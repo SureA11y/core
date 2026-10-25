@@ -139,3 +139,56 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-expanded-state-mismatch-
     ]
   );
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a collapsed toggle whose content is shown in full`, () => {
+  const lean = leanOn(
+    '<button id="a" aria-expanded="false" aria-controls="p">More</button><div id="p">Panel</div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaExpandedStateMismatch_lean_why_collapsedShown');
+});
+
+test(`${RULE_ID}: no lean for a collapsed toggle whose content is moved by a transform`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<button id="a" aria-expanded="false" aria-controls="p">Menu</button><div id="p" style="transform: translateX(-100%)">Panel</div>',
+      'a'
+    ),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: leans fail for an expanded toggle whose content is not displayed`, () => {
+  const lean = leanOn(
+    '<button id="a" aria-expanded="true" aria-controls="p">More</button><div id="p" style="display: none">Panel</div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaExpandedStateMismatch_lean_why_expandedHidden');
+});
+
+test(`${RULE_ID}: no lean for an expanded toggle whose content is hidden with aria-hidden`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<button id="a" aria-expanded="true" aria-controls="p">More</button><div id="p" aria-hidden="true">Panel</div>',
+      'a'
+    ),
+    undefined
+  );
+});

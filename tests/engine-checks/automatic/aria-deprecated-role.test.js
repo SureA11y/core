@@ -156,3 +156,35 @@ test(`${RULE_ID}: a hidden shadow host suppresses its shadow content`, () => {
   assert.strictEqual(build('aria-hidden="true"').outcome, 'notApplicable');
   assert.strictEqual(build('inert').outcome, 'notApplicable');
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans pass for role="generic" on an element that is generic by its tag`, () => {
+  const lean = leanOn('<div id="a" role="generic">Text</div>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaDeprecatedRole_lean_why_nativeGeneric');
+});
+
+test(`${RULE_ID}: no lean for role="generic" on an element with a native role`, () => {
+  assert.strictEqual(leanOn('<button id="a" role="generic">Save</button>', 'a'), undefined);
+});
+
+test(`${RULE_ID}: no lean for a deprecated role`, () => {
+  assert.strictEqual(
+    leanOn('<div id="a" role="directory"><div role="listitem">x</div></div>', 'a'),
+    undefined
+  );
+});

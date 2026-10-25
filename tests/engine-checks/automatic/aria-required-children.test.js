@@ -206,3 +206,37 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-children-all-sc
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans pass for a container that holds no element`, () => {
+  const lean = leanOn('<div id="a" role="list"></div>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaRequiredChildren_lean_why_empty');
+});
+
+test(`${RULE_ID}: leans fail for a container holding named content without the required role`, () => {
+  const lean = leanOn(
+    '<div id="a" role="list"><span><img src="star.png" alt="Starred"></span></div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaRequiredChildren_lean_why_namedContent');
+});
+
+test(`${RULE_ID}: no lean for a container holding only unnamed elements`, () => {
+  assert.strictEqual(leanOn('<div id="a" role="list"><span></span></div>', 'a'), undefined);
+});

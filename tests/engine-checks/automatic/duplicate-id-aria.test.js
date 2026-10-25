@@ -97,3 +97,43 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/duplicate-id-aria-all-scenari
     'a duplicated id never referenced by ARIA must not be flagged'
   );
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail when a referring element sits by a later copy of the id`, () => {
+  const lean = leanOn(
+    '<div><h3 id="t">One</h3><button aria-labelledby="t">Go</button></div><div><h3 id="t">Two</h3><button aria-labelledby="t">Go</button></div>',
+    't'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'duplicateIdAria_lean_why_nearerCopy');
+});
+
+test(`${RULE_ID}: leans pass when every copy has the same text for a naming reference`, () => {
+  const lean = leanOn(
+    '<span id="s">Required</span><span id="s">Required</span><input aria-describedby="s">',
+    's'
+  );
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'duplicateIdAria_lean_why_sameText');
+});
+
+test(`${RULE_ID}: no lean when copies differ and the first is the nearest`, () => {
+  assert.strictEqual(
+    leanOn('<span id="s">One</span><input aria-describedby="s"><span id="s">Two</span>', 's'),
+    undefined
+  );
+});

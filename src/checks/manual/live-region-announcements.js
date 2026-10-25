@@ -51,6 +51,8 @@
  * @reason-codes
  *   - `LIVE_REGION_HIDDEN` (cantTell): a live region inside or on
  *     aria-hidden="true" or inert, so nothing it is given can be announced.
+ *     It leans fail when no dialog is shown, which would explain the rest of
+ *     the page being hidden.
  *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2
  *     aria-live.
  *   - `LIVE_REGION_BUSY` (cantTell): a live region with aria-busy="true" when
@@ -59,10 +61,14 @@
  *   - `LIVE_REGION_INSERTED_WITH_CONTENT` (cantTell): a live region, other than
  *     role="alert", added to the page with its text already in it, which screen
  *     readers commonly do not announce.
+ *     It leans fail unless the hook saw the same text announced through
+ *     another live region.
  *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
  *   - `LIVE_REGION_SHOWN_AND_FILLED` (cantTell): a hidden live region shown and
  *     given its text in the same task, so it was not in the accessibility tree
  *     when the text arrived.
+ *     It leans fail unless the hook saw the same text announced through
+ *     another live region.
  *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
  * @implementation-notes
  * - Manual: whether a live region carries status messages, and whether a
@@ -214,6 +220,42 @@ function runInPage(ctx) {
     }
   }
 
+  // A hidden live region with no dialog open: nothing explains the page
+  // hiding it (the background of an open modal is the usual reason, and a
+  // script-made modal, role="dialog" with aria-modal, hides it with
+  // aria-hidden or inert itself), so what it is given is not announced.
+  let modalOpen = null;
+  function dialogShown() {
+    for (const d of dom.querySelectorAll(
+      document,
+      'dialog[open], [role~="dialog" i], [role~="alertdialog" i]'
+    )) {
+      if (drawn(d) && !hiddenBy(d)) return true;
+    }
+    return false;
+  }
+  function hiddenLean() {
+    if (modalOpen === null) {
+      try {
+        modalOpen = !!helpers.isModalDialogOpen() || dialogShown();
+      } catch {
+        modalOpen = true;
+      }
+    }
+    if (modalOpen) return null;
+    return {
+      toward: 'fail',
+      why: 'No dialog is open to explain hiding this live region, so what it is given is not announced.',
+      signals: [{ signal: 'dialog-open', value: false }],
+      caution:
+        'The region may be unused, or the page may show it to assistive technology before writing to it.',
+      i18n: {
+        whyKey: 'liveRegionAnnouncements_lean_why_hidden',
+        cautionKey: 'liveRegionAnnouncements_lean_caution_hidden'
+      }
+    };
+  }
+
   const occurrences = [];
   const inScope = new Set();
   let applicableCount = 0;
@@ -227,6 +269,7 @@ function runInPage(ctx) {
 
     const by = hiddenBy(el);
     if (by) {
+      const lean = hiddenLean();
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
@@ -241,6 +284,7 @@ function runInPage(ctx) {
                 : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
             hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
             visibilityFilter: eligibility(el)
@@ -301,6 +345,37 @@ function runInPage(ctx) {
         };
       }
       const target = connected ? el : dom.documentElement(document);
+      // The pattern the hook saw is one screen readers commonly skip; the
+      // message still reached them when the same text was announced
+      // through another region.
+      const elsewhere = (record.announcements || []).some(
+        (a) => a && a.element !== el && a.text === f.text
+      );
+      const lean = elsewhere
+        ? null
+        : {
+            toward: 'fail',
+            why: inserted
+              ? 'The region was added with its text already in it, which screen readers commonly do not announce.'
+              : 'The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.',
+            signals: [
+              { signal: 'hook-finding', value: f.code },
+              { signal: 'politeness', value: level },
+              { signal: 'text-also-in-existing-region', value: false }
+            ],
+            caution: inserted
+              ? 'Some screen reader and browser pairs do announce a region added with its text.'
+              : 'Some browsers update the accessibility tree in time for such a region to be announced.',
+            i18n: inserted
+              ? {
+                  whyKey: 'liveRegionAnnouncements_lean_why_inserted',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_inserted'
+                }
+              : {
+                  whyKey: 'liveRegionAnnouncements_lean_why_shownAndFilled',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_shownAndFilled'
+                }
+          };
       occurrences.push(
         helpers.reportOccurrence(target, {
           summary: inserted
@@ -318,6 +393,7 @@ function runInPage(ctx) {
               : 'liveRegionAnnouncements_hint_cantTell_shownAndFilled',
             params: { text: f.text }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details,
             visibilityFilter: connected

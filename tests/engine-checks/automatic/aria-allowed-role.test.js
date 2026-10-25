@@ -464,3 +464,34 @@ test(`${RULE_ID}: a <label for> pointing at a non-labelable element labels nothi
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a static role on an element in the tab order`, () => {
+  const lean = leanOn('<button id="a" role="heading">Save</button>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaAllowedRole_lean_why_focusable');
+});
+
+test(`${RULE_ID}: leans pass for role presentation on a focusable element`, () => {
+  const lean = leanOn('<a href="#" id="a" role="none">Home</a>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaAllowedRole_lean_why_presentational');
+});
+
+test(`${RULE_ID}: no lean for a role on an element that takes no focus`, () => {
+  assert.strictEqual(leanOn('<ul id="a" role="button"><li>One</li></ul>', 'a'), undefined);
+});

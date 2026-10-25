@@ -39,6 +39,9 @@
  *     aria-braillelabel but no other accessible name, or with
  *     aria-brailleroledescription but no aria-roledescription, so the braille
  *     text supplements nothing.
+ *     It leans pass for aria-brailleroledescription, which browsers do not
+ *     expose without aria-roledescription, and fail for aria-braillelabel on
+ *     a role that requires a name.
  *     Basis: WAI-ARIA 1.3 aria-braillelabel; WAI-ARIA 1.3
  *     aria-brailleroledescription; WCAG 4.1.2 (not settled).
  * @implementation-notes
@@ -117,6 +120,54 @@ function runInPage(ctx) {
     return t.replace(/\s+/g, ' ').trim();
   }
 
+  // Roles WAI-ARIA 1.2 marks "Name required" (DPUB and graphics roles
+  // left out).
+  const NAME_REQUIRED_ROLES = new Set([
+    'alertdialog',
+    'application',
+    'button',
+    'checkbox',
+    'columnheader',
+    'combobox',
+    'dialog',
+    'grid',
+    'heading',
+    'img',
+    'link',
+    'listbox',
+    'marquee',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
+    'rowheader',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'table',
+    'tabpanel',
+    'textbox',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+
+  function roleOf(el) {
+    try {
+      const info = helpers.getRoleInfo(el, ctx);
+      return trim(info && info.role).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]')
     : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]');
@@ -143,8 +194,27 @@ function runInPage(ctx) {
         nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : ''
       );
       const name = programmaticName || getConservativeSubtreeText(el);
+      const role = roleOf(el);
       if (!name)
         missing.push({
+          // A role that needs a name is left with none for speech users.
+          lean: NAME_REQUIRED_ROLES.has(role)
+            ? {
+                toward: 'fail',
+                why: 'The element’s role needs a name, and it has none besides its braille label, so speech users get no name.',
+                signals: [
+                  { signal: 'role-requires-name', value: true },
+                  { signal: 'role', value: role },
+                  { signal: 'accessible-name-empty', value: true }
+                ],
+                caution:
+                  'The naming rule for this role reports the missing name too; it is one problem, not two.',
+                i18n: {
+                  whyKey: 'ariaBrailleEquivalent_lean_why_label',
+                  cautionKey: 'ariaBrailleEquivalent_lean_caution_label'
+                }
+              }
+            : null,
           attr: 'aria-braillelabel',
           requires: 'an accessible name',
           messageKey: 'label',
@@ -158,6 +228,19 @@ function runInPage(ctx) {
       const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
       if (!roleDesc)
         missing.push({
+          // Browsers expose aria-brailleroledescription only with an
+          // aria-roledescription, so the element keeps its usual role and
+          // no user loses anything they had.
+          lean: {
+            toward: 'pass',
+            why: 'Without aria-roledescription, browsers do not expose the braille role description, so the element keeps its usual role and nothing is lost.',
+            signals: [{ signal: 'missing-attr', value: 'aria-roledescription' }],
+            caution: 'The braille role description the author wrote reaches no one.',
+            i18n: {
+              whyKey: 'ariaBrailleEquivalent_lean_why_roleDescription',
+              cautionKey: 'ariaBrailleEquivalent_lean_caution_roleDescription'
+            }
+          },
           attr: 'aria-brailleroledescription',
           requires: 'aria-roledescription',
           messageKey: 'roleDescription',
@@ -190,6 +273,7 @@ function runInPage(ctx) {
               'Whether any user reaches this attribute, given no braille equivalent is exposed.',
             evidence: { element: tag, attribute: m.attr, requires: m.requires }
           },
+          ...(m.lean ? { lean: m.lean } : {}),
           data: {
             details: {
               reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',

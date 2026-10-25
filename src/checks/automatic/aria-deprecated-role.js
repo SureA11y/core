@@ -38,6 +38,8 @@
  *   - `ARIA_ROLE_AUTHOR_DISCOURAGED` (cantTell): an explicit role that WAI-ARIA
  *     reserves for user agents and says authors should not use, such as
  *     generic.
+ *     It leans pass when the element is a plain container (div, span, b, i
+ *     and the like) whose native role is already generic.
  *     Basis: WAI-ARIA 1.2 generic (SHOULD); WCAG 4.1.2 (not settled).
  *   - `ARIA_ROLE_AUTHOR_PROHIBITED` (fail): an explicit role that WAI-ARIA says
  *     authors must not use; no current concrete role is listed, so this code is
@@ -118,6 +120,18 @@ function runInPage(ctx) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Elements HTML-AAM maps to the generic role, whatever their attributes
+  // (an <a> only without href): role="generic" on them restates what they
+  // already are.
+  const GENERIC_TAGS = new Set(['div', 'span', 'b', 'i', 'u', 'small', 'bdi', 'bdo']);
+  function isNativelyGeneric(el) {
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (GENERIC_TAGS.has(tag)) return true;
+    return tag === 'a' && !dom.hasAttribute(el, 'href');
+  }
 
   // A role on an element hidden from assistive technology has no effect, so
   // ACT 674b10 does not apply to it.
@@ -212,6 +226,21 @@ function runInPage(ctx) {
               'Whether this user-agent-reserved role misleads the assistive technology in use.',
             evidence: { role, ariaStatus: 'discouraged-for-authors' }
           },
+          // On an element that is generic by its tag, the role changes
+          // nothing the browser exposes, whatever assistive technology does.
+          ...(role === 'generic' && isNativelyGeneric(el)
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'This element is already generic by its tag, so role="generic" changes nothing that is exposed.',
+                  signals: [
+                    { signal: 'native-role', value: 'generic' },
+                    { signal: 'element', value: String(dom.localName(el) || '').toLowerCase() }
+                  ],
+                  i18n: { whyKey: 'ariaDeprecatedRole_lean_why_nativeGeneric' }
+                }
+              }
+            : {}),
           data: {
             details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
           }

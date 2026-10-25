@@ -34717,6 +34717,12 @@ const RUNTIME_CATALOG = {
       "ariaRolesValid_hint_abstract": "Ersetzen Sie sie durch eine konkrete Rolle, die dem Element entspricht, etwa \"button\" oder \"region\".",
       "ariaRolesValid_summary_cantTell": "Das role-Attribut hat keinen verwendbaren Wert, daher behält dieses Element seine native Rolle \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Korrigieren oder entfernen Sie das role-Attribut; bis dahin behandeln assistive Technologien das Element nach seiner nativen Rolle.",
+      "ariaRolesValid_lean_why_typoOfNative": "Der Rollenwert sieht wie ein Tippfehler der nativen Rolle des Elements aus, die das Element behält.",
+      "ariaRolesValid_lean_why_typoOfOther": "Der Rollenwert sieht wie ein Tippfehler einer anderen Rolle aus, die das Element nicht erhält: Es behält stattdessen seine native Rolle.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Ein kurzer Wert kann einer Rolle ähneln, die nie gemeint war.",
+      "ariaRolesValid_lean_why_abstractKind": "Die native Rolle des Elements ist eine Art der genannten abstrakten Rolle und stellt daher bereits eine konkrete Form davon bereit.",
+      "ariaRolesValid_lean_caution_abstractKind": "Eine Art der abstrakten Rolle zu sein zeigt nicht, dass es die gemeinte Rolle ist.",
+      "ariaRolesValid_lean_why_abstractOther": "Die native Rolle des Elements ist keine Art der genannten abstrakten Rolle, daher wird nicht bereitgestellt, was der Autor genannt hat.",
       "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
       "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", das Autorinnen und Autoren nicht setzen dürfen.",
@@ -34725,10 +34731,15 @@ const RUNTIME_CATALOG = {
       "ariaDeprecatedRole_guidance_directory": "Ersetzen Sie sie durch role=\"list\" (die empfohlene Ersetzung).",
       "ariaDeprecatedRole_guidance_generic": "Entfernen Sie sie — diese Rolle ist für den user-agent-internen Gebrauch vorgesehen, nicht für Autoren. Verwenden Sie stattdessen role=\"presentation\"/\"none\", um die Semantik zu entfernen, eine semantische Rolle wie \"group\", um eine Gruppierung auszudrücken, oder schlicht ein gewöhnliches Element (das die implizite generic-Rolle bereits trägt).",
       "ariaDeprecatedRole_guidance_default": "Ersetzen Sie die veraltete Rolle durch ihre empfohlene Ersetzung.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Dieses Element ist durch sein Tag bereits generisch, daher ändert role=\"generic\" nichts an dem, was bereitgestellt wird.",
       "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
       "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
       "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
       "ariaValidAttr_hint_fail": "Korrigieren Sie den Attributnamen, falls es ein Tippfehler ist, oder entfernen Sie das Attribut.",
+      "ariaValidAttr_lean_why_realPresent": "Das Element hat auch das richtig geschriebene Attribut, daher kostet das falsch geschriebene nichts.",
+      "ariaValidAttr_lean_why_lostName": "Das Attribut ist ein falsch geschriebenes Benennungsattribut, und das Element, dessen Rolle einen Namen braucht, hat keinen.",
+      "ariaValidAttr_lean_why_dataHook": "Der Name ähnelt keinem ARIA-Attribut und wirkt daher wie ein Anknüpfungspunkt für Skripte oder Tests, nicht wie ein Tippfehler.",
+      "ariaValidAttr_lean_caution_dataHook": "Der Autor hat es vielleicht dennoch für assistive Technologien gedacht.",
       "ariaValidAttrValue_title": "Die Werte von aria-*-Attributen müssen ihrem deklarierten Typ entsprechen",
       "ariaValidAttrValue_description": "Prüft, ob jedes erkannte aria-*-Attribut einen Wert hat, der seinem WAI-ARIA-deklarierten Werttyp entspricht (boolesch, tristate, Token, Ganzzahl, Zahl oder ID-Referenz).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" ist kein gültiger Wert für dieses Attribut.",
@@ -34746,6 +34757,12 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Lassen Sie aria-haspopup die Rolle des Popups nennen, oder prüfen Sie, ob ein Skript ein anderes Popup anzeigt.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "Das aria-activedescendant dieses Elements verweist auf ein Element, das weder in ihm liegt noch ihm gehört.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Verweisen Sie mit aria-activedescendant auf einen eigenen Eintrag des Elements, oder machen Sie den Eintrag mit aria-owns zu seinem.",
+      "ariaValidAttrValue_lean_why_otherTree": "Ein Element mit dieser ID existiert, aber in einem anderen Dokumentbaum (jenseits eines Shadow Roots), wo der Verweis es nie erreichen kann.",
+      "ariaValidAttrValue_lean_caution_otherTree": "Die Komponente kann noch ein eigenes Element mit dieser ID erzeugen.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Ein Element, dessen ID sich nur in Groß-/Kleinschreibung oder einem Zeichen unterscheidet, existiert, daher ist der Verweis wahrscheinlich falsch geschrieben.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Ein Skript kann noch ein Element mit genau dieser ID hinzufügen.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "Das Popup, das dieses Element steuert, ist geöffnet und hat eine andere Rolle, als aria-haspopup ankündigt.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "Das Widget kann ein anderes Popup öffnen, das an anderer Stelle der Seite liegt.",
       "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
       "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
       "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -34765,22 +34782,40 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Geben Sie dem Element die Rolle, die die Beschreibung verfeinert, oder entfernen Sie das Attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Dieses <{{element}}> hat keine Rolle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus; sein eigener Text gibt ihm ohnehin einen Namen.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Prüfen Sie, ob dieser Text das Element bereits gut beschriftet. Wenn ja, kann das Attribut entfallen; wenn nicht, geben Sie dem Element eine Rolle, die einen Namen haben kann, etwa role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "Der eigene Text des Elements sagt bereits, was seine Beschriftung sagt, sodass nichts verloren geht, wenn die Beschriftung ignoriert wird.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s lässt ein Benennungsattribut an einem Element ohne Rolle unabhängig von seinem Text durchfallen.",
+      "ariaProhibitedAttr_lean_why_extraWords": "Die Beschriftung sagt etwas, das der Text des Elements nicht sagt; das geht verloren, wo eine Beschriftung an einem Element ohne Rolle ignoriert wird.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Manche Kombinationen aus Browser und Screenreader kündigen eine Beschriftung an einem Element ohne Rolle dennoch an.",
       "ariaRequiredAttr_title": "Rollen mit einem erforderlichen ARIA-Zustand oder einer erforderlichen ARIA-Eigenschaft müssen das entsprechende Attribut haben",
       "ariaRequiredAttr_description": "Prüft, ob Elemente mit einer expliziten Rolle alle für diese Rolle erforderlichen aria-*-Zustände und -Eigenschaften angeben, die eindeutig und unabhängig vom Kontext sind (z. B. muss role=\"checkbox\" aria-checked haben).",
       "ariaRequiredAttr_summary_fail": "{{attr}} ist für role=\"{{role}}\" erforderlich, fehlt jedoch.",
       "ariaRequiredAttr_hint_fail": "Fügen Sie dieses Attribut mit einem für diese Rolle gültigen Wert hinzu.",
       "ariaRequiredAttr_summary_cantTell": "Dieses Attribut ist für role=\"{{role}}\" erforderlich und fehlt, ARIA verwendet aber „{{implicit}}“ als impliziten Wert.",
       "ariaRequiredAttr_hint_cantTell": "Setzen Sie {{attr}} ausdrücklich, wenn „{{implicit}}“ nicht der gemeinte Zustand ist.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "Das Popup, das diese Combobox steuert, wird angezeigt, aber ohne aria-expanded wird die Combobox als zugeklappt angekündigt.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "Das Popup schließt sich vielleicht gerade, oder es ist eine Liste, die das Widget immer anzeigt.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "Der Code der Komponente ruft attachInternals nie auf, kann diesen Zustand also nicht auf diese Weise setzen, und das Element hat kein Attribut dafür.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Code außerhalb der Klassen der Komponente, etwa eine gemeinsame Hilfsfunktion, kann die Internals anhängen.",
+      "ariaRequiredAttr_lean_why_internalsSet": "Der Code der Komponente hängt Internals an und setzt diesen Zustand über sie.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Dass der Code den Zustand nennt, zeigt nicht, dass er auf den richtigen Wert gesetzt ist.",
       "ariaAllowedRole_title": "Die explizite Rolle muss für ihr Host-Element zulässig sein",
       "ariaAllowedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut eine der Rollen ist, die die ARIA-in-HTML-Spezifikation für das Host-Element zulässt (z. B. ist role=\"tab\" bei <nav> nicht zulässig).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" ist bei <{{element}}> nicht zulässig.",
       "ariaAllowedRole_hint_fail": "Verwenden Sie eine Rolle, die dieses Element erlaubt, oder ein anderes Element.",
+      "ariaAllowedRole_lean_why_focusable": "Das Element ist in der Tab-Reihenfolge, aber seine Rolle ist keine Bedienelement-Rolle, sodass Tastaturnutzer auf etwas landen, das als statisch angekündigt wird.",
+      "ariaAllowedRole_lean_caution_focusable": "Ein fokussierbares Element mit statischer Rolle kann gewollt sein, etwa ein scrollbarer Bereich.",
+      "ariaAllowedRole_lean_why_presentational": "Browser ignorieren die Rolle none oder presentation bei einem fokussierbaren Element und behalten seine native Rolle bei.",
+      "ariaAllowedRole_lean_caution_presentational": "Browser lösen diesen Konflikt auf leicht unterschiedliche Weise.",
       "ariaRequiredChildren_title": "Container-Rollen müssen mindestens eine erforderliche Kind-Rolle besitzen",
       "ariaRequiredChildren_description": "Prüft, ob Container-Rollen, für die „required owned elements“ festgelegt sind (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...), mindestens ein zugeordnetes Element mit einer zulässigen Rolle enthalten. Dieses Element muss ein Nachfahre sein oder über aria-owns referenziert werden.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" enthält kein Element mit einer der erforderlichen Rollen: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Fügen Sie ein Kindelement mit einer dieser Rollen hinzu, oder verweisen Sie mit aria-owns auf eines.",
       "ariaRequiredChildren_summary_fail_textOnly": "Diese Container-Rolle enthält Inhalt, aber nichts davon hat eine Rolle, die der Container verlangt.",
       "ariaRequiredChildren_hint_fail_textOnly": "Geben Sie jedem Eintrag die Rolle, die der Container braucht, etwa role=\"listitem\" in einer Liste.",
+      "ariaRequiredChildren_lean_why_empty": "Der Container enthält keine Elemente und vermittelt daher keine Einträge, weder richtige noch falsche.",
+      "ariaRequiredChildren_lean_caution_empty": "Ein Skript kann ihn später mit Einträgen füllen, denen die erforderliche Rolle fehlt.",
+      "ariaRequiredChildren_lean_why_namedContent": "Der Container enthält Inhalte mit Namen, etwa ein Bild oder ein Bedienelement, aber keiner davon hat eine Rolle, die der Container verlangt.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children beurteilt Inhalte mit eigener Rolle; dies ist dieselbe Struktur aus Sicht des Containers.",
       "ariaProhibitedChildren_title": "Container-Rollen dürfen kein Kind mit einer unzulässigen Rolle besitzen",
       "ariaProhibitedChildren_description": "Prüft, ob jedes Kind, das einer Container-Rolle im Barrierefreiheitsbaum zugeordnet ist (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row), eine der für zugeordnete Kindelemente dieser Rolle zulässigen Rollen hat.",
       "ariaProhibitedChildren_summary_fail": "Dieses Element hat role=\"{{childRole}}\", das direkt in einem Container mit role=\"{{containerRole}}\" nicht erlaubt ist.",
@@ -34856,6 +34891,12 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; fügen Sie die Region zuerst leer in die Seite ein und ändern Sie ihren Text danach.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Eine verborgene Live-Region wurde angezeigt und erhielt ihren Text „{{text}}“ auf einmal, bevor sie im Accessibility Tree war.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; zeigen Sie die Region zuerst an und ändern Sie ihren Text danach.",
+      "liveRegionAnnouncements_lean_why_hidden": "Kein Dialog ist geöffnet, der das Ausblenden dieser Live-Region erklärt, daher wird nicht angekündigt, was sie erhält.",
+      "liveRegionAnnouncements_lean_caution_hidden": "Die Region wird vielleicht nicht genutzt, oder die Seite macht sie für assistive Technologien zugänglich, bevor sie hineinschreibt.",
+      "liveRegionAnnouncements_lean_why_inserted": "Die Region wurde mit ihrem Text bereits darin eingefügt, was Screenreader meist nicht ankündigen.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Manche Kombinationen aus Screenreader und Browser kündigen eine mit Text eingefügte Region durchaus an.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "Die Region wurde gleichzeitig angezeigt und mit Text gefüllt, bevor sie im Accessibility-Baum war, was Screenreader meist nicht ankündigen.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Manche Browser aktualisieren den Accessibility-Baum rechtzeitig, sodass eine solche Region angekündigt wird.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -34876,6 +34917,9 @@ const RUNTIME_CATALOG = {
       "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
       "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
       "duplicateIdAria_hint_cantTell": "Prüfen Sie, ob das erste Element mit dieser id das gemeinte ist, oder geben Sie jedem Element eine eigene id.",
+      "duplicateIdAria_lean_why_sameText": "Alle Elemente mit dieser ID haben denselben Text, daher ergibt jedes, das der Verweis erreicht, denselben Namen oder dieselbe Beschreibung.",
+      "duplicateIdAria_lean_why_nearerCopy": "Ein Element, das auf diese ID verweist, steht neben einer späteren Kopie davon, aber der Verweis geht an die erste, an anderer Stelle der Seite.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Näher zu sein ist ein Hinweis auf das Gemeinte, kein Beweis.",
       "summaryNamePresent_title": "Summary-Elemente haben einen zugänglichen Namen",
       "summaryNamePresent_description": "Prüft, ob <summary>-Elemente einen nicht leeren zugänglichen Namen aufweisen.",
       "summaryNamePresent_summary_fail": "Dieses Summary-Element hat keinen zugänglichen Namen.",
@@ -35165,10 +35209,17 @@ const RUNTIME_CATALOG = {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel ist eine Braille-spezifische Ergänzung, kein Ersatz — geben Sie dem Element zusätzlich einen zugänglichen Namen (zum Beispiel über sichtbaren Text, aria-label oder aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Dieses Element hat aria-brailleroledescription, aber nicht aria-roledescription, sein Nicht-Braille-Äquivalent.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich aria-roledescription bereit.",
+      "ariaBrailleEquivalent_lean_why_label": "Die Rolle des Elements braucht einen Namen, und außer seiner Braille-Beschriftung hat es keinen, sodass Sprachausgabe-Nutzer keinen Namen erhalten.",
+      "ariaBrailleEquivalent_lean_caution_label": "Die Namensregel für diese Rolle meldet den fehlenden Namen ebenfalls; es ist ein Problem, nicht zwei.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Ohne aria-roledescription stellen Browser die Braille-Rollenbeschreibung nicht bereit, sodass das Element seine übliche Rolle behält und nichts verloren geht.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "Die vom Autor geschriebene Braille-Rollenbeschreibung erreicht niemanden.",
       "ariaConditionalAttr_title": "aria-errormessage erfordert, dass aria-invalid auf einen Wert ungleich false gesetzt ist",
       "ariaConditionalAttr_description": "Prüft, ob Elemente mit aria-errormessage auch aria-invalid auf „true“, „grammar“ oder „spelling“ gesetzt haben — andernfalls wird die Fehlermeldung aus dem Accessibility-Baum entfernt.",
       "ariaConditionalAttr_summary_fail": "Dieses Element hat aria-errormessage, aber aria-invalid fehlt oder ist „false“, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
       "ariaConditionalAttr_hint_fail": "Setzen Sie aria-invalid auf „true“ (oder „grammar“/„spelling“), wann immer aria-errormessage assistiven Technologien zur Verfügung gestellt werden soll.",
+      "ariaConditionalAttr_lean_why_described": "Die Fehlermeldung wird auch von aria-describedby benannt und erreicht assistive Technologien so als Beschreibung des Feldes.",
+      "ariaConditionalAttr_lean_why_shown": "Die Fehlermeldung wird mit Text angezeigt, aber aria-invalid ist nicht gesetzt, sodass assistive Technologien sie nicht erhalten.",
+      "ariaConditionalAttr_lean_caution_shown": "Der angezeigte Text kann ein ständiger Hinweis statt eines Fehlers sein.",
       "ariaCheckedStateMismatch_title": "Das aria-checked eines nativen Kontrollkästchens/Optionsfelds sollte seinem tatsächlichen Zustand entsprechen",
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
@@ -35181,6 +35232,10 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "Der gesteuerte Inhalt wird vollständig angezeigt, weder abgeschnitten noch verschoben, während das Element angibt, zugeklappt zu sein.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "Der Inhalt kann eine Vorschau sein, die das Element weiter aufklappt.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "Der gesteuerte Inhalt wird gar nicht angezeigt (display: none oder das Attribut hidden), während das Element angibt, aufgeklappt zu sein.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Ein Skript ist vielleicht gerade dabei, den Inhalt anzuzeigen.",
       "ariaOwnsValid_title": "aria-owns muss jedem Element genau einen Besitzer geben, und nie einen Vorfahren des Besitzers",
       "ariaOwnsValid_description": "Prüft, dass kein Element von mehr als einem aria-owns genannt wird und kein aria-owns das Element selbst oder einen seiner Vorfahren nennt.",
       "ariaOwnsValid_summary_fail_duplicate": "Dieses Element wird im aria-owns von {{count}} Elementen genannt, kann aber nur einen Besitzer haben.",
@@ -35904,6 +35959,12 @@ const RUNTIME_CATALOG = {
       "ariaRolesValid_hint_abstract": "Replace it with a concrete role that matches what the element is, such as \"button\" or \"region\".",
       "ariaRolesValid_summary_cantTell": "The role attribute has no usable value, so this element keeps its native role, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Fix or remove the role attribute; until then, assistive technology treats the element by its native role.",
+      "ariaRolesValid_lean_why_typoOfNative": "The role value looks like a misspelling of the element’s native role, which the element keeps.",
+      "ariaRolesValid_lean_why_typoOfOther": "The role value looks like a misspelling of another role, which the element does not get: it keeps its native role instead.",
+      "ariaRolesValid_lean_caution_typoOfOther": "A short value can resemble a role it was never meant to be.",
+      "ariaRolesValid_lean_why_abstractKind": "The element’s native role is a kind of the abstract role named, so it already exposes a concrete form of it.",
+      "ariaRolesValid_lean_caution_abstractKind": "Being a kind of the abstract role does not show it is the role meant.",
+      "ariaRolesValid_lean_why_abstractOther": "The element’s native role is not a kind of the abstract role named, so what the author named is not exposed.",
       "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
       "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not set.",
@@ -35912,10 +35973,15 @@ const RUNTIME_CATALOG = {
       "ariaDeprecatedRole_guidance_directory": "Replace it with role=\"list\" (its recommended replacement).",
       "ariaDeprecatedRole_guidance_generic": "Remove it: this role is reserved for user-agent-internal use, not authors. Use role=\"presentation\"/\"none\" to strip semantics, a semantic role like \"group\" to convey grouping, or a plain element (which already carries the implicit generic role) instead.",
       "ariaDeprecatedRole_guidance_default": "Replace the deprecated role with its recommended replacement.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "This element is already generic by its tag, so role=\"generic\" changes nothing that is exposed.",
       "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
       "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
       "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
       "ariaValidAttr_hint_fail": "Fix the attribute name if it is a typo, or remove it.",
+      "ariaValidAttr_lean_why_realPresent": "The element also has the correctly spelled attribute, so the misspelled one costs nothing.",
+      "ariaValidAttr_lean_why_lostName": "The attribute misspells a naming attribute, and the element, whose role needs a name, has none.",
+      "ariaValidAttr_lean_why_dataHook": "The name is close to no ARIA attribute, so it reads as a hook for scripts or tests, not a misspelling.",
+      "ariaValidAttr_lean_caution_dataHook": "The author may still have meant it for assistive technology.",
       "ariaValidAttrValue_title": "aria-* attribute values must match their declared type",
       "ariaValidAttrValue_description": "Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" is not a valid value for this attribute.",
@@ -35933,6 +35999,12 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Make aria-haspopup name the popup’s role, or check whether a script shows another popup.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "This element’s aria-activedescendant points at an element that is neither inside it nor owned by it.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Point aria-activedescendant at one of the element’s own items, or own the item with aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "An element with this id exists, but in another document tree (across a shadow root), where the reference can never reach it.",
+      "ariaValidAttrValue_lean_caution_otherTree": "The component may still create its own element with this id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "An element whose id differs only by case or one character exists, so the reference is probably misspelled.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "A script may still add an element with the exact id.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "The popup this element controls is open and has another role than aria-haspopup announces.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "The widget may open a different popup, placed elsewhere in the page.",
       "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
       "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
       "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -35952,22 +36024,40 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Give the element the role the description refines, or remove the attribute.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "This <{{element}}> has no role, so assistive technology may not announce its {{attr}}; its own text gives it a name anyway.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Check whether that text already labels the element well. If it does, the attribute can go; if not, give the element a role that can be named, such as role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "The element’s own text already says what its label says, so nothing is lost if the label is ignored.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s fails a naming attribute on an element with no role, whatever its text.",
+      "ariaProhibitedAttr_lean_why_extraWords": "The label says something the element’s text does not, which is lost where a label on an element with no role is ignored.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Some browser and screen reader pairs still announce a label on an element with no role.",
       "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
       "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
       "ariaRequiredAttr_hint_fail": "Add this attribute with a valid value for this role.",
       "ariaRequiredAttr_summary_cantTell": "This attribute is required for role=\"{{role}}\" and is missing, but ARIA falls back to \"{{implicit}}\".",
       "ariaRequiredAttr_hint_cantTell": "Set {{attr}} explicitly if \"{{implicit}}\" is not the state you mean.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "The popup this combobox controls is shown, but without aria-expanded the combobox is announced as collapsed.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "The popup may be closing, or be a list the widget always shows.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "The component’s code never calls attachInternals, so it cannot set this state that way, and the element has no attribute for it.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Code outside the component’s classes, such as a shared helper, may attach the internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "The component’s code attaches internals and sets this state through them.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Naming the state in its code does not show it is set to the right value.",
       "ariaAllowedRole_title": "Explicit role must be permitted for its host element",
       "ariaAllowedRole_description": "Checks that an explicit role=\"\" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role=\"tab\" is not permitted on <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" is not permitted on <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Use a role this element allows, or use a different element.",
+      "ariaAllowedRole_lean_why_focusable": "The element is in the tab order but its role is not a control role, so keyboard users land on something announced as static.",
+      "ariaAllowedRole_lean_caution_focusable": "A focusable element with a static role can be deliberate, such as a scrollable region.",
+      "ariaAllowedRole_lean_why_presentational": "Browsers ignore role none or presentation on an element that takes focus, and keep its native role.",
+      "ariaAllowedRole_lean_caution_presentational": "Browsers resolve this conflict in slightly different ways.",
       "ariaRequiredChildren_title": "Container roles must own at least one required child role",
       "ariaRequiredChildren_description": "Checks that container roles with a documented \"required owned elements\" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" contains no element with one of the roles it requires: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Add a child element with one of these roles, or reference one with aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "This container role holds content, but none of it has a role the container requires.",
       "ariaRequiredChildren_hint_fail_textOnly": "Give each item the role the container needs, such as role=\"listitem\" in a list.",
+      "ariaRequiredChildren_lean_why_empty": "The container holds no elements, so it conveys no items, right or wrong.",
+      "ariaRequiredChildren_lean_caution_empty": "A script may fill it later with items that lack the required role.",
+      "ariaRequiredChildren_lean_why_namedContent": "The container holds content with a name, such as an image or a control, but none of it has a role the container requires.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children judges content that has a role of its own; this is the same structure seen from the container.",
       "ariaProhibitedChildren_title": "Container roles must not own a child with a disallowed role",
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
@@ -36043,6 +36133,12 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Check that this status message is announced; put the empty region in the page first and change its text after.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "A hidden live region was shown and given its text, \"{{text}}\", at once, before it was in the accessibility tree.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Check that this status message is announced; show the region first and change its text after.",
+      "liveRegionAnnouncements_lean_why_hidden": "No dialog is open to explain hiding this live region, so what it is given is not announced.",
+      "liveRegionAnnouncements_lean_caution_hidden": "The region may be unused, or the page may show it to assistive technology before writing to it.",
+      "liveRegionAnnouncements_lean_why_inserted": "The region was added with its text already in it, which screen readers commonly do not announce.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Some screen reader and browser pairs do announce a region added with its text.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Some browsers update the accessibility tree in time for such a region to be announced.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -36063,6 +36159,9 @@ const RUNTIME_CATALOG = {
       "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
       "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
       "duplicateIdAria_hint_cantTell": "Check that the first element with this id is the one meant, or give each element its own id.",
+      "duplicateIdAria_lean_why_sameText": "Every element with this id has the same text, so whichever one the reference reaches gives the same name or description.",
+      "duplicateIdAria_lean_why_nearerCopy": "An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Being nearer is a sign of what was meant, not proof.",
       "summaryNamePresent_title": "Summary elements have an accessible name",
       "summaryNamePresent_description": "Checks that <summary> elements expose a non-empty accessible name.",
       "summaryNamePresent_summary_fail": "This summary has no accessible name.",
@@ -36352,10 +36451,17 @@ const RUNTIME_CATALOG = {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "The element’s role needs a name, and it has none besides its braille label, so speech users get no name.",
+      "ariaBrailleEquivalent_lean_caution_label": "The naming rule for this role reports the missing name too; it is one problem, not two.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Without aria-roledescription, browsers do not expose the braille role description, so the element keeps its usual role and nothing is lost.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "The braille role description the author wrote reaches no one.",
       "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
       "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
       "ariaConditionalAttr_summary_fail": "This element has aria-errormessage but aria-invalid is missing or \"false\", so the error message is not exposed.",
       "ariaConditionalAttr_hint_fail": "Set aria-invalid to \"true\" (or \"grammar\"/\"spelling\") whenever aria-errormessage should be exposed to assistive technology.",
+      "ariaConditionalAttr_lean_why_described": "The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.",
+      "ariaConditionalAttr_lean_why_shown": "The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.",
+      "ariaConditionalAttr_lean_caution_shown": "The text shown may be a standing hint rather than an error.",
       "ariaCheckedStateMismatch_title": "Native checkbox/radio aria-checked should match its actual state",
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
@@ -36368,6 +36474,10 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "The content it controls is shown in full, not clipped or moved away, while the element says it is collapsed.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "The content may be a preview the element expands further.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "The content it controls is not displayed at all (display: none or the hidden attribute), while the element says it is expanded.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "A script may be about to show the content.",
       "ariaOwnsValid_title": "aria-owns must give each element one owner, and never an ancestor of the owner",
       "ariaOwnsValid_description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
       "ariaOwnsValid_summary_fail_duplicate": "This element is named in the aria-owns of {{count}} elements, but it can have only one owner.",
@@ -37091,6 +37201,12 @@ const RUNTIME_CATALOG = {
       "ariaRolesValid_hint_abstract": "Sustituirlo por un rol concreto que corresponda a lo que es el elemento, como \"button\" o \"region\".",
       "ariaRolesValid_summary_cantTell": "El atributo role no tiene un valor utilizable, así que este elemento conserva su rol nativo, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Corregir o quitar el atributo role; mientras tanto, las tecnologías de apoyo tratan el elemento según su rol nativo.",
+      "ariaRolesValid_lean_why_typoOfNative": "El valor del rol parece una errata del rol nativo del elemento, que el elemento conserva.",
+      "ariaRolesValid_lean_why_typoOfOther": "El valor del rol parece una errata de otro rol, que el elemento no recibe: en su lugar conserva su rol nativo.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Un valor corto puede parecerse a un rol que nunca se pretendió.",
+      "ariaRolesValid_lean_why_abstractKind": "El rol nativo del elemento es un tipo del rol abstracto indicado, así que ya expone una forma concreta de él.",
+      "ariaRolesValid_lean_caution_abstractKind": "Ser un tipo del rol abstracto no demuestra que sea el rol que se pretendía.",
+      "ariaRolesValid_lean_why_abstractOther": "El rol nativo del elemento no es un tipo del rol abstracto indicado, así que lo que indicó el autor no se expone.",
       "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
       "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben establecer.",
@@ -37099,10 +37215,15 @@ const RUNTIME_CATALOG = {
       "ariaDeprecatedRole_guidance_directory": "Reemplazarlo por role=\"list\" (su reemplazo recomendado).",
       "ariaDeprecatedRole_guidance_generic": "Eliminarlo: este rol está reservado para uso interno de los agentes de usuario, no para los autores. Usar en su lugar role=\"presentation\"/\"none\" para quitar la semántica, un rol semántico como \"group\" para expresar agrupación, o simplemente un elemento corriente (que ya lleva el rol generic implícito).",
       "ariaDeprecatedRole_guidance_default": "Reemplazar el rol obsoleto por su reemplazo recomendado.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Este elemento ya es genérico por su etiqueta, así que role=\"generic\" no cambia nada de lo que se expone.",
       "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
       "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
       "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
       "ariaValidAttr_hint_fail": "Corregir el nombre del atributo si es una errata, o quitarlo.",
+      "ariaValidAttr_lean_why_realPresent": "El elemento también tiene el atributo bien escrito, así que el mal escrito no cuesta nada.",
+      "ariaValidAttr_lean_why_lostName": "El atributo es una errata de un atributo de nombre, y el elemento, cuyo rol necesita un nombre, no tiene ninguno.",
+      "ariaValidAttr_lean_why_dataHook": "El nombre no se parece a ningún atributo ARIA, así que parece un enganche para scripts o pruebas, no una errata.",
+      "ariaValidAttr_lean_caution_dataHook": "Puede que el autor lo pensara de todos modos para las tecnologías de apoyo.",
       "ariaValidAttrValue_title": "Los valores de los atributos aria-* deben coincidir con su tipo declarado",
       "ariaValidAttrValue_description": "Comprueba que cada atributo aria-* reconocido tenga un valor conforme a su tipo declarado por WAI-ARIA (booleano, tri-estado, token, entero, número o referencia de ID).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" no es un valor válido para este atributo.",
@@ -37120,6 +37241,12 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "Existe un elemento con este id, pero en otro árbol del documento (al otro lado de una raíz shadow), donde la referencia nunca puede alcanzarlo.",
+      "ariaValidAttrValue_lean_caution_otherTree": "El componente todavía puede crear su propio elemento con este id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Existe un elemento cuyo id solo difiere en mayúsculas o en un carácter, así que la referencia probablemente está mal escrita.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Un script todavía puede añadir un elemento con el id exacto.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "La ventana emergente que controla este elemento está abierta y tiene otro rol distinto del que anuncia aria-haspopup.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "El componente puede abrir otra ventana emergente, situada en otro lugar de la página.",
       "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
       "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
       "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -37139,22 +37266,40 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Dar al elemento el rol que la descripción concreta, o quitar el atributo.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Este <{{element}}> no tiene rol, así que puede que las tecnologías de apoyo no anuncien su {{attr}}; de todos modos, su propio texto le da nombre.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Comprobar si ese texto ya etiqueta bien el elemento. Si es así, se puede quitar el atributo; si no, darle al elemento un rol que admita nombre, como role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "El propio texto del elemento ya dice lo que dice su etiqueta, así que no se pierde nada si se ignora la etiqueta.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s da por fallido un atributo de nombre en un elemento sin rol, sea cual sea su texto.",
+      "ariaProhibitedAttr_lean_why_extraWords": "La etiqueta dice algo que el texto del elemento no dice, y eso se pierde donde se ignora una etiqueta en un elemento sin rol.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Algunas combinaciones de navegador y lector de pantalla sí anuncian una etiqueta en un elemento sin rol.",
       "ariaRequiredAttr_title": "Los roles con un estado/propiedad ARIA obligatorio deben incluirlo",
       "ariaRequiredAttr_description": "Comprueba que los elementos con un rol explícito lleven todo estado/propiedad aria-* obligatorio, inequívoco e independiente del contexto para ese rol (por ejemplo, role=\"checkbox\" debe tener aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} es obligatorio para role=\"{{role}}\", pero falta.",
       "ariaRequiredAttr_hint_fail": "Agregar este atributo con un valor válido para este rol.",
       "ariaRequiredAttr_summary_cantTell": "Este atributo es obligatorio para role=\"{{role}}\" y falta, pero ARIA usa \"{{implicit}}\" como valor implícito.",
       "ariaRequiredAttr_hint_cantTell": "Indicar {{attr}} de forma explícita si \"{{implicit}}\" no es el estado deseado.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "La ventana emergente que controla este cuadro combinado se muestra, pero sin aria-expanded el cuadro combinado se anuncia como contraído.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "Puede que la ventana emergente se esté cerrando, o que sea una lista que el componente muestra siempre.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "El código del componente nunca llama a attachInternals, así que no puede establecer este estado de esa forma, y el elemento no tiene ningún atributo para él.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Código fuera de las clases del componente, como una función auxiliar compartida, puede adjuntar los internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "El código del componente adjunta internals y establece este estado a través de ellos.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Que el código nombre el estado no demuestra que se establezca con el valor correcto.",
       "ariaAllowedRole_title": "El rol explícito debe estar permitido para su elemento anfitrión",
       "ariaAllowedRole_description": "Comprueba que un atributo role=\"\" explícito sea uno de los roles que la especificación ARIA-in-HTML permite para el elemento anfitrión (por ejemplo, role=\"tab\" no está permitido en <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" no está permitido en <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Usar un rol que este elemento admita, o usar otro elemento.",
+      "ariaAllowedRole_lean_why_focusable": "El elemento está en el orden de tabulación, pero su rol no es de control, así que los usuarios de teclado llegan a algo que se anuncia como estático.",
+      "ariaAllowedRole_lean_caution_focusable": "Un elemento enfocable con un rol estático puede ser intencionado, como una región desplazable.",
+      "ariaAllowedRole_lean_why_presentational": "Los navegadores ignoran el rol none o presentation en un elemento que recibe el foco y mantienen su rol nativo.",
+      "ariaAllowedRole_lean_caution_presentational": "Los navegadores resuelven este conflicto de formas algo distintas.",
       "ariaRequiredChildren_title": "Los roles contenedores deben poseer al menos un rol hijo obligatorio",
       "ariaRequiredChildren_description": "Comprueba que los roles contenedores con una entrada documentada de \"elementos propios obligatorios\" (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contengan al menos un descendiente, o un elemento referenciado por aria-owns, con un rol propio aceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" no contiene ningún elemento con uno de los roles que requiere: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Agregar un elemento hijo con uno de estos roles, o referenciar uno con aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "Este rol contenedor tiene contenido, pero nada de él tiene un rol que el contenedor exija.",
       "ariaRequiredChildren_hint_fail_textOnly": "Dar a cada elemento el rol que necesita el contenedor, como role=\"listitem\" en una lista.",
+      "ariaRequiredChildren_lean_why_empty": "El contenedor no tiene ningún elemento, así que no transmite elementos, ni correctos ni incorrectos.",
+      "ariaRequiredChildren_lean_caution_empty": "Un script puede llenarlo más tarde con elementos que no tengan el rol requerido.",
+      "ariaRequiredChildren_lean_why_namedContent": "El contenedor tiene contenido con nombre, como una imagen o un control, pero nada de él tiene un rol que el contenedor requiera.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children juzga el contenido que tiene un rol propio; esta es la misma estructura vista desde el contenedor.",
       "ariaProhibitedChildren_title": "Los roles contenedores no deben poseer un hijo con un rol no permitido",
       "ariaProhibitedChildren_description": "Comprueba que todo hijo perteneciente al árbol de accesibilidad de un rol contenedor (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) tenga uno de los roles propios permitidos por ese rol.",
       "ariaProhibitedChildren_summary_fail": "Este elemento tiene role=\"{{childRole}}\", que no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
@@ -37230,6 +37375,12 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
+      "liveRegionAnnouncements_lean_why_hidden": "No hay ningún diálogo abierto que explique que esta región viva esté oculta, así que lo que reciba no se anuncia.",
+      "liveRegionAnnouncements_lean_caution_hidden": "Puede que la región no se use, o que la página la haga accesible a las tecnologías de apoyo antes de escribir en ella.",
+      "liveRegionAnnouncements_lean_why_inserted": "La región se añadió con su texto ya dentro, algo que los lectores de pantalla no suelen anunciar.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Algunas combinaciones de lector de pantalla y navegador sí anuncian una región añadida con su texto.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -37250,6 +37401,9 @@ const RUNTIME_CATALOG = {
       "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
       "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
       "duplicateIdAria_hint_cantTell": "Comprobar que el primer elemento con este id es el que se pretende, o darle a cada elemento su propio id.",
+      "duplicateIdAria_lean_why_sameText": "Todos los elementos con este id tienen el mismo texto, así que cualquiera al que llegue la referencia da el mismo nombre o la misma descripción.",
+      "duplicateIdAria_lean_why_nearerCopy": "Un elemento que hace referencia a este id está junto a una copia posterior, pero la referencia va a la primera, en otro lugar de la página.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Estar más cerca es un indicio de lo que se pretendía, no una prueba.",
       "summaryNamePresent_title": "Los elementos <summary> tienen un nombre accesible",
       "summaryNamePresent_description": "Comprueba que los elementos <summary> expongan un nombre accesible no vacío.",
       "summaryNamePresent_summary_fail": "Este elemento <summary> no tiene nombre accesible.",
@@ -37539,10 +37693,17 @@ const RUNTIME_CATALOG = {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel es un complemento específico para braille, no un reemplazo; dar también al elemento un nombre accesible (por ejemplo, texto visible, aria-label o aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Este elemento tiene aria-brailleroledescription pero no aria-roledescription, su equivalente no braille.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription es un complemento específico para braille, no un reemplazo; proporcionar también aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "El rol del elemento necesita un nombre y no tiene ninguno aparte de su etiqueta braille, así que los usuarios de voz no reciben ningún nombre.",
+      "ariaBrailleEquivalent_lean_caution_label": "La regla de nombre de este rol también informa del nombre que falta; es un solo problema, no dos.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Sin aria-roledescription, los navegadores no exponen la descripción de rol braille, así que el elemento mantiene su rol habitual y no se pierde nada.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "La descripción de rol braille que escribió el autor no llega a nadie.",
       "ariaConditionalAttr_title": "aria-errormessage requiere que aria-invalid tenga un valor distinto de false",
       "ariaConditionalAttr_description": "Comprueba que los elementos con aria-errormessage también tengan aria-invalid establecido en \"true\", \"grammar\" o \"spelling\"; de lo contrario, el mensaje de error se elimina del árbol de accesibilidad.",
       "ariaConditionalAttr_summary_fail": "Este elemento tiene aria-errormessage pero aria-invalid falta o es \"false\", por lo que el mensaje de error no se expone.",
       "ariaConditionalAttr_hint_fail": "Establecer aria-invalid en \"true\" (o \"grammar\"/\"spelling\") siempre que aria-errormessage deba exponerse a las tecnologías de apoyo.",
+      "ariaConditionalAttr_lean_why_described": "El mensaje de error también lo nombra aria-describedby, así que llega a las tecnologías de apoyo como descripción del campo.",
+      "ariaConditionalAttr_lean_why_shown": "El mensaje de error se muestra con texto, pero aria-invalid no está establecido, así que las tecnologías de apoyo no lo reciben.",
+      "ariaConditionalAttr_lean_caution_shown": "El texto mostrado puede ser una indicación permanente y no un error.",
       "ariaCheckedStateMismatch_title": "El aria-checked de una casilla de verificación o un botón de opción nativo debería coincidir con su estado real",
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
@@ -37555,6 +37716,10 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "El contenido que controla se muestra completo, sin recortar ni desplazar, mientras el elemento dice que está contraído.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "El contenido puede ser una vista previa que el elemento amplía más.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "El contenido que controla no se muestra en absoluto (display: none o el atributo hidden), mientras el elemento dice que está expandido.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Puede que un script esté a punto de mostrar el contenido.",
       "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
       "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
       "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
@@ -38278,6 +38443,12 @@ const RUNTIME_CATALOG = {
       "ariaRolesValid_hint_abstract": "Remplacez-le par un rôle concret qui correspond à ce qu’est l’élément, comme \"button\" ou \"region\".",
       "ariaRolesValid_summary_cantTell": "L’attribut role n’a pas de valeur utilisable : cet élément garde donc son rôle natif, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Corrigez ou retirez l’attribut role ; en attendant, les technologies d’assistance traitent l’élément selon son rôle natif.",
+      "ariaRolesValid_lean_why_typoOfNative": "La valeur du rôle ressemble à une faute de frappe du rôle natif de l’élément, que l’élément conserve.",
+      "ariaRolesValid_lean_why_typoOfOther": "La valeur du rôle ressemble à une faute de frappe d’un autre rôle, que l’élément n’obtient pas : il garde son rôle natif à la place.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Une valeur courte peut ressembler à un rôle qu’elle n’a jamais voulu désigner.",
+      "ariaRolesValid_lean_why_abstractKind": "Le rôle natif de l’élément est une sorte du rôle abstrait indiqué : il en expose déjà une forme concrète.",
+      "ariaRolesValid_lean_caution_abstractKind": "Être une sorte du rôle abstrait ne montre pas que c’est le rôle voulu.",
+      "ariaRolesValid_lean_why_abstractOther": "Le rôle natif de l’élément n’est pas une sorte du rôle abstrait indiqué : ce que l’auteur a indiqué n’est pas exposé.",
       "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
       "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas définir.",
@@ -38286,10 +38457,15 @@ const RUNTIME_CATALOG = {
       "ariaDeprecatedRole_guidance_directory": "Remplacez-le par role=\"list\" (son remplacement recommandé).",
       "ariaDeprecatedRole_guidance_generic": "Supprimez-le — ce rôle est réservé à un usage interne des agents utilisateurs, pas aux auteurs. Utilisez plutôt role=\"presentation\"/\"none\" pour retirer la sémantique, un rôle sémantique comme \"group\" pour exprimer un regroupement, ou simplement un élément ordinaire (qui porte déjà le rôle generic implicite).",
       "ariaDeprecatedRole_guidance_default": "Remplacez le rôle obsolète par son remplacement recommandé.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Cet élément est déjà générique par sa balise : role=\"generic\" ne change rien à ce qui est exposé.",
       "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
       "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
       "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
       "ariaValidAttr_hint_fail": "Corrigez le nom de l’attribut s’il s’agit d’une faute de frappe, ou retirez-le.",
+      "ariaValidAttr_lean_why_realPresent": "L’élément a aussi l’attribut correctement orthographié : celui mal orthographié ne coûte rien.",
+      "ariaValidAttr_lean_why_lostName": "L’attribut est une faute de frappe d’un attribut de nommage, et l’élément, dont le rôle exige un nom, n’en a aucun.",
+      "ariaValidAttr_lean_why_dataHook": "Le nom n’est proche d’aucun attribut ARIA : il ressemble à un point d’accroche pour des scripts ou des tests, pas à une faute de frappe.",
+      "ariaValidAttr_lean_caution_dataHook": "L’auteur le destinait peut-être quand même aux technologies d’assistance.",
       "ariaValidAttrValue_title": "Les valeurs des attributs aria-* doivent correspondre à leur type déclaré",
       "ariaValidAttrValue_description": "Vérifie que chaque attribut aria-* reconnu a une valeur conforme à son type déclaré par WAI-ARIA (booléen, tri-état, jeton, entier, nombre ou référence d’ID).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" n’est pas une valeur valide pour cet attribut.",
@@ -38307,6 +38483,12 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Faites nommer par aria-haspopup le rôle de la fenêtre surgissante, ou vérifiez si un script en affiche une autre.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "L’aria-activedescendant de cet élément désigne un élément qui n’est ni dans celui-ci ni possédé par lui.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Faites désigner par aria-activedescendant l’un des éléments propres à l’élément, ou faites-le posséder avec aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "Un élément avec cet id existe, mais dans un autre arbre du document (de l’autre côté d’une racine fantôme), où la référence ne peut jamais l’atteindre.",
+      "ariaValidAttrValue_lean_caution_otherTree": "Le composant peut encore créer son propre élément avec cet id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Un élément dont l’id ne diffère que par la casse ou un caractère existe : la référence est probablement mal orthographiée.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Un script peut encore ajouter un élément avec l’id exact.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "La fenêtre contextuelle que contrôle cet élément est ouverte et a un autre rôle que celui annoncé par aria-haspopup.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "Le composant peut ouvrir une autre fenêtre contextuelle, placée ailleurs dans la page.",
       "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
       "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
       "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -38326,22 +38508,40 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Donnez à l’élément le rôle que la description précise, ou retirez l’attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément <{{element}}> n’a pas de rôle : les technologies d’assistance risquent de ne pas annoncer son {{attr}} ; son propre texte lui donne de toute façon un nom.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si ce texte étiquette déjà bien l’élément. Si oui, l’attribut peut être retiré ; sinon, donnez à l’élément un rôle qui peut être nommé, comme role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "Le texte propre de l’élément dit déjà ce que dit son libellé : rien n’est perdu si le libellé est ignoré.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s fait échouer un attribut de nommage sur un élément sans rôle, quel que soit son texte.",
+      "ariaProhibitedAttr_lean_why_extraWords": "Le libellé dit quelque chose que le texte de l’élément ne dit pas, ce qui est perdu là où un libellé sur un élément sans rôle est ignoré.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Certaines combinaisons de navigateur et de lecteur d’écran annoncent encore un libellé sur un élément sans rôle.",
       "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
       "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
       "ariaRequiredAttr_hint_fail": "Ajoutez cet attribut avec une valeur valide pour ce rôle.",
       "ariaRequiredAttr_summary_cantTell": "Cet attribut est obligatoire pour role=\"{{role}}\" et il est absent, mais ARIA utilise « {{implicit}} » comme valeur implicite.",
       "ariaRequiredAttr_hint_cantTell": "Indiquez {{attr}} explicitement si « {{implicit}} » n’est pas l’état voulu.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "La fenêtre contextuelle que contrôle cette liste déroulante est affichée, mais sans aria-expanded la liste déroulante est annoncée comme réduite.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "La fenêtre contextuelle est peut-être en train de se fermer, ou est une liste que le composant affiche toujours.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "Le code du composant n’appelle jamais attachInternals : il ne peut pas définir cet état de cette façon, et l’élément n’a pas d’attribut pour lui.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Du code hors des classes du composant, comme une fonction utilitaire partagée, peut attacher les internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "Le code du composant attache des internals et définit cet état par leur intermédiaire.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Que le code nomme l’état ne montre pas qu’il est défini à la bonne valeur.",
       "ariaAllowedRole_title": "Le rôle explicite doit être autorisé pour son élément hôte",
       "ariaAllowedRole_description": "Vérifie qu’un attribut role=\"\" explicite fait partie des rôles que la spécification ARIA-in-HTML autorise pour l’élément hôte (ex. role=\"tab\" n’est pas autorisé sur <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" n’est pas autorisé sur <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Utilisez un rôle que cet élément autorise, ou utilisez un autre élément.",
+      "ariaAllowedRole_lean_why_focusable": "L’élément est dans l’ordre de tabulation, mais son rôle n’est pas un rôle de contrôle : les utilisateurs du clavier arrivent sur un élément annoncé comme statique.",
+      "ariaAllowedRole_lean_caution_focusable": "Un élément focalisable avec un rôle statique peut être voulu, comme une région défilante.",
+      "ariaAllowedRole_lean_why_presentational": "Les navigateurs ignorent le rôle none ou presentation sur un élément qui reçoit le focus et conservent son rôle natif.",
+      "ariaAllowedRole_lean_caution_presentational": "Les navigateurs résolvent ce conflit de manières légèrement différentes.",
       "ariaRequiredChildren_title": "Les rôles conteneurs doivent posséder au moins un rôle enfant requis",
       "ariaRequiredChildren_description": "Vérifie que les rôles conteneurs disposant d’une entrée documentée « éléments possédés requis » (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contiennent au moins un descendant, ou un élément référencé par aria-owns, ayant un rôle possédé acceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" ne contient aucun élément ayant l’un des rôles requis : {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Ajoutez un élément enfant ayant l’un de ces rôles, ou référencez-en un avec aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "Ce rôle conteneur contient du contenu, mais aucun n’a un rôle que le conteneur exige.",
       "ariaRequiredChildren_hint_fail_textOnly": "Donnez à chaque élément le rôle dont le conteneur a besoin, comme role=\"listitem\" dans une liste.",
+      "ariaRequiredChildren_lean_why_empty": "Le conteneur ne contient aucun élément : il ne transmet aucun item, ni juste ni faux.",
+      "ariaRequiredChildren_lean_caution_empty": "Un script peut le remplir plus tard avec des items dépourvus du rôle requis.",
+      "ariaRequiredChildren_lean_why_namedContent": "Le conteneur contient du contenu nommé, comme une image ou un contrôle, mais rien n’a un rôle que le conteneur exige.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children juge le contenu qui a son propre rôle ; c’est la même structure vue depuis le conteneur.",
       "ariaProhibitedChildren_title": "Les rôles conteneurs ne doivent pas posséder d’enfant ayant un rôle interdit",
       "ariaProhibitedChildren_description": "Vérifie que chaque enfant possédé (dans l’arbre d’accessibilité) d’un rôle conteneur (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) a l’un des rôles possédés autorisés par ce rôle.",
       "ariaProhibitedChildren_summary_fail": "Cet élément a role=\"{{childRole}}\", qui n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
@@ -38417,6 +38617,12 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Vérifiez que ce message d’état est annoncé ; placez d’abord la région vide dans la page et changez son texte ensuite.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Une région dynamique cachée a été affichée et a reçu son texte, « {{text}} », en même temps, avant d’être dans l’arbre d’accessibilité.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Vérifiez que ce message d’état est annoncé ; affichez d’abord la région et changez son texte ensuite.",
+      "liveRegionAnnouncements_lean_why_hidden": "Aucune boîte de dialogue n’est ouverte pour expliquer que cette région dynamique soit masquée : ce qu’elle reçoit n’est pas annoncé.",
+      "liveRegionAnnouncements_lean_caution_hidden": "La région est peut-être inutilisée, ou la page la rend peut-être accessible aux technologies d’assistance avant d’y écrire.",
+      "liveRegionAnnouncements_lean_why_inserted": "La région a été ajoutée avec son texte déjà dedans, ce que les lecteurs d’écran n’annoncent généralement pas.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Certaines combinaisons de lecteur d’écran et de navigateur annoncent bien une région ajoutée avec son texte.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "La région a été affichée et a reçu son texte en même temps, avant d’être dans l’arbre d’accessibilité, ce que les lecteurs d’écran n’annoncent généralement pas.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Certains navigateurs mettent à jour l’arbre d’accessibilité à temps pour qu’une telle région soit annoncée.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -38437,6 +38643,9 @@ const RUNTIME_CATALOG = {
       "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
       "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",
       "duplicateIdAria_hint_cantTell": "Vérifiez que le premier élément portant cet id est bien celui visé, ou donnez à chaque élément son propre id.",
+      "duplicateIdAria_lean_why_sameText": "Tous les éléments avec cet id ont le même texte : quel que soit celui qu’atteint la référence, il donne le même nom ou la même description.",
+      "duplicateIdAria_lean_why_nearerCopy": "Un élément qui fait référence à cet id se trouve à côté d’une copie ultérieure, mais la référence va à la première, ailleurs dans la page.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Être plus proche est un indice de l’intention, pas une preuve.",
       "summaryNamePresent_title": "Les éléments <summary> ont un nom accessible",
       "summaryNamePresent_description": "Vérifie que les éléments <summary> exposent un nom accessible non vide.",
       "summaryNamePresent_summary_fail": "Cet élément <summary> n’a pas de nom accessible.",
@@ -38726,10 +38935,17 @@ const RUNTIME_CATALOG = {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel est un complément spécifique au braille, pas un remplacement — donnez aussi un nom accessible à l’élément (par exemple un texte visible, aria-label ou aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Cet élément a aria-brailleroledescription mais pas aria-roledescription, son équivalent non braille.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — fournissez aussi aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "Le rôle de l’élément exige un nom, et il n’en a aucun en dehors de son libellé braille : les utilisateurs de la synthèse vocale n’obtiennent aucun nom.",
+      "ariaBrailleEquivalent_lean_caution_label": "La règle de nommage de ce rôle signale aussi le nom manquant : c’est un seul problème, pas deux.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Sans aria-roledescription, les navigateurs n’exposent pas la description de rôle braille : l’élément garde son rôle habituel et rien n’est perdu.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "La description de rôle braille écrite par l’auteur n’atteint personne.",
       "ariaConditionalAttr_title": "aria-errormessage exige que aria-invalid soit défini à une valeur autre que false",
       "ariaConditionalAttr_description": "Vérifie que les éléments ayant aria-errormessage ont aussi aria-invalid défini à « true », « grammar », ou « spelling » — sinon le message d’erreur est retiré de l’arbre d’accessibilité.",
       "ariaConditionalAttr_summary_fail": "Cet élément a aria-errormessage mais aria-invalid est absent ou « false », donc le message d’erreur n’est pas exposé.",
       "ariaConditionalAttr_hint_fail": "Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.",
+      "ariaConditionalAttr_lean_why_described": "Le message d’erreur est aussi désigné par aria-describedby : il parvient aux technologies d’assistance comme description du champ.",
+      "ariaConditionalAttr_lean_why_shown": "Le message d’erreur est affiché avec du texte, mais aria-invalid n’est pas défini : les technologies d’assistance ne le reçoivent pas.",
+      "ariaConditionalAttr_lean_caution_shown": "Le texte affiché peut être une indication permanente plutôt qu’une erreur.",
       "ariaCheckedStateMismatch_title": "L’aria-checked d’une case à cocher/d’un bouton radio natif devrait correspondre à son état réel",
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
@@ -38742,6 +38958,10 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "Le contenu qu’il contrôle est affiché en entier, ni rogné ni déplacé, alors que l’élément indique qu’il est réduit.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "Le contenu est peut-être un aperçu que l’élément développe davantage.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "Le contenu qu’il contrôle n’est pas affiché du tout (display: none ou l’attribut hidden), alors que l’élément indique qu’il est développé.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Un script est peut-être sur le point d’afficher le contenu.",
       "ariaOwnsValid_title": "aria-owns doit donner à chaque élément un seul propriétaire, et jamais un ancêtre du propriétaire",
       "ariaOwnsValid_description": "Vérifie qu’aucun élément n’est nommé par plus d’un aria-owns et qu’aucun aria-owns ne nomme l’élément lui-même ni l’un de ses ancêtres.",
       "ariaOwnsValid_summary_fail_duplicate": "Cet élément est nommé dans l’aria-owns de {{count}} éléments, mais il ne peut avoir qu’un propriétaire.",
@@ -39465,6 +39685,12 @@ const RUNTIME_CATALOG = {
       "ariaRolesValid_hint_abstract": "要素の実際の役割に合った具体的なロール (\"button\" や \"region\" など) に置き換えてください。",
       "ariaRolesValid_summary_cantTell": "role 属性に使える値がないため、この要素はネイティブのロール \"{{nativeRole}}\" のままです。",
       "ariaRolesValid_hint_cantTell": "role 属性を修正するか削除してください。それまでは、支援技術はこの要素をネイティブのロールとして扱います。",
+      "ariaRolesValid_lean_why_typoOfNative": "ロールの値は要素のネイティブロールの綴り間違いに見え、要素はそのネイティブロールを維持します。",
+      "ariaRolesValid_lean_why_typoOfOther": "ロールの値は別のロールの綴り間違いに見えますが、要素はそのロールを得ず、代わりにネイティブロールを維持します。",
+      "ariaRolesValid_lean_caution_typoOfOther": "短い値は、意図していないロールに似てしまうことがあります。",
+      "ariaRolesValid_lean_why_abstractKind": "要素のネイティブロールは指定された抽象ロールの一種なので、すでにその具体的な形を公開しています。",
+      "ariaRolesValid_lean_caution_abstractKind": "抽象ロールの一種であっても、意図したロールであるとは限りません。",
+      "ariaRolesValid_lean_why_abstractOther": "要素のネイティブロールは指定された抽象ロールの一種ではないため、作成者が指定したものは公開されません。",
       "ariaDeprecatedRole_title": "role 属性には、非推奨のロールや作成者による使用が推奨されない ARIA ロールを使わないことが望ましい",
       "ariaDeprecatedRole_description": "明示的な role=\"\" 属性が、WAI-ARIA 仕様で非推奨とされたロールや、ユーザエージェントの内部利用のために予約されたロール (role=\"generic\" など) を使用していないかを確認します。",
       "ariaDeprecatedRole_summary_fail": "この要素は role=\"{{role}}\" を使っていますが、これは作成者が指定してはならないロールです。",
@@ -39473,10 +39699,15 @@ const RUNTIME_CATALOG = {
       "ariaDeprecatedRole_guidance_directory": "role=\"list\" (推奨される代替ロール) に置き換えてください。",
       "ariaDeprecatedRole_guidance_generic": "削除してください。このロールは作成者向けではなく、ユーザエージェントの内部利用のために予約されています。セマンティクスを取り除くなら role=\"presentation\"/\"none\"、グループ化を伝えるなら \"group\" などのセマンティックなロールを使用するか、何も指定しない要素 (暗黙的に generic ロールを持ちます) を使用してください。",
       "ariaDeprecatedRole_guidance_default": "非推奨のロールを、推奨される代替ロールに置き換えてください。",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "この要素はタグによってすでに generic なので、role=\"generic\" は公開される内容を何も変えません。",
       "ariaValidAttr_title": "aria-* 属性は ARIA で定義された実在の属性であること",
       "ariaValidAttr_description": "DOM 内に存在するすべての aria-* 属性名が、WAI-ARIA 仕様で定義された実在の属性であるかを確認します。",
       "ariaValidAttr_summary_fail": "{{attr}} は認識されない ARIA 属性です。",
       "ariaValidAttr_hint_fail": "入力ミスであれば属性名を修正し、そうでなければ削除してください。",
+      "ariaValidAttr_lean_why_realPresent": "この要素には正しい綴りの属性もあるため、綴りの間違った属性による損失はありません。",
+      "ariaValidAttr_lean_why_lostName": "この属性は名前付け属性の綴り間違いで、ロールに名前が必要な要素に名前がありません。",
+      "ariaValidAttr_lean_why_dataHook": "この名前はどの ARIA 属性にも近くないため、綴り間違いではなく、スクリプトやテスト用のフックと考えられます。",
+      "ariaValidAttr_lean_caution_dataHook": "作成者が支援技術向けに意図していた可能性もあります。",
       "ariaValidAttrValue_title": "aria-* 属性の値は宣言された型に一致すること",
       "ariaValidAttrValue_description": "認識されるすべての aria-* 属性の値が、WAI-ARIA で宣言された値の型 (boolean、tristate、token、integer、number、ID 参照) に適合しているかを確認します。",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" は、この属性の値として有効ではありません。",
@@ -39494,6 +39725,12 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "aria-haspopup でポップアップのロールを示すか、スクリプトが別のポップアップを表示していないか確認してください。",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "この要素の aria-activedescendant は、この要素の中にも、この要素が所有する要素の中にもない要素を指しています。",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "aria-activedescendant でこの要素自身の項目を指すか、aria-owns でその項目を所有してください。",
+      "ariaValidAttrValue_lean_why_otherTree": "この id を持つ要素は存在しますが、別のドキュメントツリー(シャドウルートの向こう側)にあり、参照が届くことはありません。",
+      "ariaValidAttrValue_lean_caution_otherTree": "コンポーネントがこの id を持つ独自の要素を後で作成する可能性があります。",
+      "ariaValidAttrValue_lean_why_nearMiss": "大文字と小文字、または 1 文字だけが異なる id を持つ要素があるため、参照の綴りが間違っている可能性が高いです。",
+      "ariaValidAttrValue_lean_caution_nearMiss": "スクリプトが後で、完全に一致する id の要素を追加する可能性があります。",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "この要素が制御するポップアップは開いており、aria-haspopup が示すものとは別のロールを持っています。",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "ウィジェットは、ページの別の場所にある別のポップアップを開く可能性があります。",
       "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
       "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
       "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -39513,22 +39750,40 @@ const RUNTIME_CATALOG = {
       "ariaProhibitedAttr_hint_fail_roleDescription": "説明の対象となるロールを要素に指定するか、属性を削除してください。",
       "ariaProhibitedAttr_summary_cantTell_roleless": "この <{{element}}> にはロールがないため、支援技術が {{attr}} を読み上げない可能性があります。ただし、要素自身のテキストが名前になっています。",
       "ariaProhibitedAttr_hint_cantTell_roleless": "そのテキストが要素を十分に表しているか確認してください。表していれば属性は不要です。そうでなければ、role=\"img\" のように名前を付けられるロールを要素に与えてください。",
+      "ariaProhibitedAttr_lean_why_inContent": "要素自身のテキストがすでにラベルと同じ内容を伝えているため、ラベルが無視されても失われるものはありません。",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s では、テキストに関係なく、ロールのない要素の名前付け属性は不合格になります。",
+      "ariaProhibitedAttr_lean_why_extraWords": "ラベルには要素のテキストにない内容が含まれており、ロールのない要素のラベルが無視される環境ではそれが失われます。",
+      "ariaProhibitedAttr_lean_caution_extraWords": "ブラウザーとスクリーンリーダーの組み合わせによっては、ロールのない要素のラベルも読み上げられます。",
       "ariaRequiredAttr_title": "必須の ARIA ステート/プロパティを持つロールには、それを指定すること",
       "ariaRequiredAttr_description": "明示的なロールを持つ要素に、そのロールで必須とされる aria-* ステート/プロパティのうち、あいまいさがなく文脈に依存しないものがすべて指定されているかを確認します (例: role=\"checkbox\" には aria-checked が必要)。",
       "ariaRequiredAttr_summary_fail": "role=\"{{role}}\" には {{attr}} が必須ですが、指定されていません。",
       "ariaRequiredAttr_hint_fail": "このロールに有効な値で、この属性を追加してください。",
       "ariaRequiredAttr_summary_cantTell": "この属性は role=\"{{role}}\" に必須ですが指定されていないため、ARIA の既定値「{{implicit}}」が使われます。",
       "ariaRequiredAttr_hint_cantTell": "意図した状態が「{{implicit}}」でない場合は、{{attr}} を明示的に指定してください。",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "このコンボボックスが制御するポップアップは表示されていますが、aria-expanded がないため、コンボボックスは折りたたまれていると読み上げられます。",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "ポップアップが閉じる途中であるか、ウィジェットが常に表示するリストである可能性があります。",
+      "ariaRequiredAttr_lean_why_internalsUnused": "このコンポーネントのコードは attachInternals を一度も呼び出さないため、その方法でこの状態を設定できず、要素にもそのための属性がありません。",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "共有ヘルパーなど、コンポーネントのクラス外のコードが internals をアタッチしている可能性があります。",
+      "ariaRequiredAttr_lean_why_internalsSet": "このコンポーネントのコードは internals をアタッチし、それを通じてこの状態を設定しています。",
+      "ariaRequiredAttr_lean_caution_internalsSet": "コード内で状態に言及していても、正しい値に設定されているとは限りません。",
       "ariaAllowedRole_title": "明示的なロールはホスト要素で許可されていること",
       "ariaAllowedRole_description": "明示的な role=\"\" 属性が、ARIA in HTML 仕様でそのホスト要素に許可されているロールのいずれかであるかを確認します (例: <nav> に role=\"tab\" は許可されていません)。",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" は <{{element}}> では許可されていません。",
       "ariaAllowedRole_hint_fail": "この要素で許可されているロールを使うか、別の要素を使ってください。",
+      "ariaAllowedRole_lean_why_focusable": "この要素はタブ順序に含まれますが、ロールがコントロールのロールではないため、キーボード利用者は静的なものとして読み上げられる要素にフォーカスします。",
+      "ariaAllowedRole_lean_caution_focusable": "スクロール可能な領域など、静的なロールを持つフォーカス可能な要素が意図的な場合もあります。",
+      "ariaAllowedRole_lean_why_presentational": "ブラウザーはフォーカスを受け取る要素の none や presentation ロールを無視し、ネイティブのロールを維持します。",
+      "ariaAllowedRole_lean_caution_presentational": "この競合の解決方法はブラウザーによって少し異なります。",
       "ariaRequiredChildren_title": "コンテナーロールは必須の子ロールを少なくとも 1 つ所有していること",
       "ariaRequiredChildren_description": "「必須の所有要素」が定められているコンテナーロール (list、listbox、menu、radiogroup、table、grid、tablist、tree、row など) に、許容される所有ロールを持つ子孫要素または aria-owns で参照される要素が少なくとも 1 つあるかを確認します。",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" の中に、必要なロール ({{requiredRoles}}) のいずれかを持つ要素がありません。",
       "ariaRequiredChildren_hint_fail": "これらのロールのいずれかを持つ子要素を追加するか、aria-owns で参照してください。",
       "ariaRequiredChildren_summary_fail_textOnly": "このコンテナーロールには内容がありますが、どれもコンテナーが必要とするロールを持っていません。",
       "ariaRequiredChildren_hint_fail_textOnly": "各項目に、コンテナーが必要とするロールを付けてください (リストであれば role=\"listitem\" など)。",
+      "ariaRequiredChildren_lean_why_empty": "このコンテナーには要素が何もないため、正しい項目も誤った項目も伝えていません。",
+      "ariaRequiredChildren_lean_caution_empty": "後でスクリプトが、必要なロールを持たない項目で埋める可能性があります。",
+      "ariaRequiredChildren_lean_why_namedContent": "このコンテナーには画像やコントロールなど名前を持つコンテンツがありますが、コンテナーが必要とするロールを持つものはありません。",
+      "ariaRequiredChildren_lean_caution_namedContent": "独自のロールを持つコンテンツは aria-prohibited-children が判定します。これは同じ構造をコンテナー側から見たものです。",
       "ariaProhibitedChildren_title": "コンテナーロールは許可されていないロールの子を所有してはならない",
       "ariaProhibitedChildren_description": "コンテナーロール (list、listbox、menu、menubar、radiogroup、rowgroup、table、grid、treegrid、tablist、tree、row) がアクセシビリティツリー上で所有するすべての子が、そのロールで許可された所有ロールのいずれかを持っているかを確認します。",
       "ariaProhibitedChildren_summary_fail": "この要素は role=\"{{childRole}}\" ですが、このロールは role=\"{{containerRole}}\" のコンテナの直下には置けません。",
@@ -39604,6 +39859,12 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_hint_cantTell_inserted": "このステータスメッセージが通知されることを確認してください。先に空のリージョンをページに置き、後からテキストを変更してください。",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "隠されていたライブリージョンが、アクセシビリティツリーに入る前に、表示と同時にテキスト「{{text}}」を受け取りました。",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "このステータスメッセージが通知されることを確認してください。先にリージョンを表示し、後からテキストを変更してください。",
+      "liveRegionAnnouncements_lean_why_hidden": "このライブリージョンが隠されている理由となるダイアログは開いていないため、与えられた内容は通知されません。",
+      "liveRegionAnnouncements_lean_caution_hidden": "このリージョンは使われていないか、ページが書き込む前に支援技術から見えるようにする可能性があります。",
+      "liveRegionAnnouncements_lean_why_inserted": "このリージョンはテキストを含んだ状態で追加されました。スクリーンリーダーは一般にこれを通知しません。",
+      "liveRegionAnnouncements_lean_caution_inserted": "スクリーンリーダーとブラウザーの組み合わせによっては、テキスト付きで追加されたリージョンも通知されます。",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "このリージョンはアクセシビリティツリーに入る前に、表示とテキスト設定が同時に行われました。スクリーンリーダーは一般にこれを通知しません。",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "ブラウザーによっては、このようなリージョンが通知されるのに間に合うようアクセシビリティツリーを更新します。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -39624,6 +39885,9 @@ const RUNTIME_CATALOG = {
       "duplicateIdAria_description": "ARIA の ID 参照属性 (aria-labelledby、aria-describedby、aria-owns、aria-controls、aria-activedescendant、aria-flowto、aria-errormessage、aria-details) から参照される id の値が、文書内で一意であるかを確認します。",
       "duplicateIdAria_summary_cantTell": "id「{{id}}」は ARIA 属性から参照されていますが、{{duplicateCount}} 個の要素で使われています。参照先は最初の要素になります。",
       "duplicateIdAria_hint_cantTell": "この id を持つ最初の要素が意図した参照先か確認するか、要素ごとに別の id を付けてください。",
+      "duplicateIdAria_lean_why_sameText": "この id を持つ要素はすべて同じテキストなので、参照がどれに届いても同じ名前や説明になります。",
+      "duplicateIdAria_lean_why_nearerCopy": "この id を参照する要素は後にあるコピーのそばにありますが、参照はページの別の場所にある最初の要素に向かいます。",
+      "duplicateIdAria_lean_caution_nearerCopy": "近くにあることは意図の手がかりであって、証拠ではありません。",
       "summaryNamePresent_title": "summary 要素にアクセシブルな名前があること",
       "summaryNamePresent_description": "<summary> 要素が空でないアクセシブルな名前を公開しているかを確認します。",
       "summaryNamePresent_summary_fail": "この summary にはアクセシブルな名前がありません。",
@@ -39913,10 +40177,17 @@ const RUNTIME_CATALOG = {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel は点字用の補足であり、代わりになるものではありません。表示テキスト、aria-label、aria-labelledby などで、要素にアクセシブルな名前も付けてください。",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription がありません。",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。aria-roledescription も指定してください。",
+      "ariaBrailleEquivalent_lean_why_label": "この要素のロールには名前が必要ですが、点字ラベル以外に名前がないため、音声の利用者には名前が伝わりません。",
+      "ariaBrailleEquivalent_lean_caution_label": "このロールの名前に関するルールも名前の欠落を報告します。問題は 2 つではなく 1 つです。",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "aria-roledescription がない場合、ブラウザーは点字のロール説明を公開しないため、要素は通常のロールのままで、失われるものはありません。",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "作成者が書いた点字のロール説明は誰にも届きません。",
       "ariaConditionalAttr_title": "aria-errormessage を使うには、aria-invalid に false 以外の値が必要",
       "ariaConditionalAttr_description": "aria-errormessage を持つ要素で、aria-invalid が \"true\"、\"grammar\"、\"spelling\" のいずれかに設定されているかを確認します。設定されていない場合、エラーメッセージはアクセシビリティツリーから除外されます。",
       "ariaConditionalAttr_summary_fail": "この要素には aria-errormessage がありますが、aria-invalid が未指定または \"false\" のため、エラーメッセージが公開されません。",
       "ariaConditionalAttr_hint_fail": "aria-errormessage を支援技術に公開する必要があるときは、aria-invalid を \"true\" (または \"grammar\"/\"spelling\") に設定してください。",
+      "ariaConditionalAttr_lean_why_described": "エラーメッセージは aria-describedby でも参照されているため、フィールドの説明として支援技術に届きます。",
+      "ariaConditionalAttr_lean_why_shown": "エラーメッセージはテキスト付きで表示されていますが、aria-invalid が設定されていないため、支援技術には伝わりません。",
+      "ariaConditionalAttr_lean_caution_shown": "表示されているテキストは、エラーではなく常設のヒントである可能性があります。",
       "ariaCheckedStateMismatch_title": "ネイティブのチェックボックス/ラジオボタンの aria-checked は実際の状態と一致していることが望ましい",
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
@@ -39929,6 +40200,10 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "要素は折りたたまれていると示していますが、制御対象のコンテンツは切り取られも移動もされず、すべて表示されています。",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "このコンテンツは、要素がさらに展開するプレビューである可能性があります。",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "要素は展開されていると示していますが、制御対象のコンテンツはまったく表示されていません(display: none または hidden 属性)。",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "スクリプトがまもなくコンテンツを表示する可能性があります。",
       "ariaOwnsValid_title": "aria-owns は、各要素に所有者を一つだけ与え、所有者の祖先を所有させてはいけません",
       "ariaOwnsValid_description": "どの要素も複数の aria-owns で指されていないこと、またどの aria-owns もその要素自身や祖先を指していないことを確認します。",
       "ariaOwnsValid_summary_fail_duplicate": "この要素は {{count}} 個の要素の aria-owns で指されていますが、所有者は一つしか持てません。",
@@ -53971,6 +54246,92 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Roles that descend from the abstract widget role in WAI-ARIA 1.2, plus
+  // separator, which is a widget when focusable: the roles a control that
+  // takes keyboard focus is expected to have.
+  const WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'columnheader',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'row',
+    'rowheader',
+    'scrollbar',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+
+  function focusInfo(el) {
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return { focusable: !!(info && info.focusable), tabbable: !!(info && info.tabbable) };
+    } catch {
+      return { focusable: false, tabbable: false };
+    }
+  }
+
+  // Which way the finding points: a role none or presentation on an element
+  // that takes focus is ignored by browsers (presentational role conflict
+  // resolution), so the native role is kept; a static role on an element in
+  // the tab order announces what keyboard focus lands on as something that is
+  // not a control.
+  function leanFor(el, role) {
+    const focus = focusInfo(el);
+    if (role === 'none' || role === 'presentation') {
+      if (!focus.focusable) return null;
+      return {
+        toward: 'pass',
+        why: 'Browsers ignore role none or presentation on an element that takes focus, and keep its native role.',
+        signals: [
+          { signal: 'role-is-presentational', value: true },
+          { signal: 'host-focusable', value: true }
+        ],
+        caution: 'Browsers resolve this conflict in slightly different ways.',
+        i18n: {
+          whyKey: 'ariaAllowedRole_lean_why_presentational',
+          cautionKey: 'ariaAllowedRole_lean_caution_presentational'
+        }
+      };
+    }
+    if (!focus.tabbable || WIDGET_ROLES.has(role)) return null;
+    return {
+      toward: 'fail',
+      why: 'The element is in the tab order but its role is not a control role, so keyboard users land on something announced as static.',
+      signals: [
+        { signal: 'host-tabbable', value: true },
+        { signal: 'explicit-role-is-widget', value: false }
+      ],
+      caution:
+        'A focusable element with a static role can be deliberate, such as a scrollable region.',
+      i18n: {
+        whyKey: 'ariaAllowedRole_lean_why_focusable',
+        cautionKey: 'ariaAllowedRole_lean_caution_focusable'
+      }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -53985,6 +54346,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (info.allowed) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
+    const lean = leanFor(el, role);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -54005,6 +54367,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             wcagSc: []
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
         }
@@ -54046,6 +54409,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return t.replace(/\s+/g, ' ').trim();
   }
 
+  // Roles WAI-ARIA 1.2 marks "Name required" (DPUB and graphics roles
+  // left out).
+  const NAME_REQUIRED_ROLES = new Set([
+    'alertdialog',
+    'application',
+    'button',
+    'checkbox',
+    'columnheader',
+    'combobox',
+    'dialog',
+    'grid',
+    'heading',
+    'img',
+    'link',
+    'listbox',
+    'marquee',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
+    'rowheader',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'table',
+    'tabpanel',
+    'textbox',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+
+  function roleOf(el) {
+    try {
+      const info = helpers.getRoleInfo(el, ctx);
+      return trim(info && info.role).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[aria-braillelabel], [aria-brailleroledescription]')
     : helpers.queryAll('[aria-braillelabel], [aria-brailleroledescription]');
@@ -54072,8 +54483,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         nameInfo && typeof nameInfo.value === 'string' ? nameInfo.value : ''
       );
       const name = programmaticName || getConservativeSubtreeText(el);
+      const role = roleOf(el);
       if (!name)
         missing.push({
+          // A role that needs a name is left with none for speech users.
+          lean: NAME_REQUIRED_ROLES.has(role)
+            ? {
+                toward: 'fail',
+                why: 'The element’s role needs a name, and it has none besides its braille label, so speech users get no name.',
+                signals: [
+                  { signal: 'role-requires-name', value: true },
+                  { signal: 'role', value: role },
+                  { signal: 'accessible-name-empty', value: true }
+                ],
+                caution:
+                  'The naming rule for this role reports the missing name too; it is one problem, not two.',
+                i18n: {
+                  whyKey: 'ariaBrailleEquivalent_lean_why_label',
+                  cautionKey: 'ariaBrailleEquivalent_lean_caution_label'
+                }
+              }
+            : null,
           attr: 'aria-braillelabel',
           requires: 'an accessible name',
           messageKey: 'label',
@@ -54087,6 +54517,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
       if (!roleDesc)
         missing.push({
+          // Browsers expose aria-brailleroledescription only with an
+          // aria-roledescription, so the element keeps its usual role and
+          // no user loses anything they had.
+          lean: {
+            toward: 'pass',
+            why: 'Without aria-roledescription, browsers do not expose the braille role description, so the element keeps its usual role and nothing is lost.',
+            signals: [{ signal: 'missing-attr', value: 'aria-roledescription' }],
+            caution: 'The braille role description the author wrote reaches no one.',
+            i18n: {
+              whyKey: 'ariaBrailleEquivalent_lean_why_roleDescription',
+              cautionKey: 'ariaBrailleEquivalent_lean_caution_roleDescription'
+            }
+          },
           attr: 'aria-brailleroledescription',
           requires: 'aria-roledescription',
           messageKey: 'roleDescription',
@@ -54119,6 +54562,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               'Whether any user reaches this attribute, given no braille equivalent is exposed.',
             evidence: { element: tag, attribute: m.attr, requires: m.requires }
           },
+          ...(m.lean ? { lean: m.lean } : {}),
           data: {
             details: {
               reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
@@ -54247,6 +54691,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
 
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+
+  // Whether a message element is drawn, seen and holds text.
+  function shownWithText(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      return trim(dom.textContent(ref)) !== '';
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way the finding points: a message also named by aria-describedby
+  // reaches assistive technology anyway; one shown with text and not so
+  // named is an error on screen that assistive technology is not given.
+  function leanFor(el, errorMessageRef) {
+    const described = trim(dom.getAttribute(el, 'aria-describedby')).split(/\s+/);
+    const ids = errorMessageRef.split(/\s+/).filter(Boolean);
+    if (ids.some((i) => described.includes(i))) {
+      return {
+        toward: 'pass',
+        why: 'The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.',
+        signals: [{ signal: 'target-in-describedby', value: true }],
+        i18n: { whyKey: 'ariaConditionalAttr_lean_why_described' }
+      };
+    }
+    let refs = [];
+    try {
+      refs = helpers.getRefElements(el, 'aria-errormessage', ctx) || [];
+    } catch {}
+    if (refs.some(shownWithText)) {
+      return {
+        toward: 'fail',
+        why: 'The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.',
+        signals: [
+          { signal: 'errormessage-target-visible-with-text', value: true },
+          { signal: 'target-in-describedby', value: false }
+        ],
+        caution: 'The text shown may be a standing hint rather than an error.',
+        i18n: {
+          whyKey: 'ariaConditionalAttr_lean_why_shown',
+          cautionKey: 'ariaConditionalAttr_lean_caution_shown'
+        }
+      };
+    }
+    return null;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[aria-errormessage]')
     : helpers.queryAll('[aria-errormessage]');
@@ -54266,6 +54773,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
+    const lean = leanFor(el, errorMessageRef);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -54282,6 +54790,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           needed: 'Whether the field is ever in an invalid state that should expose this message.',
           evidence: { element: tag, ariaInvalid: invalidValue || null }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',
@@ -54318,6 +54827,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Elements HTML-AAM maps to the generic role, whatever their attributes
+  // (an <a> only without href): role="generic" on them restates what they
+  // already are.
+  const GENERIC_TAGS = new Set(['div', 'span', 'b', 'i', 'u', 'small', 'bdi', 'bdo']);
+  function isNativelyGeneric(el) {
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (GENERIC_TAGS.has(tag)) return true;
+    return tag === 'a' && !dom.hasAttribute(el, 'href');
+  }
 
   // A role on an element hidden from assistive technology has no effect, so
   // ACT 674b10 does not apply to it.
@@ -54412,6 +54933,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               'Whether this user-agent-reserved role misleads the assistive technology in use.',
             evidence: { role, ariaStatus: 'discouraged-for-authors' }
           },
+          // On an element that is generic by its tag, the role changes
+          // nothing the browser exposes, whatever assistive technology does.
+          ...(role === 'generic' && isNativelyGeneric(el)
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'This element is already generic by its tag, so role="generic" changes nothing that is exposed.',
+                  signals: [
+                    { signal: 'native-role', value: 'generic' },
+                    { signal: 'element', value: String(dom.localName(el) || '').toLowerCase() }
+                  ],
+                  i18n: { whyKey: 'ariaDeprecatedRole_lean_why_nativeGeneric' }
+                }
+              }
+            : {}),
           data: {
             details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
           }
@@ -54508,6 +55044,86 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return skipsContents(el) || isCollapsedBox(el);
   }
 
+  // Whether a panel is shown in full: not cut to a few lines by line-clamp
+  // or a max-height that clips, not moved by a transform, not visually
+  // hidden and, where the page has a layout, drawn with an area and not
+  // off screen to the side (an off-canvas drawer).
+  function shownInFull(ref) {
+    try {
+      const cs = helpers.computedStyle(ref) || {};
+      const clamp = String(cs.webkitLineClamp || cs.lineClamp || cs['-webkit-line-clamp'] || '');
+      if (clamp && clamp !== 'none') return false;
+      const clips = (v) => !!v && v !== 'visible';
+      const maxHeight = String(cs.maxHeight || '');
+      if (maxHeight && maxHeight !== 'none' && (clips(cs.overflowY) || clips(cs.overflow)))
+        return false;
+      const transform = String(cs.transform || '');
+      if (transform && transform !== 'none') return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      if (hasLayout()) {
+        const r = dom.getBoundingClientRect(ref);
+        const win = dom.defaultView(document);
+        const width = win ? Number(win.innerWidth) : 0;
+        if (!r || r.width <= 0 || r.height <= 0) return false;
+        if (r.right <= 0 || (width > 0 && r.left >= width)) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function toggleVisible(el) {
+    try {
+      return !(typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el));
+    } catch {
+      return false;
+    }
+  }
+  // Whether a panel is not displayed at all: display: none or the hidden
+  // attribute, on it or above it.
+  function notDisplayed(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      return reasons.includes('displayNone') || reasons.includes('hiddenAttr');
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a contradiction between aria-expanded and the panels points.
+  function leanFor(el, collapsed, refs) {
+    if (collapsed) {
+      if (!toggleVisible(el) || !refs.every(shownInFull)) return null;
+      return {
+        toward: 'fail',
+        why: 'The content it controls is shown in full, not clipped or moved away, while the element says it is collapsed.',
+        signals: [
+          { signal: 'controlled-all-shown', value: true },
+          { signal: 'panel-clamped', value: false },
+          { signal: 'controller-visible', value: true }
+        ],
+        caution: 'The content may be a preview the element expands further.',
+        i18n: {
+          whyKey: 'ariaExpandedStateMismatch_lean_why_collapsedShown',
+          cautionKey: 'ariaExpandedStateMismatch_lean_caution_collapsedShown'
+        }
+      };
+    }
+    if (!refs.every(notDisplayed)) return null;
+    return {
+      toward: 'fail',
+      why: 'The content it controls is not displayed at all (display: none or the hidden attribute), while the element says it is expanded.',
+      signals: [{ signal: 'hidden-by-display', value: true }],
+      caution: 'A script may be about to show the content.',
+      i18n: {
+        whyKey: 'ariaExpandedStateMismatch_lean_why_expandedHidden',
+        cautionKey: 'ariaExpandedStateMismatch_lean_caution_expandedHidden'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -54542,6 +55158,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {}
 
     const collapsed = expanded === 'false';
+    const lean = leanFor(el, collapsed, refs);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: collapsed
@@ -54559,6 +55176,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             : 'ariaExpandedStateMismatch_hint_cantTell_expandedHidden',
           params: {}
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: { reasonCode, ariaExpanded: expanded, controlledCount: refs.length },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
@@ -55919,6 +56537,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       String(nameInfo.value || '').trim() !== ''
     );
 
+    // Which way a naming attribute's finding points: a label the element's
+    // own text already says loses nothing if it is ignored; one with words
+    // the text lacks loses them.
+    const words = (v) =>
+      String(v || '')
+        .toLowerCase()
+        .match(/[\p{L}\p{N}]+/gu) || [];
+    const contentWords = hasContentFallback ? words(nameInfo.value) : [];
+    function leanFor(attr) {
+      let label = '';
+      try {
+        if (attr === 'aria-label') label = dom.getAttribute(el, 'aria-label');
+        else if (attr === 'aria-labelledby')
+          label = helpers.getTextFromIdRefs(dom.getAttribute(el, attr), ctx, {}, el).text;
+      } catch {
+        label = '';
+      }
+      const labelWords = words(label);
+      if (!labelWords.length || !contentWords.length) return null;
+      const inContent = (' ' + contentWords.join(' ') + ' ').includes(
+        ' ' + labelWords.join(' ') + ' '
+      );
+      if (inContent) {
+        return {
+          toward: 'pass',
+          why: 'The element’s own text already says what its label says, so nothing is lost if the label is ignored.',
+          signals: [{ signal: 'label-in-content', value: true }],
+          caution:
+            'ACT kb1m8s fails a naming attribute on an element with no role, whatever its text.',
+          i18n: {
+            whyKey: 'ariaProhibitedAttr_lean_why_inContent',
+            cautionKey: 'ariaProhibitedAttr_lean_caution_inContent'
+          }
+        };
+      }
+      const missingWords = labelWords.filter((w) => !contentWords.includes(w)).length;
+      if (!missingWords) return null;
+      return {
+        toward: 'fail',
+        why: 'The label says something the element’s text does not, which is lost where a label on an element with no role is ignored.',
+        signals: [
+          { signal: 'label-in-content', value: false },
+          { signal: 'label-words-missing-from-content', value: missingWords }
+        ],
+        caution:
+          'Some browser and screen reader pairs still announce a label on an element with no role.',
+        i18n: {
+          whyKey: 'ariaProhibitedAttr_lean_why_extraWords',
+          cautionKey: 'ariaProhibitedAttr_lean_caution_extraWords'
+        }
+      };
+    }
+
     for (const attr of present) {
       // A role description has nothing to describe without a role, whatever
       // the element's content: content can stand in for a name, not a role.
@@ -55944,6 +56615,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           })
         );
       } else if (hasContentFallback) {
+        const lean = leanFor(attr);
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
@@ -55959,6 +56631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'Whether the element’s own content already serves as its label.',
               evidence: { attribute: attr, element: tag, role: null, hasOwnContent: true }
             },
+            ...(lean ? { lean } : {}),
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
@@ -56373,6 +57046,119 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return type === 'checkbox' || type === 'radio';
   }
 
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+  function shownWithContent(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      return String(dom.textContent(ref) || '').trim() !== '';
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a missing aria-expanded on a combobox points: the popup its
+  // aria-controls names, shown with content, is open while the combobox is
+  // announced collapsed. A popup that is closed now says nothing about
+  // whether aria-expanded is set when it opens, so it gives no lean.
+  function implicitLean(el, role, attr) {
+    if (role !== 'combobox' || attr !== 'aria-expanded') return null;
+    let refs = [];
+    try {
+      refs = helpers.getRefElements(el, 'aria-controls', ctx) || [];
+    } catch {}
+    if (!refs.some(shownWithContent)) return null;
+    return {
+      toward: 'fail',
+      why: 'The popup this combobox controls is shown, but without aria-expanded the combobox is announced as collapsed.',
+      signals: [{ signal: 'popup-visible', value: true }],
+      caution: 'The popup may be closing, or be a list the widget always shows.',
+      i18n: {
+        whyKey: 'ariaRequiredAttr_lean_why_comboboxOpen',
+        cautionKey: 'ariaRequiredAttr_lean_caution_comboboxOpen'
+      }
+    };
+  }
+
+  // Which way a state a custom element may set through its internals
+  // points, from the source of its class and the classes it extends: code
+  // that never calls attachInternals can't set it that way, and code that
+  // calls it and names the state's property most likely does. Reading a
+  // class's source neither constructs nor calls it.
+  function internalsLean(el, attr) {
+    let sources = '';
+    try {
+      const name = String(dom.localName(el) || '').toLowerCase();
+      const win = dom.defaultView(dom.ownerDocument(el));
+      const registry = win && win.customElements;
+      let ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      if (!ctor) return null;
+      const toSource = Function.prototype.toString;
+      // An autonomous custom element extends HTMLElement: the walk stops
+      // there, before the platform's own code.
+      const base = win.HTMLElement;
+      for (let guard = 0; ctor && typeof ctor === 'function' && guard < 20; guard++) {
+        if (ctor === base) break;
+        const src = String(Reflect.apply(toSource, ctor, []));
+        if (/\[native code\]/.test(src)) break;
+        sources += src + '\n';
+        ctor = Object.getPrototypeOf(ctor);
+      }
+    } catch {
+      return null;
+    }
+    if (!sources) return null;
+    const tail = attr.slice(5);
+    const IDL = {
+      valuenow: 'ValueNow',
+      valuemin: 'ValueMin',
+      valuemax: 'ValueMax',
+      valuetext: 'ValueText'
+    };
+    const prop = 'aria' + (IDL[tail] || tail.charAt(0).toUpperCase() + tail.slice(1));
+    if (!sources.includes('attachInternals')) {
+      return {
+        toward: 'fail',
+        why: 'The component’s code never calls attachInternals, so it cannot set this state that way, and the element has no attribute for it.',
+        signals: [{ signal: 'ctor-source-mentions-internals', value: false }],
+        caution:
+          'Code outside the component’s classes, such as a shared helper, may attach the internals.',
+        i18n: {
+          whyKey: 'ariaRequiredAttr_lean_why_internalsUnused',
+          cautionKey: 'ariaRequiredAttr_lean_caution_internalsUnused'
+        }
+      };
+    }
+    if (!sources.includes(prop)) return null;
+    return {
+      toward: 'pass',
+      why: 'The component’s code attaches internals and sets this state through them.',
+      signals: [
+        { signal: 'ctor-source-mentions-internals', value: true },
+        { signal: 'ctor-source-mentions-state-prop', value: prop }
+      ],
+      caution: 'Naming the state in its code does not show it is set to the right value.',
+      i18n: {
+        whyKey: 'ariaRequiredAttr_lean_why_internalsSet',
+        cautionKey: 'ariaRequiredAttr_lean_caution_internalsSet'
+      }
+    };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
@@ -56438,9 +57224,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             : null;
         if (internalsState && internalsState.status === 'set') continue;
         if (internalsState && internalsState.status === 'unknown') {
-          cantTellOccurrences.push(
-            helpers.reportOccurrence(el, helpers.internalsQuestion(el, attr))
-          );
+          const question = helpers.internalsQuestion(el, attr);
+          const lean = internalsLean(el, attr);
+          if (lean) question.lean = lean;
+          cantTellOccurrences.push(helpers.reportOccurrence(el, question));
           continue;
         }
         missing.push(attr);
@@ -56456,6 +57243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : null;
 
       if (implicit) {
+        const lean = implicitLean(el, role, attr);
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
@@ -56471,6 +57259,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               needed: 'Whether the implicit fallback is the state the author meant.',
               evidence: { attribute: attr, role, implicitValue: implicit }
             },
+            ...(lean ? { lean } : {}),
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',
@@ -56589,6 +57378,52 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
   let applicableCount = 0;
+
+  // Which way a container with none of its required children points: one
+  // that holds no element at all (no shadow root, nothing owned) conveys no
+  // items, right or wrong; one that holds named content (an image with alt
+  // text, a button, a labelled control) shows items that lack the role.
+  function leanFor(el) {
+    const ownsAttr = String(dom.getAttribute(el, 'aria-owns') || '').trim();
+    let shadow = null;
+    try {
+      shadow = dom.shadowRoot(el);
+    } catch {}
+    if (dom.childElementCount(el) === 0 && !ownsAttr && !shadow) {
+      return {
+        toward: 'pass',
+        why: 'The container holds no elements, so it conveys no items, right or wrong.',
+        signals: [{ signal: 'child-element-count', value: 0 }],
+        caution: 'A script may fill it later with items that lack the required role.',
+        i18n: {
+          whyKey: 'ariaRequiredChildren_lean_why_empty',
+          cautionKey: 'ariaRequiredChildren_lean_caution_empty'
+        }
+      };
+    }
+    let named = 0;
+    try {
+      const all = dom.querySelectorAll(el, '*');
+      for (let i = 0; i < all.length && i < 500 && !named; i++) {
+        const d = all[i];
+        if (!isEligibleAcc(d)) continue;
+        const info = helpers.getAccessibleNameInfo(d, ctx);
+        if (info && String(info.value || '').trim()) named += 1;
+      }
+    } catch {}
+    if (!named) return null;
+    return {
+      toward: 'fail',
+      why: 'The container holds content with a name, such as an image or a control, but none of it has a role the container requires.',
+      signals: [{ signal: 'named-descendants', value: true }],
+      caution:
+        'aria-prohibited-children judges content that has a role of its own; this is the same structure seen from the container.',
+      i18n: {
+        whyKey: 'ariaRequiredChildren_lean_why_namedContent',
+        cautionKey: 'ariaRequiredChildren_lean_caution_namedContent'
+      }
+    };
+  }
 
   // Composed-tree descendant walk: el.querySelectorAll only sees the raw
   // light-DOM subtree, so a container whose real owned children are
@@ -56766,6 +57601,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    const lean = leanFor(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This container role has no owned child with a required role.',
@@ -56786,6 +57622,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               typeof dom.childElementCount(el) === 'number' ? dom.childElementCount(el) : null
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
@@ -57345,6 +58182,165 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return false;
   }
 
+  // The native roles that are a kind of each abstract role (WAI-ARIA 1.2
+  // superclass chains), for the native roles getNativeRoleForElement gives.
+  const NATIVE_BY_ABSTRACT = {
+    command: ['link', 'button'],
+    composite: ['listbox'],
+    input: ['checkbox', 'radio', 'textbox', 'searchbox', 'combobox'],
+    landmark: ['complementary', 'form', 'banner', 'navigation', 'main'],
+    range: [],
+    roletype: null, // every role
+    section: [
+      'complementary',
+      'form',
+      'banner',
+      'img',
+      'listitem',
+      'navigation',
+      'list',
+      'listbox',
+      'main',
+      'table',
+      'cell',
+      'columnheader',
+      'row'
+    ],
+    sectionhead: ['heading', 'columnheader'],
+    select: ['listbox'],
+    structure: [
+      'article',
+      'complementary',
+      'form',
+      'banner',
+      'heading',
+      'separator',
+      'img',
+      'listitem',
+      'navigation',
+      'list',
+      'listbox',
+      'main',
+      'table',
+      'cell',
+      'columnheader',
+      'row'
+    ],
+    widget: [
+      'link',
+      'button',
+      'checkbox',
+      'radio',
+      'textbox',
+      'searchbox',
+      'combobox',
+      'listbox',
+      'columnheader',
+      'row'
+    ],
+    window: []
+  };
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // The one concrete role a token is a near misspelling of: one edit away
+  // for a token of up to five letters, two for a longer one, and no other
+  // role as near. Shorter tokens resemble too many words to tell.
+  function nearestRole(token) {
+    if (token.length < 4 || typeof ariaHelpers.concreteRoles !== 'function') return '';
+    const limit = token.length <= 5 ? 1 : 2;
+    let best = '';
+    let bestDistance = Infinity;
+    let tie = false;
+    for (const r of ariaHelpers.concreteRoles()) {
+      const d = editDistance(token, r);
+      if (d < bestDistance) {
+        best = r;
+        bestDistance = d;
+        tie = false;
+      } else if (d === bestDistance) tie = true;
+    }
+    return bestDistance <= limit && !tie ? best : '';
+  }
+
+  // Which way an unusable role on an element that keeps its native role
+  // points: whether the native role is what the author named.
+  function leanFor(reasonCode, tokens, nativeRole) {
+    if (reasonCode === 'ARIA_ROLE_INVALID') {
+      if (tokens.length !== 1) return null;
+      const nearest = nearestRole(tokens[0]);
+      if (!nearest) return null;
+      const signals = [
+        { signal: 'nearest-known-role', value: nearest },
+        { signal: 'native-role', value: nativeRole }
+      ];
+      if (nearest === nativeRole) {
+        return {
+          toward: 'pass',
+          why: 'The role value looks like a misspelling of the element’s native role, which the element keeps.',
+          signals,
+          i18n: { whyKey: 'ariaRolesValid_lean_why_typoOfNative' }
+        };
+      }
+      return {
+        toward: 'fail',
+        why: 'The role value looks like a misspelling of another role, which the element does not get: it keeps its native role instead.',
+        signals,
+        caution: 'A short value can resemble a role it was never meant to be.',
+        i18n: {
+          whyKey: 'ariaRolesValid_lean_why_typoOfOther',
+          cautionKey: 'ariaRolesValid_lean_caution_typoOfOther'
+        }
+      };
+    }
+    const named = tokens.filter((t) => ariaHelpers.isAbstractRole(t));
+    if (!named.length) return null;
+    const isKind = named.some((t) => {
+      const kinds = NATIVE_BY_ABSTRACT[t];
+      return kinds === null || (Array.isArray(kinds) && kinds.includes(nativeRole));
+    });
+    const signals = [
+      { signal: 'native-role', value: nativeRole },
+      { signal: 'native-is-subclass', value: isKind }
+    ];
+    if (isKind) {
+      return {
+        toward: 'pass',
+        why: 'The element’s native role is a kind of the abstract role named, so it already exposes a concrete form of it.',
+        signals,
+        caution: 'Being a kind of the abstract role does not show it is the role meant.',
+        i18n: {
+          whyKey: 'ariaRolesValid_lean_why_abstractKind',
+          cautionKey: 'ariaRolesValid_lean_caution_abstractKind'
+        }
+      };
+    }
+    return {
+      toward: 'fail',
+      why: 'The element’s native role is not a kind of the abstract role named, so what the author named is not exposed.',
+      signals,
+      i18n: { whyKey: 'ariaRolesValid_lean_why_abstractOther' }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -57379,6 +58375,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : '';
 
     if (nativeRole) {
+      const lean = leanFor(reasonCode, tokens, nativeRole);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
@@ -57394,6 +58391,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             needed: 'Whether the native role this element falls back to is the one intended.',
             evidence: { role, nativeRole, fallbackExposed: true }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode, role, nativeRole }
           }
@@ -57535,6 +58533,193 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The WAI-ARIA 1.2 attributes, and the braille ones from 1.3, without
+  // their aria- prefix.
+  const ARIA_ATTRS = [
+    'activedescendant',
+    'atomic',
+    'autocomplete',
+    'braillelabel',
+    'brailleroledescription',
+    'busy',
+    'checked',
+    'colcount',
+    'colindex',
+    'colindextext',
+    'colspan',
+    'controls',
+    'current',
+    'describedby',
+    'description',
+    'details',
+    'disabled',
+    'dropeffect',
+    'errormessage',
+    'expanded',
+    'flowto',
+    'grabbed',
+    'haspopup',
+    'hidden',
+    'invalid',
+    'keyshortcuts',
+    'label',
+    'labelledby',
+    'level',
+    'live',
+    'modal',
+    'multiline',
+    'multiselectable',
+    'orientation',
+    'owns',
+    'placeholder',
+    'posinset',
+    'pressed',
+    'readonly',
+    'relevant',
+    'required',
+    'roledescription',
+    'rowcount',
+    'rowindex',
+    'rowindextext',
+    'rowspan',
+    'selected',
+    'setsize',
+    'sort',
+    'valuemax',
+    'valuemin',
+    'valuenow',
+    'valuetext'
+  ];
+  // Roles WAI-ARIA 1.2 marks "Name required" (DPUB and graphics roles
+  // left out).
+  const NAME_REQUIRED_ROLES = new Set([
+    'alertdialog',
+    'application',
+    'button',
+    'checkbox',
+    'columnheader',
+    'combobox',
+    'dialog',
+    'grid',
+    'heading',
+    'img',
+    'link',
+    'listbox',
+    'marquee',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'region',
+    'rowheader',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'table',
+    'tabpanel',
+    'textbox',
+    'tooltip',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // Which way an unknown aria-* name points. A misspelling of a real
+  // attribute (one edit away for a name of up to five letters after aria-,
+  // two for a longer one) shows intent: it costs nothing when the element
+  // also has the real attribute, and costs a name when it misspells a naming
+  // attribute on an element whose role needs a name and has none. A name
+  // near no attribute, and neither containing one nor contained in one,
+  // reads as a data hook.
+  function leanFor(el, name) {
+    const suffix = name.slice(5);
+    let nearest = '';
+    let nearestDistance = Infinity;
+    let related = false;
+    for (const a of ARIA_ATTRS) {
+      const d = editDistance(suffix, a);
+      if (d < nearestDistance) {
+        nearest = a;
+        nearestDistance = d;
+      }
+      if (suffix && (a.includes(suffix) || suffix.includes(a))) related = true;
+    }
+    const limit = suffix.length <= 5 ? 1 : 2;
+    if (nearestDistance <= limit) {
+      const real = 'aria-' + nearest;
+      const signals = [{ signal: 'nearest-valid-attr', value: real }];
+      if (dom.hasAttribute(el, real)) {
+        signals.push({ signal: 'valid-attr-present', value: true });
+        return {
+          toward: 'pass',
+          why: 'The element also has the correctly spelled attribute, so the misspelled one costs nothing.',
+          signals,
+          i18n: { whyKey: 'ariaValidAttr_lean_why_realPresent' }
+        };
+      }
+      if (nearest !== 'label' && nearest !== 'labelledby') return null;
+      let role;
+      let hasName;
+      try {
+        role = String((helpers.getRoleInfo(el, ctx) || {}).role || '').toLowerCase();
+        const info = helpers.getAccessibleNameInfo(el, ctx);
+        hasName = !!(info && String(info.value || '').trim());
+      } catch {
+        return null;
+      }
+      if (!NAME_REQUIRED_ROLES.has(role) || hasName) return null;
+      signals.push(
+        { signal: 'role', value: role },
+        { signal: 'accessible-name-empty', value: true }
+      );
+      return {
+        toward: 'fail',
+        why: 'The attribute misspells a naming attribute, and the element, whose role needs a name, has none.',
+        signals,
+        i18n: { whyKey: 'ariaValidAttr_lean_why_lostName' }
+      };
+    }
+    if (nearestDistance < 4 || related) return null;
+    return {
+      toward: 'pass',
+      why: 'The name is close to no ARIA attribute, so it reads as a hook for scripts or tests, not a misspelling.',
+      signals: [
+        { signal: 'nearest-valid-attr', value: 'aria-' + nearest },
+        { signal: 'edit-distance', value: nearestDistance }
+      ],
+      caution: 'The author may still have meant it for assistive technology.',
+      i18n: {
+        whyKey: 'ariaValidAttr_lean_why_dataHook',
+        cautionKey: 'ariaValidAttr_lean_caution_dataHook'
+      }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.attributes(el)) continue;
 
@@ -57555,6 +58740,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!invalidNames || !invalidNames.length) continue;
 
     for (const name of invalidNames) {
+      const lean = leanFor(el, name);
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an attribute that is not a recognized ARIA attribute.',
@@ -57570,6 +58756,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               'Whether the misspelling cost the element a name or state it has no other source for.',
             evidence: { attribute: name, definedInAria: false, exposedEffect: 'none' }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
           }
@@ -57662,7 +58849,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     dialog: 'dialog'
   };
 
-  function relationOccurrence(el, fail, code, key, summary, hint, params, details, uncertainty) {
+  function relationOccurrence(
+    el,
+    fail,
+    code,
+    key,
+    summary,
+    hint,
+    params,
+    details,
+    uncertainty,
+    lean
+  ) {
     const o = {
       summary,
       hint,
@@ -57674,7 +58872,155 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       data: { details: { reasonCode: code, ...details } }
     };
     if (uncertainty) o.uncertainty = uncertainty;
+    if (lean) o.lean = lean;
     return { fail, occurrence: helpers.reportOccurrence(el, o) };
+  }
+
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+  function isShown(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      return !(typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref));
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a popup role mismatch points: when aria-controls names one
+  // element and that popup is open (shown, or aria-expanded="true"), its
+  // role is the one users meet, and it is not the one announced.
+  function haspopupLean(el, refs) {
+    const ids = trim(dom.getAttribute(el, 'aria-controls')).split(/\s+/).filter(Boolean);
+    if (ids.length !== 1 || refs.length !== 1) return null;
+    const expanded = trim(dom.getAttribute(el, 'aria-expanded')).toLowerCase() === 'true';
+    const shown = isShown(refs[0].ref);
+    if (!expanded && !shown) return null;
+    return {
+      toward: 'fail',
+      why: 'The popup this element controls is open and has another role than aria-haspopup announces.',
+      signals: [
+        { signal: 'single-controls-id', value: true },
+        { signal: 'popup-shown', value: shown },
+        { signal: 'aria-expanded-true', value: expanded }
+      ],
+      caution: 'The widget may open a different popup, placed elsewhere in the page.',
+      i18n: {
+        whyKey: 'ariaValidAttrValue_lean_why_haspopupOpen',
+        cautionKey: 'ariaValidAttrValue_lean_caution_haspopupOpen'
+      }
+    };
+  }
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // Every element with an id, in the document and its open shadow roots,
+  // by id; built once, on the first reference that resolves to nothing.
+  let idIndex = null;
+  function elementsWithIds() {
+    if (idIndex) return idIndex;
+    idIndex = [];
+    try {
+      const all =
+        typeof helpers.queryAllDeep === 'function'
+          ? helpers.queryAllDeep('[id]')
+          : dom.querySelectorAll(document, '[id]');
+      for (const e of all) {
+        const v = dom.getAttribute(e, 'id');
+        if (v) idIndex.push({ id: String(v), el: e });
+      }
+    } catch {}
+    return idIndex;
+  }
+  // An id that differs from the wanted one only in case, or by one
+  // character other than a digit (item-2 for item-3 is another item, not a
+  // misspelling); short ids are left out.
+  function isNearMiss(found, wanted) {
+    if (found === wanted) return false;
+    if (found.toLowerCase() === wanted.toLowerCase()) return true;
+    if (Math.min(found.length, wanted.length) < 4) return false;
+    if (/\d/.test(found) && found.replace(/\d+/g, '#') === wanted.replace(/\d+/g, '#'))
+      return false;
+    return editDistance(found, wanted) === 1;
+  }
+
+  // Which way a reference to no element points: a target that exists in
+  // another tree can never be reached, and a near-miss id in the same tree
+  // shows a misspelling. Otherwise a script may still add the element.
+  function targetAbsentLean(el, value) {
+    const ids = trim(value).split(/\s+/).filter(Boolean);
+    if (!ids.length) return null;
+    let root = null;
+    try {
+      root = dom.getRootNode(el);
+    } catch {}
+    let otherTree = false;
+    let nearMiss = '';
+    for (const entry of elementsWithIds()) {
+      let sameTree = true;
+      try {
+        sameTree = dom.getRootNode(entry.el) === root;
+      } catch {}
+      for (const wanted of ids) {
+        if (!sameTree && entry.id === wanted) otherTree = true;
+        else if (sameTree && !nearMiss && isNearMiss(entry.id, wanted)) nearMiss = entry.id;
+      }
+    }
+    if (otherTree) {
+      return {
+        toward: 'fail',
+        why: 'An element with this id exists, but in another document tree (across a shadow root), where the reference can never reach it.',
+        signals: [{ signal: 'id-in-other-tree', value: true }],
+        caution: 'The component may still create its own element with this id.',
+        i18n: {
+          whyKey: 'ariaValidAttrValue_lean_why_otherTree',
+          cautionKey: 'ariaValidAttrValue_lean_caution_otherTree'
+        }
+      };
+    }
+    if (nearMiss) {
+      return {
+        toward: 'fail',
+        why: 'An element whose id differs only by case or one character exists, so the reference is probably misspelled.',
+        signals: [{ signal: 'near-miss-id', value: nearMiss }],
+        caution: 'A script may still add an element with the exact id.',
+        i18n: {
+          whyKey: 'ariaValidAttrValue_lean_why_nearMiss',
+          cautionKey: 'ariaValidAttrValue_lean_caution_nearMiss'
+        }
+      };
+    }
+    return null;
   }
 
   // Constraints ARIA sets between attributes, each valid on its own: a
@@ -57788,7 +59134,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               {
                 code: 'runtime-dependent',
                 needed: 'Whether the popup that opens has the role aria-haspopup names.'
-              }
+              },
+              haspopupLean(el, roles)
             )
           );
         }
@@ -57896,6 +59243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     for (const item of review || []) {
       const controls = item.name === 'aria-controls';
+      const lean = targetAbsentLean(el, item.value);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
@@ -57921,6 +59269,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               resolvedAtScanTime: false
             }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
@@ -65708,6 +67057,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const referencedIds = new Set();
+  // id -> [{ el, attr }], the elements that refer to it and by what.
+  const referrers = new Map();
   for (const attr of IDREF_ATTRS) {
     const selector = `[${attr}]`;
     const nodes = dom.get(document, 'querySelectorAll')
@@ -65718,7 +67069,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const raw = String(dom.getAttribute(el, attr) || '').trim();
       if (!raw) continue;
       for (const token of raw.split(/\s+/)) {
-        if (token) referencedIds.add(token);
+        if (!token) continue;
+        referencedIds.add(token);
+        if (!referrers.has(token)) referrers.set(token, []);
+        referrers.get(token).push({ el, attr });
       }
     }
   }
@@ -65737,9 +67091,78 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const cantTellOccurrences = [];
 
+  // The attributes whose target only gives text (a name, a description, an
+  // error message): copies with the same text give the same result.
+  const TEXT_ATTRS = new Set(['aria-labelledby', 'aria-describedby', 'aria-errormessage']);
+  const normalized = (el) =>
+    String(dom.textContent(el) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  // How deep the deepest ancestor two elements share is.
+  function sharedDepth(a, b) {
+    const chain = new Map();
+    let depth = 0;
+    for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
+    const total = depth;
+    for (let n = b; n; n = dom.parentNode(n)) {
+      if (chain.has(n)) return total - chain.get(n);
+    }
+    return 0;
+  }
+
+  // Which way a duplicated, referenced id points. Copies that all say the
+  // same thing to attributes that only read text give the same result
+  // whichever is reached. A referring element whose nearest copy (the one
+  // it shares the deepest ancestor with, alone) is not the first in tree
+  // order is a repeated component reaching another one's element.
+  function leanFor(refId, els) {
+    const refs = referrers.get(refId) || [];
+    const first = normalized(els[0]);
+    const sameText = els.every((e) => normalized(e) === first);
+    if (sameText && refs.length && refs.every((r) => TEXT_ATTRS.has(r.attr))) {
+      return {
+        toward: 'pass',
+        why: 'Every element with this id has the same text, so whichever one the reference reaches gives the same name or description.',
+        signals: [{ signal: 'duplicates-same-text', value: true }],
+        i18n: { whyKey: 'duplicateIdAria_lean_why_sameText' }
+      };
+    }
+    for (const r of refs) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest && !tie && nearest !== els[0]) {
+        return {
+          toward: 'fail',
+          why: 'An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.',
+          signals: [
+            { signal: 'duplicates-same-text', value: sameText },
+            { signal: 'nearest-duplicate-is-first', value: false }
+          ],
+          caution: 'Being nearer is a sign of what was meant, not proof.',
+          i18n: {
+            whyKey: 'duplicateIdAria_lean_why_nearerCopy',
+            cautionKey: 'duplicateIdAria_lean_caution_nearerCopy'
+          }
+        };
+      }
+    }
+    return null;
+  }
+
   for (const refId of referencedIds) {
     const els = idMap.get(refId) || [];
     if (els.length <= 1) continue;
+    const lean = leanFor(refId, els);
 
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
@@ -65759,6 +67182,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             needed: 'Whether the first element carrying this id is the intended target.',
             evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',
@@ -76648,6 +78072,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // A hidden live region with no dialog open: nothing explains the page
+  // hiding it (the background of an open modal is the usual reason, and a
+  // script-made modal, role="dialog" with aria-modal, hides it with
+  // aria-hidden or inert itself), so what it is given is not announced.
+  let modalOpen = null;
+  function dialogShown() {
+    for (const d of dom.querySelectorAll(
+      document,
+      'dialog[open], [role~="dialog" i], [role~="alertdialog" i]'
+    )) {
+      if (drawn(d) && !hiddenBy(d)) return true;
+    }
+    return false;
+  }
+  function hiddenLean() {
+    if (modalOpen === null) {
+      try {
+        modalOpen = !!helpers.isModalDialogOpen() || dialogShown();
+      } catch {
+        modalOpen = true;
+      }
+    }
+    if (modalOpen) return null;
+    return {
+      toward: 'fail',
+      why: 'No dialog is open to explain hiding this live region, so what it is given is not announced.',
+      signals: [{ signal: 'dialog-open', value: false }],
+      caution:
+        'The region may be unused, or the page may show it to assistive technology before writing to it.',
+      i18n: {
+        whyKey: 'liveRegionAnnouncements_lean_why_hidden',
+        cautionKey: 'liveRegionAnnouncements_lean_caution_hidden'
+      }
+    };
+  }
+
   const occurrences = [];
   const inScope = new Set();
   let applicableCount = 0;
@@ -76661,6 +78121,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const by = hiddenBy(el);
     if (by) {
+      const lean = hiddenLean();
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary:
@@ -76675,6 +78136,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
             hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
             visibilityFilter: eligibility(el)
@@ -76735,6 +78197,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
       const target = connected ? el : dom.documentElement(document);
+      // The pattern the hook saw is one screen readers commonly skip; the
+      // message still reached them when the same text was announced
+      // through another region.
+      const elsewhere = (record.announcements || []).some(
+        (a) => a && a.element !== el && a.text === f.text
+      );
+      const lean = elsewhere
+        ? null
+        : {
+            toward: 'fail',
+            why: inserted
+              ? 'The region was added with its text already in it, which screen readers commonly do not announce.'
+              : 'The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.',
+            signals: [
+              { signal: 'hook-finding', value: f.code },
+              { signal: 'politeness', value: level },
+              { signal: 'text-also-in-existing-region', value: false }
+            ],
+            caution: inserted
+              ? 'Some screen reader and browser pairs do announce a region added with its text.'
+              : 'Some browsers update the accessibility tree in time for such a region to be announced.',
+            i18n: inserted
+              ? {
+                  whyKey: 'liveRegionAnnouncements_lean_why_inserted',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_inserted'
+                }
+              : {
+                  whyKey: 'liveRegionAnnouncements_lean_why_shownAndFilled',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_shownAndFilled'
+                }
+          };
       occurrences.push(
         helpers.reportOccurrence(target, {
           summary: inserted
@@ -76752,6 +78245,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               : 'liveRegionAnnouncements_hint_cantTell_shownAndFilled',
             params: { text: f.text }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details,
             visibilityFilter: connected
@@ -90390,6 +91884,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRolesValid_hint_abstract": "Ersetzen Sie sie durch eine konkrete Rolle, die dem Element entspricht, etwa \"button\" oder \"region\".",
       "ariaRolesValid_summary_cantTell": "Das role-Attribut hat keinen verwendbaren Wert, daher behält dieses Element seine native Rolle \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Korrigieren oder entfernen Sie das role-Attribut; bis dahin behandeln assistive Technologien das Element nach seiner nativen Rolle.",
+      "ariaRolesValid_lean_why_typoOfNative": "Der Rollenwert sieht wie ein Tippfehler der nativen Rolle des Elements aus, die das Element behält.",
+      "ariaRolesValid_lean_why_typoOfOther": "Der Rollenwert sieht wie ein Tippfehler einer anderen Rolle aus, die das Element nicht erhält: Es behält stattdessen seine native Rolle.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Ein kurzer Wert kann einer Rolle ähneln, die nie gemeint war.",
+      "ariaRolesValid_lean_why_abstractKind": "Die native Rolle des Elements ist eine Art der genannten abstrakten Rolle und stellt daher bereits eine konkrete Form davon bereit.",
+      "ariaRolesValid_lean_caution_abstractKind": "Eine Art der abstrakten Rolle zu sein zeigt nicht, dass es die gemeinte Rolle ist.",
+      "ariaRolesValid_lean_why_abstractOther": "Die native Rolle des Elements ist keine Art der genannten abstrakten Rolle, daher wird nicht bereitgestellt, was der Autor genannt hat.",
       "ariaDeprecatedRole_title": "Das role-Attribut sollte keine veraltete oder für Autoren nicht empfohlene ARIA-Rolle verwenden",
       "ariaDeprecatedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut keine durch die WAI-ARIA-Spezifikation als veraltet markierte Rolle verwendet, und keine Rolle, die für die interne Verwendung durch den User-Agent reserviert ist (z. B. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Dieses Element verwendet role=\"{{role}}\", das Autorinnen und Autoren nicht setzen dürfen.",
@@ -90398,10 +91898,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaDeprecatedRole_guidance_directory": "Ersetzen Sie sie durch role=\"list\" (die empfohlene Ersetzung).",
       "ariaDeprecatedRole_guidance_generic": "Entfernen Sie sie — diese Rolle ist für den user-agent-internen Gebrauch vorgesehen, nicht für Autoren. Verwenden Sie stattdessen role=\"presentation\"/\"none\", um die Semantik zu entfernen, eine semantische Rolle wie \"group\", um eine Gruppierung auszudrücken, oder schlicht ein gewöhnliches Element (das die implizite generic-Rolle bereits trägt).",
       "ariaDeprecatedRole_guidance_default": "Ersetzen Sie die veraltete Rolle durch ihre empfohlene Ersetzung.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Dieses Element ist durch sein Tag bereits generisch, daher ändert role=\"generic\" nichts an dem, was bereitgestellt wird.",
       "ariaValidAttr_title": "aria-*-Attribute müssen echte, definierte ARIA-Attribute sein",
       "ariaValidAttr_description": "Prüft, ob jeder im DOM vorhandene aria-*-Attributname ein echtes, durch die WAI-ARIA-Spezifikation definiertes Attribut ist.",
       "ariaValidAttr_summary_fail": "{{attr}} ist kein erkanntes ARIA-Attribut.",
       "ariaValidAttr_hint_fail": "Korrigieren Sie den Attributnamen, falls es ein Tippfehler ist, oder entfernen Sie das Attribut.",
+      "ariaValidAttr_lean_why_realPresent": "Das Element hat auch das richtig geschriebene Attribut, daher kostet das falsch geschriebene nichts.",
+      "ariaValidAttr_lean_why_lostName": "Das Attribut ist ein falsch geschriebenes Benennungsattribut, und das Element, dessen Rolle einen Namen braucht, hat keinen.",
+      "ariaValidAttr_lean_why_dataHook": "Der Name ähnelt keinem ARIA-Attribut und wirkt daher wie ein Anknüpfungspunkt für Skripte oder Tests, nicht wie ein Tippfehler.",
+      "ariaValidAttr_lean_caution_dataHook": "Der Autor hat es vielleicht dennoch für assistive Technologien gedacht.",
       "ariaValidAttrValue_title": "Die Werte von aria-*-Attributen müssen ihrem deklarierten Typ entsprechen",
       "ariaValidAttrValue_description": "Prüft, ob jedes erkannte aria-*-Attribut einen Wert hat, der seinem WAI-ARIA-deklarierten Werttyp entspricht (boolesch, tristate, Token, Ganzzahl, Zahl oder ID-Referenz).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" ist kein gültiger Wert für dieses Attribut.",
@@ -90419,6 +91924,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Lassen Sie aria-haspopup die Rolle des Popups nennen, oder prüfen Sie, ob ein Skript ein anderes Popup anzeigt.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "Das aria-activedescendant dieses Elements verweist auf ein Element, das weder in ihm liegt noch ihm gehört.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Verweisen Sie mit aria-activedescendant auf einen eigenen Eintrag des Elements, oder machen Sie den Eintrag mit aria-owns zu seinem.",
+      "ariaValidAttrValue_lean_why_otherTree": "Ein Element mit dieser ID existiert, aber in einem anderen Dokumentbaum (jenseits eines Shadow Roots), wo der Verweis es nie erreichen kann.",
+      "ariaValidAttrValue_lean_caution_otherTree": "Die Komponente kann noch ein eigenes Element mit dieser ID erzeugen.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Ein Element, dessen ID sich nur in Groß-/Kleinschreibung oder einem Zeichen unterscheidet, existiert, daher ist der Verweis wahrscheinlich falsch geschrieben.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Ein Skript kann noch ein Element mit genau dieser ID hinzufügen.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "Das Popup, das dieses Element steuert, ist geöffnet und hat eine andere Rolle, als aria-haspopup ankündigt.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "Das Widget kann ein anderes Popup öffnen, das an anderer Stelle der Seite liegt.",
       "ariaAllowedAttr_title": "aria-*-Attribute müssen für die Rolle des Elements zulässig sein",
       "ariaAllowedAttr_description": "Prüft, ob jedes erkannte aria-*-Attribut auf einem Element mit expliziter Rolle entweder global unterstützt wird oder von dieser Rolle unterstützt wird.",
       "ariaAllowedAttr_summary_fail": "{{attr}} ist bei role=\"{{role}}\" nicht zulässig.",
@@ -90438,22 +91949,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Geben Sie dem Element die Rolle, die die Beschreibung verfeinert, oder entfernen Sie das Attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Dieses <{{element}}> hat keine Rolle, daher geben assistive Technologien sein {{attr}} möglicherweise nicht aus; sein eigener Text gibt ihm ohnehin einen Namen.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Prüfen Sie, ob dieser Text das Element bereits gut beschriftet. Wenn ja, kann das Attribut entfallen; wenn nicht, geben Sie dem Element eine Rolle, die einen Namen haben kann, etwa role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "Der eigene Text des Elements sagt bereits, was seine Beschriftung sagt, sodass nichts verloren geht, wenn die Beschriftung ignoriert wird.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s lässt ein Benennungsattribut an einem Element ohne Rolle unabhängig von seinem Text durchfallen.",
+      "ariaProhibitedAttr_lean_why_extraWords": "Die Beschriftung sagt etwas, das der Text des Elements nicht sagt; das geht verloren, wo eine Beschriftung an einem Element ohne Rolle ignoriert wird.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Manche Kombinationen aus Browser und Screenreader kündigen eine Beschriftung an einem Element ohne Rolle dennoch an.",
       "ariaRequiredAttr_title": "Rollen mit einem erforderlichen ARIA-Zustand oder einer erforderlichen ARIA-Eigenschaft müssen das entsprechende Attribut haben",
       "ariaRequiredAttr_description": "Prüft, ob Elemente mit einer expliziten Rolle alle für diese Rolle erforderlichen aria-*-Zustände und -Eigenschaften angeben, die eindeutig und unabhängig vom Kontext sind (z. B. muss role=\"checkbox\" aria-checked haben).",
       "ariaRequiredAttr_summary_fail": "{{attr}} ist für role=\"{{role}}\" erforderlich, fehlt jedoch.",
       "ariaRequiredAttr_hint_fail": "Fügen Sie dieses Attribut mit einem für diese Rolle gültigen Wert hinzu.",
       "ariaRequiredAttr_summary_cantTell": "Dieses Attribut ist für role=\"{{role}}\" erforderlich und fehlt, ARIA verwendet aber „{{implicit}}“ als impliziten Wert.",
       "ariaRequiredAttr_hint_cantTell": "Setzen Sie {{attr}} ausdrücklich, wenn „{{implicit}}“ nicht der gemeinte Zustand ist.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "Das Popup, das diese Combobox steuert, wird angezeigt, aber ohne aria-expanded wird die Combobox als zugeklappt angekündigt.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "Das Popup schließt sich vielleicht gerade, oder es ist eine Liste, die das Widget immer anzeigt.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "Der Code der Komponente ruft attachInternals nie auf, kann diesen Zustand also nicht auf diese Weise setzen, und das Element hat kein Attribut dafür.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Code außerhalb der Klassen der Komponente, etwa eine gemeinsame Hilfsfunktion, kann die Internals anhängen.",
+      "ariaRequiredAttr_lean_why_internalsSet": "Der Code der Komponente hängt Internals an und setzt diesen Zustand über sie.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Dass der Code den Zustand nennt, zeigt nicht, dass er auf den richtigen Wert gesetzt ist.",
       "ariaAllowedRole_title": "Die explizite Rolle muss für ihr Host-Element zulässig sein",
       "ariaAllowedRole_description": "Prüft, ob ein explizites role=\"\"-Attribut eine der Rollen ist, die die ARIA-in-HTML-Spezifikation für das Host-Element zulässt (z. B. ist role=\"tab\" bei <nav> nicht zulässig).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" ist bei <{{element}}> nicht zulässig.",
       "ariaAllowedRole_hint_fail": "Verwenden Sie eine Rolle, die dieses Element erlaubt, oder ein anderes Element.",
+      "ariaAllowedRole_lean_why_focusable": "Das Element ist in der Tab-Reihenfolge, aber seine Rolle ist keine Bedienelement-Rolle, sodass Tastaturnutzer auf etwas landen, das als statisch angekündigt wird.",
+      "ariaAllowedRole_lean_caution_focusable": "Ein fokussierbares Element mit statischer Rolle kann gewollt sein, etwa ein scrollbarer Bereich.",
+      "ariaAllowedRole_lean_why_presentational": "Browser ignorieren die Rolle none oder presentation bei einem fokussierbaren Element und behalten seine native Rolle bei.",
+      "ariaAllowedRole_lean_caution_presentational": "Browser lösen diesen Konflikt auf leicht unterschiedliche Weise.",
       "ariaRequiredChildren_title": "Container-Rollen müssen mindestens eine erforderliche Kind-Rolle besitzen",
       "ariaRequiredChildren_description": "Prüft, ob Container-Rollen, für die „required owned elements“ festgelegt sind (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...), mindestens ein zugeordnetes Element mit einer zulässigen Rolle enthalten. Dieses Element muss ein Nachfahre sein oder über aria-owns referenziert werden.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" enthält kein Element mit einer der erforderlichen Rollen: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Fügen Sie ein Kindelement mit einer dieser Rollen hinzu, oder verweisen Sie mit aria-owns auf eines.",
       "ariaRequiredChildren_summary_fail_textOnly": "Diese Container-Rolle enthält Inhalt, aber nichts davon hat eine Rolle, die der Container verlangt.",
       "ariaRequiredChildren_hint_fail_textOnly": "Geben Sie jedem Eintrag die Rolle, die der Container braucht, etwa role=\"listitem\" in einer Liste.",
+      "ariaRequiredChildren_lean_why_empty": "Der Container enthält keine Elemente und vermittelt daher keine Einträge, weder richtige noch falsche.",
+      "ariaRequiredChildren_lean_caution_empty": "Ein Skript kann ihn später mit Einträgen füllen, denen die erforderliche Rolle fehlt.",
+      "ariaRequiredChildren_lean_why_namedContent": "Der Container enthält Inhalte mit Namen, etwa ein Bild oder ein Bedienelement, aber keiner davon hat eine Rolle, die der Container verlangt.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children beurteilt Inhalte mit eigener Rolle; dies ist dieselbe Struktur aus Sicht des Containers.",
       "ariaProhibitedChildren_title": "Container-Rollen dürfen kein Kind mit einer unzulässigen Rolle besitzen",
       "ariaProhibitedChildren_description": "Prüft, ob jedes Kind, das einer Container-Rolle im Barrierefreiheitsbaum zugeordnet ist (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row), eine der für zugeordnete Kindelemente dieser Rolle zulässigen Rollen hat.",
       "ariaProhibitedChildren_summary_fail": "Dieses Element hat role=\"{{childRole}}\", das direkt in einem Container mit role=\"{{containerRole}}\" nicht erlaubt ist.",
@@ -90529,6 +92058,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; fügen Sie die Region zuerst leer in die Seite ein und ändern Sie ihren Text danach.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Eine verborgene Live-Region wurde angezeigt und erhielt ihren Text „{{text}}“ auf einmal, bevor sie im Accessibility Tree war.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Prüfen Sie, dass diese Statusmeldung angekündigt wird; zeigen Sie die Region zuerst an und ändern Sie ihren Text danach.",
+      "liveRegionAnnouncements_lean_why_hidden": "Kein Dialog ist geöffnet, der das Ausblenden dieser Live-Region erklärt, daher wird nicht angekündigt, was sie erhält.",
+      "liveRegionAnnouncements_lean_caution_hidden": "Die Region wird vielleicht nicht genutzt, oder die Seite macht sie für assistive Technologien zugänglich, bevor sie hineinschreibt.",
+      "liveRegionAnnouncements_lean_why_inserted": "Die Region wurde mit ihrem Text bereits darin eingefügt, was Screenreader meist nicht ankündigen.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Manche Kombinationen aus Screenreader und Browser kündigen eine mit Text eingefügte Region durchaus an.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "Die Region wurde gleichzeitig angezeigt und mit Text gefüllt, bevor sie im Accessibility-Baum war, was Screenreader meist nicht ankündigen.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Manche Browser aktualisieren den Accessibility-Baum rechtzeitig, sodass eine solche Region angekündigt wird.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -90549,6 +92084,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicateIdAria_description": "Prüft, ob jeder id-Wert, der durch ein ARIA-ID-Referenzattribut referenziert wird (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details), im Dokument eindeutig ist.",
       "duplicateIdAria_summary_cantTell": "Die id „{{id}}“ wird von einem ARIA-Attribut referenziert, wird aber von {{duplicateCount}} Elementen verwendet; die Referenz verweist auf das erste.",
       "duplicateIdAria_hint_cantTell": "Prüfen Sie, ob das erste Element mit dieser id das gemeinte ist, oder geben Sie jedem Element eine eigene id.",
+      "duplicateIdAria_lean_why_sameText": "Alle Elemente mit dieser ID haben denselben Text, daher ergibt jedes, das der Verweis erreicht, denselben Namen oder dieselbe Beschreibung.",
+      "duplicateIdAria_lean_why_nearerCopy": "Ein Element, das auf diese ID verweist, steht neben einer späteren Kopie davon, aber der Verweis geht an die erste, an anderer Stelle der Seite.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Näher zu sein ist ein Hinweis auf das Gemeinte, kein Beweis.",
       "summaryNamePresent_title": "Summary-Elemente haben einen zugänglichen Namen",
       "summaryNamePresent_description": "Prüft, ob <summary>-Elemente einen nicht leeren zugänglichen Namen aufweisen.",
       "summaryNamePresent_summary_fail": "Dieses Summary-Element hat keinen zugänglichen Namen.",
@@ -90838,10 +92376,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel ist eine Braille-spezifische Ergänzung, kein Ersatz — geben Sie dem Element zusätzlich einen zugänglichen Namen (zum Beispiel über sichtbaren Text, aria-label oder aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Dieses Element hat aria-brailleroledescription, aber nicht aria-roledescription, sein Nicht-Braille-Äquivalent.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription ist eine Braille-spezifische Ergänzung, kein Ersatz — stellen Sie zusätzlich aria-roledescription bereit.",
+      "ariaBrailleEquivalent_lean_why_label": "Die Rolle des Elements braucht einen Namen, und außer seiner Braille-Beschriftung hat es keinen, sodass Sprachausgabe-Nutzer keinen Namen erhalten.",
+      "ariaBrailleEquivalent_lean_caution_label": "Die Namensregel für diese Rolle meldet den fehlenden Namen ebenfalls; es ist ein Problem, nicht zwei.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Ohne aria-roledescription stellen Browser die Braille-Rollenbeschreibung nicht bereit, sodass das Element seine übliche Rolle behält und nichts verloren geht.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "Die vom Autor geschriebene Braille-Rollenbeschreibung erreicht niemanden.",
       "ariaConditionalAttr_title": "aria-errormessage erfordert, dass aria-invalid auf einen Wert ungleich false gesetzt ist",
       "ariaConditionalAttr_description": "Prüft, ob Elemente mit aria-errormessage auch aria-invalid auf „true“, „grammar“ oder „spelling“ gesetzt haben — andernfalls wird die Fehlermeldung aus dem Accessibility-Baum entfernt.",
       "ariaConditionalAttr_summary_fail": "Dieses Element hat aria-errormessage, aber aria-invalid fehlt oder ist „false“, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
       "ariaConditionalAttr_hint_fail": "Setzen Sie aria-invalid auf „true“ (oder „grammar“/„spelling“), wann immer aria-errormessage assistiven Technologien zur Verfügung gestellt werden soll.",
+      "ariaConditionalAttr_lean_why_described": "Die Fehlermeldung wird auch von aria-describedby benannt und erreicht assistive Technologien so als Beschreibung des Feldes.",
+      "ariaConditionalAttr_lean_why_shown": "Die Fehlermeldung wird mit Text angezeigt, aber aria-invalid ist nicht gesetzt, sodass assistive Technologien sie nicht erhalten.",
+      "ariaConditionalAttr_lean_caution_shown": "Der angezeigte Text kann ein ständiger Hinweis statt eines Fehlers sein.",
       "ariaCheckedStateMismatch_title": "Das aria-checked eines nativen Kontrollkästchens/Optionsfelds sollte seinem tatsächlichen Zustand entsprechen",
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
@@ -90854,6 +92399,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn ja, setzen Sie aria-expanded=\"true\", oder blenden Sie den Inhalt aus, solange er eingeklappt ist.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" besagt, dass der gesteuerte Inhalt ausgeklappt ist, er ist aber ausgeblendet.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Prüfen Sie, ob der Inhalt geöffnet ist; wenn nicht, setzen Sie aria-expanded=\"false\", oder zeigen Sie den Inhalt an, solange er ausgeklappt ist.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "Der gesteuerte Inhalt wird vollständig angezeigt, weder abgeschnitten noch verschoben, während das Element angibt, zugeklappt zu sein.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "Der Inhalt kann eine Vorschau sein, die das Element weiter aufklappt.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "Der gesteuerte Inhalt wird gar nicht angezeigt (display: none oder das Attribut hidden), während das Element angibt, aufgeklappt zu sein.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Ein Skript ist vielleicht gerade dabei, den Inhalt anzuzeigen.",
       "ariaOwnsValid_title": "aria-owns muss jedem Element genau einen Besitzer geben, und nie einen Vorfahren des Besitzers",
       "ariaOwnsValid_description": "Prüft, dass kein Element von mehr als einem aria-owns genannt wird und kein aria-owns das Element selbst oder einen seiner Vorfahren nennt.",
       "ariaOwnsValid_summary_fail_duplicate": "Dieses Element wird im aria-owns von {{count}} Elementen genannt, kann aber nur einen Besitzer haben.",
@@ -91577,6 +93126,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRolesValid_hint_abstract": "Replace it with a concrete role that matches what the element is, such as \"button\" or \"region\".",
       "ariaRolesValid_summary_cantTell": "The role attribute has no usable value, so this element keeps its native role, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Fix or remove the role attribute; until then, assistive technology treats the element by its native role.",
+      "ariaRolesValid_lean_why_typoOfNative": "The role value looks like a misspelling of the element’s native role, which the element keeps.",
+      "ariaRolesValid_lean_why_typoOfOther": "The role value looks like a misspelling of another role, which the element does not get: it keeps its native role instead.",
+      "ariaRolesValid_lean_caution_typoOfOther": "A short value can resemble a role it was never meant to be.",
+      "ariaRolesValid_lean_why_abstractKind": "The element’s native role is a kind of the abstract role named, so it already exposes a concrete form of it.",
+      "ariaRolesValid_lean_caution_abstractKind": "Being a kind of the abstract role does not show it is the role meant.",
+      "ariaRolesValid_lean_why_abstractOther": "The element’s native role is not a kind of the abstract role named, so what the author named is not exposed.",
       "ariaDeprecatedRole_title": "role attribute should not use a deprecated or author-discouraged ARIA role",
       "ariaDeprecatedRole_description": "Checks that an explicit role=\"\" attribute does not use a role deprecated by the WAI-ARIA specification, or one reserved for user-agent-internal use (e.g. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "This element uses role=\"{{role}}\", which authors must not set.",
@@ -91585,10 +93140,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaDeprecatedRole_guidance_directory": "Replace it with role=\"list\" (its recommended replacement).",
       "ariaDeprecatedRole_guidance_generic": "Remove it: this role is reserved for user-agent-internal use, not authors. Use role=\"presentation\"/\"none\" to strip semantics, a semantic role like \"group\" to convey grouping, or a plain element (which already carries the implicit generic role) instead.",
       "ariaDeprecatedRole_guidance_default": "Replace the deprecated role with its recommended replacement.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "This element is already generic by its tag, so role=\"generic\" changes nothing that is exposed.",
       "ariaValidAttr_title": "aria-* attributes must be real, defined ARIA attributes",
       "ariaValidAttr_description": "Checks that every aria-* attribute name present in the DOM is a real attribute defined by the WAI-ARIA specification.",
       "ariaValidAttr_summary_fail": "{{attr}} is not a recognized ARIA attribute.",
       "ariaValidAttr_hint_fail": "Fix the attribute name if it is a typo, or remove it.",
+      "ariaValidAttr_lean_why_realPresent": "The element also has the correctly spelled attribute, so the misspelled one costs nothing.",
+      "ariaValidAttr_lean_why_lostName": "The attribute misspells a naming attribute, and the element, whose role needs a name, has none.",
+      "ariaValidAttr_lean_why_dataHook": "The name is close to no ARIA attribute, so it reads as a hook for scripts or tests, not a misspelling.",
+      "ariaValidAttr_lean_caution_dataHook": "The author may still have meant it for assistive technology.",
       "ariaValidAttrValue_title": "aria-* attribute values must match their declared type",
       "ariaValidAttrValue_description": "Checks that every recognized aria-* attribute has a value conforming to its WAI-ARIA-declared value type (boolean, tristate, token, integer, number, or ID reference).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" is not a valid value for this attribute.",
@@ -91606,6 +93166,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Make aria-haspopup name the popup’s role, or check whether a script shows another popup.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "This element’s aria-activedescendant points at an element that is neither inside it nor owned by it.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Point aria-activedescendant at one of the element’s own items, or own the item with aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "An element with this id exists, but in another document tree (across a shadow root), where the reference can never reach it.",
+      "ariaValidAttrValue_lean_caution_otherTree": "The component may still create its own element with this id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "An element whose id differs only by case or one character exists, so the reference is probably misspelled.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "A script may still add an element with the exact id.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "The popup this element controls is open and has another role than aria-haspopup announces.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "The widget may open a different popup, placed elsewhere in the page.",
       "ariaAllowedAttr_title": "aria-* attributes must be permitted for the element’s role",
       "ariaAllowedAttr_description": "Checks that every recognized aria-* attribute present on an element with an explicit role is either globally supported or supported by that role.",
       "ariaAllowedAttr_summary_fail": "{{attr}} is not permitted on role=\"{{role}}\".",
@@ -91625,22 +93191,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Give the element the role the description refines, or remove the attribute.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "This <{{element}}> has no role, so assistive technology may not announce its {{attr}}; its own text gives it a name anyway.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Check whether that text already labels the element well. If it does, the attribute can go; if not, give the element a role that can be named, such as role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "The element’s own text already says what its label says, so nothing is lost if the label is ignored.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s fails a naming attribute on an element with no role, whatever its text.",
+      "ariaProhibitedAttr_lean_why_extraWords": "The label says something the element’s text does not, which is lost where a label on an element with no role is ignored.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Some browser and screen reader pairs still announce a label on an element with no role.",
       "ariaRequiredAttr_title": "Roles with a required ARIA state/property must carry it",
       "ariaRequiredAttr_description": "Checks that elements with an explicit role carry every unambiguous, context-independent required aria-* state/property for that role (e.g. role=\"checkbox\" must have aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} is required for role=\"{{role}}\", but is missing.",
       "ariaRequiredAttr_hint_fail": "Add this attribute with a valid value for this role.",
       "ariaRequiredAttr_summary_cantTell": "This attribute is required for role=\"{{role}}\" and is missing, but ARIA falls back to \"{{implicit}}\".",
       "ariaRequiredAttr_hint_cantTell": "Set {{attr}} explicitly if \"{{implicit}}\" is not the state you mean.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "The popup this combobox controls is shown, but without aria-expanded the combobox is announced as collapsed.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "The popup may be closing, or be a list the widget always shows.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "The component’s code never calls attachInternals, so it cannot set this state that way, and the element has no attribute for it.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Code outside the component’s classes, such as a shared helper, may attach the internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "The component’s code attaches internals and sets this state through them.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Naming the state in its code does not show it is set to the right value.",
       "ariaAllowedRole_title": "Explicit role must be permitted for its host element",
       "ariaAllowedRole_description": "Checks that an explicit role=\"\" attribute is one of the roles the ARIA-in-HTML specification permits for the host element (e.g. role=\"tab\" is not permitted on <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" is not permitted on <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Use a role this element allows, or use a different element.",
+      "ariaAllowedRole_lean_why_focusable": "The element is in the tab order but its role is not a control role, so keyboard users land on something announced as static.",
+      "ariaAllowedRole_lean_caution_focusable": "A focusable element with a static role can be deliberate, such as a scrollable region.",
+      "ariaAllowedRole_lean_why_presentational": "Browsers ignore role none or presentation on an element that takes focus, and keep its native role.",
+      "ariaAllowedRole_lean_caution_presentational": "Browsers resolve this conflict in slightly different ways.",
       "ariaRequiredChildren_title": "Container roles must own at least one required child role",
       "ariaRequiredChildren_description": "Checks that container roles with a documented \"required owned elements\" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" contains no element with one of the roles it requires: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Add a child element with one of these roles, or reference one with aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "This container role holds content, but none of it has a role the container requires.",
       "ariaRequiredChildren_hint_fail_textOnly": "Give each item the role the container needs, such as role=\"listitem\" in a list.",
+      "ariaRequiredChildren_lean_why_empty": "The container holds no elements, so it conveys no items, right or wrong.",
+      "ariaRequiredChildren_lean_caution_empty": "A script may fill it later with items that lack the required role.",
+      "ariaRequiredChildren_lean_why_namedContent": "The container holds content with a name, such as an image or a control, but none of it has a role the container requires.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children judges content that has a role of its own; this is the same structure seen from the container.",
       "ariaProhibitedChildren_title": "Container roles must not own a child with a disallowed role",
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
@@ -91716,6 +93300,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Check that this status message is announced; put the empty region in the page first and change its text after.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "A hidden live region was shown and given its text, \"{{text}}\", at once, before it was in the accessibility tree.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Check that this status message is announced; show the region first and change its text after.",
+      "liveRegionAnnouncements_lean_why_hidden": "No dialog is open to explain hiding this live region, so what it is given is not announced.",
+      "liveRegionAnnouncements_lean_caution_hidden": "The region may be unused, or the page may show it to assistive technology before writing to it.",
+      "liveRegionAnnouncements_lean_why_inserted": "The region was added with its text already in it, which screen readers commonly do not announce.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Some screen reader and browser pairs do announce a region added with its text.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Some browsers update the accessibility tree in time for such a region to be announced.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -91736,6 +93326,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicateIdAria_description": "Checks that any id value referenced by an ARIA ID-reference attribute (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) is unique in the document.",
       "duplicateIdAria_summary_cantTell": "The id \"{{id}}\" is referenced by an ARIA attribute but is used by {{duplicateCount}} elements; the reference resolves to the first one.",
       "duplicateIdAria_hint_cantTell": "Check that the first element with this id is the one meant, or give each element its own id.",
+      "duplicateIdAria_lean_why_sameText": "Every element with this id has the same text, so whichever one the reference reaches gives the same name or description.",
+      "duplicateIdAria_lean_why_nearerCopy": "An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Being nearer is a sign of what was meant, not proof.",
       "summaryNamePresent_title": "Summary elements have an accessible name",
       "summaryNamePresent_description": "Checks that <summary> elements expose a non-empty accessible name.",
       "summaryNamePresent_summary_fail": "This summary has no accessible name.",
@@ -92025,10 +93618,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel is a Braille-specific supplement, not a replacement, so also give the element an accessible name (for example visible text, aria-label or aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "The element’s role needs a name, and it has none besides its braille label, so speech users get no name.",
+      "ariaBrailleEquivalent_lean_caution_label": "The naming rule for this role reports the missing name too; it is one problem, not two.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Without aria-roledescription, browsers do not expose the braille role description, so the element keeps its usual role and nothing is lost.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "The braille role description the author wrote reaches no one.",
       "ariaConditionalAttr_title": "aria-errormessage requires aria-invalid to be set to a non-false value",
       "ariaConditionalAttr_description": "Checks that elements with aria-errormessage also have aria-invalid set to \"true\", \"grammar\", or \"spelling\"; otherwise the error message is dropped from the accessibility tree.",
       "ariaConditionalAttr_summary_fail": "This element has aria-errormessage but aria-invalid is missing or \"false\", so the error message is not exposed.",
       "ariaConditionalAttr_hint_fail": "Set aria-invalid to \"true\" (or \"grammar\"/\"spelling\") whenever aria-errormessage should be exposed to assistive technology.",
+      "ariaConditionalAttr_lean_why_described": "The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.",
+      "ariaConditionalAttr_lean_why_shown": "The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.",
+      "ariaConditionalAttr_lean_caution_shown": "The text shown may be a standing hint rather than an error.",
       "ariaCheckedStateMismatch_title": "Native checkbox/radio aria-checked should match its actual state",
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
@@ -92041,6 +93641,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Check whether the content is open; if it is, set aria-expanded=\"true\", or hide the content while collapsed.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" says the controlled content is expanded, but it is hidden.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Check whether the content is open; if it is not, set aria-expanded=\"false\", or show the content while expanded.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "The content it controls is shown in full, not clipped or moved away, while the element says it is collapsed.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "The content may be a preview the element expands further.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "The content it controls is not displayed at all (display: none or the hidden attribute), while the element says it is expanded.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "A script may be about to show the content.",
       "ariaOwnsValid_title": "aria-owns must give each element one owner, and never an ancestor of the owner",
       "ariaOwnsValid_description": "Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.",
       "ariaOwnsValid_summary_fail_duplicate": "This element is named in the aria-owns of {{count}} elements, but it can have only one owner.",
@@ -92764,6 +94368,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRolesValid_hint_abstract": "Sustituirlo por un rol concreto que corresponda a lo que es el elemento, como \"button\" o \"region\".",
       "ariaRolesValid_summary_cantTell": "El atributo role no tiene un valor utilizable, así que este elemento conserva su rol nativo, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Corregir o quitar el atributo role; mientras tanto, las tecnologías de apoyo tratan el elemento según su rol nativo.",
+      "ariaRolesValid_lean_why_typoOfNative": "El valor del rol parece una errata del rol nativo del elemento, que el elemento conserva.",
+      "ariaRolesValid_lean_why_typoOfOther": "El valor del rol parece una errata de otro rol, que el elemento no recibe: en su lugar conserva su rol nativo.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Un valor corto puede parecerse a un rol que nunca se pretendió.",
+      "ariaRolesValid_lean_why_abstractKind": "El rol nativo del elemento es un tipo del rol abstracto indicado, así que ya expone una forma concreta de él.",
+      "ariaRolesValid_lean_caution_abstractKind": "Ser un tipo del rol abstracto no demuestra que sea el rol que se pretendía.",
+      "ariaRolesValid_lean_why_abstractOther": "El rol nativo del elemento no es un tipo del rol abstracto indicado, así que lo que indicó el autor no se expone.",
       "ariaDeprecatedRole_title": "El atributo role no debería usar un rol ARIA obsoleto o desaconsejado para autores",
       "ariaDeprecatedRole_description": "Comprueba que un atributo role=\"\" explícito no use un rol obsoleto según la especificación WAI-ARIA, ni uno reservado para uso interno del agente de usuario (por ejemplo, role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Este elemento usa role=\"{{role}}\", que los autores no deben establecer.",
@@ -92772,10 +94382,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaDeprecatedRole_guidance_directory": "Reemplazarlo por role=\"list\" (su reemplazo recomendado).",
       "ariaDeprecatedRole_guidance_generic": "Eliminarlo: este rol está reservado para uso interno de los agentes de usuario, no para los autores. Usar en su lugar role=\"presentation\"/\"none\" para quitar la semántica, un rol semántico como \"group\" para expresar agrupación, o simplemente un elemento corriente (que ya lleva el rol generic implícito).",
       "ariaDeprecatedRole_guidance_default": "Reemplazar el rol obsoleto por su reemplazo recomendado.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Este elemento ya es genérico por su etiqueta, así que role=\"generic\" no cambia nada de lo que se expone.",
       "ariaValidAttr_title": "Los atributos aria-* deben ser atributos ARIA reales y definidos",
       "ariaValidAttr_description": "Comprueba que cada nombre de atributo aria-* presente en el DOM sea un atributo real definido por la especificación WAI-ARIA.",
       "ariaValidAttr_summary_fail": "{{attr}} no es un atributo ARIA reconocido.",
       "ariaValidAttr_hint_fail": "Corregir el nombre del atributo si es una errata, o quitarlo.",
+      "ariaValidAttr_lean_why_realPresent": "El elemento también tiene el atributo bien escrito, así que el mal escrito no cuesta nada.",
+      "ariaValidAttr_lean_why_lostName": "El atributo es una errata de un atributo de nombre, y el elemento, cuyo rol necesita un nombre, no tiene ninguno.",
+      "ariaValidAttr_lean_why_dataHook": "El nombre no se parece a ningún atributo ARIA, así que parece un enganche para scripts o pruebas, no una errata.",
+      "ariaValidAttr_lean_caution_dataHook": "Puede que el autor lo pensara de todos modos para las tecnologías de apoyo.",
       "ariaValidAttrValue_title": "Los valores de los atributos aria-* deben coincidir con su tipo declarado",
       "ariaValidAttrValue_description": "Comprueba que cada atributo aria-* reconocido tenga un valor conforme a su tipo declarado por WAI-ARIA (booleano, tri-estado, token, entero, número o referencia de ID).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" no es un valor válido para este atributo.",
@@ -92793,6 +94408,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "Existe un elemento con este id, pero en otro árbol del documento (al otro lado de una raíz shadow), donde la referencia nunca puede alcanzarlo.",
+      "ariaValidAttrValue_lean_caution_otherTree": "El componente todavía puede crear su propio elemento con este id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Existe un elemento cuyo id solo difiere en mayúsculas o en un carácter, así que la referencia probablemente está mal escrita.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Un script todavía puede añadir un elemento con el id exacto.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "La ventana emergente que controla este elemento está abierta y tiene otro rol distinto del que anuncia aria-haspopup.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "El componente puede abrir otra ventana emergente, situada en otro lugar de la página.",
       "ariaAllowedAttr_title": "Los atributos aria-* deben estar permitidos para el rol del elemento",
       "ariaAllowedAttr_description": "Comprueba que cada atributo aria-* reconocido presente en un elemento con un rol explícito esté admitido globalmente o admitido por ese rol.",
       "ariaAllowedAttr_summary_fail": "{{attr}} no está permitido en role=\"{{role}}\".",
@@ -92812,22 +94433,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Dar al elemento el rol que la descripción concreta, o quitar el atributo.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Este <{{element}}> no tiene rol, así que puede que las tecnologías de apoyo no anuncien su {{attr}}; de todos modos, su propio texto le da nombre.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Comprobar si ese texto ya etiqueta bien el elemento. Si es así, se puede quitar el atributo; si no, darle al elemento un rol que admita nombre, como role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "El propio texto del elemento ya dice lo que dice su etiqueta, así que no se pierde nada si se ignora la etiqueta.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s da por fallido un atributo de nombre en un elemento sin rol, sea cual sea su texto.",
+      "ariaProhibitedAttr_lean_why_extraWords": "La etiqueta dice algo que el texto del elemento no dice, y eso se pierde donde se ignora una etiqueta en un elemento sin rol.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Algunas combinaciones de navegador y lector de pantalla sí anuncian una etiqueta en un elemento sin rol.",
       "ariaRequiredAttr_title": "Los roles con un estado/propiedad ARIA obligatorio deben incluirlo",
       "ariaRequiredAttr_description": "Comprueba que los elementos con un rol explícito lleven todo estado/propiedad aria-* obligatorio, inequívoco e independiente del contexto para ese rol (por ejemplo, role=\"checkbox\" debe tener aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} es obligatorio para role=\"{{role}}\", pero falta.",
       "ariaRequiredAttr_hint_fail": "Agregar este atributo con un valor válido para este rol.",
       "ariaRequiredAttr_summary_cantTell": "Este atributo es obligatorio para role=\"{{role}}\" y falta, pero ARIA usa \"{{implicit}}\" como valor implícito.",
       "ariaRequiredAttr_hint_cantTell": "Indicar {{attr}} de forma explícita si \"{{implicit}}\" no es el estado deseado.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "La ventana emergente que controla este cuadro combinado se muestra, pero sin aria-expanded el cuadro combinado se anuncia como contraído.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "Puede que la ventana emergente se esté cerrando, o que sea una lista que el componente muestra siempre.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "El código del componente nunca llama a attachInternals, así que no puede establecer este estado de esa forma, y el elemento no tiene ningún atributo para él.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Código fuera de las clases del componente, como una función auxiliar compartida, puede adjuntar los internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "El código del componente adjunta internals y establece este estado a través de ellos.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Que el código nombre el estado no demuestra que se establezca con el valor correcto.",
       "ariaAllowedRole_title": "El rol explícito debe estar permitido para su elemento anfitrión",
       "ariaAllowedRole_description": "Comprueba que un atributo role=\"\" explícito sea uno de los roles que la especificación ARIA-in-HTML permite para el elemento anfitrión (por ejemplo, role=\"tab\" no está permitido en <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" no está permitido en <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Usar un rol que este elemento admita, o usar otro elemento.",
+      "ariaAllowedRole_lean_why_focusable": "El elemento está en el orden de tabulación, pero su rol no es de control, así que los usuarios de teclado llegan a algo que se anuncia como estático.",
+      "ariaAllowedRole_lean_caution_focusable": "Un elemento enfocable con un rol estático puede ser intencionado, como una región desplazable.",
+      "ariaAllowedRole_lean_why_presentational": "Los navegadores ignoran el rol none o presentation en un elemento que recibe el foco y mantienen su rol nativo.",
+      "ariaAllowedRole_lean_caution_presentational": "Los navegadores resuelven este conflicto de formas algo distintas.",
       "ariaRequiredChildren_title": "Los roles contenedores deben poseer al menos un rol hijo obligatorio",
       "ariaRequiredChildren_description": "Comprueba que los roles contenedores con una entrada documentada de \"elementos propios obligatorios\" (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contengan al menos un descendiente, o un elemento referenciado por aria-owns, con un rol propio aceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" no contiene ningún elemento con uno de los roles que requiere: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Agregar un elemento hijo con uno de estos roles, o referenciar uno con aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "Este rol contenedor tiene contenido, pero nada de él tiene un rol que el contenedor exija.",
       "ariaRequiredChildren_hint_fail_textOnly": "Dar a cada elemento el rol que necesita el contenedor, como role=\"listitem\" en una lista.",
+      "ariaRequiredChildren_lean_why_empty": "El contenedor no tiene ningún elemento, así que no transmite elementos, ni correctos ni incorrectos.",
+      "ariaRequiredChildren_lean_caution_empty": "Un script puede llenarlo más tarde con elementos que no tengan el rol requerido.",
+      "ariaRequiredChildren_lean_why_namedContent": "El contenedor tiene contenido con nombre, como una imagen o un control, pero nada de él tiene un rol que el contenedor requiera.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children juzga el contenido que tiene un rol propio; esta es la misma estructura vista desde el contenedor.",
       "ariaProhibitedChildren_title": "Los roles contenedores no deben poseer un hijo con un rol no permitido",
       "ariaProhibitedChildren_description": "Comprueba que todo hijo perteneciente al árbol de accesibilidad de un rol contenedor (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) tenga uno de los roles propios permitidos por ese rol.",
       "ariaProhibitedChildren_summary_fail": "Este elemento tiene role=\"{{childRole}}\", que no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
@@ -92903,6 +94542,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
+      "liveRegionAnnouncements_lean_why_hidden": "No hay ningún diálogo abierto que explique que esta región viva esté oculta, así que lo que reciba no se anuncia.",
+      "liveRegionAnnouncements_lean_caution_hidden": "Puede que la región no se use, o que la página la haga accesible a las tecnologías de apoyo antes de escribir en ella.",
+      "liveRegionAnnouncements_lean_why_inserted": "La región se añadió con su texto ya dentro, algo que los lectores de pantalla no suelen anunciar.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Algunas combinaciones de lector de pantalla y navegador sí anuncian una región añadida con su texto.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -92923,6 +94568,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicateIdAria_description": "Comprueba que cualquier valor de id referenciado por un atributo de referencia de ID de ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) sea único en el documento.",
       "duplicateIdAria_summary_cantTell": "El id \"{{id}}\" está referenciado por un atributo ARIA, pero lo usan {{duplicateCount}} elementos; la referencia apunta al primero.",
       "duplicateIdAria_hint_cantTell": "Comprobar que el primer elemento con este id es el que se pretende, o darle a cada elemento su propio id.",
+      "duplicateIdAria_lean_why_sameText": "Todos los elementos con este id tienen el mismo texto, así que cualquiera al que llegue la referencia da el mismo nombre o la misma descripción.",
+      "duplicateIdAria_lean_why_nearerCopy": "Un elemento que hace referencia a este id está junto a una copia posterior, pero la referencia va a la primera, en otro lugar de la página.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Estar más cerca es un indicio de lo que se pretendía, no una prueba.",
       "summaryNamePresent_title": "Los elementos <summary> tienen un nombre accesible",
       "summaryNamePresent_description": "Comprueba que los elementos <summary> expongan un nombre accesible no vacío.",
       "summaryNamePresent_summary_fail": "Este elemento <summary> no tiene nombre accesible.",
@@ -93212,10 +94860,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel es un complemento específico para braille, no un reemplazo; dar también al elemento un nombre accesible (por ejemplo, texto visible, aria-label o aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Este elemento tiene aria-brailleroledescription pero no aria-roledescription, su equivalente no braille.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription es un complemento específico para braille, no un reemplazo; proporcionar también aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "El rol del elemento necesita un nombre y no tiene ninguno aparte de su etiqueta braille, así que los usuarios de voz no reciben ningún nombre.",
+      "ariaBrailleEquivalent_lean_caution_label": "La regla de nombre de este rol también informa del nombre que falta; es un solo problema, no dos.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Sin aria-roledescription, los navegadores no exponen la descripción de rol braille, así que el elemento mantiene su rol habitual y no se pierde nada.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "La descripción de rol braille que escribió el autor no llega a nadie.",
       "ariaConditionalAttr_title": "aria-errormessage requiere que aria-invalid tenga un valor distinto de false",
       "ariaConditionalAttr_description": "Comprueba que los elementos con aria-errormessage también tengan aria-invalid establecido en \"true\", \"grammar\" o \"spelling\"; de lo contrario, el mensaje de error se elimina del árbol de accesibilidad.",
       "ariaConditionalAttr_summary_fail": "Este elemento tiene aria-errormessage pero aria-invalid falta o es \"false\", por lo que el mensaje de error no se expone.",
       "ariaConditionalAttr_hint_fail": "Establecer aria-invalid en \"true\" (o \"grammar\"/\"spelling\") siempre que aria-errormessage deba exponerse a las tecnologías de apoyo.",
+      "ariaConditionalAttr_lean_why_described": "El mensaje de error también lo nombra aria-describedby, así que llega a las tecnologías de apoyo como descripción del campo.",
+      "ariaConditionalAttr_lean_why_shown": "El mensaje de error se muestra con texto, pero aria-invalid no está establecido, así que las tecnologías de apoyo no lo reciben.",
+      "ariaConditionalAttr_lean_caution_shown": "El texto mostrado puede ser una indicación permanente y no un error.",
       "ariaCheckedStateMismatch_title": "El aria-checked de una casilla de verificación o un botón de opción nativo debería coincidir con su estado real",
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
@@ -93228,6 +94883,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "El contenido que controla se muestra completo, sin recortar ni desplazar, mientras el elemento dice que está contraído.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "El contenido puede ser una vista previa que el elemento amplía más.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "El contenido que controla no se muestra en absoluto (display: none o el atributo hidden), mientras el elemento dice que está expandido.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Puede que un script esté a punto de mostrar el contenido.",
       "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
       "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
       "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
@@ -93951,6 +95610,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRolesValid_hint_abstract": "Remplacez-le par un rôle concret qui correspond à ce qu’est l’élément, comme \"button\" ou \"region\".",
       "ariaRolesValid_summary_cantTell": "L’attribut role n’a pas de valeur utilisable : cet élément garde donc son rôle natif, \"{{nativeRole}}\".",
       "ariaRolesValid_hint_cantTell": "Corrigez ou retirez l’attribut role ; en attendant, les technologies d’assistance traitent l’élément selon son rôle natif.",
+      "ariaRolesValid_lean_why_typoOfNative": "La valeur du rôle ressemble à une faute de frappe du rôle natif de l’élément, que l’élément conserve.",
+      "ariaRolesValid_lean_why_typoOfOther": "La valeur du rôle ressemble à une faute de frappe d’un autre rôle, que l’élément n’obtient pas : il garde son rôle natif à la place.",
+      "ariaRolesValid_lean_caution_typoOfOther": "Une valeur courte peut ressembler à un rôle qu’elle n’a jamais voulu désigner.",
+      "ariaRolesValid_lean_why_abstractKind": "Le rôle natif de l’élément est une sorte du rôle abstrait indiqué : il en expose déjà une forme concrète.",
+      "ariaRolesValid_lean_caution_abstractKind": "Être une sorte du rôle abstrait ne montre pas que c’est le rôle voulu.",
+      "ariaRolesValid_lean_why_abstractOther": "Le rôle natif de l’élément n’est pas une sorte du rôle abstrait indiqué : ce que l’auteur a indiqué n’est pas exposé.",
       "ariaDeprecatedRole_title": "L’attribut role ne devrait pas utiliser un rôle ARIA obsolète ou déconseillé aux auteurs",
       "ariaDeprecatedRole_description": "Vérifie qu’un attribut role=\"\" explicite n’utilise pas un rôle rendu obsolète par la spécification WAI-ARIA, ni un rôle réservé à un usage interne à l’agent utilisateur (ex. role=\"generic\").",
       "ariaDeprecatedRole_summary_fail": "Cet élément utilise role=\"{{role}}\", que les auteurs ne doivent pas définir.",
@@ -93959,10 +95624,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaDeprecatedRole_guidance_directory": "Remplacez-le par role=\"list\" (son remplacement recommandé).",
       "ariaDeprecatedRole_guidance_generic": "Supprimez-le — ce rôle est réservé à un usage interne des agents utilisateurs, pas aux auteurs. Utilisez plutôt role=\"presentation\"/\"none\" pour retirer la sémantique, un rôle sémantique comme \"group\" pour exprimer un regroupement, ou simplement un élément ordinaire (qui porte déjà le rôle generic implicite).",
       "ariaDeprecatedRole_guidance_default": "Remplacez le rôle obsolète par son remplacement recommandé.",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "Cet élément est déjà générique par sa balise : role=\"generic\" ne change rien à ce qui est exposé.",
       "ariaValidAttr_title": "Les attributs aria-* doivent être des attributs ARIA réels et définis",
       "ariaValidAttr_description": "Vérifie que chaque nom d’attribut aria-* présent dans le DOM est un attribut réel défini par la spécification WAI-ARIA.",
       "ariaValidAttr_summary_fail": "{{attr}} n’est pas un attribut ARIA reconnu.",
       "ariaValidAttr_hint_fail": "Corrigez le nom de l’attribut s’il s’agit d’une faute de frappe, ou retirez-le.",
+      "ariaValidAttr_lean_why_realPresent": "L’élément a aussi l’attribut correctement orthographié : celui mal orthographié ne coûte rien.",
+      "ariaValidAttr_lean_why_lostName": "L’attribut est une faute de frappe d’un attribut de nommage, et l’élément, dont le rôle exige un nom, n’en a aucun.",
+      "ariaValidAttr_lean_why_dataHook": "Le nom n’est proche d’aucun attribut ARIA : il ressemble à un point d’accroche pour des scripts ou des tests, pas à une faute de frappe.",
+      "ariaValidAttr_lean_caution_dataHook": "L’auteur le destinait peut-être quand même aux technologies d’assistance.",
       "ariaValidAttrValue_title": "Les valeurs des attributs aria-* doivent correspondre à leur type déclaré",
       "ariaValidAttrValue_description": "Vérifie que chaque attribut aria-* reconnu a une valeur conforme à son type déclaré par WAI-ARIA (booléen, tri-état, jeton, entier, nombre ou référence d’ID).",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" n’est pas une valeur valide pour cet attribut.",
@@ -93980,6 +95650,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Faites nommer par aria-haspopup le rôle de la fenêtre surgissante, ou vérifiez si un script en affiche une autre.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "L’aria-activedescendant de cet élément désigne un élément qui n’est ni dans celui-ci ni possédé par lui.",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Faites désigner par aria-activedescendant l’un des éléments propres à l’élément, ou faites-le posséder avec aria-owns.",
+      "ariaValidAttrValue_lean_why_otherTree": "Un élément avec cet id existe, mais dans un autre arbre du document (de l’autre côté d’une racine fantôme), où la référence ne peut jamais l’atteindre.",
+      "ariaValidAttrValue_lean_caution_otherTree": "Le composant peut encore créer son propre élément avec cet id.",
+      "ariaValidAttrValue_lean_why_nearMiss": "Un élément dont l’id ne diffère que par la casse ou un caractère existe : la référence est probablement mal orthographiée.",
+      "ariaValidAttrValue_lean_caution_nearMiss": "Un script peut encore ajouter un élément avec l’id exact.",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "La fenêtre contextuelle que contrôle cet élément est ouverte et a un autre rôle que celui annoncé par aria-haspopup.",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "Le composant peut ouvrir une autre fenêtre contextuelle, placée ailleurs dans la page.",
       "ariaAllowedAttr_title": "Les attributs aria-* doivent être autorisés pour le rôle de l’élément",
       "ariaAllowedAttr_description": "Vérifie que chaque attribut aria-* reconnu présent sur un élément ayant un rôle explicite est soit globalement pris en charge, soit pris en charge par ce rôle.",
       "ariaAllowedAttr_summary_fail": "{{attr}} n’est pas autorisé sur role=\"{{role}}\".",
@@ -93999,22 +95675,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail_roleDescription": "Donnez à l’élément le rôle que la description précise, ou retirez l’attribut.",
       "ariaProhibitedAttr_summary_cantTell_roleless": "Cet élément <{{element}}> n’a pas de rôle : les technologies d’assistance risquent de ne pas annoncer son {{attr}} ; son propre texte lui donne de toute façon un nom.",
       "ariaProhibitedAttr_hint_cantTell_roleless": "Vérifiez si ce texte étiquette déjà bien l’élément. Si oui, l’attribut peut être retiré ; sinon, donnez à l’élément un rôle qui peut être nommé, comme role=\"img\".",
+      "ariaProhibitedAttr_lean_why_inContent": "Le texte propre de l’élément dit déjà ce que dit son libellé : rien n’est perdu si le libellé est ignoré.",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s fait échouer un attribut de nommage sur un élément sans rôle, quel que soit son texte.",
+      "ariaProhibitedAttr_lean_why_extraWords": "Le libellé dit quelque chose que le texte de l’élément ne dit pas, ce qui est perdu là où un libellé sur un élément sans rôle est ignoré.",
+      "ariaProhibitedAttr_lean_caution_extraWords": "Certaines combinaisons de navigateur et de lecteur d’écran annoncent encore un libellé sur un élément sans rôle.",
       "ariaRequiredAttr_title": "Les rôles avec un état/une propriété ARIA requis doivent le porter",
       "ariaRequiredAttr_description": "Vérifie que les éléments ayant un rôle explicite portent chaque état/propriété aria-* requis, non ambigu et indépendant du contexte, pour ce rôle (ex. role=\"checkbox\" doit avoir aria-checked).",
       "ariaRequiredAttr_summary_fail": "{{attr}} est requis pour role=\"{{role}}\", mais est absent.",
       "ariaRequiredAttr_hint_fail": "Ajoutez cet attribut avec une valeur valide pour ce rôle.",
       "ariaRequiredAttr_summary_cantTell": "Cet attribut est obligatoire pour role=\"{{role}}\" et il est absent, mais ARIA utilise « {{implicit}} » comme valeur implicite.",
       "ariaRequiredAttr_hint_cantTell": "Indiquez {{attr}} explicitement si « {{implicit}} » n’est pas l’état voulu.",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "La fenêtre contextuelle que contrôle cette liste déroulante est affichée, mais sans aria-expanded la liste déroulante est annoncée comme réduite.",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "La fenêtre contextuelle est peut-être en train de se fermer, ou est une liste que le composant affiche toujours.",
+      "ariaRequiredAttr_lean_why_internalsUnused": "Le code du composant n’appelle jamais attachInternals : il ne peut pas définir cet état de cette façon, et l’élément n’a pas d’attribut pour lui.",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "Du code hors des classes du composant, comme une fonction utilitaire partagée, peut attacher les internals.",
+      "ariaRequiredAttr_lean_why_internalsSet": "Le code du composant attache des internals et définit cet état par leur intermédiaire.",
+      "ariaRequiredAttr_lean_caution_internalsSet": "Que le code nomme l’état ne montre pas qu’il est défini à la bonne valeur.",
       "ariaAllowedRole_title": "Le rôle explicite doit être autorisé pour son élément hôte",
       "ariaAllowedRole_description": "Vérifie qu’un attribut role=\"\" explicite fait partie des rôles que la spécification ARIA-in-HTML autorise pour l’élément hôte (ex. role=\"tab\" n’est pas autorisé sur <nav>).",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" n’est pas autorisé sur <{{element}}>.",
       "ariaAllowedRole_hint_fail": "Utilisez un rôle que cet élément autorise, ou utilisez un autre élément.",
+      "ariaAllowedRole_lean_why_focusable": "L’élément est dans l’ordre de tabulation, mais son rôle n’est pas un rôle de contrôle : les utilisateurs du clavier arrivent sur un élément annoncé comme statique.",
+      "ariaAllowedRole_lean_caution_focusable": "Un élément focalisable avec un rôle statique peut être voulu, comme une région défilante.",
+      "ariaAllowedRole_lean_why_presentational": "Les navigateurs ignorent le rôle none ou presentation sur un élément qui reçoit le focus et conservent son rôle natif.",
+      "ariaAllowedRole_lean_caution_presentational": "Les navigateurs résolvent ce conflit de manières légèrement différentes.",
       "ariaRequiredChildren_title": "Les rôles conteneurs doivent posséder au moins un rôle enfant requis",
       "ariaRequiredChildren_description": "Vérifie que les rôles conteneurs disposant d’une entrée documentée « éléments possédés requis » (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contiennent au moins un descendant, ou un élément référencé par aria-owns, ayant un rôle possédé acceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" ne contient aucun élément ayant l’un des rôles requis : {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Ajoutez un élément enfant ayant l’un de ces rôles, ou référencez-en un avec aria-owns.",
       "ariaRequiredChildren_summary_fail_textOnly": "Ce rôle conteneur contient du contenu, mais aucun n’a un rôle que le conteneur exige.",
       "ariaRequiredChildren_hint_fail_textOnly": "Donnez à chaque élément le rôle dont le conteneur a besoin, comme role=\"listitem\" dans une liste.",
+      "ariaRequiredChildren_lean_why_empty": "Le conteneur ne contient aucun élément : il ne transmet aucun item, ni juste ni faux.",
+      "ariaRequiredChildren_lean_caution_empty": "Un script peut le remplir plus tard avec des items dépourvus du rôle requis.",
+      "ariaRequiredChildren_lean_why_namedContent": "Le conteneur contient du contenu nommé, comme une image ou un contrôle, mais rien n’a un rôle que le conteneur exige.",
+      "ariaRequiredChildren_lean_caution_namedContent": "aria-prohibited-children juge le contenu qui a son propre rôle ; c’est la même structure vue depuis le conteneur.",
       "ariaProhibitedChildren_title": "Les rôles conteneurs ne doivent pas posséder d’enfant ayant un rôle interdit",
       "ariaProhibitedChildren_description": "Vérifie que chaque enfant possédé (dans l’arbre d’accessibilité) d’un rôle conteneur (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) a l’un des rôles possédés autorisés par ce rôle.",
       "ariaProhibitedChildren_summary_fail": "Cet élément a role=\"{{childRole}}\", qui n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
@@ -94090,6 +95784,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_hint_cantTell_inserted": "Vérifiez que ce message d’état est annoncé ; placez d’abord la région vide dans la page et changez son texte ensuite.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Une région dynamique cachée a été affichée et a reçu son texte, « {{text}} », en même temps, avant d’être dans l’arbre d’accessibilité.",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Vérifiez que ce message d’état est annoncé ; affichez d’abord la région et changez son texte ensuite.",
+      "liveRegionAnnouncements_lean_why_hidden": "Aucune boîte de dialogue n’est ouverte pour expliquer que cette région dynamique soit masquée : ce qu’elle reçoit n’est pas annoncé.",
+      "liveRegionAnnouncements_lean_caution_hidden": "La région est peut-être inutilisée, ou la page la rend peut-être accessible aux technologies d’assistance avant d’y écrire.",
+      "liveRegionAnnouncements_lean_why_inserted": "La région a été ajoutée avec son texte déjà dedans, ce que les lecteurs d’écran n’annoncent généralement pas.",
+      "liveRegionAnnouncements_lean_caution_inserted": "Certaines combinaisons de lecteur d’écran et de navigateur annoncent bien une région ajoutée avec son texte.",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "La région a été affichée et a reçu son texte en même temps, avant d’être dans l’arbre d’accessibilité, ce que les lecteurs d’écran n’annoncent généralement pas.",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "Certains navigateurs mettent à jour l’arbre d’accessibilité à temps pour qu’une telle région soit annoncée.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -94110,6 +95810,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicateIdAria_description": "Vérifie que toute valeur id référencée par un attribut de référence d’ID ARIA (aria-labelledby, aria-describedby, aria-owns, aria-controls, aria-activedescendant, aria-flowto, aria-errormessage, aria-details) est unique dans le document.",
       "duplicateIdAria_summary_cantTell": "L’id « {{id}} » est référencé par un attribut ARIA mais est utilisé par {{duplicateCount}} éléments ; la référence pointe vers le premier.",
       "duplicateIdAria_hint_cantTell": "Vérifiez que le premier élément portant cet id est bien celui visé, ou donnez à chaque élément son propre id.",
+      "duplicateIdAria_lean_why_sameText": "Tous les éléments avec cet id ont le même texte : quel que soit celui qu’atteint la référence, il donne le même nom ou la même description.",
+      "duplicateIdAria_lean_why_nearerCopy": "Un élément qui fait référence à cet id se trouve à côté d’une copie ultérieure, mais la référence va à la première, ailleurs dans la page.",
+      "duplicateIdAria_lean_caution_nearerCopy": "Être plus proche est un indice de l’intention, pas une preuve.",
       "summaryNamePresent_title": "Les éléments <summary> ont un nom accessible",
       "summaryNamePresent_description": "Vérifie que les éléments <summary> exposent un nom accessible non vide.",
       "summaryNamePresent_summary_fail": "Cet élément <summary> n’a pas de nom accessible.",
@@ -94399,10 +96102,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel est un complément spécifique au braille, pas un remplacement — donnez aussi un nom accessible à l’élément (par exemple un texte visible, aria-label ou aria-labelledby).",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "Cet élément a aria-brailleroledescription mais pas aria-roledescription, son équivalent non braille.",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — fournissez aussi aria-roledescription.",
+      "ariaBrailleEquivalent_lean_why_label": "Le rôle de l’élément exige un nom, et il n’en a aucun en dehors de son libellé braille : les utilisateurs de la synthèse vocale n’obtiennent aucun nom.",
+      "ariaBrailleEquivalent_lean_caution_label": "La règle de nommage de ce rôle signale aussi le nom manquant : c’est un seul problème, pas deux.",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "Sans aria-roledescription, les navigateurs n’exposent pas la description de rôle braille : l’élément garde son rôle habituel et rien n’est perdu.",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "La description de rôle braille écrite par l’auteur n’atteint personne.",
       "ariaConditionalAttr_title": "aria-errormessage exige que aria-invalid soit défini à une valeur autre que false",
       "ariaConditionalAttr_description": "Vérifie que les éléments ayant aria-errormessage ont aussi aria-invalid défini à « true », « grammar », ou « spelling » — sinon le message d’erreur est retiré de l’arbre d’accessibilité.",
       "ariaConditionalAttr_summary_fail": "Cet élément a aria-errormessage mais aria-invalid est absent ou « false », donc le message d’erreur n’est pas exposé.",
       "ariaConditionalAttr_hint_fail": "Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.",
+      "ariaConditionalAttr_lean_why_described": "Le message d’erreur est aussi désigné par aria-describedby : il parvient aux technologies d’assistance comme description du champ.",
+      "ariaConditionalAttr_lean_why_shown": "Le message d’erreur est affiché avec du texte, mais aria-invalid n’est pas défini : les technologies d’assistance ne le reçoivent pas.",
+      "ariaConditionalAttr_lean_caution_shown": "Le texte affiché peut être une indication permanente plutôt qu’une erreur.",
       "ariaCheckedStateMismatch_title": "L’aria-checked d’une case à cocher/d’un bouton radio natif devrait correspondre à son état réel",
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
@@ -94415,6 +96125,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Vérifiez si le contenu est ouvert ; si c’est le cas, mettez aria-expanded=\"true\", ou masquez le contenu tant qu’il est replié.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indique que le contenu contrôlé est déplié, mais il est masqué.",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Vérifiez si le contenu est ouvert ; si ce n’est pas le cas, mettez aria-expanded=\"false\", ou affichez le contenu tant qu’il est déplié.",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "Le contenu qu’il contrôle est affiché en entier, ni rogné ni déplacé, alors que l’élément indique qu’il est réduit.",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "Le contenu est peut-être un aperçu que l’élément développe davantage.",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "Le contenu qu’il contrôle n’est pas affiché du tout (display: none ou l’attribut hidden), alors que l’élément indique qu’il est développé.",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "Un script est peut-être sur le point d’afficher le contenu.",
       "ariaOwnsValid_title": "aria-owns doit donner à chaque élément un seul propriétaire, et jamais un ancêtre du propriétaire",
       "ariaOwnsValid_description": "Vérifie qu’aucun élément n’est nommé par plus d’un aria-owns et qu’aucun aria-owns ne nomme l’élément lui-même ni l’un de ses ancêtres.",
       "ariaOwnsValid_summary_fail_duplicate": "Cet élément est nommé dans l’aria-owns de {{count}} éléments, mais il ne peut avoir qu’un propriétaire.",
@@ -95138,6 +96852,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRolesValid_hint_abstract": "要素の実際の役割に合った具体的なロール (\"button\" や \"region\" など) に置き換えてください。",
       "ariaRolesValid_summary_cantTell": "role 属性に使える値がないため、この要素はネイティブのロール \"{{nativeRole}}\" のままです。",
       "ariaRolesValid_hint_cantTell": "role 属性を修正するか削除してください。それまでは、支援技術はこの要素をネイティブのロールとして扱います。",
+      "ariaRolesValid_lean_why_typoOfNative": "ロールの値は要素のネイティブロールの綴り間違いに見え、要素はそのネイティブロールを維持します。",
+      "ariaRolesValid_lean_why_typoOfOther": "ロールの値は別のロールの綴り間違いに見えますが、要素はそのロールを得ず、代わりにネイティブロールを維持します。",
+      "ariaRolesValid_lean_caution_typoOfOther": "短い値は、意図していないロールに似てしまうことがあります。",
+      "ariaRolesValid_lean_why_abstractKind": "要素のネイティブロールは指定された抽象ロールの一種なので、すでにその具体的な形を公開しています。",
+      "ariaRolesValid_lean_caution_abstractKind": "抽象ロールの一種であっても、意図したロールであるとは限りません。",
+      "ariaRolesValid_lean_why_abstractOther": "要素のネイティブロールは指定された抽象ロールの一種ではないため、作成者が指定したものは公開されません。",
       "ariaDeprecatedRole_title": "role 属性には、非推奨のロールや作成者による使用が推奨されない ARIA ロールを使わないことが望ましい",
       "ariaDeprecatedRole_description": "明示的な role=\"\" 属性が、WAI-ARIA 仕様で非推奨とされたロールや、ユーザエージェントの内部利用のために予約されたロール (role=\"generic\" など) を使用していないかを確認します。",
       "ariaDeprecatedRole_summary_fail": "この要素は role=\"{{role}}\" を使っていますが、これは作成者が指定してはならないロールです。",
@@ -95146,10 +96866,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaDeprecatedRole_guidance_directory": "role=\"list\" (推奨される代替ロール) に置き換えてください。",
       "ariaDeprecatedRole_guidance_generic": "削除してください。このロールは作成者向けではなく、ユーザエージェントの内部利用のために予約されています。セマンティクスを取り除くなら role=\"presentation\"/\"none\"、グループ化を伝えるなら \"group\" などのセマンティックなロールを使用するか、何も指定しない要素 (暗黙的に generic ロールを持ちます) を使用してください。",
       "ariaDeprecatedRole_guidance_default": "非推奨のロールを、推奨される代替ロールに置き換えてください。",
+      "ariaDeprecatedRole_lean_why_nativeGeneric": "この要素はタグによってすでに generic なので、role=\"generic\" は公開される内容を何も変えません。",
       "ariaValidAttr_title": "aria-* 属性は ARIA で定義された実在の属性であること",
       "ariaValidAttr_description": "DOM 内に存在するすべての aria-* 属性名が、WAI-ARIA 仕様で定義された実在の属性であるかを確認します。",
       "ariaValidAttr_summary_fail": "{{attr}} は認識されない ARIA 属性です。",
       "ariaValidAttr_hint_fail": "入力ミスであれば属性名を修正し、そうでなければ削除してください。",
+      "ariaValidAttr_lean_why_realPresent": "この要素には正しい綴りの属性もあるため、綴りの間違った属性による損失はありません。",
+      "ariaValidAttr_lean_why_lostName": "この属性は名前付け属性の綴り間違いで、ロールに名前が必要な要素に名前がありません。",
+      "ariaValidAttr_lean_why_dataHook": "この名前はどの ARIA 属性にも近くないため、綴り間違いではなく、スクリプトやテスト用のフックと考えられます。",
+      "ariaValidAttr_lean_caution_dataHook": "作成者が支援技術向けに意図していた可能性もあります。",
       "ariaValidAttrValue_title": "aria-* 属性の値は宣言された型に一致すること",
       "ariaValidAttrValue_description": "認識されるすべての aria-* 属性の値が、WAI-ARIA で宣言された値の型 (boolean、tristate、token、integer、number、ID 参照) に適合しているかを確認します。",
       "ariaValidAttrValue_summary_fail": "{{attr}}=\"{{value}}\" は、この属性の値として有効ではありません。",
@@ -95167,6 +96892,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "aria-haspopup でポップアップのロールを示すか、スクリプトが別のポップアップを表示していないか確認してください。",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "この要素の aria-activedescendant は、この要素の中にも、この要素が所有する要素の中にもない要素を指しています。",
       "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "aria-activedescendant でこの要素自身の項目を指すか、aria-owns でその項目を所有してください。",
+      "ariaValidAttrValue_lean_why_otherTree": "この id を持つ要素は存在しますが、別のドキュメントツリー(シャドウルートの向こう側)にあり、参照が届くことはありません。",
+      "ariaValidAttrValue_lean_caution_otherTree": "コンポーネントがこの id を持つ独自の要素を後で作成する可能性があります。",
+      "ariaValidAttrValue_lean_why_nearMiss": "大文字と小文字、または 1 文字だけが異なる id を持つ要素があるため、参照の綴りが間違っている可能性が高いです。",
+      "ariaValidAttrValue_lean_caution_nearMiss": "スクリプトが後で、完全に一致する id の要素を追加する可能性があります。",
+      "ariaValidAttrValue_lean_why_haspopupOpen": "この要素が制御するポップアップは開いており、aria-haspopup が示すものとは別のロールを持っています。",
+      "ariaValidAttrValue_lean_caution_haspopupOpen": "ウィジェットは、ページの別の場所にある別のポップアップを開く可能性があります。",
       "ariaAllowedAttr_title": "aria-* 属性は要素のロールで許可されていること",
       "ariaAllowedAttr_description": "明示的なロールを持つ要素にある、認識されるすべての aria-* 属性が、グローバルにサポートされているか、そのロールでサポートされているかを確認します。",
       "ariaAllowedAttr_summary_fail": "{{attr}} は role=\"{{role}}\" では許可されていません。",
@@ -95186,22 +96917,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaProhibitedAttr_hint_fail_roleDescription": "説明の対象となるロールを要素に指定するか、属性を削除してください。",
       "ariaProhibitedAttr_summary_cantTell_roleless": "この <{{element}}> にはロールがないため、支援技術が {{attr}} を読み上げない可能性があります。ただし、要素自身のテキストが名前になっています。",
       "ariaProhibitedAttr_hint_cantTell_roleless": "そのテキストが要素を十分に表しているか確認してください。表していれば属性は不要です。そうでなければ、role=\"img\" のように名前を付けられるロールを要素に与えてください。",
+      "ariaProhibitedAttr_lean_why_inContent": "要素自身のテキストがすでにラベルと同じ内容を伝えているため、ラベルが無視されても失われるものはありません。",
+      "ariaProhibitedAttr_lean_caution_inContent": "ACT kb1m8s では、テキストに関係なく、ロールのない要素の名前付け属性は不合格になります。",
+      "ariaProhibitedAttr_lean_why_extraWords": "ラベルには要素のテキストにない内容が含まれており、ロールのない要素のラベルが無視される環境ではそれが失われます。",
+      "ariaProhibitedAttr_lean_caution_extraWords": "ブラウザーとスクリーンリーダーの組み合わせによっては、ロールのない要素のラベルも読み上げられます。",
       "ariaRequiredAttr_title": "必須の ARIA ステート/プロパティを持つロールには、それを指定すること",
       "ariaRequiredAttr_description": "明示的なロールを持つ要素に、そのロールで必須とされる aria-* ステート/プロパティのうち、あいまいさがなく文脈に依存しないものがすべて指定されているかを確認します (例: role=\"checkbox\" には aria-checked が必要)。",
       "ariaRequiredAttr_summary_fail": "role=\"{{role}}\" には {{attr}} が必須ですが、指定されていません。",
       "ariaRequiredAttr_hint_fail": "このロールに有効な値で、この属性を追加してください。",
       "ariaRequiredAttr_summary_cantTell": "この属性は role=\"{{role}}\" に必須ですが指定されていないため、ARIA の既定値「{{implicit}}」が使われます。",
       "ariaRequiredAttr_hint_cantTell": "意図した状態が「{{implicit}}」でない場合は、{{attr}} を明示的に指定してください。",
+      "ariaRequiredAttr_lean_why_comboboxOpen": "このコンボボックスが制御するポップアップは表示されていますが、aria-expanded がないため、コンボボックスは折りたたまれていると読み上げられます。",
+      "ariaRequiredAttr_lean_caution_comboboxOpen": "ポップアップが閉じる途中であるか、ウィジェットが常に表示するリストである可能性があります。",
+      "ariaRequiredAttr_lean_why_internalsUnused": "このコンポーネントのコードは attachInternals を一度も呼び出さないため、その方法でこの状態を設定できず、要素にもそのための属性がありません。",
+      "ariaRequiredAttr_lean_caution_internalsUnused": "共有ヘルパーなど、コンポーネントのクラス外のコードが internals をアタッチしている可能性があります。",
+      "ariaRequiredAttr_lean_why_internalsSet": "このコンポーネントのコードは internals をアタッチし、それを通じてこの状態を設定しています。",
+      "ariaRequiredAttr_lean_caution_internalsSet": "コード内で状態に言及していても、正しい値に設定されているとは限りません。",
       "ariaAllowedRole_title": "明示的なロールはホスト要素で許可されていること",
       "ariaAllowedRole_description": "明示的な role=\"\" 属性が、ARIA in HTML 仕様でそのホスト要素に許可されているロールのいずれかであるかを確認します (例: <nav> に role=\"tab\" は許可されていません)。",
       "ariaAllowedRole_summary_fail": "role=\"{{role}}\" は <{{element}}> では許可されていません。",
       "ariaAllowedRole_hint_fail": "この要素で許可されているロールを使うか、別の要素を使ってください。",
+      "ariaAllowedRole_lean_why_focusable": "この要素はタブ順序に含まれますが、ロールがコントロールのロールではないため、キーボード利用者は静的なものとして読み上げられる要素にフォーカスします。",
+      "ariaAllowedRole_lean_caution_focusable": "スクロール可能な領域など、静的なロールを持つフォーカス可能な要素が意図的な場合もあります。",
+      "ariaAllowedRole_lean_why_presentational": "ブラウザーはフォーカスを受け取る要素の none や presentation ロールを無視し、ネイティブのロールを維持します。",
+      "ariaAllowedRole_lean_caution_presentational": "この競合の解決方法はブラウザーによって少し異なります。",
       "ariaRequiredChildren_title": "コンテナーロールは必須の子ロールを少なくとも 1 つ所有していること",
       "ariaRequiredChildren_description": "「必須の所有要素」が定められているコンテナーロール (list、listbox、menu、radiogroup、table、grid、tablist、tree、row など) に、許容される所有ロールを持つ子孫要素または aria-owns で参照される要素が少なくとも 1 つあるかを確認します。",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" の中に、必要なロール ({{requiredRoles}}) のいずれかを持つ要素がありません。",
       "ariaRequiredChildren_hint_fail": "これらのロールのいずれかを持つ子要素を追加するか、aria-owns で参照してください。",
       "ariaRequiredChildren_summary_fail_textOnly": "このコンテナーロールには内容がありますが、どれもコンテナーが必要とするロールを持っていません。",
       "ariaRequiredChildren_hint_fail_textOnly": "各項目に、コンテナーが必要とするロールを付けてください (リストであれば role=\"listitem\" など)。",
+      "ariaRequiredChildren_lean_why_empty": "このコンテナーには要素が何もないため、正しい項目も誤った項目も伝えていません。",
+      "ariaRequiredChildren_lean_caution_empty": "後でスクリプトが、必要なロールを持たない項目で埋める可能性があります。",
+      "ariaRequiredChildren_lean_why_namedContent": "このコンテナーには画像やコントロールなど名前を持つコンテンツがありますが、コンテナーが必要とするロールを持つものはありません。",
+      "ariaRequiredChildren_lean_caution_namedContent": "独自のロールを持つコンテンツは aria-prohibited-children が判定します。これは同じ構造をコンテナー側から見たものです。",
       "ariaProhibitedChildren_title": "コンテナーロールは許可されていないロールの子を所有してはならない",
       "ariaProhibitedChildren_description": "コンテナーロール (list、listbox、menu、menubar、radiogroup、rowgroup、table、grid、treegrid、tablist、tree、row) がアクセシビリティツリー上で所有するすべての子が、そのロールで許可された所有ロールのいずれかを持っているかを確認します。",
       "ariaProhibitedChildren_summary_fail": "この要素は role=\"{{childRole}}\" ですが、このロールは role=\"{{containerRole}}\" のコンテナの直下には置けません。",
@@ -95277,6 +97026,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_hint_cantTell_inserted": "このステータスメッセージが通知されることを確認してください。先に空のリージョンをページに置き、後からテキストを変更してください。",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "隠されていたライブリージョンが、アクセシビリティツリーに入る前に、表示と同時にテキスト「{{text}}」を受け取りました。",
       "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "このステータスメッセージが通知されることを確認してください。先にリージョンを表示し、後からテキストを変更してください。",
+      "liveRegionAnnouncements_lean_why_hidden": "このライブリージョンが隠されている理由となるダイアログは開いていないため、与えられた内容は通知されません。",
+      "liveRegionAnnouncements_lean_caution_hidden": "このリージョンは使われていないか、ページが書き込む前に支援技術から見えるようにする可能性があります。",
+      "liveRegionAnnouncements_lean_why_inserted": "このリージョンはテキストを含んだ状態で追加されました。スクリーンリーダーは一般にこれを通知しません。",
+      "liveRegionAnnouncements_lean_caution_inserted": "スクリーンリーダーとブラウザーの組み合わせによっては、テキスト付きで追加されたリージョンも通知されます。",
+      "liveRegionAnnouncements_lean_why_shownAndFilled": "このリージョンはアクセシビリティツリーに入る前に、表示とテキスト設定が同時に行われました。スクリーンリーダーは一般にこれを通知しません。",
+      "liveRegionAnnouncements_lean_caution_shownAndFilled": "ブラウザーによっては、このようなリージョンが通知されるのに間に合うようアクセシビリティツリーを更新します。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -95297,6 +97052,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "duplicateIdAria_description": "ARIA の ID 参照属性 (aria-labelledby、aria-describedby、aria-owns、aria-controls、aria-activedescendant、aria-flowto、aria-errormessage、aria-details) から参照される id の値が、文書内で一意であるかを確認します。",
       "duplicateIdAria_summary_cantTell": "id「{{id}}」は ARIA 属性から参照されていますが、{{duplicateCount}} 個の要素で使われています。参照先は最初の要素になります。",
       "duplicateIdAria_hint_cantTell": "この id を持つ最初の要素が意図した参照先か確認するか、要素ごとに別の id を付けてください。",
+      "duplicateIdAria_lean_why_sameText": "この id を持つ要素はすべて同じテキストなので、参照がどれに届いても同じ名前や説明になります。",
+      "duplicateIdAria_lean_why_nearerCopy": "この id を参照する要素は後にあるコピーのそばにありますが、参照はページの別の場所にある最初の要素に向かいます。",
+      "duplicateIdAria_lean_caution_nearerCopy": "近くにあることは意図の手がかりであって、証拠ではありません。",
       "summaryNamePresent_title": "summary 要素にアクセシブルな名前があること",
       "summaryNamePresent_description": "<summary> 要素が空でないアクセシブルな名前を公開しているかを確認します。",
       "summaryNamePresent_summary_fail": "この summary にはアクセシブルな名前がありません。",
@@ -95586,10 +97344,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel は点字用の補足であり、代わりになるものではありません。表示テキスト、aria-label、aria-labelledby などで、要素にアクセシブルな名前も付けてください。",
       "ariaBrailleEquivalent_summary_fail_roleDescription": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription がありません。",
       "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。aria-roledescription も指定してください。",
+      "ariaBrailleEquivalent_lean_why_label": "この要素のロールには名前が必要ですが、点字ラベル以外に名前がないため、音声の利用者には名前が伝わりません。",
+      "ariaBrailleEquivalent_lean_caution_label": "このロールの名前に関するルールも名前の欠落を報告します。問題は 2 つではなく 1 つです。",
+      "ariaBrailleEquivalent_lean_why_roleDescription": "aria-roledescription がない場合、ブラウザーは点字のロール説明を公開しないため、要素は通常のロールのままで、失われるものはありません。",
+      "ariaBrailleEquivalent_lean_caution_roleDescription": "作成者が書いた点字のロール説明は誰にも届きません。",
       "ariaConditionalAttr_title": "aria-errormessage を使うには、aria-invalid に false 以外の値が必要",
       "ariaConditionalAttr_description": "aria-errormessage を持つ要素で、aria-invalid が \"true\"、\"grammar\"、\"spelling\" のいずれかに設定されているかを確認します。設定されていない場合、エラーメッセージはアクセシビリティツリーから除外されます。",
       "ariaConditionalAttr_summary_fail": "この要素には aria-errormessage がありますが、aria-invalid が未指定または \"false\" のため、エラーメッセージが公開されません。",
       "ariaConditionalAttr_hint_fail": "aria-errormessage を支援技術に公開する必要があるときは、aria-invalid を \"true\" (または \"grammar\"/\"spelling\") に設定してください。",
+      "ariaConditionalAttr_lean_why_described": "エラーメッセージは aria-describedby でも参照されているため、フィールドの説明として支援技術に届きます。",
+      "ariaConditionalAttr_lean_why_shown": "エラーメッセージはテキスト付きで表示されていますが、aria-invalid が設定されていないため、支援技術には伝わりません。",
+      "ariaConditionalAttr_lean_caution_shown": "表示されているテキストは、エラーではなく常設のヒントである可能性があります。",
       "ariaCheckedStateMismatch_title": "ネイティブのチェックボックス/ラジオボタンの aria-checked は実際の状態と一致していることが望ましい",
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
@@ -95602,6 +97367,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "コンテンツが開いているか確認してください。開いている場合は aria-expanded=\"true\" にするか、折りたたまれている間はコンテンツを隠してください。",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" は制御するコンテンツが展開されていることを示していますが、コンテンツは隠れています。",
       "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "コンテンツが開いているか確認してください。開いていない場合は aria-expanded=\"false\" にするか、展開されている間はコンテンツを表示してください。",
+      "ariaExpandedStateMismatch_lean_why_collapsedShown": "要素は折りたたまれていると示していますが、制御対象のコンテンツは切り取られも移動もされず、すべて表示されています。",
+      "ariaExpandedStateMismatch_lean_caution_collapsedShown": "このコンテンツは、要素がさらに展開するプレビューである可能性があります。",
+      "ariaExpandedStateMismatch_lean_why_expandedHidden": "要素は展開されていると示していますが、制御対象のコンテンツはまったく表示されていません(display: none または hidden 属性)。",
+      "ariaExpandedStateMismatch_lean_caution_expandedHidden": "スクリプトがまもなくコンテンツを表示する可能性があります。",
       "ariaOwnsValid_title": "aria-owns は、各要素に所有者を一つだけ与え、所有者の祖先を所有させてはいけません",
       "ariaOwnsValid_description": "どの要素も複数の aria-owns で指されていないこと、またどの aria-owns もその要素自身や祖先を指していないことを確認します。",
       "ariaOwnsValid_summary_fail_duplicate": "この要素は {{count}} 個の要素の aria-owns で指されていますが、所有者は一つしか持てません。",

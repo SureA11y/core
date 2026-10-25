@@ -481,3 +481,68 @@ test(`${RULE_ID}: aria-activedescendant outside the host is asked about, unless 
     assert.equal(relation(markup).outcome, 'pass', markup);
   }
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a reference to an id that differs only in case`, () => {
+  const lean = leanOn(
+    '<div id="a" aria-describedby="Hint-Text">x</div><p id="hint-text">h</p>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_nearMiss');
+});
+
+test(`${RULE_ID}: no lean for a reference to the next number of a numbered id`, () => {
+  assert.strictEqual(
+    leanOn('<div id="a" aria-describedby="item-3">x</div><p id="item-2">h</p>', 'a'),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: leans fail for a reference to an id in another shadow tree`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><body><div id="a" aria-describedby="tip">x</div><div id="host"></div></body></html>'
+  );
+  const host = dom.window.document.getElementById('host');
+  host.attachShadow({ mode: 'open' }).innerHTML = '<p id="tip">Tip</p>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1
+  });
+  const occ = rule.occurrences.find((o) => o.html.includes('id="a"'));
+  assert.strictEqual(occ.lean.toward, 'fail');
+  assert.strictEqual(occ.lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_otherTree');
+});
+
+test(`${RULE_ID}: leans fail for an open popup with another role than aria-haspopup`, () => {
+  const lean = leanOn(
+    '<button id="a" aria-haspopup="menu" aria-controls="p" aria-expanded="true">Open</button><div id="p" role="dialog">d</div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_haspopupOpen');
+});
+
+test(`${RULE_ID}: no lean for a closed popup with another role than aria-haspopup`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<button id="a" aria-haspopup="menu" aria-controls="p" aria-expanded="false">Open</button><div id="p" role="dialog" hidden>d</div>',
+      'a'
+    ),
+    undefined
+  );
+});
