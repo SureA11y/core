@@ -69531,7 +69531,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // An <svg> or role="img" element is named as an image is: by its ARIA
       // name, or an <svg>'s own <title>.
       if (tag === 'svg' || (helpers.aria && helpers.aria.getExplicitRole(node) === 'img')) {
-        let name = '';
+        let name;
         try {
           const info = helpers.getAccessibleNameInfo(node, ctx);
           name = info && info.present ? String(info.value || '') : '';
