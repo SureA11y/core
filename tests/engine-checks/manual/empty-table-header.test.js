@@ -160,7 +160,7 @@ test(`${RULE_ID}: an upper-case role resolves too: role="COLUMNHEADER" is a head
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: an empty header over data leans fail; the corner cell and one holding an svg have none`, () => {
+test(`${RULE_ID}: an empty header over data leans fail; the corner cell has none`, () => {
   const run = (body) =>
     assertRule(
       runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
@@ -178,8 +178,24 @@ test(`${RULE_ID}: an empty header over data leans fail; the corner cell and one 
   );
   assert.equal(corner[0].data.details.reasonCode, 'TABLE_HEADER_EMPTY');
   assert.equal(corner[0].lean, undefined);
-  const svg = run(
-    '<table><tr><th>Name</th><th><svg><title>Sort</title></svg></th></tr><tr><td>Ann</td><td>12</td></tr></table>'
-  );
-  assert.equal(svg[0].lean, undefined);
+});
+
+// An <svg> or role="img" in a header is named as an image is, so the header
+// is not empty.
+test(`${RULE_ID}: a header holding a named svg or role="img" is not empty`, () => {
+  for (const content of [
+    '<svg><title>Sort</title></svg>',
+    '<svg role="img"><title>Sort</title><rect width="5" height="5"/></svg>',
+    '<svg role="img" aria-label="Sort"></svg>',
+    '<span role="img" aria-labelledby="s"></span><span id="s" hidden>Sort</span>'
+  ]) {
+    const html = `<!doctype html><html><body><table><tr><th>Name</th><th>${content}</th></tr><tr><td>Ann</td><td>12</td></tr></table></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      maxOccurrences: 0
+    });
+  }
+  const unnamed = `<!doctype html><html><body><table><tr><th>Name</th><th><svg></svg></th></tr><tr><td>Ann</td><td>12</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(unnamed, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1
+  });
 });

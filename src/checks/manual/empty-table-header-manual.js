@@ -150,8 +150,23 @@ function runInPage(ctx) {
       if (tag === 'img' || (tag === 'input' && type === 'image')) {
         return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
       }
-      if (helpers.aria && helpers.aria.getExplicitRole(node) === 'img') {
-        return ' ' + String(dom.getAttribute(node, 'aria-label') || '') + ' ';
+      // An <svg> or role="img" element is named as an image is: by its ARIA
+      // name, or an <svg>'s own <title>.
+      if (tag === 'svg' || (helpers.aria && helpers.aria.getExplicitRole(node) === 'img')) {
+        let name = '';
+        try {
+          const info = helpers.getAccessibleNameInfo(node, ctx);
+          name = info && info.present ? String(info.value || '') : '';
+        } catch {
+          name = '';
+        }
+        if (!name && tag === 'svg') {
+          const title = Array.from(dom.childNodes(node) || []).find(
+            (c) => dom.nodeType(c) === 1 && String(dom.tagName(c) || '').toLowerCase() === 'title'
+          );
+          name = title ? String(dom.textContent(title) || '') : '';
+        }
+        return ' ' + name + ' ';
       }
       let text = '';
       for (const child of dom.childNodes(node) || []) text += walk(child);
