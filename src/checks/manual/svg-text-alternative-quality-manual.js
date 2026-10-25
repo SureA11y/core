@@ -77,6 +77,32 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ONLY_CONTROL_CONTENT: {
+      steps: [
+        'Find the link or button the report names; its only content is this svg.',
+        'Activate the control and note what it does or where it goes.',
+        "Read the control's name in the Accessibility pane of the developer tools (it comes from the svg's text alternative), or Tab to it with a screen reader.",
+        'Compare: does the name say what the control does ("Search", "Close menu"), not just what the icon looks like ("magnifying glass")?'
+      ],
+      passWhen: "The control's name says what it does or where it goes.",
+      failWhen:
+        "The name describes the picture, is vague, or is wrong for the action, which fails WCAG 1.1.1 (and leaves the control's purpose unclear)."
+    },
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at the graphic the report names and note what it shows (an icon, a logo, a chart and its data).',
+        'Read its text alternative from the report (title, desc, aria-label or aria-labelledby text), or in the Accessibility pane of the developer tools.',
+        'Compare: does the text say what the graphic shows or means? If the graphic is decorative, it should instead be hidden (aria-hidden="true").'
+      ],
+      passWhen:
+        'The text alternative conveys what the graphic shows, or the decorative graphic is hidden from assistive technology.',
+      failWhen:
+        'The text alternative is wrong, vague (such as "image" or "icon") or leaves out what the graphic conveys, which fails WCAG 1.1.1.'
+    }
   }
 };
 

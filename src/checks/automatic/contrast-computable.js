@@ -216,7 +216,193 @@ const meta = {
     'SELECT_OPTION_COLOR',
     'GENERATED_TEXT_UNREADABLE',
     'GENERATED_TEXT_POSITIONED'
-  ]
+  ],
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ANCESTOR_OPACITY: {
+      steps: [
+        'Find the text the report names and note the ancestor with opacity below 1.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen:
+        'The faded colours on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
+      failWhen:
+        'The faded colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
+    },
+    BACKGROUND_FILTER_OR_BACKDROP_FILTER: {
+      steps: [
+        'Find the text the report names and note the filter or backdrop-filter on it or an ancestor (in the developer tools Styles pane).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background colours as they appear on screen with the filter applied, using an eyedropper on the rendered page rather than the declared values.",
+        'For a blur or backdrop-filter over changing content, scroll or wait so different content passes behind, and check the worst case.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'With the filter applied, the ratio on screen reaches the threshold.',
+      failWhen:
+        'With the filter applied, the ratio on screen falls below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    BACKGROUND_IMAGE_OR_GRADIENT: {
+      steps: [
+        'Find the text the report names and look at the image or gradient behind it.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the lightest and darkest parts of the background directly behind the letters.",
+        'If the image changes (slides, video, responsive images), check each version and at a few window widths.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen:
+        'Every part of the background behind the letters gives at least the threshold ratio.',
+      failWhen:
+        'Some part of the background behind the text gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    BACKGROUND_NOT_COMPUTABLE: {
+      steps: [
+        'Find the text the report names on the page.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour seen directly behind the letters, taking the darkest and lightest points if it varies.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The ratio reaches the threshold everywhere behind the text.',
+      failWhen:
+        'The ratio is below the threshold anywhere behind the text, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    BACKGROUND_NOT_OPAQUE_AT_ROOT: {
+      steps: [
+        "Find the text the report names; note that the page sets no background, so the browser's default (usually white) shows.",
+        'If the page is embedded in another page or the browser or system is in dark mode, view it in each setting where it is shown.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text against the background actually seen in each setting.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The ratio reaches the threshold in every setting where the page is shown.',
+      failWhen:
+        'In some setting where the page is shown the ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    BACKGROUND_OVERLAP: {
+      steps: [
+        'Find the text the report names and check which element actually paints behind it (inspect it and toggle the overlapping element off and on).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour actually seen behind the letters.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The colour actually behind the text gives at least the threshold ratio.',
+      failWhen:
+        'The colour actually behind the text gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    BACKGROUND_UNPARSABLE: {
+      steps: [
+        'Find the text the report names and inspect the background colour value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background as rendered on screen.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The ratio reaches the threshold.',
+      failWhen: 'The ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    ELEMENT_OPACITY: {
+      steps: [
+        'Find the text the report names and note the opacity below 1 on its element.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen:
+        'The faded colours on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
+      failWhen:
+        'The faded colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
+    },
+    ENGINE_EXCEPTION: {
+      steps: [
+        'Find the text the report names (the check stopped early, so nothing was measured).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background directly behind the letters.",
+        'Note the text size and weight to tell whether it counts as large (at least 24px, or 18.66px and bold).',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The ratio reaches the threshold for its size.',
+      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    FOREGROUND_UNPARSABLE: {
+      steps: [
+        'Find the text the report names and inspect its colour value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour as rendered against its background.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The ratio reaches the threshold.',
+      failWhen: 'The ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    GENERATED_TEXT_POSITIONED: {
+      steps: [
+        'Find the element the report names and locate the text its ::before or ::after draws on screen (it is positioned away from its element).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure that text's colour against whatever shows behind it at its actual position.",
+        'Resize the window and scroll to check other positions where it may land on another background.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'Wherever it lands, the generated text reaches the threshold.',
+      failWhen:
+        'Where the generated text lands, the ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    GENERATED_TEXT_UNREADABLE: {
+      steps: [
+        'Find the element the report names and look at the text its ::before, ::after or list marker draws (a number, bullet or label).',
+        'Decide whether it is text people need to read (a number, word or label) or a purely decorative shape.',
+        "If it is text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure its colour against the background behind it.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The generated text reaches the threshold, or it is purely decorative.',
+      failWhen:
+        'The generated text is readable content and its ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    MIX_BLEND_MODE: {
+      steps: [
+        'Find the text the report names and note the mix-blend-mode on it or its container.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the blended text and background colours as they appear on screen, with an eyedropper on the rendered page.",
+        'If different content can sit behind it (scrolling, sliders), check the worst case.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'The blended colours on screen reach the threshold.',
+      failWhen:
+        'The blended colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    PSEUDO_ELEMENT_COLOR: {
+      steps: [
+        'Find the text the report names and note the ::first-line or ::first-letter colour in the Styles pane.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure both the element's text colour and the first-line or first-letter colour against the background.",
+        'Resize the window to see that the first-line colour applies to different words at different widths.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'Both colours reach the threshold.',
+      failWhen:
+        'Either colour gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    SELECT_OPTION_COLOR: {
+      steps: [
+        'Find the drop-down the report names and open it with the mouse and with Alt+Down Arrow.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure each option's text against its background in the open list, including the highlighted option, in each browser the page supports.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'Every option in the open list reaches the threshold.',
+      failWhen:
+        'An option in the open list gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    TEXT_SHADOW: {
+      steps: [
+        'Find the text the report names and note its text-shadow.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text fill colour against the background.",
+        'If the fill fails, zoom in and check whether the shadow forms a solid outline or halo around every letter; if so, measure the shadow colour against the background and the fill against the shadow.',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen:
+        'The fill reaches the threshold against the background, or a solid halo surrounds every letter and gives the threshold ratio.',
+      failWhen:
+        'Neither the fill against the background nor a solid halo around the letters reaches the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    TEXT_STROKE: {
+      steps: [
+        'Find the text the report names and note its -webkit-text-stroke width and colour.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the fill colour against the background, and the stroke colour against the background.",
+        'Zoom in to see which colour forms most of each letter (a thin stroke counts less than the fill).',
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen:
+        'The fill and stroke both reach the threshold, or the colour that clearly forms the letters does.',
+      failWhen:
+        'The colour that forms the letters gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    }
+  }
 };
 
 function runInPage(ctx) {

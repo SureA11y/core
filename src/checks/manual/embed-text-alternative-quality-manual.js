@@ -64,6 +64,20 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at what the embedded content the report names shows or does.',
+        'Read its text alternative (aria-label, aria-labelledby text or title, as the report gives it).',
+        'Check that the text says what the embedded content is or describes it.'
+      ],
+      passWhen: 'The text alternative identifies or describes the embedded content accurately.',
+      failWhen:
+        'The text alternative is generic, wrong or does not describe the embedded content, which fails WCAG 1.1.1.'
+    }
   }
 };
 

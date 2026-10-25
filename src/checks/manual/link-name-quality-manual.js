@@ -119,6 +119,33 @@ const meta = {
       '2.4.4': ['link-text-descriptive-evidence'],
       '2.4.9': ['link-text-descriptive-evidence']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    AMBIGUOUS_FORMAT_NAME: {
+      steps: [
+        'Find the link the report names; its text is only a format, such as "PDF".',
+        'Read the text around it (the sentence, list item, table row or heading above it) and see whether it names the document.',
+        'Follow the link and confirm the document is the one that context names.'
+      ],
+      passWhen:
+        'The surrounding sentence, list item, row or heading names the document, so the link reads as, for example, the annual report in PDF.',
+      failWhen:
+        'Nothing near the link says which document it is, so the destination is unclear, which fails WCAG 2.4.4; link text that is unclear on its own fails 2.4.9.'
+    },
+    GENERIC_LINK_TEXT: {
+      steps: [
+        'Find the link the report names and read its text, such as "read more" or "click here".',
+        'Read the sentence, list item, table cell or heading right around it, as someone using the link would.',
+        'Ask whether the link text together with that context makes clear where the link goes; then check whether a list of links (link text alone) would.',
+        'Follow the link and confirm it goes where the context says.'
+      ],
+      passWhen:
+        'The link text with its surrounding sentence, list item, cell or heading makes the destination clear; for AAA, the link text alone does.',
+      failWhen:
+        'Neither the link text nor its surrounding context says where it leads, which fails WCAG 2.4.4 (F84); link text that is unclear on its own fails 2.4.9.'
+    }
   }
 };
 

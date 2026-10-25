@@ -68,7 +68,23 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_NOT_UNIQUE: {
+      steps: [
+        'Find the landmarks the report names; they share one role, such as navigation, and one name or no name.',
+        'Look at each one on the page and compare what it contains and what it is for.',
+        'If they differ in purpose (for example main menu and footer links), check whether each has an aria-label or aria-labelledby that tells them apart.',
+        "Open the Accessibility pane in the browser's developer tools and confirm the name each landmark exposes."
+      ],
+      passWhen:
+        'The landmarks hold the same content for the same purpose (such as pagination repeated above and below a list), or each now has a distinct name that says what it is.',
+      failWhen:
+        'Landmarks with different content share a name or have none, so they cannot be told apart when navigating by landmark (best practice, ARIA13).'
+    }
+  }
 };
 
 function runInPage(ctx) {

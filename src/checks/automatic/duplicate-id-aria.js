@@ -64,7 +64,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } }
+  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    DUPLICATE_ID_ARIA_REFERENCED: {
+      steps: [
+        'Inspect the element the report names and note the ARIA attribute and the duplicated id it refers to.',
+        'In the developer tools, search the markup for id="the-id" and note each element that has it and its text; the browser uses the first one.',
+        "Open the Accessibility pane in the browser's developer tools on the referring element and read the name or description it gets.",
+        "Compare that with the text next to the element on screen (for example, its own card's title)."
+      ],
+      passWhen:
+        'The name or description comes from the intended element, or all the duplicates have the same text.',
+      failWhen:
+        "The referring element gets text from the wrong element, such as card 2 named with card 1's title, which fails WCAG 4.1.2 (and 1.3.1)."
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -83,7 +83,33 @@ const meta = {
   category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '3.3.8': ['authentication-paste-not-blocked'] } }
+  coverage: { facetsBySc: { '3.3.8': ['authentication-paste-not-blocked'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    PASTE_CANCELLED: {
+      steps: [
+        'Copy a test password or code to the clipboard.',
+        'Click in the field the report names and paste (Ctrl+V or Cmd+V, or the context menu).',
+        'If the field is split into boxes for a one-time code, check whether the digits spread across them.',
+        "Also try filling the field with the browser's password manager."
+      ],
+      passWhen: 'The pasted or autofilled value appears in the field.',
+      failWhen:
+        'Paste and password-manager filling are blocked, so the user must remember and type the value, which fails WCAG 3.3.8 unless another login method is offered.'
+    },
+    PASTE_HANDLER_OPAQUE: {
+      steps: [
+        'Copy a test password or code to the clipboard.',
+        'Click in the field the report names and paste (Ctrl+V or Cmd+V, or the context menu).',
+        'Check the whole value arrives in the field (for split code boxes, across the boxes), and that no message says pasting is not allowed.',
+        "Also try filling the field with the browser's password manager."
+      ],
+      passWhen: 'The pasted or autofilled value appears in full in the field.',
+      failWhen:
+        'Pasting or autofill is blocked or the value is cut or cleared, so the user must type it from memory, which fails WCAG 3.3.8 unless another login method is offered.'
+    }
+  }
 };
 
 function runInPage(ctx) {

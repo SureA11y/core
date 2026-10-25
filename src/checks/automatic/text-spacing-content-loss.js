@@ -196,7 +196,83 @@ const meta = {
     'VIEWPORT_SCROLL_LOCKED',
     'SPACING_NOT_APPLIED'
   ],
-  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } }
+  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SPACING_NOT_APPLIED: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important. Rules added in the Styles pane are not blocked by the page's security policy.",
+        'Scroll through the whole page and look for text that is cut off, overlaps other text or disappears.',
+        'Check that controls and menus still work and show all their text.'
+      ],
+      passWhen:
+        'All text stays visible and readable and nothing stops working with the spacing applied.',
+      failWhen:
+        'Some text is cut off, overlaps or is lost with the spacing applied, which fails WCAG 1.4.12.'
+    },
+    STYLESHEET_IMPORTANT: {
+      steps: [
+        'Note the rule, property and value the report gives, and find an element it styles in the Elements panel.',
+        "Add the text-spacing rules with !important in the Styles pane and check in the Computed tab whether the element's line-height, letter-spacing or word-spacing changes.",
+        "If it does not change, look at that element's text on screen with the spacing a user would apply, and check whether it stays readable."
+      ],
+      passWhen:
+        "A user's spacing still takes effect on the element, or the content reads fine without it.",
+      failWhen:
+        "The page's !important rule keeps the user's spacing from applying, which fails WCAG 1.4.12."
+    },
+    TEXT_CLIPPED_FURTHER: {
+      steps: [
+        'Find the text excerpt the report names and note how many lines it shows in full.',
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        "Count the lines it shows now, and check whether a 'read more' link or other way still reaches the full text."
+      ],
+      passWhen: 'The excerpt still does its job, and the full text can be reached another way.',
+      failWhen:
+        'The spacing cuts off content that cannot be reached any other way, which fails WCAG 1.4.12.'
+    },
+    TEXT_CLIPPED_MOVING: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the moving text the report names and watch it through at least one full cycle of its animation.',
+        'Pause it if there is a control, and check that all of its text can be read at some point.'
+      ],
+      passWhen: 'Every part of the moving text can still be read during its cycle.',
+      failWhen:
+        'Some of the text never appears in full with the spacing applied, which fails WCAG 1.4.12.'
+    },
+    TEXT_CLIPPED_PARTLY: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the text the report names and look at the edge of the box that cuts it off.',
+        'Read the text and check whether every letter can still be made out, including the tops and tails of letters.'
+      ],
+      passWhen: 'Only a sliver at the edge is cut and all the text can still be read.',
+      failWhen:
+        'Part of the text is cut off so it can no longer be read, which fails WCAG 1.4.12 (F104).'
+    },
+    TEXT_OVERLAPS: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the text the report names and the text it now overlaps.',
+        'Read both and check whether either one becomes hard to read where they overlap.'
+      ],
+      passWhen: 'The overlap is only a sliver at the edges and both texts stay readable.',
+      failWhen:
+        'Text is drawn over other text so that either becomes unreadable, which fails WCAG 1.4.12 (F104).'
+    },
+    VIEWPORT_SCROLL_LOCKED: {
+      steps: [
+        'Close any banner, dialog or overlay that is open on the page, so the page can scroll.',
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Scroll to the text the report names and check that it can be reached and read.'
+      ],
+      passWhen:
+        'Once the overlay is closed, the page scrolls and all of the text can be reached and read.',
+      failWhen: 'The text stays out of reach with the spacing applied, which fails WCAG 1.4.12.'
+    }
+  }
 };
 
 function runInPage(ctx) {

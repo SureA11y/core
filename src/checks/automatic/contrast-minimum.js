@@ -148,7 +148,86 @@ const meta = {
   type: 'automatic',
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } },
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    BACKGROUND_NOT_COMPUTABLE: {
+      steps: [
+        'Find the text the report names on the page.',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour seen directly behind the letters, taking the worst point if it varies.",
+        'Compare the ratio with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).'
+      ],
+      passWhen: 'The ratio reaches the threshold everywhere behind the text.',
+      failWhen: 'The ratio is below the threshold anywhere behind the text, which fails WCAG 1.4.3.'
+    },
+    CONTRAST_SWITCH_OFFERED: {
+      steps: [
+        'Find the contrast switch the report names and check that it is easy to find, near the top of the page or on every page, and reachable by keyboard.',
+        'Turn the switch on.',
+        "Find the text the report names and use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against its background, comparing with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'Move to another page and check that the setting holds.'
+      ],
+      passWhen:
+        'The switch is easy to find and use, and with it on the text reaches its ratio (G174).',
+      failWhen:
+        'The switch is hard to find or does not raise this text to its ratio, so the text fails WCAG 1.4.3.'
+    },
+    ENGINE_EXCEPTION: {
+      steps: [
+        'Find the text the report names (the check stopped early, so nothing was measured).',
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background directly behind the letters.",
+        'Note the text size and weight and compare the ratio with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).'
+      ],
+      passWhen: 'The ratio reaches the threshold for its size.',
+      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.3.'
+    },
+    LOGO_TEXT_BELOW_THRESHOLD: {
+      steps: [
+        'Find the text the report names (often in the site header or its home link).',
+        "Decide whether it is part of a logo or brand name, such as the site's name in its logo treatment, rather than a slogan, menu item or other text.",
+        "If it is not logo text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold)."
+      ],
+      passWhen:
+        'The text is part of a logo or brand name, which has no contrast requirement, or it reaches its ratio.',
+      failWhen:
+        'The text is not part of a logo or brand name and is below its ratio, which fails WCAG 1.4.3.'
+    },
+    PLACEHOLDER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the field the report names and empty it so the placeholder shows.',
+        "In the Styles pane, check whether the page's CSS sets the ::placeholder colour or opacity, or the field's background.",
+        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the placeholder text against the field background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
+      ],
+      passWhen:
+        "The placeholder reaches 4.5:1 (or 3:1 if large), or it is drawn entirely in the browser's own default colours.",
+      failWhen:
+        'The page sets the placeholder or field colours and the ratio is below the threshold, which fails WCAG 1.4.3.'
+    },
+    SEMIBOLD_BELOW_THRESHOLD: {
+      steps: [
+        'Find the semi-bold text the report names.',
+        'Compare it side by side with bold text (weight 700) of the same size and font on the page or in the developer tools, toggling font-weight.',
+        'Decide whether it reads as bold; if it does, it counts as large and needs 3:1, otherwise 4.5:1.'
+      ],
+      passWhen: 'The text reads as bold, so it is large text and its ratio meets 3:1.',
+      failWhen:
+        'The text does not read as bold, so it is normal text below 4.5:1, which fails WCAG 1.4.3.'
+    },
+    SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
+        'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
+        "If it is text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
+      ],
+      passWhen:
+        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
+      failWhen:
+        'It is text below 4.5:1, which fails WCAG 1.4.3; or an icon below 3:1, which fails WCAG 1.4.11.'
+    }
+  }
 };
 
 function runInPage(ctx) {

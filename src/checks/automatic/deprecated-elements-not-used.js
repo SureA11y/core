@@ -60,7 +60,23 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.2.2': ['deprecated-non-stoppable-elements-absent'] } }
+  coverage: { facetsBySc: { '2.2.2': ['deprecated-non-stoppable-elements-absent'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    MARQUEE_PAUSE_MECHANISM_UNKNOWN: {
+      steps: [
+        'Find the scrolling text the report names and note whether it moves for more than 5 seconds.',
+        'Look near it, and elsewhere on the page, for a control to pause, stop or hide it.',
+        'Press Tab to reach that control and activate it with Enter or Space.',
+        'Check that the text stops moving or disappears.'
+      ],
+      passWhen:
+        'A keyboard-operable control pauses, stops or hides the scrolling text (or it stops on its own within 5 seconds).',
+      failWhen:
+        'The text keeps scrolling with no way to pause, stop or hide it, which fails WCAG 2.2.2 (F16).'
+    }
+  }
 };
 
 function runInPage(ctx) {

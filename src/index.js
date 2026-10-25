@@ -94,7 +94,21 @@ function stampPacks(result, engine) {
   return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
 }
 
+const { addHowToCheck, howToCheckFor } = require('./how-to-check.js');
+
+// A result gains its undecided findings' steps here, after the scan
+// (src/how-to-check.js); a result that is a promise, once it settles.
+function withHowToCheck(result) {
+  return result && typeof result.then === 'function'
+    ? result.then(addHowToCheck)
+    : addHowToCheck(result);
+}
+
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
+  return withHowToCheck(scanInPage(pageUrl, contextSelector, engineOptions, runOnly));
+}
+
+function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const p = withPacks(engineOptions);
   if (!p) {
     // packs: [] is a scan without packs, and reads as one: not echoed.
@@ -176,6 +190,8 @@ module.exports = {
   getRulesForRunOnly,
   getTestsForRunOnly,
   runDomRulesInPage,
+  addHowToCheck,
+  howToCheckFor,
   flattenCrossFrameResult,
   internalsHookScript,
   listenerHookScript,

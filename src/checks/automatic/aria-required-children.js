@@ -123,7 +123,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '1.3.1': ['aria-role-required-owned-children'] } }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-required-owned-children'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_REQUIRED_CHILD_MISSING: {
+      steps: [
+        'Inspect the container the report names and note its role and the child roles it needs (such as listitem for list, option for listbox).',
+        'Look at what it shows on screen: check whether it is empty or holds images, icons or controls.',
+        'Interact with the page (open menus, load results) and check whether children with the required role are added later.',
+        "Open the Accessibility pane in the browser's developer tools and check the roles of anything it holds."
+      ],
+      passWhen:
+        'The container is empty and conveys nothing, or the items it shows carry the required role.',
+      failWhen:
+        'It shows items (images, icons, controls) that lack the required child role, so the structure is not conveyed, which fails WCAG 1.3.1 (ACT bc4a75).'
+    }
+  }
 };
 
 function runInPage(ctx) {

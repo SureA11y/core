@@ -67,7 +67,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.3.1': ['table-fake-caption-evidence'] } }
+  coverage: { facetsBySc: { '1.3.1': ['table-fake-caption-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SINGLE_CELL_FIRST_ROW_NO_CAPTION: {
+      steps: [
+        'Find the table the report names and look at its first row, which has one text cell.',
+        'Decide whether that cell is a title for the whole table or real data or a header for its column.',
+        'If it is a title, check in the Accessibility pane of the developer tools whether the table has a name (it should come from a caption element).'
+      ],
+      passWhen:
+        "The first-row cell is real table data or a header, or the table's title is in a caption that gives the table its name.",
+      failWhen:
+        "The table's title is shown only as a cell in the first row, not tied to the table as a caption, which fails WCAG 1.3.1."
+    }
+  }
 };
 
 function runInPage(ctx) {

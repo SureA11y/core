@@ -74,7 +74,34 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TABLE_HEADER_EMPTY: {
+      steps: [
+        'Find the header cell the report names and look at what it shows on screen.',
+        "Inspect it in the Accessibility pane of the browser's developer tools and note its computed name; an image with alt text or a labelled icon inside can give it one.",
+        'Look at the cells under or beside it and decide whether they need a header to be understood.',
+        'If it is the empty top-left corner cell of a table whose first column holds row headers, note that it heads nothing.'
+      ],
+      passWhen:
+        'The cell has a name that describes its column or row, or it is an empty corner cell that heads no data (better still marked up as a td).',
+      failWhen:
+        'The cell heads data cells but has no visible text and no name, so its column or row has no header, a best-practice miss for table header cells.'
+    },
+    TABLE_HEADER_NAME_NOT_VISIBLE_TEXT: {
+      steps: [
+        'Find the header cell the report names and read the name the report gives (from aria-label or aria-labelledby).',
+        'Look at the cell on screen and confirm it shows no text of its own.',
+        'With a screen reader, move through a data cell in that column or row and listen to whether the header name is announced with it.'
+      ],
+      passWhen:
+        'The header is announced with its data cells, or the cell is given visible text (visually hidden text inside the cell also works) that states the same name.',
+      failWhen:
+        'The header has no visible text and relies on an ARIA name that is not announced with its data cells, a best-practice miss under accessible-name guidance.'
+    }
+  }
 };
 
 function runInPage(ctx) {

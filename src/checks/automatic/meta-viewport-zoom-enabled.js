@@ -67,7 +67,22 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.4': ['meta-viewport-zoom-enabled'] } }
+  coverage: { facetsBySc: { '1.4.4': ['meta-viewport-zoom-enabled'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN: {
+      steps: [
+        'In the Elements panel, find every <meta name="viewport"> in the page\'s head and note which one is last.',
+        "Open the page on a phone or tablet, or in the developer tools' device mode with touch emulation.",
+        "Pinch to zoom (or use the browser's zoom) and try to enlarge text to 200%."
+      ],
+      passWhen:
+        'Text can be zoomed to at least 200%, so the earlier restricting tag has no effect.',
+      failWhen:
+        'Zoom is blocked or capped below 200% in the browser tested, which fails WCAG 1.4.4.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this

@@ -120,7 +120,57 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.1.1': ['widget-keyboard-focusable-evidence'] } }
+  coverage: { facetsBySc: { '2.1.1': ['widget-keyboard-focusable-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE: {
+      steps: [
+        'Find the element the report names; it uses aria-activedescendant to point at its active item.',
+        'Using only the keyboard, open or reach the widget (for example type in its search box) and watch whether that element, not something else, gets focus.',
+        'Press the arrow keys with a screen reader running and listen whether each active item is announced.'
+      ],
+      passWhen:
+        'The element gets focus and the screen reader announces each active item as the arrow keys move.',
+      failWhen:
+        'The element cannot get focus, so moving through items announces nothing or the items cannot be reached, which fails WCAG 2.1.1.'
+    },
+    COMPOSITE_NO_TAB_STOP: {
+      steps: [
+        'Find the widget the report names (a menu, list box, tab list, toolbar, grid or tree).',
+        'Click just before it and press Tab, and watch whether focus enters it or one of its items.',
+        'If it is a popup, open it from its button with the keyboard and see whether focus moves into it.',
+        'Once inside, check that the arrow keys move between the items.'
+      ],
+      passWhen:
+        'Tab (or the button that opens it) puts focus in the widget and the arrow keys move between its items.',
+      failWhen:
+        'Focus never gets into the widget or its items with the keyboard, which fails WCAG 2.1.1.'
+    },
+    WIDGET_NOT_FOCUSABLE: {
+      steps: [
+        'Find the widget the report names and note what it does when clicked or touched.',
+        'Click just before it, then press Tab and watch whether focus ever lands on it.',
+        'If it never gets focus, look for another control a keyboard can reach that does the same thing.',
+        'If the element does nothing, its role may be wrong; note that instead.'
+      ],
+      passWhen:
+        'The widget gets keyboard focus and works with the keyboard, or the same function is offered by another keyboard-reachable control.',
+      failWhen:
+        'The widget cannot be reached or used with the keyboard and its function is not offered elsewhere, which fails WCAG 2.1.1 (F42).'
+    },
+    WIDGET_NOT_IN_TAB_ORDER: {
+      steps: [
+        'Find the widget the report names and note when it appears (for example when a menu or dialog opens).',
+        'Use only the keyboard to open or reach that part of the page, and watch whether a script moves focus to the widget, or the arrow keys reach it.',
+        'If focus never reaches it, look for another keyboard-reachable control that does the same thing.'
+      ],
+      passWhen:
+        'Focus is moved to the widget by script or by arrow keys when needed, or its function is offered elsewhere.',
+      failWhen:
+        'Tab and arrow keys never reach the widget and nothing else offers its function, which fails WCAG 2.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -746,6 +746,12 @@ function renderCards(checksResults, ui) {
       occs.length > 1
         ? ` <span class="card-count">× ${ui.num(occs.length)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
         : '';
+    // How to answer the question, for an undecided finding.
+    const how = cardOutcome === 'cantTell' && representative.howToCheck;
+    const howBlock =
+      how && Array.isArray(how.steps) && how.steps.length
+        ? `<details class="card-how"><summary>${esc(ui.tr('report_card_howToCheck'))}</summary><ol>${how.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>${how.passWhen ? `<p>${esc(ui.tr('report_card_howToCheck_pass', { text: how.passWhen }))}</p>` : ''}${how.failWhen ? `<p>${esc(ui.tr('report_card_howToCheck_fail', { text: how.failWhen }))}</p>` : ''}</details>`
+        : '';
     const leanInfo = lean && representative.lean;
     const leanLine = leanInfo
       ? `<p class="card-lean">${esc(ui.tr(lean === 'fail' ? 'report_card_leanFail' : 'report_card_leanPass', { why: leanInfo.why }))}${leanInfo.caution ? ` ${esc(ui.tr('report_card_leanCaution', { caution: leanInfo.caution }))}` : ''}</p>`
@@ -761,6 +767,7 @@ function renderCards(checksResults, ui) {
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${leanLine}
+        ${howBlock}
         ${occs.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(occs.length) }))}</p>` : ''}
         ${helpLink(r, ui)}
       </div>
@@ -970,6 +977,9 @@ function renderHtmlReport(input, options = {}) {
   .card-lean { font-size: 12px; margin: 6px 0 0; }
   .cards-group { font-size: 14px; margin: 16px 0 8px; }
   .row-lean { display: block; font-size: 11px; margin-top: 4px; }
+  .card-how { font-size: 12px; margin: 6px 0 0; }
+  .card-how ol { margin: 4px 0 4px 18px; padding: 0; }
+  .card-how p { margin: 2px 0; }
   .card-help { font-size: 12.5px; margin: 6px 0 0; }
 
   details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }

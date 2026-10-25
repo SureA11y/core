@@ -98,7 +98,41 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.6': ['heading-text-descriptive-evidence'] } }
+  coverage: { facetsBySc: { '2.4.6': ['heading-text-descriptive-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    FILENAME_LIKE_HEADING: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        "Decide whether that file is the subject of the section (a file offered for download) or a leftover name such as an image's file name."
+      ],
+      passWhen: 'The file name is the real subject of the section, such as the document it offers.',
+      failWhen:
+        'The heading is a leftover file name (such as IMG_1234.jpg) that does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    },
+    PLACEHOLDER_HEADING_TEXT: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        'Decide whether the heading describes that content or is template text such as "Heading", "Lorem ipsum" or "Untitled".'
+      ],
+      passWhen:
+        'The heading names the topic of the content after it (a numbered "Step 1" over the first step is fine).',
+      failWhen:
+        'The heading is placeholder text that does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    },
+    URL_LIKE_HEADING: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        'Decide whether the web address is the subject of that section (a site being reviewed or listed) or stands in for a real title.'
+      ],
+      passWhen: 'The address is the topic of the section, so it describes the content after it.',
+      failWhen: 'The address does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    }
+  }
 };
 
 function runInPage(ctx) {

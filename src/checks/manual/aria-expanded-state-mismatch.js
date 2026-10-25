@@ -89,7 +89,32 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-expanded-state-mismatch'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-expanded-state-mismatch'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    EXPANDED_FALSE_CONTROLLED_SHOWN: {
+      steps: [
+        'Find the toggle the report names; it says it is collapsed.',
+        'Look at the content it controls and check whether it is shown in full or only a preview, such as a few clamped lines.',
+        'Activate the toggle with Enter or Space and check the Accessibility pane: the expanded state should follow what is shown.'
+      ],
+      passWhen:
+        'The content is collapsed or only previewed while the toggle says collapsed, and the state changes when the content opens.',
+      failWhen:
+        'The content is fully shown while the toggle tells screen reader users it is collapsed, which fails WCAG 4.1.2.'
+    },
+    EXPANDED_TRUE_CONTROLLED_HIDDEN: {
+      steps: [
+        'Find the toggle the report names; it says it is expanded.',
+        'Look for the content it controls and check whether it is shown on screen, waiting for any animation to finish.',
+        'Activate the toggle with Enter or Space and check in the Accessibility pane that the expanded state follows what is shown.'
+      ],
+      passWhen: 'The content is shown while the toggle says expanded, once any transition ends.',
+      failWhen:
+        'The content stays hidden while the toggle tells screen reader users it is expanded, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {

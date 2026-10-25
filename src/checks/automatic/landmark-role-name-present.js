@@ -63,7 +63,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_ROLE_NAME_MISSING: {
+      steps: [
+        'Inspect the element the report names and note its role (region or form).',
+        'Look at the content it wraps and any visible heading at its start.',
+        'Decide whether the area is important enough that users should be able to jump to it as a landmark.',
+        'If so, check whether it is given a name, for example with aria-labelledby pointing at its heading.'
+      ],
+      passWhen:
+        'The area does not need to be a landmark (and the role can be removed), or it is given a name that makes it one.',
+      failWhen:
+        'An area meant as a landmark has no name, so it is not exposed as one, which fails the WAI-ARIA requirement that region and form roles be labelled (best practice, ARIA13).'
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -46,7 +46,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SCOPE_ATTR_INVALID: {
+      steps: [
+        'Find the th the report names and read its scope value.',
+        'Look at the table and decide whether that header labels a column or a row.',
+        'Check that scope is exactly row, col, rowgroup or colgroup, with no extra spaces or other words.'
+      ],
+      passWhen:
+        "The scope value is one of row, col, rowgroup or colgroup and matches the header's direction.",
+      failWhen:
+        'The scope value is not a recognised keyword, so it declares no header direction (best practice, H63).'
+    }
+  }
 };
 
 function runInPage(ctx) {

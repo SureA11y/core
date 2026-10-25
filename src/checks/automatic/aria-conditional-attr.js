@@ -69,7 +69,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID: {
+      steps: [
+        'Inspect the field the report names and note the id in its aria-errormessage.',
+        'Enter an invalid value (or leave a required field empty) and submit or leave the field, so any error appears.',
+        'Look whether the element with that id now shows error text, and inspect the field again for aria-invalid="true".',
+        'With a screen reader, move back to the field and listen for the error message.'
+      ],
+      passWhen:
+        'When the error is shown, the field gets aria-invalid="true" (or the message is in aria-describedby) and the screen reader announces it; when no error is shown, nothing needs exposing.',
+      failWhen:
+        'Error text is visible but aria-invalid stays absent or false and the message is not announced, which fails WCAG 3.3.1 / 4.1.2 (see ARIA21).'
+    }
+  }
 };
 
 function runInPage(ctx) {

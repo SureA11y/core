@@ -111,6 +111,55 @@ const meta = {
   ],
   coverage: {
     facetsBySc: { '4.1.3': ['live-region-reachable-evidence', 'live-region-changes-evidence'] }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LIVE_REGION_BUSY: {
+      steps: [
+        'Find the live region the report names; it had aria-busy="true" when the page was scanned.',
+        'Trigger the action that updates the region, then inspect it in the developer tools and see whether aria-busy changes to false or is removed once the update finishes.',
+        'Repeat the action with a screen reader running and listen for the message.'
+      ],
+      passWhen:
+        'aria-busy is cleared when the update finishes and the screen reader announces the message.',
+      failWhen:
+        'aria-busy stays true, so the screen reader holds back or skips the message, which fails WCAG 4.1.3.'
+    },
+    LIVE_REGION_HIDDEN: {
+      steps: [
+        'Find the live region the report names and note whether aria-hidden="true" or inert is on it or on an ancestor (the report says which).',
+        'Check whether a modal dialog was open when the page was scanned; if so, close it and see whether the attribute is removed.',
+        'Trigger the action that updates the region (submit a form, add to cart, run a search) with a screen reader running.',
+        'Listen for the message, and check in the Accessibility pane of the developer tools that the region is in the tree when its text changes.'
+      ],
+      passWhen:
+        'The region is not hidden when its text changes (or is never used for messages), and the screen reader announces the message without focus moving.',
+      failWhen:
+        'The region is still hidden by aria-hidden or inert when the message arrives, so the screen reader says nothing, which fails WCAG 4.1.3.'
+    },
+    LIVE_REGION_INSERTED_WITH_CONTENT: {
+      steps: [
+        'Find the message the report quotes and the action that shows it (the report gives the text and the region).',
+        'Start a screen reader, then perform that action.',
+        'Listen for the message without moving focus to it.',
+        'If it is not read, check in the developer tools whether the page adds the region already filled; an empty region should be on the page first, with the text written into it later.'
+      ],
+      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
+      failWhen:
+        'The message appears on screen but the screen reader does not announce it, because the region was added with its text already in it, which fails WCAG 4.1.3 (ARIA22).'
+    },
+    LIVE_REGION_SHOWN_AND_FILLED: {
+      steps: [
+        'Find the message the report quotes and the action that shows it.',
+        'Start a screen reader, then perform that action.',
+        'Listen for the message without moving focus to it.',
+        'If it is not read, check in the developer tools whether the region is hidden until the moment its text is set; it should be visible (or present and empty) before the text arrives.'
+      ],
+      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
+      failWhen:
+        'The message appears but the screen reader does not announce it, because the region was shown and filled at the same moment, which fails WCAG 4.1.3 (ARIA22).'
+    }
   }
 };
 

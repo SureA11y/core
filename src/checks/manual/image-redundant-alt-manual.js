@@ -57,7 +57,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ALT_REDUNDANT: {
+      steps: [
+        'Find the image the report names and the text next to it in the same link, button or parent.',
+        'With a screen reader, move to that link or button, or read its computed name in the Accessibility pane, and listen to whether the words are said twice.',
+        'If the image is already hidden from assistive technology, note that nothing is repeated.'
+      ],
+      passWhen:
+        'The words are read once: the image is hidden or has alt="", or its alt adds something the text does not say.',
+      failWhen:
+        "The image's alt repeats the text beside it, so the same words are read twice, a best-practice miss (H2)."
+    }
+  }
 };
 
 function runInPage(ctx) {

@@ -70,6 +70,20 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at the object the report names and note what it shows or does (image, chart, animation, player).',
+        'Read its text alternative from the report (fallback text, aria-label, aria-labelledby text or title), or in the Accessibility pane of the developer tools.',
+        'Compare: does the text say what the object shows, or, for a control or player, what it is for?'
+      ],
+      passWhen: "The text alternative describes the object's content or purpose accurately.",
+      failWhen:
+        'The text alternative is wrong, vague (such as "object" or a file name) or misses what the object conveys, which fails WCAG 1.1.1.'
+    }
   }
 };
 

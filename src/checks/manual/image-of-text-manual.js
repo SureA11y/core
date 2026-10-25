@@ -72,7 +72,33 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.4.5': ['image-of-text-evidence'] } }
+  coverage: { facetsBySc: { '1.4.5': ['image-of-text-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_BUTTON_TEXT_REVIEW: {
+      steps: [
+        'Find the image button the report names and look at the image.',
+        'Check whether the image contains words or letters, not only an icon.',
+        'If it does, decide whether that text could be real text styled with CSS, or whether its look is essential (a logo).'
+      ],
+      passWhen:
+        'The image holds no text, only an icon or picture, or the text is a logo or otherwise essential.',
+      failWhen:
+        'The button shows its label as text in an image that could be real text, which fails WCAG 1.4.5.'
+    },
+    SVG_IMAGE_TEXT_REVIEW: {
+      steps: [
+        'Find the image the report names and look at the text drawn in it.',
+        'Decide whether it is a logo or wordmark, or text such as a heading, sentence or label.',
+        'If it is not a logo, decide whether the text could be real text styled with CSS, or whether its look is essential.'
+      ],
+      passWhen:
+        "The text is a logo or its look is essential (or it is only incidental, such as a chart's axis numbers).",
+      failWhen:
+        'The image draws text that could be real text and is not a logo, which fails WCAG 1.4.5.'
+    }
+  }
 };
 
 function runInPage(ctx) {

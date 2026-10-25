@@ -88,7 +88,23 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } }
+  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT: {
+      steps: [
+        'Click on the page just before the frame the report names, then press Tab to move toward it.',
+        'Keep pressing Tab and watch whether focus ever lands inside the frame, and where it goes when it would arrive there.',
+        'Inspect the focusable element inside the frame in the Elements panel: note whether it is an empty focus guard or a real link or control with content.',
+        "If it is a real link or control, try every other keyboard route to it (Shift+Tab, the frame's own controls) to see if it can be reached and used."
+      ],
+      passWhen:
+        'The only focusable element inside the frame is an empty focus guard that sends focus on, and nothing a user needs inside the frame is left out of keyboard reach.',
+      failWhen:
+        'A real link or control inside the frame cannot be reached or used with the keyboard because focus skips or bounces away from it, which fails WCAG 2.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

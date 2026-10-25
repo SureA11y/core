@@ -105,6 +105,31 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ONLY_CONTROL_CONTENT: {
+      steps: [
+        "Find the link or button the report names; the image is its only content, so its alt is the control's name.",
+        'Read the alt text, then activate the control or check its destination to learn what it does.',
+        'Decide whether the alt says what the control does ("Search", "Home"), not what the image looks like.'
+      ],
+      passWhen: "The alt text states the control's purpose or destination.",
+      failWhen:
+        'The alt text does not say what the control does, for example a file name, address, generic word or symbols, which fails WCAG 1.1.1 (H30, F30).'
+    },
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Find the image the report names and read its alt text (the report gives the reason it looked suspect, if any).',
+        'Look at the image and its context, and ask what it shows that matters to the page.',
+        'Decide whether the alt says that; a file name, web address or generic word such as "image" does not.'
+      ],
+      passWhen:
+        'The alt text conveys what the image shows that a user needs, in words that fit the context.',
+      failWhen:
+        "The alt text does not convey the image's content, for example a file name, address or generic word, which fails WCAG 1.1.1 (F30)."
+    }
   }
 };
 
