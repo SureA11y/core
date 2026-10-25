@@ -79,3 +79,41 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-all-scenarios
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a misspelled aria-label on an element left with no name`, () => {
+  const lean = leanOn('<button id="a" aria-lable="Close"></button>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttr_lean_why_lostName');
+});
+
+test(`${RULE_ID}: leans pass when the correctly spelled attribute is there too`, () => {
+  const lean = leanOn('<button id="a" aria-lable="Close" aria-label="Close"></button>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttr_lean_why_realPresent');
+});
+
+test(`${RULE_ID}: leans pass for a name near no ARIA attribute`, () => {
+  const lean = leanOn('<div id="a" aria-qa="checkout">x</div>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttr_lean_why_dataHook');
+});
+
+test(`${RULE_ID}: no lean for a misspelling whose effect a person must judge`, () => {
+  assert.strictEqual(leanOn('<div id="a" aria-hiden="true">x</div>', 'a'), undefined);
+  assert.strictEqual(leanOn('<div id="a" aria-role="button">x</div>', 'a'), undefined);
+});

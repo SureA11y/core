@@ -102,3 +102,37 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-braille-equivalent-all-s
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a braille label alone on a role that needs a name`, () => {
+  const lean = leanOn('<button id="a" aria-braillelabel="ok"></button>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaBrailleEquivalent_lean_why_label');
+});
+
+test(`${RULE_ID}: no lean for a braille label alone on a role that needs no name`, () => {
+  assert.strictEqual(leanOn('<div id="a" aria-braillelabel="ok"></div>', 'a'), undefined);
+});
+
+test(`${RULE_ID}: leans pass for a braille role description without aria-roledescription`, () => {
+  const lean = leanOn(
+    '<span id="a" role="img" aria-label="Star" aria-brailleroledescription="ico"></span>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaBrailleEquivalent_lean_why_roleDescription');
+});

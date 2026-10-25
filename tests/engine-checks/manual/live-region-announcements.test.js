@@ -106,3 +106,69 @@ test(`${RULE_ID}: the scenario fixture`, () => {
     ['#lra_case_05', '#lra_case_06', '#lra_case_07']
   );
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a hidden live region with no dialog open`, () => {
+  const lean = leanOn('<div aria-hidden="true"><div id="a" role="status"></div></div>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'liveRegionAnnouncements_lean_why_hidden');
+});
+
+test(`${RULE_ID}: no lean for a live region the page hid behind an open dialog`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<div aria-hidden="true"><div id="a" role="status"></div></div><div role="dialog" aria-modal="true"><button>OK</button></div>',
+      'a'
+    ),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: the hook's findings lean fail unless the text was announced elsewhere`, () => {
+  const {
+    createDom: createLeanDom,
+    runa11yCoreOnDom: runLeanOnDom
+  } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createLeanDom(
+    '<!doctype html><html lang="en"><body><div id="r1" role="status">Saved</div><div id="r2" role="status">Done</div><div id="r3" aria-live="polite">Done</div></body></html>'
+  );
+  const doc = dom.window.document;
+  const el = (id) => doc.getElementById(id);
+  Object.defineProperty(dom.window, Symbol.for('surea11y.liveRegions'), {
+    value: Object.freeze({
+      version: 1,
+      early: true,
+      announcements: [{ text: 'Done', politeness: 'polite', time: 2, element: el('r3') }],
+      findings: [
+        { code: 'LIVE_REGION_INSERTED_WITH_CONTENT', text: 'Saved', time: 1, element: el('r1') },
+        { code: 'LIVE_REGION_SHOWN_AND_FILLED', text: 'Done', time: 1, element: el('r2') }
+      ],
+      dropped: { announcements: 0, findings: 0 }
+    })
+  });
+  const rule = assertRule(runLeanOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const inserted = rule.occurrences.find((o) => o.html.includes('id="r1"'));
+  assert.strictEqual(inserted.data.details.reasonCode, 'LIVE_REGION_INSERTED_WITH_CONTENT');
+  assert.strictEqual(inserted.lean.toward, 'fail');
+  assert.strictEqual(inserted.lean.i18n.whyKey, 'liveRegionAnnouncements_lean_why_inserted');
+  const shown = rule.occurrences.find((o) => o.html.includes('id="r2"'));
+  assert.strictEqual(shown.data.details.reasonCode, 'LIVE_REGION_SHOWN_AND_FILLED');
+  assert.strictEqual(shown.lean, undefined);
+});

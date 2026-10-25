@@ -75,6 +75,9 @@
  *   - `ARIA_ATTR_VALUE_TARGET_ABSENT` (cantTell): an id reference list, such as
  *     aria-describedby or aria-controls, none of whose ids matches an element;
  *     a script may add it later.
+ *     It leans fail when an element with the id exists in another document
+ *     tree (across a shadow root), or one with an id differing only in case
+ *     or one character, digits aside, exists in the same tree.
  *     Basis: WCAG 4.1.2 (not settled); ACT 6a7281; WAI-ARIA 1.2 ID reference
  *     list.
  *   - `ARIA_VALUE_RANGE_INVERTED` (fail): a range widget whose aria-valuemin is
@@ -91,6 +94,8 @@
  *   - `ARIA_HASPOPUP_ROLE_MISMATCH` (cantTell): the element aria-controls names
  *     has another role than the popup aria-haspopup announces; a script may
  *     show another popup.
+ *     It leans fail when aria-controls names that one element and it is shown,
+ *     or aria-expanded is true: the popup that is open has another role.
  *     Basis: WAI-ARIA 1.2 aria-haspopup (MUST); WCAG 4.1.2 (not settled).
  *   - `ARIA_ACTIVEDESCENDANT_OUTSIDE` (cantTell): aria-activedescendant names
  *     an element that is neither inside the element nor inside one it owns or
@@ -275,7 +280,18 @@ function runInPage(ctx) {
     dialog: 'dialog'
   };
 
-  function relationOccurrence(el, fail, code, key, summary, hint, params, details, uncertainty) {
+  function relationOccurrence(
+    el,
+    fail,
+    code,
+    key,
+    summary,
+    hint,
+    params,
+    details,
+    uncertainty,
+    lean
+  ) {
     const o = {
       summary,
       hint,
@@ -287,7 +303,155 @@ function runInPage(ctx) {
       data: { details: { reasonCode: code, ...details } }
     };
     if (uncertainty) o.uncertainty = uncertainty;
+    if (lean) o.lean = lean;
     return { fail, occurrence: helpers.reportOccurrence(el, o) };
+  }
+
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+  function isShown(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      return !(typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref));
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a popup role mismatch points: when aria-controls names one
+  // element and that popup is open (shown, or aria-expanded="true"), its
+  // role is the one users meet, and it is not the one announced.
+  function haspopupLean(el, refs) {
+    const ids = trim(dom.getAttribute(el, 'aria-controls')).split(/\s+/).filter(Boolean);
+    if (ids.length !== 1 || refs.length !== 1) return null;
+    const expanded = trim(dom.getAttribute(el, 'aria-expanded')).toLowerCase() === 'true';
+    const shown = isShown(refs[0].ref);
+    if (!expanded && !shown) return null;
+    return {
+      toward: 'fail',
+      why: 'The popup this element controls is open and has another role than aria-haspopup announces.',
+      signals: [
+        { signal: 'single-controls-id', value: true },
+        { signal: 'popup-shown', value: shown },
+        { signal: 'aria-expanded-true', value: expanded }
+      ],
+      caution: 'The widget may open a different popup, placed elsewhere in the page.',
+      i18n: {
+        whyKey: 'ariaValidAttrValue_lean_why_haspopupOpen',
+        cautionKey: 'ariaValidAttrValue_lean_caution_haspopupOpen'
+      }
+    };
+  }
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // Every element with an id, in the document and its open shadow roots,
+  // by id; built once, on the first reference that resolves to nothing.
+  let idIndex = null;
+  function elementsWithIds() {
+    if (idIndex) return idIndex;
+    idIndex = [];
+    try {
+      const all =
+        typeof helpers.queryAllDeep === 'function'
+          ? helpers.queryAllDeep('[id]')
+          : dom.querySelectorAll(document, '[id]');
+      for (const e of all) {
+        const v = dom.getAttribute(e, 'id');
+        if (v) idIndex.push({ id: String(v), el: e });
+      }
+    } catch {}
+    return idIndex;
+  }
+  // An id that differs from the wanted one only in case, or by one
+  // character other than a digit (item-2 for item-3 is another item, not a
+  // misspelling); short ids are left out.
+  function isNearMiss(found, wanted) {
+    if (found === wanted) return false;
+    if (found.toLowerCase() === wanted.toLowerCase()) return true;
+    if (Math.min(found.length, wanted.length) < 4) return false;
+    if (/\d/.test(found) && found.replace(/\d+/g, '#') === wanted.replace(/\d+/g, '#'))
+      return false;
+    return editDistance(found, wanted) === 1;
+  }
+
+  // Which way a reference to no element points: a target that exists in
+  // another tree can never be reached, and a near-miss id in the same tree
+  // shows a misspelling. Otherwise a script may still add the element.
+  function targetAbsentLean(el, value) {
+    const ids = trim(value).split(/\s+/).filter(Boolean);
+    if (!ids.length) return null;
+    let root = null;
+    try {
+      root = dom.getRootNode(el);
+    } catch {}
+    let otherTree = false;
+    let nearMiss = '';
+    for (const entry of elementsWithIds()) {
+      let sameTree = true;
+      try {
+        sameTree = dom.getRootNode(entry.el) === root;
+      } catch {}
+      for (const wanted of ids) {
+        if (!sameTree && entry.id === wanted) otherTree = true;
+        else if (sameTree && !nearMiss && isNearMiss(entry.id, wanted)) nearMiss = entry.id;
+      }
+    }
+    if (otherTree) {
+      return {
+        toward: 'fail',
+        why: 'An element with this id exists, but in another document tree (across a shadow root), where the reference can never reach it.',
+        signals: [{ signal: 'id-in-other-tree', value: true }],
+        caution: 'The component may still create its own element with this id.',
+        i18n: {
+          whyKey: 'ariaValidAttrValue_lean_why_otherTree',
+          cautionKey: 'ariaValidAttrValue_lean_caution_otherTree'
+        }
+      };
+    }
+    if (nearMiss) {
+      return {
+        toward: 'fail',
+        why: 'An element whose id differs only by case or one character exists, so the reference is probably misspelled.',
+        signals: [{ signal: 'near-miss-id', value: nearMiss }],
+        caution: 'A script may still add an element with the exact id.',
+        i18n: {
+          whyKey: 'ariaValidAttrValue_lean_why_nearMiss',
+          cautionKey: 'ariaValidAttrValue_lean_caution_nearMiss'
+        }
+      };
+    }
+    return null;
   }
 
   // Constraints ARIA sets between attributes, each valid on its own: a
@@ -401,7 +565,8 @@ function runInPage(ctx) {
               {
                 code: 'runtime-dependent',
                 needed: 'Whether the popup that opens has the role aria-haspopup names.'
-              }
+              },
+              haspopupLean(el, roles)
             )
           );
         }
@@ -509,6 +674,7 @@ function runInPage(ctx) {
 
     for (const item of review || []) {
       const controls = item.name === 'aria-controls';
+      const lean = targetAbsentLean(el, item.value);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
@@ -534,6 +700,7 @@ function runInPage(ctx) {
               resolvedAtScanTime: false
             }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',

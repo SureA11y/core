@@ -47,11 +47,17 @@
  *   - `ARIA_ATTR_REQUIRED_MISSING_IMPLICIT` (cantTell): an element whose role
  *     requires a state or property it does not have, where ARIA gives a default
  *     value, such as level 2 for a heading.
+ *     It leans fail for a combobox without aria-expanded when the popup its
+ *     aria-controls names is shown with content, so it is announced collapsed
+ *     while open.
  *     Basis: WAI-ARIA 1.2 required states and properties (exception: implicit
  *     value); ACT 4e8ab6; WCAG 4.1.2 (not settled).
  *   - `state_internals` (cantTell): the element is a custom element that may
  *     set the required state through ElementInternals, which no script can
  *     read, so whether it is set could not be told.
+ *     It leans fail when the code of the element's class and the classes it
+ *     extends never calls attachInternals, and pass when it calls it and
+ *     names the state's property (such as ariaChecked).
  *     Basis: WCAG 4.1.2 (not settled); HTML ElementInternals (not settled).
  * @implementation-notes
  * - The implicit-value table is generated from aria-query's requiredProps by
@@ -206,6 +212,119 @@ function runInPage(ctx) {
     return type === 'checkbox' || type === 'radio';
   }
 
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+  function shownWithContent(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      return String(dom.textContent(ref) || '').trim() !== '';
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a missing aria-expanded on a combobox points: the popup its
+  // aria-controls names, shown with content, is open while the combobox is
+  // announced collapsed. A popup that is closed now says nothing about
+  // whether aria-expanded is set when it opens, so it gives no lean.
+  function implicitLean(el, role, attr) {
+    if (role !== 'combobox' || attr !== 'aria-expanded') return null;
+    let refs = [];
+    try {
+      refs = helpers.getRefElements(el, 'aria-controls', ctx) || [];
+    } catch {}
+    if (!refs.some(shownWithContent)) return null;
+    return {
+      toward: 'fail',
+      why: 'The popup this combobox controls is shown, but without aria-expanded the combobox is announced as collapsed.',
+      signals: [{ signal: 'popup-visible', value: true }],
+      caution: 'The popup may be closing, or be a list the widget always shows.',
+      i18n: {
+        whyKey: 'ariaRequiredAttr_lean_why_comboboxOpen',
+        cautionKey: 'ariaRequiredAttr_lean_caution_comboboxOpen'
+      }
+    };
+  }
+
+  // Which way a state a custom element may set through its internals
+  // points, from the source of its class and the classes it extends: code
+  // that never calls attachInternals can't set it that way, and code that
+  // calls it and names the state's property most likely does. Reading a
+  // class's source neither constructs nor calls it.
+  function internalsLean(el, attr) {
+    let sources = '';
+    try {
+      const name = String(dom.localName(el) || '').toLowerCase();
+      const win = dom.defaultView(dom.ownerDocument(el));
+      const registry = win && win.customElements;
+      let ctor = registry && typeof registry.get === 'function' ? registry.get(name) : null;
+      if (!ctor) return null;
+      const toSource = Function.prototype.toString;
+      // An autonomous custom element extends HTMLElement: the walk stops
+      // there, before the platform's own code.
+      const base = win.HTMLElement;
+      for (let guard = 0; ctor && typeof ctor === 'function' && guard < 20; guard++) {
+        if (ctor === base) break;
+        const src = String(Reflect.apply(toSource, ctor, []));
+        if (/\[native code\]/.test(src)) break;
+        sources += src + '\n';
+        ctor = Object.getPrototypeOf(ctor);
+      }
+    } catch {
+      return null;
+    }
+    if (!sources) return null;
+    const tail = attr.slice(5);
+    const IDL = {
+      valuenow: 'ValueNow',
+      valuemin: 'ValueMin',
+      valuemax: 'ValueMax',
+      valuetext: 'ValueText'
+    };
+    const prop = 'aria' + (IDL[tail] || tail.charAt(0).toUpperCase() + tail.slice(1));
+    if (!sources.includes('attachInternals')) {
+      return {
+        toward: 'fail',
+        why: 'The component’s code never calls attachInternals, so it cannot set this state that way, and the element has no attribute for it.',
+        signals: [{ signal: 'ctor-source-mentions-internals', value: false }],
+        caution:
+          'Code outside the component’s classes, such as a shared helper, may attach the internals.',
+        i18n: {
+          whyKey: 'ariaRequiredAttr_lean_why_internalsUnused',
+          cautionKey: 'ariaRequiredAttr_lean_caution_internalsUnused'
+        }
+      };
+    }
+    if (!sources.includes(prop)) return null;
+    return {
+      toward: 'pass',
+      why: 'The component’s code attaches internals and sets this state through them.',
+      signals: [
+        { signal: 'ctor-source-mentions-internals', value: true },
+        { signal: 'ctor-source-mentions-state-prop', value: prop }
+      ],
+      caution: 'Naming the state in its code does not show it is set to the right value.',
+      i18n: {
+        whyKey: 'ariaRequiredAttr_lean_why_internalsSet',
+        cautionKey: 'ariaRequiredAttr_lean_caution_internalsSet'
+      }
+    };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
@@ -271,9 +390,10 @@ function runInPage(ctx) {
             : null;
         if (internalsState && internalsState.status === 'set') continue;
         if (internalsState && internalsState.status === 'unknown') {
-          cantTellOccurrences.push(
-            helpers.reportOccurrence(el, helpers.internalsQuestion(el, attr))
-          );
+          const question = helpers.internalsQuestion(el, attr);
+          const lean = internalsLean(el, attr);
+          if (lean) question.lean = lean;
+          cantTellOccurrences.push(helpers.reportOccurrence(el, question));
           continue;
         }
         missing.push(attr);
@@ -289,6 +409,7 @@ function runInPage(ctx) {
           : null;
 
       if (implicit) {
+        const lean = implicitLean(el, role, attr);
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
@@ -304,6 +425,7 @@ function runInPage(ctx) {
               needed: 'Whether the implicit fallback is the state the author meant.',
               evidence: { attribute: attr, role, implicitValue: implicit }
             },
+            ...(lean ? { lean } : {}),
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',

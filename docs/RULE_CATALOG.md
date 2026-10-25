@@ -328,7 +328,7 @@ Checks that an explicit role="" attribute is one of the roles the ARIA-in-HTML s
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT` | cantTell | An explicit role that ARIA in HTML does not permit on that element, which assistive technology still exposes. | ARIA in HTML (MUST) |
+| `ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT` | cantTell | An explicit role that ARIA in HTML does not permit on that element, which assistive technology still exposes. It leans fail when the element takes keyboard focus and the role is not a widget role, and pass when the role is none or presentation on a focusable element, which browsers ignore. | ARIA in HTML (MUST) |
 
 ### `aria-braille-equivalent`
 
@@ -358,7 +358,7 @@ Using either braille-specific attribute as the ONLY naming mechanism leaves non-
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `BRAILLE_ATTR_WITHOUT_EQUIVALENT` | cantTell | An element with aria-braillelabel but no other accessible name, or with aria-brailleroledescription but no aria-roledescription, so the braille text supplements nothing. | WAI-ARIA 1.3 aria-braillelabel; WAI-ARIA 1.3 aria-brailleroledescription; WCAG 4.1.2 (not settled) |
+| `BRAILLE_ATTR_WITHOUT_EQUIVALENT` | cantTell | An element with aria-braillelabel but no other accessible name, or with aria-brailleroledescription but no aria-roledescription, so the braille text supplements nothing. It leans pass for aria-brailleroledescription, which browsers do not expose without aria-roledescription, and fail for aria-braillelabel on a role that requires a name. | WAI-ARIA 1.3 aria-braillelabel; WAI-ARIA 1.3 aria-brailleroledescription; WCAG 4.1.2 (not settled) |
 
 ### `aria-checked-state-mismatch`
 
@@ -404,7 +404,7 @@ Checks that elements with aria-errormessage also have aria-invalid set to "true"
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID` | cantTell | An element with aria-errormessage whose aria-invalid is absent or false, so the error message is not exposed. | WAI-ARIA 1.2 aria-errormessage; WCAG 4.1.2 (not settled) |
+| `ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID` | cantTell | An element with aria-errormessage whose aria-invalid is absent or false, so the error message is not exposed. It leans fail when the message it names is shown with text and is not also in aria-describedby, and pass when it is in aria-describedby. | WAI-ARIA 1.2 aria-errormessage; WCAG 4.1.2 (not settled) |
 
 ### `aria-deprecated-role`
 
@@ -435,7 +435,7 @@ Distinct, atomic decision from aria-roles-valid (existence/ abstractness): a rol
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ARIA_ROLE_DEPRECATED` | cantTell | An explicit role that WAI-ARIA has deprecated, such as directory; it still works, and a replacement role is suggested. | WAI-ARIA 1.2 directory; WCAG 4.1.2 (not settled) |
-| `ARIA_ROLE_AUTHOR_DISCOURAGED` | cantTell | An explicit role that WAI-ARIA reserves for user agents and says authors should not use, such as generic. | WAI-ARIA 1.2 generic (SHOULD); WCAG 4.1.2 (not settled) |
+| `ARIA_ROLE_AUTHOR_DISCOURAGED` | cantTell | An explicit role that WAI-ARIA reserves for user agents and says authors should not use, such as generic. It leans pass when the element is a plain container (div, span, b, i and the like) whose native role is already generic. | WAI-ARIA 1.2 generic (SHOULD); WCAG 4.1.2 (not settled) |
 | `ARIA_ROLE_AUTHOR_PROHIBITED` | fail | An explicit role that WAI-ARIA says authors must not use; no current concrete role is listed, so this code is not given yet. | WAI-ARIA 1.2 role definitions (MUST); WCAG 4.1.2 |
 
 ### `aria-expanded-state-mismatch`
@@ -472,8 +472,8 @@ An element counts as hidden when it is out of the accessibility tree: `display: 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `EXPANDED_FALSE_CONTROLLED_SHOWN` | cantTell | An element says aria-expanded="false" while every element its aria-controls names is shown. | WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled) |
-| `EXPANDED_TRUE_CONTROLLED_HIDDEN` | cantTell | An element says aria-expanded="true" while every element its aria-controls names is hidden. | WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled) |
+| `EXPANDED_FALSE_CONTROLLED_SHOWN` | cantTell | An element says aria-expanded="false" while every element its aria-controls names is shown. It leans fail when the element is not visually hidden and each element it controls is shown in full: not clamped, cut by a max-height, moved by a transform, visually hidden or, in a browser, off screen to the side. | WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled) |
+| `EXPANDED_TRUE_CONTROLLED_HIDDEN` | cantTell | An element says aria-expanded="true" while every element its aria-controls names is hidden. It leans fail when each element it controls is not displayed at all (display: none or the hidden attribute), which no animation is midway through. | WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled) |
 
 ### `aria-hidden-body`
 
@@ -578,7 +578,7 @@ Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose s
 |---|---|---|---|
 | `ARIA_ATTR_PROHIBITED` | fail | Aria-label or aria-labelledby on an element whose role cannot be named, such as paragraph, generic or presentation. | WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 prohibited states and properties (MUST) |
 | `ARIA_ATTR_PROHIBITED_ROLELESS` | fail | A naming attribute on an element with no role and no other source for a name, or a role description on an element with no role. | WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 generic (MUST); HTML-AAM |
-| `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` | cantTell | A naming attribute on an element with no role whose own text gives it a name, so the attribute may be a deliberate override. | WCAG 4.1.2 (not settled); ACT kb1m8s; WAI-ARIA 1.2 generic |
+| `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` | cantTell | A naming attribute on an element with no role whose own text gives it a name, so the attribute may be a deliberate override. It leans pass when the label's words already appear, in order, in the element's text, and fail when the label has words the text lacks. | WCAG 4.1.2 (not settled); ACT kb1m8s; WAI-ARIA 1.2 generic |
 
 ### `aria-prohibited-children`
 
@@ -635,8 +635,8 @@ Every required state/property for that role is present and non-empty. Graded by 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ARIA_ATTR_REQUIRED_MISSING` | fail | An element whose role requires a state or property it does not have, and for which ARIA gives no default, so the state is not exposed. | WCAG 4.1.2; ACT 4e8ab6; WAI-ARIA 1.2 required states and properties (MUST) |
-| `ARIA_ATTR_REQUIRED_MISSING_IMPLICIT` | cantTell | An element whose role requires a state or property it does not have, where ARIA gives a default value, such as level 2 for a heading. | WAI-ARIA 1.2 required states and properties (exception: implicit value); ACT 4e8ab6; WCAG 4.1.2 (not settled) |
-| `state_internals` | cantTell | The element is a custom element that may set the required state through ElementInternals, which no script can read, so whether it is set could not be told. | WCAG 4.1.2 (not settled); HTML ElementInternals (not settled) |
+| `ARIA_ATTR_REQUIRED_MISSING_IMPLICIT` | cantTell | An element whose role requires a state or property it does not have, where ARIA gives a default value, such as level 2 for a heading. It leans fail for a combobox without aria-expanded when the popup its aria-controls names is shown with content, so it is announced collapsed while open. | WAI-ARIA 1.2 required states and properties (exception: implicit value); ACT 4e8ab6; WCAG 4.1.2 (not settled) |
+| `state_internals` | cantTell | The element is a custom element that may set the required state through ElementInternals, which no script can read, so whether it is set could not be told. It leans fail when the code of the element's class and the classes it extends never calls attachInternals, and pass when it calls it and names the state's property (such as ariaChecked). | WCAG 4.1.2 (not settled); HTML ElementInternals (not settled) |
 
 ### `aria-required-children`
 
@@ -660,7 +660,7 @@ Checks that container roles with a documented "required owned elements" entry (l
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ARIA_REQUIRED_CHILD_TEXT_ONLY` | fail | A container role owns text, directly or through generic wrappers, and none of the roles it requires, such as a list whose items have no role. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 |
-| `ARIA_REQUIRED_CHILD_MISSING` | cantTell | A container role owns none of the roles it requires, and no text either, such as an empty list. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 (not settled) |
+| `ARIA_REQUIRED_CHILD_MISSING` | cantTell | A container role owns none of the roles it requires, and no text either, such as an empty list. It leans pass when the container holds no element at all, and fail when it holds content with a name, such as an image with alt text or a button, none of it with a required role. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 (not settled) |
 
 ### `aria-required-parent`
 
@@ -734,8 +734,8 @@ At least one role token names a concrete, non-abstract ARIA role. Graded by what
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ROLE_INVALID` | fail, cantTell | No token of the role attribute is a known ARIA role; it fails on an element left with no role, and is asked about where the element keeps its native role. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute |
-| `ARIA_ROLE_ABSTRACT` | fail, cantTell | The role attribute names only abstract roles, which authors must not use; it fails on an element left with no role, and is asked about where the element keeps its native role. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles (MUST) |
+| `ARIA_ROLE_INVALID` | fail, cantTell | No token of the role attribute is a known ARIA role; it fails on an element left with no role, and is asked about where the element keeps its native role. Where asked about, it leans pass when the value is a near misspelling of the native role and fail when it is one of another role. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute |
+| `ARIA_ROLE_ABSTRACT` | fail, cantTell | The role attribute names only abstract roles, which authors must not use; it fails on an element left with no role, and is asked about where the element keeps its native role. Where asked about, it leans pass when the native role is a kind of the abstract role named, and fail when it is not. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles (MUST) |
 
 ### `aria-text`
 
@@ -775,7 +775,7 @@ Checks that every aria-* attribute name present in the DOM is a real attribute d
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ATTR_INVALID` | cantTell | An aria-* attribute name that WAI-ARIA does not define, such as a typo, which assistive technology ignores. | WAI-ARIA 1.2 states and properties; ACT 5f99a7; WCAG 4.1.2 (not settled) |
+| `ARIA_ATTR_INVALID` | cantTell | An aria-* attribute name that WAI-ARIA does not define, such as a typo, which assistive technology ignores. It leans fail when it misspells aria-label or aria-labelledby on an element whose role needs a name and that has none; pass when the correctly spelled attribute is there too, or when the name is near no ARIA attribute (a data hook such as aria-qa). | WAI-ARIA 1.2 states and properties; ACT 5f99a7; WCAG 4.1.2 (not settled) |
 
 ### `aria-valid-attr-value`
 
@@ -808,11 +808,11 @@ Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("t
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ARIA_ATTR_VALUE_INVALID` | fail | An aria-* attribute whose value is not of the type WAI-ARIA defines for it, is below its lowest allowed value, or, for aria-activedescendant, names no element. | WCAG 4.1.2; ACT 6a7281; WAI-ARIA 1.2 state and property value types |
-| `ARIA_ATTR_VALUE_TARGET_ABSENT` | cantTell | An id reference list, such as aria-describedby or aria-controls, none of whose ids matches an element; a script may add it later. | WCAG 4.1.2 (not settled); ACT 6a7281; WAI-ARIA 1.2 ID reference list |
+| `ARIA_ATTR_VALUE_TARGET_ABSENT` | cantTell | An id reference list, such as aria-describedby or aria-controls, none of whose ids matches an element; a script may add it later. It leans fail when an element with the id exists in another document tree (across a shadow root), or one with an id differing only in case or one character, digits aside, exists in the same tree. | WCAG 4.1.2 (not settled); ACT 6a7281; WAI-ARIA 1.2 ID reference list |
 | `ARIA_VALUE_RANGE_INVERTED` | fail | A range widget whose aria-valuemin is greater than its aria-valuemax. | WCAG 4.1.2; WAI-ARIA 1.2 aria-valuemin; WAI-ARIA 1.2 aria-valuemax |
 | `ARIA_VALUENOW_OUT_OF_RANGE` | fail | A range widget whose aria-valuenow is outside its range, so assistive technology is given the nearest end of the range instead. | WCAG 4.1.2; WAI-ARIA 1.2 aria-valuenow; HTML-AAM |
 | `ARIA_POSINSET_EXCEEDS_SETSIZE` | fail | An element whose aria-posinset is greater than its aria-setsize. | WCAG 4.1.2; WAI-ARIA 1.2 aria-posinset (MUST) |
-| `ARIA_HASPOPUP_ROLE_MISMATCH` | cantTell | The element aria-controls names has another role than the popup aria-haspopup announces; a script may show another popup. | WAI-ARIA 1.2 aria-haspopup (MUST); WCAG 4.1.2 (not settled) |
+| `ARIA_HASPOPUP_ROLE_MISMATCH` | cantTell | The element aria-controls names has another role than the popup aria-haspopup announces; a script may show another popup. It leans fail when aria-controls names that one element and it is shown, or aria-expanded is true: the popup that is open has another role. | WAI-ARIA 1.2 aria-haspopup (MUST); WCAG 4.1.2 (not settled) |
 | `ARIA_ACTIVEDESCENDANT_OUTSIDE` | cantTell | Aria-activedescendant names an element that is neither inside the element nor inside one it owns or controls. | WAI-ARIA 1.2 aria-activedescendant; WCAG 4.1.2 (not settled) |
 
 ### `autocomplete-valid`
@@ -1410,7 +1410,7 @@ Checks that any id value referenced by an ARIA ID-reference attribute (aria-labe
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DUPLICATE_ID_ARIA_REFERENCED` | cantTell | An id that an ARIA attribute refers to is on more than one element, so the reference goes to the first, which may not be the one meant. | HTML id attribute (MUST); WAI-ARIA 1.2 ID reference; WCAG 4.1.2 (not settled) |
+| `DUPLICATE_ID_ARIA_REFERENCED` | cantTell | An id that an ARIA attribute refers to is on more than one element, so the reference goes to the first, which may not be the one meant. It leans pass when only aria-labelledby, aria-describedby or aria-errormessage refer to the id and every element carrying it has the same text; and fail when an element referring to it sits nearer a later copy than the first, as in repeated components. | HTML id attribute (MUST); WAI-ARIA 1.2 ID reference; WCAG 4.1.2 (not settled) |
 
 ### `embed-text-alternative-present`
 
@@ -2580,10 +2580,10 @@ Check whether the page uses the region for status messages, and that it is in th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LIVE_REGION_HIDDEN` | cantTell | A live region inside or on aria-hidden="true" or inert, so nothing it is given can be announced. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2 aria-live |
+| `LIVE_REGION_HIDDEN` | cantTell | A live region inside or on aria-hidden="true" or inert, so nothing it is given can be announced. It leans fail when no dialog is shown, which would explain the rest of the page being hidden. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2 aria-live |
 | `LIVE_REGION_BUSY` | cantTell | A live region with aria-busy="true" when the page was scanned, so assistive technology may hold back its changes. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-busy |
-| `LIVE_REGION_INSERTED_WITH_CONTENT` | cantTell | A live region, other than role="alert", added to the page with its text already in it, which screen readers commonly do not announce. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |
-| `LIVE_REGION_SHOWN_AND_FILLED` | cantTell | A hidden live region shown and given its text in the same task, so it was not in the accessibility tree when the text arrived. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |
+| `LIVE_REGION_INSERTED_WITH_CONTENT` | cantTell | A live region, other than role="alert", added to the page with its text already in it, which screen readers commonly do not announce. It leans fail unless the hook saw the same text announced through another live region. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |
+| `LIVE_REGION_SHOWN_AND_FILLED` | cantTell | A hidden live region shown and given its text in the same task, so it was not in the accessibility tree when the text arrived. It leans fail unless the hook saw the same text announced through another live region. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |
 
 ### `manual-review`
 
