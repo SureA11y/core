@@ -14,6 +14,9 @@
  *   ol, textarea) with computed `overflow-x`/`overflow-y` of `auto` or
  *   `scroll`, not every element on the page, to keep this deterministic
  *   and performant (same style of scope-down as `region`).
+ *   Finding nothing to ask about, it reports notApplicable, not pass: it
+ *   applies only to what its check flags, and finding nothing there
+ *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
  * @expectation
  *   A region whose CSS declares it may scroll (`auto`/`scroll`) should be
  *   reachable by keyboard: either it already contains a focusable

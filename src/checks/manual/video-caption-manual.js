@@ -19,14 +19,20 @@
  *   This rule is therefore `type: 'manual'` (cantTell-capped, never
  *   fail), matching the precedent set by
  *   `media-alternative-transcript-evidence` for the same class
- *   of "normatively mapped but not statically verifiable" gap. A <video>
- *   with a `<track kind="captions">` whose `src` is non-empty is not
- *   flagged; everything else is flagged for human review. A video whose
+ *   of "normatively mapped but not statically verifiable" gap. Every
+ *   <video> is asked about: one with a `<track kind="captions">` whose
+ *   `src` is non-empty, whether its captions are complete and match the
+ *   audio, which a declared track says nothing of (F8); any other, whether
+ *   it needs captions. A video whose
  *   only text tracks are subtitles (`kind="subtitles"`, or no `kind`,
  *   which HTML treats as subtitles) gets its own question: subtitles may
  *   be a translation of the dialogue only, without the speaker and sound
  *   information captions carry.
  * @reason-codes
+ *   - `CAPTIONS_REVIEW` (cantTell): a <video> has a captions track; a
+ *     person checks that the captions carry all the dialogue and the sounds
+ *     that matter.
+ *     Basis: WCAG 1.2.2 (not settled); G87; F8; ACT f51b46.
  *   - `CAPTIONS_TRACK_NOT_DETECTED` (cantTell): a <video> has no
  *     <track kind="captions"> with a source; a person checks whether it has
  *     audio that needs captions.
@@ -45,7 +51,7 @@ const id = 'video-caption';
 const meta = {
   title: 'Prerecorded video should provide a captions track',
   description:
-    'Flags <video> elements with no <track kind="captions"> child, for manual review of whether the video has an audio track that needs captions; a subtitles track alone may be a translation only.',
+    'Asks about each <video>: with no <track kind="captions"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.',
   i18n: {
     titleKey: 'videoCaption_title',
     descriptionKey: 'videoCaption_description'
@@ -104,43 +110,60 @@ function runInPage(ctx) {
       if (kind === 'subtitles') hasSubtitlesTrack = true;
     }
 
-    if (hasCaptionsTrack) continue;
-
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
-    const baseOccurrence = hasSubtitlesTrack
+    // A captions track says captions exist, not that they are complete:
+    // 1.2.2 asks for all the dialogue and the sounds that matter (F8), which
+    // only a person watching can check.
+    const baseOccurrence = hasCaptionsTrack
       ? {
           selector: stableSelector,
           html,
           summary:
-            'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
-          hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            'This video has a captions track. Check that its captions are complete and match the audio.',
+          hint: 'Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.',
           i18n: {
-            summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
-            hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
+            summaryKey: 'videoCaption_summary_cantTell_review',
+            hintKey: 'videoCaption_hint_cantTell_review',
             params: {}
           },
           data: {
-            details: { reasonCode: 'SUBTITLES_TRACK_ONLY' }
+            details: { reasonCode: 'CAPTIONS_REVIEW' }
           }
         }
-      : {
-          selector: stableSelector,
-          html,
-          summary: 'This video has no captions track.',
-          hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
-          i18n: {
-            summaryKey: 'videoCaption_summary_cantTell',
-            hintKey: 'videoCaption_hint_cantTell',
-            params: {}
-          },
-          data: {
-            details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
+      : hasSubtitlesTrack
+        ? {
+            selector: stableSelector,
+            html,
+            summary:
+              'This video has only subtitles tracks, which may translate the dialogue without the speaker and sound information captions carry.',
+            hint: 'If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind="captions">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            i18n: {
+              summaryKey: 'videoCaption_summary_cantTell_subtitlesOnly',
+              hintKey: 'videoCaption_hint_cantTell_subtitlesOnly',
+              params: {}
+            },
+            data: {
+              details: { reasonCode: 'SUBTITLES_TRACK_ONLY' }
+            }
           }
-        };
+        : {
+            selector: stableSelector,
+            html,
+            summary: 'This video has no captions track.',
+            hint: 'If this video has an audio track that conveys information, add a <track kind="captions" src="..."> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.',
+            i18n: {
+              summaryKey: 'videoCaption_summary_cantTell',
+              hintKey: 'videoCaption_hint_cantTell',
+              params: {}
+            },
+            data: {
+              details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
+            }
+          };
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -153,18 +176,12 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'cantTell',
-      severity: rule.defaultSeverity || 'moderate',
-      occurrences
-    };
-  }
-
-  // Every <video> has a captions track. Not a pass: a track existing says
-  // nothing about whether its captions are accurate or complete.
-  return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
 }
 
 module.exports = { id, meta, runInPage };

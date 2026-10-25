@@ -8,6 +8,12 @@
  * @summary Elements with role="progressbar" must have an accessible name
  * @standard WCAG 2.2
  * @sc 1.1.1
+ *   Not 4.1.2: a meter or a progress bar shows a value and takes no input,
+ *   so it is not a user interface component (WCAG's glossary: perceived as
+ *   a single control for a distinct function), and WAI-ARIA doesn't count
+ *   it as a widget. What it needs is a text alternative for what it shows.
+ *   A slider or a spinbutton, whose value the user sets, is a control:
+ *   slider-name-present and spinbutton-name-present map to 4.1.2.
  * @applicability
  *   Applies to elements whose role attribute resolves to progressbar: its first
  *   token naming a known role, matched in any case, is progressbar, so

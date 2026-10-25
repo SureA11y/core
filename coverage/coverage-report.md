@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **144**
+Total rules (loaded without error): **145**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 115 | 26 | 10 |
+| Any WCAG version | 116 | 27 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 107 | 19 | 10 |
+| WCAG 2.0 | 108 | 20 | 10 |
 | WCAG 2.1 | 6 | 5 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -29,7 +29,7 @@ Total rules (loaded without error): **144**
 | wcag21aa | 5 |
 | wcag22aa | 2 |
 | wcag2a | 96 |
-| wcag2aa | 10 |
+| wcag2aa | 11 |
 | wcag2aaa | 10 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -240,6 +240,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
+
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| images-of-text-evidence | manual | images-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| images-of-text | manual | Text should be real text, not an image of text | src/checks/manual/images-of-text-manual.js | images-of-text-evidence |  |
 
 ### 1.4.6
 
@@ -936,6 +949,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
+
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| images-of-text-evidence | manual | images-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| images-of-text | manual | Text should be real text, not an image of text | src/checks/manual/images-of-text-manual.js | images-of-text-evidence |  |
 
 ### 1.4.6
 

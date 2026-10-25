@@ -1086,6 +1086,28 @@ The image's `alt` text ("Home") duplicates the adjacent visible link text word f
 ```
 The `alt` text ("Home icon") differs from the adjacent text ("Home").
 
+## images-of-text
+
+*Manual; asks only where markup shows an image likely holds text. Text in an image's pixels is not seen.*
+
+**Flagged (cantTell)**
+```html
+<input type="image" src="send-button.png" alt="Send">
+```
+A button drawn as an image nearly always carries its label as text in the image; a `<button>` with real text could do the same.
+
+**Flagged (cantTell)**
+```html
+<img alt="WCAG Rocks" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><text x='0' y='15'>WCAG Rocks</text></svg>">
+```
+The SVG's `<text>` is drawn as part of the image, where it can't be restyled as text.
+
+**Not applicable**
+```html
+<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="15">WCAG Rocks</text></svg>
+```
+An inline SVG's text is real text.
+
 ## img-alt-decorative
 
 *Manual; flags every applicable element with a detected text alternative for review, not only the ones that look wrong.*
@@ -1765,15 +1787,21 @@ No fallback content and no accessible name.
 
 **Flagged (cantTell)**
 ```html
-<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+<object data="sales-chart.png" type="image/png">Sales chart</object>
 ```
-Fallback text is present — worth confirming "Product brochure (PDF)" is genuinely equivalent to the embedded document, not just a filler caption.
+Fallback text is present — worth confirming "Sales chart" is genuinely equivalent to the image, not just a filler caption.
 
 **Not applicable**
 ```html
-<object data="brochure.pdf" type="application/pdf"></object>
+<object data="sales-chart.png" type="image/png"></object>
 ```
 No fallback content, ARIA name, or title exists to review; that's `object-text-alternative-present`'s failure instead.
+
+**Not applicable**
+```html
+<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+```
+A PDF renders text, not non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6), as `object-text-alternative-present` has it too.
 
 ## option-name-present
 
@@ -2368,11 +2396,11 @@ The value isn't valid BCP 47 syntax.
 ```
 No `<track>` element at all, so no evidence of captions. A video whose only track is `kind="subtitles"` is asked about too, since subtitles may translate the dialogue without the sound information captions carry.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <video src="x.mp4"><track kind="captions" src="cap.vtt"></video>
 ```
-A `kind="captions"` track with a real `src` is present.
+A `kind="captions"` track with a real `src` is present, which says captions exist, not that they carry all the dialogue and the sounds that matter (F8): a person checks them.
 
 ## video-poster-text-alternative-present
 

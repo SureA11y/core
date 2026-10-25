@@ -136,32 +136,32 @@
   </div>
 
   <div class="case" id="case_11">
-    <div class="case-title">11 — PASS: &lt;desc&gt; as the first child element</div>
+    <div class="case-title">11 — FAIL: only a &lt;desc&gt; child, which describes but never names</div>
     <div class="row">
       <svg width="40" height="24">
         <image id="svgimg_case_11" href="x.png"><desc>Detailed logo description</desc></image>
       </svg>
-      <span>&lt;desc&gt; as the first child provides the alternative.</span>
+      <span>SVG-AAM maps &lt;desc&gt; to the description, not the name.</span>
     </div>
   </div>
 
   <div class="case" id="case_12">
-    <div class="case-title">12 — PASS: empty &lt;title&gt; first child, &lt;desc&gt; immediately second</div>
+    <div class="case-title">12 — FAIL: empty &lt;title&gt; and a &lt;desc&gt;</div>
     <div class="row">
       <svg width="40" height="24">
         <image id="svgimg_case_12" href="x.png"><title></title><desc>Detailed description</desc></image>
       </svg>
-      <span>Standard &lt;title&gt;+&lt;desc&gt; pairing: desc as second child immediately after title counts.</span>
+      <span>The empty title names nothing, and the desc only describes.</span>
     </div>
   </div>
 
   <div class="case" id="case_13">
-    <div class="case-title">13 — PASS: &lt;desc&gt; that is neither first child nor pair-second after &lt;title&gt;</div>
+    <div class="case-title">13 — FAIL: a &lt;desc&gt; after another child, and no name</div>
     <div class="row">
       <svg width="40" height="24">
         <image id="svgimg_case_13" href="x.png"><rect width="1" height="1"/><desc>Misplaced description</desc></image>
       </svg>
-      <span>A direct child &lt;desc&gt; describes the image wherever it is among the children.</span>
+      <span>A direct child &lt;desc&gt; describes the image wherever it is, and names it nowhere.</span>
     </div>
   </div>
 

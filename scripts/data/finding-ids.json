@@ -66,6 +66,7 @@
     "iframe-name-present",
     "iframe-title-unique",
     "image-redundant-alt",
+    "images-of-text",
     "img-alt-decorative",
     "img-alt-present",
     "img-alt-quality",
@@ -752,6 +753,7 @@
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [
+      "CAPTIONS_REVIEW",
       "CAPTIONS_TRACK_NOT_DETECTED",
       "SUBTITLES_TRACK_ONLY"
     ],

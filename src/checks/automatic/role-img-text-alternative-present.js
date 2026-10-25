@@ -49,7 +49,7 @@
  *     Basis: WCAG 1.1.1; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img role
  *     (MUST).
  *   - `emptyAriaLabel` (fail): the element's aria-label is empty and no
- *     title or SVG <title> child names it.
+ *     aria-labelledby, title or SVG <title> child names it.
  *     Basis: WCAG 1.1.1; ARIA6; ACT 23a2a8; ACT 7d6734; WAI-ARIA 1.2 img
  *     role (MUST).
  *   - `emptyAriaLabelledby` (fail): the element's aria-labelledby is empty
@@ -307,13 +307,16 @@ function runInPage(ctx) {
       } else {
         reasonCode = 'missingTextAlternative';
       }
-    } else if (hasAriaLabelAttr && !hasValidAriaLabel) {
+    } else if (!hasValidAriaLabelledbyAttr && hasAriaLabelAttr && !hasValidAriaLabel) {
+      // aria-labelledby comes before aria-label (accname 1.2, step 2B), so
+      // an empty aria-label only matters when nothing names the element
+      // through aria-labelledby.
       if (hasValidTitleSource) {
         hasName = true;
       } else {
         reasonCode = 'emptyAriaLabel';
       }
-    } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr) {
+    } else if (hasAriaLabelledbyAttr && !hasValidAriaLabelledbyAttr && !hasValidAriaLabel) {
       if (hasValidTitleSource) {
         hasName = true;
       } else {

@@ -110,7 +110,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'svgimg_case_01',
@@ -118,18 +118,19 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/svg-image-text-alternative-pr
     'svgimg_case_07',
     'svgimg_case_09',
     'svgimg_case_16', // opacity:0 remains eligible
-    'svgimg_case_17' // offscreen remains eligible
+    'svgimg_case_17', // offscreen remains eligible
+    // A <desc> describes and never names (SVG-AAM), wherever it is.
+    'svgimg_case_11',
+    'svgimg_case_12',
+    'svgimg_case_13'
   ];
   const expectedNoOccIds = [
     'svgimg_case_10', // a direct child <title> counts wherever it is (#118)
-    'svgimg_case_13', // so does a direct child <desc> (#118)
     'svgimg_case_02',
     'svgimg_case_03',
     'svgimg_case_04',
     'svgimg_case_06',
     'svgimg_case_08',
-    'svgimg_case_11', // <desc> as first child counts
-    'svgimg_case_12', // empty <title> + <desc> pair-second counts
     'svgimg_case_14', // title attribute counts
     'svgimg_case_15', // aria-labelledby counts
     'svgimg_case_18', // display:none ineligible
@@ -160,7 +161,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   assert.strictEqual(rule.title, '<image> dans un SVG doit avoir un équivalent textuel');
   assert.strictEqual(
     rule.description,
-    'Vérifie que les éléments SVG <image> fournissent un équivalent textuel via <title>/<desc> ou un nom accessible ARIA.'
+    'Vérifie que les éléments SVG <image> fournissent un équivalent textuel via un élément <title> ou un nom accessible ARIA (un élément <desc> seul ne suffit pas).'
   );
 
   const occ = rule.occurrences[0];
@@ -181,7 +182,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'SVG <image> must have a text alternative');
   assert.strictEqual(
     rule.description,
-    'Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.'
+    'Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).'
   );
 
   const occ = rule.occurrences[0];
@@ -214,12 +215,25 @@ test(`${RULE_ID}: role="foo none" and role="NONE" are presentational (#91)`, () 
   assert.ok(!hasOccurrenceForId(rule, 'upper'));
 });
 
-// A direct child <title> or <desc> counts wherever it is among the children,
-// as SVG-AAM reads them (#118).
-test(`${RULE_ID}: a direct child <title> or <desc> counts wherever it is among the children`, () => {
-  for (const child of ['<title>Logo</title>', '<desc>Company logo</desc>']) {
-    const html = `<!doctype html><html><body><svg><image href="x.png"><metadata>x</metadata>${child}</image></svg></body></html>`;
-    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
-  }
+// A direct child <title> counts wherever it is among the children, as
+// SVG-AAM reads it (#118). A <desc> gives the description, never the name,
+// so it doesn't, as in svg-text-alternative-present.
+test(`${RULE_ID}: a direct child <title> names the image wherever it is; a <desc> never does`, () => {
+  const page = (child) =>
+    `<!doctype html><html><body><svg><image href="x.png"><metadata>x</metadata>${child}</image></svg></body></html>`;
+  assertRule(
+    runa11yCoreOnHtml(page('<title>Logo</title>'), { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'pass',
+    {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    }
+  );
+  assertRule(
+    runa11yCoreOnHtml(page('<desc>Company logo</desc>'), { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
 });
