@@ -35201,6 +35201,10 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
+      "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
+      "scrollableRegionFocusable_lean_why_fits": "Sein Inhalt passt in den Kasten, es gibt also nichts zu scrollen.",
+      "scrollableRegionFocusable_lean_caution_fits": "Später geladener Inhalt oder ein schmaleres Fenster kann ihn überlaufen lassen.",
       "identicalLinksSamePurpose_title": "Links mit demselben zugänglichen Namen sollten zum selben Ziel führen",
       "identicalLinksSamePurpose_description": "Markiert Gruppen von Links, die denselben zugänglichen Namen teilen, aber zu mehr als einem unterschiedlichen Ziel führen, zur manuellen Überprüfung, ob sie demselben Zweck dienen.",
       "identicalLinksSamePurpose_summary_cantTell": "Dieser Link teilt einen zugänglichen Namen mit anderen Links auf der Seite, die zu einem anderen Ziel führen.",
@@ -36443,6 +36447,10 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
+      "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
+      "scrollableRegionFocusable_lean_why_fits": "Its content fits the box, so there is nothing to scroll.",
+      "scrollableRegionFocusable_lean_caution_fits": "Content loaded later, or a narrower window, can make it overflow.",
       "identicalLinksSamePurpose_title": "Links with the same accessible name should lead to the same destination",
       "identicalLinksSamePurpose_description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
       "identicalLinksSamePurpose_summary_cantTell": "This link shares an accessible name with other links on the page that lead to a different destination.",
@@ -37685,6 +37693,10 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
+      "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
+      "scrollableRegionFocusable_lean_why_fits": "Su contenido cabe en la caja, así que no hay nada que desplazar.",
+      "scrollableRegionFocusable_lean_caution_fits": "El contenido que se carga después, o una ventana más estrecha, puede hacer que desborde.",
       "identicalLinksSamePurpose_title": "Los enlaces con el mismo nombre accesible deberían llevar al mismo destino",
       "identicalLinksSamePurpose_description": "Señala grupos de enlaces que comparten el mismo nombre accesible pero resuelven a más de un destino distinto, para su revisión manual sobre si cumplen el mismo propósito.",
       "identicalLinksSamePurpose_summary_cantTell": "Este enlace comparte un nombre accesible con otros enlaces de la página que llevan a un destino diferente.",
@@ -38927,6 +38939,10 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
+      "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
+      "scrollableRegionFocusable_lean_why_fits": "Son contenu tient dans la boîte : il n’y a rien à faire défiler.",
+      "scrollableRegionFocusable_lean_caution_fits": "Un contenu chargé plus tard, ou une fenêtre plus étroite, peut le faire déborder.",
       "identicalLinksSamePurpose_title": "Les liens partageant le même nom accessible devraient mener à la même destination",
       "identicalLinksSamePurpose_description": "Signale les groupes de liens qui partagent le même nom accessible mais mènent à plus d’une destination distincte, pour une vérification manuelle visant à déterminer s’ils servent le même objectif.",
       "identicalLinksSamePurpose_summary_cantTell": "Ce lien partage un nom accessible avec d’autres liens de la page qui mènent à une destination différente.",
@@ -40169,6 +40185,10 @@ const RUNTIME_CATALOG = {
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
+      "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
+      "scrollableRegionFocusable_lean_why_fits": "内容がボックスに収まっているため、スクロールするものはありません。",
+      "scrollableRegionFocusable_lean_caution_fits": "後から読み込まれる内容や、より狭いウィンドウでは、はみ出すことがあります。",
       "identicalLinksSamePurpose_title": "同じアクセシブルな名前のリンクは、同じリンク先に移動することが望ましい",
       "identicalLinksSamePurpose_description": "同じアクセシブルな名前を持ちながら、複数の異なるリンク先を指すリンクのグループを検出し、同じ目的を果たしているかを人が確認できるようにします。",
       "identicalLinksSamePurpose_summary_cantTell": "このリンクは、別のリンク先に移動するページ内のほかのリンクと同じアクセシブルな名前を持っています。",
@@ -83629,6 +83649,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(CANDIDATE_SELECTOR)
     : helpers.queryAll(CANDIDATE_SELECTOR);
 
+  // Overflow can be measured only where the page is laid out (not in jsdom,
+  // where every box measures 0).
+  function hasReliableGeometry() {
+    const probe = dom.documentElement(document) || dom.body(document) || null;
+    if (!probe || !dom.get(probe, 'getBoundingClientRect')) return false;
+    try {
+      const r = dom.getBoundingClientRect(probe);
+      return (
+        !!r &&
+        ((Number.isFinite(r.width) && r.width > 0) || (Number.isFinite(r.height) && r.height > 0))
+      );
+    } catch {
+      return false;
+    }
+  }
+  const geometry = hasReliableGeometry();
+
+  // How far the content overflows the box on the axes the CSS lets scroll,
+  // in px, or null where it can't be measured.
+  function measuredOverflow(el, cs) {
+    if (!geometry) return null;
+    try {
+      const sx = /^(auto|scroll)$/.test(String(cs.overflowX || ''));
+      const sy = /^(auto|scroll)$/.test(String(cs.overflowY || ''));
+      const dx = sx ? Number(dom.get(el, 'scrollWidth')) - Number(dom.get(el, 'clientWidth')) : 0;
+      const dy = sy ? Number(dom.get(el, 'scrollHeight')) - Number(dom.get(el, 'clientHeight')) : 0;
+      if (!Number.isFinite(dx) || !Number.isFinite(dy)) return null;
+      return Math.max(dx, dy, 0);
+    } catch {
+      return null;
+    }
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -83668,6 +83721,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         details: { reasonCode: 'SCROLLABLE_OVERFLOW_NOT_FOCUSABLE', element: tag }
       }
     };
+
+    // Where the box is laid out, whether its content overflows now points
+    // one way: a box with nothing to scroll needs no keyboard scrolling.
+    const overflow = measuredOverflow(el, cs);
+    if (overflow != null) {
+      baseOccurrence.lean =
+        overflow > 2
+          ? {
+              toward: 'fail',
+              why: 'Its content overflows the box, and nothing in it can take keyboard focus to scroll it.',
+              signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],
+              caution:
+                'Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.',
+              i18n: {
+                whyKey: 'scrollableRegionFocusable_lean_why_overflows',
+                cautionKey: 'scrollableRegionFocusable_lean_caution_overflows'
+              }
+            }
+          : {
+              toward: 'pass',
+              why: 'Its content fits the box, so there is nothing to scroll.',
+              signals: [{ signal: 'overflow-px', value: Math.round(overflow) }],
+              caution: 'Content loaded later, or a narrower window, can make it overflow.',
+              i18n: {
+                whyKey: 'scrollableRegionFocusable_lean_why_fits',
+                cautionKey: 'scrollableRegionFocusable_lean_caution_fits'
+              }
+            };
+    }
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
@@ -92389,6 +92471,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_description": "Markiert Elemente, deren CSS overflow:auto/scroll deklariert, die keinen fokussierbaren Nachfahren enthalten und selbst nicht per Tastatur fokussierbar sind, zur manuellen Überprüfung, ob ihr Inhalt tatsächlich überläuft und Tastaturzugriff zum Scrollen benötigt.",
       "scrollableRegionFocusable_summary_cantTell": "Dieses Element kann scrollen (overflow: auto oder scroll), aber weder es selbst noch sein Inhalt kann den Tastaturfokus erhalten.",
       "scrollableRegionFocusable_hint_cantTell": "Wenn sein Inhalt tatsächlich überläuft, fügen Sie tabindex=\"0\" und einen Namen hinzu, damit Tastaturnutzende es fokussieren und mit den Pfeiltasten scrollen können.",
+      "scrollableRegionFocusable_lean_why_overflows": "Sein Inhalt läuft über den Kasten hinaus, und nichts darin kann den Tastaturfokus erhalten, um ihn zu scrollen.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium ab Version 130 und Firefox machen einen scrollbaren Kasten trotzdem per Tastatur erreichbar; Safari nicht.",
+      "scrollableRegionFocusable_lean_why_fits": "Sein Inhalt passt in den Kasten, es gibt also nichts zu scrollen.",
+      "scrollableRegionFocusable_lean_caution_fits": "Später geladener Inhalt oder ein schmaleres Fenster kann ihn überlaufen lassen.",
       "identicalLinksSamePurpose_title": "Links mit demselben zugänglichen Namen sollten zum selben Ziel führen",
       "identicalLinksSamePurpose_description": "Markiert Gruppen von Links, die denselben zugänglichen Namen teilen, aber zu mehr als einem unterschiedlichen Ziel führen, zur manuellen Überprüfung, ob sie demselben Zweck dienen.",
       "identicalLinksSamePurpose_summary_cantTell": "Dieser Link teilt einen zugänglichen Namen mit anderen Links auf der Seite, die zu einem anderen Ziel führen.",
@@ -93631,6 +93717,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_description": "Flags elements whose CSS declares overflow:auto/scroll, contain no focusable descendant, and are not themselves keyboard-focusable, for manual review of whether their content actually overflows and needs keyboard scroll access.",
       "scrollableRegionFocusable_summary_cantTell": "This element can scroll (overflow: auto or scroll), but neither it nor anything inside it can take keyboard focus.",
       "scrollableRegionFocusable_hint_cantTell": "If its content does overflow, add tabindex=\"0\" and a name, so keyboard users can focus it and scroll with the arrow keys.",
+      "scrollableRegionFocusable_lean_why_overflows": "Its content overflows the box, and nothing in it can take keyboard focus to scroll it.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 and later, and Firefox, let keyboard users reach a scrolling box anyway; Safari does not.",
+      "scrollableRegionFocusable_lean_why_fits": "Its content fits the box, so there is nothing to scroll.",
+      "scrollableRegionFocusable_lean_caution_fits": "Content loaded later, or a narrower window, can make it overflow.",
       "identicalLinksSamePurpose_title": "Links with the same accessible name should lead to the same destination",
       "identicalLinksSamePurpose_description": "Flags groups of links that share the same accessible name but resolve to more than one distinct destination, for manual review of whether they serve the same purpose.",
       "identicalLinksSamePurpose_summary_cantTell": "This link shares an accessible name with other links on the page that lead to a different destination.",
@@ -94873,6 +94963,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_description": "Señala elementos cuyo CSS declara overflow:auto/scroll, que no contienen ningún descendiente enfocable, y que no son enfocables por teclado por sí mismos, para su revisión manual sobre si su contenido realmente desborda y necesita acceso de desplazamiento por teclado.",
       "scrollableRegionFocusable_summary_cantTell": "Este elemento puede desplazarse (overflow: auto o scroll), pero ni él ni nada de su interior puede recibir el foco del teclado.",
       "scrollableRegionFocusable_hint_cantTell": "Si su contenido se desborda de verdad, agregar tabindex=\"0\" y un nombre, para que con el teclado se pueda enfocar y desplazar con las flechas.",
+      "scrollableRegionFocusable_lean_why_overflows": "Su contenido desborda la caja, y nada en ella puede recibir el foco del teclado para desplazarla.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 y posteriores, y Firefox, permiten igualmente llegar con el teclado a una caja que se desplaza; Safari no.",
+      "scrollableRegionFocusable_lean_why_fits": "Su contenido cabe en la caja, así que no hay nada que desplazar.",
+      "scrollableRegionFocusable_lean_caution_fits": "El contenido que se carga después, o una ventana más estrecha, puede hacer que desborde.",
       "identicalLinksSamePurpose_title": "Los enlaces con el mismo nombre accesible deberían llevar al mismo destino",
       "identicalLinksSamePurpose_description": "Señala grupos de enlaces que comparten el mismo nombre accesible pero resuelven a más de un destino distinto, para su revisión manual sobre si cumplen el mismo propósito.",
       "identicalLinksSamePurpose_summary_cantTell": "Este enlace comparte un nombre accesible con otros enlaces de la página que llevan a un destino diferente.",
@@ -96115,6 +96209,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_description": "Signale les éléments dont le CSS déclare overflow:auto/scroll, qui ne contiennent aucun descendant focalisable, et qui ne sont pas eux-mêmes focalisables au clavier, pour une vérification manuelle visant à déterminer si leur contenu déborde réellement et nécessite un accès au défilement au clavier.",
       "scrollableRegionFocusable_summary_cantTell": "Cet élément peut défiler (overflow: auto ou scroll), mais ni lui ni son contenu ne peut recevoir le focus clavier.",
       "scrollableRegionFocusable_hint_cantTell": "Si son contenu déborde réellement, ajoutez tabindex=\"0\" et un nom, pour qu’on puisse le focaliser au clavier et le faire défiler avec les flèches.",
+      "scrollableRegionFocusable_lean_why_overflows": "Son contenu déborde de la boîte, et rien à l’intérieur ne peut recevoir le focus clavier pour la faire défiler.",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 et versions ultérieures, ainsi que Firefox, permettent quand même d’atteindre au clavier une boîte qui défile ; Safari non.",
+      "scrollableRegionFocusable_lean_why_fits": "Son contenu tient dans la boîte : il n’y a rien à faire défiler.",
+      "scrollableRegionFocusable_lean_caution_fits": "Un contenu chargé plus tard, ou une fenêtre plus étroite, peut le faire déborder.",
       "identicalLinksSamePurpose_title": "Les liens partageant le même nom accessible devraient mener à la même destination",
       "identicalLinksSamePurpose_description": "Signale les groupes de liens qui partagent le même nom accessible mais mènent à plus d’une destination distincte, pour une vérification manuelle visant à déterminer s’ils servent le même objectif.",
       "identicalLinksSamePurpose_summary_cantTell": "Ce lien partage un nom accessible avec d’autres liens de la page qui mènent à une destination différente.",
@@ -97357,6 +97455,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scrollableRegionFocusable_description": "CSS で overflow:auto/scroll が宣言され、フォーカス可能な子孫要素がなく、それ自体もキーボードでフォーカスできない要素を検出し、コンテンツが実際にはみ出してキーボードでのスクロール手段が必要かを人が確認できるようにします。",
       "scrollableRegionFocusable_summary_cantTell": "この要素はスクロールできます (overflow: auto または scroll) が、要素自体もその中身も、キーボードフォーカスを受け取れません。",
       "scrollableRegionFocusable_hint_cantTell": "内容が実際にはみ出す場合は、tabindex=\"0\" と名前を付け、キーボードでフォーカスして矢印キーでスクロールできるようにしてください。",
+      "scrollableRegionFocusable_lean_why_overflows": "内容がボックスからはみ出しており、スクロールするためにキーボードフォーカスを受けられるものが中にありません。",
+      "scrollableRegionFocusable_lean_caution_overflows": "Chromium 130 以降と Firefox では、スクロールするボックスにキーボードで到達できます。Safari ではできません。",
+      "scrollableRegionFocusable_lean_why_fits": "内容がボックスに収まっているため、スクロールするものはありません。",
+      "scrollableRegionFocusable_lean_caution_fits": "後から読み込まれる内容や、より狭いウィンドウでは、はみ出すことがあります。",
       "identicalLinksSamePurpose_title": "同じアクセシブルな名前のリンクは、同じリンク先に移動することが望ましい",
       "identicalLinksSamePurpose_description": "同じアクセシブルな名前を持ちながら、複数の異なるリンク先を指すリンクのグループを検出し、同じ目的を果たしているかを人が確認できるようにします。",
       "identicalLinksSamePurpose_summary_cantTell": "このリンクは、別のリンク先に移動するページ内のほかのリンクと同じアクセシブルな名前を持っています。",

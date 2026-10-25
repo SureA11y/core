@@ -3192,7 +3192,7 @@ Flags elements whose CSS declares overflow:auto/scroll, contain no focusable des
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` | cantTell | The element's CSS lets it scroll, but neither it nor anything inside it can be reached by keyboard; whether its content really overflows is for a person to check. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); ACT 0ssw9k |
+| `SCROLLABLE_OVERFLOW_NOT_FOCUSABLE` | cantTell | The element's CSS lets it scroll, but neither it nor anything inside it can be reached by keyboard; whether its content really overflows is for a person to check. Where the page is laid out, it leans fail when the content overflows the box by more than 2px and pass when it fits; in jsdom, no lean. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); ACT 0ssw9k |
 
 ### `searchbox-name-present`
 
