@@ -138,6 +138,7 @@ const SAFE_DOM_OTHER_NAMES = [
   'ariaFlowToElements',
   'ariaLabelledByElements',
   'ariaOwnsElements',
+  'caption',
   'checked',
   'clientHeight',
   'clientWidth',

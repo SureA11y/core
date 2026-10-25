@@ -57,7 +57,7 @@ const meta = {
     descriptionKey: 'imagesOfText_description'
   },
   helpUrl: null,
-  tags: ['wcag2aa', 'wcag145', 'images', 'atomic', 'manual'],
+  tags: ['wcag2aa', 'wcag145', 'nontext', 'images', 'atomic', 'manual'],
   wcagSc: ['1.4.5'],
   normativeMappings: [
     {
