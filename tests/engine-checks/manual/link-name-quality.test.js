@@ -185,7 +185,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFlaggedIds = [
     'lnq_case_01',
@@ -193,14 +193,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenari
     'lnq_case_03',
     'lnq_case_04',
     'lnq_case_09',
-    'lnq_case_10'
+    'lnq_case_10',
+    'lnq_case_13',
+    'lnq_case_14',
+    'lnq_case_15'
   ];
   const expectedNoOccIds = [
     'lnq_case_05',
     'lnq_case_06',
     'lnq_case_07',
     'lnq_case_08',
-    'lnq_case_11'
+    'lnq_case_11',
+    'lnq_case_12'
   ];
 
   for (const id of expectedFlaggedIds) {
@@ -208,5 +212,91 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-name-quality-all-scenari
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
+  }
+  const leanOf = (id) =>
+    rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).lean?.toward || null;
+  assert.equal(leanOf('lnq_case_13'), 'pass');
+  assert.equal(leanOf('lnq_case_14'), 'fail');
+  assert.equal(leanOf('lnq_case_15'), 'fail');
+  assert.equal(leanOf('lnq_case_02'), null);
+});
+
+// The text of a list item's, paragraph's or cell's inline elements is the
+// link's context, as the item's own text is; a nested list's, hidden text
+// and another link's text are not.
+test(`${RULE_ID}: text in an inline element of the list item, paragraph or cell is context`, () => {
+  for (const body of [
+    '<ul><li><strong>Ulysses</strong> <a href="/u">Read more</a></li></ul>',
+    '<p><em>The 2026 pricing guide</em>: <a href="/g">Download</a></p>',
+    '<table><tr><td><span><b>Annual report</b></span> <a href="/r.pdf">PDF</a></td></tr></table>'
+  ]) {
+    const html = `<!doctype html><html lang="en"><body>${body}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      maxOccurrences: 0
+    });
+  }
+  for (const body of [
+    '<ul><li><span hidden>Ulysses</span> <a href="/u">Read more</a></li></ul>',
+    '<ul><li><a href="/a.pdf">PDF</a> <a href="/a.html">HTML</a></li></ul>',
+    '<ul><li><a href="/u">Read more</a><ul><li>Ulysses</li></ul></li></ul>'
+  ]) {
+    const html = `<!doctype html><html lang="en"><body>${body}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1
+    });
+  }
+});
+
+test(`${RULE_ID}: a bare format name beside a link naming the document leans pass`, () => {
+  const html = `<!doctype html><html lang="en"><body>
+    <ul><li><a href="/r">Annual report</a> (<a href="/r.pdf">PDF</a>)</li></ul>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const { lean } = rule.occurrences[0];
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'AMBIGUOUS_FORMAT_NAME');
+  assert.equal(lean.toward, 'pass');
+  assert.equal(lean.i18n.whyKey, 'linkNameQuality_lean_why_formatBesideName');
+
+  // Beside another bare format name, nothing names the document.
+  const bare = `<!doctype html><html lang="en"><body>
+    <ul><li><a href="/r.html">HTML</a> (<a href="/r.pdf">PDF</a>)</li></ul>
+  </body></html>`;
+  const plain = assertRule(runa11yCoreOnHtml(bare, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2
+  });
+  assert.ok(plain.occurrences.every((o) => !o.lean));
+});
+
+test(`${RULE_ID}: the same generic name to different places under one heading leans fail`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+  const rule = assertRule(
+    run('<h2>News</h2><div><a href="/a">Read more</a></div><div><a href="/b">Read more</a></div>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 2, maxOccurrences: 2 }
+  );
+  for (const o of rule.occurrences) {
+    assert.equal(o.data.details.reasonCode, 'GENERIC_LINK_TEXT');
+    assert.equal(o.lean.toward, 'fail');
+    assert.equal(o.lean.i18n.whyKey, 'linkNameQuality_lean_why_repeated');
+  }
+  // Each under a heading of its own, to the same place, beside a sentence,
+  // in a table or in a named region: no lean.
+  for (const body of [
+    '<h2>A</h2><div><a href="/a">Read more</a></div><h2>B</h2><div><a href="/b">Read more</a></div>',
+    '<div><a href="/a">Read more</a></div><div><a href="/a">Read more</a></div>',
+    '<div>The annual report is out. <a href="/a">Read more</a></div><div><a href="/b">Read more</a></div>',
+    '<table><tr><td>A</td><td><div><a href="/a">Read more</a></div></td></tr><tr><td>B</td><td><div><a href="/b">Read more</a></div></td></tr></table>',
+    '<section aria-label="A"><a href="/a">Read more</a></section><section aria-label="B"><a href="/b">Read more</a></section>'
+  ]) {
+    const r = assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 1 });
+    const own = r.occurrences.filter((o) => o.html.includes('href="/a"'));
+    assert.ok(own.length && own.every((o) => !o.lean), body);
   }
 });

@@ -25,8 +25,9 @@
  *   "details", "link", etc., WCAG technique F84's known failure pattern
  *   for SC 2.4.4) or a bare file-format/type name ("HTML", "PDF", "EPUB",
  *   ...) with no adjacent context (an aria-describedby target, the
- *   enclosing list item/table cell/paragraph's own text, or (format
- *   names only) a table's first-row header) naming what it belongs to.
+ *   enclosing list item/table cell/paragraph's text outside links, that
+ *   of its inline elements included, or (format names only) a table's
+ *   first-row header) naming what it belongs to.
  * @reports
  *   - `normalizedName`: the link's accessible name as it was matched: in
  *     lowercase, with spacing collapsed and trailing punctuation removed.
@@ -36,11 +37,16 @@
  *   - `GENERIC_LINK_TEXT` (cantTell): the link's whole name is a generic
  *     phrase such as "read more" or "click here", with no adjacent context
  *     found that says where it leads.
+ *     It leans fail when another flagged link with the same name goes
+ *     elsewhere under the same nearest heading, with no other text, table or
+ *     named container around them.
  *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9; F84; G91; G53; ACT
  *     5effbb; ACT aizyf1.
  *   - `AMBIGUOUS_FORMAT_NAME` (cantTell): the link's whole name is a bare
  *     file format such as "PDF", with no adjacent context found that names
  *     the document.
+ *     It leans pass when another link in the same list item, paragraph or
+ *     cell has a descriptive name, and fail as GENERIC_LINK_TEXT does.
  *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); G91; G53;
  *     ACT 5effbb; ACT aizyf1.
  * @implementation-notes
@@ -56,6 +62,13 @@
  *   alone does. This keeps false positives near zero at the cost of
  *   not catching every possible non-descriptive phrasing (e.g. "click
  *   this", a legitimate but uncommon variant, is not in either list).
+ * - The context of a list item, cell or paragraph is its text outside
+ *   links, with the text of its inline elements exposed to assistive
+ *   technology (<strong>, <em>, <span>...): "<li><strong>Ulysses</strong>
+ *   <a>Read more</a></li>" has "Ulysses" as context. Block descendants (a
+ *   nested list) are left out, and so is another link's text: it names that
+ *   link's destination, and a row of bare "PDF" and "HTML" links would
+ *   otherwise give each other context.
  * - Adjacent-context detection climbs through a bare wrapping list into
  *   an outer list item, so "Ulysses" heading a list of per-format
  *   download links still counts as that list's context. The table-header
@@ -363,13 +376,82 @@ function runInPage(ctx) {
     );
   }
 
-  function ownDirectText(el) {
+  // Phrasing elements whose text belongs to the sentence, list item or cell
+  // they sit in: "<li><strong>Ulysses</strong> <a>Read more</a></li>" has
+  // "Ulysses" as its context. Block descendants (a nested list, a table)
+  // hold their own items and are not read, so a list item heading a nested
+  // list of links is credited only with its own text.
+  const INLINE_CONTEXT_TAGS = new Set([
+    'abbr',
+    'b',
+    'bdi',
+    'bdo',
+    'big',
+    'cite',
+    'code',
+    'data',
+    'del',
+    'dfn',
+    'em',
+    'font',
+    'i',
+    'ins',
+    'kbd',
+    'label',
+    'mark',
+    'nobr',
+    'q',
+    's',
+    'samp',
+    'small',
+    'span',
+    'strike',
+    'strong',
+    'sub',
+    'sup',
+    'time',
+    'tt',
+    'u',
+    'var'
+  ]);
+
+  function isAccEligible(el) {
+    const r = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
+    return typeof r === 'boolean' ? r : !!(r && r.eligible);
+  }
+
+  // The text of `el` that sits outside any link: its own text nodes and
+  // those of its inline descendants exposed to assistive technology. Another
+  // link's text is left out on purpose: it names that link's destination,
+  // and counting it would let a row of bare "PDF" and "HTML" links, or of
+  // "Read more" links, give each other context. Links met on the way are
+  // collected in `links` when it is given.
+  function contextTextOutsideLinks(el, links) {
     let out = '';
-    const kids = dom.childNodes(el) || [];
-    for (let i = 0; i < kids.length; i++) {
-      const n = kids[i];
-      if (dom.nodeType(n) === 3) out += dom.nodeValue(n) || '';
-    }
+    // Bounded as a safety net only: a context block holds a few nodes.
+    let budget = 5000;
+    (function walk(node) {
+      const kids = dom.childNodes(node) || [];
+      for (let i = 0; i < kids.length && budget > 0; i++) {
+        budget -= 1;
+        const n = kids[i];
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          out += dom.nodeValue(n) || '';
+          continue;
+        }
+        if (type !== 1 || !dom.get(n, 'getAttribute')) continue;
+        if (isLinkCandidate(n)) {
+          if (links) links.push(n);
+          continue;
+        }
+        const tag = String(dom.localName(n) || '').toLowerCase();
+        if (!INLINE_CONTEXT_TAGS.has(tag) || !isAccEligible(n)) continue;
+        out += ' ';
+        walk(n);
+        out += ' ';
+      }
+    })(el);
     return out.replace(/\s+/g, ' ').trim();
   }
 
@@ -377,30 +459,33 @@ function runInPage(ctx) {
     return !!text && text.length >= 3 && /\p{L}/u.test(text);
   }
 
-  // Direct text of the nearest enclosing list item/table cell/paragraph,
-  // climbing through a wrapping <ul>/<ol> into an outer <li> when the
-  // immediate one carries none of its own (a heading li wrapping a
-  // nested list of links, e.g. "Ulysses" above per-format download
-  // links).
-  function nearestBlockContextText(el) {
+  // The nearest enclosing list item/table cell/paragraph and its text
+  // outside links, climbing through a wrapping <ul>/<ol> into an outer <li>
+  // when the immediate one carries none of its own (a heading li wrapping a
+  // nested list of links, e.g. "Ulysses" above per-format download links).
+  // `block` is the first such element met, `text` the first text found.
+  function nearestBlockContext(el) {
     let node = dom.parentElement(el);
     let liHops = 0;
+    let block = null;
     // Bounded as a safety net only: a walk up a real tree always ends.
     for (let steps = 0; node && steps < 100000; steps++) {
       const tag = (dom.tagName(node) || '').toLowerCase();
       if (tag === 'li') {
-        const text = ownDirectText(node);
-        if (text) return text;
+        if (!block) block = node;
+        const text = contextTextOutsideLinks(node);
+        if (text) return { block, text };
         liHops += 1;
-        if (liHops >= 4) return '';
+        if (liHops >= 4) return { block, text: '' };
         const list = dom.parentElement(node);
         node = list ? dom.parentElement(list) : null;
         continue;
       }
-      if (CONTEXT_BLOCK_TAGS.has(tag)) return ownDirectText(node);
-      return '';
+      if (CONTEXT_BLOCK_TAGS.has(tag))
+        return { block: block || node, text: contextTextOutsideLinks(node) };
+      return { block, text: '' };
     }
-    return '';
+    return { block, text: '' };
   }
 
   function describedByContextText(el) {
@@ -438,9 +523,148 @@ function runInPage(ctx) {
 
   function hasAdequateContext(el, tier) {
     if (isSubstantiveContext(describedByContextText(el))) return true;
-    if (isSubstantiveContext(nearestBlockContextText(el))) return true;
+    if (isSubstantiveContext(nearestBlockContext(el).text)) return true;
     if (tier === 'format' && isSubstantiveContext(firstRowHeaderText(el))) return true;
     return false;
+  }
+
+  // The URL a link leads to, '' when it has none to compare (a role="link"
+  // element without href). `.href` on an SVG <a> is not a string.
+  function resolvedHref(el) {
+    try {
+      const h = dom.get(el, 'href');
+      if (typeof h === 'string' && h) return h;
+      const raw = dom.getAttribute(el, 'href') || dom.getAttribute(el, 'xlink:href') || '';
+      return raw ? new URL(raw, dom.baseURI(dom.ownerDocument(el))).href : '';
+    } catch {
+      return '';
+    }
+  }
+
+  let headingList = null;
+  function exposedHeadings() {
+    if (headingList) return headingList;
+    const found = helpers.queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]') || [];
+    headingList = Array.prototype.filter.call(found, (h) => {
+      const role = helpers.aria.getAuthorRole(h);
+      const isHeading = role ? role === 'heading' : /^h[1-6]$/.test(String(dom.localName(h)));
+      return isHeading && isAccEligible(h);
+    });
+    return headingList;
+  }
+
+  // The last heading before the link in document order (or the heading it
+  // sits in), which H80 lets serve as the link's context; null when none.
+  function nearestPrecedingHeading(el) {
+    let last = null;
+    for (const h of exposedHeadings()) {
+      // 4: the link follows the heading or is inside it.
+      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
+      last = h;
+    }
+    return last;
+  }
+
+  // Context the rule doesn't look for but a person may read: a table row's
+  // other cells, a name on an enclosing element, a sentence in the link's
+  // own parent.
+  function hasOtherPossibleContext(el) {
+    // Document order across shadow trees is not defined.
+    if (dom.getRootNode(el) !== dom.ownerDocument(el)) return true;
+    if (dom.closest(el, 'td, th')) return true;
+    if (isSubstantiveContext(contextTextOutsideLinks(dom.parentElement(el) || el))) return true;
+    for (let n = dom.parentElement(el), steps = 0; n && steps < 100000; steps++) {
+      const tag = String(dom.localName(n) || '').toLowerCase();
+      if (tag === 'body' || tag === 'html') break;
+      if (dom.hasAttribute(n, 'aria-label') || dom.hasAttribute(n, 'aria-labelledby')) return true;
+      const role = helpers.aria.getAuthorRole(n);
+      if (role === 'cell' || role === 'gridcell' || role === 'row') return true;
+      n = dom.parentElement(n);
+    }
+    return false;
+  }
+
+  // A format name whose list item, paragraph or cell holds another link
+  // with a descriptive name ("<li><a>Annual report</a> (<a>PDF</a>)</li>"):
+  // that link names the document this one gives a format of.
+  function descriptiveSiblingLink(el) {
+    const { block } = nearestBlockContext(el);
+    if (!block) return null;
+    const links = [];
+    contextTextOutsideLinks(block, links);
+    for (const other of links) {
+      if (other === el || !isAccEligible(other)) continue;
+      const info = helpers.getNameFromContentInfo(other, ctx);
+      const n = normalize(info && typeof info.value === 'string' ? info.value : '');
+      if (!isSubstantiveContext(n)) continue;
+      if (inPhraseList(GENERIC_LINK_TEXT, n, primaryLangOf(other))) continue;
+      if (FORMAT_NAME_LINK_TEXT.has(n)) continue;
+      return n;
+    }
+    return null;
+  }
+
+  // Leans for the flagged links. A format name leans pass when a link
+  // beside it names the document. A link leans fail when another flagged
+  // link with the same name and reason goes elsewhere under the same
+  // nearest heading (or no heading), and nothing else near it could tell
+  // them apart: neither the text around them nor the heading can say which
+  // is which (F84; G53).
+  function addLeans(list) {
+    const groups = new Map();
+    for (const f of list) {
+      f.href = resolvedHref(f.el);
+      if (!f.href || hasOtherPossibleContext(f.el)) continue;
+      f.heading = nearestPrecedingHeading(f.el);
+      const key = f.tier + '\u0000' + f.normalized;
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(f);
+    }
+    for (const f of list) {
+      if (f.tier === 'format') {
+        const sibling = descriptiveSiblingLink(f.el);
+        if (sibling) {
+          f.occurrence.lean = {
+            toward: 'pass',
+            why: 'Another link in the same list item, paragraph or cell names the document this format belongs to.',
+            signals: [{ signal: 'descriptive-link-in-context', value: sibling }],
+            caution: 'Check that the other link names this same document.',
+            i18n: {
+              whyKey: 'linkNameQuality_lean_why_formatBesideName',
+              cautionKey: 'linkNameQuality_lean_caution_formatBesideName'
+            }
+          };
+          continue;
+        }
+      }
+      if (!f.href || f.heading === undefined) continue;
+      const peers = (groups.get(f.tier + '\u0000' + f.normalized) || []).filter(
+        (g) => g.heading === f.heading
+      );
+      const hrefs = new Set(peers.map((g) => g.href));
+      if (hrefs.size < 2) continue;
+      f.occurrence.lean = {
+        toward: 'fail',
+        why: 'Other links with the same text go to different places, and no text or heading near them tells them apart.',
+        signals: [
+          { signal: 'same-name-different-href-count', value: hrefs.size },
+          {
+            signal: 'nearest-heading',
+            value: f.heading
+              ? String(dom.textContent(f.heading) || '')
+                  .replace(/\s+/g, ' ')
+                  .trim()
+              : null
+          }
+        ],
+        caution:
+          "The page's layout, such as a card with an image or a heading the link is not placed after, may still make each link clear.",
+        i18n: {
+          whyKey: 'linkNameQuality_lean_why_repeated',
+          cautionKey: 'linkNameQuality_lean_caution_repeated'
+        }
+      };
+    }
   }
 
   const NATIVE_LINK_TAGS = ['a', 'area'];
@@ -460,6 +684,7 @@ function runInPage(ctx) {
     : helpers.queryAll(selector);
 
   const occurrences = [];
+  const flagged = [];
   let applicableCount = 0;
 
   for (const el of nodes) {
@@ -521,7 +746,16 @@ function runInPage(ctx) {
           }
         };
 
-    occurrences.push(helpers.reportOccurrence(el, reportOpts));
+    const occurrence = helpers.reportOccurrence(el, reportOpts);
+    occurrences.push(occurrence);
+    flagged.push({ el, occurrence, tier, normalized });
+  }
+
+  // A lean is advice: a failure reading it costs the leans, not the findings.
+  try {
+    addLeans(flagged);
+  } catch {
+    for (const f of flagged) delete f.occurrence.lean;
   }
 
   if (applicableCount === 0) {

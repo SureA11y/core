@@ -180,3 +180,37 @@ test(`${RULE_ID}: role="foo heading", role="HEADING" and <h2 role="foo"> are hea
   for (const id of ['a', 'b', 'c']) assert.ok(hasOccurrenceForId(rule, id), id);
   assert.ok(!hasOccurrenceForId(rule, 'd'));
 });
+
+// Leans.
+test(`${RULE_ID}: template text and image file names lean fail, numbered slots and document names don't`, () => {
+  const lean = (name, lang = 'en') =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="${lang}"><body><h2>${name}</h2></body></html>`,
+        {
+          runOnly: [RULE_ID]
+        }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0].lean;
+
+  for (const [name, lang] of [
+    ['Lorem ipsum', 'en'],
+    ['Untitled', 'en'],
+    ['Heading', 'en'],
+    ['Sans titre', 'fr']
+  ]) {
+    const l = lean(name, lang);
+    assert.equal(l.toward, 'fail', name);
+    assert.equal(l.i18n.whyKey, 'headingQuality_lean_why_template', name);
+  }
+  const image = lean('IMG_1234.jpg');
+  assert.equal(image.toward, 'fail');
+  assert.equal(image.i18n.whyKey, 'headingQuality_lean_why_imageFile');
+
+  for (const name of ['Step 1', 'Chapter 2', 'Content', 'Example', 'annual-report.pdf']) {
+    assert.equal(lean(name), undefined, name);
+  }
+});

@@ -32,9 +32,13 @@
  *   - `PLACEHOLDER_HEADING_TEXT` (cantTell): the heading's name is a
  *     placeholder such as "heading", "lorem ipsum" or "Section 3" rather
  *     than a description of the content it introduces.
+ *     It leans fail when the name is text only a template leaves ("lorem
+ *     ipsum", "untitled", "heading"), not a numbered slot or a word that
+ *     heads real sections.
  *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
  *   - `FILENAME_LIKE_HEADING` (cantTell): the heading's name is a file name
  *     rather than a description of the content it introduces.
+ *     It leans fail when the file is an image.
  *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
  *   - `URL_LIKE_HEADING` (cantTell): the heading's name is a web address
  *     rather than a description of the content it introduces.
@@ -274,6 +278,116 @@ function runInPage(ctx) {
     ja: /^(?:(見出し|タイトル|セクション|章|ステップ|パート)\s*[-#:.]?\s*\d+|第\s*\d+\s*章)$/
   };
 
+  // The placeholders only a template leaves: no author means them as a
+  // heading. Numbered slots ("Step 1", "Chapter 2") and words that are real
+  // headings in context ("Content", "Example", "Title") are not here.
+  const TEMPLATE_ONLY = {
+    en: new Set([
+      'heading',
+      'headline',
+      'subheading',
+      'sub heading',
+      'sub-heading',
+      'untitled',
+      'new section',
+      'sample text',
+      'placeholder',
+      'placeholder text',
+      'lorem ipsum',
+      'insert title here',
+      'your title here',
+      'add a title',
+      'tbd',
+      'to be defined',
+      'todo',
+      'to do'
+    ]),
+    de: new Set([
+      'überschrift',
+      'zwischenüberschrift',
+      'unbenannt',
+      'ohne titel',
+      'neuer abschnitt',
+      'beispieltext',
+      'blindtext',
+      'platzhalter',
+      'platzhaltertext',
+      'titel hier eingeben'
+    ]),
+    es: new Set([
+      'encabezado',
+      'sin título',
+      'nueva sección',
+      'texto de ejemplo',
+      'marcador de posición',
+      'escriba el título aquí',
+      'su título aquí',
+      'por definir'
+    ]),
+    fr: new Set([
+      'sans titre',
+      'nouvelle section',
+      "texte d'exemple",
+      'espace réservé',
+      'insérer le titre ici',
+      'votre titre ici',
+      'à définir'
+    ]),
+    ja: new Set([
+      '見出し',
+      '小見出し',
+      '無題',
+      '新しいセクション',
+      'サンプルテキスト',
+      'ダミーテキスト',
+      'プレースホルダー',
+      'ここにタイトルを入力',
+      'タイトルを入力',
+      '未定'
+    ])
+  };
+
+  const IMAGE_EXTENSION = /\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?)$/;
+
+  // A template's placeholder and an image's file name lean fail: neither is
+  // ever written as a heading on purpose. A numbered slot, a word that heads
+  // real sections, and a document's file name (a downloads page may title a
+  // section by the file it offers) get no lean.
+  function leanFor(reasonCode, normalized, lang) {
+    if (
+      reasonCode === 'PLACEHOLDER_HEADING_TEXT' &&
+      inPhraseList(TEMPLATE_ONLY, normalized, lang)
+    ) {
+      return {
+        toward: 'fail',
+        why: 'The heading is text a template leaves in place, which describes no content.',
+        signals: [
+          { signal: 'template-only-phrase', value: true },
+          { signal: 'numbered-slot', value: false }
+        ],
+        caution: 'A design-system or documentation page can show such a heading as a sample.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_template',
+          cautionKey: 'headingQuality_lean_caution_template'
+        }
+      };
+    }
+    const image = reasonCode === 'FILENAME_LIKE_HEADING' && IMAGE_EXTENSION.exec(normalized);
+    if (image) {
+      return {
+        toward: 'fail',
+        why: "The heading is an image's file name, usually left by a content system rather than written for the section.",
+        signals: [{ signal: 'image-extension', value: image[1] }],
+        caution: 'A file listing, such as an attachment list, can use file names as real headings.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_imageFile',
+          cautionKey: 'headingQuality_lean_caution_imageFile'
+        }
+      };
+    }
+    return null;
+  }
+
   const FILENAME_LIKE =
     /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
 
@@ -450,8 +564,10 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const reasonCode = classify(normalized, primaryLangOf(el));
+    const lang = primaryLangOf(el);
+    const reasonCode = classify(normalized, lang);
     if (!reasonCode) continue;
+    const lean = leanFor(reasonCode, normalized, lang);
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -472,6 +588,7 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: summaryByReason[reasonCode],
         hint: 'Rewrite the heading so it names the topic or purpose of the content that follows it.',
         i18n: {

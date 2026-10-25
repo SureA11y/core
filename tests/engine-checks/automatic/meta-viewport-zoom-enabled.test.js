@@ -220,3 +220,23 @@ test(`${RULE_ID}: judges the viewport tag in effect, the last with content`, () 
   );
   assertRule(run(empty), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: a replaced tag leans pass when the later one sets the restricted settings again`, () => {
+  const page = (...contents) =>
+    `<!doctype html><html><head>${contents
+      .map((c) => `<meta name="viewport" content="${c}">`)
+      .join('')}</head><body><p>x</p></body></html>`;
+  const run = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const replaced = (first, second) =>
+    assertRule(run(page(first, second)), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }).occurrences[0];
+  const reset = replaced('user-scalable=no, maximum-scale=1', 'user-scalable=yes, maximum-scale=5');
+  assert.equal(reset.data.details.reasonCode, 'VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN');
+  assert.equal(reset.lean.toward, 'pass');
+  assert.equal(reset.lean.i18n.whyKey, 'metaViewportZoomEnabled_lean_why_overridden');
+  // A later tag that leaves a setting out: a browser merging them keeps it.
+  assert.equal(replaced('user-scalable=no', 'width=device-width').lean, undefined);
+  assert.equal(replaced('user-scalable=no, maximum-scale=1', 'user-scalable=yes').lean, undefined);
+});

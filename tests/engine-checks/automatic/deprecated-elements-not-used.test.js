@@ -101,3 +101,39 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/deprecated-elements-not-used-
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// Leans.
+test(`${RULE_ID}: a marquee leans pass with a pause control or scrollamount="0", fail with neither`, () => {
+  const lean = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0].lean;
+
+  const control = lean(
+    `<marquee id="m">News</marquee><button type="button" onclick="document.getElementById('m').stop()">Pause</button>`
+  );
+  assert.equal(control.toward, 'pass');
+  assert.equal(control.i18n.whyKey, 'deprecatedElements_lean_why_pauseControl');
+
+  const still = lean('<marquee scrollamount="0">News</marquee>');
+  assert.equal(still.toward, 'pass');
+  assert.equal(still.i18n.whyKey, 'deprecatedElements_lean_why_still');
+
+  const none = lean('<marquee>News</marquee><a href="/bus">Bus stop map and times</a>');
+  assert.equal(none.toward, 'fail');
+  assert.equal(none.i18n.whyKey, 'deprecatedElements_lean_why_noMechanism');
+
+  // A script that may stop it, or a marquee that scrolls once: no lean.
+  assert.equal(
+    lean(
+      `<marquee>News</marquee><button id="b">||</button><script>document.getElementById('b').onclick = () => document.querySelector('marquee').stop();</script>`
+    ),
+    undefined
+  );
+  assert.equal(lean('<marquee loop="1">News</marquee>'), undefined);
+});

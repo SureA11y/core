@@ -36,6 +36,9 @@
  *   - `SAME_NAME_DIFFERENT_DESTINATION` (cantTell): links that share an
  *     accessible name lead to two or more different URLs; a person judges
  *     whether they serve the same purpose.
+ *     It leans pass when the destinations are equal without tracking
+ *     parameters, an index file, a trailing slash and the scheme, and fail
+ *     when the name is generic ("read more") and the paths differ.
  *     Basis: WCAG 2.4.9 (not settled); ACT b20e66; ACT fd3a94.
  * @implementation-notes
  * - Destination comparison uses the DOM `.href` property (already
@@ -193,11 +196,120 @@ function runInPage(ctx) {
     groups.get(name).push({ el, href });
   }
 
+  // ---- Lean ----
+
+  // Query parameters that only track the visit.
+  function isTrackingParam(key) {
+    const k = key.toLowerCase();
+    return k.indexOf('utm_') === 0 || ['gclid', 'fbclid', 'msclkid', 'dclid'].indexOf(k) !== -1;
+  }
+  const INDEX_FILE = /\/(?:index\.(?:html?|php|aspx?)|default\.aspx?)$/i;
+
+  // A URL with what doesn't change the page taken out: the scheme, tracking
+  // parameters, the order of the rest, a default index file and a trailing
+  // slash. The fragment stays: #reviews and #specs are different parts.
+  function samePageKey(href) {
+    try {
+      const u = new URL(href);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') return href;
+      let path = u.pathname.replace(INDEX_FILE, '/');
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      const params = [];
+      u.searchParams.forEach((v, k) => {
+        if (!isTrackingParam(k)) params.push(k + '=' + v);
+      });
+      params.sort();
+      return u.hostname.toLowerCase() + ':' + u.port + path + '?' + params.join('&') + u.hash;
+    } catch {
+      return href;
+    }
+  }
+  function pathKey(href) {
+    try {
+      const u = new URL(href);
+      let path = u.pathname.replace(INDEX_FILE, '/');
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      return u.hostname.toLowerCase() + ':' + u.port + path;
+    } catch {
+      return href;
+    }
+  }
+
+  // Names that say nothing about the destination (F84), in the languages
+  // the engine ships.
+  const GENERIC_NAMES = new Set([
+    'read more',
+    'more',
+    'learn more',
+    'click here',
+    'here',
+    'details',
+    'more details',
+    'continue',
+    'continue reading',
+    'more info',
+    'see more',
+    'view more',
+    'lire la suite',
+    'en savoir plus',
+    'ici',
+    'weiterlesen',
+    'mehr erfahren',
+    'mehr',
+    'hier',
+    'leer más',
+    'saber más',
+    'más información',
+    'aquí',
+    '続きを読む',
+    '詳しくはこちら',
+    'こちら'
+  ]);
+  function bareName(name) {
+    let end = name.length;
+    while (end > 0 && ' .,;:!?…>»›→'.includes(name[end - 1])) end--;
+    return name.slice(0, end).trim();
+  }
+
+  // Destinations equal once tracking parameters, an index file, a trailing
+  // slash and the scheme are set aside are one page: lean pass. A generic
+  // name over different pages is the textbook 2.4.9 failure: lean fail.
+  function groupLean(name, entries) {
+    const keys = new Set(entries.map((e) => samePageKey(e.href)));
+    if (keys.size === 1) {
+      return {
+        toward: 'pass',
+        why: 'The addresses differ only in tracking parameters, an index file, a trailing slash or the scheme, so the links lead to the same page.',
+        signals: [{ signal: 'normalized-href-equal', value: true }],
+        i18n: { whyKey: 'identicalLinksSamePurpose_lean_why_samePage' }
+      };
+    }
+    const paths = new Set(entries.map((e) => pathKey(e.href)));
+    if (GENERIC_NAMES.has(bareName(name)) && paths.size >= 2) {
+      return {
+        toward: 'fail',
+        why: 'The links share a generic name such as "read more" and lead to different pages.',
+        signals: [
+          { signal: 'generic-link-name', value: bareName(name) },
+          { signal: 'distinct-paths', value: paths.size }
+        ],
+        caution:
+          'Different addresses can still be one resource, such as a mirror or a localized copy.',
+        i18n: {
+          whyKey: 'identicalLinksSamePurpose_lean_why_genericName',
+          cautionKey: 'identicalLinksSamePurpose_lean_caution_genericName'
+        }
+      };
+    }
+    return null;
+  }
+
   const occurrences = [];
 
   for (const [name, entries] of groups) {
     const distinctHrefs = new Set(entries.map((e) => e.href));
     if (distinctHrefs.size <= 1) continue;
+    const lean = groupLean(name, entries);
 
     for (const { el, href } of entries) {
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -206,6 +318,7 @@ function runInPage(ctx) {
         : dom.outerHTML(el) || '';
 
       const baseOccurrence = {
+        ...(lean ? { lean } : {}),
         selector: stableSelector,
         html,
         summary:

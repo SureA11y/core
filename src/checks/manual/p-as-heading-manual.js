@@ -36,12 +36,18 @@
  * @reason-codes
  *   - `BOLD_LARGE_PARAGRAPH` (cantTell): a short p whose visible text is all
  *     bold and at least 18px may be a heading shown only by its style.
+ *     It leans fail when the text does not end as a sentence and has a real
+ *     heading's style on the page or is followed by smaller plain text.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `BOLD_LARGE_DIV` (cantTell): a short div of text and inline markup,
  *     all bold and at least 18px, may be a heading shown only by its style.
+ *     It leans fail when the text does not end as a sentence, has a real
+ *     heading's style on the page and is followed by smaller plain text.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `HEADING_LIKE_LINK` (cantTell): bold, large, short text that is all
  *     inside one link may be a heading shown only by its style.
+ *     It leans fail when the link is followed by a description and sibling
+ *     containers of the same shape repeat it, with no real heading.
  *     Basis: WCAG 1.3.1 (not settled); H42; F2.
  *   - `HEADING_LIKE_NUMBER` (cantTell): bold, large text that is only a
  *     number, such as a year, may be a heading shown only by its style.
@@ -447,11 +453,95 @@ function runInPage(ctx) {
     return !hasOwnRoleAncestor(el);
   }
 
+  // ---- Leans ----
+
+  const pxOf = (cs) => Number.parseFloat(cs && cs.fontSize);
+  const familyOf = (cs) =>
+    trim(cs && cs.fontFamily)
+      .toLowerCase()
+      .replace(/["']/g, '');
+  const weightOf = (cs) => {
+    const w = trim(cs && cs.fontWeight).toLowerCase();
+    return w === 'bold' ? '700' : w;
+  };
+
+  // The styles of the page's real headings shown to its readers, read once.
+  let headingStyles = null;
+  function realHeadingStyles() {
+    if (headingStyles) return headingStyles;
+    headingStyles = [];
+    for (const h of helpers.queryAll('h1, h2, h3, h4, h5, h6') || []) {
+      if (helpers.aria.getExplicitRole(h) || !isRendered(h) || isScreenReaderOnly(h)) continue;
+      const cs = safeComputedStyle(h);
+      if (cs && Number.isFinite(pxOf(cs))) headingStyles.push(cs);
+    }
+    return headingStyles;
+  }
+
+  // The same font size, weight and family as a real heading on the page:
+  // the text is styled as that heading is.
+  function matchesRealHeadingStyle(holder) {
+    const cs = safeComputedStyle(holder);
+    if (!cs) return false;
+    return realHeadingStyles().some(
+      (h) =>
+        Math.abs(pxOf(h) - pxOf(cs)) < 0.5 &&
+        weightOf(h) === weightOf(cs) &&
+        familyOf(h) === familyOf(cs)
+    );
+  }
+
+  // The next element after el holds plain text: not bold, and smaller than
+  // el's text. A title over body text.
+  function followedByBodyText(el, fontSizePx) {
+    const next = dom.nextElementSibling(el);
+    if (!next || !/\p{L}/u.test(String(dom.textContent(next) || ''))) return false;
+    if (!isRendered(next)) return false;
+    const cs = safeComputedStyle(next);
+    return !!cs && !isBoldWeight(cs) && pxOf(cs) < fontSizePx;
+  }
+
+  // Sentence punctuation at the end reads as a sentence, not a title.
+  const SENTENCE_END = /[.!?:;…。！？：]$/;
+
+  function styleLean(el, pieces, fontSizePx, isParagraph) {
+    const shown = shownTextOf(pieces);
+    const endsAsSentence = SENTENCE_END.test(shown);
+    const matches = matchesRealHeadingStyle(pieces[0].holder);
+    const followed = followedByBodyText(el, fontSizePx);
+    const signals = [
+      { signal: 'font-size-px', value: fontSizePx },
+      { signal: 'matches-real-heading-style', value: matches },
+      { signal: 'followed-by-body-text', value: followed },
+      { signal: 'ends-with-sentence-punctuation', value: endsAsSentence }
+    ];
+    // A <div> is more often a label, a badge or a price than a <p> is, so it
+    // needs both signs.
+    const leans = !endsAsSentence && (isParagraph ? matches || followed : matches && followed);
+    if (!leans) return null;
+    return {
+      toward: 'fail',
+      why: matches
+        ? "The text has a real heading's font size, weight and family on this page, and it doesn't end as a sentence does."
+        : "The text is followed by smaller, plain body text, and it doesn't end as a sentence does, as a section title is.",
+      signals,
+      caution:
+        'A lead-in sentence or a pull quote can also come before body text, and a design system may reuse heading styles for other text.',
+      i18n: {
+        whyKey: matches ? 'pAsHeading_lean_why_headingStyle' : 'pAsHeading_lean_why_bodyFollows',
+        cautionKey: 'pAsHeading_lean_caution_style'
+      }
+    };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('p, div')
     : helpers.queryAll('p, div');
 
   const occurrences = [];
+  // The single-link candidates, judged together once all are found: a card
+  // grid repeats them.
+  const linkCandidates = [];
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -512,11 +602,58 @@ function runInPage(ctx) {
           }
         };
 
-    if (helpers && typeof helpers.reportOccurrence === 'function') {
-      occurrences.push(helpers.reportOccurrence(el, baseOccurrence));
-    } else {
-      occurrences.push(baseOccurrence);
+    if (!kindCode) {
+      // A lean is advice: a failure reading it costs the lean, not the finding.
+      try {
+        const lean = styleLean(el, pieces, fontSizePx, isParagraph);
+        if (lean) baseOccurrence.lean = lean;
+      } catch {}
     }
+
+    const occurrence =
+      helpers && typeof helpers.reportOccurrence === 'function'
+        ? helpers.reportOccurrence(el, baseOccurrence)
+        : baseOccurrence;
+    occurrences.push(occurrence);
+    if (kindCode === 'HEADING_LIKE_LINK') linkCandidates.push({ el, occurrence, fontSizePx });
+  }
+
+  // A bold link followed by a teaser in its own container, where sibling
+  // containers of the same shape each hold one too and no real heading:
+  // the card title and teaser of a grid, a title shown only by style.
+  // A link alone in its container (a call to action) gets no lean.
+  const shapeOf = (n) => String(dom.localName(n) || '') + '.' + trim(dom.getAttribute(n, 'class'));
+  const candidateEls = new Set(linkCandidates.map((c) => c.el));
+  const hasRealHeading = (n) => !!dom.querySelector(n, 'h1, h2, h3, h4, h5, h6');
+  try {
+    for (const c of linkCandidates) {
+      const card = dom.parentElement(c.el);
+      if (!card || !followedByBodyText(c.el, c.fontSizePx) || hasRealHeading(card)) continue;
+      const grid = dom.parentElement(card);
+      if (!grid) continue;
+      let repeats = 0;
+      for (const sib of Array.from(dom.children(grid) || [])) {
+        if (sib === card || shapeOf(sib) !== shapeOf(card) || hasRealHeading(sib)) continue;
+        if (Array.from(dom.children(sib) || []).some((k) => candidateEls.has(k))) repeats += 1;
+      }
+      if (!repeats) continue;
+      c.occurrence.lean = {
+        toward: 'fail',
+        why: 'The link is followed by a description in its container, and sibling containers of the same shape repeat that title and description with no real heading, as a grid of cards does.',
+        signals: [
+          { signal: 'followed-by-body-text', value: true },
+          { signal: 'repeated-card-structure', value: repeats + 1 }
+        ],
+        caution:
+          'A bold link is often a call to action; whether each card is a section of its own is for a person to decide.',
+        i18n: {
+          whyKey: 'pAsHeading_lean_why_cardTitle',
+          cautionKey: 'pAsHeading_lean_caution_cardTitle'
+        }
+      };
+    }
+  } catch {
+    // A lean is advice: a failure reading it costs the lean, not the finding.
   }
 
   if (occurrences.length) {

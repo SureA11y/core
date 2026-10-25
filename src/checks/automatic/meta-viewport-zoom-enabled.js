@@ -29,6 +29,8 @@
  *   - `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` (cantTell): a viewport meta tag
  *     that a later one replaces restricts zoom; browsers apply the last,
  *     and have not always agreed.
+ *     It leans pass when the tag in effect sets each restricted setting
+ *     again to a value that allows zoom.
  *     Basis: WCAG 1.4.4 (not settled); CSS Viewport meta viewport.
  * @implementation-notes
  * - The content attribute is read as browsers read it (CSS Viewport):
@@ -114,6 +116,35 @@ function runInPage(ctx) {
   );
   const inEffect = withContent.length ? withContent[withContent.length - 1] : null;
 
+  // The tag in effect sets each setting this earlier one restricts, to a
+  // value that restricts nothing: a browser that merges the tags keeps the
+  // later value, and one that applies the last tag drops the earlier, so
+  // zoom is allowed either way. Where the later tag leaves one out, a
+  // merging browser would keep the restriction, and there is no lean.
+  const inEffectViewport = inEffect
+    ? helpers.readViewportContent(String(dom.getAttribute(inEffect, 'content') || ''))
+    : null;
+  function overriddenLean(viewport) {
+    if (!inEffectViewport) return null;
+    const later = inEffectViewport;
+    if (later.userScalable === false) return null;
+    if (typeof later.maximumScale === 'number' && later.maximumScale < 2) return null;
+    const resetsUserScalable = viewport.userScalable !== false || later.userScalable === true;
+    const resetsMaximumScale =
+      !(typeof viewport.maximumScale === 'number' && viewport.maximumScale < 2) ||
+      typeof later.maximumScale === 'number';
+    if (!resetsUserScalable || !resetsMaximumScale) return null;
+    return {
+      toward: 'pass',
+      why: 'The later viewport meta tag sets each restricted setting again to a value that allows zoom, so zoom is allowed whether browsers merge the tags or apply the last one.',
+      signals: [
+        { signal: 'later-tag-resets-properties', value: true },
+        { signal: 'later-tag-restricts', value: false }
+      ],
+      i18n: { whyKey: 'metaViewportZoomEnabled_lean_why_overridden' }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'content') || '').trim();
@@ -136,8 +167,10 @@ function runInPage(ctx) {
     if (!reasons.length) continue;
 
     if (el !== inEffect) {
+      const lean = overriddenLean(viewport);
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(lean ? { lean } : {}),
           summary:
             'This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.',
           hint: 'Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.',
