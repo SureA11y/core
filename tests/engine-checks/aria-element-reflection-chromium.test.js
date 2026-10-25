@@ -160,7 +160,7 @@ const CASES = [
     '<label for="f">Email</label><input id="f" aria-invalid="true"><span id="err" hidden>Enter an email</span>',
     'f.ariaErrorMessageElements = [err]',
     'invalid-field-error-message',
-    'fail',
+    'cantTell',
     ['ERROR_MESSAGE_HIDDEN']
   ],
   [
