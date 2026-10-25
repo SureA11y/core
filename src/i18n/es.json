@@ -922,7 +922,7 @@
   "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
   "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
   "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
-  "focusNotRemovedByScript_description": "Pregunta por los elementos cuyo manejador onfocus en línea llama a blur(), o a focus() en otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo WCAG F55).",
+  "focusNotRemovedByScript_description": "Da por fallidos los elementos del orden de tabulación cuyo controlador onfocus en línea solo llama a blur() sobre ellos, y pregunta por otros controladores que llaman a blur(), o a focus() sobre otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo F55 de WCAG).",
   "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_fail_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",

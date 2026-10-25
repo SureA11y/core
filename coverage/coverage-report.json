@@ -1914,6 +1914,70 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/automatic/focus-not-removed-by-script.js",
+      "ruleId": "focus-not-removed-by-script",
+      "wcagScNormative": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScAll": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "A script does not remove focus from an element as it receives it",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag211",
+        "wcag247",
+        "navigation",
+        "focus",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          },
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.1.1": [
+            "focus-not-removed-by-script-evidence"
+          ],
+          "2.4.7": [
+            "focus-not-removed-by-script-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/automatic/form-control-programmatic-label-present.js",
       "ruleId": "form-control-programmatic-label-present",
       "wcagScNormative": [
@@ -4889,70 +4953,6 @@
       },
       "error": null,
       "coverage": {},
-      "deprecated": false
-    },
-    {
-      "file": "src/checks/manual/focus-not-removed-by-script-manual.js",
-      "ruleId": "focus-not-removed-by-script",
-      "wcagScNormative": [
-        "2.1.1",
-        "2.4.7"
-      ],
-      "wcagScAll": [
-        "2.1.1",
-        "2.4.7"
-      ],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "A script does not remove focus from an element as it receives it",
-      "tags": [
-        "wcag2a",
-        "wcag2aa",
-        "wcag211",
-        "wcag247",
-        "navigation",
-        "focus",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          },
-          {
-            "tag": "wcag2aa",
-            "version": "2.0",
-            "level": "AA"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A",
-            "AA"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A",
-          "AA"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "2.1.1": [
-            "focus-not-removed-by-script-evidence"
-          ],
-          "2.4.7": [
-            "focus-not-removed-by-script-evidence"
-          ]
-        }
-      },
       "deprecated": false
     },
     {

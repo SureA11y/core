@@ -1216,13 +1216,13 @@ Empty alt on a functional control is `input-image-alt-decorative`'s question, no
 ```
 The field is marked invalid, and the message `aria-errormessage` names is shown and says what is wrong.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <label for="email">Email</label>
 <input id="email" aria-invalid="true" aria-errormessage="email-error">
 <p id="email-error" hidden>Enter an email address, like name@example.com.</p>
 ```
-The field is marked invalid, but its error message is hidden, so nobody is told what is wrong.
+The field is marked invalid, but its error message is hidden. It leans fail: the message tied to the field can't be seen or heard, though the error may still be told in the label or next to the field.
 
 **Flagged (cantTell)**
 ```html
@@ -1704,11 +1704,11 @@ Each mouse handler is paired with a keyboard-equivalent focus handler.
 
 ## focus-not-removed-by-script
 
-**Flagged (cantTell)**
+**Failed**
 ```html
 <a href="/offers" onfocus="this.blur()">Offers</a>
 ```
-The link removes focus from itself as soon as it receives it, WCAG failure F55's own example. It is asked about, not failed: tabbing to it confirms it.
+The link removes focus from itself as soon as it receives it, WCAG failure F55's own example: a keyboard user can't stay on it to follow it.
 
 **Flagged (cantTell)**
 ```html

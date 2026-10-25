@@ -1512,7 +1512,7 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 automatic · WCAG 2.1.1, 2.4.7 (A, AA) · confidence medium · default severity serious
 
-Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).
+Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).
 
 **Applies to.** Elements that can take focus, that the page renders, and whose inline `onfocus` handler calls `blur()`, or `focus()` on another element. Without such an element, or in a document where none can take focus, nothing is applicable.
 
@@ -1520,7 +1520,7 @@ Asks about elements whose inline onfocus handler calls blur(), or focus() on ano
 
 WCAG failure F55: a script that removes focus from an element when it receives it leaves a keyboard user unable to reach or operate it, and unable to see where focus is.
 
-- `FOCUS_HANDLER_BLURS_SELF`: fail, when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, by name or in brackets, possibly behind `if (this.blur)`, with at most a `return`), as F55's examples do. Focus goes nowhere: it is dropped, not sent elsewhere.
+- `FOCUS_HANDLER_BLURS_SELF`: fail, on an element in the tab order, when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, by name or in brackets, possibly behind `if (this.blur)`, with at most a `return`), as F55's examples do. Focus goes nowhere: it is dropped, not sent elsewhere. Outside the tab order (tabindex="-1"), where a keyboard user doesn't reach it, it is asked about.
 
 Each other element is asked about (cantTell):
 
@@ -1539,7 +1539,7 @@ A handler that sends focus somewhere (a focus-trap sentinel, a redirect) is the 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_HANDLER_BLURS_SELF` | fail | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives. | WCAG 2.1.1; WCAG 2.4.7; F55 |
+| `FOCUS_HANDLER_BLURS_SELF` | fail, cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives; it fails in the tab order and is asked about outside it. | WCAG 2.1.1; WCAG 2.4.7; F55 |
 | `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 | `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 
