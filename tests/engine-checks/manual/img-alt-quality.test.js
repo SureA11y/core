@@ -319,3 +319,45 @@ test('img-alt-quality: alt made only of symbols gets its own message', () => {
   assert.match(occ.summary, /made only of symbols/);
   assert.doesNotMatch(occ.summary, /placeholder/);
 });
+
+// A file name, an address or a generic word is the page's own text and says
+// nothing of what the image shows (F30): those findings lean fail. Ordinary
+// alt, and the signals that can be right (symbols, "image of", length), get
+// no lean: whether alt describes its image is a person's call.
+test(`${RULE_ID}: leans fail on a file name, an address or a placeholder only`, () => {
+  const html = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const run = (body) =>
+    runa11yCoreOnHtml(html(body), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+  for (const [alt, signal] of [
+    ['IMG_1234.jpg', 'file-name'],
+    ['https://example.com/team', 'url'],
+    ['image', 'placeholder']
+  ]) {
+    const o = run(`<img src="a.png" alt="${alt}">`);
+    assert.strictEqual(o.lean.toward, 'fail', alt);
+    assert.strictEqual(o.lean.i18n.whyKey, 'img_altQuality_lean_why', alt);
+    assert.deepStrictEqual(o.lean.signals, [{ signal: 'alt-signal', value: signal }], alt);
+  }
+  for (const alt of ['Sales rose 20% in 2024', '★★★★☆', 'Image of a cat on a sofa']) {
+    const o = run(`<img src="a.png" alt="${alt}">`);
+    assert.strictEqual(o.lean, undefined, alt);
+  }
+});
+
+test(`${RULE_ID}: an image that is a link's only content leans fail on a file name, not an address`, () => {
+  const run = (alt) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><body><a href="/x"><img src="a.png" alt="${alt}"></a></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  const o = run('icon_home_32.png');
+  assert.strictEqual(o.data.details.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
+  assert.strictEqual(o.lean.toward, 'fail');
+  assert.strictEqual(o.lean.i18n.whyKey, 'img_altQuality_lean_why_control');
+  // An address says where the link leads.
+  assert.strictEqual(run('https://example.com/').lean, undefined);
+  assert.strictEqual(run('Home').lean, undefined);
+});

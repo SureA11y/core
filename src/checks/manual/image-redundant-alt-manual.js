@@ -28,6 +28,8 @@
  *   - `IMAGE_ALT_REDUNDANT` (cantTell): an image's alt text repeats the
  *     visible text next to it in the same parent, so the same words may be
  *     read twice.
+ *     It leans fail when the image has no role="none" or "presentation":
+ *     the page states the repetition, and a best practice never fails.
  *     Basis: HTML img alt (best practice); H2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -158,8 +160,29 @@ function runInPage(ctx) {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
+    // The repetition is a fact the page states; this best practice never
+    // fails, so it leans fail. A presentational role may take the image's
+    // alt out of what is read, so that case gets no lean.
+    const explicitRole = (() => {
+      try {
+        return (helpers.aria && helpers.aria.getExplicitRole(el)) || '';
+      } catch {
+        return '';
+      }
+    })();
+    const presentational = explicitRole === 'none' || explicitRole === 'presentation';
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(presentational
+          ? {}
+          : {
+              lean: {
+                toward: 'fail',
+                why: "The image's alt text is the same as the text beside it, so the words are read twice.",
+                signals: [{ signal: 'alt-equals-adjacent-text', value: true }],
+                i18n: { whyKey: 'imageRedundantAlt_lean_why' }
+              }
+            }),
         summary: "This image's alt text duplicates other visible text right next to it.",
         hint: 'If the image adds nothing beyond that text, use alt=""; otherwise rewrite the alt text so it doesn\'t repeat it.',
         i18n: {

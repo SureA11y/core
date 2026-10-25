@@ -142,3 +142,19 @@ test(`${RULE_ID} (node runtime): a focusable role="presentation" input is NOT ex
   assert.strictEqual(rule.outcome, 'cantTell');
   assert.strictEqual(rule.occurrences.length, 1);
 });
+
+// The name from aria-label, aria-labelledby or title is the button's whole
+// label: a file name, an address or a generic word leans fail.
+test(`${RULE_ID}: leans fail when the name from elsewhere is a file name or a placeholder`, () => {
+  const run = (attrs) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><body><form><input type="image" src="go.png" alt="" ${attrs}></form></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  for (const attrs of ['aria-label="go.png"', 'title="icon"']) {
+    const o = run(attrs);
+    assert.strictEqual(o.lean.toward, 'fail', attrs);
+    assert.strictEqual(o.lean.i18n.whyKey, 'inputImage_altDecorative_lean_why', attrs);
+  }
+  assert.strictEqual(run('aria-label="Search"').lean, undefined);
+});

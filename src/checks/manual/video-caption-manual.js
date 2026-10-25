@@ -36,6 +36,9 @@
  *   - `CAPTIONS_TRACK_NOT_DETECTED` (cantTell): a <video> has no
  *     <track kind="captions"> with a source; a person checks whether it has
  *     audio that needs captions.
+ *     It leans pass when the video is muted, autoplays and loops with no
+ *     controls attribute: a background video whose sound users can't turn
+ *     on with the browser's controls.
  *     Basis: WCAG 1.2.2 (not settled); G87; H95; ACT f51b46.
  *   - `SUBTITLES_TRACK_ONLY` (cantTell): a <video> has only subtitles
  *     tracks, which may carry the dialogue without the speaker and sound
@@ -124,6 +127,15 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Muted, autoplaying, looping and without controls: the browser gives no
+  // way to turn its sound on, so it presents no audio to caption.
+  function isBackgroundVideo(el) {
+    return (
+      ['muted', 'autoplay', 'loop'].every((a) => dom.hasAttribute(el, a)) &&
+      !dom.hasAttribute(el, 'controls')
+    );
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'querySelectorAll')) continue;
 
@@ -196,6 +208,20 @@ function runInPage(ctx) {
               hintKey: 'videoCaption_hint_cantTell',
               params: {}
             },
+            ...(isBackgroundVideo(el)
+              ? {
+                  lean: {
+                    toward: 'pass',
+                    why: 'The video is muted, plays by itself, loops and has no controls, so users get no sound from it.',
+                    signals: [{ signal: 'background-video', value: true }],
+                    caution: 'A control the page builds itself may still turn the sound on.',
+                    i18n: {
+                      whyKey: 'videoCaption_lean_why_background',
+                      cautionKey: 'videoCaption_lean_caution_background'
+                    }
+                  }
+                }
+              : {}),
             data: {
               details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
             }

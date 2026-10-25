@@ -133,3 +133,24 @@ test(`${RULE_ID}: a focusable role="presentation" embed is still reviewed`, () =
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'embed1'));
 });
+
+// A name that is the embedded file's name, or a generic word, says nothing
+// of what is embedded: it leans fail. Any other name needs a person.
+test(`${RULE_ID}: leans fail on a file name or a placeholder name`, () => {
+  const run = (attrs) =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="en"><body><main><embed src="/media/chart_2024_q3.svg" type="image/svg+xml" ${attrs}></main></body></html>`,
+        { runOnly: [RULE_ID] }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  for (const attrs of ['title="chart_2024_q3.svg"', 'aria-label="graphic"']) {
+    const o = run(attrs);
+    assert.strictEqual(o.lean.toward, 'fail', attrs);
+    assert.strictEqual(o.lean.i18n.whyKey, 'embed_textAltQuality_lean_why', attrs);
+  }
+  assert.strictEqual(run('title="Sales by quarter, 2024"').lean, undefined);
+});

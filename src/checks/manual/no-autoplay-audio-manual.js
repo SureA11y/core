@@ -29,14 +29,20 @@
  *   - `AUTOPLAY_NO_CONTROLS_MECHANISM` (cantTell): an unmuted <audio> or
  *     <video> plays automatically with no native controls to pause, stop
  *     or turn down its sound.
+ *     It leans pass when a script has muted it (the muted property) or its
+ *     known duration is 3 seconds or less without loop, and fail when it
+ *     has loop or its known duration is longer than 3 seconds.
  *     Basis: WCAG 1.4.2 (not settled); F23; ACT 80f0bf; ACT 4c31df.
  *   - `AUTOPLAY_CONTROLS_HIDDEN` (cantTell): an unmuted <audio> or <video>
  *     plays automatically and has native controls, but it is hidden, so the
  *     controls cannot be reached.
+ *     It leans as AUTOPLAY_NO_CONTROLS_MECHANISM does.
  *     Basis: WCAG 1.4.2 (not settled); F23; ACT 4c31df.
  *   - `EMBEDDED_SOUND_SOURCE` (cantTell): an <embed>, <object> or <bgsound>
  *     may play sound when the page loads, with no controls the rule can
  *     read.
+ *     It leans pass for a <bgsound>, and for a Flash plugin (its type, or
+ *     a .swf file), which current browsers no longer play.
  *     Basis: WCAG 1.4.2 (not settled); F23.
  * @implementation-notes
  * - Elements with `controls` present are not flagged while they are
@@ -153,6 +159,62 @@ function runInPage(ctx) {
 
   const nodes = queryAllUnfiltered('audio[autoplay], video[autoplay]');
 
+  // What the element states about its sound: muted by a script (the
+  // property, with no attribute), set to loop, or a duration the browser
+  // has read (readyState 1 or more). The 3-second limit is 1.4.2's.
+  function mediaLean(el) {
+    let muted;
+    let readyState;
+    let duration;
+    try {
+      muted = dom.get(el, 'muted') === true;
+      readyState = Number(dom.get(el, 'readyState')) || 0;
+      duration = Number(dom.get(el, 'duration'));
+    } catch {
+      return null;
+    }
+    const known = readyState >= 1 && !Number.isNaN(duration);
+    const seconds = known && Number.isFinite(duration) ? Math.round(duration * 100) / 100 : null;
+    const failCaution = {
+      caution:
+        'The browser may block sound that plays by itself, the file may have no sound, and a control elsewhere may stop it.',
+      cautionKey: 'noAutoplayAudio_lean_caution'
+    };
+    if (muted) {
+      return {
+        toward: 'pass',
+        why: 'A script has muted it, so it plays no sound.',
+        signals: [{ signal: 'muted-property', value: true }],
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_muted' }
+      };
+    }
+    if (dom.hasAttribute(el, 'loop')) {
+      return {
+        toward: 'fail',
+        why: 'It has the loop attribute, so it plays again and again, for more than 3 seconds.',
+        signals: [{ signal: 'loop-attribute', value: true }],
+        caution: failCaution.caution,
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_loop', cautionKey: failCaution.cautionKey }
+      };
+    }
+    if (!known) return null;
+    if (seconds != null && seconds <= 3) {
+      return {
+        toward: 'pass',
+        why: 'It lasts 3 seconds or less, which WCAG 1.4.2 allows.',
+        signals: [{ signal: 'media-duration-s', value: seconds }],
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_short' }
+      };
+    }
+    return {
+      toward: 'fail',
+      why: 'It lasts more than 3 seconds.',
+      signals: [{ signal: 'media-duration-s', value: seconds }],
+      caution: failCaution.caution,
+      i18n: { whyKey: 'noAutoplayAudio_lean_why_long', cautionKey: failCaution.cautionKey }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -169,8 +231,10 @@ function runInPage(ctx) {
         ignoreOpacity: true
       });
       if (shown.eligible) continue;
+      const hiddenLean = mediaLean(el);
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(hiddenLean ? { lean: hiddenLean } : {}),
           summary:
             'This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.',
           hint: 'If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.',
@@ -192,7 +256,9 @@ function runInPage(ctx) {
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
+    const lean = mediaLean(el);
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       selector: stableSelector,
       html,
       summary:
@@ -260,7 +326,36 @@ function runInPage(ctx) {
     applicableCount += 1;
     if (tag === 'object') askedObjects.push(el);
 
+    // Current browsers play neither a <bgsound> nor a Flash plugin.
+    const urlAttr = tag === 'object' ? 'data' : 'src';
+    const flash =
+      tag !== 'bgsound' &&
+      (PLUGIN_TYPES.test(attr(el, 'type').toLowerCase().split(';')[0].trim()) ||
+        /\.swf(?:[?#]|$)/i.test(attr(el, urlAttr)));
+    const embeddedLean =
+      tag === 'bgsound' || flash
+        ? {
+            toward: 'pass',
+            why:
+              tag === 'bgsound'
+                ? 'Current browsers ignore <bgsound>, so it plays nothing.'
+                : 'Current browsers no longer run Flash, so it plays nothing.',
+            signals: [
+              { signal: tag === 'bgsound' ? 'bgsound-element' : 'flash-plugin', value: true }
+            ],
+            caution: 'Older browsers still play it.',
+            i18n: {
+              whyKey:
+                tag === 'bgsound'
+                  ? 'noAutoplayAudio_lean_why_bgsound'
+                  : 'noAutoplayAudio_lean_why_flash',
+              cautionKey: 'noAutoplayAudio_lean_caution_obsolete'
+            }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(embeddedLean ? { lean: embeddedLean } : {}),
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
       html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       summary: 'This element may play sound as soon as the page loads.',

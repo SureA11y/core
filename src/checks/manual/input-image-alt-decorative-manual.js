@@ -23,6 +23,8 @@
  *   - `NAME_FROM_ELSEWHERE_REVIEW` (cantTell): an image button has alt=""
  *     but takes a name from aria-label, aria-labelledby or title, and a
  *     person checks that the name says what the button does.
+ *     It leans fail when that name is a file name, a web address or a
+ *     placeholder word.
  *     Basis: WCAG 1.1.1 (not settled); H36; HTML-AAM input type=image.
  */
 
@@ -141,22 +143,26 @@ function runInPage(ctx) {
   // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
   // call this rule reviews. alt="" with no other source leaves the control
   // unnamed, which input-image-alt-present fails outright.
-  function hasNameFromOtherSource(el) {
+  // The name, '' when there is none: the ARIA name wins over title.
+  function nameFromOtherSource(el) {
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(el, ctx);
-        if (aria && aria.present && String(aria.value || '').trim()) return true;
+        if (aria && aria.present && String(aria.value || '').trim())
+          return String(aria.value).trim();
       } catch {
         // fall through to title
       }
     }
     try {
-      const title = dom.getAttribute(el, 'title');
-      return title != null && String(title).trim() !== '';
+      return String(dom.getAttribute(el, 'title') || '').trim();
     } catch {
-      return false;
+      return '';
     }
   }
+
+  // The signals a lean fail rests on: a name that is not a label (F30).
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
 
   const els = (() => {
     try {
@@ -195,13 +201,34 @@ function runInPage(ctx) {
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(dom.getAttribute(el, 'alt') != null && String(dom.getAttribute(el, 'alt')).trim() === ''))
       continue;
-    if (!hasNameFromOtherSource(el)) continue;
+    const name = nameFromOtherSource(el);
+    if (!name) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const lean =
+      signal && LEAN_SIGNALS.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: 'Its name is a file name, a web address or a generic word, which does not say what the button does.',
+            signals: [{ signal: 'name-signal', value: signal.altSignal }],
+            i18n: { whyKey: 'inputImage_altDecorative_lean_why' }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'This <input type="image"> has alt="" and takes its name from elsewhere.',
       hint: "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
       i18n: {

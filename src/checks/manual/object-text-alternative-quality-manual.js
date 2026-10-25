@@ -37,6 +37,10 @@
  *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <object> has a text
  *     alternative, and a person checks that it describes the object's
  *     content.
+ *     It leans fail when the text users get (the ARIA name, else the
+ *     fallback text, else the title) is the data file's name, a placeholder
+ *     word, or only a note that a plugin or player is missing (English
+ *     wording).
  *     Basis: WCAG 1.1.1 (not settled); H53.
  */
 
@@ -193,6 +197,94 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Text that stands in for the object without describing it: the words
+  // for an object itself, and notes that a plugin or player is missing.
+  // Every sentence must be such a note, so one beside a real description
+  // gets no lean. English wording only.
+  const OBJECT_PLACEHOLDER_WORDS = new Set([
+    'object',
+    'embed',
+    'flash',
+    'flash movie',
+    'movie',
+    'video',
+    'audio',
+    'media',
+    'plugin',
+    'plug-in'
+  ]);
+  const MISSING_PLUGIN_SENTENCE_RE = new RegExp(
+    [
+      "\\b(?:flash|plug-?ins?|player|browsers?)\\b.*\\b(?:not installed|is required|are required|required|needed|not supported|isn't supported|unsupported|(?:does not|doesn't|do not|don't|cannot|can't) (?:support|play|display|show))\\b",
+      '\\b(?:install|download|get|update|upgrade|enable)\\b.*\\b(?:flash|plug-?ins?|player|browser)\\b',
+      '^(?:sorry|oops)[.!,]?$'
+    ].join('|'),
+    'i'
+  );
+  function isMissingPluginNote(text) {
+    const sentences = String(text || '')
+      .split(/(?<=[.!?])\s+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return sentences.length > 0 && sentences.every((x) => MISSING_PLUGIN_SENTENCE_RE.test(x));
+  }
+  function normalized(v) {
+    return String(v || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+  function dataFileName(data) {
+    const path = String(data || '').split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {
+      // keep it as written
+    }
+    return normalized(name);
+  }
+
+  function leanFor(el, text, data) {
+    const t = normalized(text);
+    if (!t) return null;
+    if (isMissingPluginNote(t)) {
+      return {
+        toward: 'fail',
+        why: 'The text only says a plugin or player is missing, which tells nothing of the content.',
+        signals: [{ signal: 'missing-plugin-text', value: true }],
+        i18n: { whyKey: 'object_textAltQuality_lean_why_plugin' }
+      };
+    }
+    let signal = null;
+    const fileName = dataFileName(data);
+    if (fileName && /\./.test(fileName) && t === fileName) signal = 'file-name';
+    if (!signal) {
+      try {
+        const s =
+          typeof helpers.getTextAlternativeSignal === 'function'
+            ? helpers.getTextAlternativeSignal(el, text)
+            : null;
+        if (s && (s.altSignal === 'file-name' || s.altSignal === 'placeholder'))
+          signal = s.altSignal;
+      } catch {
+        signal = null;
+      }
+    }
+    if (!signal && OBJECT_PLACEHOLDER_WORDS.has(t.replace(/[.!?:]+$/, ''))) signal = 'placeholder';
+    if (!signal) return null;
+    return {
+      toward: 'fail',
+      why: 'A file name or a generic word does not say what the object shows.',
+      signals: [{ signal: 'alt-signal', value: signal }],
+      caution: 'The word may be all the object shows.',
+      i18n: {
+        whyKey: 'object_textAltQuality_lean_why',
+        cautionKey: 'object_textAltQuality_lean_caution'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -262,7 +354,13 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const lean = leanFor(
+      el,
+      ariaLabel || labelledByText || fallbackText || title,
+      dom.getAttribute(el, 'data')
+    );
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <object> conveys what it embeds.',
       hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {
