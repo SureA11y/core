@@ -535,7 +535,7 @@ module.exports = [
 
   {
     id: 'wcag-1.4.5-images-of-text',
-    checksIds: ['images-of-text'],
+    checksIds: ['image-of-text'],
     meta: {
       titleKey: 'catalog.rules.wcag_145_images_of_text.title',
       descriptionKey: 'catalog.rules.wcag_145_images_of_text.description',

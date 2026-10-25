@@ -27067,46 +27067,7 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
-    "ruleId": "image-redundant-alt",
-    "title": "Image alt text must not duplicate adjacent visible text",
-    "description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
-    "i18n": {
-      "titleKey": "imageRedundantAlt_title",
-      "descriptionKey": "imageRedundantAlt_description"
-    },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
-    "tags": [
-      "best-practice",
-      "images",
-      "nontext",
-      "atomic",
-      "manual",
-      "a11ycore"
-    ],
-    "wcagSc": [],
-    "normativeMappings": [],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {},
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null,
-    "margin": null
-  },
-  {
-    "ruleId": "images-of-text",
+    "ruleId": "image-of-text",
     "title": "Text should be real text, not an image of text",
     "description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
     "i18n": {
@@ -27161,10 +27122,49 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "1.4.5": [
-          "images-of-text-evidence"
+          "image-of-text-evidence"
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "image-redundant-alt",
+    "title": "Image alt text must not duplicate adjacent visible text",
+    "description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
+    "i18n": {
+      "titleKey": "imageRedundantAlt_title",
+      "descriptionKey": "imageRedundantAlt_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
+    "tags": [
+      "best-practice",
+      "images",
+      "nontext",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -33805,7 +33805,7 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-1.4.5-images-of-text",
     "checksIds": [
-      "images-of-text"
+      "image-of-text"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_145_images_of_text.title",
@@ -34077,8 +34077,8 @@ const RUNTIME_CATALOG = {
   "iframe-focusable-content": { run: require("./checks/automatic/iframe-focusable-content.js").runInPage, applicability: require("./checks/automatic/iframe-focusable-content.js").applicability || null },
   "iframe-name-present": { run: require("./checks/automatic/iframe-name-present.js").runInPage, applicability: require("./checks/automatic/iframe-name-present.js").applicability || null },
   "iframe-title-unique": { run: require("./checks/automatic/iframe-title-unique.js").runInPage, applicability: require("./checks/automatic/iframe-title-unique.js").applicability || null },
+  "image-of-text": { run: require("./checks/manual/image-of-text-manual.js").runInPage, applicability: require("./checks/manual/image-of-text-manual.js").applicability || null },
   "image-redundant-alt": { run: require("./checks/manual/image-redundant-alt-manual.js").runInPage, applicability: require("./checks/manual/image-redundant-alt-manual.js").applicability || null },
-  "images-of-text": { run: require("./checks/manual/images-of-text-manual.js").runInPage, applicability: require("./checks/manual/images-of-text-manual.js").applicability || null },
   "img-alt-decorative": { run: require("./checks/manual/img-alt-decorative-manual.js").runInPage, applicability: require("./checks/manual/img-alt-decorative-manual.js").applicability || null },
   "img-alt-present": { run: require("./checks/automatic/img-alt-present.js").runInPage, applicability: require("./checks/automatic/img-alt-present.js").applicability || null },
   "img-alt-quality": { run: require("./checks/manual/img-alt-quality-manual.js").runInPage, applicability: require("./checks/manual/img-alt-quality-manual.js").applicability || null },
@@ -39440,8 +39440,8 @@ const RULE_MODULES = [
   "./checks/automatic/iframe-focusable-content.js",
   "./checks/automatic/iframe-name-present.js",
   "./checks/automatic/iframe-title-unique.js",
+  "./checks/manual/image-of-text-manual.js",
   "./checks/manual/image-redundant-alt-manual.js",
-  "./checks/manual/images-of-text-manual.js",
   "./checks/manual/img-alt-decorative-manual.js",
   "./checks/automatic/img-alt-present.js",
   "./checks/manual/img-alt-quality-manual.js",
@@ -44448,46 +44448,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
-    "ruleId": "image-redundant-alt",
-    "title": "Image alt text must not duplicate adjacent visible text",
-    "description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
-    "i18n": {
-      "titleKey": "imageRedundantAlt_title",
-      "descriptionKey": "imageRedundantAlt_description"
-    },
-    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
-    "tags": [
-      "best-practice",
-      "images",
-      "nontext",
-      "atomic",
-      "manual",
-      "a11ycore"
-    ],
-    "wcagSc": [],
-    "normativeMappings": [],
-    "defaultSeverity": "minor",
-    "defaultConfidence": "medium",
-    "type": "manual",
-    "coverage": {},
-    "data": null,
-    "ruleInterfaceVersion": "1.0.0",
-    "ruleVersion": "0.0.0",
-    "normative": true,
-    "atomic": true,
-    "deprecated": false,
-    "deprecation": null,
-    "category": "perceivable",
-    "standard": null,
-    "applicability": "",
-    "expectation": "",
-    "references": [],
-    "requirements": null,
-    "mappings": null,
-    "margin": null
-  },
-  {
-    "ruleId": "images-of-text",
+    "ruleId": "image-of-text",
     "title": "Text should be real text, not an image of text",
     "description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
     "i18n": {
@@ -44542,10 +44503,49 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "1.4.5": [
-          "images-of-text-evidence"
+          "image-of-text-evidence"
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "perceivable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "image-redundant-alt",
+    "title": "Image alt text must not duplicate adjacent visible text",
+    "description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
+    "i18n": {
+      "titleKey": "imageRedundantAlt_title",
+      "descriptionKey": "imageRedundantAlt_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.13.0/docs/RULE_CATALOG.md#image-redundant-alt",
+    "tags": [
+      "best-practice",
+      "images",
+      "nontext",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -51186,7 +51186,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-1.4.5-images-of-text",
     "checksIds": [
-      "images-of-text"
+      "image-of-text"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_145_images_of_text.title",
@@ -68324,6 +68324,88 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const { rule } = ctx;
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
+    "image-of-text": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { helpers, rule } = ctx;
+
+  // Rendered: an image a scan can't see drawn is no image of text to it.
+  function isRendered(el) {
+    if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
+    try {
+      return helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible !== false;
+    } catch {
+      return true;
+    }
+  }
+
+  // The markup of an SVG data URL, or '' for any other source.
+  function svgDataMarkup(src) {
+    const m = /^\s*data:image\/svg\+xml(;[^,]*)?,([\s\S]*)$/i.exec(String(src || ''));
+    if (!m) return '';
+    const params = (m[1] || '').toLowerCase();
+    try {
+      if (/;base64/.test(params)) {
+        return typeof atob === 'function' ? atob(m[2].replace(/\s+/g, '')) : '';
+      }
+      return decodeURIComponent(m[2]);
+    } catch {
+      return m[2];
+    }
+  }
+
+  const occurrences = [];
+
+  function ask(el, reasonCode, keys, summary, hint) {
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary,
+        hint,
+        i18n: { summaryKey: keys[0], hintKey: keys[1], params: {} },
+        data: { details: { reasonCode } }
+      })
+    );
+  }
+
+  const inputs = helpers.queryAllSmart ? helpers.queryAllSmart('input') : helpers.queryAll('input');
+  for (const el of inputs) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const type = String(dom.getAttribute(el, 'type') || '')
+      .trim()
+      .toLowerCase();
+    if (type !== 'image' || !isRendered(el)) continue;
+    ask(
+      el,
+      'IMAGE_BUTTON_TEXT_REVIEW',
+      ['imagesOfText_summary_cantTell_button', 'imagesOfText_hint_cantTell_button'],
+      'This button is drawn as an image. Check whether the image holds text that could be real text.',
+      'Use real text styled with CSS, such as a <button> with its label as text, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
+    );
+  }
+
+  const imgs = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
+  for (const el of imgs) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    if (!/<text[\s>/]/i.test(svgDataMarkup(dom.getAttribute(el, 'src')))) continue;
+    if (!isRendered(el)) continue;
+    ask(
+      el,
+      'SVG_IMAGE_TEXT_REVIEW',
+      ['imagesOfText_summary_cantTell_svg', 'imagesOfText_hint_cantTell_svg'],
+      'This image shows an SVG with text drawn in it. Check whether that text could be real text.',
+      'Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
+    );
+  }
+
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'moderate',
+    occurrences
+  };
+}), applicability: null },
     "image-redundant-alt": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
@@ -68424,88 +68506,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-}), applicability: null },
-    "images-of-text": { run: (function runInPage(ctx) {
-  const dom = ctx.helpers.dom;
-  const { helpers, rule } = ctx;
-
-  // Rendered: an image a scan can't see drawn is no image of text to it.
-  function isRendered(el) {
-    if (!helpers || typeof helpers.isDomVisibleEligible !== 'function') return true;
-    try {
-      return helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible !== false;
-    } catch {
-      return true;
-    }
-  }
-
-  // The markup of an SVG data URL, or '' for any other source.
-  function svgDataMarkup(src) {
-    const m = /^\s*data:image\/svg\+xml(;[^,]*)?,([\s\S]*)$/i.exec(String(src || ''));
-    if (!m) return '';
-    const params = (m[1] || '').toLowerCase();
-    try {
-      if (/;base64/.test(params)) {
-        return typeof atob === 'function' ? atob(m[2].replace(/\s+/g, '')) : '';
-      }
-      return decodeURIComponent(m[2]);
-    } catch {
-      return m[2];
-    }
-  }
-
-  const occurrences = [];
-
-  function ask(el, reasonCode, keys, summary, hint) {
-    occurrences.push(
-      helpers.reportOccurrence(el, {
-        summary,
-        hint,
-        i18n: { summaryKey: keys[0], hintKey: keys[1], params: {} },
-        data: { details: { reasonCode } }
-      })
-    );
-  }
-
-  const inputs = helpers.queryAllSmart ? helpers.queryAllSmart('input') : helpers.queryAll('input');
-  for (const el of inputs) {
-    if (!el || !dom.get(el, 'getAttribute')) continue;
-    const type = String(dom.getAttribute(el, 'type') || '')
-      .trim()
-      .toLowerCase();
-    if (type !== 'image' || !isRendered(el)) continue;
-    ask(
-      el,
-      'IMAGE_BUTTON_TEXT_REVIEW',
-      ['imagesOfText_summary_cantTell_button', 'imagesOfText_hint_cantTell_button'],
-      'This button is drawn as an image. Check whether the image holds text that could be real text.',
-      'Use real text styled with CSS, such as a <button> with its label as text, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
-    );
-  }
-
-  const imgs = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
-  for (const el of imgs) {
-    if (!el || !dom.get(el, 'getAttribute')) continue;
-    if (!/<text[\s>/]/i.test(svgDataMarkup(dom.getAttribute(el, 'src')))) continue;
-    if (!isRendered(el)) continue;
-    ask(
-      el,
-      'SVG_IMAGE_TEXT_REVIEW',
-      ['imagesOfText_summary_cantTell_svg', 'imagesOfText_hint_cantTell_svg'],
-      'This image shows an SVG with text drawn in it. Check whether that text could be real text.',
-      'Use real text styled with CSS, such as the SVG inline in the page or the text next to the image, unless the text is essential as it is drawn (a logo) or users can change how the image shows it.'
-    );
-  }
-
-  if (!occurrences.length) {
-    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
-  }
-  return {
-    ruleId: rule.ruleId,
-    outcome: 'cantTell',
-    severity: rule.defaultSeverity || 'moderate',
-    occurrences
-  };
 }), applicability: null },
     "img-alt-decorative": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;

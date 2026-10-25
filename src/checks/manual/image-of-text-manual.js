@@ -3,7 +3,7 @@
 'use strict';
 
 /**
- * @check images-of-text
+ * @check image-of-text
  * @atomic true
  * @summary Text should be real text, not an image of text
  * @standard WCAG 2.2
@@ -46,7 +46,7 @@
  *   Failed Example 4).
  */
 
-const id = 'images-of-text';
+const id = 'image-of-text';
 
 const meta = {
   title: 'Text should be real text, not an image of text',
@@ -72,7 +72,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.4.5': ['images-of-text-evidence'] } }
+  coverage: { facetsBySc: { '1.4.5': ['image-of-text-evidence'] } }
 };
 
 function runInPage(ctx) {

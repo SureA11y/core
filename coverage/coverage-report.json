@@ -5216,33 +5216,8 @@
       "deprecated": false
     },
     {
-      "file": "src/checks/manual/image-redundant-alt-manual.js",
-      "ruleId": "image-redundant-alt",
-      "wcagScNormative": [],
-      "wcagScAll": [],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "Image alt text must not duplicate adjacent visible text",
-      "tags": [
-        "best-practice",
-        "images",
-        "nontext",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [],
-        "versions": [],
-        "cumulativeLevelsByVersion": {},
-        "cumulativeLevelsAny": []
-      },
-      "error": null,
-      "coverage": {},
-      "deprecated": false
-    },
-    {
-      "file": "src/checks/manual/images-of-text-manual.js",
-      "ruleId": "images-of-text",
+      "file": "src/checks/manual/image-of-text-manual.js",
+      "ruleId": "image-of-text",
       "wcagScNormative": [
         "1.4.5"
       ],
@@ -5255,6 +5230,7 @@
       "tags": [
         "wcag2aa",
         "wcag145",
+        "nontext",
         "images",
         "atomic",
         "manual"
@@ -5285,10 +5261,35 @@
       "coverage": {
         "facetsBySc": {
           "1.4.5": [
-            "images-of-text-evidence"
+            "image-of-text-evidence"
           ]
         }
       },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/manual/image-redundant-alt-manual.js",
+      "ruleId": "image-redundant-alt",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Image alt text must not duplicate adjacent visible text",
+      "tags": [
+        "best-practice",
+        "images",
+        "nontext",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {},
       "deprecated": false
     },
     {
@@ -7357,11 +7358,11 @@
         "unknownFacetIds": [],
         "facets": [
           {
-            "id": "images-of-text-evidence",
+            "id": "image-of-text-evidence",
             "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
             "automation": "manual",
             "coveredBy": [
-              "images-of-text"
+              "image-of-text"
             ]
           }
         ]
@@ -8957,11 +8958,11 @@
         "unknownFacetIds": [],
         "facets": [
           {
-            "id": "images-of-text-evidence",
+            "id": "image-of-text-evidence",
             "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
             "automation": "manual",
             "coveredBy": [
-              "images-of-text"
+              "image-of-text"
             ]
           }
         ]

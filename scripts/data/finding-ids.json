@@ -65,8 +65,8 @@
     "iframe-focusable-content",
     "iframe-name-present",
     "iframe-title-unique",
+    "image-of-text",
     "image-redundant-alt",
-    "images-of-text",
     "img-alt-decorative",
     "img-alt-present",
     "img-alt-quality",
@@ -430,12 +430,12 @@
     "iframe-name-present": [
       "IFRAME_NAME_MISSING"
     ],
-    "image-redundant-alt": [
-      "IMAGE_ALT_REDUNDANT"
-    ],
-    "images-of-text": [
+    "image-of-text": [
       "IMAGE_BUTTON_TEXT_REVIEW",
       "SVG_IMAGE_TEXT_REVIEW"
+    ],
+    "image-redundant-alt": [
+      "IMAGE_ALT_REDUNDANT"
     ],
     "img-alt-decorative": [
       "EXCLUDED_ELEMENT_REVIEW",

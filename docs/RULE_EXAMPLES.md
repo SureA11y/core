@@ -1086,7 +1086,7 @@ The image's `alt` text ("Home") duplicates the adjacent visible link text word f
 ```
 The `alt` text ("Home icon") differs from the adjacent text ("Home").
 
-## images-of-text
+## image-of-text
 
 *Manual; asks only where markup shows an image likely holds text. Text in an image's pixels is not seen.*
 

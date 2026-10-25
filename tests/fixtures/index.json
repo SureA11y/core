@@ -1209,6 +1209,25 @@
       "caseCounts": null
     },
     {
+      "ruleId": "image-of-text",
+      "title": "Text should be real text, not an image of text",
+      "type": "manual",
+      "wcagSc": [
+        "1.4.5"
+      ],
+      "ruleFile": "src/checks/manual/image-of-text-manual.js",
+      "testFile": "tests/engine-checks/manual/image-of-text.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/image-of-text-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "image-redundant-alt",
       "title": "Image alt text must not duplicate adjacent visible text",
       "type": "manual",
@@ -1223,25 +1242,6 @@
         "FAIL": 0,
         "CANTTELL": 1,
         "OTHER": 2
-      }
-    },
-    {
-      "ruleId": "images-of-text",
-      "title": "Text should be real text, not an image of text",
-      "type": "manual",
-      "wcagSc": [
-        "1.4.5"
-      ],
-      "ruleFile": "src/checks/manual/images-of-text-manual.js",
-      "testFile": "tests/engine-checks/manual/images-of-text.test.js",
-      "hasFixture": true,
-      "fixtureFile": "tests/fixtures/images-of-text-all-scenarios.html",
-      "totalCases": 8,
-      "caseCounts": {
-        "PASS": 0,
-        "FAIL": 0,
-        "CANTTELL": 3,
-        "OTHER": 5
       }
     },
     {
