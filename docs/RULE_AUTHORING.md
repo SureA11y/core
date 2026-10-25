@@ -550,8 +550,10 @@ lean: {
 - The engine drops a lean on a `fail`-tier occurrence and a malformed one,
   never the finding. Don't set `measured`: it is filled once the lean has been
   counted against known answers.
-- Give each lean a fixture case, and say in `@reason-codes` which way the code
-  leans and when (`It leans fail: …`).
+- Test each lean in the rule's test file: a case that leans, its `toward` and
+  `whyKey`, and, for a conditional lean, a case of the same code with none.
+  Where the rule's fixture already has the case, say there what it leans. Say
+  in `@reason-codes` which way the code leans and when (`It leans fail: …`).
 
 ### 8.6 How to check: steps for each undecided finding
 
