@@ -91,8 +91,8 @@
  *     characters and the page has loaded that font; otherwise no lean.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
  *   - `POSSIBLE_SYMBOLIC_CHARACTER` (cantTell): the visible label is a single
- *     character missing from the accessible name, which may be a symbol rather
- *     than text.
+ *     character, or symbols only ("×", "+", "»"), missing from the accessible
+ *     name, which may be a symbol rather than text.
  *     It leans pass when the character is the letter x (a close icon), and
  *     fail when it is a digit; other letters have no lean.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
@@ -754,7 +754,11 @@ function runInPage(ctx) {
 
     const labelTokens = tokenize(visibleLabel, false);
     const nameTokens = tokenize(accName, false);
-    const contains = containsWordRun(labelTokens, nameTokens, null);
+    // A label of symbols only ("×", "+", "»") has no words to look for, and
+    // was counted as contained. One the name doesn't hold is asked about as a
+    // symbol standing for an icon, as a single "X" is.
+    const symbolsOnly = labelTokens.length === 0 && accNorm.indexOf(visibleNorm) === -1;
+    const contains = !symbolsOnly && containsWordRun(labelTokens, nameTokens, null);
 
     // An abbreviation, a word hyphenated differently, or visible text that
     // may not be literal text at all (an icon-font glyph, a single symbolic
@@ -762,7 +766,9 @@ function runInPage(ctx) {
     // either. Report without asserting a defect instead of failing or
     // staying silent.
     let uncertainReason = '';
-    if (!contains) {
+    if (symbolsOnly) {
+      uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
+    } else if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
         uncertainReason = 'HYPHENATION_DIFFERS';
       } else {

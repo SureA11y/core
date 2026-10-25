@@ -670,3 +670,25 @@ test(`${RULE_ID}: an icon font ligature leans pass only when the page has loaded
   assert.equal(lean.i18n.whyKey, 'labelInName_lean_why_iconFont');
   assert.equal(leanWith('error'), undefined);
 });
+
+// A label of symbols only has no words to look for in the name; it was
+// counted as contained. Like a single "X", it is asked about as a symbol
+// standing for an icon, and leans pass.
+test(`${RULE_ID}: a symbols-only label the name doesn't hold is asked about, leaning pass`, () => {
+  for (const [label, name] of [
+    ['×', 'Close'],
+    ['+', 'Add item'],
+    ['»»', 'Next page']
+  ]) {
+    const html = `<!doctype html><html lang="en"><body><main><button aria-label="${name}">${label}</button></main></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_SYMBOLIC_CHARACTER', label);
+    assert.equal(rule.occurrences[0].lean.toward, 'pass', label);
+  }
+  // One the name holds is in the name.
+  const held = `<!doctype html><html lang="en"><body><main><button aria-label="+ add">+</button></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(held, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
+});
