@@ -253,7 +253,7 @@ Every automatic rule that can report `cantTell` carries this, and a test holds t
 
 ### Leans
 
-A `cantTell` can still point one way. `lean` says which, when the page gives evidence for it: `toward` is the answer that evidence makes likely, `why` says what the evidence is, and `signals` lists the facts the rule read, each a kebab-case name and a plain value, so a tool can show or weigh them. `caution` says what could make the lean wrong, when that isn't plain from `uncertainty.needed`. The outcome stays `cantTell`: a lean is advice, not a verdict, and nothing that reads outcomes or tiers changes because of it.
+A `cantTell` can still point one way ([`LEANS.md`](./LEANS.md) is the guide for readers and tool builders). `lean` says which, when the page gives evidence for it: `toward` is the answer that evidence makes likely, `why` says what the evidence is, and `signals` lists the facts the rule read, each a kebab-case name and a plain value, so a tool can show or weigh them. `caution` says what could make the lean wrong, when that isn't plain from `uncertainty.needed`. The outcome stays `cantTell`: a lean is advice, not a verdict, and nothing that reads outcomes or tiers changes because of it.
 
 `lean` is present only where the rule has evidence. Its absence is information too: only a person can judge this one. It is present only on a `cantTell`-tier occurrence, as `uncertainty` is; the engine drops one on a decided occurrence, and drops a malformed one (a `toward` other than `pass` or `fail`, or no `why`) without touching the finding. `measured` appears once a lean has been counted against cases with known answers: how many times it was right (`agreed`) out of how many (`cases`). Until then it is absent; there is no confidence number.
 
