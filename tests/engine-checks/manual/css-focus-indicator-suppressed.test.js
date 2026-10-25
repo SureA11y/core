@@ -243,6 +243,36 @@ test(`${RULE_ID}: catches ACT oj04fd's failed example once its stylesheet is ava
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: leans fail when nothing readable shows focus another way`, () => {
+  const lean = (css, body) => {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
+    return rule.occurrences[0].lean;
+  };
+  const plain = lean('a:focus{outline:none}', '<a href="/x" id="a">x</a>');
+  assert.strictEqual(plain.toward, 'fail');
+  assert.strictEqual(plain.i18n.whyKey, 'cssFocusIndicatorSuppressed_lean_why');
+  // An inline focus handler may draw the indicator: no lean.
+  assert.strictEqual(
+    lean('a:focus{outline:none}', '<a href="/x" id="a" onfocus="mark(this)">x</a>'),
+    undefined
+  );
+  // A :focus-within rule around it draws a change: no lean.
+  assert.strictEqual(
+    lean(
+      'a:focus{outline:none} nav:focus-within{background:yellow}',
+      '<nav><a href="/x" id="a">x</a></nav>'
+    ),
+    undefined
+  );
+  // A focus-visible polyfill's class: no lean.
+  assert.strictEqual(
+    lean('a:focus:not(.focus-visible){outline:none}', '<a href="/x" id="a">x</a>'),
+    undefined
+  );
+});
+
 test(`${RULE_ID}: manual rule never reports fail`, () => {
   const result = runa11yCoreOnHtml(page('*:focus{outline:none}', '<a href="/x" id="a">x</a>'), {
     runOnly: [RULE_ID]

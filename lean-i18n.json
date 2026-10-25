@@ -1,0 +1,303 @@
+{
+  "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": {
+    "en": "Even if a script moves focus here, no key or focus listener is on the element, its ancestors, the document or the window, so Enter and Space would do nothing.",
+    "fr": "Même si un script déplace le focus ici, aucun écouteur de touches ni de focus n’est posé sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne feraient rien.",
+    "de": "Selbst wenn ein Skript den Fokus hierher bewegt, gibt es weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener; Eingabe und Leertaste würden nichts bewirken.",
+    "es": "Aunque un script mueva el foco aquí, no hay ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio no harían nada.",
+    "ja": "スクリプトがここにフォーカスを移しても、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーがないため、Enter や Space では何も起きません。"
+  },
+  "clickHandlerKeyboardOperable_lean_caution_clickOnly": {
+    "en": "The click may only track clicks, or repeat what another control of the page does.",
+    "fr": "Le clic peut ne faire que suivre les clics, ou répéter ce que fait une autre commande de la page.",
+    "de": "Der Klick erfasst vielleicht nur Klicks oder wiederholt, was ein anderes Bedienelement der Seite tut.",
+    "es": "Puede que el clic solo registre clics, o que repita lo que hace otro control de la página.",
+    "ja": "クリックはクリックを記録するだけか、ページ内の別のコントロールと同じことをしているだけかもしれません。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_roving": {
+    "en": "Another item of the same role in the widget around it is in the tab order: a roving tabindex, where the arrow keys move focus between items.",
+    "fr": "Un autre élément du même rôle, dans le composant qui l’entoure, est dans l’ordre de tabulation : c’est un tabindex itinérant, où les flèches déplacent le focus d’un élément à l’autre.",
+    "de": "Ein anderes Element mit derselben Rolle im umgebenden Widget ist in der Tab-Reihenfolge: ein Roving-tabindex, bei dem die Pfeiltasten den Fokus zwischen den Elementen bewegen.",
+    "es": "Otro elemento con el mismo rol en el widget que lo rodea está en el orden de tabulación: es un tabindex itinerante, en el que las flechas mueven el foco entre los elementos.",
+    "ja": "周囲のウィジェット内にある同じロールの別の項目がタブ順序に含まれています。矢印キーで項目間のフォーカスを移すロービング tabindex の形です。"
+  },
+  "clickHandlerKeyboardOperable_lean_caution_widgetKeys": {
+    "en": "The widget may move between its items with the arrow keys without making Enter or Space run the click.",
+    "fr": "Le composant peut passer d’un élément à l’autre avec les flèches sans qu’Entrée ni Espace n’exécutent le clic.",
+    "de": "Das Widget bewegt sich vielleicht mit den Pfeiltasten zwischen seinen Elementen, ohne dass Eingabe oder Leertaste den Klick ausführen.",
+    "es": "Puede que el widget se mueva entre sus elementos con las flechas sin que Intro ni Espacio ejecuten el clic.",
+    "ja": "ウィジェットは矢印キーで項目間を移動できても、Enter や Space でクリックの動作を実行しないことがあります。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_pageFocusListener": {
+    "en": "The only focus listeners are on the document or the window, which usually serve the whole page (focus styles, analytics), not this element’s keys.",
+    "fr": "Les seuls écouteurs de focus sont sur le document ou la fenêtre, qui servent en général toute la page (styles de focus, mesure d’audience), pas les touches de cet élément.",
+    "de": "Die einzigen Fokus-Listener sind am Dokument oder am Fenster; solche dienen meist der ganzen Seite (Fokusstile, Analyse), nicht den Tasten dieses Elements.",
+    "es": "Los únicos detectores de foco están en el documento o en la ventana, que suelen servir a toda la página (estilos de foco, analítica), no a las teclas de este elemento.",
+    "ja": "フォーカス リスナーは document か window にしかありません。こうしたリスナーはふつうページ全体のため(フォーカスのスタイル、アクセス解析)のもので、この要素のキーのためではありません。"
+  },
+  "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": {
+    "en": "Some frameworks add an element’s listeners from a page-wide focus listener.",
+    "fr": "Certains frameworks ajoutent les écouteurs d’un élément depuis un écouteur de focus posé sur toute la page.",
+    "de": "Manche Frameworks fügen die Listener eines Elements über einen seitenweiten Fokus-Listener hinzu.",
+    "es": "Algunos frameworks añaden los detectores de un elemento desde un detector de foco de toda la página.",
+    "ja": "フレームワークによっては、ページ全体のフォーカス リスナーから要素のリスナーを追加するものがあります。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_compositeListener": {
+    "en": "The nearest key listener above the element is on the widget it is an item of, which is where such a widget handles its items’ keys.",
+    "fr": "L’écouteur de touches le plus proche au-dessus de l’élément est sur le composant dont il est un élément, là où un tel composant gère les touches de ses éléments.",
+    "de": "Der nächste Tasten-Listener über dem Element sitzt an dem Widget, zu dem es als Element gehört; dort behandelt ein solches Widget die Tasten seiner Elemente.",
+    "es": "El detector de teclas más cercano por encima del elemento está en el widget del que es un elemento, que es donde ese widget gestiona las teclas de sus elementos.",
+    "ja": "要素より上で最も近いキー リスナーは、この要素を項目として持つウィジェットにあります。このようなウィジェットは、そこで項目のキーを処理します。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_noKeyListener": {
+    "en": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
+    "fr": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
+    "de": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
+    "es": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
+    "ja": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。"
+  },
+  "iframeFocusableContent_lean_why": {
+    "en": "The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.",
+    "fr": "Le seul élément focalisable du cadre est une garde de focus vide qui renvoie le focus hors du cadre, le procédé habituel des widgets intégrés ; elle ne contient rien qu’on ait besoin d’atteindre.",
+    "de": "Das einzige fokussierbare Element im Frame ist ein leerer Fokuswächter, der den Fokus aus dem Frame weiterschickt, wie es eingebettete Widgets üblicherweise tun; er enthält nichts, was jemand erreichen muss.",
+    "es": "El único elemento enfocable del marco es una guarda de foco vacía que envía el foco fuera del marco, el patrón habitual de los widgets incrustados; no contiene nada que haga falta alcanzar.",
+    "ja": "フレーム内でフォーカス可能な唯一の要素は、フォーカスをフレームの外へ送る空のフォーカス ガードです。埋め込みウィジェットでよく使われる仕組みで、利用者が到達すべき内容は含みません。"
+  },
+  "iframeFocusableContent_lean_caution": {
+    "en": "A script may still reveal real content behind the guard later; the probe only waits a short moment.",
+    "fr": "Un script peut encore révéler plus tard un vrai contenu derrière la garde ; la sonde n’attend qu’un court instant.",
+    "de": "Ein Skript kann hinter dem Wächter später noch echten Inhalt einblenden; die Prüfung wartet nur einen kurzen Moment.",
+    "es": "Un script aún puede mostrar más tarde contenido real detrás de la guarda; la prueba solo espera un breve momento.",
+    "ja": "スクリプトが後でガードの奥に実際の内容を表示する可能性があります。確認処理はごく短い時間しか待ちません。"
+  },
+  "cssFocusIndicatorSuppressed_lean_why": {
+    "en": "Every style sheet was read and none draws a replacement, and no inline focus handler or :focus-within rule shows focus another way.",
+    "fr": "Toutes les feuilles de style ont été lues et aucune ne dessine d’indicateur de remplacement, et aucun gestionnaire de focus en ligne ni aucune règle :focus-within ne montre le focus autrement.",
+    "de": "Alle Stylesheets wurden gelesen, keines zeichnet einen Ersatz, und weder ein Inline-Fokus-Handler noch eine :focus-within-Regel zeigt den Fokus auf andere Weise.",
+    "es": "Se leyeron todas las hojas de estilo y ninguna dibuja un reemplazo, y ningún manejador de foco en línea ni ninguna regla :focus-within muestra el foco de otra forma.",
+    "ja": "すべてのスタイルシートを読み取りましたが、代わりのインジケーターを描くものはなく、インラインのフォーカス ハンドラーや :focus-within ルールもフォーカスを別の方法で示していません。"
+  },
+  "cssFocusIndicatorSuppressed_lean_caution": {
+    "en": "A focus style added by a script listener or a class a script toggles is not seen when the listener hook did not run.",
+    "fr": "Un style de focus ajouté par un écouteur de script, ou par une classe qu’un script bascule, n’est pas vu quand le hook d’écouteurs n’a pas été exécuté.",
+    "de": "Ein Fokusstil, den ein Skript-Listener oder eine per Skript umgeschaltete Klasse hinzufügt, wird nicht erkannt, wenn der Listener-Hook nicht lief.",
+    "es": "Un estilo de foco añadido por un detector de script, o por una clase que un script alterna, no se ve si el hook de detectores no se ejecutó.",
+    "ja": "スクリプトのリスナーや、スクリプトが切り替えるクラスで追加されるフォーカスのスタイルは、リスナー フックを実行していない場合は検出できません。"
+  },
+  "focusNotRemovedByScript_lean_why_calls": {
+    "en": "The handler calls blur() on the element itself as a statement of its own, outside any condition, so focus is removed as it arrives.",
+    "fr": "Le gestionnaire appelle blur() sur l’élément lui-même dans une instruction à part, hors de toute condition : le focus est retiré dès son arrivée.",
+    "de": "Der Handler ruft blur() für das Element selbst als eigene Anweisung auf, außerhalb jeder Bedingung; der Fokus wird daher beim Eintreffen entfernt.",
+    "es": "El manejador llama a blur() sobre el propio elemento en una instrucción propia, fuera de cualquier condición, así que el foco se quita al llegar.",
+    "ja": "ハンドラーは条件の外にある独立した文で要素自体の blur() を呼び出しているため、フォーカスは届いた時点で外されます。"
+  },
+  "focusNotRemovedByScript_lean_caution_calls": {
+    "en": "Other code in the handler may move focus back, or open something that takes focus on purpose.",
+    "fr": "Le reste du gestionnaire peut ramener le focus, ou ouvrir volontairement quelque chose qui prend le focus.",
+    "de": "Anderer Code im Handler kann den Fokus zurückholen oder absichtlich etwas öffnen, das den Fokus übernimmt.",
+    "es": "Otro código del manejador puede devolver el foco, o abrir a propósito algo que toma el foco.",
+    "ja": "ハンドラー内の他のコードがフォーカスを戻したり、意図的にフォーカスを受け取る何かを開いたりしている可能性があります。"
+  },
+  "focusNotRemovedByScript_lean_why_sentinel": {
+    "en": "The element is an empty, unnamed focus guard at the edge of a dialog or a group of controls: moving focus on as it arrives is how a focus trap keeps focus inside.",
+    "fr": "L’élément est une garde de focus vide et sans nom au bord d’une boîte de dialogue ou d’un groupe de commandes : renvoyer le focus dès son arrivée est la façon dont un piège à focus garde le focus à l’intérieur.",
+    "de": "Das Element ist ein leerer, unbenannter Fokuswächter am Rand eines Dialogs oder einer Gruppe von Bedienelementen: Den Fokus beim Eintreffen weiterzuschicken ist die Art, wie eine Fokusfalle den Fokus im Inneren hält.",
+    "es": "El elemento es una guarda de foco vacía y sin nombre en el borde de un diálogo o de un grupo de controles: enviar el foco en cuanto llega es como una trampa de foco mantiene el foco dentro.",
+    "ja": "この要素は、ダイアログやコントロール群の端にある、空で名前のないフォーカス ガードです。届いたフォーカスを先へ送るのは、フォーカス トラップがフォーカスを内側に保つための仕組みです。"
+  },
+  "focusNotRemovedByScript_lean_caution_sentinel": {
+    "en": "Check that the trap lets focus out once the dialog closes, and that it belongs to a modal dialog.",
+    "fr": "Vérifiez que le piège laisse sortir le focus une fois la boîte de dialogue fermée, et qu’il appartient à une boîte de dialogue modale.",
+    "de": "Prüfen Sie, dass die Falle den Fokus freigibt, sobald der Dialog geschlossen ist, und dass sie zu einem modalen Dialog gehört.",
+    "es": "Comprobar que la trampa deja salir el foco cuando se cierra el diálogo, y que pertenece a un diálogo modal.",
+    "ja": "ダイアログを閉じた後にトラップがフォーカスを外へ出すこと、またモーダル ダイアログのものであることを確認してください。"
+  },
+  "focusNotRemovedByScript_lean_why_moves": {
+    "en": "The element is a visible, named control, and its handler sends focus to another element whenever it arrives, so the control cannot be operated by keyboard.",
+    "fr": "L’élément est une commande visible et nommée, et son gestionnaire envoie le focus vers un autre élément à chaque arrivée : la commande ne peut pas être utilisée au clavier.",
+    "de": "Das Element ist ein sichtbares, benanntes Bedienelement, und sein Handler schickt den Fokus bei jedem Eintreffen zu einem anderen Element; das Bedienelement lässt sich daher nicht per Tastatur bedienen.",
+    "es": "El elemento es un control visible y con nombre, y su manejador envía el foco a otro elemento cada vez que llega, así que el control no se puede usar con el teclado.",
+    "ja": "この要素は名前を持つ表示されたコントロールで、ハンドラーはフォーカスが届くたびに別の要素へ送ります。そのため、このコントロールはキーボードで操作できません。"
+  },
+  "focusNotRemovedByScript_lean_caution_moves": {
+    "en": "A field may forward focus on purpose to the control that edits it, such as a custom date picker.",
+    "fr": "Un champ peut renvoyer volontairement le focus vers la commande qui le modifie, comme un sélecteur de date personnalisé.",
+    "de": "Ein Feld kann den Fokus absichtlich an das Bedienelement weitergeben, das es bearbeitet, etwa an eine eigene Datumsauswahl.",
+    "es": "Un campo puede pasar a propósito el foco al control que lo edita, como un selector de fecha personalizado.",
+    "ja": "フィールドが、その値を編集するコントロール(独自の日付選択など)へ意図的にフォーカスを渡している場合があります。"
+  },
+  "focusOrderSemantics_lean_why_handler": {
+    "en": "A click or key handler is on the element, so it acts as a control while its role says it is not one.",
+    "fr": "Un gestionnaire de clic ou de touche est posé sur l’élément : il agit comme une commande alors que son rôle dit qu’il n’en est pas une.",
+    "de": "Am Element sitzt ein Klick- oder Tasten-Handler; es verhält sich also wie ein Bedienelement, obwohl seine Rolle sagt, dass es keines ist.",
+    "es": "El elemento tiene un controlador de clic o de teclas, así que actúa como un control aunque su rol dice que no lo es.",
+    "ja": "この要素にはクリックやキーのハンドラーがあり、ロールはコントロールでないと示しているのに、コントロールとして動作しています。"
+  },
+  "focusOrderSemantics_lean_caution_handler": {
+    "en": "The handler may only track clicks, or serve something other than the element.",
+    "fr": "Le gestionnaire peut ne faire que suivre les clics, ou servir autre chose que l’élément.",
+    "de": "Der Handler erfasst vielleicht nur Klicks oder dient etwas anderem als dem Element.",
+    "es": "Puede que el controlador solo registre clics, o que sirva a algo distinto del elemento.",
+    "ja": "ハンドラーはクリックを記録するだけか、この要素以外のためのものかもしれません。"
+  },
+  "mouseOnlyEventHandlers_lean_why_notFocusable": {
+    "en": "The element has keyboard handlers, but neither it nor anything in it can take focus, so they never run.",
+    "fr": "L’élément a des gestionnaires clavier, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus : ils ne s’exécutent jamais.",
+    "de": "Das Element hat Tastatur-Handler, aber weder es noch etwas darin kann den Fokus erhalten; sie werden daher nie ausgeführt.",
+    "es": "El elemento tiene controladores de teclado, pero ni él ni nada de lo que contiene puede recibir el foco, así que nunca se ejecutan.",
+    "ja": "この要素にはキーボードのハンドラーがありますが、要素自体もその中身もフォーカスを受け取れないため、ハンドラーは実行されません。"
+  },
+  "mouseOnlyEventHandlers_lean_caution_notFocusable": {
+    "en": "A script may make it focusable later, or another control may offer the same function.",
+    "fr": "Un script peut le rendre focalisable plus tard, ou une autre commande peut offrir la même fonction.",
+    "de": "Ein Skript kann es später fokussierbar machen, oder ein anderes Bedienelement kann dieselbe Funktion anbieten.",
+    "es": "Un script puede hacerlo enfocable más tarde, u otro control puede ofrecer la misma función.",
+    "ja": "スクリプトが後でフォーカス可能にするか、別のコントロールが同じ機能を提供している可能性があります。"
+  },
+  "mouseOnlyEventHandlers_lean_why_noKeyboard": {
+    "en": "The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.",
+    "fr": "L’élément exécute une action au mousedown, au mouseup ou au double-clic, un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur lui, ses ancêtres, le document ni la fenêtre, et rien en lui ni autour ne peut recevoir le focus.",
+    "de": "Das Element führt bei mousedown, mouseup oder Doppelklick eine Aktion aus, ein vor den Skripten der Seite installierter Hook hat weder an ihm noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten-Listener gesehen, und nichts in ihm oder um es herum kann den Fokus erhalten.",
+    "es": "El elemento ejecuta una acción con mousedown, mouseup o doble clic, un hook instalado antes de los scripts de la página no vio ningún detector de teclas en él, sus antepasados, el documento ni la ventana, y nada dentro ni alrededor puede recibir el foco.",
+    "ja": "この要素は mousedown、mouseup、ダブルクリックで操作を実行します。ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーを見つけておらず、要素の中にも周囲にもフォーカスを受け取れるものがありません。"
+  },
+  "mouseOnlyEventHandlers_lean_caution_noKeyboard": {
+    "en": "The handler may only draw an effect or track the pointer, or another control may offer the same function.",
+    "fr": "Le gestionnaire peut ne faire que dessiner un effet ou suivre le pointeur, ou une autre commande peut offrir la même fonction.",
+    "de": "Der Handler zeichnet vielleicht nur einen Effekt oder verfolgt den Zeiger, oder ein anderes Bedienelement bietet dieselbe Funktion an.",
+    "es": "Puede que el controlador solo dibuje un efecto o siga el puntero, u otro control puede ofrecer la misma función.",
+    "ja": "ハンドラーは効果を描くか、ポインターを追跡するだけかもしれません。また、別のコントロールが同じ機能を提供している可能性があります。"
+  },
+  "tabindex_lean_why_reordered": {
+    "en": "Tab reaches this element before tab stops that come earlier in the page, so focus jumps out of document order.",
+    "fr": "La tabulation atteint cet élément avant des arrêts de tabulation placés plus haut dans la page : le focus sort de l’ordre du document.",
+    "de": "Die Tab-Taste erreicht dieses Element vor Tab-Stopps, die weiter oben auf der Seite stehen; der Fokus springt daher aus der Dokumentreihenfolge.",
+    "es": "La tabulación llega a este elemento antes que a paradas de tabulación que están antes en la página, así que el foco salta fuera del orden del documento.",
+    "ja": "Tab キーでは、ページ内でこの要素より前にあるタブストップよりも先にこの要素に到達するため、フォーカスが文書の順序から外れます。"
+  },
+  "tabindex_lean_caution_reordered": {
+    "en": "The page may lay its content out in an order that differs from the document.",
+    "fr": "La page peut disposer son contenu dans un ordre différent de celui du document.",
+    "de": "Die Seite kann ihren Inhalt in einer anderen Reihenfolge anordnen als im Dokument.",
+    "es": "La página puede disponer su contenido en un orden distinto al del documento.",
+    "ja": "ページのレイアウトが、文書とは異なる順序で内容を配置している場合があります。"
+  },
+  "tabindex_lean_why_inOrder": {
+    "en": "The positive tabindex values leave the tab order as the document order: they are on the page’s first tab stops, in increasing order.",
+    "fr": "Les valeurs positives de tabindex laissent l’ordre de tabulation identique à l’ordre du document : elles sont sur les premiers arrêts de tabulation de la page, en ordre croissant.",
+    "de": "Die positiven tabindex-Werte lassen die Tab-Reihenfolge gleich der Dokumentreihenfolge: Sie stehen auf den ersten Tab-Stopps der Seite, in aufsteigender Folge.",
+    "es": "Los valores positivos de tabindex dejan el orden de tabulación igual al del documento: están en las primeras paradas de tabulación de la página, en orden creciente.",
+    "ja": "正の tabindex の値はページの最初のタブストップに昇順で付いているため、タブ順序は文書の順序のままです。"
+  },
+  "tabindex_lean_caution_inOrder": {
+    "en": "A positive tabindex stays fragile: content added before these elements will be visited after them.",
+    "fr": "Un tabindex positif reste fragile : du contenu ajouté avant ces éléments sera parcouru après eux.",
+    "de": "Ein positiver tabindex bleibt fehleranfällig: Inhalt, der vor diesen Elementen hinzukommt, wird nach ihnen angesteuert.",
+    "es": "Un tabindex positivo sigue siendo frágil: el contenido que se añada antes de estos elementos se recorrerá después de ellos.",
+    "ja": "正の tabindex は壊れやすいままです。これらの要素より前に内容を追加すると、その内容はこれらの要素の後に移動先になります。"
+  },
+  "widgetKeyboardFocusable_lean_why_notFocusable": {
+    "en": "The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.",
+    "fr": "L’élément se présente comme un widget, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus, et aucune commande de l’ordre de tabulation n’a son rôle et son nom.",
+    "de": "Das Element gibt sich als Widget aus, aber weder es noch etwas darin kann den Fokus erhalten, und kein Bedienelement in der Tab-Reihenfolge hat seine Rolle und seinen Namen.",
+    "es": "El elemento dice ser un widget, pero ni él ni nada de lo que contiene puede recibir el foco, y ningún control del orden de tabulación tiene su rol y su nombre.",
+    "ja": "この要素はウィジェットであると示していますが、要素自体もその中身もフォーカスを受け取れず、タブ順序に同じロールと名前を持つコントロールもありません。"
+  },
+  "widgetKeyboardFocusable_lean_caution_notFocusable": {
+    "en": "A script may make it focusable when needed, or the role may be wrong for content that does nothing.",
+    "fr": "Un script peut le rendre focalisable au besoin, ou le rôle peut être erroné pour un contenu qui ne fait rien.",
+    "de": "Ein Skript kann es bei Bedarf fokussierbar machen, oder die Rolle ist für Inhalt, der nichts tut, falsch gewählt.",
+    "es": "Un script puede hacerlo enfocable cuando haga falta, o el rol puede ser incorrecto para un contenido que no hace nada.",
+    "ja": "スクリプトが必要なときにフォーカス可能にするか、何もしない内容に誤ったロールが付いている可能性があります。"
+  },
+  "widgetKeyboardFocusable_lean_why_duplicate": {
+    "en": "Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.",
+    "fr": "Une autre commande de l’ordre de tabulation a le même rôle et le même nom : celle-ci est un doublon retiré de l’ordre de tabulation.",
+    "de": "Ein anderes Bedienelement in der Tab-Reihenfolge hat dieselbe Rolle und denselben Namen; dieses ist also ein aus der Tab-Reihenfolge genommenes Duplikat.",
+    "es": "Otro control del orden de tabulación tiene el mismo rol y el mismo nombre, así que este es un duplicado sacado del orden de tabulación.",
+    "ja": "タブ順序内の別のコントロールが同じロールと名前を持っているため、この要素はタブ順序から外された重複です。"
+  },
+  "widgetKeyboardFocusable_lean_caution_duplicate": {
+    "en": "Check that the two really do the same thing.",
+    "fr": "Vérifiez que les deux font bien la même chose.",
+    "de": "Prüfen Sie, dass beide wirklich dasselbe tun.",
+    "es": "Comprobar que los dos hacen de verdad lo mismo.",
+    "ja": "2 つが本当に同じことをするか確認してください。"
+  },
+  "widgetKeyboardFocusable_lean_why_noKeyListener": {
+    "en": "A hook installed before the page’s scripts saw no key listener on its ancestors, the document or the window, so no key moves focus to it.",
+    "fr": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur ses ancêtres, le document ni la fenêtre : aucune touche n’y déplace le focus.",
+    "de": "Ein vor den Skripten der Seite installierter Hook hat an seinen Vorfahren, am Dokument und am Fenster keinen Tasten-Listener gesehen; keine Taste bewegt den Fokus dorthin.",
+    "es": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas en sus antepasados, el documento ni la ventana, así que ninguna tecla mueve el foco hasta él.",
+    "ja": "ページのスクリプトより前に組み込んだフックは、祖先にも document にも window にもキー リスナーを見つけませんでした。キー操作でこの要素にフォーカスが移ることはありません。"
+  },
+  "widgetKeyboardFocusable_lean_caution_noKeyListener": {
+    "en": "A script may focus it when something opens, such as a dialog that takes focus to it.",
+    "fr": "Un script peut lui donner le focus quand quelque chose s’ouvre, comme une boîte de dialogue qui y amène le focus.",
+    "de": "Ein Skript kann es fokussieren, wenn sich etwas öffnet, etwa ein Dialog, der den Fokus dorthin bringt.",
+    "es": "Un script puede darle el foco cuando se abre algo, como un diálogo que lleva el foco hasta él.",
+    "ja": "何かが開いたとき(フォーカスをこの要素に移すダイアログなど)に、スクリプトがフォーカスを与える場合があります。"
+  },
+  "widgetKeyboardFocusable_lean_why_compositeNoTabStop": {
+    "en": "Nothing names this widget as one it controls or owns, nothing before it opens a popup, and neither it nor any item is in the tab order.",
+    "fr": "Rien ne désigne ce widget comme contrôlé ou possédé, rien juste avant lui n’ouvre de fenêtre surgissante, et ni lui ni aucun de ses éléments n’est dans l’ordre de tabulation.",
+    "de": "Nichts bezeichnet dieses Widget als gesteuert oder besessen, nichts direkt davor öffnet ein Popup, und weder es noch eines seiner Elemente ist in der Tab-Reihenfolge.",
+    "es": "Nada señala este widget como controlado o poseído, nada justo antes de él abre una ventana emergente, y ni él ni ninguno de sus elementos está en el orden de tabulación.",
+    "ja": "このウィジェットを制御対象や所有対象として示す要素はなく、直前にポップアップを開く要素もなく、ウィジェット自体もその項目もタブ順序に含まれていません。"
+  },
+  "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": {
+    "en": "A popup opened and focused by a script from a trigger that does not say so looks the same.",
+    "fr": "Une fenêtre surgissante ouverte et focalisée par un script depuis un déclencheur qui ne l’indique pas a la même apparence.",
+    "de": "Ein Popup, das ein Skript von einem Auslöser aus öffnet und fokussiert, der dies nicht angibt, sieht genauso aus.",
+    "es": "Una ventana emergente que un script abre y enfoca desde un activador que no lo indica se ve igual.",
+    "ja": "それを示さないトリガーからスクリプトで開いてフォーカスするポップアップも、同じように見えます。"
+  },
+  "widgetKeyboardFocusable_lean_why_activedescendantHost": {
+    "en": "ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.",
+    "fr": "ARIA ne donne d’effet à aria-activedescendant que sur l’élément qui a le focus, et celui-ci ne peut pas le recevoir.",
+    "de": "ARIA lässt aria-activedescendant nur an dem Element wirken, das den Fokus hat, und dieses kann ihn nicht erhalten.",
+    "es": "ARIA solo da efecto a aria-activedescendant en el elemento que tiene el foco, y este no puede recibirlo.",
+    "ja": "ARIA では aria-activedescendant はフォーカスを持つ要素でしか効果がありませんが、この要素はフォーカスを受け取れません。"
+  },
+  "widgetKeyboardFocusable_lean_caution_activedescendantHost": {
+    "en": "A script may make it focusable when the widget opens.",
+    "fr": "Un script peut le rendre focalisable à l’ouverture du widget.",
+    "de": "Ein Skript kann es fokussierbar machen, wenn sich das Widget öffnet.",
+    "es": "Un script puede hacerlo enfocable cuando se abre el widget.",
+    "ja": "ウィジェットが開いたときに、スクリプトがフォーカス可能にする場合があります。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_managed": {
+    "en": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
+    "fr": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
+    "de": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
+    "es": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
+    "ja": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。"
+  },
+  "clickHandlerKeyboardOperable_lean_why_pointerOnly": {
+    "en": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+    "fr": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+    "de": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+    "es": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+    "ja": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。"
+  },
+  "clickHandlerKeyboardOperable_lean_caution_elsewhere": {
+    "en": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
+    "fr": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
+    "de": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
+    "es": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
+    "ja": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。"
+  },
+  "focusOrderSemantics_lean_why_scrolls": {
+    "en": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
+    "fr": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
+    "de": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
+    "es": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
+    "ja": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。"
+  },
+  "focusOrderSemantics_lean_why_documentInApplication": {
+    "en": "A document inside an application is made focusable so screen reader users can read it.",
+    "fr": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
+    "de": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
+    "es": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
+    "ja": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。"
+  }
+}

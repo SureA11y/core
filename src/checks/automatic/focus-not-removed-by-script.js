@@ -52,9 +52,17 @@
  *   - `FOCUS_HANDLER_CALLS_BLUR` (cantTell): the element's onfocus handler
  *     calls blur() among other code or on another element; whether focus is
  *     lost depends on the script.
+ *     It leans fail when the element is in the tab order and blur() is
+ *     called on it as a statement of its own, outside any condition or
+ *     callback, with no return before it.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
  *   - `FOCUS_HANDLER_MOVES_FOCUS` (cantTell): the element's onfocus handler
  *     calls focus() on another element, so focus may move away as it arrives.
+ *     It leans pass when the element is a focus-trap sentinel (a plain,
+ *     empty, unnamed element in the tab order, in or beside a dialog, or at
+ *     the edge of a container holding focusable content), and fail when it
+ *     is a visible control with a name, in the tab order, that calls focus()
+ *     as a statement of its own, outside any condition or callback.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
  * @implementation-notes
  * - Only inline `onfocus` attributes are read. A focus listener added with
@@ -183,6 +191,169 @@ function runInPage(ctx) {
     return all > own;
   }
 
+  // The handler's top-level statements: split on the semicolons and the
+  // closing braces that are outside any bracket or string, so a call in a
+  // condition, a callback or a block stays inside its statement.
+  function topStatements(code) {
+    const out = [];
+    let depth = 0;
+    let quote = '';
+    let cur = '';
+    for (let i = 0; i < code.length; i++) {
+      const ch = code[i];
+      cur += ch;
+      if (quote) {
+        if (ch === '\\') {
+          cur += code[i + 1] || '';
+          i += 1;
+        } else if (ch === quote) quote = '';
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+      else if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+      else if (ch === ')' || ch === ']' || ch === '}') {
+        depth = Math.max(0, depth - 1);
+        if (ch === '}' && depth === 0) {
+          out.push(cur.trim());
+          cur = '';
+        }
+      } else if (ch === ';' && depth === 0) {
+        out.push(cur.slice(0, -1).trim());
+        cur = '';
+      }
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out.filter(Boolean);
+  }
+  // Whether a top-level statement passes `test`, with no return or throw in
+  // a statement before it that could stop the handler first.
+  function unconditionally(code, test) {
+    for (const st of topStatements(code)) {
+      if (test(st)) return true;
+      if (/\b(?:return|throw)\b/.test(st)) return false;
+    }
+    return false;
+  }
+  const SELF_BLUR_STATEMENT = new RegExp('^' + SELF_BLUR + String.raw`\s*\(\s*\)$`);
+  const OTHER_FOCUS_STATEMENT =
+    /^(?!(?:if|else|for|while|do|switch|try|return|throw|var|let|const)\b)[^?]*(?:\.\s*focus|\[\s*['"]focus['"]\s*\])\s*\(\s*\)$/;
+  function focusesOther(st) {
+    if (/&&|\|\||=>|\bfunction\b/.test(st)) return false;
+    if (/^(?:this|event\.(?:target|currentTarget))\s*(?:\.\s*focus|\[)/.test(st)) return false;
+    return OTHER_FOCUS_STATEMENT.test(st);
+  }
+
+  function trimText(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  // A dialog: <dialog>, role dialog or alertdialog, or aria-modal="true".
+  function isDialog(el) {
+    if (!el) return false;
+    if (String(dom.localName(el) || '').toLowerCase() === 'dialog') return true;
+    if (trimText(dom.getAttribute(el, 'aria-modal')).toLowerCase() === 'true') return true;
+    let role = '';
+    try {
+      role = helpers.aria.getExplicitRole(el) || '';
+    } catch {}
+    return role === 'dialog' || role === 'alertdialog';
+  }
+  function inDialog(el) {
+    for (let a = el, i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (isDialog(a)) return true;
+    }
+    return false;
+  }
+  const FOCUS_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+  function matchesSafe(el, sel) {
+    try {
+      return !!el && dom.matches(el, sel);
+    } catch {
+      return false;
+    }
+  }
+  // A focus-trap sentinel: a plain element in the tab order with no text,
+  // content, name or role, in or beside a dialog, or first or last in a
+  // container that holds other focusable content. Its handler sends focus
+  // into the dialog or back to its start, which is what it is for.
+  function isSentinel(el, focus) {
+    if (!focus.tabbable) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (tag !== 'div' && tag !== 'span') return false;
+    for (const a of ['role', 'aria-label', 'aria-labelledby', 'title', 'contenteditable']) {
+      if (dom.getAttribute(el, a) != null) return false;
+    }
+    if (/\S/.test(String(dom.textContent(el) || ''))) return false;
+    try {
+      if (dom.querySelector(el, 'img, svg, canvas, picture, video, audio, object, embed, iframe'))
+        return false;
+    } catch {
+      return false;
+    }
+    if (inDialog(el)) return true;
+    if (isDialog(dom.previousElementSibling(el)) || isDialog(dom.nextElementSibling(el)))
+      return true;
+    const parent = dom.parentElement(el);
+    if (!parent) return false;
+    const atEdge = dom.firstElementChild(parent) === el || dom.lastElementChild(parent) === el;
+    if (!atEdge) return false;
+    try {
+      for (const d of dom.querySelectorAll(parent, FOCUS_CANDIDATES)) {
+        if (d !== el && canTakeFocus(d).focusable) return true;
+      }
+    } catch {}
+    return false;
+  }
+  const WIDGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'tab',
+    'treeitem',
+    'slider',
+    'spinbutton',
+    'combobox',
+    'textbox',
+    'searchbox'
+  ]);
+  const NATIVE_CONTROL =
+    'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary';
+  // A control a person sees and that has a name: a native control or a
+  // widget role, a non-empty accessible name, and shown.
+  function isNamedVisibleControl(el) {
+    let role = '';
+    try {
+      role = helpers.aria.getExplicitRole(el) || '';
+    } catch {}
+    if (!(role ? WIDGET_ROLES.has(role) : matchesSafe(el, NATIVE_CONTROL))) return false;
+    let name = '';
+    try {
+      // The name from author mechanisms, or from the content for a
+      // control that takes it from there (a button, a link).
+      const info =
+        typeof helpers.getNameFromContentInfo === 'function'
+          ? helpers.getNameFromContentInfo(el, ctx)
+          : helpers.getAccessibleNameInfo(el, ctx);
+      name = trimText(info && info.value);
+    } catch {}
+    if (!name) return false;
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        const vis = helpers.isDomVisibleEligible(el, ctx);
+        if (vis && vis.eligible === false) return false;
+      }
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
   function canTakeFocus(el) {
     if (!helpers.getFocusableInfo) return { focusable: true, tabbable: true };
     try {
@@ -251,8 +422,59 @@ function runInPage(ctx) {
       );
       continue;
     }
+    let lean;
+    if (
+      kind === 'calls' &&
+      focus.tabbable &&
+      unconditionally(handler, (st) => SELF_BLUR_STATEMENT.test(st))
+    ) {
+      lean = {
+        toward: 'fail',
+        why: 'The handler calls blur() on the element itself as a statement of its own, outside any condition, so focus is removed as it arrives.',
+        signals: [{ signal: 'unconditional-self-blur', value: true }],
+        caution:
+          'Other code in the handler may move focus back, or open something that takes focus on purpose.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_calls',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_calls'
+        }
+      };
+    } else if (kind === 'moves' && isSentinel(el, focus)) {
+      lean = {
+        toward: 'pass',
+        why: 'The element is an empty, unnamed focus guard at the edge of a dialog or a group of controls: moving focus on as it arrives is how a focus trap keeps focus inside.',
+        signals: [{ signal: 'sentinel-shape', value: true }],
+        caution:
+          'Check that the trap lets focus out once the dialog closes, and that it belongs to a modal dialog.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_sentinel',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_sentinel'
+        }
+      };
+    } else if (
+      kind === 'moves' &&
+      focus.tabbable &&
+      isNamedVisibleControl(el) &&
+      unconditionally(handler, focusesOther)
+    ) {
+      lean = {
+        toward: 'fail',
+        why: 'The element is a visible, named control, and its handler sends focus to another element whenever it arrives, so the control cannot be operated by keyboard.',
+        signals: [
+          { signal: 'named-visible-control', value: true },
+          { signal: 'unconditional-focus-move', value: true }
+        ],
+        caution:
+          'A field may forward focus on purpose to the control that edits it, such as a custom date picker.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_moves',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_moves'
+        }
+      };
+    }
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: SUMMARIES[kind],
         hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
         i18n: {

@@ -138,6 +138,40 @@ test(`${RULE_ID}: cantTell when the only focusable candidate immediately redirec
   assert.strictEqual(rule.occurrences[0].occurrenceOutcome, 'cantTell');
 });
 
+test(`${RULE_ID}: leans pass when the redirecting element is an empty focus guard; a real control gets no lean`, () => {
+  function scan(inner) {
+    const dom = createDom(
+      `<!doctype html><html><body>
+        <iframe id="a" tabindex="-1"></iframe>
+        <button id="outer-target">Outer target</button>
+      </body></html>`
+    );
+    const contentDoc = dom.window.document.getElementById('a').contentDocument;
+    contentDoc.body.innerHTML = inner;
+    contentDoc.getElementById('sentinel').addEventListener('focus', () => {
+      contentDoc.defaultView.setTimeout(() => {
+        dom.window.document.getElementById('outer-target').focus();
+      }, 0);
+    });
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    return assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 })
+      .occurrences[0];
+  }
+  const guard = scan('<div id="sentinel" tabindex="0"></div>');
+  assert.strictEqual(
+    guard.data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+  assert.strictEqual(guard.lean.toward, 'pass');
+  assert.strictEqual(guard.lean.i18n.whyKey, 'iframeFocusableContent_lean_why');
+  const button = scan('<button id="sentinel">Sentinel</button>');
+  assert.strictEqual(
+    button.data.details.reasonCode,
+    'IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT'
+  );
+  assert.strictEqual(button.lean, undefined);
+});
+
 test(`${RULE_ID}: mixed fail and cantTell stay split at occurrence level`, () => {
   const dom = createDom(
     `<!doctype html><html><body>

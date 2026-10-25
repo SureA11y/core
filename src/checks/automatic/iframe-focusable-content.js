@@ -40,6 +40,9 @@
  *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` (cantTell): a frame
  *     with a negative tabindex holds one focusable element, but focus moved
  *     straight on from it, so keyboard access is checked in a real browser.
+ *     It leans pass when that element is an empty focus guard (a plain
+ *     element made focusable by tabindex alone, with no text, content, name
+ *     or role) and focus left the frame.
  *     Basis: WCAG 2.1.1 (not settled); ACT akn7bn (not settled).
  * @implementation-notes
  * - Scoped to same-origin, currently-accessible content only
@@ -432,6 +435,29 @@ function runInPage(ctx) {
     };
   }
 
+  // A focus guard: a plain element made focusable only by its tabindex,
+  // with no text, no embedded content, no name and no role. Embedded
+  // widgets put one at their edge to send focus on; it holds nothing a
+  // user needs to reach.
+  const GUARD_TAGS = new Set(['div', 'span']);
+  function isFocusSentinel(el) {
+    try {
+      if (!GUARD_TAGS.has(String(dom.localName(el) || '').toLowerCase())) return false;
+      const t = parseTabIndex(dom.getAttribute(el, 'tabindex'));
+      if (t === null || t < 0) return false;
+      for (const a of ['role', 'aria-label', 'aria-labelledby', 'title', 'contenteditable']) {
+        if (dom.getAttribute(el, a) != null) return false;
+      }
+      if (/\S/.test(String(dom.textContent(el) || ''))) return false;
+      return !dom.querySelector(
+        el,
+        'img, svg, canvas, picture, video, audio, object, embed, iframe, input, button, select, textarea, a[href]'
+      );
+    } catch {
+      return false;
+    }
+  }
+
   function getNegativeTabIndex(el) {
     const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
@@ -516,8 +542,27 @@ function runInPage(ctx) {
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
+      const sentinel = runtimeProbe.redirectedOutOfFrame && isFocusSentinel(candidates[0]);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
+          ...(sentinel
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.',
+                  signals: [
+                    { signal: 'focus-redirected-out-of-frame', value: true },
+                    { signal: 'candidate-is-sentinel', value: true }
+                  ],
+                  caution:
+                    'A script may still reveal real content behind the guard later; the probe only waits a short moment.',
+                  i18n: {
+                    whyKey: 'iframeFocusableContent_lean_why',
+                    cautionKey: 'iframeFocusableContent_lean_caution'
+                  }
+                }
+              }
+            : {}),
           summary: `This <${tag}> has tabindex="-1" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.`,
           hint: 'If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.',
           i18n: {
