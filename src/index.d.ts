@@ -630,7 +630,13 @@ export interface CheckResult {
   /** Present only on a rule that declares `meta.margin`, when an element met its threshold. */
   margin?: Margin;
   /** Present only when the target WCAG version changed this outcome. */
-  wcagVersionScope?: { target: '2.0' | '2.1' | '2.2'; removedSc: string[]; coercedFrom: 'fail' };
+  wcagVersionScope?: {
+    target: '2.0' | '2.1' | '2.2';
+    removedSc: string[];
+    coercedFrom: 'fail';
+    /** Under 2.0 or 2.1: their 2023 errata count the criterion as always satisfied. */
+    by?: 'errata';
+  };
   /**
    * Present when the rule did not complete (cantTell with no occurrences),
    * or with the engine's notes on what it changed in what the rule returned

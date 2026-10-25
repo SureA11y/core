@@ -87,14 +87,11 @@
  *   the element becomes exposed. Same false-positive shape as
  *   aria-required-children; an element that isn't currently exposed to
  *   the accessibility tree is skipped (notApplicable), not failed.
- * - Also treats aria-busy="true" as an exemption, same as
- *   aria-required-children. Note this is an extension by analogy, not a
- *   literal reading of the spec: WAI-ARIA's aria-busy carve-out text names
- *   "required owned elements" specifically, not required state attributes.
- *   The underlying rationale (a widget mid-initialization shouldn't be
- *   flagged for not yet reflecting state the same initialization step is
- *   about to set) applies equally here, so the exemption is extended by
- *   analogy rather than by explicit spec text.
+ * - aria-busy="true" exempts nothing here. WAI-ARIA's aria-busy carve-out
+ *   names required owned elements, which aria-required-children reads, not
+ *   required states, and ACT 4e8ab6 has no such exemption: a checkbox
+ *   that is busy still announces no checked state. It extended the
+ *   carve-out by analogy until 2026-10.
  */
 
 const id = 'aria-required-attr';
@@ -181,11 +178,6 @@ function runInPage(ctx) {
     return type === 'checkbox' || type === 'radio';
   }
 
-  function isMarkedBusy(el) {
-    const v = dom.getAttribute(el, 'aria-busy');
-    return v != null && String(v).trim().toLowerCase() === 'true';
-  }
-
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
@@ -234,7 +226,6 @@ function runInPage(ctx) {
     if (!required.length) continue;
 
     if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
-    if (isMarkedBusy(el)) continue; // author has signaled transient incompleteness per WAI-ARIA
 
     applicableCount += 1;
 

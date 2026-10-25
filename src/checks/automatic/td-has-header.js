@@ -19,7 +19,10 @@
  *   anything but table, grid or treegrid, such as a layout table with
  *   role="presentation", is left out: it has no data cells.
  * @expectation
- *   Every non-empty `<td>` has an associated header, via one of:
+ *   A table with no header cell at all is asked about once, on the table:
+ *   markup can't tell a layout table, which needs no headers, from a data
+ *   table without them. In a table with header cells, every non-empty
+ *   `<td>` has an associated header, via one of:
  *     - a non-empty `headers` attribute (trusted here; whether it
  *       resolves to real `<th>` ids is `table-headers-attr-valid`'s
  *       concern, not this rule's), OR
@@ -37,9 +40,13 @@
  *     rows from the top, cells from the left within the row.
  * @reason-codes
  *   - `TD_NO_ASSOCIATED_HEADER` (fail): a non-empty data cell in a large
- *     table has no headers attribute and no header cell above it in its
- *     column or before it in its row.
+ *     table that has header cells has no headers attribute and no header
+ *     cell above it in its column or before it in its row.
  *     Basis: WCAG 1.3.1; H51; H43; HTML table model.
+ *   - `TD_TABLE_NO_HEADERS` (cantTell): a large table with data in it has
+ *     no header cell at all; a person checks whether it holds data, which
+ *     needs headers, or only lays out content, which needs none (F46).
+ *     Basis: WCAG 1.3.1 (not settled); H51; F46.
  * @implementation-notes
  * - Closes the gap `table-th-has-data-cells` deferred (see
  *   that rule's own implementation notes): this is the fuller positional
@@ -132,6 +139,7 @@ function runInPage(ctx) {
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
+  const questions = [];
   let applicableCount = 0;
 
   for (const table of tables) {
@@ -180,6 +188,34 @@ function runInPage(ctx) {
     // rows/columns already passed for every cell: colHasHeaderAbove[c]
     // carries forward across rows, rowHasHeaderBefore resets at the start
     // of each row. One pass over every cell, not one rescan per cell.
+    // A table with no header cell at all may be a layout table, which 1.3.1
+    // asks no headers of, or a data table that lacks them: markup can't tell
+    // which, so it is asked about once, on the table.
+    const hasAnyHeader = rowCells.some((cells) => cells.some((c) => isHeaderCell(c)));
+    if (!hasAnyHeader) {
+      const hasData = rowCells.some((cells) => cells.some((c) => isEligible(c) && !isEmptyCell(c)));
+      if (hasData) {
+        questions.push(
+          helpers.reportOccurrence(table, {
+            summary: 'This table has no header cells. If it holds data, its cells have no headers.',
+            hint: 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'tdHasHeader_summary_cantTell_noHeaders',
+              hintKey: 'tdHasHeader_hint_cantTell_noHeaders',
+              params: {}
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether the table holds data, which needs headers, or only lays out content.'
+            },
+            data: { details: { reasonCode: 'TD_TABLE_NO_HEADERS' } }
+          })
+        );
+      }
+      continue;
+    }
+
     const colHasHeaderAbove = new Array(maxCols).fill(false);
 
     for (let r = 0; r < rowCells.length; r++) {
@@ -214,6 +250,7 @@ function runInPage(ctx) {
             summary:
               'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
             hint: "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+            occurrenceOutcome: 'fail',
             i18n: {
               summaryKey: 'tdHasHeader_summary_fail',
               hintKey: 'tdHasHeader_hint_fail',
@@ -231,15 +268,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage };

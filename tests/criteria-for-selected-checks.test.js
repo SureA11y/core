@@ -144,7 +144,8 @@ test("a criterion outside the run's WCAG version is not added", () => {
   assert.deepEqual(ids(scan(PAGE, { includeRuleIds: ['duplicate-id'] })), []);
   const under21 = scan(PAGE, { includeRuleIds: ['duplicate-id'] }, { wcagVersion: '2.1' });
   assert.deepEqual(ids(under21), [R411]);
-  assert.equal(rollup(under21, R411).outcome, 'fail');
+  // The 2023 errata count 4.1.1 as satisfied for HTML, so the duplicate is asked about.
+  assert.equal(rollup(under21, R411).outcome, 'cantTell');
   assert.deepEqual(ids(scan(PAGE, { includeRuleIds: ['target-size-minimum'] })), [R258]);
   assert.deepEqual(
     ids(scan(PAGE, { includeRuleIds: ['target-size-minimum'] }, { wcagVersion: '2.1' })),

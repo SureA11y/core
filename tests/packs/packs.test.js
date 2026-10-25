@@ -1405,6 +1405,8 @@ test("a variant's messages its pack doesn't define read the base rule's", () => 
 // wcagVersion says it. Each scan runs in Node and in the page, which must agree.
 const DUPLICATE_IDS = '<main><p id="a">One</p><p id="a">Two</p></main>';
 
+// Its profile keeps 4.1.1 Parsing, so a duplicate id fails under 2.1 and
+// shows which version the scan was judged by.
 const versioned = (profile) =>
   definePack({
     name: '@c/versioned',
@@ -1412,7 +1414,7 @@ const versioned = (profile) =>
     version: '1.0.0',
     namespace: 'v',
     core: '*',
-    profiles: { 'v-1': { tags: [], rules: ['duplicate-id'], ...profile } }
+    profiles: { 'v-1': { tags: [], rules: ['duplicate-id'], keepsParsing: true, ...profile } }
   });
 
 function scanDuplicates(pack, engineOptions) {
@@ -1461,7 +1463,7 @@ test("a standard profile's wcagVersion keeps 4.1.1 for a profile of mapped rules
   const without = run(only({}));
   assert.equal(without.engine.wcagVersion, '2.2');
   assert.equal(without.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'cantTell');
-  const with21 = run(only({ wcagVersion: '2.1' }));
+  const with21 = run(only({ wcagVersion: '2.1', keepsParsing: true }));
   assert.equal(with21.engine.wcagVersion, '2.1');
   assert.equal(with21.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'fail');
   // The version changes how rules are judged, not which run: the same rules
@@ -1476,6 +1478,39 @@ test("a standard profile's wcagVersion keeps 4.1.1 for a profile of mapped rules
     result.rulesResults.map((r) => r.ruleId).filter((id) => id.startsWith('wcag-'));
   assert.ok(wcag(with21).includes('wcag-4.1.1-parsing'));
   assert.equal(wcag(without).includes('wcag-4.1.1-parsing'), false);
+});
+
+test("a profile that doesn't keep 4.1.1 is judged by the 2023 errata under 2.1", () => {
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.1', keepsParsing: undefined })), {
+    wcagVersion: '2.1',
+    outcome: 'cantTell'
+  });
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.1', keepsParsing: false })), {
+    wcagVersion: '2.1',
+    outcome: 'cantTell'
+  });
+  // keepsParsing has no say under 2.2, which removed the criterion.
+  assert.deepEqual(scanDuplicates(versioned({ wcagVersion: '2.2' })), {
+    wcagVersion: '2.2',
+    outcome: 'cantTell'
+  });
+});
+
+test("a profile's keepsParsing must be true or false", () => {
+  const pack = {
+    name: '@c/p',
+    title: 'C',
+    version: '1.0.0',
+    namespace: 'c',
+    core: '*',
+    rollups: [{ id: 'c-i', title: 'I', checksIds: ['img-alt-present'] }]
+  };
+  const problems = (keepsParsing) =>
+    checkPack({ ...pack, profiles: { 'c-1': { tags: [], keepsParsing } } }).join();
+  for (const bad of ['yes', 1, null]) {
+    assert.match(problems(bad), /profiles\.c-1\.keepsParsing must be true or false/);
+  }
+  for (const good of [true, false, undefined]) assert.equal(problems(good), '');
 });
 
 test("an explicit wcagVersion still wins over the profile's", () => {

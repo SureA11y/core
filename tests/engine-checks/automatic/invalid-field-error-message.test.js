@@ -66,7 +66,7 @@ test(`${RULE_ID}: fail when aria-errormessage names a hidden message`, () => {
   assert.equal(rule.occurrences[0].uncertainty, undefined);
 });
 
-test(`${RULE_ID}: fail when the message is shown but empty`, () => {
+test(`${RULE_ID}: ask when the message is shown but empty`, () => {
   assert.deepEqual(
     codes(
       assertRule(
@@ -74,7 +74,7 @@ test(`${RULE_ID}: fail when the message is shown but empty`, () => {
           '<input aria-label="City" aria-invalid="true" aria-errormessage="e"><span id="e"> </span>'
         ),
         RULE_ID,
-        'fail'
+        'cantTell'
       )
     ),
     ['ERROR_MESSAGE_EMPTY']
@@ -89,7 +89,7 @@ test(`${RULE_ID}: text the page hides inside a shown message does not count`, ()
           '<input aria-label="City" aria-invalid="true" aria-errormessage="e"><p id="e"><span hidden>Enter a city.</span></p>'
         ),
         RULE_ID,
-        'fail'
+        'cantTell'
       )
     ),
     ['ERROR_MESSAGE_EMPTY']
@@ -267,8 +267,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/invalid-field-error-message-a
     [
       ['ifem_case_04', 'ERROR_MESSAGE_HIDDEN'],
       ['ifem_case_05', 'ERROR_MESSAGE_HIDDEN'],
-      ['ifem_case_06', 'ERROR_MESSAGE_EMPTY'],
       ['ifem_case_15', 'ERROR_MESSAGE_HIDDEN'],
+      ['ifem_case_06', 'ERROR_MESSAGE_EMPTY'],
       ['ifem_case_07', 'NO_ERROR_MESSAGE'],
       ['ifem_case_08', 'ERROR_MESSAGE_TARGET_MISSING'],
       ['ifem_case_09', 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED'],

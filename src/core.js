@@ -11206,10 +11206,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // alone accepts "eng" and "em-US", which look like language tags but are not
   // registered: the IANA registry lists a three-letter subtag only when no
   // two-letter one exists, so "en" is registered and "eng" is not.
+  // The registry also lists the range qaa..qtz, reserved for private use, as
+  // one entry of Type: language, which the generated list doesn't spell out:
+  // ACT de46e4 counts it as a known language subtag too.
   let __languageSubtagSet = null;
   function isRegisteredLanguageSubtag(subtag) {
+    const c = String(subtag || '').toLowerCase();
+    if (/^q[a-t][a-z]$/.test(c)) return true;
     if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
-    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+    return __languageSubtagSet.has(c);
   }
 
   // <generated:iso-639-alpha3>
@@ -20597,8 +20602,19 @@ const runCoreSettled = (function runCoreSettled(
   }
   warnDeprecatedStandards(mappingSelection.tokens);
 
+  // W3C's 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as always satisfied
+  // for content in HTML or XML, so a 2.0 or 2.1 target is treated as 2.2 is.
+  // A profile whose standard keeps the criterion's text (keepsParsing in the
+  // registry: EN 301 549 V3.2.1) keeps the fail.
+  function removesParsing() {
+    if (targetWcagVersion === '2.2') return 'removed';
+    const keeps = (CATALOG && CATALOG.profileKeepsParsing) || [];
+    return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
-    if (targetWcagVersion !== '2.2') return result;
+    const why = removesParsing();
+    if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
@@ -20618,7 +20634,10 @@ const runCoreSettled = (function runCoreSettled(
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
-              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              needed:
+                why === 'removed'
+                  ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
+                  : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
             };
           }
@@ -20635,7 +20654,8 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersionScope: {
         target: targetWcagVersion,
         removedSc,
-        coercedFrom: 'fail'
+        coercedFrom: 'fail',
+        ...(why === 'errata' ? { by: 'errata' } : {})
       }
     };
   }
@@ -32467,7 +32487,7 @@ const RUNTIME_CATALOG = {
           "registry",
           "iso639"
         ],
-        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use.",
+        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger). Both accept the qaa to qtz range reserved for private use, which the registry lists.",
         "basis": "BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary \"Code de langue\" (iso639)"
       }
     ]
@@ -34626,6 +34646,8 @@ const RUNTIME_CATALOG = {
       "ariaRequiredChildren_description": "Prüft, ob Container-Rollen, für die „required owned elements“ festgelegt sind (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...), mindestens ein zugeordnetes Element mit einer zulässigen Rolle enthalten. Dieses Element muss ein Nachfahre sein oder über aria-owns referenziert werden.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" enthält kein Element mit einer der erforderlichen Rollen: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Fügen Sie ein Kindelement mit einer dieser Rollen hinzu, oder verweisen Sie mit aria-owns auf eines.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Diese Container-Rolle enthält Inhalt, aber nichts davon hat eine Rolle, die der Container verlangt.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Geben Sie jedem Eintrag die Rolle, die der Container braucht, etwa role=\"listitem\" in einer Liste.",
       "ariaProhibitedChildren_title": "Container-Rollen dürfen kein Kind mit einer unzulässigen Rolle besitzen",
       "ariaProhibitedChildren_description": "Prüft, ob jedes Kind, das einer Container-Rolle im Barrierefreiheitsbaum zugeordnet ist (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row), eine der für zugeordnete Kindelemente dieser Rolle zulässigen Rollen hat.",
       "ariaProhibitedChildren_summary_fail": "Dieses Element hat role=\"{{childRole}}\", das direkt in einem Container mit role=\"{{containerRole}}\" nicht erlaubt ist.",
@@ -34725,6 +34747,8 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_description": "Prüft, ob <meta name=\"viewport\"> nicht user-scalable=no oder maximum-scale unter 2 (200 %) setzt.",
       "metaViewportZoomEnabled_summary_fail": "Dieses viewport-Meta-Tag hindert Nutzende am Vergrößern ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Entfernen Sie user-scalable=no und jedes maximum-scale unter 2 aus dem Inhalt des Viewport-Meta-Tags.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Dieses viewport-Meta-Tag schränkt das Zoomen ein, wird aber durch ein späteres viewport-Meta-Tag ersetzt.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Entfernen Sie das frühere viewport-Meta-Tag oder darin user-scalable=no und jedes maximum-scale unter 2: Browser wenden das letzte an, waren sich darin aber nicht immer einig.",
       "metaRefreshTimingAbsent_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden",
       "metaRefreshTimingAbsent_description": "Prüft, ob <meta http-equiv=\"refresh\"> keine positive Verzögerung von 20 Stunden oder weniger erzwingt.",
       "metaRefreshTimingAbsent_summary_fail": "Diese Seite lädt sich nach {{delay}} Sekunden automatisch neu.",
@@ -34915,7 +34939,7 @@ const RUNTIME_CATALOG = {
       "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
       "validLang_description": "Prüft, ob jedes Element (außer dem Wurzelelement <html>) mit einem nicht leeren lang-Attribut ein syntaktisch gültiges Sprach-Tag verwendet.",
       "validLang_summary_fail": "Dieser lang-Wert (\"{{value}}\") ist kein gültiges Sprach-Tag.",
-      "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry oder ist für die private Nutzung reserviert).",
+      "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry).",
       "validLang_hint_fail": "Verwenden Sie ein gültiges Sprach-Tag, etwa \"fr\" oder \"es-MX\".",
       "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
       "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, font-weight oder Schriftstil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist. Bei Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben, wird eine Überprüfung verlangt, da sie auch bei Hover und Fokus ein Merkmal benötigen.",
@@ -34997,8 +35021,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Prüfen Sie, ob dem Benutzer in Textform gesagt wird, was falsch ist, in der Beschriftung oder neben dem Feld; schreiben Sie diesen Text in die Fehlermeldung.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Prüfen Sie, ob die Beschreibung als Text sagt, was falsch ist; zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung wird angezeigt, aber aria-hidden verbirgt ihren Text vor assistiven Technologien.",
@@ -35050,6 +35074,8 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Diese Tabelle hat keine Kopfzellen. Wenn sie Daten enthält, haben ihre Zellen keine Überschriften.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Wenn die Tabelle Daten enthält, kennzeichnen Sie ihre Kopfzellen mit <th> oder geben Sie ihren Zellen ein headers-Attribut. Dient sie nur dem Layout, geben Sie ihr role=\"presentation\".",
       "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
@@ -35649,6 +35675,8 @@ const RUNTIME_CATALOG = {
       "ariaRequiredChildren_description": "Checks that container roles with a documented \"required owned elements\" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" contains no element with one of the roles it requires: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Add a child element with one of these roles, or reference one with aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "This container role holds content, but none of it has a role the container requires.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Give each item the role the container needs, such as role=\"listitem\" in a list.",
       "ariaProhibitedChildren_title": "Container roles must not own a child with a disallowed role",
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
@@ -35748,6 +35776,8 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_description": "Checks that <meta name=\"viewport\"> does not set user-scalable=no or maximum-scale below 2 (200%).",
       "metaViewportZoomEnabled_summary_fail": "This viewport meta tag stops users from zooming in ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.",
       "metaRefreshTimingAbsent_title": "Page must not use a timed meta refresh",
       "metaRefreshTimingAbsent_description": "Checks that <meta http-equiv=\"refresh\"> does not impose a positive delay of 20 hours or less.",
       "metaRefreshTimingAbsent_summary_fail": "This page refreshes itself automatically after {{delay}} seconds.",
@@ -35938,7 +35968,7 @@ const RUNTIME_CATALOG = {
       "validLang_title": "Element lang attribute must be syntactically valid",
       "validLang_description": "Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.",
       "validLang_summary_fail": "This lang value (\"{{value}}\") is not a valid language tag.",
-      "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).",
+      "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry).",
       "validLang_hint_fail": "Use a valid language tag, such as \"fr\" or \"es-MX\".",
       "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
       "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
@@ -36020,8 +36050,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
-      "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.",
@@ -36073,6 +36103,8 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "tdHasHeader_summary_cantTell_noHeaders": "This table has no header cells. If it holds data, its cells have no headers.",
+      "tdHasHeader_hint_cantTell_noHeaders": "If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role=\"presentation\".",
       "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
@@ -36672,6 +36704,8 @@ const RUNTIME_CATALOG = {
       "ariaRequiredChildren_description": "Comprueba que los roles contenedores con una entrada documentada de \"elementos propios obligatorios\" (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contengan al menos un descendiente, o un elemento referenciado por aria-owns, con un rol propio aceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" no contiene ningún elemento con uno de los roles que requiere: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Agregar un elemento hijo con uno de estos roles, o referenciar uno con aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Este rol contenedor tiene contenido, pero nada de él tiene un rol que el contenedor exija.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Dar a cada elemento el rol que necesita el contenedor, como role=\"listitem\" en una lista.",
       "ariaProhibitedChildren_title": "Los roles contenedores no deben poseer un hijo con un rol no permitido",
       "ariaProhibitedChildren_description": "Comprueba que todo hijo perteneciente al árbol de accesibilidad de un rol contenedor (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) tenga uno de los roles propios permitidos por ese rol.",
       "ariaProhibitedChildren_summary_fail": "Este elemento tiene role=\"{{childRole}}\", que no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
@@ -36771,6 +36805,8 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_description": "Comprueba que <meta name=\"viewport\"> no establezca user-scalable=no ni maximum-scale por debajo de 2 (200%).",
       "metaViewportZoomEnabled_summary_fail": "Esta etiqueta meta viewport impide que se amplíe la página ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Eliminar user-scalable=no y cualquier maximum-scale por debajo de 2 del contenido de la etiqueta meta viewport.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Esta etiqueta meta viewport limita el zoom, pero una etiqueta meta viewport posterior la sustituye.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Quitar la etiqueta meta viewport anterior, o quitar de ella user-scalable=no y cualquier maximum-scale menor que 2: los navegadores aplican la última, aunque no siempre han coincidido.",
       "metaRefreshTimingAbsent_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\">",
       "metaRefreshTimingAbsent_description": "Comprueba que <meta http-equiv=\"refresh\"> no imponga un retraso positivo de 20 horas o menos.",
       "metaRefreshTimingAbsent_summary_fail": "Esta página se actualiza automáticamente después de {{delay}} segundos.",
@@ -36961,7 +36997,7 @@ const RUNTIME_CATALOG = {
       "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
       "validLang_description": "Comprueba que cualquier elemento (distinto de la raíz <html>) con un atributo lang no vacío use una etiqueta de idioma sintácticamente válida.",
       "validLang_summary_fail": "Este valor de lang (\"{{value}}\") no es una etiqueta de idioma válida.",
-      "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA o está reservado para uso privado).",
+      "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA).",
       "validLang_hint_fail": "Usar una etiqueta de idioma válida, como \"fr\" o \"es-MX\".",
       "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
       "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto que lo rodea mediante una señal distinta del color (subrayado, font-weight o estilo de fuente, borde, fondo o icono). Pide revisar los enlaces que solo se distinguen por una diferencia de color >= 3:1, ya que también necesitan una señal al pasar el cursor y al recibir el foco.",
@@ -37043,8 +37079,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage se muestra, pero aria-hidden oculta su texto a las tecnologías de apoyo.",
@@ -37096,6 +37132,8 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Esta tabla no tiene celdas de encabezado. Si contiene datos, sus celdas no tienen encabezados.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Si la tabla contiene datos, marcar sus celdas de encabezado con <th> o dar a sus celdas un atributo headers. Si solo sirve para maquetar, darle role=\"presentation\".",
       "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
@@ -37695,6 +37733,8 @@ const RUNTIME_CATALOG = {
       "ariaRequiredChildren_description": "Vérifie que les rôles conteneurs disposant d’une entrée documentée « éléments possédés requis » (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contiennent au moins un descendant, ou un élément référencé par aria-owns, ayant un rôle possédé acceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" ne contient aucun élément ayant l’un des rôles requis : {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Ajoutez un élément enfant ayant l’un de ces rôles, ou référencez-en un avec aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Ce rôle conteneur contient du contenu, mais aucun n’a un rôle que le conteneur exige.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Donnez à chaque élément le rôle dont le conteneur a besoin, comme role=\"listitem\" dans une liste.",
       "ariaProhibitedChildren_title": "Les rôles conteneurs ne doivent pas posséder d’enfant ayant un rôle interdit",
       "ariaProhibitedChildren_description": "Vérifie que chaque enfant possédé (dans l’arbre d’accessibilité) d’un rôle conteneur (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) a l’un des rôles possédés autorisés par ce rôle.",
       "ariaProhibitedChildren_summary_fail": "Cet élément a role=\"{{childRole}}\", qui n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
@@ -37794,6 +37834,8 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_description": "Vérifie que <meta name=\"viewport\"> ne définit pas user-scalable=no ni maximum-scale en dessous de 2 (200 %).",
       "metaViewportZoomEnabled_summary_fail": "Cette balise meta viewport empêche de zoomer ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Retirez user-scalable=no et tout maximum-scale inférieur à 2 du contenu de la balise meta viewport.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Cette balise meta viewport limite le zoom, mais une balise meta viewport plus loin la remplace.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Supprimez la balise meta viewport précédente, ou retirez-en user-scalable=no et tout maximum-scale inférieur à 2 : les navigateurs appliquent la dernière, mais n’ont pas toujours été d’accord.",
       "metaRefreshTimingAbsent_title": "La page ne doit pas utiliser un rafraîchissement meta minuté",
       "metaRefreshTimingAbsent_description": "Vérifie que <meta http-equiv=\"refresh\"> n’impose pas un délai positif de 20 heures ou moins.",
       "metaRefreshTimingAbsent_summary_fail": "Cette page se rafraîchit automatiquement après {{delay}} secondes.",
@@ -37984,7 +38026,7 @@ const RUNTIME_CATALOG = {
       "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
       "validLang_description": "Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.",
       "validLang_summary_fail": "Cette valeur de lang (\"{{value}}\") n’est pas une étiquette de langue valide.",
-      "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue, ou est réservée à un usage privé).",
+      "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue).",
       "validLang_hint_fail": "Utilisez une étiquette de langue valide, comme \"fr\" ou \"es-MX\".",
       "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
       "linkInTextBlock_description": "Vérifie qu’un lien dans un bloc de texte se distingue visuellement du texte environnant par un indice autre que la couleur (soulignement, font-weight ou style de police, bordure, arrière-plan, icône). Demande de vérifier les liens qui se distinguent seulement par une différence de couleur >= 3:1, car ils ont aussi besoin d’un indice au survol et au focus.",
@@ -38066,8 +38108,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Vérifiez que l’utilisateur est informé, par un texte, de ce qui ne va pas, dans l’étiquette ou à côté du champ ; mettez ce texte dans le message d’erreur.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Vérifiez que la description dit à l’utilisateur, sous forme de texte, ce qui ne va pas ; affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est affiché, mais aria-hidden cache son texte aux technologies d’assistance.",
@@ -38119,6 +38161,8 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Ce tableau n’a aucune cellule d’en-tête. S’il contient des données, ses cellules n’ont pas d’en-têtes.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Si le tableau contient des données, marquez ses cellules d’en-tête avec <th>, ou donnez à ses cellules un attribut headers. S’il ne sert qu’à la mise en page, donnez-lui role=\"presentation\".",
       "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
@@ -38718,6 +38762,8 @@ const RUNTIME_CATALOG = {
       "ariaRequiredChildren_description": "「必須の所有要素」が定められているコンテナーロール (list、listbox、menu、radiogroup、table、grid、tablist、tree、row など) に、許容される所有ロールを持つ子孫要素または aria-owns で参照される要素が少なくとも 1 つあるかを確認します。",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" の中に、必要なロール ({{requiredRoles}}) のいずれかを持つ要素がありません。",
       "ariaRequiredChildren_hint_fail": "これらのロールのいずれかを持つ子要素を追加するか、aria-owns で参照してください。",
+      "ariaRequiredChildren_summary_fail_textOnly": "このコンテナーロールには内容がありますが、どれもコンテナーが必要とするロールを持っていません。",
+      "ariaRequiredChildren_hint_fail_textOnly": "各項目に、コンテナーが必要とするロールを付けてください (リストであれば role=\"listitem\" など)。",
       "ariaProhibitedChildren_title": "コンテナーロールは許可されていないロールの子を所有してはならない",
       "ariaProhibitedChildren_description": "コンテナーロール (list、listbox、menu、menubar、radiogroup、rowgroup、table、grid、treegrid、tablist、tree、row) がアクセシビリティツリー上で所有するすべての子が、そのロールで許可された所有ロールのいずれかを持っているかを確認します。",
       "ariaProhibitedChildren_summary_fail": "この要素は role=\"{{childRole}}\" ですが、このロールは role=\"{{containerRole}}\" のコンテナの直下には置けません。",
@@ -38817,6 +38863,8 @@ const RUNTIME_CATALOG = {
       "metaViewportZoomEnabled_description": "<meta name=\"viewport\"> で user-scalable=no や 2 (200%) 未満の maximum-scale が指定されていないかを確認します。",
       "metaViewportZoomEnabled_summary_fail": "この viewport の meta タグは、利用者による拡大を妨げています ({{reasons}})。",
       "metaViewportZoomEnabled_hint_fail": "viewport の meta の content から、user-scalable=no と 2 未満の maximum-scale を削除してください。",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "この viewport メタタグはズームを制限していますが、後の viewport メタタグに置き換えられています。",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "前の viewport メタタグを削除するか、そこから user-scalable=no と 2 未満の maximum-scale を取り除いてください。ブラウザーは最後のものを適用しますが、常に一致していたわけではありません。",
       "metaRefreshTimingAbsent_title": "ページで時間指定の meta refresh を使用してはならない",
       "metaRefreshTimingAbsent_description": "<meta http-equiv=\"refresh\"> で、20 時間以下の正の遅延が指定されていないかを確認します。",
       "metaRefreshTimingAbsent_summary_fail": "このページは {{delay}} 秒後に自動的に再読み込みされます。",
@@ -39007,7 +39055,7 @@ const RUNTIME_CATALOG = {
       "validLang_title": "要素の lang 属性は構文上有効であること",
       "validLang_description": "ルートの <html> 以外で空でない lang 属性を持つ要素が、構文上有効な言語タグを使用しているかを確認します。",
       "validLang_summary_fail": "この lang の値「{{value}}」は有効な言語タグではありません。",
-      "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにないか、私的利用のために予約されています)。",
+      "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにありません)。",
       "validLang_hint_fail": "\"fr\" や \"es-MX\" のような有効な言語タグを使ってください。",
       "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
       "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、font-weight またはフォントスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",
@@ -39089,8 +39137,8 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
-      "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
-      "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "何が誤っているかが、ラベルやフィールドの横などにテキストで示されているか確認してください。そのテキストをエラーメッセージに入れてください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "説明が何が誤っているかをテキストで伝えていることを確認してください。フィールドが無効な間はエラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "このフィールドは無効とマークされ、aria-errormessage が指すエラーメッセージは表示されていますが、aria-hidden によってそのテキストは支援技術に伝わりません。",
@@ -39142,6 +39190,8 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "tdHasHeader_summary_cantTell_noHeaders": "この表には見出しセルがありません。データを含む表であれば、そのセルには見出しがありません。",
+      "tdHasHeader_hint_cantTell_noHeaders": "表がデータを含む場合は、見出しセルを <th> でマークするか、セルに headers 属性を付けてください。レイアウトのためだけの表であれば、role=\"presentation\" を付けてください。",
       "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
@@ -39367,7 +39417,10 @@ const RUNTIME_CATALOG = {
       "version": "V3.2.1"
     }
   },
-  "profileWcagVersions": {}
+  "profileWcagVersions": {},
+  "profileKeepsParsing": [
+    "en301549-v3.2.1"
+  ]
 }
 };
 const RUNTIME = createRuntime(RUNTIME_CATALOG);
@@ -49848,7 +49901,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "registry",
           "iso639"
         ],
-        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use.",
+        "description": "The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger). Both accept the qaa to qtz range reserved for private use, which the registry lists.",
         "basis": "BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary \"Code de langue\" (iso639)"
       }
     ]
@@ -55404,11 +55457,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return type === 'checkbox' || type === 'radio';
   }
 
-  function isMarkedBusy(el) {
-    const v = dom.getAttribute(el, 'aria-busy');
-    return v != null && String(v).trim().toLowerCase() === 'true';
-  }
-
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[role]')
     : helpers.queryAll('[role]');
@@ -55457,7 +55505,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!required.length) continue;
 
     if (!isEligibleAcc(el)) continue; // not currently exposed to the accessibility tree
-    if (isMarkedBusy(el)) continue; // author has signaled transient incompleteness per WAI-ARIA
 
     applicableCount += 1;
 
@@ -55596,6 +55643,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('[role]');
 
   const occurrences = [];
+  const fails = [];
+
+  // Whether `node` owns text directly or through generic wrappers: a text
+  // node with more than whitespace, or an element with no role of its own
+  // (or role generic, none or presentation) that does. Hidden elements, and
+  // elements with another role, don't count.
+  const NO_ROLE = ['', 'generic', 'none', 'presentation'];
+  function ownsBareText(node, depth) {
+    if (depth > 50) return false;
+    for (const child of dom.childNodes(node) || []) {
+      const type = dom.nodeType(child);
+      if (type === 3) {
+        if (String(dom.nodeValue(child) || '').trim()) return true;
+        continue;
+      }
+      if (type !== 1) continue;
+      if (!isEligibleAcc(child)) continue;
+      let childRole;
+      try {
+        childRole =
+          ariaHelpers.getContainmentRole(child) || ariaHelpers.getNativeRoleForElement(child) || '';
+      } catch {
+        childRole = 'unknown';
+      }
+      if (!NO_ROLE.includes(childRole)) continue;
+      if (ownsBareText(child, depth + 1)) return true;
+    }
+    return false;
+  }
   let applicableCount = 0;
 
   // Composed-tree descendant walk: el.querySelectorAll only sees the raw
@@ -55745,6 +55821,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (found) continue;
 
+    // Text the container owns itself, or through generic wrappers (a <span>
+    // with no role), is content in place of its required children: a list
+    // whose items have no role (ACT bc4a75, Failed Example 1). It fails. An
+    // element with a role of its own is aria-prohibited-children's to judge,
+    // and an empty container is asked about, as before.
+    if (ownsBareText(el, 0)) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This container role holds content, but none of it has a role the container requires.',
+          hint: 'Give each item the role the container needs, such as role="listitem" in a list.',
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'ariaRequiredChildren_summary_fail_textOnly',
+            hintKey: 'ariaRequiredChildren_hint_fail_textOnly',
+            params: { role, requiredRoles: requiredOwned.join(', ') }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_REQUIRED_CHILD_TEXT_ONLY',
+              role,
+              requiredOwnedRoles: requiredOwned
+            }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This container role has no owned child with a required role.',
@@ -55780,7 +55885,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   const resolved = helpers.resolveTieredOutcome(
-    [],
+    fails,
     occurrences,
     rule.defaultSeverity || 'moderate'
   );
@@ -70173,11 +70278,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           reasonCode = 'ERROR_MESSAGE_ARIA_HIDDEN';
         } else if (described(el)) {
           reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
+        } else if (infos.some((i) => i.shown)) {
+          // A shown message with no text: ARIA sets no MUST on its text, and
+          // 3.3.1 is met by error text the markup doesn't tie to the field,
+          // as for NO_ERROR_MESSAGE.
+          reasonCode = 'ERROR_MESSAGE_EMPTY';
         } else {
           tier = 'fail';
-          reasonCode = infos.some((i) => i.shown) ? 'ERROR_MESSAGE_EMPTY' : 'ERROR_MESSAGE_HIDDEN';
-          if (reasonCode === 'ERROR_MESSAGE_HIDDEN' && infos.every((i) => i.hiddenByAria))
-            hiddenBy = 'aria-hidden';
+          reasonCode = 'ERROR_MESSAGE_HIDDEN';
+          if (infos.every((i) => i.hiddenByAria)) hiddenBy = 'aria-hidden';
         }
       }
     } else {
@@ -70204,10 +70313,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
       },
       ERROR_MESSAGE_EMPTY: {
-        key: 'fail_empty',
+        key: 'cantTell_empty',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names has no text.',
-        hint: 'Put text in the error message that says what is wrong and how to fix it.'
+        hint: 'Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.'
       },
       ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
         key: 'cantTell_notShownDescribed',
@@ -75133,7 +75244,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : [];
 
   const occurrences = [];
+  const questions = [];
   let applicableCount = 0;
+
+  // Browsers apply the last viewport meta tag that has content; an earlier
+  // one is overridden. One that restricts zoom fails; an earlier one that
+  // restricts is asked about, since browsers have differed on merging them.
+  const withContent = Array.from(nodes).filter(
+    (el) =>
+      el && dom.get(el, 'getAttribute') && String(dom.getAttribute(el, 'content') || '').trim()
+  );
+  const inEffect = withContent.length ? withContent[withContent.length - 1] : null;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -75156,8 +75277,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!reasons.length) continue;
 
+    if (el !== inEffect) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.',
+          hint: 'Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'metaViewportZoomEnabled_summary_cantTell_overridden',
+            hintKey: 'metaViewportZoomEnabled_hint_cantTell_overridden',
+            params: { reasons: reasons.join(', ') }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether the browser in use applies only the last viewport meta tag.'
+          },
+          data: {
+            details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN', reasons }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'fail',
         summary: 'This viewport meta tag restricts the user’s ability to zoom.',
         hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
         i18n: {
@@ -75175,15 +75321,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: (function applicability(ctx) {
   return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
 }) },
@@ -81650,8 +81793,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // the three roles that still describe a table keep the cell's headers
     // attribute meaningful; anything else (presentation/none, heading, ...)
     // takes the whole table out of scope. Unknown tokens name no role, so
-    // the native one stands.
-    const tableRole = table ? getExplicitRole(table) : '';
+    // the native one stands. A presentational role is ignored, as WAI-ARIA's
+    // conflict resolution has it, on a table with a global ARIA attribute or
+    // a tabindex: it stays a table (ACT a25f45 goes by its semantic role).
+    let tableRole = table ? getExplicitRole(table) : '';
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      ((ariaHelpers && ariaHelpers.hasGlobalAriaAttr(table)) ||
+        /^\s*[+-]?\d/.test(dom.getAttribute(table, 'tabindex') || ''))
+    )
+      tableRole = '';
     if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')
       continue;
 
@@ -83775,6 +83926,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
+  const questions = [];
   let applicableCount = 0;
 
   for (const table of tables) {
@@ -83823,6 +83975,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // rows/columns already passed for every cell: colHasHeaderAbove[c]
     // carries forward across rows, rowHasHeaderBefore resets at the start
     // of each row. One pass over every cell, not one rescan per cell.
+    // A table with no header cell at all may be a layout table, which 1.3.1
+    // asks no headers of, or a data table that lacks them: markup can't tell
+    // which, so it is asked about once, on the table.
+    const hasAnyHeader = rowCells.some((cells) => cells.some((c) => isHeaderCell(c)));
+    if (!hasAnyHeader) {
+      const hasData = rowCells.some((cells) => cells.some((c) => isEligible(c) && !isEmptyCell(c)));
+      if (hasData) {
+        questions.push(
+          helpers.reportOccurrence(table, {
+            summary: 'This table has no header cells. If it holds data, its cells have no headers.',
+            hint: 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
+            occurrenceOutcome: 'cantTell',
+            i18n: {
+              summaryKey: 'tdHasHeader_summary_cantTell_noHeaders',
+              hintKey: 'tdHasHeader_hint_cantTell_noHeaders',
+              params: {}
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether the table holds data, which needs headers, or only lays out content.'
+            },
+            data: { details: { reasonCode: 'TD_TABLE_NO_HEADERS' } }
+          })
+        );
+      }
+      continue;
+    }
+
     const colHasHeaderAbove = new Array(maxCols).fill(false);
 
     for (let r = 0; r < rowCells.length; r++) {
@@ -83857,6 +84037,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summary:
               'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
             hint: "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+            occurrenceOutcome: 'fail',
             i18n: {
               summaryKey: 'tdHasHeader_summary_fail',
               hintKey: 'tdHasHeader_hint_fail',
@@ -83874,15 +84055,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
     "text-spacing-content-loss": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -85806,15 +85984,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = dom.tagName(el).toLowerCase();
     // A primary subtag of 2 to 8 letters is well formed (BCP 47); it fails
-    // because it names no language ("eng", or "qaa" from the private-use
-    // range), which the message says rather than calling it malformed.
+    // because it names no language ("eng"), which the message says rather
+    // than calling it malformed.
     const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
     const setsDefault = setsDefaultLanguage(el);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: wellFormed
-          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).`
+          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry).`
           : `This lang value ("${raw}") is not a valid language tag.`,
         hint: 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
@@ -86904,6 +87082,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredChildren_description": "Prüft, ob Container-Rollen, für die „required owned elements“ festgelegt sind (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...), mindestens ein zugeordnetes Element mit einer zulässigen Rolle enthalten. Dieses Element muss ein Nachfahre sein oder über aria-owns referenziert werden.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" enthält kein Element mit einer der erforderlichen Rollen: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Fügen Sie ein Kindelement mit einer dieser Rollen hinzu, oder verweisen Sie mit aria-owns auf eines.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Diese Container-Rolle enthält Inhalt, aber nichts davon hat eine Rolle, die der Container verlangt.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Geben Sie jedem Eintrag die Rolle, die der Container braucht, etwa role=\"listitem\" in einer Liste.",
       "ariaProhibitedChildren_title": "Container-Rollen dürfen kein Kind mit einer unzulässigen Rolle besitzen",
       "ariaProhibitedChildren_description": "Prüft, ob jedes Kind, das einer Container-Rolle im Barrierefreiheitsbaum zugeordnet ist (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row), eine der für zugeordnete Kindelemente dieser Rolle zulässigen Rollen hat.",
       "ariaProhibitedChildren_summary_fail": "Dieses Element hat role=\"{{childRole}}\", das direkt in einem Container mit role=\"{{containerRole}}\" nicht erlaubt ist.",
@@ -87003,6 +87183,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_description": "Prüft, ob <meta name=\"viewport\"> nicht user-scalable=no oder maximum-scale unter 2 (200 %) setzt.",
       "metaViewportZoomEnabled_summary_fail": "Dieses viewport-Meta-Tag hindert Nutzende am Vergrößern ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Entfernen Sie user-scalable=no und jedes maximum-scale unter 2 aus dem Inhalt des Viewport-Meta-Tags.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Dieses viewport-Meta-Tag schränkt das Zoomen ein, wird aber durch ein späteres viewport-Meta-Tag ersetzt.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Entfernen Sie das frühere viewport-Meta-Tag oder darin user-scalable=no und jedes maximum-scale unter 2: Browser wenden das letzte an, waren sich darin aber nicht immer einig.",
       "metaRefreshTimingAbsent_title": "Die Seite darf keinen zeitgesteuerten Meta-Refresh verwenden",
       "metaRefreshTimingAbsent_description": "Prüft, ob <meta http-equiv=\"refresh\"> keine positive Verzögerung von 20 Stunden oder weniger erzwingt.",
       "metaRefreshTimingAbsent_summary_fail": "Diese Seite lädt sich nach {{delay}} Sekunden automatisch neu.",
@@ -87193,7 +87375,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "validLang_title": "Das lang-Attribut eines Elements muss syntaktisch gültig sein",
       "validLang_description": "Prüft, ob jedes Element (außer dem Wurzelelement <html>) mit einem nicht leeren lang-Attribut ein syntaktisch gültiges Sprach-Tag verwendet.",
       "validLang_summary_fail": "Dieser lang-Wert (\"{{value}}\") ist kein gültiges Sprach-Tag.",
-      "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry oder ist für die private Nutzung reserviert).",
+      "validLang_summary_unknown": "Dieser lang-Attributwert („{{value}}“) ist wohlgeformt, aber „{{subtag}}“ bezeichnet keine bekannte Sprache (es steht nicht im IANA Language Subtag Registry).",
       "validLang_hint_fail": "Verwenden Sie ein gültiges Sprach-Tag, etwa \"fr\" oder \"es-MX\".",
       "linkInTextBlock_title": "Links in Textblöcken müssen sich vom umgebenden Text unterscheiden lassen, ohne sich allein auf Farbe zu verlassen",
       "linkInTextBlock_description": "Prüft, ob ein Link innerhalb eines Textabschnitts durch ein Merkmal außer der Farbe (Unterstreichung, font-weight oder Schriftstil, Rahmen, Hintergrund, Symbol) visuell vom umgebenden Text unterscheidbar ist. Bei Links, die sich nur durch einen Farbunterschied von >= 3:1 abheben, wird eine Überprüfung verlangt, da sie auch bei Hover und Fokus ein Merkmal benötigen.",
@@ -87275,8 +87457,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Schreiben Sie in die Fehlermeldung, was falsch ist und wie es sich beheben lässt.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Prüfen Sie, ob dem Benutzer in Textform gesagt wird, was falsch ist, in der Beschriftung oder neben dem Feld; schreiben Sie diesen Text in die Fehlermeldung.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Prüfen Sie, ob die Beschreibung als Text sagt, was falsch ist; zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung wird angezeigt, aber aria-hidden verbirgt ihren Text vor assistiven Technologien.",
@@ -87328,6 +87510,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Diese Tabelle hat keine Kopfzellen. Wenn sie Daten enthält, haben ihre Zellen keine Überschriften.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Wenn die Tabelle Daten enthält, kennzeichnen Sie ihre Kopfzellen mit <th> oder geben Sie ihren Zellen ein headers-Attribut. Dient sie nur dem Layout, geben Sie ihr role=\"presentation\".",
       "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
@@ -87927,6 +88111,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredChildren_description": "Checks that container roles with a documented \"required owned elements\" entry (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contain at least one descendant or aria-owns-referenced element with an acceptable owned role.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" contains no element with one of the roles it requires: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Add a child element with one of these roles, or reference one with aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "This container role holds content, but none of it has a role the container requires.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Give each item the role the container needs, such as role=\"listitem\" in a list.",
       "ariaProhibitedChildren_title": "Container roles must not own a child with a disallowed role",
       "ariaProhibitedChildren_description": "Checks that every accessible-tree-owned child of a container role (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) has one of that role's allowed owned roles.",
       "ariaProhibitedChildren_summary_fail": "This element has role=\"{{childRole}}\", which isn't allowed directly inside a role=\"{{containerRole}}\" container.",
@@ -88026,6 +88212,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_description": "Checks that <meta name=\"viewport\"> does not set user-scalable=no or maximum-scale below 2 (200%).",
       "metaViewportZoomEnabled_summary_fail": "This viewport meta tag stops users from zooming in ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.",
       "metaRefreshTimingAbsent_title": "Page must not use a timed meta refresh",
       "metaRefreshTimingAbsent_description": "Checks that <meta http-equiv=\"refresh\"> does not impose a positive delay of 20 hours or less.",
       "metaRefreshTimingAbsent_summary_fail": "This page refreshes itself automatically after {{delay}} seconds.",
@@ -88216,7 +88404,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "validLang_title": "Element lang attribute must be syntactically valid",
       "validLang_description": "Checks that any element (other than the root <html>) with a non-empty lang attribute uses a syntactically valid language tag.",
       "validLang_summary_fail": "This lang value (\"{{value}}\") is not a valid language tag.",
-      "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).",
+      "validLang_summary_unknown": "This lang attribute value (\"{{value}}\") is well formed, but \"{{subtag}}\" names no known language (it is not in the IANA Language Subtag Registry).",
       "validLang_hint_fail": "Use a valid language tag, such as \"fr\" or \"es-MX\".",
       "linkInTextBlock_title": "Links in text blocks must be distinguishable from surrounding text without relying on color alone",
       "linkInTextBlock_description": "Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a >=3:1 color difference, which also need a hover and focus cue.",
@@ -88298,8 +88486,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
-      "invalidFieldErrorMessage_summary_fail_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Put text in the error message that says what is wrong and how to fix it.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.",
@@ -88351,6 +88539,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+      "tdHasHeader_summary_cantTell_noHeaders": "This table has no header cells. If it holds data, its cells have no headers.",
+      "tdHasHeader_hint_cantTell_noHeaders": "If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role=\"presentation\".",
       "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
@@ -88950,6 +89140,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredChildren_description": "Comprueba que los roles contenedores con una entrada documentada de \"elementos propios obligatorios\" (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contengan al menos un descendiente, o un elemento referenciado por aria-owns, con un rol propio aceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" no contiene ningún elemento con uno de los roles que requiere: {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Agregar un elemento hijo con uno de estos roles, o referenciar uno con aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Este rol contenedor tiene contenido, pero nada de él tiene un rol que el contenedor exija.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Dar a cada elemento el rol que necesita el contenedor, como role=\"listitem\" en una lista.",
       "ariaProhibitedChildren_title": "Los roles contenedores no deben poseer un hijo con un rol no permitido",
       "ariaProhibitedChildren_description": "Comprueba que todo hijo perteneciente al árbol de accesibilidad de un rol contenedor (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) tenga uno de los roles propios permitidos por ese rol.",
       "ariaProhibitedChildren_summary_fail": "Este elemento tiene role=\"{{childRole}}\", que no está permitido directamente dentro de un contenedor role=\"{{containerRole}}\".",
@@ -89049,6 +89241,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_description": "Comprueba que <meta name=\"viewport\"> no establezca user-scalable=no ni maximum-scale por debajo de 2 (200%).",
       "metaViewportZoomEnabled_summary_fail": "Esta etiqueta meta viewport impide que se amplíe la página ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Eliminar user-scalable=no y cualquier maximum-scale por debajo de 2 del contenido de la etiqueta meta viewport.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Esta etiqueta meta viewport limita el zoom, pero una etiqueta meta viewport posterior la sustituye.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Quitar la etiqueta meta viewport anterior, o quitar de ella user-scalable=no y cualquier maximum-scale menor que 2: los navegadores aplican la última, aunque no siempre han coincidido.",
       "metaRefreshTimingAbsent_title": "La página no debe usar una actualización temporizada mediante <meta http-equiv=\"refresh\">",
       "metaRefreshTimingAbsent_description": "Comprueba que <meta http-equiv=\"refresh\"> no imponga un retraso positivo de 20 horas o menos.",
       "metaRefreshTimingAbsent_summary_fail": "Esta página se actualiza automáticamente después de {{delay}} segundos.",
@@ -89239,7 +89433,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "validLang_title": "El atributo lang del elemento debe ser sintácticamente válido",
       "validLang_description": "Comprueba que cualquier elemento (distinto de la raíz <html>) con un atributo lang no vacío use una etiqueta de idioma sintácticamente válida.",
       "validLang_summary_fail": "Este valor de lang (\"{{value}}\") no es una etiqueta de idioma válida.",
-      "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA o está reservado para uso privado).",
+      "validLang_summary_unknown": "Este valor del atributo lang (\"{{value}}\") está bien formado, pero \"{{subtag}}\" no designa ningún idioma conocido (no figura en el registro de subetiquetas de idioma de la IANA).",
       "validLang_hint_fail": "Usar una etiqueta de idioma válida, como \"fr\" o \"es-MX\".",
       "linkInTextBlock_title": "Los enlaces dentro de bloques de texto deben distinguirse del texto circundante sin depender únicamente del color",
       "linkInTextBlock_description": "Comprueba que un enlace dentro de un bloque de texto se distinga visualmente del texto que lo rodea mediante una señal distinta del color (subrayado, font-weight o estilo de fuente, borde, fondo o icono). Pide revisar los enlaces que solo se distinguen por una diferencia de color >= 3:1, ya que también necesitan una señal al pasar el cursor y al recibir el foco.",
@@ -89321,8 +89515,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Ponga en el mensaje de error un texto que diga qué está mal y cómo corregirlo.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage se muestra, pero aria-hidden oculta su texto a las tecnologías de apoyo.",
@@ -89374,6 +89568,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Esta tabla no tiene celdas de encabezado. Si contiene datos, sus celdas no tienen encabezados.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Si la tabla contiene datos, marcar sus celdas de encabezado con <th> o dar a sus celdas un atributo headers. Si solo sirve para maquetar, darle role=\"presentation\".",
       "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
@@ -89973,6 +90169,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredChildren_description": "Vérifie que les rôles conteneurs disposant d’une entrée documentée « éléments possédés requis » (list, listbox, menu, radiogroup, table, grid, tablist, tree, row, ...) contiennent au moins un descendant, ou un élément référencé par aria-owns, ayant un rôle possédé acceptable.",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" ne contient aucun élément ayant l’un des rôles requis : {{requiredRoles}}.",
       "ariaRequiredChildren_hint_fail": "Ajoutez un élément enfant ayant l’un de ces rôles, ou référencez-en un avec aria-owns.",
+      "ariaRequiredChildren_summary_fail_textOnly": "Ce rôle conteneur contient du contenu, mais aucun n’a un rôle que le conteneur exige.",
+      "ariaRequiredChildren_hint_fail_textOnly": "Donnez à chaque élément le rôle dont le conteneur a besoin, comme role=\"listitem\" dans une liste.",
       "ariaProhibitedChildren_title": "Les rôles conteneurs ne doivent pas posséder d’enfant ayant un rôle interdit",
       "ariaProhibitedChildren_description": "Vérifie que chaque enfant possédé (dans l’arbre d’accessibilité) d’un rôle conteneur (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row) a l’un des rôles possédés autorisés par ce rôle.",
       "ariaProhibitedChildren_summary_fail": "Cet élément a role=\"{{childRole}}\", qui n’est pas autorisé directement dans un conteneur role=\"{{containerRole}}\".",
@@ -90072,6 +90270,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_description": "Vérifie que <meta name=\"viewport\"> ne définit pas user-scalable=no ni maximum-scale en dessous de 2 (200 %).",
       "metaViewportZoomEnabled_summary_fail": "Cette balise meta viewport empêche de zoomer ({{reasons}}).",
       "metaViewportZoomEnabled_hint_fail": "Retirez user-scalable=no et tout maximum-scale inférieur à 2 du contenu de la balise meta viewport.",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "Cette balise meta viewport limite le zoom, mais une balise meta viewport plus loin la remplace.",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "Supprimez la balise meta viewport précédente, ou retirez-en user-scalable=no et tout maximum-scale inférieur à 2 : les navigateurs appliquent la dernière, mais n’ont pas toujours été d’accord.",
       "metaRefreshTimingAbsent_title": "La page ne doit pas utiliser un rafraîchissement meta minuté",
       "metaRefreshTimingAbsent_description": "Vérifie que <meta http-equiv=\"refresh\"> n’impose pas un délai positif de 20 heures ou moins.",
       "metaRefreshTimingAbsent_summary_fail": "Cette page se rafraîchit automatiquement après {{delay}} secondes.",
@@ -90262,7 +90462,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "validLang_title": "L’attribut lang d’un élément doit être syntaxiquement valide",
       "validLang_description": "Vérifie que tout élément (autre que la racine <html>) ayant un attribut lang non vide utilise une étiquette de langue syntaxiquement valide.",
       "validLang_summary_fail": "Cette valeur de lang (\"{{value}}\") n’est pas une étiquette de langue valide.",
-      "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue, ou est réservée à un usage privé).",
+      "validLang_summary_unknown": "Cette valeur d’attribut lang (« {{value}} ») est bien formée, mais « {{subtag}} » ne désigne aucune langue connue (elle ne figure pas dans le registre IANA des sous-étiquettes de langue).",
       "validLang_hint_fail": "Utilisez une étiquette de langue valide, comme \"fr\" ou \"es-MX\".",
       "linkInTextBlock_title": "Les liens dans des blocs de texte doivent être distinguables du texte environnant sans se fier uniquement à la couleur",
       "linkInTextBlock_description": "Vérifie qu’un lien dans un bloc de texte se distingue visuellement du texte environnant par un indice autre que la couleur (soulignement, font-weight ou style de police, bordure, arrière-plan, icône). Demande de vérifier les liens qui se distinguent seulement par une différence de couleur >= 3:1, car ils ont aussi besoin d’un indice au survol et au focus.",
@@ -90344,8 +90544,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
-      "invalidFieldErrorMessage_summary_fail_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
-      "invalidFieldErrorMessage_hint_fail_empty": "Mettez dans le message d’erreur un texte qui dit ce qui ne va pas et comment le corriger.",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "Vérifiez que l’utilisateur est informé, par un texte, de ce qui ne va pas, dans l’étiquette ou à côté du champ ; mettez ce texte dans le message d’erreur.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Vérifiez que la description dit à l’utilisateur, sous forme de texte, ce qui ne va pas ; affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est affiché, mais aria-hidden cache son texte aux technologies d’assistance.",
@@ -90397,6 +90597,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
+      "tdHasHeader_summary_cantTell_noHeaders": "Ce tableau n’a aucune cellule d’en-tête. S’il contient des données, ses cellules n’ont pas d’en-têtes.",
+      "tdHasHeader_hint_cantTell_noHeaders": "Si le tableau contient des données, marquez ses cellules d’en-tête avec <th>, ou donnez à ses cellules un attribut headers. S’il ne sert qu’à la mise en page, donnez-lui role=\"presentation\".",
       "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
@@ -90996,6 +91198,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaRequiredChildren_description": "「必須の所有要素」が定められているコンテナーロール (list、listbox、menu、radiogroup、table、grid、tablist、tree、row など) に、許容される所有ロールを持つ子孫要素または aria-owns で参照される要素が少なくとも 1 つあるかを確認します。",
       "ariaRequiredChildren_summary_fail": "role=\"{{role}}\" の中に、必要なロール ({{requiredRoles}}) のいずれかを持つ要素がありません。",
       "ariaRequiredChildren_hint_fail": "これらのロールのいずれかを持つ子要素を追加するか、aria-owns で参照してください。",
+      "ariaRequiredChildren_summary_fail_textOnly": "このコンテナーロールには内容がありますが、どれもコンテナーが必要とするロールを持っていません。",
+      "ariaRequiredChildren_hint_fail_textOnly": "各項目に、コンテナーが必要とするロールを付けてください (リストであれば role=\"listitem\" など)。",
       "ariaProhibitedChildren_title": "コンテナーロールは許可されていないロールの子を所有してはならない",
       "ariaProhibitedChildren_description": "コンテナーロール (list、listbox、menu、menubar、radiogroup、rowgroup、table、grid、treegrid、tablist、tree、row) がアクセシビリティツリー上で所有するすべての子が、そのロールで許可された所有ロールのいずれかを持っているかを確認します。",
       "ariaProhibitedChildren_summary_fail": "この要素は role=\"{{childRole}}\" ですが、このロールは role=\"{{containerRole}}\" のコンテナの直下には置けません。",
@@ -91095,6 +91299,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "metaViewportZoomEnabled_description": "<meta name=\"viewport\"> で user-scalable=no や 2 (200%) 未満の maximum-scale が指定されていないかを確認します。",
       "metaViewportZoomEnabled_summary_fail": "この viewport の meta タグは、利用者による拡大を妨げています ({{reasons}})。",
       "metaViewportZoomEnabled_hint_fail": "viewport の meta の content から、user-scalable=no と 2 未満の maximum-scale を削除してください。",
+      "metaViewportZoomEnabled_summary_cantTell_overridden": "この viewport メタタグはズームを制限していますが、後の viewport メタタグに置き換えられています。",
+      "metaViewportZoomEnabled_hint_cantTell_overridden": "前の viewport メタタグを削除するか、そこから user-scalable=no と 2 未満の maximum-scale を取り除いてください。ブラウザーは最後のものを適用しますが、常に一致していたわけではありません。",
       "metaRefreshTimingAbsent_title": "ページで時間指定の meta refresh を使用してはならない",
       "metaRefreshTimingAbsent_description": "<meta http-equiv=\"refresh\"> で、20 時間以下の正の遅延が指定されていないかを確認します。",
       "metaRefreshTimingAbsent_summary_fail": "このページは {{delay}} 秒後に自動的に再読み込みされます。",
@@ -91285,7 +91491,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "validLang_title": "要素の lang 属性は構文上有効であること",
       "validLang_description": "ルートの <html> 以外で空でない lang 属性を持つ要素が、構文上有効な言語タグを使用しているかを確認します。",
       "validLang_summary_fail": "この lang の値「{{value}}」は有効な言語タグではありません。",
-      "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにないか、私的利用のために予約されています)。",
+      "validLang_summary_unknown": "この lang 属性の値 (「{{value}}」) は形式上は正しいものの、「{{subtag}}」は既知の言語を示していません (IANA 言語サブタグレジストリにありません)。",
       "validLang_hint_fail": "\"fr\" や \"es-MX\" のような有効な言語タグを使ってください。",
       "linkInTextBlock_title": "文中のリンクは、色だけに頼らずに周囲のテキストと区別できること",
       "linkInTextBlock_description": "文中にあるリンクが、色以外の手がかり (下線、font-weight またはフォントスタイル、枠線、背景、アイコン) によって周囲のテキストと視覚的に区別できるかを確認します。3:1 以上の色の差だけで区別されているリンクは、ホバー時とフォーカス時にも手がかりが必要なため、確認を求めます。",
@@ -91367,8 +91573,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
       "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
-      "invalidFieldErrorMessage_summary_fail_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
-      "invalidFieldErrorMessage_hint_fail_empty": "何が誤っていて、どう直せばよいかをエラーメッセージのテキストで示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
+      "invalidFieldErrorMessage_hint_cantTell_empty": "何が誤っているかが、ラベルやフィールドの横などにテキストで示されているか確認してください。そのテキストをエラーメッセージに入れてください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
       "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "説明が何が誤っているかをテキストで伝えていることを確認してください。フィールドが無効な間はエラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "このフィールドは無効とマークされ、aria-errormessage が指すエラーメッセージは表示されていますが、aria-hidden によってそのテキストは支援技術に伝わりません。",
@@ -91420,6 +91626,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
+      "tdHasHeader_summary_cantTell_noHeaders": "この表には見出しセルがありません。データを含む表であれば、そのセルには見出しがありません。",
+      "tdHasHeader_hint_cantTell_noHeaders": "表がデータを含む場合は、見出しセルを <th> でマークするか、セルに headers 属性を付けてください。レイアウトのためだけの表であれば、role=\"presentation\" を付けてください。",
       "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
@@ -91645,7 +91853,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "version": "V3.2.1"
     }
   },
-  "profileWcagVersions": {}
+  "profileWcagVersions": {},
+  "profileKeepsParsing": [
+    "en301549-v3.2.1"
+  ]
 }
   };
 
@@ -102912,10 +103123,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // alone accepts "eng" and "em-US", which look like language tags but are not
   // registered: the IANA registry lists a three-letter subtag only when no
   // two-letter one exists, so "en" is registered and "eng" is not.
+  // The registry also lists the range qaa..qtz, reserved for private use, as
+  // one entry of Type: language, which the generated list doesn't spell out:
+  // ACT de46e4 counts it as a known language subtag too.
   let __languageSubtagSet = null;
   function isRegisteredLanguageSubtag(subtag) {
+    const c = String(subtag || '').toLowerCase();
+    if (/^q[a-t][a-z]$/.test(c)) return true;
     if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
-    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+    return __languageSubtagSet.has(c);
   }
 
   // <generated:iso-639-alpha3>
@@ -112303,8 +112519,19 @@ const runCoreSettled = (function runCoreSettled(
   }
   warnDeprecatedStandards(mappingSelection.tokens);
 
+  // W3C's 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as always satisfied
+  // for content in HTML or XML, so a 2.0 or 2.1 target is treated as 2.2 is.
+  // A profile whose standard keeps the criterion's text (keepsParsing in the
+  // registry: EN 301 549 V3.2.1) keeps the fail.
+  function removesParsing() {
+    if (targetWcagVersion === '2.2') return 'removed';
+    const keeps = (CATALOG && CATALOG.profileKeepsParsing) || [];
+    return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
-    if (targetWcagVersion !== '2.2') return result;
+    const why = removesParsing();
+    if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
@@ -112324,7 +112551,10 @@ const runCoreSettled = (function runCoreSettled(
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
-              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              needed:
+                why === 'removed'
+                  ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
+                  : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
             };
           }
@@ -112341,7 +112571,8 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersionScope: {
         target: targetWcagVersion,
         removedSc,
-        coercedFrom: 'fail'
+        coercedFrom: 'fail',
+        ...(why === 'errata' ? { by: 'errata' } : {})
       }
     };
   }

@@ -47,15 +47,26 @@ const outcome = (lang, config) => {
     .outcome;
 };
 
-// Three-letter ISO 639-2 terminology and bibliographic codes, an ISO 639-3
-// code, and the local-use range, none of which the registry lists.
-const ISO_ONLY = ['fra', 'fre', 'eng', 'deu', 'ger', 'zho', 'chi', 'hbs', 'qaa', 'qtz', 'FRA-fr'];
+// Three-letter ISO 639-2 terminology and bibliographic codes and an ISO
+// 639-3 code, none of which the registry lists.
+const ISO_ONLY = ['fra', 'fre', 'eng', 'deu', 'ger', 'zho', 'chi', 'hbs', 'FRA-fr'];
 
 test('valid-lang fails codes the registry leaves out, by default and with codes: registry', () => {
   for (const lang of ISO_ONLY) {
     assert.equal(outcome(lang), 'fail', lang);
     assert.equal(outcome(lang, { codes: 'registry' }), 'fail', lang);
   }
+});
+
+// The registry lists the private-use range qaa..qtz as one entry, and ACT
+// de46e4 counts it as known.
+test('valid-lang passes the private-use range, by default and with either codes', () => {
+  for (const lang of ['qaa', 'qtz', 'qab-FR']) {
+    assert.equal(outcome(lang), 'pass', lang);
+    assert.equal(outcome(lang, { codes: 'registry' }), 'pass', lang);
+    assert.equal(outcome(lang, { codes: 'iso639' }), 'pass', lang);
+  }
+  assert.equal(outcome('qza'), 'fail');
 });
 
 test('a variant with codes: iso639 passes any ISO 639 code', () => {

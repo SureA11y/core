@@ -45,6 +45,11 @@ export interface PackStandard {
        * `engineOptions.wcagVersion` still wins.
        */
       wcagVersion?: '2.0' | '2.1' | '2.2';
+      /**
+       * True when the standard requires 4.1.1 Parsing as written: a failure of
+       * it stays one under 2.0 or 2.1, which the 2023 errata would have asked.
+       */
+      keepsParsing?: boolean;
     }
   >;
   mappingsFor: (rule: { id: string; wcagSc?: string[]; checksIds?: string[] }) => object[];
@@ -139,6 +144,8 @@ export interface Pack {
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
       /** The WCAG version its scans are judged by, when its tags don't imply it. */
       wcagVersion?: '2.0' | '2.1' | '2.2';
+      /** True when it requires 4.1.1 Parsing as written, whatever the 2023 errata say. */
+      keepsParsing?: boolean;
     }
   >;
   /** A checklist's items: each groups rules into one result, under its profiles. */

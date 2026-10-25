@@ -69,6 +69,29 @@ test(`${RULE_ID}: notApplicable when the table has role="presentation" (ACT a25f
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// WAI-ARIA's conflict resolution: browsers ignore a presentational role on an
+// element with a global ARIA attribute or one that is focusable, so the
+// table stays a table (ACT a25f45 goes by the semantic role).
+test(`${RULE_ID}: a presentational role browsers ignore leaves the table in scope`, () => {
+  for (const attrs of [
+    'role="none" aria-label="Staff"',
+    'role="presentation" tabindex="0"',
+    'role="none" tabindex="-1"'
+  ]) {
+    const html = `<!doctype html><html><body><table ${attrs}><tr><td id="h1">Name</td></tr><tr><td id="a" headers="h1 missing">Alice</td></tr></table></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepEqual(rule.occurrences[0].data.details.invalid, [
+      { id: 'missing', reason: 'missing' }
+    ]);
+  }
+  // aria-label is global; aria-checked is not, so the role stands.
+  const html = `<!doctype html><html><body><table role="none" aria-checked="true"><tr><td id="a" headers="missing">Alice</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
+});
+
 test(`${RULE_ID}: fail when the referenced th is in a different table`, () => {
   const html = `<!doctype html><html><body>
     <table><tr><th id="h1">Name</th></tr></table>

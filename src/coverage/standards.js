@@ -45,6 +45,10 @@
  *   only its mapped rules has no WCAG tags to imply it, and the run would
  *   default to 2.2, where 4.1.1 Parsing is gone. An explicit
  *   engineOptions.wcagVersion still wins (src/core/dom-runner.js).
+ *   A profile may also have `keepsParsing: true`: its standard requires 4.1.1
+ *   Parsing as written, so a failure of it stays a failure. Under any other
+ *   2.0 or 2.1 target the 2023 errata count 4.1.1 as satisfied for HTML and
+ *   XML, and the failure is asked about, as under 2.2.
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -112,11 +116,12 @@ const NORMATIVE_STANDARDS = [
     key: 'en301549',
     standard: 'EN 301 549',
     versions: EN301549_VERSIONS.map((v) => v.version),
-    // Chapter 9 restates WCAG A and AA: V4.1.1 is built on 2.2, V3.2.1 on 2.1
-    // (which keeps 4.1.1 Parsing).
+    // Chapter 9 restates WCAG A and AA: V4.1.1 is built on 2.2, V3.2.1 on 2.1,
+    // and its 9.4.1.1 keeps 4.1.1 Parsing's text, which the later errata to
+    // WCAG 2.1 do not change.
     profiles: {
       'en301549-v4.1.1': { version: 'V4.1.1', tags: en301549Tags('V4.1.1') },
-      'en301549-v3.2.1': { version: 'V3.2.1', tags: en301549Tags('V3.2.1') }
+      'en301549-v3.2.1': { version: 'V3.2.1', tags: en301549Tags('V3.2.1'), keepsParsing: true }
     },
     mappingsFor: ({ wcagSc }) => en301549MappingsForScs(wcagSc),
     // Moving to its own pack, as RGAA did: a scan given the pack uses the
@@ -263,7 +268,8 @@ function createRegistry(standards) {
               : {}),
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
-            ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
+            ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
+            ...(p.keepsParsing ? { keepsParsing: true } : {})
           }
         ])
       ),

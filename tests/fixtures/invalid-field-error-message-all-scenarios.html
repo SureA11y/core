@@ -37,7 +37,7 @@
     <label for="ifem_case_03">Name</label> <input id="ifem_case_03" aria-invalid="true" aria-errormessage="ifem_msg_03"> <span id="ifem_msg_03"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Error: enter your name"></span>
   </div>
 
-  <h2>B. Error message hidden or empty (FAIL)</h2>
+  <h2>B. Error message hidden (FAIL)</h2>
 
   <div class="case" id="case_04">
     <div class="case-title">04 — FAIL: aria-errormessage names a hidden message (ERROR_MESSAGE_HIDDEN)</div>
@@ -49,11 +49,6 @@
     <label for="ifem_case_05">Phone</label> <input id="ifem_case_05" aria-invalid="true" aria-errormessage="ifem_msg_05"> <p id="ifem_msg_05" style="display:none">Enter a phone number.</p>
   </div>
 
-  <div class="case" id="case_06">
-    <div class="case-title">06 — FAIL: aria-errormessage names an empty message (ERROR_MESSAGE_EMPTY)</div>
-    <label for="ifem_case_06">City</label> <input id="ifem_case_06" aria-invalid="true" aria-errormessage="ifem_msg_06"> <p id="ifem_msg_06"></p>
-  </div>
-
   <div class="case" id="case_15">
     <div class="case-title">15 — FAIL: the message is drawn, but aria-hidden on it hides it from assistive technology</div>
     <label for="ifem_case_15">Email</label> <input id="ifem_case_15" aria-invalid="true" aria-errormessage="ifem_err_15">
@@ -61,6 +56,11 @@
   </div>
 
   <h2>C. Cannot tell (CANTTELL)</h2>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: aria-errormessage names an empty message, and the error may be told elsewhere (ERROR_MESSAGE_EMPTY)</div>
+    <label for="ifem_case_06">City</label> <input id="ifem_case_06" aria-invalid="true" aria-errormessage="ifem_msg_06"> <p id="ifem_msg_06"></p>
+  </div>
 
   <div class="case" id="case_07">
     <div class="case-title">07 — CANTTELL: no aria-errormessage or aria-describedby (NO_ERROR_MESSAGE)</div>

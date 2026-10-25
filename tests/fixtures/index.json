@@ -302,9 +302,9 @@
       "totalCases": 18,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 2,
-        "OTHER": 7
+        "OTHER": 6
       }
     },
     {
@@ -318,11 +318,11 @@
       "testFile": "tests/engine-checks/automatic/aria-required-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-children-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 10,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 0,
-        "CANTTELL": 2,
+        "FAIL": 2,
+        "CANTTELL": 1,
         "OTHER": 4
       }
     },
@@ -1373,8 +1373,8 @@
       "totalCases": 16,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 4,
-        "CANTTELL": 4,
+        "FAIL": 3,
+        "CANTTELL": 5,
         "OTHER": 4
       }
     },
@@ -2542,11 +2542,11 @@
       "testFile": "tests/engine-checks/automatic/td-has-header.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/td-has-header-all-scenarios.html",
-      "totalCases": 8,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 1,
-        "CANTTELL": 0,
+        "CANTTELL": 1,
         "OTHER": 7
       }
     },

@@ -648,7 +648,7 @@ Checks that container roles with a documented "required owned elements" entry (l
 
 **Applies to.** Applies to elements with an explicit, valid, non-abstract role that is also one of the container roles with a documented "required owned elements" entry (list, listbox, menu, menubar, radiogroup, rowgroup, table, grid, treegrid, tablist, tree, row). The container needs its explicit role, but an owned element may take its role from a custom element's ElementInternals (this.attachInternals().role), as an owned native element takes its tag's.
 
-**Expectation.** At least one descendant, or one aria-owns-referenced element, has one of the acceptable owned roles for that container role. Reported at CANTTELL, never FAIL: this rule asks only whether the required content is PRESENT, and a container that owns nothing conveys nothing false -- an empty role="list" is announced as a list with no items, which is what it is. Whether the content a container does own is VALID is aria-prohibited-children's decision, and that rule still fails, so a genuinely misdescribed structure (a role="button" among list items, a tablist of plain buttons) is caught with the same strength as before. The native-HTML equivalents already work this way: nothing in this ruleset fails an empty &lt;ul&gt;, and list-children-valid judges only the children that exist.
+**Expectation.** At least one descendant, or one aria-owns-referenced element, has one of the acceptable owned roles for that container role. A container with none that owns text, directly or through generic wrappers (a &lt;span&gt; or &lt;div&gt; with no role), FAILS: the text sits where its required children belong, as in a list whose items have no role (ACT bc4a75, Failed Example 1). One that owns nothing is asked about (CANTTELL): it conveys nothing false -- an empty role="list" is announced as a list with no items, which is what it is, and a script may fill it. Whether the content a container does own is VALID is aria-prohibited-children's decision, and that rule still fails, so a genuinely misdescribed structure (a role="button" among list items, a tablist of plain buttons) is caught with the same strength as before. The native-HTML equivalents already work this way: nothing in this ruleset fails an empty &lt;ul&gt;, and list-children-valid judges only the children that exist.
 
 **What a finding reports.**
 
@@ -659,7 +659,8 @@ Checks that container roles with a documented "required owned elements" entry (l
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_REQUIRED_CHILD_MISSING` | cantTell | A container role owns none of the roles it requires, such as a list with no list items. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 (not settled) |
+| `ARIA_REQUIRED_CHILD_TEXT_ONLY` | fail | A container role owns text, directly or through generic wrappers, and none of the roles it requires, such as a list whose items have no role. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 |
+| `ARIA_REQUIRED_CHILD_MISSING` | cantTell | A container role owns none of the roles it requires, and no text either, such as an empty list. | WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG 1.3.1 (not settled) |
 
 ### `aria-required-parent`
 
@@ -1385,7 +1386,7 @@ Checks that every non-empty id attribute value is unique within its own document
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DUPLICATE_ID` | fail, cantTell | Two or more elements in the same tree have the same id; it fails under WCAG 2.0 and 2.1, and is asked about under WCAG 2.2, which removed 4.1.1. | WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST) |
+| `DUPLICATE_ID` | fail, cantTell | Two or more elements in the same tree have the same id; it is asked about under WCAG 2.2, which removed 4.1.1, and under 2.0 and 2.1, whose 2023 errata count 4.1.1 as always satisfied for HTML and XML. It fails only under a standard's own profile that keeps 4.1.1's text (EN 301 549 V3.2.1). | WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST) |
 | `DUPLICATE_ID_IN_SHADOW_TREE` | fail, cantTell | Two or more elements in one shadow tree have the same id; it is graded as DUPLICATE_ID is. | WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST) |
 
 ### `duplicate-id-aria`
@@ -2071,7 +2072,8 @@ Checks that an element with aria-invalid has an error message in text: its aria-
 The error is identified and described to the user in text (WCAG 3.3.1).
 
 - `aria-errormessage` names an element that is shown and has text: pass.
-- `aria-errormessage` names only elements that are hidden (`ERROR_MESSAGE_HIDDEN`) or that are shown with no text (`ERROR_MESSAGE_EMPTY`): fail. ARIA requires the message to be shown while the field is invalid, and the page states it isn't. When the field's `aria-describedby` gives a description, the error may be there: cantTell (`ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`).
+- `aria-errormessage` names only elements that are hidden (`ERROR_MESSAGE_HIDDEN`): fail. ARIA requires the message to be shown while the field is invalid, and the page states it isn't.
+- `aria-errormessage` names only shown elements with no text (`ERROR_MESSAGE_EMPTY`): cantTell. ARIA sets no MUST on the message's text, and the error may be told in the label or next to the field, which meets 3.3.1. When the field's `aria-describedby` gives a description, the error may be there: cantTell (`ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`).
 - `aria-errormessage` names no element of the page: cantTell (`ERROR_MESSAGE_TARGET_MISSING`); a script may add it.
 - No `aria-errormessage`, and `aria-describedby` gives a description: pass.
 - Neither: cantTell (`NO_ERROR_MESSAGE`). The error may be in the label or in text next to the field, which the markup doesn't tie to it; check that the user is told, in text, which field is in error and what is wrong.
@@ -2091,7 +2093,7 @@ An element counts as hidden when nobody sees it: `display: none`, `visibility: h
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ERROR_MESSAGE_HIDDEN` | fail | Aria-errormessage names only messages that are hidden: nobody sees them, or aria-hidden, on the message or around it, hides them from assistive technology. | WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21 |
-| `ERROR_MESSAGE_EMPTY` | fail | Aria-errormessage names only shown messages that have no text. | WAI-ARIA 1.2 aria-errormessage; WCAG 3.3.1 |
+| `ERROR_MESSAGE_EMPTY` | cantTell | Aria-errormessage names only shown messages that have no text; the error may be told in text elsewhere. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
 | `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` | cantTell | The named message is hidden or empty, but the field's aria-describedby gives a description that may carry the error. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
 | `ERROR_MESSAGE_ARIA_HIDDEN` | cantTell | The named message is shown, but all its text is inside aria-hidden elements, so people who see it are told and screen reader users may not be. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST) |
 | `ERROR_MESSAGE_TARGET_MISSING` | cantTell | Aria-errormessage names no element of the page; a script may add it later. | WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1 |
@@ -2718,7 +2720,7 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 
 **Applies to.** Applies to &lt;meta name="viewport"&gt; elements whose content attribute sets maximum-scale or user-scalable. Content setting neither cannot restrict zoom.
 
-**Expectation.** user-scalable is absent, yes, device-width, device-height, or a number outside the range -1 to 1; and maximum-scale is absent, device-width, device-height, negative, or 2 or more. Anything else stops the user zooming text to 200%, which WCAG 1.4.4 (Resize Text) requires.
+**Expectation.** In the viewport meta tag in effect, the last one with content (an earlier one is replaced, and asked about if it restricts zoom): user-scalable is absent, yes, device-width, device-height, or a number outside the range -1 to 1; and maximum-scale is absent, device-width, device-height, negative, or 2 or more. Anything else stops the user zooming text to 200%, which WCAG 1.4.4 (Resize Text) requires.
 
 **What a finding reports.**
 
@@ -2728,7 +2730,8 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `VIEWPORT_ZOOM_RESTRICTED` | fail | The viewport meta tag disables zoom or caps it below 200%. | WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport |
+| `VIEWPORT_ZOOM_RESTRICTED` | fail | The viewport meta tag in effect, the last one with content, disables zoom or caps it below 200%. | WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport |
+| `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` | cantTell | A viewport meta tag that a later one replaces restricts zoom; browsers apply the last, and have not always agreed. | WCAG 1.4.4 (not settled); CSS Viewport meta viewport |
 
 ### `meter-name-present`
 
@@ -3491,7 +3494,7 @@ automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
 Checks that each id in a &lt;td&gt;/&lt;th&gt; headers attribute resolves to a cell (&lt;td&gt; or &lt;th&gt;) within the same table (not missing, not a non-cell element, not itself).
 
-**Applies to.** Applies to &lt;td&gt;/&lt;th&gt; elements that carry a non-empty headers attribute, within a &lt;table&gt; whose semantic role is still table/grid/treegrid -- an explicit role of anything else (role="presentation"/"none", but also role="heading" or any other real role) replaces the native table semantics, leaving no table for headers to describe. Matches ACT a25f45's applicability.
+**Applies to.** Applies to &lt;td&gt;/&lt;th&gt; elements that carry a non-empty headers attribute, within a &lt;table&gt; whose semantic role is still table/grid/treegrid -- an explicit role of anything else (role="presentation"/"none", but also role="heading" or any other real role) replaces the native table semantics, leaving no table for headers to describe. A presentational role on a table with a global ARIA attribute or a tabindex is ignored, as WAI-ARIA's conflict resolution has it, and the table stays one. Matches ACT a25f45's applicability.
 
 **Expectation.** Every id token in the headers attribute resolves to an element that: (a) exists, (b) is a cell (&lt;td&gt; or &lt;th&gt;) of the same &lt;table&gt; as the referencing cell, and (c) is not the cell itself. A &lt;td&gt; serving as a header via role="columnheader"/"rowheader" is a valid target, same as a plain &lt;th&gt; -- ACT a25f45 does not require the native tag.
 
@@ -3572,7 +3575,7 @@ Checks that every &lt;td&gt; in a large, simple (no colspan/rowspan) table has a
 
 **Expectation.**
 
-Every non-empty `<td>` has an associated header, via one of:
+A table with no header cell at all is asked about once, on the table: markup can't tell a layout table, which needs no headers, from a data table without them. In a table with header cells, every non-empty `<td>` has an associated header, via one of:
 
 - a non-empty `headers` attribute (trusted here; whether it resolves to real `<th>` ids is `table-headers-attr-valid`'s concern, not this rule's), OR
 - an implicit column header: a header cell in the same column, in an earlier row, OR
@@ -3588,7 +3591,8 @@ A header cell is a `<th>` with no other role, or any cell with role="columnheade
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TD_NO_ASSOCIATED_HEADER` | fail | A non-empty data cell in a large table has no headers attribute and no header cell above it in its column or before it in its row. | WCAG 1.3.1; H51; H43; HTML table model |
+| `TD_NO_ASSOCIATED_HEADER` | fail | A non-empty data cell in a large table that has header cells has no headers attribute and no header cell above it in its column or before it in its row. | WCAG 1.3.1; H51; H43; HTML table model |
+| `TD_TABLE_NO_HEADERS` | cantTell | A large table with data in it has no header cell at all; a person checks whether it holds data, which needs headers, or only lays out content, which needs none (F46). | WCAG 1.3.1 (not settled); H51; F46 |
 
 ### `text-spacing-content-loss`
 
@@ -3735,7 +3739,7 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 | Setting | Default | Takes | What it changes | Basis |
 |---|---|---|---|---|
-| `codes` | `"registry"` | `"registry"`, `"iso639"` | The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger) and the qaa to qtz range reserved for local use. | BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary "Code de langue" (iso639) |
+| `codes` | `"registry"` | `"registry"`, `"iso639"` | The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger). Both accept the qaa to qtz range reserved for private use, which the registry lists. | BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary "Code de langue" (iso639) |
 
 ### `video-caption`
 
