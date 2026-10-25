@@ -170,3 +170,18 @@ test(`${RULE_ID}: leans fail on an unsupported-browser note, a file name or a pl
     assert.strictEqual(run(canvas).lean, undefined, canvas);
   }
 });
+
+// Browsers name a <canvas> from its ARIA name first; the fallback content is
+// what it holds, and its text alternative only when nothing names it.
+test(`${RULE_ID}: an ARIA name is read before the fallback content`, () => {
+  const html = `<!doctype html><html lang="en"><body><main><canvas aria-label="Sales by month, 2026" width="300" height="150">Your browser does not support canvas.</canvas></main></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.equal(rule.occurrences[0].data.details.value, 'Sales by month, 2026');
+  assert.equal(rule.occurrences[0].data.details.mechanism, 'aria-label');
+  // The "browser does not support canvas" note is not the name, so it no
+  // longer leans fail.
+  assert.equal(rule.occurrences[0].lean, undefined);
+});

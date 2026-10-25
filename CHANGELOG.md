@@ -87,6 +87,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- A `<canvas>` with an ARIA name and fallback content was described by its fallback content (`canvas-text-alternative-quality`): browsers name it from the ARIA name first, and the fallback content is its text alternative only when nothing names it.
 - `empty-table-header` asked about `<th><img alt="Price"></th>` as a header with no name: it read only text nodes. An image's alt (or a `role="img"` element's `aria-label`) counts as the header's text now.
 - `image-redundant-alt` asked about an image with `aria-hidden="true"`, which nothing reads, so it can't say anything twice. Such an image is left out.
 - `aria-required-children` fails a container role that holds text, directly or through generic wrappers (a `<span>` with no role), and none of the roles it requires (`ARIA_REQUIRED_CHILD_TEXT_ONLY`): `<div role="list"><span>Item 1</span></div>` is a list whose items have no role (ACT bc4a75, Failed Example 1). It only asked before. An empty container is still asked about, and an element with a role of its own is still `aria-prohibited-children`'s.

@@ -5230,22 +5230,13 @@ function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(dom.textContent(el) || '');
-      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
-        return {
-          present: true,
-          value: fallbackText || 'fallback-content',
-          mechanism: 'canvas-fallback',
-          requiredMechanism: 'fallback-or-name',
-          flags
-        };
-      }
-
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
       // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
-      // <label> associations.
+      // <label> associations. An ARIA name comes first, as browsers name
+      // the element from it; the fallback content is what the canvas holds,
+      // and its text alternative only when nothing names it.
       const aria = getAriaNameInfo(el, _ctx, opts);
       if (aria && aria.present && aria.value) {
         return {
@@ -5254,6 +5245,17 @@ function createDomHelpers(opts) {
           mechanism: aria.mechanism || 'aria',
           requiredMechanism: 'fallback-or-name',
           flags: flags.concat(aria.flags ? aria.flags.slice(0) : [])
+        };
+      }
+
+      const fallbackText = trim(dom.textContent(el) || '');
+      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
+        return {
+          present: true,
+          value: fallbackText || 'fallback-content',
+          mechanism: 'canvas-fallback',
+          requiredMechanism: 'fallback-or-name',
+          flags
         };
       }
 
