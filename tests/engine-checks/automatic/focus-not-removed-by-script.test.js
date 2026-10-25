@@ -82,6 +82,64 @@ test(`${RULE_ID}: focus() on another element is asked about with its own reason;
   assertRule(run('<a href="/x" onfocus="this.focus()">X</a>'), RULE_ID, 'notApplicable');
 });
 
+test(`${RULE_ID}: blur() on itself as a statement of its own leans fail; a conditional one does not`, () => {
+  const occOf = (body) =>
+    assertRule(run(body), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 })
+      .occurrences[0];
+  for (const handler of ['track(); this.blur()', 'if (a) { b() } this.blur();']) {
+    const occ = occOf(`<a href="/x" onfocus="${handler}">X</a>`);
+    assert.equal(occ.data.details.reasonCode, 'FOCUS_HANDLER_CALLS_BLUR', handler);
+    assert.equal(occ.lean.toward, 'fail', handler);
+    assert.equal(occ.lean.i18n.whyKey, 'focusNotRemovedByScript_lean_why_calls');
+  }
+  for (const handler of [
+    'if (this.value) this.blur()',
+    'setTimeout(function () { this.blur() }, 0)',
+    'other.blur()',
+    'if (done) return; this.blur()',
+    'x && this.blur()'
+  ]) {
+    const occ = occOf(`<a href="/x" onfocus="${handler}">X</a>`);
+    assert.equal(occ.data.details.reasonCode, 'FOCUS_HANDLER_CALLS_BLUR', handler);
+    assert.equal(occ.lean, undefined, handler);
+  }
+});
+
+test(`${RULE_ID}: focus() elsewhere leans pass on a focus-trap sentinel and fail on a named control`, () => {
+  const occOf = (body, id) =>
+    assertRule(run(body), RULE_ID, 'cantTell').occurrences.find((o) =>
+      o.html.includes(`id="${id}"`)
+    );
+  const sentinel = occOf(
+    '<div role="dialog" aria-label="d"><div id="s" tabindex="0" onfocus="document.getElementById(\'last\').focus()"></div><button>OK</button><button id="last">Cancel</button></div>',
+    's'
+  );
+  assert.equal(sentinel.data.details.reasonCode, 'FOCUS_HANDLER_MOVES_FOCUS');
+  assert.equal(sentinel.lean.toward, 'pass');
+  assert.equal(sentinel.lean.i18n.whyKey, 'focusNotRemovedByScript_lean_why_sentinel');
+
+  const control = occOf(
+    '<button id="b" onfocus="document.getElementById(\'f\').focus()">Pay</button><input id="f" aria-label="Card">',
+    'b'
+  );
+  assert.equal(control.data.details.reasonCode, 'FOCUS_HANDLER_MOVES_FOCUS');
+  assert.equal(control.lean.toward, 'fail');
+  assert.equal(control.lean.i18n.whyKey, 'focusNotRemovedByScript_lean_why_moves');
+
+  // A conditional move on a control, or an unnamed element outside a trap: no lean.
+  const conditional = occOf(
+    '<button id="b" onfocus="if (!ok) document.getElementById(\'f\').focus()">Pay</button><input id="f" aria-label="Card">',
+    'b'
+  );
+  assert.equal(conditional.lean, undefined);
+  const loose = occOf(
+    '<p>Intro</p><div id="s" tabindex="0" onfocus="document.body.focus()"></div><p>More</p>',
+    's'
+  );
+  assert.equal(loose.data.details.reasonCode, 'FOCUS_HANDLER_MOVES_FOCUS');
+  assert.equal(loose.lean, undefined);
+});
+
 test(`${RULE_ID}: a handler longer than 120 characters is cut and marked with an ellipsis`, () => {
   const handler = `${'track();'.repeat(20)}this.blur()`;
   const rule = assertRule(run(`<a href="/x" onfocus="${handler}">X</a>`), RULE_ID, 'cantTell');

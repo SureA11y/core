@@ -34536,6 +34536,8 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel oder eine Regel ohne Zustand wie a { outline: none } entfernt wird, wenn keine auf sie zutreffende Fokusregel einen Ersatzindikator vorsieht (border, box-shadow, background usw.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Dieses Element erhält einen Tabstopp, und „{{selectors}}“ entfernt seinen Fokusumriss, ohne dass eine andere passende Fokusregel einen Ersatzindikator zeichnet.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
+      "cssFocusIndicatorSuppressed_lean_why": "Alle Stylesheets wurden gelesen, keines zeichnet einen Ersatz, und weder ein Inline-Fokus-Handler noch eine :focus-within-Regel zeigt den Fokus auf andere Weise.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Ein Fokusstil, den ein Skript-Listener oder eine per Skript umgeschaltete Klasse hinzufügt, wird nicht erkannt, wenn der Listener-Hook nicht lief.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
       "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
@@ -34813,6 +34815,8 @@ const RUNTIME_CATALOG = {
       "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
       "iframeFocusableContent_summary_cantTell_redirect": "Dieses <{{element}}> hat tabindex=\"-1\" und fokussierbaren Inhalt, aber der Fokus springt sofort zu einem anderen Element weiter. Prüfen Sie die Tastaturbedienung in einem echten Browser.",
       "iframeFocusableContent_hint_cantTell_redirect": "Wenn dies eine beabsichtigte Fokusübergabe ist, prüfen Sie, dass der Tastaturfokus nie im Inhalt des Frames hängen bleibt.",
+      "iframeFocusableContent_lean_why": "Das einzige fokussierbare Element im Frame ist ein leerer Fokuswächter, der den Fokus aus dem Frame weiterschickt, wie es eingebettete Widgets üblicherweise tun; er enthält nichts, was jemand erreichen muss.",
+      "iframeFocusableContent_lean_caution": "Ein Skript kann hinter dem Wächter später noch echten Inhalt einblenden; die Prüfung wartet nur einen kurzen Moment.",
       "tableHeadersAttrValid_title": "Das headers-Attribut einer Tabellenzelle muss auf gültige Kopfzellen verweisen",
       "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf eine Zelle (<td> oder <th>) innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Element außer einer Zelle, nicht sich selbst).",
       "tableHeadersAttrValid_summary_fail": "Das headers-Attribut dieses <{{element}}> verweist auf ids, die keine Kopfzellen dieser Tabelle sind: {{invalidIds}}.",
@@ -35006,6 +35010,10 @@ const RUNTIME_CATALOG = {
       "tabindex_description": "Prüft, ob tabindex-Werte 0 oder negativ sind, nicht eine positive Zahl.",
       "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
       "tabindex_hint_cantTell": "Verwenden Sie tabindex=\"0\", um das Element in die Tab-Reihenfolge aufzunehmen, oder einen negativen Wert, um es herauszunehmen. Soll sich die Tab-Reihenfolge ändern, ändern Sie stattdessen die Reihenfolge des Inhalts.",
+      "tabindex_lean_why_reordered": "Die Tab-Taste erreicht dieses Element vor Tab-Stopps, die weiter oben auf der Seite stehen; der Fokus springt daher aus der Dokumentreihenfolge.",
+      "tabindex_lean_caution_reordered": "Die Seite kann ihren Inhalt in einer anderen Reihenfolge anordnen als im Dokument.",
+      "tabindex_lean_why_inOrder": "Die positiven tabindex-Werte lassen die Tab-Reihenfolge gleich der Dokumentreihenfolge: Sie stehen auf den ersten Tab-Stopps der Seite, in aufsteigender Folge.",
+      "tabindex_lean_caution_inOrder": "Ein positiver tabindex bleibt fehleranfällig: Inhalt, der vor diesen Elementen hinzukommt, wird nach ihnen angesteuert.",
       "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
       "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
       "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
@@ -35189,6 +35197,16 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Dieses Element verweist mit aria-activedescendant auf seinen aktiven Eintrag, kann aber keinen Tastaturfokus erhalten.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "Das Element gibt sich als Widget aus, aber weder es noch etwas darin kann den Fokus erhalten, und kein Bedienelement in der Tab-Reihenfolge hat seine Rolle und seinen Namen.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Ein Skript kann es bei Bedarf fokussierbar machen, oder die Rolle ist für Inhalt, der nichts tut, falsch gewählt.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Ein anderes Bedienelement in der Tab-Reihenfolge hat dieselbe Rolle und denselben Namen; dieses ist also ein aus der Tab-Reihenfolge genommenes Duplikat.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Prüfen Sie, dass beide wirklich dasselbe tun.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat an seinen Vorfahren, am Dokument und am Fenster keinen Tasten-Listener gesehen; keine Taste bewegt den Fokus dorthin.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Ein Skript kann es fokussieren, wenn sich etwas öffnet, etwa ein Dialog, der den Fokus dorthin bringt.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nichts bezeichnet dieses Widget als gesteuert oder besessen, nichts direkt davor öffnet ein Popup, und weder es noch eines seiner Elemente ist in der Tab-Reihenfolge.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Ein Popup, das ein Skript von einem Auslöser aus öffnet und fokussiert, der dies nicht angibt, sieht genauso aus.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA lässt aria-activedescendant nur an dem Element wirken, das den Fokus hat, und dieses kann ihn nicht erhalten.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Ein Skript kann es fokussierbar machen, wenn sich das Widget öffnet.",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
@@ -35247,6 +35265,10 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, note, presentation), zur manuellen Überprüfung.",
       "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
       "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn das Element nicht bedient werden soll, oder geben Sie ihm eine interaktive Rolle, die zu seiner Funktion passt.",
+      "focusOrderSemantics_lean_why_handler": "Am Element sitzt ein Klick- oder Tasten-Handler; es verhält sich also wie ein Bedienelement, obwohl seine Rolle sagt, dass es keines ist.",
+      "focusOrderSemantics_lean_caution_handler": "Der Handler erfasst vielleicht nur Klicks oder dient etwas anderem als dem Element.",
+      "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
       "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
@@ -35282,12 +35304,22 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_moves": "Der onfocus-Handler dieses <{{element}}> verschiebt den Fokus beim Eintreffen auf ein anderes Element (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
       "focusNotRemovedByScript_hint_fail": "Entfernen Sie den Aufruf von blur(), damit der Fokus auf dem Element bleibt, oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll (WCAG-Fehler F55).",
+      "focusNotRemovedByScript_lean_why_calls": "Der Handler ruft blur() für das Element selbst als eigene Anweisung auf, außerhalb jeder Bedingung; der Fokus wird daher beim Eintreffen entfernt.",
+      "focusNotRemovedByScript_lean_caution_calls": "Anderer Code im Handler kann den Fokus zurückholen oder absichtlich etwas öffnen, das den Fokus übernimmt.",
+      "focusNotRemovedByScript_lean_why_sentinel": "Das Element ist ein leerer, unbenannter Fokuswächter am Rand eines Dialogs oder einer Gruppe von Bedienelementen: Den Fokus beim Eintreffen weiterzuschicken ist die Art, wie eine Fokusfalle den Fokus im Inneren hält.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Prüfen Sie, dass die Falle den Fokus freigibt, sobald der Dialog geschlossen ist, und dass sie zu einem modalen Dialog gehört.",
+      "focusNotRemovedByScript_lean_why_moves": "Das Element ist ein sichtbares, benanntes Bedienelement, und sein Handler schickt den Fokus bei jedem Eintreffen zu einem anderen Element; das Bedienelement lässt sich daher nicht per Tastatur bedienen.",
+      "focusNotRemovedByScript_lean_caution_moves": "Ein Feld kann den Fokus absichtlich an das Bedienelement weitergeben, das es bearbeitet, etwa an eine eigene Datumsauswahl.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "Das Element hat Tastatur-Handler, aber weder es noch etwas darin kann den Fokus erhalten; sie werden daher nie ausgeführt.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Ein Skript kann es später fokussierbar machen, oder ein anderes Bedienelement kann dieselbe Funktion anbieten.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "Das Element führt bei mousedown, mouseup oder Doppelklick eine Aktion aus, ein vor den Skripten der Seite installierter Hook hat weder an ihm noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten-Listener gesehen, und nichts in ihm oder um es herum kann den Fokus erhalten.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Der Handler zeichnet vielleicht nur einen Effekt oder verfolgt den Zeiger, oder ein anderes Bedienelement bietet dieselbe Funktion an.",
       "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
       "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
@@ -35302,6 +35334,17 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Selbst wenn ein Skript den Fokus hierher bewegt, gibt es weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener; Eingabe und Leertaste würden nichts bewirken.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Der Klick erfasst vielleicht nur Klicks oder wiederholt, was ein anderes Bedienelement der Seite tut.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Ein anderes Element mit derselben Rolle im umgebenden Widget ist in der Tab-Reihenfolge: ein Roving-tabindex, bei dem die Pfeiltasten den Fokus zwischen den Elementen bewegen.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Das Widget bewegt sich vielleicht mit den Pfeiltasten zwischen seinen Elementen, ohne dass Eingabe oder Leertaste den Klick ausführen.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Die einzigen Fokus-Listener sind am Dokument oder am Fenster; solche dienen meist der ganzen Seite (Fokusstile, Analyse), nicht den Tasten dieses Elements.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Manche Frameworks fügen die Listener eines Elements über einen seitenweiten Fokus-Listener hinzu.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "Der nächste Tasten-Listener über dem Element sitzt an dem Widget, zu dem es als Element gehört; dort behandelt ein solches Widget die Tasten seiner Elemente.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -35680,6 +35723,8 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
       "cssFocusIndicatorSuppressed_summary_cantTell": "This element takes a tab stop, and \"{{selectors}}\" removes its focus outline with no replacement indicator in any other focus rule matching it.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
+      "cssFocusIndicatorSuppressed_lean_why": "Every style sheet was read and none draws a replacement, and no inline focus handler or :focus-within rule shows focus another way.",
+      "cssFocusIndicatorSuppressed_lean_caution": "A focus style added by a script listener or a class a script toggles is not seen when the listener hook did not run.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
       "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
@@ -35957,6 +36002,8 @@ const RUNTIME_CATALOG = {
       "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
       "iframeFocusableContent_summary_cantTell_redirect": "This <{{element}}> has tabindex=\"-1\" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.",
       "iframeFocusableContent_hint_cantTell_redirect": "If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.",
+      "iframeFocusableContent_lean_why": "The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.",
+      "iframeFocusableContent_lean_caution": "A script may still reveal real content behind the guard later; the probe only waits a short moment.",
       "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
       "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
       "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute points to ids that are not header cells in this table: {{invalidIds}}.",
@@ -36150,6 +36197,10 @@ const RUNTIME_CATALOG = {
       "tabindex_description": "Checks that tabindex values are 0 or negative, not a positive number.",
       "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
       "tabindex_hint_cantTell": "Use tabindex=\"0\" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.",
+      "tabindex_lean_why_reordered": "Tab reaches this element before tab stops that come earlier in the page, so focus jumps out of document order.",
+      "tabindex_lean_caution_reordered": "The page may lay its content out in an order that differs from the document.",
+      "tabindex_lean_why_inOrder": "The positive tabindex values leave the tab order as the document order: they are on the page’s first tab stops, in increasing order.",
+      "tabindex_lean_caution_inOrder": "A positive tabindex stays fragile: content added before these elements will be visited after them.",
       "emptyTableHeader_title": "Table header cells must not be empty",
       "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
       "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
@@ -36333,6 +36384,16 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "This element points at its active item with aria-activedescendant, but cannot take keyboard focus.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "A script may make it focusable when needed, or the role may be wrong for content that does nothing.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Check that the two really do the same thing.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key listener on its ancestors, the document or the window, so no key moves focus to it.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "A script may focus it when something opens, such as a dialog that takes focus to it.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nothing names this widget as one it controls or owns, nothing before it opens a popup, and neither it nor any item is in the tab order.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "A popup opened and focused by a script from a trigger that does not say so looks the same.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "A script may make it focusable when the widget opens.",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
@@ -36391,6 +36452,10 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
       "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
       "focusOrderSemantics_hint_cantTell": "Remove the tabindex if the element isn't meant to be used, or give it an interactive role that matches what it does.",
+      "focusOrderSemantics_lean_why_handler": "A click or key handler is on the element, so it acts as a control while its role says it is not one.",
+      "focusOrderSemantics_lean_caution_handler": "The handler may only track clicks, or serve something other than the element.",
+      "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
+      "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
       "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
@@ -36426,12 +36491,22 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_moves": "This <{{element}}>'s onfocus handler moves focus to another element as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
       "focusNotRemovedByScript_hint_fail": "Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).",
+      "focusNotRemovedByScript_lean_why_calls": "The handler calls blur() on the element itself as a statement of its own, outside any condition, so focus is removed as it arrives.",
+      "focusNotRemovedByScript_lean_caution_calls": "Other code in the handler may move focus back, or open something that takes focus on purpose.",
+      "focusNotRemovedByScript_lean_why_sentinel": "The element is an empty, unnamed focus guard at the edge of a dialog or a group of controls: moving focus on as it arrives is how a focus trap keeps focus inside.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Check that the trap lets focus out once the dialog closes, and that it belongs to a modal dialog.",
+      "focusNotRemovedByScript_lean_why_moves": "The element is a visible, named control, and its handler sends focus to another element whenever it arrives, so the control cannot be operated by keyboard.",
+      "focusNotRemovedByScript_lean_caution_moves": "A field may forward focus on purpose to the control that edits it, such as a custom date picker.",
       "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "The element has keyboard handlers, but neither it nor anything in it can take focus, so they never run.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "A script may make it focusable later, or another control may offer the same function.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "The handler may only draw an effect or track the pointer, or another control may offer the same function.",
       "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
       "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
@@ -36446,6 +36521,17 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Even if a script moves focus here, no key or focus listener is on the element, its ancestors, the document or the window, so Enter and Space would do nothing.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "The click may only track clicks, or repeat what another control of the page does.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Another item of the same role in the widget around it is in the tab order: a roving tabindex, where the arrow keys move focus between items.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "The widget may move between its items with the arrow keys without making Enter or Space run the click.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "The only focus listeners are on the document or the window, which usually serve the whole page (focus styles, analytics), not this element’s keys.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Some frameworks add an element’s listeners from a page-wide focus listener.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "The nearest key listener above the element is on the widget it is an item of, which is where such a widget handles its items’ keys.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -36824,6 +36910,8 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_description": "Señala elementos en el orden de tabulación cuyo contorno de foco se elimina mediante una regla :focus/:focus-visible o una regla sin estado, como a { outline: none }, y para los que ninguna regla de foco aplicable define un indicador alternativo (border, box-shadow, background, etc.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Este elemento recibe una parada de tabulación y «{{selectors}}» elimina su contorno de foco sin que ninguna otra regla de foco que le afecte dibuje un indicador de reemplazo.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
+      "cssFocusIndicatorSuppressed_lean_why": "Se leyeron todas las hojas de estilo y ninguna dibuja un reemplazo, y ningún manejador de foco en línea ni ninguna regla :focus-within muestra el foco de otra forma.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Un estilo de foco añadido por un detector de script, o por una clase que un script alterna, no se ve si el hook de detectores no se ejecutó.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
       "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
@@ -37101,6 +37189,8 @@ const RUNTIME_CATALOG = {
       "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
       "iframeFocusableContent_summary_cantTell_redirect": "Este <{{element}}> tiene tabindex=\"-1\" y contenido enfocable, pero el foco pasa de inmediato a otro elemento. Comprobar el acceso con teclado en un navegador real.",
       "iframeFocusableContent_hint_cantTell_redirect": "Si se trata de un traspaso de foco intencionado, comprobar que el foco del teclado nunca se queda atascado en el contenido del marco.",
+      "iframeFocusableContent_lean_why": "El único elemento enfocable del marco es una guarda de foco vacía que envía el foco fuera del marco, el patrón habitual de los widgets incrustados; no contiene nada que haga falta alcanzar.",
+      "iframeFocusableContent_lean_caution": "Un script aún puede mostrar más tarde contenido real detrás de la guarda; la prueba solo espera un breve momento.",
       "tableHeadersAttrValid_title": "El atributo \"headers\" de la celda de tabla debe referenciar celdas de encabezado válidas",
       "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en una celda (<td> o <th>) dentro de la misma tabla (que no falte, que no sea un elemento distinto de una celda, y que no sea ella misma).",
       "tableHeadersAttrValid_summary_fail": "El atributo headers de este <{{element}}> apunta a ids que no son celdas de encabezado de esta tabla: {{invalidIds}}.",
@@ -37294,6 +37384,10 @@ const RUNTIME_CATALOG = {
       "tabindex_description": "Comprueba que los valores de tabindex sean 0 o negativos, no un número positivo.",
       "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
       "tabindex_hint_cantTell": "Usar tabindex=\"0\" para incluir el elemento en el orden de tabulación, o un valor negativo para sacarlo. Si hay que cambiar el orden de tabulación, cambiar el orden del contenido.",
+      "tabindex_lean_why_reordered": "La tabulación llega a este elemento antes que a paradas de tabulación que están antes en la página, así que el foco salta fuera del orden del documento.",
+      "tabindex_lean_caution_reordered": "La página puede disponer su contenido en un orden distinto al del documento.",
+      "tabindex_lean_why_inOrder": "Los valores positivos de tabindex dejan el orden de tabulación igual al del documento: están en las primeras paradas de tabulación de la página, en orden creciente.",
+      "tabindex_lean_caution_inOrder": "Un tabindex positivo sigue siendo frágil: el contenido que se añada antes de estos elementos se recorrerá después de ellos.",
       "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
       "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
       "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
@@ -37477,6 +37571,16 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "El elemento dice ser un widget, pero ni él ni nada de lo que contiene puede recibir el foco, y ningún control del orden de tabulación tiene su rol y su nombre.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script puede hacerlo enfocable cuando haga falta, o el rol puede ser incorrecto para un contenido que no hace nada.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Otro control del orden de tabulación tiene el mismo rol y el mismo nombre, así que este es un duplicado sacado del orden de tabulación.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Comprobar que los dos hacen de verdad lo mismo.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas en sus antepasados, el documento ni la ventana, así que ninguna tecla mueve el foco hasta él.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Un script puede darle el foco cuando se abre algo, como un diálogo que lleva el foco hasta él.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nada señala este widget como controlado o poseído, nada justo antes de él abre una ventana emergente, y ni él ni ninguno de sus elementos está en el orden de tabulación.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Una ventana emergente que un script abre y enfoca desde un activador que no lo indica se ve igual.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA solo da efecto a aria-activedescendant en el elemento que tiene el foco, y este no puede recibirlo.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script puede hacerlo enfocable cuando se abre el widget.",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
@@ -37535,6 +37639,10 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, note, presentation), para su revisión manual.",
       "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
       "focusOrderSemantics_hint_cantTell": "Quitar el tabindex si el elemento no está pensado para usarse, o darle un rol interactivo que corresponda a lo que hace.",
+      "focusOrderSemantics_lean_why_handler": "El elemento tiene un controlador de clic o de teclas, así que actúa como un control aunque su rol dice que no lo es.",
+      "focusOrderSemantics_lean_caution_handler": "Puede que el controlador solo registre clics, o que sirva a algo distinto del elemento.",
+      "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
       "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
@@ -37570,12 +37678,22 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
       "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
+      "focusNotRemovedByScript_lean_why_calls": "El manejador llama a blur() sobre el propio elemento en una instrucción propia, fuera de cualquier condición, así que el foco se quita al llegar.",
+      "focusNotRemovedByScript_lean_caution_calls": "Otro código del manejador puede devolver el foco, o abrir a propósito algo que toma el foco.",
+      "focusNotRemovedByScript_lean_why_sentinel": "El elemento es una guarda de foco vacía y sin nombre en el borde de un diálogo o de un grupo de controles: enviar el foco en cuanto llega es como una trampa de foco mantiene el foco dentro.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Comprobar que la trampa deja salir el foco cuando se cierra el diálogo, y que pertenece a un diálogo modal.",
+      "focusNotRemovedByScript_lean_why_moves": "El elemento es un control visible y con nombre, y su manejador envía el foco a otro elemento cada vez que llega, así que el control no se puede usar con el teclado.",
+      "focusNotRemovedByScript_lean_caution_moves": "Un campo puede pasar a propósito el foco al control que lo edita, como un selector de fecha personalizado.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "El elemento tiene controladores de teclado, pero ni él ni nada de lo que contiene puede recibir el foco, así que nunca se ejecutan.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Un script puede hacerlo enfocable más tarde, u otro control puede ofrecer la misma función.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "El elemento ejecuta una acción con mousedown, mouseup o doble clic, un hook instalado antes de los scripts de la página no vio ningún detector de teclas en él, sus antepasados, el documento ni la ventana, y nada dentro ni alrededor puede recibir el foco.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Puede que el controlador solo dibuje un efecto o siga el puntero, u otro control puede ofrecer la misma función.",
       "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
       "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
@@ -37590,6 +37708,17 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Aunque un script mueva el foco aquí, no hay ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio no harían nada.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Puede que el clic solo registre clics, o que repita lo que hace otro control de la página.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Otro elemento con el mismo rol en el widget que lo rodea está en el orden de tabulación: es un tabindex itinerante, en el que las flechas mueven el foco entre los elementos.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Puede que el widget se mueva entre sus elementos con las flechas sin que Intro ni Espacio ejecuten el clic.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Los únicos detectores de foco están en el documento o en la ventana, que suelen servir a toda la página (estilos de foco, analítica), no a las teclas de este elemento.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Algunos frameworks añaden los detectores de un elemento desde un detector de foco de toda la página.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "El detector de teclas más cercano por encima del elemento está en el widget del que es un elemento, que es donde ese widget gestiona las teclas de sus elementos.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -37968,6 +38097,8 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé par une règle :focus/:focus-visible ou une règle sans état comme a { outline: none }, alors qu’aucune règle de focus qui leur correspond ne prévoit d’indicateur de remplacement (border, box-shadow, background, etc.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Cet élément reçoit un arrêt de tabulation, et « {{selectors}} » supprime son contour de focus sans qu’aucune autre règle de focus le concernant ne dessine d’indicateur de remplacement.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
+      "cssFocusIndicatorSuppressed_lean_why": "Toutes les feuilles de style ont été lues et aucune ne dessine d’indicateur de remplacement, et aucun gestionnaire de focus en ligne ni aucune règle :focus-within ne montre le focus autrement.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Un style de focus ajouté par un écouteur de script, ou par une classe qu’un script bascule, n’est pas vu quand le hook d’écouteurs n’a pas été exécuté.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
       "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
@@ -38245,6 +38376,8 @@ const RUNTIME_CATALOG = {
       "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
       "iframeFocusableContent_summary_cantTell_redirect": "Cet élément <{{element}}> a tabindex=\"-1\" et du contenu focalisable, mais le focus passe aussitôt à un autre élément. Vérifiez l’accès au clavier dans un vrai navigateur.",
       "iframeFocusableContent_hint_cantTell_redirect": "S’il s’agit d’un transfert de focus voulu, vérifiez que le focus clavier ne reste jamais bloqué sur le contenu du cadre.",
+      "iframeFocusableContent_lean_why": "Le seul élément focalisable du cadre est une garde de focus vide qui renvoie le focus hors du cadre, le procédé habituel des widgets intégrés ; elle ne contient rien qu’on ait besoin d’atteindre.",
+      "iframeFocusableContent_lean_caution": "Un script peut encore révéler plus tard un vrai contenu derrière la garde ; la sonde n’attend qu’un court instant.",
       "tableHeadersAttrValid_title": "L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides",
       "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à une cellule (<td> ou <th>) du même tableau (ni absente, ni un élément autre qu’une cellule, ni elle-même).",
       "tableHeadersAttrValid_summary_fail": "L’attribut headers de cet élément <{{element}}> pointe vers des id qui ne sont pas des cellules d’en-tête de ce tableau : {{invalidIds}}.",
@@ -38438,6 +38571,10 @@ const RUNTIME_CATALOG = {
       "tabindex_description": "Vérifie que les valeurs de tabindex sont égales à 0 ou négatives, jamais un nombre positif.",
       "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
       "tabindex_hint_cantTell": "Utilisez tabindex=\"0\" pour ajouter l’élément à l’ordre de tabulation, ou une valeur négative pour l’en retirer. Si l’ordre de tabulation doit changer, changez plutôt l’ordre du contenu.",
+      "tabindex_lean_why_reordered": "La tabulation atteint cet élément avant des arrêts de tabulation placés plus haut dans la page : le focus sort de l’ordre du document.",
+      "tabindex_lean_caution_reordered": "La page peut disposer son contenu dans un ordre différent de celui du document.",
+      "tabindex_lean_why_inOrder": "Les valeurs positives de tabindex laissent l’ordre de tabulation identique à l’ordre du document : elles sont sur les premiers arrêts de tabulation de la page, en ordre croissant.",
+      "tabindex_lean_caution_inOrder": "Un tabindex positif reste fragile : du contenu ajouté avant ces éléments sera parcouru après eux.",
       "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
       "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
       "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
@@ -38621,6 +38758,16 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Cet élément désigne son élément actif avec aria-activedescendant, mais ne peut pas recevoir le focus clavier.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "L’élément se présente comme un widget, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus, et aucune commande de l’ordre de tabulation n’a son rôle et son nom.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script peut le rendre focalisable au besoin, ou le rôle peut être erroné pour un contenu qui ne fait rien.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Une autre commande de l’ordre de tabulation a le même rôle et le même nom : celle-ci est un doublon retiré de l’ordre de tabulation.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Vérifiez que les deux font bien la même chose.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur ses ancêtres, le document ni la fenêtre : aucune touche n’y déplace le focus.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Un script peut lui donner le focus quand quelque chose s’ouvre, comme une boîte de dialogue qui y amène le focus.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Rien ne désigne ce widget comme contrôlé ou possédé, rien juste avant lui n’ouvre de fenêtre surgissante, et ni lui ni aucun de ses éléments n’est dans l’ordre de tabulation.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Une fenêtre surgissante ouverte et focalisée par un script depuis un déclencheur qui ne l’indique pas a la même apparence.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA ne donne d’effet à aria-activedescendant que sur l’élément qui a le focus, et celui-ci ne peut pas le recevoir.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script peut le rendre focalisable à l’ouverture du widget.",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
@@ -38679,6 +38826,10 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, note, presentation), pour une vérification manuelle.",
       "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
       "focusOrderSemantics_hint_cantTell": "Retirez le tabindex si l’élément n’est pas destiné à être utilisé, ou donnez-lui un rôle interactif qui correspond à ce qu’il fait.",
+      "focusOrderSemantics_lean_why_handler": "Un gestionnaire de clic ou de touche est posé sur l’élément : il agit comme une commande alors que son rôle dit qu’il n’en est pas une.",
+      "focusOrderSemantics_lean_caution_handler": "Le gestionnaire peut ne faire que suivre les clics, ou servir autre chose que l’élément.",
+      "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
       "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une vérification manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
@@ -38714,12 +38865,22 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_moves": "Le gestionnaire onfocus de cet élément <{{element}}> déplace le focus vers un autre élément dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
       "focusNotRemovedByScript_hint_fail": "Supprimez l’appel à blur() pour que le focus reste sur l’élément, ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus (échec WCAG F55).",
+      "focusNotRemovedByScript_lean_why_calls": "Le gestionnaire appelle blur() sur l’élément lui-même dans une instruction à part, hors de toute condition : le focus est retiré dès son arrivée.",
+      "focusNotRemovedByScript_lean_caution_calls": "Le reste du gestionnaire peut ramener le focus, ou ouvrir volontairement quelque chose qui prend le focus.",
+      "focusNotRemovedByScript_lean_why_sentinel": "L’élément est une garde de focus vide et sans nom au bord d’une boîte de dialogue ou d’un groupe de commandes : renvoyer le focus dès son arrivée est la façon dont un piège à focus garde le focus à l’intérieur.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Vérifiez que le piège laisse sortir le focus une fois la boîte de dialogue fermée, et qu’il appartient à une boîte de dialogue modale.",
+      "focusNotRemovedByScript_lean_why_moves": "L’élément est une commande visible et nommée, et son gestionnaire envoie le focus vers un autre élément à chaque arrivée : la commande ne peut pas être utilisée au clavier.",
+      "focusNotRemovedByScript_lean_caution_moves": "Un champ peut renvoyer volontairement le focus vers la commande qui le modifie, comme un sélecteur de date personnalisé.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "L’élément a des gestionnaires clavier, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus : ils ne s’exécutent jamais.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Un script peut le rendre focalisable plus tard, ou une autre commande peut offrir la même fonction.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "L’élément exécute une action au mousedown, au mouseup ou au double-clic, un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur lui, ses ancêtres, le document ni la fenêtre, et rien en lui ni autour ne peut recevoir le focus.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Le gestionnaire peut ne faire que dessiner un effet ou suivre le pointeur, ou une autre commande peut offrir la même fonction.",
       "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
       "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
@@ -38734,6 +38895,17 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Même si un script déplace le focus ici, aucun écouteur de touches ni de focus n’est posé sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne feraient rien.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Le clic peut ne faire que suivre les clics, ou répéter ce que fait une autre commande de la page.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Un autre élément du même rôle, dans le composant qui l’entoure, est dans l’ordre de tabulation : c’est un tabindex itinérant, où les flèches déplacent le focus d’un élément à l’autre.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Le composant peut passer d’un élément à l’autre avec les flèches sans qu’Entrée ni Espace n’exécutent le clic.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Les seuls écouteurs de focus sont sur le document ou la fenêtre, qui servent en général toute la page (styles de focus, mesure d’audience), pas les touches de cet élément.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Certains frameworks ajoutent les écouteurs d’un élément depuis un écouteur de focus posé sur toute la page.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "L’écouteur de touches le plus proche au-dessus de l’élément est sur le composant dont il est un élément, là où un tel composant gère les touches de ses éléments.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -39112,6 +39284,8 @@ const RUNTIME_CATALOG = {
       "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルール、または a { outline: none } のような状態を持たないルールでフォーカスのアウトラインが削除され、その要素に一致するどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
       "cssFocusIndicatorSuppressed_summary_cantTell": "この要素はタブ移動で停止しますが、「{{selectors}}」がフォーカスのアウトラインを削除しており、この要素に一致するほかのフォーカス用ルールにも代わりのインジケーターがありません。",
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
+      "cssFocusIndicatorSuppressed_lean_why": "すべてのスタイルシートを読み取りましたが、代わりのインジケーターを描くものはなく、インラインのフォーカス ハンドラーや :focus-within ルールもフォーカスを別の方法で示していません。",
+      "cssFocusIndicatorSuppressed_lean_caution": "スクリプトのリスナーや、スクリプトが切り替えるクラスで追加されるフォーカスのスタイルは、リスナー フックを実行していない場合は検出できません。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
       "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
@@ -39389,6 +39563,8 @@ const RUNTIME_CATALOG = {
       "iframeFocusableContent_hint_fail": "フレームからフォーカス可能なコンテンツを取り除くか、フレームに到達できるようにする意図であれば tabindex=\"-1\" を削除してください。",
       "iframeFocusableContent_summary_cantTell_redirect": "この <{{element}}> は tabindex=\"-1\" でフォーカス可能な内容を含みますが、フォーカスはすぐに別の要素へ移ります。実際のブラウザーでキーボード操作を確認してください。",
       "iframeFocusableContent_hint_cantTell_redirect": "意図したフォーカスの受け渡しであれば、キーボードフォーカスがフレーム内の内容で動けなくならないか確認してください。",
+      "iframeFocusableContent_lean_why": "フレーム内でフォーカス可能な唯一の要素は、フォーカスをフレームの外へ送る空のフォーカス ガードです。埋め込みウィジェットでよく使われる仕組みで、利用者が到達すべき内容は含みません。",
+      "iframeFocusableContent_lean_caution": "スクリプトが後でガードの奥に実際の内容を表示する可能性があります。確認処理はごく短い時間しか待ちません。",
       "tableHeadersAttrValid_title": "表のセルの headers 属性は有効な見出しセルを参照すること",
       "tableHeadersAttrValid_description": "<td>/<th> の headers 属性にある各 id が、同じ表の中のセル (<td> または <th>) を指しているかを確認します (存在しない id、セル以外の要素、自分自身を指していないか)。",
       "tableHeadersAttrValid_summary_fail": "この <{{element}}> の headers 属性は、この表の見出しセルではない id を参照しています: {{invalidIds}}。",
@@ -39582,6 +39758,10 @@ const RUNTIME_CATALOG = {
       "tabindex_description": "tabindex の値が正の数ではなく、0 または負の値であるかを確認します。",
       "tabindex_summary_cantTell": "この要素には正の tabindex が指定されており、本来のタブ順序を上書きしています。",
       "tabindex_hint_cantTell": "要素をタブ順序に含めるには tabindex=\"0\"、外すには負の値を使ってください。タブ順序を変えたい場合は、内容の順序そのものを変えてください。",
+      "tabindex_lean_why_reordered": "Tab キーでは、ページ内でこの要素より前にあるタブストップよりも先にこの要素に到達するため、フォーカスが文書の順序から外れます。",
+      "tabindex_lean_caution_reordered": "ページのレイアウトが、文書とは異なる順序で内容を配置している場合があります。",
+      "tabindex_lean_why_inOrder": "正の tabindex の値はページの最初のタブストップに昇順で付いているため、タブ順序は文書の順序のままです。",
+      "tabindex_lean_caution_inOrder": "正の tabindex は壊れやすいままです。これらの要素より前に内容を追加すると、その内容はこれらの要素の後に移動先になります。",
       "emptyTableHeader_title": "表の見出しセルを空にしてはならない",
       "emptyTableHeader_description": "表の見出しセル (<th>、または role=\"columnheader\"/\"rowheader\" を持つ要素) に、表示されるテキストがあるかを確認します。aria-label/aria-labelledby だけで名前が付けられた見出しも検出します。実際のスクリーンリーダーとブラウザーでは、そのサポートにばらつきがあるためです。",
       "emptyTableHeader_summary_cantTell": "この表の見出しセルにはアクセシブルな名前がありません。",
@@ -39765,6 +39945,16 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "この要素は aria-activedescendant でアクティブな項目を指していますが、キーボードフォーカスを受け取れません。",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "この要素はウィジェットであると示していますが、要素自体もその中身もフォーカスを受け取れず、タブ順序に同じロールと名前を持つコントロールもありません。",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "スクリプトが必要なときにフォーカス可能にするか、何もしない内容に誤ったロールが付いている可能性があります。",
+      "widgetKeyboardFocusable_lean_why_duplicate": "タブ順序内の別のコントロールが同じロールと名前を持っているため、この要素はタブ順序から外された重複です。",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "2 つが本当に同じことをするか確認してください。",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、祖先にも document にも window にもキー リスナーを見つけませんでした。キー操作でこの要素にフォーカスが移ることはありません。",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "何かが開いたとき(フォーカスをこの要素に移すダイアログなど)に、スクリプトがフォーカスを与える場合があります。",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "このウィジェットを制御対象や所有対象として示す要素はなく、直前にポップアップを開く要素もなく、ウィジェット自体もその項目もタブ順序に含まれていません。",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "それを示さないトリガーからスクリプトで開いてフォーカスするポップアップも、同じように見えます。",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA では aria-activedescendant はフォーカスを持つ要素でしか効果がありませんが、この要素はフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "ウィジェットが開いたときに、スクリプトがフォーカス可能にする場合があります。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
@@ -39823,6 +40013,10 @@ const RUNTIME_CATALOG = {
       "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、note、presentation など) である要素を検出し、人が確認できるようにします。",
       "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
       "focusOrderSemantics_hint_cantTell": "操作する要素でなければ tabindex を削除し、操作する要素なら働きに合った操作用のロールを付けてください。",
+      "focusOrderSemantics_lean_why_handler": "この要素にはクリックやキーのハンドラーがあり、ロールはコントロールでないと示しているのに、コントロールとして動作しています。",
+      "focusOrderSemantics_lean_caution_handler": "ハンドラーはクリックを記録するだけか、この要素以外のためのものかもしれません。",
+      "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
+      "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
       "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
@@ -39858,12 +40052,22 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_summary_cantTell_moves": "この <{{element}}> の onfocus ハンドラーは、フォーカスが届いた時点で別の要素にフォーカスを移します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
       "focusNotRemovedByScript_hint_fail": "フォーカスが要素に留まるよう blur() の呼び出しを削除するか、フォーカスを受けるべきでない場合は要素をフォーカス不可にしてください (WCAG 失敗例 F55)。",
+      "focusNotRemovedByScript_lean_why_calls": "ハンドラーは条件の外にある独立した文で要素自体の blur() を呼び出しているため、フォーカスは届いた時点で外されます。",
+      "focusNotRemovedByScript_lean_caution_calls": "ハンドラー内の他のコードがフォーカスを戻したり、意図的にフォーカスを受け取る何かを開いたりしている可能性があります。",
+      "focusNotRemovedByScript_lean_why_sentinel": "この要素は、ダイアログやコントロール群の端にある、空で名前のないフォーカス ガードです。届いたフォーカスを先へ送るのは、フォーカス トラップがフォーカスを内側に保つための仕組みです。",
+      "focusNotRemovedByScript_lean_caution_sentinel": "ダイアログを閉じた後にトラップがフォーカスを外へ出すこと、またモーダル ダイアログのものであることを確認してください。",
+      "focusNotRemovedByScript_lean_why_moves": "この要素は名前を持つ表示されたコントロールで、ハンドラーはフォーカスが届くたびに別の要素へ送ります。そのため、このコントロールはキーボードで操作できません。",
+      "focusNotRemovedByScript_lean_caution_moves": "フィールドが、その値を編集するコントロール(独自の日付選択など)へ意図的にフォーカスを渡している場合があります。",
       "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "この要素にはキーボードのハンドラーがありますが、要素自体もその中身もフォーカスを受け取れないため、ハンドラーは実行されません。",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "スクリプトが後でフォーカス可能にするか、別のコントロールが同じ機能を提供している可能性があります。",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "この要素は mousedown、mouseup、ダブルクリックで操作を実行します。ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーを見つけておらず、要素の中にも周囲にもフォーカスを受け取れるものがありません。",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "ハンドラーは効果を描くか、ポインターを追跡するだけかもしれません。また、別のコントロールが同じ機能を提供している可能性があります。",
       "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
       "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
@@ -39878,6 +40082,17 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "スクリプトがここにフォーカスを移しても、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーがないため、Enter や Space では何も起きません。",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "クリックはクリックを記録するだけか、ページ内の別のコントロールと同じことをしているだけかもしれません。",
+      "clickHandlerKeyboardOperable_lean_why_roving": "周囲のウィジェット内にある同じロールの別の項目がタブ順序に含まれています。矢印キーで項目間のフォーカスを移すロービング tabindex の形です。",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "ウィジェットは矢印キーで項目間を移動できても、Enter や Space でクリックの動作を実行しないことがあります。",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "フォーカス リスナーは document か window にしかありません。こうしたリスナーはふつうページ全体のため(フォーカスのスタイル、アクセス解析)のもので、この要素のキーのためではありません。",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "フレームワークによっては、ページ全体のフォーカス リスナーから要素のリスナーを追加するものがあります。",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "要素より上で最も近いキー リスナーは、この要素を項目として持つウィジェットにあります。このようなウィジェットは、そこで項目のキーを処理します。",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
+      "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -59847,6 +60062,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // The item roles each composite widget handles the keys of, for a lean:
+  // a key listener on the widget that owns the element is where such a
+  // widget usually handles its items' keys.
+  const ITEM_ROLES = {
+    tablist: ['tab'],
+    menu: ['menuitem', 'menuitemcheckbox', 'menuitemradio'],
+    menubar: ['menuitem', 'menuitemcheckbox', 'menuitemradio'],
+    listbox: ['option'],
+    tree: ['treeitem'],
+    grid: ['row', 'gridcell', 'columnheader', 'rowheader'],
+    treegrid: ['row', 'gridcell', 'columnheader', 'rowheader'],
+    radiogroup: ['radio']
+  };
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Another item of the same role, in the nearest composite widget around
+  // the element, that is in the tab order: the roving tabindex pattern.
+  function rovingSibling(el, role, ancestorList) {
+    if (!role) return false;
+    const composite = ancestorList.find((a) => ITEM_ROLES[roleOf(a)]);
+    if (!composite || ITEM_ROLES[roleOf(composite)].indexOf(role) === -1) return false;
+    try {
+      for (const d of dom.querySelectorAll(composite, '[tabindex]')) {
+        if (d === el || dom.contains(d, el) || dom.contains(el, d)) continue;
+        if (roleOf(d) === role && focusOf(d).tabbable && shown(d)) return true;
+      }
+    } catch {}
+    return false;
+  }
+
   // Elements with an inline onclick, and with the listener hook, those
   // given a click listener from script (addEventListener or el.onclick).
   const nodes = helpers.queryAllSmart('[onclick]', { listenerTypes: ['click'] });
@@ -59901,13 +60151,60 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // An early hook saw every listener: none of the above means no key
     // event reaches a handler at all.
     const noKeyListenerAnywhere = clickInfo.hook === 'early' && !keyHandled && !keyListenerAbove;
+    // A focus or focusin listener on the element, an ancestor or a shadow
+    // root it is in, which may add a key listener once it has focus.
+    const localFocusListener =
+      clickInfo.hook !== 'none' &&
+      (listenerInfo(el, FOCUS_TYPES).listens ||
+        ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
+        shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
+    // Nothing, as an early hook saw it, can handle a key from the element
+    // or add a key listener when it gets focus.
+    const noKeyPath = noKeyListenerAnywhere && !pageFocusListener && !localFocusListener;
+    const hookSignals = [
+      { signal: 'hook-mode', value: clickInfo.hook },
+      { signal: 'no-key-listener-anywhere', value: noKeyListenerAnywhere },
+      { signal: 'focus-listener', value: !!(pageFocusListener || localFocusListener) }
+    ];
+    const CLICK_ONLY_CAUTION =
+      'The click may only track clicks, or repeat what another control of the page does.';
+    const WIDGET_KEYS_CAUTION =
+      'The widget may move between its items with the arrow keys without making Enter or Space run the click.';
 
     // Only a script can move focus to a tabindex="-1" element, as a roving
     // tabindex does from a key handler on an ancestor.
     if (reachable && !inTabOrder && !keyAbove) {
       applicableCount += 1;
+      let lean;
+      if (noKeyPath && selfFocusable && !sub.focusable) {
+        lean = {
+          toward: 'fail',
+          why: 'Even if a script moves focus here, no key or focus listener is on the element, its ancestors, the document or the window, so Enter and Space would do nothing.',
+          signals: hookSignals,
+          caution: CLICK_ONLY_CAUTION,
+          i18n: {
+            whyKey: 'clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder',
+            cautionKey: 'clickHandlerKeyboardOperable_lean_caution_clickOnly'
+          }
+        };
+      } else if (!noKeyListenerAnywhere && rovingSibling(el, role, ancestorList)) {
+        lean = {
+          toward: 'pass',
+          why: 'Another item of the same role in the widget around it is in the tab order: a roving tabindex, where the arrow keys move focus between items.',
+          signals: [
+            { signal: 'roving-sibling-tabbable', value: true },
+            { signal: 'hook-mode', value: clickInfo.hook }
+          ],
+          caution: WIDGET_KEYS_CAUTION,
+          i18n: {
+            whyKey: 'clickHandlerKeyboardOperable_lean_why_roving',
+            cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+          }
+        };
+      }
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(lean ? { lean } : {}),
           summary: `This <${tag}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex="-1"), so a keyboard user reaches it only if a script moves focus there.`,
           hint: 'Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex="0" or a native <button> or <a href>.',
           i18n: {
@@ -59949,8 +60246,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
           shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
       if (focusWired) {
+        const pageOnly = pageFocusListener && !localFocusListener;
         questions.push(
           helpers.reportOccurrence(el, {
+            ...(pageOnly
+              ? {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The only focus listeners are on the document or the window, which usually serve the whole page (focus styles, analytics), not this element’s keys.',
+                    signals: [
+                      { signal: 'page-focus-listener', value: true },
+                      { signal: 'local-focus-listener', value: false }
+                    ],
+                    caution:
+                      'Some frameworks add an element’s listeners from a page-wide focus listener.',
+                    i18n: {
+                      whyKey: 'clickHandlerKeyboardOperable_lean_why_pageFocusListener',
+                      cautionKey: 'clickHandlerKeyboardOperable_lean_caution_pageFocusListener'
+                    }
+                  }
+                }
+              : {}),
             summary: `This <${tag}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.`,
             hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
             i18n: {
@@ -60002,8 +60318,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
       if (keyListenerAbove) {
+        // The nearest ancestor with a key listener the hook saw: when it is
+        // the composite widget that owns the element, it handles its items'
+        // keys. One only on a shadow root, the document or the window (a
+        // framework's root) says nothing.
+        const listening = ancestorList.find((a) => listenerInfo(a, KEY_TYPES).listens);
+        const listeningRole = listening ? roleOf(listening) : '';
+        const ownsItem =
+          !!ITEM_ROLES[listeningRole] && ITEM_ROLES[listeningRole].indexOf(role) !== -1;
         questions.push(
           helpers.reportOccurrence(el, {
+            ...(ownsItem
+              ? {
+                  lean: {
+                    toward: 'pass',
+                    why: 'The nearest key listener above the element is on the widget it is an item of, which is where such a widget handles its items’ keys.',
+                    signals: [
+                      { signal: 'listening-ancestor-role', value: listeningRole },
+                      { signal: 'element-item-role', value: role }
+                    ],
+                    caution: WIDGET_KEYS_CAUTION,
+                    i18n: {
+                      whyKey: 'clickHandlerKeyboardOperable_lean_why_compositeListener',
+                      cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+                    }
+                  }
+                }
+              : {}),
             summary: `This <${tag}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.`,
             hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
             i18n: {
@@ -60033,8 +60374,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         );
         continue;
       }
+      const noKeyLean = noKeyPath && selfTabbable && !sub.focusable;
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(noKeyLean
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.',
+                  signals: hookSignals,
+                  caution: CLICK_ONLY_CAUTION,
+                  i18n: {
+                    whyKey: 'clickHandlerKeyboardOperable_lean_why_noKeyListener',
+                    cautionKey: 'clickHandlerKeyboardOperable_lean_caution_clickOnly'
+                  }
+                }
+              }
+            : {}),
           summary: `This <${tag}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.`,
           hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
           i18n: {
@@ -60062,14 +60418,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     // A focusable composite widget may operate its items from the keyboard
     // with a listener added from script, focus staying on the widget.
-    const managedFromAbove =
-      keyAbove ||
-      hookKeyAbove ||
-      ancestorList.some(
-        (a) =>
-          trim(dom.getAttribute(a, 'aria-activedescendant')) ||
-          (COMPOSITE_ROLES.has(helpers.aria.getAuthorRole(a) || '') && focusOf(a).focusable)
-      );
+    const focusKeeper = ancestorList.some(
+      (a) =>
+        trim(dom.getAttribute(a, 'aria-activedescendant')) ||
+        (COMPOSITE_ROLES.has(helpers.aria.getAuthorRole(a) || '') && focusOf(a).focusable)
+    );
+    const managedFromAbove = keyAbove || hookKeyAbove || focusKeeper;
 
     if (FAIL_ROLES.has(role) && !managedFromAbove) {
       fails.push(
@@ -60089,8 +60443,44 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    let notFocusableLean;
+    if (focusKeeper) {
+      notFocusableLean = {
+        toward: 'pass',
+        why: 'An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.',
+        signals: [{ signal: 'managed-from-above', value: true }],
+        caution: WIDGET_KEYS_CAUTION,
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_managed',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+        }
+      };
+    } else if (
+      !managedFromAbove &&
+      !isWidget &&
+      hasPointerCursor(el) &&
+      !ancestorList.some((a) => focusOf(a).focusable)
+    ) {
+      notFocusableLean = {
+        toward: 'fail',
+        why: 'The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        signals: [
+          { signal: 'managed-from-above', value: false },
+          { signal: 'pointer-cursor', value: true },
+          { signal: 'widget-role', value: false },
+          { signal: 'focusable-ancestor', value: false }
+        ],
+        caution:
+          'The same action may be offered by another control of the page, such as a link next to a clickable row.',
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_pointerOnly',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_elsewhere'
+        }
+      };
+    }
     questions.push(
       helpers.reportOccurrence(el, {
+        ...(notFocusableLean ? { lean: notFocusableLean } : {}),
         summary: `This <${tag}> runs a click handler, but neither it nor anything in it can take keyboard focus.`,
         hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
         i18n: {
@@ -62906,6 +63296,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const suppressors = []; // { selector, base }
   const providers = []; // { base, subject }
+  // :focus-within rules that draw something: the compound holding the
+  // pseudo, without it. Read only for the lean, never to pass an element.
+  const withinProviders = [];
+  const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
 
   function collectFromStyleRule(style, selectorText) {
     if (!style || !selectorText) return;
@@ -62915,6 +63309,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
+      if (provides && /:focus-within(?![-\w])/.test(part)) {
+        for (const compound of splitCompounds(part)) {
+          if (!/:focus-within(?![-\w])/.test(compound)) continue;
+          withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        }
+      }
       if (!hasFocusPseudo(part)) {
         // A rule with no focus state still applies while the element has
         // focus, and an author declaration beats the user agent's focus
@@ -62993,6 +63393,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   let sheetCount = 0;
+  let unreadableSheets = 0;
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
@@ -63003,9 +63404,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       try {
         rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
       } catch {
+        unreadableSheets += 1;
         continue;
       }
-      if (!rules) continue;
+      if (!rules) {
+        unreadableSheets += 1;
+        continue;
+      }
       sheetCount += 1;
       walkRules(rules, 0, '');
     }
@@ -63047,6 +63452,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Focus listeners the listener hook saw, on the element, an ancestor, the
+  // document or the window: a script may draw the indicator from one.
+  const FOCUS_EVENT_TYPES = ['focus', 'focusin', 'blur', 'focusout'];
+  function hookInfo(target) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, FOCUS_EVENT_TYPES)
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const view = dom.defaultView ? dom.defaultView(document) : null;
+  const pageFocusListener = hookInfo(document).listens || (view ? hookInfo(view).listens : false);
+  function scriptFocusListener(el) {
+    if (pageFocusListener) return true;
+    for (let a = el, i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (hookInfo(a).listens) return true;
+    }
+    return false;
+  }
+  const INLINE_FOCUS_HANDLERS = '[onfocus], [onfocusin], [onblur], [onfocusout]';
+
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
   const candidates = helpers.queryAllSmart
@@ -63082,8 +63510,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // The lean: nothing the scan can read draws focus another way.
+    const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
+    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
+    const scriptListener = scriptFocusListener(el);
+    const leans =
+      unreadableSheets === 0 &&
+      !inlineHandler &&
+      !focusWithin &&
+      !namesFocusVisible &&
+      !scriptListener;
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(leans
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'Every style sheet was read and none draws a replacement, and no inline focus handler or :focus-within rule shows focus another way.',
+                signals: [
+                  { signal: 'suppressing-selectors', value: selectors.join(', ') },
+                  { signal: 'unreadable-sheets', value: 0 },
+                  { signal: 'inline-focus-handler', value: false },
+                  { signal: 'focus-within-rule', value: false },
+                  { signal: 'listener-hook', value: hookInfo(el).hook }
+                ],
+                caution:
+                  'A focus style added by a script listener or a class a script toggles is not seen when the listener hook did not run.',
+                i18n: {
+                  whyKey: 'cssFocusIndicatorSuppressed_lean_why',
+                  cautionKey: 'cssFocusIndicatorSuppressed_lean_caution'
+                }
+              }
+            }
+          : {}),
         summary: `This element takes a tab stop, and "${selectors.join(', ')}" removes its focus outline with no replacement indicator in any other focus rule matching it.`,
         hint: 'Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.',
         i18n: {
@@ -66179,6 +66640,169 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return all > own;
   }
 
+  // The handler's top-level statements: split on the semicolons and the
+  // closing braces that are outside any bracket or string, so a call in a
+  // condition, a callback or a block stays inside its statement.
+  function topStatements(code) {
+    const out = [];
+    let depth = 0;
+    let quote = '';
+    let cur = '';
+    for (let i = 0; i < code.length; i++) {
+      const ch = code[i];
+      cur += ch;
+      if (quote) {
+        if (ch === '\\') {
+          cur += code[i + 1] || '';
+          i += 1;
+        } else if (ch === quote) quote = '';
+        continue;
+      }
+      if (ch === "'" || ch === '"' || ch === '`') quote = ch;
+      else if (ch === '(' || ch === '[' || ch === '{') depth += 1;
+      else if (ch === ')' || ch === ']' || ch === '}') {
+        depth = Math.max(0, depth - 1);
+        if (ch === '}' && depth === 0) {
+          out.push(cur.trim());
+          cur = '';
+        }
+      } else if (ch === ';' && depth === 0) {
+        out.push(cur.slice(0, -1).trim());
+        cur = '';
+      }
+    }
+    if (cur.trim()) out.push(cur.trim());
+    return out.filter(Boolean);
+  }
+  // Whether a top-level statement passes `test`, with no return or throw in
+  // a statement before it that could stop the handler first.
+  function unconditionally(code, test) {
+    for (const st of topStatements(code)) {
+      if (test(st)) return true;
+      if (/\b(?:return|throw)\b/.test(st)) return false;
+    }
+    return false;
+  }
+  const SELF_BLUR_STATEMENT = new RegExp('^' + SELF_BLUR + String.raw`\s*\(\s*\)$`);
+  const OTHER_FOCUS_STATEMENT =
+    /^(?!(?:if|else|for|while|do|switch|try|return|throw|var|let|const)\b)[^?]*(?:\.\s*focus|\[\s*['"]focus['"]\s*\])\s*\(\s*\)$/;
+  function focusesOther(st) {
+    if (/&&|\|\||=>|\bfunction\b/.test(st)) return false;
+    if (/^(?:this|event\.(?:target|currentTarget))\s*(?:\.\s*focus|\[)/.test(st)) return false;
+    return OTHER_FOCUS_STATEMENT.test(st);
+  }
+
+  function trimText(v) {
+    return (v == null ? '' : String(v)).trim();
+  }
+  // A dialog: <dialog>, role dialog or alertdialog, or aria-modal="true".
+  function isDialog(el) {
+    if (!el) return false;
+    if (String(dom.localName(el) || '').toLowerCase() === 'dialog') return true;
+    if (trimText(dom.getAttribute(el, 'aria-modal')).toLowerCase() === 'true') return true;
+    let role = '';
+    try {
+      role = helpers.aria.getExplicitRole(el) || '';
+    } catch {}
+    return role === 'dialog' || role === 'alertdialog';
+  }
+  function inDialog(el) {
+    for (let a = el, i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (isDialog(a)) return true;
+    }
+    return false;
+  }
+  const FOCUS_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, [tabindex], [contenteditable]';
+  function matchesSafe(el, sel) {
+    try {
+      return !!el && dom.matches(el, sel);
+    } catch {
+      return false;
+    }
+  }
+  // A focus-trap sentinel: a plain element in the tab order with no text,
+  // content, name or role, in or beside a dialog, or first or last in a
+  // container that holds other focusable content. Its handler sends focus
+  // into the dialog or back to its start, which is what it is for.
+  function isSentinel(el, focus) {
+    if (!focus.tabbable) return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (tag !== 'div' && tag !== 'span') return false;
+    for (const a of ['role', 'aria-label', 'aria-labelledby', 'title', 'contenteditable']) {
+      if (dom.getAttribute(el, a) != null) return false;
+    }
+    if (/\S/.test(String(dom.textContent(el) || ''))) return false;
+    try {
+      if (dom.querySelector(el, 'img, svg, canvas, picture, video, audio, object, embed, iframe'))
+        return false;
+    } catch {
+      return false;
+    }
+    if (inDialog(el)) return true;
+    if (isDialog(dom.previousElementSibling(el)) || isDialog(dom.nextElementSibling(el)))
+      return true;
+    const parent = dom.parentElement(el);
+    if (!parent) return false;
+    const atEdge = dom.firstElementChild(parent) === el || dom.lastElementChild(parent) === el;
+    if (!atEdge) return false;
+    try {
+      for (const d of dom.querySelectorAll(parent, FOCUS_CANDIDATES)) {
+        if (d !== el && canTakeFocus(d).focusable) return true;
+      }
+    } catch {}
+    return false;
+  }
+  const WIDGET_ROLES = new Set([
+    'button',
+    'link',
+    'checkbox',
+    'switch',
+    'radio',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'tab',
+    'treeitem',
+    'slider',
+    'spinbutton',
+    'combobox',
+    'textbox',
+    'searchbox'
+  ]);
+  const NATIVE_CONTROL =
+    'a[href], area[href], button, input:not([type="hidden"]), select, textarea, summary';
+  // A control a person sees and that has a name: a native control or a
+  // widget role, a non-empty accessible name, and shown.
+  function isNamedVisibleControl(el) {
+    let role = '';
+    try {
+      role = helpers.aria.getExplicitRole(el) || '';
+    } catch {}
+    if (!(role ? WIDGET_ROLES.has(role) : matchesSafe(el, NATIVE_CONTROL))) return false;
+    let name = '';
+    try {
+      // The name from author mechanisms, or from the content for a
+      // control that takes it from there (a button, a link).
+      const info =
+        typeof helpers.getNameFromContentInfo === 'function'
+          ? helpers.getNameFromContentInfo(el, ctx)
+          : helpers.getAccessibleNameInfo(el, ctx);
+      name = trimText(info && info.value);
+    } catch {}
+    if (!name) return false;
+    try {
+      if (typeof helpers.isDomVisibleEligible === 'function') {
+        const vis = helpers.isDomVisibleEligible(el, ctx);
+        if (vis && vis.eligible === false) return false;
+      }
+    } catch {
+      return false;
+    }
+    return true;
+  }
+
   function canTakeFocus(el) {
     if (!helpers.getFocusableInfo) return { focusable: true, tabbable: true };
     try {
@@ -66247,8 +66871,59 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       );
       continue;
     }
+    let lean;
+    if (
+      kind === 'calls' &&
+      focus.tabbable &&
+      unconditionally(handler, (st) => SELF_BLUR_STATEMENT.test(st))
+    ) {
+      lean = {
+        toward: 'fail',
+        why: 'The handler calls blur() on the element itself as a statement of its own, outside any condition, so focus is removed as it arrives.',
+        signals: [{ signal: 'unconditional-self-blur', value: true }],
+        caution:
+          'Other code in the handler may move focus back, or open something that takes focus on purpose.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_calls',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_calls'
+        }
+      };
+    } else if (kind === 'moves' && isSentinel(el, focus)) {
+      lean = {
+        toward: 'pass',
+        why: 'The element is an empty, unnamed focus guard at the edge of a dialog or a group of controls: moving focus on as it arrives is how a focus trap keeps focus inside.',
+        signals: [{ signal: 'sentinel-shape', value: true }],
+        caution:
+          'Check that the trap lets focus out once the dialog closes, and that it belongs to a modal dialog.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_sentinel',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_sentinel'
+        }
+      };
+    } else if (
+      kind === 'moves' &&
+      focus.tabbable &&
+      isNamedVisibleControl(el) &&
+      unconditionally(handler, focusesOther)
+    ) {
+      lean = {
+        toward: 'fail',
+        why: 'The element is a visible, named control, and its handler sends focus to another element whenever it arrives, so the control cannot be operated by keyboard.',
+        signals: [
+          { signal: 'named-visible-control', value: true },
+          { signal: 'unconditional-focus-move', value: true }
+        ],
+        caution:
+          'A field may forward focus on purpose to the control that edits it, such as a custom date picker.',
+        i18n: {
+          whyKey: 'focusNotRemovedByScript_lean_why_moves',
+          cautionKey: 'focusNotRemovedByScript_lean_caution_moves'
+        }
+      };
+    }
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: SUMMARIES[kind],
         hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
         i18n: {
@@ -66317,6 +66992,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'tooltip'
   ]);
 
+  // For the lean: what the element does with its tab stop.
+  const HANDLER_ATTRS = ['onclick', 'onkeydown', 'onkeyup', 'onkeypress'];
+  function hasActivationHandler(el) {
+    if (HANDLER_ATTRS.some((a) => String(dom.getAttribute(el, a) || '').trim())) return true;
+    try {
+      return (
+        typeof helpers.getEventListenerInfo === 'function' &&
+        !!helpers.getEventListenerInfo(el, ['click', 'keydown', 'keyup', 'keypress']).listens
+      );
+    } catch {
+      return false;
+    }
+  }
+  // A box that scrolls: overflow auto or scroll, and content the browser
+  // measures larger than the box. Without layout (jsdom) the sizes are 0.
+  function scrollsOverflow(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      const ov = [cs && cs.overflowX, cs && cs.overflowY].map((v) => String(v || '').toLowerCase());
+      const x =
+        (ov[0] === 'auto' || ov[0] === 'scroll') &&
+        dom.get(el, 'scrollWidth') - dom.get(el, 'clientWidth') > 2;
+      const y =
+        (ov[1] === 'auto' || ov[1] === 'scroll') &&
+        dom.get(el, 'scrollHeight') - dom.get(el, 'clientHeight') > 2;
+      return !!(x || y);
+    } catch {
+      return false;
+    }
+  }
+  function inApplication(el) {
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      try {
+        if (helpers.aria.getExplicitRole(a) === 'application') return true;
+      } catch {}
+    }
+    return false;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[tabindex][role]')
     : helpers.queryAll('[tabindex][role]');
@@ -66351,7 +67065,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
+    const handler = hasActivationHandler(el);
+    const scrolls = scrollsOverflow(el);
+    const docInApp = role === 'document' && inApplication(el);
+    let lean;
+    if (!handler && (scrolls || docInApp)) {
+      lean = {
+        toward: 'pass',
+        why: scrolls
+          ? 'The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.'
+          : 'A document inside an application is made focusable so screen reader users can read it.',
+        signals: [
+          { signal: 'scrollable-overflow', value: scrolls },
+          { signal: 'document-in-application', value: docInApp },
+          { signal: 'inline-activation-handler', value: false }
+        ],
+        i18n: {
+          whyKey: scrolls
+            ? 'focusOrderSemantics_lean_why_scrolls'
+            : 'focusOrderSemantics_lean_why_documentInApplication'
+        }
+      };
+    } else if (handler && !scrolls && !docInApp) {
+      lean = {
+        toward: 'fail',
+        why: 'A click or key handler is on the element, so it acts as a control while its role says it is not one.',
+        signals: [
+          { signal: 'inline-activation-handler', value: true },
+          { signal: 'scrollable-overflow', value: false }
+        ],
+        caution: 'The handler may only track clicks, or serve something other than the element.',
+        i18n: {
+          whyKey: 'focusOrderSemantics_lean_why_handler',
+          cautionKey: 'focusOrderSemantics_lean_caution_handler'
+        }
+      };
+    }
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       selector: stableSelector,
       html,
       summary: `This element is in the tab order (tabindex="${tabindex}") but has a non-interactive role ("${role}").`,
@@ -69376,6 +70128,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // A focus guard: a plain element made focusable only by its tabindex,
+  // with no text, no embedded content, no name and no role. Embedded
+  // widgets put one at their edge to send focus on; it holds nothing a
+  // user needs to reach.
+  const GUARD_TAGS = new Set(['div', 'span']);
+  function isFocusSentinel(el) {
+    try {
+      if (!GUARD_TAGS.has(String(dom.localName(el) || '').toLowerCase())) return false;
+      const t = parseTabIndex(dom.getAttribute(el, 'tabindex'));
+      if (t === null || t < 0) return false;
+      for (const a of ['role', 'aria-label', 'aria-labelledby', 'title', 'contenteditable']) {
+        if (dom.getAttribute(el, a) != null) return false;
+      }
+      if (/\S/.test(String(dom.textContent(el) || ''))) return false;
+      return !dom.querySelector(
+        el,
+        'img, svg, canvas, picture, video, audio, object, embed, iframe, input, button, select, textarea, a[href]'
+      );
+    } catch {
+      return false;
+    }
+  }
+
   function getNegativeTabIndex(el) {
     const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
@@ -69460,8 +70235,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
+      const sentinel = runtimeProbe.redirectedOutOfFrame && isFocusSentinel(candidates[0]);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
+          ...(sentinel
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.',
+                  signals: [
+                    { signal: 'focus-redirected-out-of-frame', value: true },
+                    { signal: 'candidate-is-sentinel', value: true }
+                  ],
+                  caution:
+                    'A script may still reveal real content behind the guard later; the probe only waits a short moment.',
+                  i18n: {
+                    whyKey: 'iframeFocusableContent_lean_why',
+                    cautionKey: 'iframeFocusableContent_lean_caution'
+                  }
+                }
+              }
+            : {}),
           summary: `This <${tag}> has tabindex="-1" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.`,
           hint: 'If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.',
           i18n: {
@@ -77233,6 +78027,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
+  // A shown descendant that can take focus.
+  function focusableInside(el) {
+    let descendants;
+    try {
+      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+    } catch {
+      return true;
+    }
+    return descendants.some(
+      (d) => !(helpers.isHiddenContent && helpers.isHiddenContent(d)) && canTakeFocus(d)
+    );
+  }
+  function focusableAncestor(el) {
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (canTakeFocus(a)) return true;
+    }
+    return false;
+  }
+  // The hook's mode ('none', 'early' or 'late'), and whether it saw a key
+  // listener on an ancestor, the document or the window.
+  const KEY_TYPES = ['keydown', 'keyup', 'keypress'];
+  function hookOf(target, types) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, types)
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const doc = ctx.document || null;
+  const win = doc && dom.defaultView ? dom.defaultView(doc) : null;
+  const pageKeyListener =
+    (doc && hookOf(doc, KEY_TYPES).listens) || (win && hookOf(win, KEY_TYPES).listens);
+  function keyListenerAbove(el) {
+    if (pageKeyListener) return true;
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (hookOf(a, KEY_TYPES).listens) return true;
+    }
+    return false;
+  }
+  // Pointer handlers that perform an action, not a hover effect; an inline
+  // one made only of statements that do nothing doesn't count.
+  const ACTION_ATTRS = ['onmousedown', 'onmouseup', 'ondblclick'];
+  const NO_OP =
+    /^(?:return(?:\s*\(?\s*false\s*\)?)?|void\s*\(?\s*0\s*\)?|event\.preventDefault\(\)|event\.stopPropagation\(\))$/;
+  function isActionHandler(el, attr) {
+    const code = trim(dom.getAttribute(el, attr));
+    if (!code) return true; // a listener added from script
+    const parts = code
+      .split(';')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return !parts.every((p) => NO_OP.test(p));
+  }
+
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
   // With the listener hook, elements given a pointer listener from script
   // are candidates too.
@@ -77273,8 +78123,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : null;
 
     if (unreachable) {
+      const nothingInside = !focusableInside(el);
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(nothingInside
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'The element has keyboard handlers, but neither it nor anything in it can take focus, so they never run.',
+                  signals: [
+                    { signal: 'keyboard-attrs', value: presentKeyboardAttrs.join(', ') },
+                    { signal: 'not-focusable', value: true }
+                  ],
+                  caution:
+                    'A script may make it focusable later, or another control may offer the same function.',
+                  i18n: {
+                    whyKey: 'mouseOnlyEventHandlers_lean_why_notFocusable',
+                    cautionKey: 'mouseOnlyEventHandlers_lean_caution_notFocusable'
+                  }
+                }
+              }
+            : {}),
           summary: `This element has ${presentMouseAttrs.join(', ')} and ${presentKeyboardAttrs.join(', ')}, but it cannot take keyboard focus, so the keyboard handlers never run.`,
           hint: 'Make the element focusable (use a native control, or add tabindex="0"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.',
           i18n: {
@@ -77298,8 +78167,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    const actions = presentMouseAttrs.filter(
+      (a) => ACTION_ATTRS.indexOf(a) !== -1 && isActionHandler(el, a)
+    );
+    const noKeyboardPath =
+      actions.length > 0 &&
+      hookOf(el, KEY_TYPES).hook === 'early' &&
+      !canTakeFocus(el) &&
+      !focusableInside(el) &&
+      !focusableAncestor(el) &&
+      !keyListenerAbove(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(noKeyboardPath
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.',
+                signals: [
+                  { signal: 'listener-hook-active', value: true },
+                  { signal: 'mouse-attrs', value: actions.join(', ') },
+                  { signal: 'element-focusable', value: false },
+                  { signal: 'ancestor-key-listener', value: false }
+                ],
+                caution:
+                  'The handler may only draw an effect or track the pointer, or another control may offer the same function.',
+                i18n: {
+                  whyKey: 'mouseOnlyEventHandlers_lean_why_noKeyboard',
+                  cautionKey: 'mouseOnlyEventHandlers_lean_caution_noKeyboard'
+                }
+              }
+            }
+          : {}),
         summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
         hint: 'Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).',
         i18n: {
@@ -83533,6 +84432,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // The document's tab stops, in document order and in the order Tab
+  // visits them (positive tabindex first, by value, then the rest), worked
+  // out once, when a positive tabindex is found. Light DOM only: a shadow
+  // tree has its own order.
+  const TAB_CANDIDATES =
+    'a[href], area[href], button, input, select, textarea, summary, iframe, audio[controls], video[controls], [tabindex], [contenteditable]';
+  let order = null;
+  function tabOrder() {
+    if (order) return order;
+    const stops = [];
+    try {
+      const doc = ctx.document;
+      for (const d of dom.querySelectorAll(doc, TAB_CANDIDATES)) {
+        let info = null;
+        try {
+          info = helpers.getFocusableInfo(d, ctx);
+        } catch {}
+        if (!info || !info.tabbable) continue;
+        if (helpers.isHiddenContent && helpers.isHiddenContent(d)) continue;
+        const t = Number(String(dom.getAttribute(d, 'tabindex') || '').trim());
+        stops.push({ el: d, value: Number.isInteger(t) && t > 0 ? t : 0 });
+      }
+    } catch {}
+    const visit = stops
+      .map((s, i) => ({ ...s, i }))
+      .sort((a, b) => {
+        if (a.value > 0 && b.value > 0) return a.value - b.value || a.i - b.i;
+        if (a.value > 0) return -1;
+        if (b.value > 0) return 1;
+        return a.i - b.i;
+      });
+    const position = new Map();
+    visit.forEach((s, k) => position.set(s.el, k));
+    order = { stops, position, reordered: visit.some((s, k) => s.i !== k) };
+    return order;
+  }
+  // Whether Tab reaches el before a tab stop that comes earlier in the
+  // document. null when el is not a tab stop of the document.
+  function jumpsAhead(el) {
+    const o = tabOrder();
+    if (!o.position.has(el)) return null;
+    const mine = o.position.get(el);
+    for (const s of o.stops) {
+      if (s.el === el) return false;
+      if (o.position.get(s.el) > mine) return true;
+    }
+    return false;
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const raw = String(dom.getAttribute(el, 'tabindex') || '').trim();
@@ -83544,8 +84492,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (n <= 0) continue;
 
+    const jumps = jumpsAhead(el);
+    let lean;
+    if (jumps === true) {
+      lean = {
+        toward: 'fail',
+        why: 'Tab reaches this element before tab stops that come earlier in the page, so focus jumps out of document order.',
+        signals: [
+          { signal: 'tabindex-value', value: n },
+          { signal: 'tab-order-matches-dom-order', value: false }
+        ],
+        caution: 'The page may lay its content out in an order that differs from the document.',
+        i18n: {
+          whyKey: 'tabindex_lean_why_reordered',
+          cautionKey: 'tabindex_lean_caution_reordered'
+        }
+      };
+    } else if (jumps === false && !tabOrder().reordered) {
+      lean = {
+        toward: 'pass',
+        why: 'The positive tabindex values leave the tab order as the document order: they are on the page’s first tab stops, in increasing order.',
+        signals: [
+          { signal: 'tabindex-value', value: n },
+          { signal: 'tab-order-matches-dom-order', value: true }
+        ],
+        caution:
+          'A positive tabindex stays fragile: content added before these elements will be visited after them.',
+        i18n: {
+          whyKey: 'tabindex_lean_why_inOrder',
+          cautionKey: 'tabindex_lean_caution_inOrder'
+        }
+      };
+    }
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: 'This element has a positive tabindex, overriding the natural tab order.',
         hint: 'Use tabindex="0" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.',
         i18n: {
@@ -88689,6 +89670,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return controlled.has(el);
   }
 
+  // For the leans. Tab stops by role and name, built once on demand: a
+  // widget whose function another control in the tab order offers, with
+  // the same role and name, is a deliberate duplicate.
+  let tabStopsByRoleName = null;
+  function nameOf(el) {
+    try {
+      const info =
+        typeof helpers.getNameFromContentInfo === 'function'
+          ? helpers.getNameFromContentInfo(el, ctx)
+          : helpers.getAccessibleNameInfo(el, ctx);
+      return trim(info && info.value)
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function fullRoleOf(el) {
+    const r = roleOf(el);
+    if (r) return r;
+    try {
+      return trim(helpers.aria.getNativeRoleForElement(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function hasTabbableTwin(el, role) {
+    const name = nameOf(el);
+    if (!name) return false;
+    if (!tabStopsByRoleName) {
+      tabStopsByRoleName = new Map();
+      for (const d of helpers.queryAllDeep(FOCUS_SELECTOR + ', [role]')) {
+        if (!focusOf(d).tabbable || helpers.isHiddenContent(d)) continue;
+        const key = fullRoleOf(d) + '|' + nameOf(d);
+        tabStopsByRoleName.set(key, (tabStopsByRoleName.get(key) || []).concat(d));
+      }
+    }
+    return (tabStopsByRoleName.get(role + '|' + name) || []).some((d) => d !== el);
+  }
+  // A key listener the listener hook saw on an ancestor, the document or the
+  // window; null without an early hook, which alone shows there is none.
+  function keyListenerAbove(el) {
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const types = ['keydown', 'keyup', 'keypress'];
+    let info;
+    try {
+      info = helpers.getEventListenerInfo(el, types);
+    } catch {
+      return null;
+    }
+    if (!info || info.hook !== 'early') return null;
+    try {
+      const doc = ctx.document;
+      const win = dom.defaultView(doc);
+      if (helpers.getEventListenerInfo(doc, types).listens) return true;
+      if (win && helpers.getEventListenerInfo(win, types).listens) return true;
+      for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+        if (helpers.getEventListenerInfo(a, types).listens) return true;
+      }
+    } catch {
+      return null;
+    }
+    return false;
+  }
+  const POPUP_TRIGGER = '[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded="true"]';
+  function hasPopupTrigger(el) {
+    const parent = dom.parentElement(el);
+    for (const sib of [
+      dom.previousElementSibling(el),
+      parent && dom.previousElementSibling(parent)
+    ]) {
+      if (!sib) continue;
+      try {
+        if (dom.matches(sib, POPUP_TRIGGER) || dom.querySelector(sib, POPUP_TRIGGER)) return true;
+      } catch {}
+    }
+    return false;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -88773,8 +89833,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
     const m = messages[reasonCode];
 
+    let lean;
+    if (reasonCode === 'WIDGET_NOT_FOCUSABLE') {
+      if (!hasTabbableTwin(el, role))
+        lean = {
+          toward: 'fail',
+          why: 'The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.',
+          signals: [
+            { signal: 'role', value: role },
+            { signal: 'focusable', value: false },
+            { signal: 'same-name-tabbable-duplicate', value: false }
+          ],
+          caution:
+            'A script may make it focusable when needed, or the role may be wrong for content that does nothing.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_notFocusable',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_notFocusable'
+          }
+        };
+    } else if (reasonCode === 'WIDGET_NOT_IN_TAB_ORDER') {
+      if (hasTabbableTwin(el, role)) {
+        lean = {
+          toward: 'pass',
+          why: 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
+          signals: [{ signal: 'same-name-tabbable-duplicate', value: true }],
+          caution: 'Check that the two really do the same thing.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_duplicate',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate'
+          }
+        };
+      } else if (keyListenerAbove(el) === false) {
+        lean = {
+          toward: 'fail',
+          why: 'A hook installed before the page’s scripts saw no key listener on its ancestors, the document or the window, so no key moves focus to it.',
+          signals: [
+            { signal: 'listener-hook-active', value: true },
+            { signal: 'ancestor-key-listener', value: false },
+            { signal: 'same-name-tabbable-duplicate', value: false }
+          ],
+          caution:
+            'A script may focus it when something opens, such as a dialog that takes focus to it.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_noKeyListener',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_noKeyListener'
+          }
+        };
+      }
+    } else if (reasonCode === 'COMPOSITE_NO_TAB_STOP') {
+      if (!hasPopupTrigger(el))
+        lean = {
+          toward: 'fail',
+          why: 'Nothing names this widget as one it controls or owns, nothing before it opens a popup, and neither it nor any item is in the tab order.',
+          signals: [
+            { signal: 'script-focusable', value: scriptFocusable },
+            { signal: 'adjacent-popup-trigger', value: false }
+          ],
+          caution:
+            'A popup opened and focused by a script from a trigger that does not say so looks the same.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_compositeNoTabStop',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_compositeNoTabStop'
+          }
+        };
+    } else if (reasonCode === 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE') {
+      lean = {
+        toward: 'fail',
+        why: 'ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.',
+        signals: [{ signal: 'focusable', value: false }],
+        caution: 'A script may make it focusable when the widget opens.',
+        i18n: {
+          whyKey: 'widgetKeyboardFocusable_lean_why_activedescendantHost',
+          cautionKey: 'widgetKeyboardFocusable_lean_caution_activedescendantHost'
+        }
+      };
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: m.summary.replace(/\{\{role\}\}/g, role),
         hint: m.hint.replace(/\{\{role\}\}/g, role),
         i18n: {
@@ -89072,6 +90209,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_description": "Meldet Elemente in der Tabulatorreihenfolge, deren Fokusumriss durch eine :focus/:focus-visible-Regel oder eine Regel ohne Zustand wie a { outline: none } entfernt wird, wenn keine auf sie zutreffende Fokusregel einen Ersatzindikator vorsieht (border, box-shadow, background usw.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Dieses Element erhält einen Tabstopp, und „{{selectors}}“ entfernt seinen Fokusumriss, ohne dass eine andere passende Fokusregel einen Ersatzindikator zeichnet.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Zeichnen Sie in derselben Regel einen Ersatzindikator (einen sichtbaren Umriss mit outline, einen Rahmen mit border, einen Schatten mit box-shadow oder eine Hintergrundänderung mit background) oder verzichten Sie auf das Zurücksetzen von outline. Wird der Indikator stattdessen per Skript gesetzt, prüfen Sie, ob er für Tastaturnutzende erscheint.",
+      "cssFocusIndicatorSuppressed_lean_why": "Alle Stylesheets wurden gelesen, keines zeichnet einen Ersatz, und weder ein Inline-Fokus-Handler noch eine :focus-within-Regel zeigt den Fokus auf andere Weise.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Ein Fokusstil, den ein Skript-Listener oder eine per Skript umgeschaltete Klasse hinzufügt, wird nicht erkannt, wenn der Listener-Hook nicht lief.",
       "cssHidden_focus_title": "Fokussierbare Elemente dürfen nicht visuell verborgen sein",
       "cssHidden_focus_description": "Prüft, ob per Tastatur fokussierbare Elemente nicht durch CSS-Techniken visuell verborgen werden, die sie dennoch in der Tab-Reihenfolge belassen können.",
       "cssHidden_focus_summary_cantTell": "Dieses fokussierbare <{{element}}> ist nicht zu sehen.{{#opacityZero}} Seine Deckkraft ist 0.{{/opacityZero}}{{#offscreen}} Es ist außerhalb des Bildschirms positioniert.{{/offscreen}}{{#clipped}} Es ist auf nichts zugeschnitten.{{/clipped}}{{#zeroSizeOverflowHidden}} Es hat die Größe null mit overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Es liegt dort, wo Scrollen es nicht ins Bild bringen kann, etwa in einem aus dem Bildschirm geschobenen Menü.{{/outOfReach}}{{#containerClipped}} Ein Container um es herum ist auf nichts zugeschnitten.{{/containerClipped}}",
@@ -89349,6 +90488,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframeFocusableContent_hint_fail": "Entfernen Sie den fokussierbaren Inhalt aus dem Frame, oder entfernen Sie tabindex=\"-1\", falls der Frame erreichbar sein soll.",
       "iframeFocusableContent_summary_cantTell_redirect": "Dieses <{{element}}> hat tabindex=\"-1\" und fokussierbaren Inhalt, aber der Fokus springt sofort zu einem anderen Element weiter. Prüfen Sie die Tastaturbedienung in einem echten Browser.",
       "iframeFocusableContent_hint_cantTell_redirect": "Wenn dies eine beabsichtigte Fokusübergabe ist, prüfen Sie, dass der Tastaturfokus nie im Inhalt des Frames hängen bleibt.",
+      "iframeFocusableContent_lean_why": "Das einzige fokussierbare Element im Frame ist ein leerer Fokuswächter, der den Fokus aus dem Frame weiterschickt, wie es eingebettete Widgets üblicherweise tun; er enthält nichts, was jemand erreichen muss.",
+      "iframeFocusableContent_lean_caution": "Ein Skript kann hinter dem Wächter später noch echten Inhalt einblenden; die Prüfung wartet nur einen kurzen Moment.",
       "tableHeadersAttrValid_title": "Das headers-Attribut einer Tabellenzelle muss auf gültige Kopfzellen verweisen",
       "tableHeadersAttrValid_description": "Prüft, ob jede id im headers-Attribut eines <td>/<th> auf eine Zelle (<td> oder <th>) innerhalb derselben Tabelle aufgelöst wird (nicht fehlend, kein Element außer einer Zelle, nicht sich selbst).",
       "tableHeadersAttrValid_summary_fail": "Das headers-Attribut dieses <{{element}}> verweist auf ids, die keine Kopfzellen dieser Tabelle sind: {{invalidIds}}.",
@@ -89542,6 +90683,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tabindex_description": "Prüft, ob tabindex-Werte 0 oder negativ sind, nicht eine positive Zahl.",
       "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
       "tabindex_hint_cantTell": "Verwenden Sie tabindex=\"0\", um das Element in die Tab-Reihenfolge aufzunehmen, oder einen negativen Wert, um es herauszunehmen. Soll sich die Tab-Reihenfolge ändern, ändern Sie stattdessen die Reihenfolge des Inhalts.",
+      "tabindex_lean_why_reordered": "Die Tab-Taste erreicht dieses Element vor Tab-Stopps, die weiter oben auf der Seite stehen; der Fokus springt daher aus der Dokumentreihenfolge.",
+      "tabindex_lean_caution_reordered": "Die Seite kann ihren Inhalt in einer anderen Reihenfolge anordnen als im Dokument.",
+      "tabindex_lean_why_inOrder": "Die positiven tabindex-Werte lassen die Tab-Reihenfolge gleich der Dokumentreihenfolge: Sie stehen auf den ersten Tab-Stopps der Seite, in aufsteigender Folge.",
+      "tabindex_lean_caution_inOrder": "Ein positiver tabindex bleibt fehleranfällig: Inhalt, der vor diesen Elementen hinzukommt, wird nach ihnen angesteuert.",
       "emptyTableHeader_title": "Tabellen-Kopfzellen dürfen nicht leer sein",
       "emptyTableHeader_description": "Prüft, ob Kopfzellen (<th> oder ein beliebiges Element mit role=\"columnheader\"/\"rowheader\") sichtbaren Textinhalt haben — eine Kopfzelle, die nur über aria-label/aria-labelledby benannt ist, wird ebenfalls markiert, da die tatsächliche Unterstützung durch Screenreader/Browser dafür uneinheitlich ist.",
       "emptyTableHeader_summary_cantTell": "Diese Tabellen-Kopfzelle hat keinen zugänglichen Namen.",
@@ -89725,6 +90870,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: Geben Sie einem Eintrag tabindex=\"0\" (Roving Tabindex), oder machen Sie das Element mit der Rolle {{role}} fokussierbar und verweisen Sie mit aria-activedescendant auf den aktiven Eintrag.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Dieses Element verweist mit aria-activedescendant auf seinen aktiven Eintrag, kann aber keinen Tastaturfokus erhalten.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "Das Element gibt sich als Widget aus, aber weder es noch etwas darin kann den Fokus erhalten, und kein Bedienelement in der Tab-Reihenfolge hat seine Rolle und seinen Namen.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Ein Skript kann es bei Bedarf fokussierbar machen, oder die Rolle ist für Inhalt, der nichts tut, falsch gewählt.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Ein anderes Bedienelement in der Tab-Reihenfolge hat dieselbe Rolle und denselben Namen; dieses ist also ein aus der Tab-Reihenfolge genommenes Duplikat.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Prüfen Sie, dass beide wirklich dasselbe tun.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat an seinen Vorfahren, am Dokument und am Fenster keinen Tasten-Listener gesehen; keine Taste bewegt den Fokus dorthin.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Ein Skript kann es fokussieren, wenn sich etwas öffnet, etwa ein Dialog, der den Fokus dorthin bringt.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nichts bezeichnet dieses Widget als gesteuert oder besessen, nichts direkt davor öffnet ein Popup, und weder es noch eines seiner Elemente ist in der Tab-Reihenfolge.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Ein Popup, das ein Skript von einem Auslöser aus öffnet und fokussiert, der dies nicht angibt, sieht genauso aus.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA lässt aria-activedescendant nur an dem Element wirken, das den Fokus hat, und dieses kann ihn nicht erhalten.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Ein Skript kann es fokussierbar machen, wenn sich das Widget öffnet.",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
@@ -89783,6 +90938,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, note, presentation), zur manuellen Überprüfung.",
       "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
       "focusOrderSemantics_hint_cantTell": "Entfernen Sie tabindex, wenn das Element nicht bedient werden soll, oder geben Sie ihm eine interaktive Rolle, die zu seiner Funktion passt.",
+      "focusOrderSemantics_lean_why_handler": "Am Element sitzt ein Klick- oder Tasten-Handler; es verhält sich also wie ein Bedienelement, obwohl seine Rolle sagt, dass es keines ist.",
+      "focusOrderSemantics_lean_caution_handler": "Der Handler erfasst vielleicht nur Klicks oder dient etwas anderem als dem Element.",
+      "focusOrderSemantics_lean_why_scrolls": "Der Inhalt des Elements läuft über seine Box hinaus und es scrollt; sein Tab-Stopp lässt Tastaturnutzende es scrollen.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Ein Dokument innerhalb einer Anwendung wird fokussierbar gemacht, damit Screenreader-Nutzende es lesen können.",
       "pAsHeading_title": "Text, der wie eine Überschrift gestaltet ist, sollte wahrscheinlich eine echte Überschrift sein",
       "pAsHeading_description": "Markiert kurze <p>- und <div>-Elemente, deren Text vollständig fett und mit mindestens 18px dargestellt wird, zur manuellen Prüfung, ob stattdessen ein echtes Überschriftenelement verwendet werden sollte.",
       "pAsHeading_summary_cantTell": "Dieser Absatz ist vollständig fett und wird in einer überschriftenähnlichen Größe dargestellt.",
@@ -89818,12 +90977,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_moves": "Der onfocus-Handler dieses <{{element}}> verschiebt den Fokus beim Eintreffen auf ein anderes Element (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
       "focusNotRemovedByScript_hint_fail": "Entfernen Sie den Aufruf von blur(), damit der Fokus auf dem Element bleibt, oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll (WCAG-Fehler F55).",
+      "focusNotRemovedByScript_lean_why_calls": "Der Handler ruft blur() für das Element selbst als eigene Anweisung auf, außerhalb jeder Bedingung; der Fokus wird daher beim Eintreffen entfernt.",
+      "focusNotRemovedByScript_lean_caution_calls": "Anderer Code im Handler kann den Fokus zurückholen oder absichtlich etwas öffnen, das den Fokus übernimmt.",
+      "focusNotRemovedByScript_lean_why_sentinel": "Das Element ist ein leerer, unbenannter Fokuswächter am Rand eines Dialogs oder einer Gruppe von Bedienelementen: Den Fokus beim Eintreffen weiterzuschicken ist die Art, wie eine Fokusfalle den Fokus im Inneren hält.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Prüfen Sie, dass die Falle den Fokus freigibt, sobald der Dialog geschlossen ist, und dass sie zu einem modalen Dialog gehört.",
+      "focusNotRemovedByScript_lean_why_moves": "Das Element ist ein sichtbares, benanntes Bedienelement, und sein Handler schickt den Fokus bei jedem Eintreffen zu einem anderen Element; das Bedienelement lässt sich daher nicht per Tastatur bedienen.",
+      "focusNotRemovedByScript_lean_caution_moves": "Ein Feld kann den Fokus absichtlich an das Bedienelement weitergeben, das es bearbeitet, etwa an eine eigene Datumsauswahl.",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Prüfen Sie mit der Tastatur, ob sich dieses Verhalten auslösen lässt: Ein per Skript hinzugefügter Tastatur-Handler zählt, und ein rein visueller Hover-Effekt braucht keinen. Falls nicht, fügen Sie eine Tastaturbedienung hinzu, die dasselbe bewirkt (onkeydown oder onfocus/onblur für Hover-Verhalten).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Dieses Element hat {{attrs}} und {{keyboardAttrs}}, kann aber keinen Tastaturfokus erhalten, daher werden die Tastatur-Handler nie ausgeführt.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Machen Sie das Element fokussierbar (verwenden Sie ein natives Bedienelement oder fügen Sie tabindex=\"0\" hinzu), oder verschieben Sie die Handler auf ein fokussierbares Element, damit diese Funktionalität auch per Tastatur erreichbar ist.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "Das Element hat Tastatur-Handler, aber weder es noch etwas darin kann den Fokus erhalten; sie werden daher nie ausgeführt.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Ein Skript kann es später fokussierbar machen, oder ein anderes Bedienelement kann dieselbe Funktion anbieten.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "Das Element führt bei mousedown, mouseup oder Doppelklick eine Aktion aus, ein vor den Skripten der Seite installierter Hook hat weder an ihm noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten-Listener gesehen, und nichts in ihm oder um es herum kann den Fokus erhalten.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Der Handler zeichnet vielleicht nur einen Effekt oder verfolgt den Zeiger, oder ein anderes Bedienelement bietet dieselbe Funktion an.",
       "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
       "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
@@ -89838,6 +91007,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus. Die einzigen Tasten-Listener sind an einem Vorfahren, am Dokument oder am Fenster; ob sie seine Tasten behandeln, ist offen.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Verwenden Sie das native Element (<button>, <a href> oder <input type=\"checkbox\">), oder behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert, dasselbe bewirken wie ein Klick.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler und erhält den Tastaturfokus, aber weder an ihm noch an einem Vorfahren, am Dokument oder am Fenster gibt es einen Tasten-Listener; Eingabe und Leertaste bewirken daher nichts.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Selbst wenn ein Skript den Fokus hierher bewegt, gibt es weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener; Eingabe und Leertaste würden nichts bewirken.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Der Klick erfasst vielleicht nur Klicks oder wiederholt, was ein anderes Bedienelement der Seite tut.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Ein anderes Element mit derselben Rolle im umgebenden Widget ist in der Tab-Reihenfolge: ein Roving-tabindex, bei dem die Pfeiltasten den Fokus zwischen den Elementen bewegen.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Das Widget bewegt sich vielleicht mit den Pfeiltasten zwischen seinen Elementen, ohne dass Eingabe oder Leertaste den Klick ausführen.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Die einzigen Fokus-Listener sind am Dokument oder am Fenster; solche dienen meist der ganzen Seite (Fokusstile, Analyse), nicht den Tasten dieses Elements.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Manche Frameworks fügen die Listener eines Elements über einen seitenweiten Fokus-Listener hinzu.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "Der nächste Tasten-Listener über dem Element sitzt an dem Widget, zu dem es als Element gehört; dort behandelt ein solches Widget die Tasten seiner Elemente.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Ein vor den Skripten der Seite installierter Hook hat weder am Element noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten- oder Fokus-Listener gesehen; Eingabe und Leertaste bewirken daher wahrscheinlich nichts.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -90216,6 +91396,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_description": "Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.",
       "cssFocusIndicatorSuppressed_summary_cantTell": "This element takes a tab stop, and \"{{selectors}}\" removes its focus outline with no replacement indicator in any other focus rule matching it.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.",
+      "cssFocusIndicatorSuppressed_lean_why": "Every style sheet was read and none draws a replacement, and no inline focus handler or :focus-within rule shows focus another way.",
+      "cssFocusIndicatorSuppressed_lean_caution": "A focus style added by a script listener or a class a script toggles is not seen when the listener hook did not run.",
       "cssHidden_focus_title": "Focusable elements must not be visually hidden",
       "cssHidden_focus_description": "Checks that keyboard-focusable elements are not visually hidden by CSS techniques that can leave them in the tab order.",
       "cssHidden_focus_summary_cantTell": "This focusable <{{element}}> can't be seen.{{#opacityZero}} Its opacity is 0.{{/opacityZero}}{{#offscreen}} It is positioned off-screen.{{/offscreen}}{{#clipped}} It is clipped to nothing.{{/clipped}}{{#zeroSizeOverflowHidden}} It has zero size with overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} It lies where scrolling can't bring it into view, as in a menu slid off screen.{{/outOfReach}}{{#containerClipped}} A container around it is clipped to nothing.{{/containerClipped}}",
@@ -90493,6 +91675,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframeFocusableContent_hint_fail": "Remove focusable content from the frame, or remove tabindex=\"-1\" if the frame is meant to be reachable.",
       "iframeFocusableContent_summary_cantTell_redirect": "This <{{element}}> has tabindex=\"-1\" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.",
       "iframeFocusableContent_hint_cantTell_redirect": "If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.",
+      "iframeFocusableContent_lean_why": "The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.",
+      "iframeFocusableContent_lean_caution": "A script may still reveal real content behind the guard later; the probe only waits a short moment.",
       "tableHeadersAttrValid_title": "Table cell \"headers\" attribute must reference valid header cells",
       "tableHeadersAttrValid_description": "Checks that each id in a <td>/<th> headers attribute resolves to a cell (<td> or <th>) within the same table (not missing, not a non-cell element, not itself).",
       "tableHeadersAttrValid_summary_fail": "This <{{element}}>'s headers attribute points to ids that are not header cells in this table: {{invalidIds}}.",
@@ -90686,6 +91870,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tabindex_description": "Checks that tabindex values are 0 or negative, not a positive number.",
       "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
       "tabindex_hint_cantTell": "Use tabindex=\"0\" to add the element to the tab order, or a negative value to take it out. If the tab order needs to change, change the order of the content instead.",
+      "tabindex_lean_why_reordered": "Tab reaches this element before tab stops that come earlier in the page, so focus jumps out of document order.",
+      "tabindex_lean_caution_reordered": "The page may lay its content out in an order that differs from the document.",
+      "tabindex_lean_why_inOrder": "The positive tabindex values leave the tab order as the document order: they are on the page’s first tab stops, in increasing order.",
+      "tabindex_lean_caution_inOrder": "A positive tabindex stays fragile: content added before these elements will be visited after them.",
       "emptyTableHeader_title": "Table header cells must not be empty",
       "emptyTableHeader_description": "Checks that table header cells (<th>, or any element with role=\"columnheader\"/\"rowheader\") have visible text content. A header named only via aria-label/aria-labelledby is also flagged, since real screen-reader/browser support for that is inconsistent.",
       "emptyTableHeader_summary_cantTell": "This table header cell has no accessible name.",
@@ -90869,6 +92057,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Check that a keyboard user can reach it: give one item tabindex=\"0\" (roving tabindex), or make the {{role}} focusable and point aria-activedescendant at the active item.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "This element points at its active item with aria-activedescendant, but cannot take keyboard focus.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "A script may make it focusable when needed, or the role may be wrong for content that does nothing.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Check that the two really do the same thing.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key listener on its ancestors, the document or the window, so no key moves focus to it.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "A script may focus it when something opens, such as a dialog that takes focus to it.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nothing names this widget as one it controls or owns, nothing before it opens a popup, and neither it nor any item is in the tab order.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "A popup opened and focused by a script from a trigger that does not say so looks the same.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "A script may make it focusable when the widget opens.",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
@@ -90927,6 +92125,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
       "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
       "focusOrderSemantics_hint_cantTell": "Remove the tabindex if the element isn't meant to be used, or give it an interactive role that matches what it does.",
+      "focusOrderSemantics_lean_why_handler": "A click or key handler is on the element, so it acts as a control while its role says it is not one.",
+      "focusOrderSemantics_lean_caution_handler": "The handler may only track clicks, or serve something other than the element.",
+      "focusOrderSemantics_lean_why_scrolls": "The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.",
+      "focusOrderSemantics_lean_why_documentInApplication": "A document inside an application is made focusable so screen reader users can read it.",
       "pAsHeading_title": "Text styled to look like a heading should probably be a real heading",
       "pAsHeading_description": "Flags short <p> and <div> elements whose text is all bold and rendered at >=18px, for manual review of whether a real heading element should be used instead.",
       "pAsHeading_summary_cantTell": "This paragraph is entirely bold and rendered at a heading-like size.",
@@ -90962,12 +92164,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_moves": "This <{{element}}>'s onfocus handler moves focus to another element as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
       "focusNotRemovedByScript_hint_fail": "Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).",
+      "focusNotRemovedByScript_lean_why_calls": "The handler calls blur() on the element itself as a statement of its own, outside any condition, so focus is removed as it arrives.",
+      "focusNotRemovedByScript_lean_caution_calls": "Other code in the handler may move focus back, or open something that takes focus on purpose.",
+      "focusNotRemovedByScript_lean_why_sentinel": "The element is an empty, unnamed focus guard at the edge of a dialog or a group of controls: moving focus on as it arrives is how a focus trap keeps focus inside.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Check that the trap lets focus out once the dialog closes, and that it belongs to a modal dialog.",
+      "focusNotRemovedByScript_lean_why_moves": "The element is a visible, named control, and its handler sends focus to another element whenever it arrives, so the control cannot be operated by keyboard.",
+      "focusNotRemovedByScript_lean_caution_moves": "A field may forward focus on purpose to the control that edits it, such as a custom date picker.",
       "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
       "mouseOnlyEventHandlers_hint_cantTell": "Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "This element has {{attrs}} and {{keyboardAttrs}}, but it cannot take keyboard focus, so the keyboard handlers never run.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Make the element focusable (use a native control, or add tabindex=\"0\"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "The element has keyboard handlers, but neither it nor anything in it can take focus, so they never run.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "A script may make it focusable later, or another control may offer the same function.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "The handler may only draw an effect or track the pointer, or another control may offer the same function.",
       "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
       "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
@@ -90982,6 +92194,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "This <{{element}}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use the native element (<button>, <a href> or <input type=\"checkbox\">), or handle keydown so that the keys a {{role}} answers to do what a click does.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "This element has role=\"{{role}}\" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Even if a script moves focus here, no key or focus listener is on the element, its ancestors, the document or the window, so Enter and Space would do nothing.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "The click may only track clicks, or repeat what another control of the page does.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Another item of the same role in the widget around it is in the tab order: a roving tabindex, where the arrow keys move focus between items.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "The widget may move between its items with the arrow keys without making Enter or Space run the click.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "The only focus listeners are on the document or the window, which usually serve the whole page (focus styles, analytics), not this element’s keys.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Some frameworks add an element’s listeners from a page-wide focus listener.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "The nearest key listener above the element is on the widget it is an item of, which is where such a widget handles its items’ keys.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -91360,6 +92583,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_description": "Señala elementos en el orden de tabulación cuyo contorno de foco se elimina mediante una regla :focus/:focus-visible o una regla sin estado, como a { outline: none }, y para los que ninguna regla de foco aplicable define un indicador alternativo (border, box-shadow, background, etc.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Este elemento recibe una parada de tabulación y «{{selectors}}» elimina su contorno de foco sin que ninguna otra regla de foco que le afecte dibuje un indicador de reemplazo.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Definir un indicador alternativo en la misma regla (un outline visible, un border, un box-shadow o un cambio de background), o eliminar la declaración que suprime el contorno. Si el indicador se aplica mediante un script, comprobar que aparece al navegar con el teclado.",
+      "cssFocusIndicatorSuppressed_lean_why": "Se leyeron todas las hojas de estilo y ninguna dibuja un reemplazo, y ningún manejador de foco en línea ni ninguna regla :focus-within muestra el foco de otra forma.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Un estilo de foco añadido por un detector de script, o por una clase que un script alterna, no se ve si el hook de detectores no se ejecutó.",
       "cssHidden_focus_title": "Los elementos enfocables no deben estar ocultos visualmente",
       "cssHidden_focus_description": "Comprueba que los elementos enfocables por teclado no estén ocultos visualmente mediante técnicas CSS que puedan dejarlos en el orden de tabulación.",
       "cssHidden_focus_summary_cantTell": "Este <{{element}}> enfocable no se ve.{{#opacityZero}} Su opacidad es 0.{{/opacityZero}}{{#offscreen}} Está colocado fuera de la pantalla.{{/offscreen}}{{#clipped}} Está recortado hasta no mostrar nada.{{/clipped}}{{#zeroSizeOverflowHidden}} Tiene tamaño cero con overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Está donde el desplazamiento no puede mostrarlo, como en un menú deslizado fuera de la pantalla.{{/outOfReach}}{{#containerClipped}} Un contenedor que lo rodea está recortado hasta no mostrar nada.{{/containerClipped}}",
@@ -91637,6 +92862,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframeFocusableContent_hint_fail": "Eliminar el contenido enfocable del marco, o eliminar tabindex=\"-1\" si el marco está pensado para ser alcanzable.",
       "iframeFocusableContent_summary_cantTell_redirect": "Este <{{element}}> tiene tabindex=\"-1\" y contenido enfocable, pero el foco pasa de inmediato a otro elemento. Comprobar el acceso con teclado en un navegador real.",
       "iframeFocusableContent_hint_cantTell_redirect": "Si se trata de un traspaso de foco intencionado, comprobar que el foco del teclado nunca se queda atascado en el contenido del marco.",
+      "iframeFocusableContent_lean_why": "El único elemento enfocable del marco es una guarda de foco vacía que envía el foco fuera del marco, el patrón habitual de los widgets incrustados; no contiene nada que haga falta alcanzar.",
+      "iframeFocusableContent_lean_caution": "Un script aún puede mostrar más tarde contenido real detrás de la guarda; la prueba solo espera un breve momento.",
       "tableHeadersAttrValid_title": "El atributo \"headers\" de la celda de tabla debe referenciar celdas de encabezado válidas",
       "tableHeadersAttrValid_description": "Comprueba que cada id en un atributo headers de <td>/<th> se resuelva en una celda (<td> o <th>) dentro de la misma tabla (que no falte, que no sea un elemento distinto de una celda, y que no sea ella misma).",
       "tableHeadersAttrValid_summary_fail": "El atributo headers de este <{{element}}> apunta a ids que no son celdas de encabezado de esta tabla: {{invalidIds}}.",
@@ -91830,6 +93057,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tabindex_description": "Comprueba que los valores de tabindex sean 0 o negativos, no un número positivo.",
       "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
       "tabindex_hint_cantTell": "Usar tabindex=\"0\" para incluir el elemento en el orden de tabulación, o un valor negativo para sacarlo. Si hay que cambiar el orden de tabulación, cambiar el orden del contenido.",
+      "tabindex_lean_why_reordered": "La tabulación llega a este elemento antes que a paradas de tabulación que están antes en la página, así que el foco salta fuera del orden del documento.",
+      "tabindex_lean_caution_reordered": "La página puede disponer su contenido en un orden distinto al del documento.",
+      "tabindex_lean_why_inOrder": "Los valores positivos de tabindex dejan el orden de tabulación igual al del documento: están en las primeras paradas de tabulación de la página, en orden creciente.",
+      "tabindex_lean_caution_inOrder": "Un tabindex positivo sigue siendo frágil: el contenido que se añada antes de estos elementos se recorrerá después de ellos.",
       "emptyTableHeader_title": "Las celdas de encabezado de tabla no deben estar vacías",
       "emptyTableHeader_description": "Comprueba que las celdas de encabezado (<th>, o cualquier elemento con role=\"columnheader\"/\"rowheader\") tengan contenido de texto visible; un encabezado nombrado únicamente mediante aria-label/aria-labelledby también se señala, ya que el soporte real de lectores de pantalla/navegadores para eso es inconsistente.",
       "emptyTableHeader_summary_cantTell": "Esta celda de encabezado de tabla no tiene nombre accesible.",
@@ -92013,6 +93244,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "El elemento dice ser un widget, pero ni él ni nada de lo que contiene puede recibir el foco, y ningún control del orden de tabulación tiene su rol y su nombre.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script puede hacerlo enfocable cuando haga falta, o el rol puede ser incorrecto para un contenido que no hace nada.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Otro control del orden de tabulación tiene el mismo rol y el mismo nombre, así que este es un duplicado sacado del orden de tabulación.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Comprobar que los dos hacen de verdad lo mismo.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas en sus antepasados, el documento ni la ventana, así que ninguna tecla mueve el foco hasta él.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Un script puede darle el foco cuando se abre algo, como un diálogo que lleva el foco hasta él.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Nada señala este widget como controlado o poseído, nada justo antes de él abre una ventana emergente, y ni él ni ninguno de sus elementos está en el orden de tabulación.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Una ventana emergente que un script abre y enfoca desde un activador que no lo indica se ve igual.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA solo da efecto a aria-activedescendant en el elemento que tiene el foco, y este no puede recibirlo.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script puede hacerlo enfocable cuando se abre el widget.",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
@@ -92071,6 +93312,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, note, presentation), para su revisión manual.",
       "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
       "focusOrderSemantics_hint_cantTell": "Quitar el tabindex si el elemento no está pensado para usarse, o darle un rol interactivo que corresponda a lo que hace.",
+      "focusOrderSemantics_lean_why_handler": "El elemento tiene un controlador de clic o de teclas, así que actúa como un control aunque su rol dice que no lo es.",
+      "focusOrderSemantics_lean_caution_handler": "Puede que el controlador solo registre clics, o que sirva a algo distinto del elemento.",
+      "focusOrderSemantics_lean_why_scrolls": "El contenido del elemento desborda su caja y se desplaza, así que su parada de tabulación permite desplazarlo con el teclado.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Un documento dentro de una aplicación se hace enfocable para que los usuarios de lectores de pantalla puedan leerlo.",
       "pAsHeading_title": "Un texto con estilo de encabezado probablemente debería ser un encabezado real",
       "pAsHeading_description": "Señala elementos <p> y <div> cortos cuyo texto está todo en negrita y se muestra a >=18px, para revisar manualmente si debería usarse un elemento de encabezado real.",
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
@@ -92106,12 +93351,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
       "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
+      "focusNotRemovedByScript_lean_why_calls": "El manejador llama a blur() sobre el propio elemento en una instrucción propia, fuera de cualquier condición, así que el foco se quita al llegar.",
+      "focusNotRemovedByScript_lean_caution_calls": "Otro código del manejador puede devolver el foco, o abrir a propósito algo que toma el foco.",
+      "focusNotRemovedByScript_lean_why_sentinel": "El elemento es una guarda de foco vacía y sin nombre en el borde de un diálogo o de un grupo de controles: enviar el foco en cuanto llega es como una trampa de foco mantiene el foco dentro.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Comprobar que la trampa deja salir el foco cuando se cierra el diálogo, y que pertenece a un diálogo modal.",
+      "focusNotRemovedByScript_lean_why_moves": "El elemento es un control visible y con nombre, y su manejador envía el foco a otro elemento cada vez que llega, así que el control no se puede usar con el teclado.",
+      "focusNotRemovedByScript_lean_caution_moves": "Un campo puede pasar a propósito el foco al control que lo edita, como un selector de fecha personalizado.",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
       "mouseOnlyEventHandlers_hint_cantTell": "Comprobar con el teclado si este comportamiento se puede activar: un manejador de teclado añadido por script cuenta, y un efecto puramente visual al pasar el ratón no necesita ninguno. Si no se puede, añadir un manejo de teclado que haga lo mismo (onkeydown, u onfocus/onblur para el comportamiento al pasar el ratón).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Este elemento tiene {{attrs}} y {{keyboardAttrs}}, pero no puede recibir el foco del teclado, por lo que los controladores de teclado nunca se ejecutan.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Hacer que el elemento pueda recibir el foco (usar un control nativo, o agregar tabindex=\"0\"), o mover los controladores a un elemento que pueda recibir el foco, para que esta funcionalidad también sea alcanzable por teclado.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "El elemento tiene controladores de teclado, pero ni él ni nada de lo que contiene puede recibir el foco, así que nunca se ejecutan.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Un script puede hacerlo enfocable más tarde, u otro control puede ofrecer la misma función.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "El elemento ejecuta una acción con mousedown, mouseup o doble clic, un hook instalado antes de los scripts de la página no vio ningún detector de teclas en él, sus antepasados, el documento ni la ventana, y nada dentro ni alrededor puede recibir el foco.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Puede que el controlador solo dibuje un efecto o siga el puntero, u otro control puede ofrecer la misma función.",
       "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
       "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
@@ -92126,6 +93381,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Aunque un script mueva el foco aquí, no hay ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio no harían nada.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Puede que el clic solo registre clics, o que repita lo que hace otro control de la página.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Otro elemento con el mismo rol en el widget que lo rodea está en el orden de tabulación: es un tabindex itinerante, en el que las flechas mueven el foco entre los elementos.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Puede que el widget se mueva entre sus elementos con las flechas sin que Intro ni Espacio ejecuten el clic.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Los únicos detectores de foco están en el documento o en la ventana, que suelen servir a toda la página (estilos de foco, analítica), no a las teclas de este elemento.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Algunos frameworks añaden los detectores de un elemento desde un detector de foco de toda la página.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "El detector de teclas más cercano por encima del elemento está en el widget del que es un elemento, que es donde ese widget gestiona las teclas de sus elementos.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook instalado antes de los scripts de la página no vio ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio probablemente no hacen nada.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -92504,6 +93770,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_description": "Signale les éléments de l’ordre de tabulation dont le contour de focus est supprimé par une règle :focus/:focus-visible ou une règle sans état comme a { outline: none }, alors qu’aucune règle de focus qui leur correspond ne prévoit d’indicateur de remplacement (border, box-shadow, background, etc.).",
       "cssFocusIndicatorSuppressed_summary_cantTell": "Cet élément reçoit un arrêt de tabulation, et « {{selectors}} » supprime son contour de focus sans qu’aucune autre règle de focus le concernant ne dessine d’indicateur de remplacement.",
       "cssFocusIndicatorSuppressed_hint_cantTell": "Définissez un indicateur de remplacement dans la même règle (un outline visible, un border, un box-shadow ou un changement de background), ou supprimez la déclaration qui retire le contour. Si l’indicateur est appliqué par script, vérifiez qu’il apparaît lors de la navigation au clavier.",
+      "cssFocusIndicatorSuppressed_lean_why": "Toutes les feuilles de style ont été lues et aucune ne dessine d’indicateur de remplacement, et aucun gestionnaire de focus en ligne ni aucune règle :focus-within ne montre le focus autrement.",
+      "cssFocusIndicatorSuppressed_lean_caution": "Un style de focus ajouté par un écouteur de script, ou par une classe qu’un script bascule, n’est pas vu quand le hook d’écouteurs n’a pas été exécuté.",
       "cssHidden_focus_title": "Les éléments focalisables ne doivent pas être masqués visuellement",
       "cssHidden_focus_description": "Vérifie que les éléments focalisables au clavier ne sont pas masqués visuellement par des techniques CSS pouvant les laisser dans l’ordre de tabulation.",
       "cssHidden_focus_summary_cantTell": "Cet élément <{{element}}> focalisable n’est pas visible.{{#opacityZero}} Son opacité est de 0.{{/opacityZero}}{{#offscreen}} Il est positionné hors de l’écran.{{/offscreen}}{{#clipped}} Il est rogné jusqu’à ne plus rien montrer.{{/clipped}}{{#zeroSizeOverflowHidden}} Il a une taille nulle avec overflow hidden.{{/zeroSizeOverflowHidden}}{{#outOfReach}} Il se trouve là où le défilement ne peut pas l’amener à l’écran, comme dans un menu glissé hors de l’écran.{{/outOfReach}}{{#containerClipped}} Un conteneur autour de lui est rogné jusqu’à ne plus rien montrer.{{/containerClipped}}",
@@ -92781,6 +94049,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframeFocusableContent_hint_fail": "Retirez le contenu focalisable du cadre, ou retirez tabindex=\"-1\" si le cadre est censé être accessible.",
       "iframeFocusableContent_summary_cantTell_redirect": "Cet élément <{{element}}> a tabindex=\"-1\" et du contenu focalisable, mais le focus passe aussitôt à un autre élément. Vérifiez l’accès au clavier dans un vrai navigateur.",
       "iframeFocusableContent_hint_cantTell_redirect": "S’il s’agit d’un transfert de focus voulu, vérifiez que le focus clavier ne reste jamais bloqué sur le contenu du cadre.",
+      "iframeFocusableContent_lean_why": "Le seul élément focalisable du cadre est une garde de focus vide qui renvoie le focus hors du cadre, le procédé habituel des widgets intégrés ; elle ne contient rien qu’on ait besoin d’atteindre.",
+      "iframeFocusableContent_lean_caution": "Un script peut encore révéler plus tard un vrai contenu derrière la garde ; la sonde n’attend qu’un court instant.",
       "tableHeadersAttrValid_title": "L’attribut headers d’une cellule de tableau doit référencer des cellules d’en-tête valides",
       "tableHeadersAttrValid_description": "Vérifie que chaque id de l’attribut headers d’un <td>/<th> correspond à une cellule (<td> ou <th>) du même tableau (ni absente, ni un élément autre qu’une cellule, ni elle-même).",
       "tableHeadersAttrValid_summary_fail": "L’attribut headers de cet élément <{{element}}> pointe vers des id qui ne sont pas des cellules d’en-tête de ce tableau : {{invalidIds}}.",
@@ -92974,6 +94244,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tabindex_description": "Vérifie que les valeurs de tabindex sont égales à 0 ou négatives, jamais un nombre positif.",
       "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
       "tabindex_hint_cantTell": "Utilisez tabindex=\"0\" pour ajouter l’élément à l’ordre de tabulation, ou une valeur négative pour l’en retirer. Si l’ordre de tabulation doit changer, changez plutôt l’ordre du contenu.",
+      "tabindex_lean_why_reordered": "La tabulation atteint cet élément avant des arrêts de tabulation placés plus haut dans la page : le focus sort de l’ordre du document.",
+      "tabindex_lean_caution_reordered": "La page peut disposer son contenu dans un ordre différent de celui du document.",
+      "tabindex_lean_why_inOrder": "Les valeurs positives de tabindex laissent l’ordre de tabulation identique à l’ordre du document : elles sont sur les premiers arrêts de tabulation de la page, en ordre croissant.",
+      "tabindex_lean_caution_inOrder": "Un tabindex positif reste fragile : du contenu ajouté avant ces éléments sera parcouru après eux.",
       "emptyTableHeader_title": "Les cellules d’en-tête de tableau ne doivent pas être vides",
       "emptyTableHeader_description": "Vérifie que les cellules d’en-tête (<th>, ou tout élément avec role=\"columnheader\"/\"rowheader\") ont un contenu textuel visible — un en-tête nommé uniquement via aria-label/aria-labelledby est aussi signalé, car la prise en charge réelle par les lecteurs d’écran/navigateurs est incohérente.",
       "emptyTableHeader_summary_cantTell": "Cette cellule d’en-tête de tableau n’a pas de nom accessible.",
@@ -93157,6 +94431,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : donnez tabindex=\"0\" à un élément (tabindex mobile), ou rendez le {{role}} focalisable et pointez aria-activedescendant vers l’élément actif.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Cet élément désigne son élément actif avec aria-activedescendant, mais ne peut pas recevoir le focus clavier.",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "L’élément se présente comme un widget, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus, et aucune commande de l’ordre de tabulation n’a son rôle et son nom.",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script peut le rendre focalisable au besoin, ou le rôle peut être erroné pour un contenu qui ne fait rien.",
+      "widgetKeyboardFocusable_lean_why_duplicate": "Une autre commande de l’ordre de tabulation a le même rôle et le même nom : celle-ci est un doublon retiré de l’ordre de tabulation.",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "Vérifiez que les deux font bien la même chose.",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur ses ancêtres, le document ni la fenêtre : aucune touche n’y déplace le focus.",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "Un script peut lui donner le focus quand quelque chose s’ouvre, comme une boîte de dialogue qui y amène le focus.",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "Rien ne désigne ce widget comme contrôlé ou possédé, rien juste avant lui n’ouvre de fenêtre surgissante, et ni lui ni aucun de ses éléments n’est dans l’ordre de tabulation.",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Une fenêtre surgissante ouverte et focalisée par un script depuis un déclencheur qui ne l’indique pas a la même apparence.",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA ne donne d’effet à aria-activedescendant que sur l’élément qui a le focus, et celui-ci ne peut pas le recevoir.",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script peut le rendre focalisable à l’ouverture du widget.",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
@@ -93215,6 +94499,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, note, presentation), pour une vérification manuelle.",
       "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
       "focusOrderSemantics_hint_cantTell": "Retirez le tabindex si l’élément n’est pas destiné à être utilisé, ou donnez-lui un rôle interactif qui correspond à ce qu’il fait.",
+      "focusOrderSemantics_lean_why_handler": "Un gestionnaire de clic ou de touche est posé sur l’élément : il agit comme une commande alors que son rôle dit qu’il n’en est pas une.",
+      "focusOrderSemantics_lean_caution_handler": "Le gestionnaire peut ne faire que suivre les clics, ou servir autre chose que l’élément.",
+      "focusOrderSemantics_lean_why_scrolls": "Le contenu de l’élément déborde de sa boîte et il défile : son arrêt de tabulation permet de le faire défiler au clavier.",
+      "focusOrderSemantics_lean_why_documentInApplication": "Un document dans une application est rendu focalisable pour que les utilisateurs de lecteurs d’écran puissent le lire.",
       "pAsHeading_title": "Un texte mis en forme comme un titre devrait probablement être un véritable titre",
       "pAsHeading_description": "Signale les éléments <p> et <div> courts dont tout le texte est en gras et affiché à >= 18px, pour une vérification manuelle visant à déterminer si un véritable élément de titre devrait être utilisé à la place.",
       "pAsHeading_summary_cantTell": "Ce paragraphe est entièrement en gras et affiché à une taille évoquant un titre.",
@@ -93250,12 +94538,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_moves": "Le gestionnaire onfocus de cet élément <{{element}}> déplace le focus vers un autre élément dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
       "focusNotRemovedByScript_hint_fail": "Supprimez l’appel à blur() pour que le focus reste sur l’élément, ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus (échec WCAG F55).",
+      "focusNotRemovedByScript_lean_why_calls": "Le gestionnaire appelle blur() sur l’élément lui-même dans une instruction à part, hors de toute condition : le focus est retiré dès son arrivée.",
+      "focusNotRemovedByScript_lean_caution_calls": "Le reste du gestionnaire peut ramener le focus, ou ouvrir volontairement quelque chose qui prend le focus.",
+      "focusNotRemovedByScript_lean_why_sentinel": "L’élément est une garde de focus vide et sans nom au bord d’une boîte de dialogue ou d’un groupe de commandes : renvoyer le focus dès son arrivée est la façon dont un piège à focus garde le focus à l’intérieur.",
+      "focusNotRemovedByScript_lean_caution_sentinel": "Vérifiez que le piège laisse sortir le focus une fois la boîte de dialogue fermée, et qu’il appartient à une boîte de dialogue modale.",
+      "focusNotRemovedByScript_lean_why_moves": "L’élément est une commande visible et nommée, et son gestionnaire envoie le focus vers un autre élément à chaque arrivée : la commande ne peut pas être utilisée au clavier.",
+      "focusNotRemovedByScript_lean_caution_moves": "Un champ peut renvoyer volontairement le focus vers la commande qui le modifie, comme un sélecteur de date personnalisé.",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
       "mouseOnlyEventHandlers_hint_cantTell": "Vérifiez au clavier si ce comportement peut être déclenché : un gestionnaire clavier ajouté par script compte, et un simple effet visuel au survol n’en demande aucun. Sinon, ajoutez une gestion du clavier qui fait la même chose (onkeydown, ou onfocus/onblur pour un comportement au survol).",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "Cet élément a {{attrs}} et {{keyboardAttrs}}, mais il ne peut pas recevoir le focus clavier, donc les gestionnaires clavier ne s’exécutent jamais.",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "Rendez l’élément focalisable (utilisez un contrôle natif, ou ajoutez tabindex=\"0\"), ou déplacez les gestionnaires sur un élément focalisable, afin que cette fonctionnalité soit aussi accessible au clavier.",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "L’élément a des gestionnaires clavier, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus : ils ne s’exécutent jamais.",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "Un script peut le rendre focalisable plus tard, ou une autre commande peut offrir la même fonction.",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "L’élément exécute une action au mousedown, au mouseup ou au double-clic, un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur lui, ses ancêtres, le document ni la fenêtre, et rien en lui ni autour ne peut recevoir le focus.",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Le gestionnaire peut ne faire que dessiner un effet ou suivre le pointeur, ou une autre commande peut offrir la même fonction.",
       "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
       "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
@@ -93270,6 +94568,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier. Les seuls écouteurs de touches sont sur un ancêtre, le document ou la fenêtre, qui peuvent gérer ses touches ou non.",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Utilisez l’élément natif (<button>, <a href> ou <input type=\"checkbox\">), ou gérez keydown pour que les touches auxquelles répond un {{role}} fassent ce que fait un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, et reçoit le focus clavier, mais aucun écouteur de touches n’est posé sur lui, sur un ancêtre, sur le document ni sur la fenêtre : Entrée et Espace ne font rien.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Même si un script déplace le focus ici, aucun écouteur de touches ni de focus n’est posé sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne feraient rien.",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Le clic peut ne faire que suivre les clics, ou répéter ce que fait une autre commande de la page.",
+      "clickHandlerKeyboardOperable_lean_why_roving": "Un autre élément du même rôle, dans le composant qui l’entoure, est dans l’ordre de tabulation : c’est un tabindex itinérant, où les flèches déplacent le focus d’un élément à l’autre.",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "Le composant peut passer d’un élément à l’autre avec les flèches sans qu’Entrée ni Espace n’exécutent le clic.",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "Les seuls écouteurs de focus sont sur le document ou la fenêtre, qui servent en général toute la page (styles de focus, mesure d’audience), pas les touches de cet élément.",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "Certains frameworks ajoutent les écouteurs d’un élément depuis un écouteur de focus posé sur toute la page.",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "L’écouteur de touches le plus proche au-dessus de l’élément est sur le composant dont il est un élément, là où un tel composant gère les touches de ses éléments.",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "Un hook installé avant les scripts de la page n’a vu aucun écouteur de touches ni de focus sur l’élément, ses ancêtres, le document ni la fenêtre : Entrée et Espace ne font sans doute rien.",
+      "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -93648,6 +94957,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssFocusIndicatorSuppressed_description": "タブ順序に含まれる要素のうち、:focus/:focus-visible のルール、または a { outline: none } のような状態を持たないルールでフォーカスのアウトラインが削除され、その要素に一致するどのフォーカス用ルールにも代わりのインジケーター (border、box-shadow、background など) がないものを検出します。",
       "cssFocusIndicatorSuppressed_summary_cantTell": "この要素はタブ移動で停止しますが、「{{selectors}}」がフォーカスのアウトラインを削除しており、この要素に一致するほかのフォーカス用ルールにも代わりのインジケーターがありません。",
       "cssFocusIndicatorSuppressed_hint_cantTell": "同じルールで代わりのインジケーター (見える outline、border、box-shadow、background の変化など) を指定するか、outline を消す宣言を削除してください。インジケーターをスクリプトで付けている場合は、キーボード利用者に表示されることを確認してください。",
+      "cssFocusIndicatorSuppressed_lean_why": "すべてのスタイルシートを読み取りましたが、代わりのインジケーターを描くものはなく、インラインのフォーカス ハンドラーや :focus-within ルールもフォーカスを別の方法で示していません。",
+      "cssFocusIndicatorSuppressed_lean_caution": "スクリプトのリスナーや、スクリプトが切り替えるクラスで追加されるフォーカスのスタイルは、リスナー フックを実行していない場合は検出できません。",
       "cssHidden_focus_title": "フォーカス可能な要素は視覚的に隠されていてはならない",
       "cssHidden_focus_description": "キーボードでフォーカス可能な要素が、タブ順序に残ったまま CSS の手法で視覚的に隠されていないかを確認します。",
       "cssHidden_focus_summary_cantTell": "フォーカス可能なこの <{{element}}> は目に見えません。{{#opacityZero}}不透明度が 0 です。{{/opacityZero}}{{#offscreen}}画面外に配置されています。{{/offscreen}}{{#clipped}}何も見えないように切り取られています。{{/clipped}}{{#zeroSizeOverflowHidden}}サイズが 0 で、overflow が hidden です。{{/zeroSizeOverflowHidden}}{{#outOfReach}} スクロールしても表示できない位置にあります（画面外にスライドしたメニューなど）。{{/outOfReach}}{{#containerClipped}} 周りのコンテナーが何も見えないように切り取られています。{{/containerClipped}}",
@@ -93925,6 +95236,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "iframeFocusableContent_hint_fail": "フレームからフォーカス可能なコンテンツを取り除くか、フレームに到達できるようにする意図であれば tabindex=\"-1\" を削除してください。",
       "iframeFocusableContent_summary_cantTell_redirect": "この <{{element}}> は tabindex=\"-1\" でフォーカス可能な内容を含みますが、フォーカスはすぐに別の要素へ移ります。実際のブラウザーでキーボード操作を確認してください。",
       "iframeFocusableContent_hint_cantTell_redirect": "意図したフォーカスの受け渡しであれば、キーボードフォーカスがフレーム内の内容で動けなくならないか確認してください。",
+      "iframeFocusableContent_lean_why": "フレーム内でフォーカス可能な唯一の要素は、フォーカスをフレームの外へ送る空のフォーカス ガードです。埋め込みウィジェットでよく使われる仕組みで、利用者が到達すべき内容は含みません。",
+      "iframeFocusableContent_lean_caution": "スクリプトが後でガードの奥に実際の内容を表示する可能性があります。確認処理はごく短い時間しか待ちません。",
       "tableHeadersAttrValid_title": "表のセルの headers 属性は有効な見出しセルを参照すること",
       "tableHeadersAttrValid_description": "<td>/<th> の headers 属性にある各 id が、同じ表の中のセル (<td> または <th>) を指しているかを確認します (存在しない id、セル以外の要素、自分自身を指していないか)。",
       "tableHeadersAttrValid_summary_fail": "この <{{element}}> の headers 属性は、この表の見出しセルではない id を参照しています: {{invalidIds}}。",
@@ -94118,6 +95431,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tabindex_description": "tabindex の値が正の数ではなく、0 または負の値であるかを確認します。",
       "tabindex_summary_cantTell": "この要素には正の tabindex が指定されており、本来のタブ順序を上書きしています。",
       "tabindex_hint_cantTell": "要素をタブ順序に含めるには tabindex=\"0\"、外すには負の値を使ってください。タブ順序を変えたい場合は、内容の順序そのものを変えてください。",
+      "tabindex_lean_why_reordered": "Tab キーでは、ページ内でこの要素より前にあるタブストップよりも先にこの要素に到達するため、フォーカスが文書の順序から外れます。",
+      "tabindex_lean_caution_reordered": "ページのレイアウトが、文書とは異なる順序で内容を配置している場合があります。",
+      "tabindex_lean_why_inOrder": "正の tabindex の値はページの最初のタブストップに昇順で付いているため、タブ順序は文書の順序のままです。",
+      "tabindex_lean_caution_inOrder": "正の tabindex は壊れやすいままです。これらの要素より前に内容を追加すると、その内容はこれらの要素の後に移動先になります。",
       "emptyTableHeader_title": "表の見出しセルを空にしてはならない",
       "emptyTableHeader_description": "表の見出しセル (<th>、または role=\"columnheader\"/\"rowheader\" を持つ要素) に、表示されるテキストがあるかを確認します。aria-label/aria-labelledby だけで名前が付けられた見出しも検出します。実際のスクリーンリーダーとブラウザーでは、そのサポートにばらつきがあるためです。",
       "emptyTableHeader_summary_cantTell": "この表の見出しセルにはアクセシブルな名前がありません。",
@@ -94301,6 +95618,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "キーボード利用者が到達できることを確認してください。項目の一つに tabindex=\"0\" を指定する(ロービング tabindex)か、{{role}} をフォーカス可能にして aria-activedescendant でアクティブな項目を指してください。",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "この要素は aria-activedescendant でアクティブな項目を指していますが、キーボードフォーカスを受け取れません。",
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
+      "widgetKeyboardFocusable_lean_why_notFocusable": "この要素はウィジェットであると示していますが、要素自体もその中身もフォーカスを受け取れず、タブ順序に同じロールと名前を持つコントロールもありません。",
+      "widgetKeyboardFocusable_lean_caution_notFocusable": "スクリプトが必要なときにフォーカス可能にするか、何もしない内容に誤ったロールが付いている可能性があります。",
+      "widgetKeyboardFocusable_lean_why_duplicate": "タブ順序内の別のコントロールが同じロールと名前を持っているため、この要素はタブ順序から外された重複です。",
+      "widgetKeyboardFocusable_lean_caution_duplicate": "2 つが本当に同じことをするか確認してください。",
+      "widgetKeyboardFocusable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、祖先にも document にも window にもキー リスナーを見つけませんでした。キー操作でこの要素にフォーカスが移ることはありません。",
+      "widgetKeyboardFocusable_lean_caution_noKeyListener": "何かが開いたとき(フォーカスをこの要素に移すダイアログなど)に、スクリプトがフォーカスを与える場合があります。",
+      "widgetKeyboardFocusable_lean_why_compositeNoTabStop": "このウィジェットを制御対象や所有対象として示す要素はなく、直前にポップアップを開く要素もなく、ウィジェット自体もその項目もタブ順序に含まれていません。",
+      "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "それを示さないトリガーからスクリプトで開いてフォーカスするポップアップも、同じように見えます。",
+      "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA では aria-activedescendant はフォーカスを持つ要素でしか効果がありませんが、この要素はフォーカスを受け取れません。",
+      "widgetKeyboardFocusable_lean_caution_activedescendantHost": "ウィジェットが開いたときに、スクリプトがフォーカス可能にする場合があります。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
@@ -94359,6 +95686,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、note、presentation など) である要素を検出し、人が確認できるようにします。",
       "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
       "focusOrderSemantics_hint_cantTell": "操作する要素でなければ tabindex を削除し、操作する要素なら働きに合った操作用のロールを付けてください。",
+      "focusOrderSemantics_lean_why_handler": "この要素にはクリックやキーのハンドラーがあり、ロールはコントロールでないと示しているのに、コントロールとして動作しています。",
+      "focusOrderSemantics_lean_caution_handler": "ハンドラーはクリックを記録するだけか、この要素以外のためのものかもしれません。",
+      "focusOrderSemantics_lean_why_scrolls": "この要素の内容はボックスからはみ出してスクロールするため、タブストップによってキーボードでスクロールできます。",
+      "focusOrderSemantics_lean_why_documentInApplication": "アプリケーション内のドキュメントは、スクリーン リーダー利用者が読めるようにフォーカス可能にされています。",
       "pAsHeading_title": "見出しのように装飾されたテキストは、本来の見出し要素にすることが望ましい場合がある",
       "pAsHeading_description": "テキスト全体が太字で 18px 以上で表示される短い <p> 要素と <div> 要素を検出し、本来の見出し要素を使うべきかを人が確認できるようにします。",
       "pAsHeading_summary_cantTell": "この段落はテキスト全体が太字で、見出しのようなサイズで表示されています。",
@@ -94394,12 +95725,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_summary_cantTell_moves": "この <{{element}}> の onfocus ハンドラーは、フォーカスが届いた時点で別の要素にフォーカスを移します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
       "focusNotRemovedByScript_hint_fail": "フォーカスが要素に留まるよう blur() の呼び出しを削除するか、フォーカスを受けるべきでない場合は要素をフォーカス不可にしてください (WCAG 失敗例 F55)。",
+      "focusNotRemovedByScript_lean_why_calls": "ハンドラーは条件の外にある独立した文で要素自体の blur() を呼び出しているため、フォーカスは届いた時点で外されます。",
+      "focusNotRemovedByScript_lean_caution_calls": "ハンドラー内の他のコードがフォーカスを戻したり、意図的にフォーカスを受け取る何かを開いたりしている可能性があります。",
+      "focusNotRemovedByScript_lean_why_sentinel": "この要素は、ダイアログやコントロール群の端にある、空で名前のないフォーカス ガードです。届いたフォーカスを先へ送るのは、フォーカス トラップがフォーカスを内側に保つための仕組みです。",
+      "focusNotRemovedByScript_lean_caution_sentinel": "ダイアログを閉じた後にトラップがフォーカスを外へ出すこと、またモーダル ダイアログのものであることを確認してください。",
+      "focusNotRemovedByScript_lean_why_moves": "この要素は名前を持つ表示されたコントロールで、ハンドラーはフォーカスが届くたびに別の要素へ送ります。そのため、このコントロールはキーボードで操作できません。",
+      "focusNotRemovedByScript_lean_caution_moves": "フィールドが、その値を編集するコントロール(独自の日付選択など)へ意図的にフォーカスを渡している場合があります。",
       "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
       "mouseOnlyEventHandlers_hint_cantTell": "キーボードでこの動作を実行できるか確認してください。スクリプトで追加したキーボードのハンドラーも有効で、見た目だけのホバー効果には不要です。実行できない場合は、同じ動作をするキーボード操作 (onkeydown、ホバー時の動作には onfocus/onblur) を追加してください。",
       "mouseOnlyEventHandlers_summary_cantTell_notFocusable": "この要素には {{attrs}} と {{keyboardAttrs}} がありますが、キーボードフォーカスを受け取れないため、キーボードのハンドラーは実行されません。",
       "mouseOnlyEventHandlers_hint_cantTell_notFocusable": "この機能をキーボードでも利用できるよう、要素をフォーカス可能にする (ネイティブのコントロールを使うか tabindex=\"0\" を追加する) か、ハンドラーをフォーカス可能な要素に移してください。",
+      "mouseOnlyEventHandlers_lean_why_notFocusable": "この要素にはキーボードのハンドラーがありますが、要素自体もその中身もフォーカスを受け取れないため、ハンドラーは実行されません。",
+      "mouseOnlyEventHandlers_lean_caution_notFocusable": "スクリプトが後でフォーカス可能にするか、別のコントロールが同じ機能を提供している可能性があります。",
+      "mouseOnlyEventHandlers_lean_why_noKeyboard": "この要素は mousedown、mouseup、ダブルクリックで操作を実行します。ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーを見つけておらず、要素の中にも周囲にもフォーカスを受け取れるものがありません。",
+      "mouseOnlyEventHandlers_lean_caution_noKeyboard": "ハンドラーは効果を描くか、ポインターを追跡するだけかもしれません。また、別のコントロールが同じ機能を提供している可能性があります。",
       "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
       "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
@@ -94414,6 +95755,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取ります。キー リスナーは祖先、document、window にしかなく、この要素のキーを処理するかどうかはわかりません。",
       "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "ネイティブの要素(<button>、<a href>、<input type=\"checkbox\">)を使うか、keydown を処理して、{{role}} が応答するキーでクリックと同じことが起きるようにしてください。",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ち、キーボード フォーカスを受け取りますが、要素自体にも祖先にも document にも window にもキー リスナーがないため、Enter や Space では何も起きません。",
+      "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "スクリプトがここにフォーカスを移しても、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーがないため、Enter や Space では何も起きません。",
+      "clickHandlerKeyboardOperable_lean_caution_clickOnly": "クリックはクリックを記録するだけか、ページ内の別のコントロールと同じことをしているだけかもしれません。",
+      "clickHandlerKeyboardOperable_lean_why_roving": "周囲のウィジェット内にある同じロールの別の項目がタブ順序に含まれています。矢印キーで項目間のフォーカスを移すロービング tabindex の形です。",
+      "clickHandlerKeyboardOperable_lean_caution_widgetKeys": "ウィジェットは矢印キーで項目間を移動できても、Enter や Space でクリックの動作を実行しないことがあります。",
+      "clickHandlerKeyboardOperable_lean_why_pageFocusListener": "フォーカス リスナーは document か window にしかありません。こうしたリスナーはふつうページ全体のため(フォーカスのスタイル、アクセス解析)のもので、この要素のキーのためではありません。",
+      "clickHandlerKeyboardOperable_lean_caution_pageFocusListener": "フレームワークによっては、ページ全体のフォーカス リスナーから要素のリスナーを追加するものがあります。",
+      "clickHandlerKeyboardOperable_lean_why_compositeListener": "要素より上で最も近いキー リスナーは、この要素を項目として持つウィジェットにあります。このようなウィジェットは、そこで項目のキーを処理します。",
+      "clickHandlerKeyboardOperable_lean_why_noKeyListener": "ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーやフォーカス リスナーを見つけませんでした。Enter や Space ではおそらく何も起きません。",
+      "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
+      "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
+      "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",

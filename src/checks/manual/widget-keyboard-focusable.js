@@ -63,17 +63,27 @@
  *   - `WIDGET_NOT_FOCUSABLE` (cantTell): a widget that cannot take focus and
  *     holds nothing that can; whether a keyboard user can reach it or what
  *     it does another way is for a person to check.
+ *     It leans fail unless another element in the tab order has the same
+ *     role and name.
  *     Basis: WCAG 2.1.1 (not settled); F42.
  *   - `WIDGET_NOT_IN_TAB_ORDER` (cantTell): a widget that takes focus only
  *     from script (tabindex="-1"), so Tab never reaches it.
+ *     It leans pass when another element in the tab order has the same role
+ *     and name, and fail when, with a listener hook installed before the
+ *     page's scripts, no key listener is on an ancestor, the document or
+ *     the window to move focus to it.
  *     Basis: WCAG 2.1.1 (not settled).
  *   - `COMPOSITE_NO_TAB_STOP` (cantTell): a composite widget that no other
  *     element controls or owns, with no tab stop on it or on any of its
  *     items.
+ *     It leans fail unless the element just before it, or before its parent,
+ *     says it opens a popup (aria-haspopup, or aria-expanded="true").
  *     Basis: WCAG 2.1.1 (not settled).
  *   - `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` (cantTell): an element with
  *     aria-activedescendant that cannot take focus, so its active item is
  *     never announced.
+ *     It leans fail: ARIA gives aria-activedescendant effect only on the
+ *     element that has focus.
  *     Basis: WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant.
  * @implementation-notes
  * - WCAG 2.1.1 asks that all functionality work from a keyboard; F42 fails
@@ -302,6 +312,85 @@ function runInPage(ctx) {
     return controlled.has(el);
   }
 
+  // For the leans. Tab stops by role and name, built once on demand: a
+  // widget whose function another control in the tab order offers, with
+  // the same role and name, is a deliberate duplicate.
+  let tabStopsByRoleName = null;
+  function nameOf(el) {
+    try {
+      const info =
+        typeof helpers.getNameFromContentInfo === 'function'
+          ? helpers.getNameFromContentInfo(el, ctx)
+          : helpers.getAccessibleNameInfo(el, ctx);
+      return trim(info && info.value)
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function fullRoleOf(el) {
+    const r = roleOf(el);
+    if (r) return r;
+    try {
+      return trim(helpers.aria.getNativeRoleForElement(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function hasTabbableTwin(el, role) {
+    const name = nameOf(el);
+    if (!name) return false;
+    if (!tabStopsByRoleName) {
+      tabStopsByRoleName = new Map();
+      for (const d of helpers.queryAllDeep(FOCUS_SELECTOR + ', [role]')) {
+        if (!focusOf(d).tabbable || helpers.isHiddenContent(d)) continue;
+        const key = fullRoleOf(d) + '|' + nameOf(d);
+        tabStopsByRoleName.set(key, (tabStopsByRoleName.get(key) || []).concat(d));
+      }
+    }
+    return (tabStopsByRoleName.get(role + '|' + name) || []).some((d) => d !== el);
+  }
+  // A key listener the listener hook saw on an ancestor, the document or the
+  // window; null without an early hook, which alone shows there is none.
+  function keyListenerAbove(el) {
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const types = ['keydown', 'keyup', 'keypress'];
+    let info;
+    try {
+      info = helpers.getEventListenerInfo(el, types);
+    } catch {
+      return null;
+    }
+    if (!info || info.hook !== 'early') return null;
+    try {
+      const doc = ctx.document;
+      const win = dom.defaultView(doc);
+      if (helpers.getEventListenerInfo(doc, types).listens) return true;
+      if (win && helpers.getEventListenerInfo(win, types).listens) return true;
+      for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+        if (helpers.getEventListenerInfo(a, types).listens) return true;
+      }
+    } catch {
+      return null;
+    }
+    return false;
+  }
+  const POPUP_TRIGGER = '[aria-haspopup]:not([aria-haspopup="false"]), [aria-expanded="true"]';
+  function hasPopupTrigger(el) {
+    const parent = dom.parentElement(el);
+    for (const sib of [
+      dom.previousElementSibling(el),
+      parent && dom.previousElementSibling(parent)
+    ]) {
+      if (!sib) continue;
+      try {
+        if (dom.matches(sib, POPUP_TRIGGER) || dom.querySelector(sib, POPUP_TRIGGER)) return true;
+      } catch {}
+    }
+    return false;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -386,8 +475,85 @@ function runInPage(ctx) {
     };
     const m = messages[reasonCode];
 
+    let lean;
+    if (reasonCode === 'WIDGET_NOT_FOCUSABLE') {
+      if (!hasTabbableTwin(el, role))
+        lean = {
+          toward: 'fail',
+          why: 'The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.',
+          signals: [
+            { signal: 'role', value: role },
+            { signal: 'focusable', value: false },
+            { signal: 'same-name-tabbable-duplicate', value: false }
+          ],
+          caution:
+            'A script may make it focusable when needed, or the role may be wrong for content that does nothing.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_notFocusable',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_notFocusable'
+          }
+        };
+    } else if (reasonCode === 'WIDGET_NOT_IN_TAB_ORDER') {
+      if (hasTabbableTwin(el, role)) {
+        lean = {
+          toward: 'pass',
+          why: 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
+          signals: [{ signal: 'same-name-tabbable-duplicate', value: true }],
+          caution: 'Check that the two really do the same thing.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_duplicate',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate'
+          }
+        };
+      } else if (keyListenerAbove(el) === false) {
+        lean = {
+          toward: 'fail',
+          why: 'A hook installed before the page’s scripts saw no key listener on its ancestors, the document or the window, so no key moves focus to it.',
+          signals: [
+            { signal: 'listener-hook-active', value: true },
+            { signal: 'ancestor-key-listener', value: false },
+            { signal: 'same-name-tabbable-duplicate', value: false }
+          ],
+          caution:
+            'A script may focus it when something opens, such as a dialog that takes focus to it.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_noKeyListener',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_noKeyListener'
+          }
+        };
+      }
+    } else if (reasonCode === 'COMPOSITE_NO_TAB_STOP') {
+      if (!hasPopupTrigger(el))
+        lean = {
+          toward: 'fail',
+          why: 'Nothing names this widget as one it controls or owns, nothing before it opens a popup, and neither it nor any item is in the tab order.',
+          signals: [
+            { signal: 'script-focusable', value: scriptFocusable },
+            { signal: 'adjacent-popup-trigger', value: false }
+          ],
+          caution:
+            'A popup opened and focused by a script from a trigger that does not say so looks the same.',
+          i18n: {
+            whyKey: 'widgetKeyboardFocusable_lean_why_compositeNoTabStop',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_compositeNoTabStop'
+          }
+        };
+    } else if (reasonCode === 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE') {
+      lean = {
+        toward: 'fail',
+        why: 'ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.',
+        signals: [{ signal: 'focusable', value: false }],
+        caution: 'A script may make it focusable when the widget opens.',
+        i18n: {
+          whyKey: 'widgetKeyboardFocusable_lean_why_activedescendantHost',
+          cautionKey: 'widgetKeyboardFocusable_lean_caution_activedescendantHost'
+        }
+      };
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: m.summary.replace(/\{\{role\}\}/g, role),
         hint: m.hint.replace(/\{\{role\}\}/g, role),
         i18n: {

@@ -322,6 +322,162 @@ test(`${RULE_ID}: i18n default is English`, () => {
   );
 });
 
+// A jsdom page with the listener hook installed before the page's own
+// script, as listenerHookScript({ early: true }) is in a browser. jsdom's
+// selector engine adds key listeners to the window the first time a selector
+// runs, so one runs before the hook.
+function hooked(body, script) {
+  const { JSDOM } = require('jsdom');
+  const { listenerHookScript } = require('../../../src/index.js');
+  const dom = new JSDOM(`<!doctype html><html><body>${body}</body></html>`, {
+    runScripts: 'outside-only'
+  });
+  dom.window.document.querySelector('*');
+  dom.window.eval(listenerHookScript({ early: true }));
+  if (script) dom.window.eval(script);
+  return runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+}
+function occOf(result, id) {
+  const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
+  return rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+}
+
+test(`${RULE_ID}: leans fail when an early hook saw no key or focus listener for a tab stop`, () => {
+  const occ = occOf(
+    hooked(
+      '<div id="a" tabindex="0">Save</div>',
+      "document.getElementById('a').onclick = () => {};"
+    ),
+    'a'
+  );
+  assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_HANDLER');
+  assert.equal(occ.lean.toward, 'fail');
+  assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_noKeyListener');
+  // Without the hook, nothing says no listener exists.
+  const plain = assertRule(
+    run('<div id="a" tabindex="0" onclick="go()">Save</div>'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(plain.occurrences[0].lean, undefined);
+  // A page-wide focus listener may add one: no lean.
+  const focused = occOf(
+    hooked(
+      '<div id="a" tabindex="0">Save</div>',
+      "document.getElementById('a').onclick = () => {}; document.addEventListener('focusin', () => {});"
+    ),
+    'a'
+  );
+  assert.equal(focused.data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_HANDLER');
+  assert.equal(focused.lean, undefined);
+});
+
+test(`${RULE_ID}: out of the tab order, leans fail with no key path and pass for a roving tabindex`, () => {
+  const occ = occOf(
+    hooked(
+      '<div id="a" role="tab" tabindex="-1">A</div>',
+      "document.getElementById('a').onclick = () => {};"
+    ),
+    'a'
+  );
+  assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NOT_IN_TAB_ORDER');
+  assert.equal(occ.lean.toward, 'fail');
+  assert.equal(
+    occ.lean.i18n.whyKey,
+    'clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder'
+  );
+
+  const roving = assertRule(
+    run(
+      '<div role="tablist" aria-label="t"><div role="tab" tabindex="0">One</div><div id="b" role="tab" tabindex="-1" onclick="a()">Two</div></div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  const r = roving.occurrences.find((o) => o.html.includes('id="b"'));
+  assert.equal(r.data.details.reasonCode, 'CLICK_HANDLER_NOT_IN_TAB_ORDER');
+  assert.equal(r.lean.toward, 'pass');
+  assert.equal(r.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_roving');
+
+  const alone = assertRule(
+    run('<div id="t" role="button" tabindex="-1" onclick="a()">A</div>'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(alone.occurrences[0].lean, undefined);
+});
+
+test(`${RULE_ID}: a key listener on the widget that owns the item leans pass; one on the document does not`, () => {
+  const occ = occOf(
+    hooked(
+      '<div id="l" role="tablist" aria-label="t"><div id="a" role="tab" tabindex="0">A</div></div>',
+      "document.getElementById('a').onclick = () => {}; document.getElementById('l').addEventListener('keydown', () => {});"
+    ),
+    'a'
+  );
+  assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_KEY_LISTENER_ABOVE');
+  assert.equal(occ.lean.toward, 'pass');
+  assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_compositeListener');
+  const onDoc = occOf(
+    hooked(
+      '<div role="tablist" aria-label="t"><div id="a" role="tab" tabindex="0">A</div></div>',
+      "document.getElementById('a').onclick = () => {}; document.addEventListener('keydown', () => {});"
+    ),
+    'a'
+  );
+  assert.equal(onDoc.data.details.reasonCode, 'CLICK_HANDLER_KEY_LISTENER_ABOVE');
+  assert.equal(onDoc.lean, undefined);
+});
+
+test(`${RULE_ID}: a focus listener only on the document leans fail; one on the element does not`, () => {
+  const occ = occOf(
+    hooked(
+      '<div id="a" role="button" tabindex="0">A</div>',
+      "document.getElementById('a').onclick = () => {}; document.addEventListener('focusin', () => {});"
+    ),
+    'a'
+  );
+  assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_FOCUS_LISTENER');
+  assert.equal(occ.lean.toward, 'fail');
+  assert.equal(occ.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_pageFocusListener');
+  const own = occOf(
+    hooked(
+      '<div id="a" role="button" tabindex="0">A</div>',
+      "const a = document.getElementById('a'); a.onclick = () => {}; a.addEventListener('focus', () => {});"
+    ),
+    'a'
+  );
+  assert.equal(own.data.details.reasonCode, 'CLICK_HANDLER_FOCUS_LISTENER');
+  assert.equal(own.lean, undefined);
+});
+
+test(`${RULE_ID}: an unfocusable element leans pass under a focus keeper and fail with only a pointer cursor`, () => {
+  const managed = assertRule(
+    run(
+      '<div tabindex="0" aria-activedescendant="b" aria-label="Tools"><div id="b" role="option" onclick="a()">Cut</div></div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  ).occurrences[0];
+  assert.equal(managed.data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  assert.equal(managed.lean.toward, 'pass');
+  assert.equal(managed.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_managed');
+
+  const pointer = assertRule(
+    run('<div onclick="a()" style="cursor: pointer">More</div>'),
+    RULE_ID,
+    'cantTell'
+  ).occurrences[0];
+  assert.equal(pointer.lean.toward, 'fail');
+  assert.equal(pointer.lean.i18n.whyKey, 'clickHandlerKeyboardOperable_lean_why_pointerOnly');
+
+  // An option with no focus keeper: a widget role, so no lean.
+  const option = assertRule(run('<div role="option" onclick="a()">X</div>'), RULE_ID, 'cantTell')
+    .occurrences[0];
+  assert.equal(option.data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  assert.equal(option.lean, undefined);
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/click-handler-keyboard-operable-all-scenarios.html)`, () => {
   const fixtureHtml = fs.readFileSync(
     path.join(__dirname, '../..', 'fixtures', 'click-handler-keyboard-operable-all-scenarios.html'),

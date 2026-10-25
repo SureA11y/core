@@ -30,6 +30,11 @@
  *   - `FOCUS_INDICATOR_SUPPRESSED` (cantTell): a style sheet rule removes the
  *     element's focus outline and no focus rule draws a replacement; whether
  *     the page shows focus another way is for a person to check.
+ *     It leans fail when every style sheet could be read, no :focus-within
+ *     rule around the element draws a change, no inline focus or blur
+ *     handler is on it or an ancestor, the removing rule doesn't name
+ *     focus-visible, and the listener hook, when it ran, saw no focus
+ *     listener for it.
  *     Basis: WCAG 2.4.7 (not settled); F78; ACT oj04fd.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
@@ -293,6 +298,10 @@ function runInPage(ctx) {
 
   const suppressors = []; // { selector, base }
   const providers = []; // { base, subject }
+  // :focus-within rules that draw something: the compound holding the
+  // pseudo, without it. Read only for the lean, never to pass an element.
+  const withinProviders = [];
+  const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
 
   function collectFromStyleRule(style, selectorText) {
     if (!style || !selectorText) return;
@@ -302,6 +311,12 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
+      if (provides && /:focus-within(?![-\w])/.test(part)) {
+        for (const compound of splitCompounds(part)) {
+          if (!/:focus-within(?![-\w])/.test(compound)) continue;
+          withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+        }
+      }
       if (!hasFocusPseudo(part)) {
         // A rule with no focus state still applies while the element has
         // focus, and an author declaration beats the user agent's focus
@@ -380,6 +395,7 @@ function runInPage(ctx) {
   }
 
   let sheetCount = 0;
+  let unreadableSheets = 0;
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
@@ -390,9 +406,13 @@ function runInPage(ctx) {
       try {
         rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet && sheet.cssRules;
       } catch {
+        unreadableSheets += 1;
         continue;
       }
-      if (!rules) continue;
+      if (!rules) {
+        unreadableSheets += 1;
+        continue;
+      }
       sheetCount += 1;
       walkRules(rules, 0, '');
     }
@@ -434,6 +454,29 @@ function runInPage(ctx) {
     }
   }
 
+  // Focus listeners the listener hook saw, on the element, an ancestor, the
+  // document or the window: a script may draw the indicator from one.
+  const FOCUS_EVENT_TYPES = ['focus', 'focusin', 'blur', 'focusout'];
+  function hookInfo(target) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, FOCUS_EVENT_TYPES)
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const view = dom.defaultView ? dom.defaultView(document) : null;
+  const pageFocusListener = hookInfo(document).listens || (view ? hookInfo(view).listens : false);
+  function scriptFocusListener(el) {
+    if (pageFocusListener) return true;
+    for (let a = el, i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (hookInfo(a).listens) return true;
+    }
+    return false;
+  }
+  const INLINE_FOCUS_HANDLERS = '[onfocus], [onfocusin], [onblur], [onfocusout]';
+
   const CANDIDATE_SELECTOR =
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]';
   const candidates = helpers.queryAllSmart
@@ -469,8 +512,41 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // The lean: nothing the scan can read draws focus another way.
+    const inlineHandler = closestSafe(el, INLINE_FOCUS_HANDLERS);
+    const focusWithin = withinProviders.some((b) => closestSafe(el, b));
+    const namesFocusVisible = selectors.some((sel) => /focus-visible/i.test(sel));
+    const scriptListener = scriptFocusListener(el);
+    const leans =
+      unreadableSheets === 0 &&
+      !inlineHandler &&
+      !focusWithin &&
+      !namesFocusVisible &&
+      !scriptListener;
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(leans
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'Every style sheet was read and none draws a replacement, and no inline focus handler or :focus-within rule shows focus another way.',
+                signals: [
+                  { signal: 'suppressing-selectors', value: selectors.join(', ') },
+                  { signal: 'unreadable-sheets', value: 0 },
+                  { signal: 'inline-focus-handler', value: false },
+                  { signal: 'focus-within-rule', value: false },
+                  { signal: 'listener-hook', value: hookInfo(el).hook }
+                ],
+                caution:
+                  'A focus style added by a script listener or a class a script toggles is not seen when the listener hook did not run.',
+                i18n: {
+                  whyKey: 'cssFocusIndicatorSuppressed_lean_why',
+                  cautionKey: 'cssFocusIndicatorSuppressed_lean_caution'
+                }
+              }
+            }
+          : {}),
         summary: `This element takes a tab stop, and "${selectors.join(', ')}" removes its focus outline with no replacement indicator in any other focus rule matching it.`,
         hint: 'Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.',
         i18n: {
