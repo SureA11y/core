@@ -281,7 +281,7 @@ Flags &lt;area&gt; elements with a non-empty text alternative (alt, aria-label, 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;area&gt; link has a text alternative, and a person checks that it says where the link leads. | WCAG 1.1.1 (not settled); H24 |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;area&gt; link has a text alternative, and a person checks that it says where the link leads. It leans fail when the name is a file name or a placeholder word. | WCAG 1.1.1 (not settled); H24 |
 
 ### `aria-allowed-attr`
 
@@ -971,7 +971,7 @@ Flags &lt;canvas&gt; elements with a detected text alternative for human review 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | A &lt;canvas&gt; has a text alternative, and a person checks that it conveys what the canvas shows. | WCAG 1.1.1 (not settled); ACT qt1vmo |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | A &lt;canvas&gt; has a text alternative, and a person checks that it conveys what the canvas shows. It leans fail when the text that names it is only a note that the browser does not support canvas (English wording), or is a file name or a placeholder word. | WCAG 1.1.1 (not settled); ACT qt1vmo |
 
 ### `click-handler-keyboard-operable`
 
@@ -1015,11 +1015,11 @@ A keyboard user can run what the click runs. Chromium fires `click` on Enter or 
 |---|---|---|---|
 | `CLICK_HANDLER_NO_KEY_LISTENER` | fail | A button, link, checkbox or switch with a click handler is in the tab order, but no key handler or listener is anywhere its key events go, so Enter and Space do nothing. | WCAG 2.1.1; WCAG 2.1.3 |
 | `CLICK_HANDLER_CONTROL_NOT_FOCUSABLE` | fail | A button, link, checkbox or switch with a click handler cannot take focus, nor can anything inside it, and nothing above it operates it. | WCAG 2.1.1; WCAG 2.1.3; F42 |
-| `CLICK_HANDLER_NO_KEY_HANDLER` | cantTell | An element with a click handler is in the tab order, but no key handler is seen; whether Enter and Space do what a click does is for a person to check. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
-| `CLICK_HANDLER_NOT_IN_TAB_ORDER` | cantTell | An element with a click handler takes focus only from script (tabindex="-1"), so Tab never reaches it. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
-| `CLICK_HANDLER_KEY_LISTENER_ABOVE` | cantTell | An element with a click handler is in the tab order, and the only key listener is above it, which may or may not handle its keys. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
-| `CLICK_HANDLER_FOCUS_LISTENER` | cantTell | A control with a click handler is in the tab order with no key listener, but a focus listener may add one once it has focus. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
-| `CLICK_HANDLER_NOT_FOCUSABLE` | cantTell | An element with a click handler that cannot take focus, with a widget role or a pointer cursor; whether the action is offered by keyboard elsewhere is for a person to check. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_NO_KEY_HANDLER` | cantTell | An element with a click handler is in the tab order, but no key handler is seen; whether Enter and Space do what a click does is for a person to check. It leans fail when a hook installed before the page's scripts saw no key or focus listener on the element, anything around it, the document or the window, and nothing inside it takes focus. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_NOT_IN_TAB_ORDER` | cantTell | An element with a click handler takes focus only from script (tabindex="-1"), so Tab never reaches it. It leans fail when, as above, an early hook saw no key or focus listener anywhere its key events go; it leans pass when another item of the same role in the composite widget around it is in the tab order (a roving tabindex) and the hook did not show that no key listener exists. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_KEY_LISTENER_ABOVE` | cantTell | An element with a click handler is in the tab order, and the only key listener is above it, which may or may not handle its keys. It leans pass when the nearest ancestor with a key listener is a composite widget the element is an item of (a tab in its tablist). | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_FOCUS_LISTENER` | cantTell | A control with a click handler is in the tab order with no key listener, but a focus listener may add one once it has focus. It leans fail when the only focus listeners are on the document or the window, none on the element, an ancestor or a shadow root it is in. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `CLICK_HANDLER_NOT_FOCUSABLE` | cantTell | An element with a click handler that cannot take focus, with a widget role or a pointer cursor; whether the action is offered by keyboard elsewhere is for a person to check. It leans pass when an ancestor keeps focus for it (aria-activedescendant, or a focusable composite widget), and fail when it has no widget role, shows a pointer cursor, and nothing above it takes focus or handles keys. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
 
 ### `combobox-name-present`
 
@@ -1228,7 +1228,7 @@ Flags elements in the tab order whose focus outline is removed, by a :focus/:foc
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. | WCAG 2.4.7 (not settled); F78; ACT oj04fd |
+| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. It leans fail when every style sheet could be read, no :focus-within rule around the element draws a change, no inline focus or blur handler is on it or an ancestor, the removing rule doesn't name focus-visible, and the listener hook, when it ran, saw no focus listener for it. | WCAG 2.4.7 (not settled); F78; ACT oj04fd |
 
 ### `css-hidden-focus`
 
@@ -1460,7 +1460,7 @@ Flags &lt;embed&gt; elements with a detected name for human review of appropriat
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;embed&gt; has a text alternative, and a person checks that it describes the embedded content. | WCAG 1.1.1 (not settled) |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;embed&gt; has a text alternative, and a person checks that it describes the embedded content. It leans fail when its name is the embedded file's name (or looks like a file name) or a placeholder word. | WCAG 1.1.1 (not settled) |
 
 ### `empty-heading`
 
@@ -1503,7 +1503,7 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TABLE_HEADER_EMPTY` | cantTell | A header cell has no visible text and no name from aria-label or aria-labelledby. | HTML table model th element (best practice); WAI-ARIA 1.2 columnheader role (best practice) |
+| `TABLE_HEADER_EMPTY` | cantTell | A header cell has no visible text and no name from aria-label or aria-labelledby. It leans fail when the cell is a &lt;th&gt; holding nothing that could name it (an svg, an element with an ARIA name or title, a control), is not the top-left corner above a column of row headers, and has a data cell with text below it or after it in a table with no spans; otherwise no lean. | HTML table model th element (best practice); WAI-ARIA 1.2 columnheader role (best practice) |
 | `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | cantTell | A header cell has no visible text and is named only by aria-label or aria-labelledby, which some screen readers do not read on header cells. It leans fail: the page states it. | accname 1.2 (best practice) |
 
 ### `focus-not-removed-by-script`
@@ -1540,8 +1540,8 @@ A handler that sends focus somewhere (a focus-trap sentinel, a redirect) is the 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `FOCUS_HANDLER_BLURS_SELF` | fail, cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives; it fails in the tab order and is asked about outside it. | WCAG 2.1.1; WCAG 2.4.7; F55 |
-| `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
-| `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
+| `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. It leans fail when the element is in the tab order and blur() is called on it as a statement of its own, outside any condition or callback, with no return before it. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
+| `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. It leans pass when the element is a focus-trap sentinel (a plain, empty, unnamed element in the tab order, in or beside a dialog, or at the edge of a container holding focusable content), and fail when it is a visible control with a name, in the tab order, that calls focus() as a statement of its own, outside any condition or callback. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 
 ### `focus-order-semantics`
 
@@ -1564,7 +1564,7 @@ Flags elements with tabindex &gt;= 0 whose explicit role is a non-interactive st
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TABBABLE_WITH_NON_INTERACTIVE_ROLE` | cantTell | The element is in the tab order but carries a non-interactive role, so a keyboard user who reaches it is not told what it does. | WCAG 2.4.3 (best practice); WCAG 4.1.2 (best practice) |
+| `TABBABLE_WITH_NON_INTERACTIVE_ROLE` | cantTell | The element is in the tab order but carries a non-interactive role, so a keyboard user who reaches it is not told what it does. It leans pass when the element scrolls (overflow auto or scroll and content measured larger than its box) or is a document inside an application, with no click or key handler; it leans fail when a click or key handler is on it and neither holds. | WCAG 2.4.3 (best practice); WCAG 4.1.2 (best practice) |
 
 ### `form-control-label-quality`
 
@@ -1588,9 +1588,9 @@ Flags a visible form-field label that is a placeholder ("Label", "Field"), or th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DUPLICATE_LABEL_TEXT` | cantTell | The field's visible label is the same as another field's, with no visible legend, heading or row text telling them apart. | WCAG 2.4.6 (not settled); G131; ACT cc0f0a |
+| `DUPLICATE_LABEL_TEXT` | cantTell | The field's visible label is the same as another field's, with no visible legend, heading or row text telling them apart. It leans pass when each field is in a form of its own with the same name, type and action (copies of one widget), and fail when they are fields of one form with different names (not radio buttons or checkboxes); otherwise no lean. | WCAG 2.4.6 (not settled); G131; ACT cc0f0a |
 | `PARTIALLY_HIDDEN_LABEL` | cantTell | Part of the field's programmatic label is hidden from sight, so the visible part may not identify the field on its own. | WCAG 2.4.6 (not settled); G131; ACT cc0f0a |
-| `PLACEHOLDER_LABEL_TEXT` | cantTell | The field's visible label is generic placeholder text, such as "label" or "enter text", rather than a description of the field. | WCAG 2.4.6 (not settled); G131; ACT cc0f0a |
+| `PLACEHOLDER_LABEL_TEXT` | cantTell | The field's visible label is generic placeholder text, such as "label" or "enter text", rather than a description of the field. It leans fail when the label is a phrase only a template leaves ("label", "enter text", "untitled"); words that can be a real field's name ("text", "value", "test") have no lean. | WCAG 2.4.6 (not settled); G131; ACT cc0f0a |
 
 ### `form-control-programmatic-label-present`
 
@@ -1683,8 +1683,8 @@ All-empty associations with no override are a missing-name case (the sibling rul
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FORM_FIELD_MULTIPLE_LABELS` | cantTell | Two or more labels with text name the field, and no aria-label or aria-labelledby overrides them; browsers join them into one name, which a person judges. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2 |
-| `FORM_FIELD_EXTRA_EMPTY_LABEL` | cantTell | One label with text and one or more empty label associations, with no override. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled) |
+| `FORM_FIELD_MULTIPLE_LABELS` | cantTell | Two or more labels with text name the field, and no aria-label or aria-labelledby overrides them; browsers join them into one name, which a person judges. It leans pass when the labels repeat each other (one's words appear in another) or the extra ones only mark the field as required. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2 |
+| `FORM_FIELD_EXTRA_EMPTY_LABEL` | cantTell | One label with text and one or more empty label associations, with no override. It leans pass: browsers join the labels' text, so the empty one adds nothing. | HTML-AAM 4.1.1; WCAG 3.3.2 (not settled) |
 
 ### `heading-order`
 
@@ -1846,7 +1846,7 @@ Checks that same-origin &lt;iframe&gt;/&lt;frame&gt; elements with tabindex="-1"
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` | fail | A frame with a negative tabindex holds content in the tab order, which Tab skips, so a keyboard user cannot reach it. | WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation |
-| `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | cantTell | A frame with a negative tabindex holds one focusable element, but focus moved straight on from it, so keyboard access is checked in a real browser. | WCAG 2.1.1 (not settled); ACT akn7bn (not settled) |
+| `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | cantTell | A frame with a negative tabindex holds one focusable element, but focus moved straight on from it, so keyboard access is checked in a real browser. It leans pass when that element is an empty focus guard (a plain element made focusable by tabindex alone, with no text, content, name or role) and focus left the frame. | WCAG 2.1.1 (not settled); ACT akn7bn (not settled) |
 
 ### `iframe-name-present`
 
@@ -1924,7 +1924,7 @@ Checks that an &lt;img&gt; alt text is not identical to other visible text alrea
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `IMAGE_ALT_REDUNDANT` | cantTell | An image's alt text repeats the visible text next to it in the same parent, so the same words may be read twice. | HTML img alt (best practice); H2 (best practice) |
+| `IMAGE_ALT_REDUNDANT` | cantTell | An image's alt text repeats the visible text next to it in the same parent, so the same words may be read twice. It leans fail when the image has no role="none" or "presentation": the page states the repetition, and a best practice never fails. | HTML img alt (best practice); H2 (best practice) |
 
 ### `img-alt-decorative`
 
@@ -1949,8 +1949,8 @@ Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the acc
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `EXCLUDED_ELEMENT_REVIEW` | cantTell | A visible image, &lt;svg&gt; or &lt;canvas&gt; is hidden from assistive technology, and a person checks that it is purely decorative. | WCAG 1.1.1 (not settled); H67; ACT e88epe |
-| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | An image hidden from assistive technology is the only content of a link or button, so the control gets no name from it. | WCAG 1.1.1 (not settled); F89; ACT e88epe |
+| `EXCLUDED_ELEMENT_REVIEW` | cantTell | A visible image, &lt;svg&gt; or &lt;canvas&gt; is hidden from assistive technology, and a person checks that it is purely decorative. It leans pass when the element is 2 px or less wide or high, or is an &lt;img&gt; whose file is named as a spacer (spacer.gif, blank.png, 1x1.gif). | WCAG 1.1.1 (not settled); H67; ACT e88epe |
+| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | An image hidden from assistive technology is the only content of a link or button, so the control gets no name from it. It leans fail: the control has no author name either (aria-label, aria-labelledby, title or label), so nothing in it names it. | WCAG 1.1.1 (not settled); F89; ACT e88epe |
 
 ### `img-alt-present`
 
@@ -1993,8 +1993,8 @@ Flags &lt;img&gt; elements with non-empty alt text for human review of appropria
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;img&gt; has non-empty alt text, and a person checks that it conveys what the image shows. | WCAG 1.1.1 (not settled); H37; ACT qt1vmo |
-| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | The image is the only content of a link or button, so its alt text is the control's name and should say what the control does. | WCAG 1.1.1 (not settled); H30; ACT qt1vmo |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;img&gt; has non-empty alt text, and a person checks that it conveys what the image shows. It leans fail when the alt is a file name, a web address or a placeholder word (`altSignal`). | WCAG 1.1.1 (not settled); H37; ACT qt1vmo |
+| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | The image is the only content of a link or button, so its alt text is the control's name and should say what the control does. It leans fail when the alt is a file name or a placeholder word. | WCAG 1.1.1 (not settled); H30; ACT qt1vmo |
 
 ### `input-image-alt-decorative`
 
@@ -2012,7 +2012,7 @@ Flags &lt;input type="image"&gt; elements with empty alt for human review (usual
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `NAME_FROM_ELSEWHERE_REVIEW` | cantTell | An image button has alt="" but takes a name from aria-label, aria-labelledby or title, and a person checks that the name says what the button does. | WCAG 1.1.1 (not settled); H36; HTML-AAM input type=image |
+| `NAME_FROM_ELSEWHERE_REVIEW` | cantTell | An image button has alt="" but takes a name from aria-label, aria-labelledby or title, and a person checks that the name says what the button does. It leans fail when that name is a file name, a web address or a placeholder word. | WCAG 1.1.1 (not settled); H36; HTML-AAM input type=image |
 
 ### `input-image-alt-present`
 
@@ -2058,7 +2058,7 @@ Flags &lt;input type="image"&gt; elements with a non-empty text alternative (alt
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An image button has a text alternative, and a person checks that it says what the button does. | WCAG 1.1.1 (not settled); H36 |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An image button has a text alternative, and a person checks that it says what the button does. It leans fail when the name is a file name, a web address or a placeholder word. | WCAG 1.1.1 (not settled); H36 |
 
 ### `invalid-field-error-message`
 
@@ -2096,10 +2096,10 @@ An element counts as hidden when nobody sees it: `display: none`, `visibility: h
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ERROR_MESSAGE_HIDDEN` | cantTell | Aria-errormessage names only messages that are hidden: nobody sees them, or aria-hidden, on the message or around it, hides them from assistive technology. It leans fail: the message tied to the field can't be seen or heard. | WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1 (not settled); ARIA21 |
-| `ERROR_MESSAGE_EMPTY` | cantTell | Aria-errormessage names only shown messages that have no text; the error may be told in text elsewhere. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
-| `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` | cantTell | The named message is hidden or empty, but the field's aria-describedby gives a description that may carry the error. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
-| `ERROR_MESSAGE_ARIA_HIDDEN` | cantTell | The named message is shown, but all its text is inside aria-hidden elements, so people who see it are told and screen reader users may not be. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST) |
-| `ERROR_MESSAGE_TARGET_MISSING` | cantTell | Aria-errormessage names no element of the page; a script may add it later. | WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1 |
+| `ERROR_MESSAGE_EMPTY` | cantTell | Aria-errormessage names only shown messages that have no text; the error may be told in text elsewhere. It leans fail: the message is empty and the field has no description. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
+| `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` | cantTell | The named message is hidden or empty, but the field's aria-describedby gives a description that may carry the error. It leans pass when a description target is a shown live region with text; otherwise it has no lean, as the description may be a hint. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
+| `ERROR_MESSAGE_ARIA_HIDDEN` | cantTell | The named message is shown, but all its text is inside aria-hidden elements, so people who see it are told and screen reader users may not be. It leans fail when the field has no description; otherwise no lean. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST) |
+| `ERROR_MESSAGE_TARGET_MISSING` | cantTell | Aria-errormessage names no element of the page; a script may add it later. It leans fail when the field has no description; otherwise no lean. | WAI-ARIA 1.2 aria-errormessage (not settled); WCAG 3.3.1 |
 | `NO_ERROR_MESSAGE` | cantTell | Neither aria-errormessage nor aria-describedby ties a message to the field; the error may be told in text the markup doesn't tie to it. | WCAG 3.3.1 (not settled); G83 |
 
 ### `label-for-valid`
@@ -2158,10 +2158,10 @@ Checks that when a control has a visible text label, the accessible name contain
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `HYPHENATION_DIFFERS` | cantTell | The accessible name holds the visible label's words only when hyphens are ignored, so whether it contains the label is a judgment call. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
-| `POSSIBLE_ABBREVIATION` | cantTell | The accessible name holds the visible label only if a word ending in a period is read as an abbreviation of a longer word. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
-| `POSSIBLE_ICON_FONT_GLYPH` | cantTell | The visible label renders through an icon font, so its text may show as a symbol rather than readable words. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
-| `POSSIBLE_SYMBOLIC_CHARACTER` | cantTell | The visible label is a single character missing from the accessible name, which may be a symbol rather than text. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
+| `HYPHENATION_DIFFERS` | cantTell | The accessible name holds the visible label's words only when hyphens are ignored, so whether it contains the label is a judgment call. It leans pass: the words are the same once hyphens are ignored. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
+| `POSSIBLE_ABBREVIATION` | cantTell | The accessible name holds the visible label only if a word ending in a period is read as an abbreviation of a longer word. It leans pass when each shortened word has three letters or more and starts the word in the name; otherwise no lean. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
+| `POSSIBLE_ICON_FONT_GLYPH` | cantTell | The visible label renders through an icon font, so its text may show as a symbol rather than readable words. It leans pass when the text is a ligature name or Private Use Area characters and the page has loaded that font; otherwise no lean. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
+| `POSSIBLE_SYMBOLIC_CHARACTER` | cantTell | The visible label is a single character, or symbols only ("×", "+", "»"), missing from the accessible name, which may be a symbol rather than text. It leans pass when the character is the letter x (a close icon), and fail when it is a digit; other letters have no lean. | WCAG 2.5.3 (not settled); ACT 2ee8b8 |
 | `VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME` | fail | The accessible name from aria-label or aria-labelledby does not contain the visible label's words, together and in order. | WCAG 2.5.3; F96; G208; ACT 2ee8b8 |
 
 ### `label-title-only`
@@ -2776,8 +2776,8 @@ Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmou
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT` | cantTell | The element has pointer-only event handlers and no key, focus or blur handler. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54 |
-| `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | cantTell | The element has pointer-only event handlers, and its keyboard handlers cannot run because neither it nor anything inside it can take focus. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54 |
+| `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT` | cantTell | The element has pointer-only event handlers and no key, focus or blur handler. It leans fail when a listener hook installed before the page's scripts saw no key listener on it, an ancestor, the document or the window, a handler is a mousedown, mouseup or dblclick one that does something, and neither it, anything in it nor any ancestor can take focus. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54 |
+| `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` | cantTell | The element has pointer-only event handlers, and its keyboard handlers cannot run because neither it nor anything inside it can take focus. It leans fail when nothing inside it can take focus either (a focus or blur handler alone is reported whatever its content holds). | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54 |
 
 ### `moving-content-pausable`
 
@@ -2841,9 +2841,9 @@ Flags &lt;audio&gt;/&lt;video&gt; elements that autoplay unmuted with no native 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `AUTOPLAY_NO_CONTROLS_MECHANISM` | cantTell | An unmuted &lt;audio&gt; or &lt;video&gt; plays automatically with no native controls to pause, stop or turn down its sound. | WCAG 1.4.2 (not settled); F23; ACT 80f0bf; ACT 4c31df |
-| `AUTOPLAY_CONTROLS_HIDDEN` | cantTell | An unmuted &lt;audio&gt; or &lt;video&gt; plays automatically and has native controls, but it is hidden, so the controls cannot be reached. | WCAG 1.4.2 (not settled); F23; ACT 4c31df |
-| `EMBEDDED_SOUND_SOURCE` | cantTell | An &lt;embed&gt;, &lt;object&gt; or &lt;bgsound&gt; may play sound when the page loads, with no controls the rule can read. | WCAG 1.4.2 (not settled); F23 |
+| `AUTOPLAY_NO_CONTROLS_MECHANISM` | cantTell | An unmuted &lt;audio&gt; or &lt;video&gt; plays automatically with no native controls to pause, stop or turn down its sound. It leans pass when a script has muted it (the muted property) or its known duration is 3 seconds or less without loop, and fail when it has loop or its known duration is longer than 3 seconds. | WCAG 1.4.2 (not settled); F23; ACT 80f0bf; ACT 4c31df |
+| `AUTOPLAY_CONTROLS_HIDDEN` | cantTell | An unmuted &lt;audio&gt; or &lt;video&gt; plays automatically and has native controls, but it is hidden, so the controls cannot be reached. It leans as AUTOPLAY_NO_CONTROLS_MECHANISM does. | WCAG 1.4.2 (not settled); F23; ACT 4c31df |
+| `EMBEDDED_SOUND_SOURCE` | cantTell | An &lt;embed&gt;, &lt;object&gt; or &lt;bgsound&gt; may play sound when the page loads, with no controls the rule can read. It leans pass for a &lt;bgsound&gt;, and for a Flash plugin (its type, or a .swf file), which current browsers no longer play. | WCAG 1.4.2 (not settled); F23 |
 
 ### `object-text-alternative-present`
 
@@ -2894,7 +2894,7 @@ Flags &lt;object&gt; elements with detected fallback or name for human review of
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;object&gt; has a text alternative, and a person checks that it describes the object's content. | WCAG 1.1.1 (not settled); H53 |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;object&gt; has a text alternative, and a person checks that it describes the object's content. It leans fail when the text users get (the ARIA name, else the fallback text, else the title) is the data file's name, a placeholder word, or only a note that a plugin or player is missing (English wording). | WCAG 1.1.1 (not settled); H53 |
 
 ### `option-name-present`
 
@@ -3032,8 +3032,8 @@ Checks that a password or one-time-code field carries no inline paste handler th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `PASTE_CANCELLED` | cantTell | The authentication field has an inline paste handler whose only effect is to cancel the paste, which may stop a password manager or the clipboard filling it. | WCAG 3.3.8 (not settled) |
-| `PASTE_HANDLER_OPAQUE` | cantTell | The authentication field has an inline paste handler that calls other script, so whether it blocks pasting could not be told. | WCAG 3.3.8 (not settled) |
+| `PASTE_CANCELLED` | cantTell | The authentication field has an inline paste handler whose only effect is to cancel the paste, which may stop a password manager or the clipboard filling it. It leans fail, unless the field is a box of a split one-time code (maxlength 1, among four or more such boxes), which has no lean. | WCAG 3.3.8 (not settled) |
+| `PASTE_HANDLER_OPAQUE` | cantTell | The authentication field has an inline paste handler that calls other script, so whether it blocks pasting could not be told. It leans fail when the handler calls a function named to block pasting (disablePaste) or shows an alert and cancels, and the field is not a box of a split one-time code; otherwise no lean. | WCAG 3.3.8 (not settled) |
 
 ### `presentation-role-conflict`
 
@@ -3174,7 +3174,7 @@ Checks that scope="..." is one of row, col, rowgroup, or colgroup.
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SCOPE_ATTR_INVALID` | cantTell | A th has a scope value that is not row, col, rowgroup or colgroup, so it declares no header direction. | HTML table model scope attribute (best practice); H63 |
+| `SCOPE_ATTR_INVALID` | cantTell | A th has a scope value that is not row, col, rowgroup or colgroup, so it declares no header direction. It leans fail: the page states it. | HTML table model scope attribute (best practice); H63 |
 
 ### `scrollable-region-focusable`
 
@@ -3407,8 +3407,8 @@ Flags applicable &lt;svg&gt; graphics with a detected text alternative for human
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;svg&gt; has a text alternative, and a person checks that it conveys what the graphic shows. | WCAG 1.1.1 (not settled); ACT qt1vmo; SVG-AAM |
-| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | The &lt;svg&gt; is the only content of a link or button, so its text alternative is the control's name and should say what the control does. | WCAG 1.1.1 (not settled); ACT qt1vmo; accname 1.2 |
+| `TEXT_ALTERNATIVE_REVIEW` | cantTell | An &lt;svg&gt; has a text alternative, and a person checks that it conveys what the graphic shows. It leans fail when its name (aria-label, aria-labelledby, else &lt;title&gt;) is a leftover of the drawing tool or the export ("Layer 1", "Group 3", "Created with Sketch.", "icon-search"), a file name or a placeholder word. | WCAG 1.1.1 (not settled); ACT qt1vmo; SVG-AAM |
+| `IMAGE_ONLY_CONTROL_CONTENT` | cantTell | The &lt;svg&gt; is the only content of a link or button, so its text alternative is the control's name and should say what the control does. It leans fail on the same names as TEXT_ALTERNATIVE_REVIEW. | WCAG 1.1.1 (not settled); ACT qt1vmo; accname 1.2 |
 
 ### `tab-name-present`
 
@@ -3451,7 +3451,7 @@ Checks that tabindex values are 0 or negative, not a positive number.
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TABINDEX_POSITIVE` | cantTell | The element has a tabindex above 0, which moves it ahead of the page's natural tab order. | WCAG 2.4.3 (best practice); F44 (not settled) |
+| `TABINDEX_POSITIVE` | cantTell | The element has a tabindex above 0, which moves it ahead of the page's natural tab order. It leans fail when Tab reaches the element before a tab stop that comes earlier in the document, and pass when the page's tab order is its document order all the same (the positive tabindex values are on its first tab stops, in increasing order). | WCAG 2.4.3 (best practice); F44 (not settled) |
 
 ### `table-duplicate-name`
 
@@ -3487,7 +3487,7 @@ Flags tables with no &lt;caption&gt; whose first row has a single non-empty cell
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SINGLE_CELL_FIRST_ROW_NO_CAPTION` | cantTell | A table with no caption or name has a first row of one text cell above rows of several cells, which may be a title shown as a cell instead of a caption. | WCAG 1.3.1 (not settled); H39 |
+| `SINGLE_CELL_FIRST_ROW_NO_CAPTION` | cantTell | A table with no caption or name has a first row of one text cell above rows of several cells, which may be a title shown as a cell instead of a caption. It leans fail when that cell spans the table's full width and no later row is a single cell; otherwise no lean. | WCAG 1.3.1 (not settled); H39 |
 
 ### `table-headers-attr-valid`
 
@@ -3532,7 +3532,7 @@ Checks that a table containing &lt;th&gt; elements also contains at least one &l
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `TABLE_TH_NO_DATA_CELLS` | fail | The table has header cells but no data cell at all, so no header describes anything. | WCAG 1.3.1; H51; ACT d0f69e; HTML table model |
-| `TABLE_TH_NO_ASSIGNED_CELL` | cantTell | No data cell is assigned to the header, so it describes nothing; a person checks whether the table lacks the cells or leaves them out on purpose. A header with scope rowgroup or colgroup is left out, and so is the corner where a row of headers meets a column of them. | WCAG 1.3.1 (not settled); H51; H43; ACT d0f69e; HTML table model |
+| `TABLE_TH_NO_ASSIGNED_CELL` | cantTell | No data cell is assigned to the header, so it describes nothing; a person checks whether the table lacks the cells or leaves them out on purpose. A header with scope rowgroup or colgroup is left out, and so is the corner where a row of headers meets a column of them. It leans fail when no cell follows the header at all where its scope looks (short rows) and no cell in the table has a headers attribute; otherwise no lean. | WCAG 1.3.1 (not settled); H51; H43; ACT d0f69e; HTML table model |
 
 ### `target-size-minimum`
 
@@ -3595,7 +3595,7 @@ A header cell is a `<th>` with no other role, or any cell with role="columnheade
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `TD_NO_ASSOCIATED_HEADER` | fail | A non-empty data cell in a large table that has header cells has no headers attribute and no header cell above it in its column or before it in its row. | WCAG 1.3.1; H51; H43; HTML table model |
-| `TD_TABLE_NO_HEADERS` | cantTell | A large table with data in it has no header cell at all; a person checks whether it holds data, which needs headers, or only lays out content, which needs none (F46). | WCAG 1.3.1 (not settled); H51; F46 |
+| `TD_TABLE_NO_HEADERS` | cantTell | A large table with data in it has no header cell at all; a person checks whether it holds data, which needs headers, or only lays out content, which needs none (F46). It leans fail when the table shows signs of data (most body cells numbers, a caption or thead, a first row or column bold apart from the rest) and none of layout; it leans pass when its cells hold a nested table, form controls, images or blocks of prose and nothing marks it as data; otherwise no lean. | WCAG 1.3.1 (not settled); H51; F46 |
 
 ### `text-spacing-content-loss`
 
@@ -3761,7 +3761,7 @@ Asks about each &lt;video&gt;: with no &lt;track kind="captions"&gt; child, whet
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `CAPTIONS_REVIEW` | cantTell | A &lt;video&gt; has a captions track; a person checks that the captions carry all the dialogue and the sounds that matter. | WCAG 1.2.2 (not settled); G87; F8; ACT f51b46 |
-| `CAPTIONS_TRACK_NOT_DETECTED` | cantTell | A &lt;video&gt; has no &lt;track kind="captions"&gt; with a source; a person checks whether it has audio that needs captions. | WCAG 1.2.2 (not settled); G87; H95; ACT f51b46 |
+| `CAPTIONS_TRACK_NOT_DETECTED` | cantTell | A &lt;video&gt; has no &lt;track kind="captions"&gt; with a source; a person checks whether it has audio that needs captions. It leans pass when the video is muted, autoplays and loops with no controls attribute: a background video whose sound users can't turn on with the browser's controls. | WCAG 1.2.2 (not settled); G87; H95; ACT f51b46 |
 | `SUBTITLES_TRACK_ONLY` | cantTell | A &lt;video&gt; has only subtitles tracks, which may carry the dialogue without the speaker and sound information that captions add. | WCAG 1.2.2 (not settled); H95; HTML track kind |
 
 ### `video-poster-text-alternative-present`
@@ -3834,7 +3834,7 @@ A keyboard user can reach the widget with Tab (WCAG 2.1.1). Only the markup's fo
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `WIDGET_NOT_FOCUSABLE` | cantTell | A widget that cannot take focus and holds nothing that can; whether a keyboard user can reach it or what it does another way is for a person to check. | WCAG 2.1.1 (not settled); F42 |
-| `WIDGET_NOT_IN_TAB_ORDER` | cantTell | A widget that takes focus only from script (tabindex="-1"), so Tab never reaches it. | WCAG 2.1.1 (not settled) |
-| `COMPOSITE_NO_TAB_STOP` | cantTell | A composite widget that no other element controls or owns, with no tab stop on it or on any of its items. | WCAG 2.1.1 (not settled) |
-| `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | cantTell | An element with aria-activedescendant that cannot take focus, so its active item is never announced. | WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant |
+| `WIDGET_NOT_FOCUSABLE` | cantTell | A widget that cannot take focus and holds nothing that can; whether a keyboard user can reach it or what it does another way is for a person to check. It leans fail unless another element in the tab order has the same role and name. | WCAG 2.1.1 (not settled); F42 |
+| `WIDGET_NOT_IN_TAB_ORDER` | cantTell | A widget that takes focus only from script (tabindex="-1"), so Tab never reaches it. It leans pass when another element in the tab order has the same role and name, and fail when, with a listener hook installed before the page's scripts, no key listener is on an ancestor, the document or the window to move focus to it. | WCAG 2.1.1 (not settled) |
+| `COMPOSITE_NO_TAB_STOP` | cantTell | A composite widget that no other element controls or owns, with no tab stop on it or on any of its items. It leans fail unless the element just before it, or before its parent, says it opens a popup (aria-haspopup, or aria-expanded="true"). | WCAG 2.1.1 (not settled) |
+| `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | cantTell | An element with aria-activedescendant that cannot take focus, so its active item is never announced. It leans fail: ARIA gives aria-activedescendant effect only on the element that has focus. | WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant |

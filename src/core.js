@@ -74721,7 +74721,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const labelTokens = tokenize(visibleLabel, false);
     const nameTokens = tokenize(accName, false);
-    const contains = containsWordRun(labelTokens, nameTokens, null);
+    // A label of symbols only ("×", "+", "»") has no words to look for, and
+    // was counted as contained. One the name doesn't hold is asked about as a
+    // symbol standing for an icon, as a single "X" is.
+    const symbolsOnly = labelTokens.length === 0 && accNorm.indexOf(visibleNorm) === -1;
+    const contains = !symbolsOnly && containsWordRun(labelTokens, nameTokens, null);
 
     // An abbreviation, a word hyphenated differently, or visible text that
     // may not be literal text at all (an icon-font glyph, a single symbolic
@@ -74729,7 +74733,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // either. Report without asserting a defect instead of failing or
     // staying silent.
     let uncertainReason = '';
-    if (!contains) {
+    if (symbolsOnly) {
+      uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
+    } else if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
         uncertainReason = 'HYPHENATION_DIFFERS';
       } else {
