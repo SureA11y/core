@@ -87,6 +87,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `empty-table-header` asked about a header holding a named `<svg>` (by its `<title>`) or a `role="img"` named by `aria-label` or `aria-labelledby` as a header with no name. They count as the header's text now, as an image's alt does.
 - A `<canvas>` with an ARIA name and fallback content was described by its fallback content (`canvas-text-alternative-quality`): browsers name it from the ARIA name first, and the fallback content is its text alternative only when nothing names it.
 - `empty-table-header` asked about `<th><img alt="Price"></th>` as a header with no name: it read only text nodes. An image's alt (or a `role="img"` element's `aria-label`) counts as the header's text now.
 - `image-redundant-alt` asked about an image with `aria-hidden="true"`, which nothing reads, so it can't say anything twice. Such an image is left out.
