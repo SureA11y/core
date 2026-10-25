@@ -922,7 +922,7 @@
   "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
   "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
   "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
-  "focusNotRemovedByScript_description": "インラインの onfocus ハンドラーが blur()、または別の要素の focus() を呼び出す要素について確認を求めます。要素がフォーカスを受け取った直後にフォーカスが外れる可能性があります (WCAG の失敗例 F55)。",
+  "focusNotRemovedByScript_description": "タブ順序内の要素で、インラインの onfocus ハンドラーが自身に blur() を呼ぶだけのものを不適合とし、blur() や別要素への focus() を呼ぶその他のハンドラーについては確認を求めます。これらは要素がフォーカスを受けた直後にフォーカスを失わせることがあります (WCAG 失敗例 F55)。",
   "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
   "focusNotRemovedByScript_summary_fail_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
   "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",

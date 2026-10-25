@@ -922,7 +922,7 @@
   "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
   "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
   "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
-  "focusNotRemovedByScript_description": "Signale les éléments dont le gestionnaire onfocus en ligne appelle blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
+  "focusNotRemovedByScript_description": "Signale en échec les éléments de l’ordre de tabulation dont le gestionnaire onfocus en ligne ne fait qu’appeler blur() sur eux, et pose la question pour les autres gestionnaires qui appellent blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
   "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_fail_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",

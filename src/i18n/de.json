@@ -922,7 +922,7 @@
   "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
   "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
   "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
-  "focusNotRemovedByScript_description": "Fragt nach Elementen, deren Inline-Handler onfocus blur() oder focus() an einem anderen Element aufruft, was den Fokus entziehen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
+  "focusNotRemovedByScript_description": "Wertet Elemente in der Tab-Reihenfolge als Fehler, deren Inline-onfocus-Handler nur blur() auf ihnen aufruft, und fragt bei anderen Handlern nach, die blur() oder focus() auf einem anderen Element aufrufen, was den Fokus entfernen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
   "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_fail_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",

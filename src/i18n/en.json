@@ -922,7 +922,7 @@
   "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
   "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
   "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
-  "focusNotRemovedByScript_description": "Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
+  "focusNotRemovedByScript_description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
   "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_fail_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
   "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",

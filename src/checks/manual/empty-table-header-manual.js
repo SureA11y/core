@@ -118,11 +118,7 @@ function runInPage(ctx) {
       if (tag === 'img' || (tag === 'input' && type === 'image')) {
         return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
       }
-      if (
-        String(dom.getAttribute(node, 'role') || '')
-          .trim()
-          .toLowerCase() === 'img'
-      ) {
+      if (helpers.aria && helpers.aria.getExplicitRole(node) === 'img') {
         return ' ' + String(dom.getAttribute(node, 'aria-label') || '') + ' ';
       }
       let text = '';
