@@ -30,9 +30,11 @@
  * @reason-codes
  *   - `LABEL_FOR_NOT_LABELABLE` (cantTell): the label's for attribute names an
  *     element that cannot be labelled, so the label labels nothing.
+ *     It leans fail: the page states it.
  *     Basis: HTML labeled control (best practice).
  *   - `LABEL_FOR_TARGET_MISSING` (cantTell): the label's for attribute names
  *     no element in its tree, so the label labels nothing.
+ *     It leans fail: the page states it.
  *     Basis: HTML labeled control (best practice).
  * @implementation-notes
  * - Best practice, with no WCAG mapping: the harm, a control without its
@@ -111,6 +113,19 @@ function runInPage(ctx) {
           hintKey: 'labelForValid_hint_cantTell',
           params: missing ? { for: forId } : { for: forId, element: targetElement }
         },
+        lean: missing
+          ? {
+              toward: 'fail',
+              why: "The label's for attribute names no element, so the label labels nothing.",
+              signals: [{ signal: 'for-target-missing', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_targetMissing' }
+            }
+          : {
+              toward: 'fail',
+              why: "The label's for attribute names an element that can't be labelled, so the label labels nothing.",
+              signals: [{ signal: 'for-target-not-labelable', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_notLabelable' }
+            },
         data: {
           details: missing
             ? { reasonCode: 'LABEL_FOR_TARGET_MISSING', for: forId }

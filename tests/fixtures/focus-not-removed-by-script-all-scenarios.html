@@ -49,18 +49,18 @@
       rule never fails: an inline focus handler that calls blur() is asked about.
     </p>
 
-    <h2>A. CANTTELL — an inline focus handler calls blur()</h2>
+    <h2>A. FAIL and CANTTELL — an inline focus handler calls blur()</h2>
 
     <div class="case" id="case_01">
       <div class="case-title">
-        01 — CANTTELL: a link removes focus from itself (WCAG F55's example)
+        01 — FAIL: a link removes focus from itself (WCAG F55's example)
       </div>
       <a id="fnrs_case_01" href="/offers" onfocus="this.blur()">Offers</a>
     </div>
 
     <div class="case" id="case_02">
       <div class="case-title">
-        02 — CANTTELL: a read-only field removes focus from itself with a bare blur()
+        02 — FAIL: a read-only field removes focus from itself with a bare blur()
       </div>
       <input
         id="fnrs_case_02"
@@ -86,6 +86,13 @@
       >
         Send
       </button>
+    </div>
+
+    <div class="case" id="case_07">
+      <div class="case-title">
+        07 — CANTTELL: an element outside the tab order removes focus from itself
+      </div>
+      <div id="fnrs_case_07" tabindex="-1" onfocus="this.blur()">Panel</div>
     </div>
 
     <h2>B. NOT APPLICABLE</h2>

@@ -21,6 +21,7 @@
  * @reason-codes
  *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
  *     role="text" contains content that can take keyboard focus.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA Authoring Practices (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -107,6 +108,12 @@ function runInPage(ctx) {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',
         params: {}
+      },
+      lean: {
+        toward: 'fail',
+        why: 'A focusable element sits inside role="text", which flattens it into plain text.',
+        signals: [{ signal: 'focusable-descendant', value: true }],
+        i18n: { whyKey: 'ariaText_lean_why' }
       },
       data: {
         details: { reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT' }

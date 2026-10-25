@@ -23,6 +23,7 @@
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_MAIN` (cantTell): the page exposes more than one
  *     main landmark; each one is reported.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 main role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -111,6 +112,12 @@ function runInPage(ctx) {
         summaryKey: 'landmarkNoDuplicateMain_summary_cantTell',
         hintKey: 'landmarkNoDuplicateMain_hint_cantTell',
         params: { count: String(mains.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one main landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateMain_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_MAIN', count: mains.length }

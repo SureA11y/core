@@ -30,6 +30,7 @@
  *   - `CONTENT_OUTSIDE_LANDMARK` (cantTell): content on the page, or an
  *     iframe whose content can't be seen from the page, is outside every
  *     landmark region.
+ *     It leans fail, except for an iframe or frame.
  *     Basis: WAI-ARIA 1.2 landmark role (best practice); ARIA11.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -352,6 +353,16 @@ function runInPage(ctx) {
         hintKey: 'region_hint_cantTell',
         params: { element: tag }
       },
+      ...(tag !== 'iframe' && tag !== 'frame'
+        ? {
+            lean: {
+              toward: 'fail',
+              why: 'The content is outside every landmark region.',
+              signals: [{ signal: 'outside-landmark', value: true }],
+              i18n: { whyKey: 'region_lean_why' }
+            }
+          }
+        : {}),
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }

@@ -23,6 +23,7 @@
  *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
  *     also used by another element on the page, so the shortcut may not
  *     reach it.
+ *     It leans fail: the page states it.
  *     Basis: WCAG 2.1.1 (best practice); HTML accesskey attribute
  *     (not settled).
  * @implementation-notes
@@ -83,6 +84,12 @@ function runInPage(ctx) {
             summaryKey: 'accesskeys_summary_cantTell',
             hintKey: 'accesskeys_hint_cantTell',
             params: { accesskey: key, duplicateCount: String(els.length) }
+          },
+          lean: {
+            toward: 'fail',
+            why: 'Another element on the page uses the same access key.',
+            signals: [{ signal: 'accesskey-shared', value: true }],
+            i18n: { whyKey: 'accesskeys_lean_why' }
           },
           data: {
             details: {

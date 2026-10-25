@@ -38,6 +38,7 @@
  *     role="presentation" or "none", or an <img alt="">, that carries a global
  *     aria-* attribute or can take focus, so browsers expose its own role
  *     again.
+ *     It leans fail when the element has a meaningful native role.
  *     Basis: WAI-ARIA 1.2 presentational roles conflict resolution (best
  *     practice); ACT 46ca7f; HTML-AAM img.
  * @implementation-notes
@@ -222,6 +223,23 @@ function runInPage(ctx) {
           hintKey: 'presentationRoleConflict_hint_cantTell',
           params: { role, attrs: parts.join(', ') }
         },
+        ...((() => {
+          try {
+            const nr = helpers.aria.getNativeRoleForElement(el);
+            return !!nr && !['generic', 'none', 'presentation'].includes(nr);
+          } catch {
+            return false;
+          }
+        })()
+          ? {
+              lean: {
+                toward: 'fail',
+                why: "Browsers ignore the presentational role here and expose the element's own role.",
+                signals: [{ signal: 'native-role-exposed', value: true }],
+                i18n: { whyKey: 'presentationRoleConflict_lean_why' }
+              }
+            }
+          : {}),
         data: {
           details: {
             reasonCode: 'PRESENTATION_ROLE_CONFLICT',

@@ -18,6 +18,7 @@
  * @reason-codes
  *   - `TABLE_CAPTION_SUMMARY_DUPLICATE` (cantTell): the table's caption and
  *     its summary attribute say the same text, which may be announced twice.
+ *     It leans fail: the page states it.
  *     Basis: HTML table element summary attribute (best practice); H39.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -88,6 +89,12 @@ function runInPage(ctx) {
           summaryKey: 'tableDuplicateName_summary_cantTell',
           hintKey: 'tableDuplicateName_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: "The table's caption and summary say the same thing, so it is read twice.",
+          signals: [{ signal: 'caption-equals-summary', value: true }],
+          i18n: { whyKey: 'tableDuplicateName_lean_why' }
         },
         data: {
           details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }

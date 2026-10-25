@@ -1866,6 +1866,18 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       delete o.uncertainty;
     }
 
+    // A lean says which way a cantTell points; on a decided occurrence it has
+    // nothing to say, so it is dropped there, as uncertainty is.
+    const normalizedLean = occTier === 'cantTell' ? normalizeLean(o.lean) : null;
+    if (normalizedLean) {
+      const li = normalizedLean.i18n;
+      const params = (li && li.params) || {};
+      if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
+      if (li && li.cautionKey && normalizedLean.caution)
+        normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      o.lean = normalizedLean;
+    } else delete o.lean;
+
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
@@ -18471,6 +18483,64 @@ const normalizeUncertainty = (function normalizeUncertainty(input) {
   return out;
 });
 
+// Inlined from src/core/lean.js -- which way a cantTell finding points.
+const LEAN_DIRECTIONS = [
+  "pass",
+  "fail"
+];
+const SIGNAL_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const signalValue = (function signalValue(v) {
+  if (v === null || typeof v === 'string' || typeof v === 'boolean') return { ok: true, v };
+  if (typeof v === 'number' && Number.isFinite(v)) return { ok: true, v };
+  return { ok: false };
+});
+const normalizeLean = (function normalizeLean(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
+  if (typeof input.why !== 'string' || !input.why.trim()) return null;
+
+  const out = { toward: input.toward, why: input.why.trim() };
+
+  const signals = [];
+  for (const s of Array.isArray(input.signals) ? input.signals : []) {
+    if (!s || typeof s !== 'object' || typeof s.signal !== 'string') continue;
+    if (!SIGNAL_NAME.test(s.signal)) continue;
+    const value = signalValue(s.value === undefined ? null : s.value);
+    if (!value.ok) continue;
+    signals.push({ signal: s.signal, value: value.v });
+  }
+  out.signals = signals;
+
+  if (typeof input.caution === 'string' && input.caution.trim()) out.caution = input.caution.trim();
+
+  const m = input.measured;
+  if (
+    m &&
+    typeof m === 'object' &&
+    Number.isInteger(m.agreed) &&
+    Number.isInteger(m.cases) &&
+    m.cases > 0 &&
+    m.agreed >= 0 &&
+    m.agreed <= m.cases
+  ) {
+    out.measured = { agreed: m.agreed, cases: m.cases };
+    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
+    if (typeof m.coreVersion === 'string' && m.coreVersion)
+      out.measured.coreVersion = m.coreVersion;
+  }
+
+  const i = input.i18n;
+  if (i && typeof i === 'object' && !Array.isArray(i)) {
+    const ii = {};
+    if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
+    if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
+    if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
+      ii.params = { ...i.params };
+    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+  }
+  return out;
+});
+
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 const resolveMargin = (function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
@@ -20639,6 +20709,28 @@ const runCoreSettled = (function runCoreSettled(
                   ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
                   : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          // Under the target the criterion is met, by its removal or by the
+          // errata: the finding still stands, as a defect of its own.
+          if (!next.lean) {
+            next.lean = {
+              toward: 'pass',
+              why:
+                why === 'removed'
+                  ? `WCAG ${targetWcagVersion} removed the criterion this was found against.`
+                  : `WCAG ${targetWcagVersion}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.`,
+              signals: [
+                { signal: 'target-wcag-version', value: targetWcagVersion },
+                { signal: 'criterion-scope', value: why }
+              ],
+              caution:
+                'The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.',
+              i18n: {
+                whyKey: why === 'removed' ? 'engine_lean_why_removedSc' : 'engine_lean_why_errata',
+                cautionKey: 'engine_lean_caution_scopedSc',
+                params: { version: targetWcagVersion }
+              }
             };
           }
           return next;
@@ -25935,7 +26027,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "focus-not-removed-by-script",
     "title": "A script does not remove focus from an element as it receives it",
-    "description": "Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
+    "description": "Fails elements whose inline onfocus handler only calls blur() on them, and asks about those whose handler calls blur() otherwise, or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
     "i18n": {
       "titleKey": "focusNotRemovedByScript_title",
       "descriptionKey": "focusNotRemovedByScript_description"
@@ -25949,7 +26041,7 @@ const RUNTIME_CATALOG = {
       "navigation",
       "focus",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [
@@ -26013,8 +26105,8 @@ const RUNTIME_CATALOG = {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "low",
-    "type": "manual",
+    "defaultConfidence": "medium",
+    "type": "automatic",
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
@@ -34082,7 +34174,7 @@ const RUNTIME_CATALOG = {
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
   "empty-heading": { run: require("./checks/automatic/empty-heading.js").runInPage, applicability: require("./checks/automatic/empty-heading.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
-  "focus-not-removed-by-script": { run: require("./checks/manual/focus-not-removed-by-script-manual.js").runInPage, applicability: require("./checks/manual/focus-not-removed-by-script-manual.js").applicability || null },
+  "focus-not-removed-by-script": { run: require("./checks/automatic/focus-not-removed-by-script.js").runInPage, applicability: require("./checks/automatic/focus-not-removed-by-script.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
   "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
   "form-control-programmatic-label-present": { run: require("./checks/automatic/form-control-programmatic-label-present.js").runInPage, applicability: require("./checks/automatic/form-control-programmatic-label-present.js").applicability || null },
@@ -34791,10 +34883,12 @@ const RUNTIME_CATALOG = {
       "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Verschieben Sie die banner-Landmarke (<header> oder role=\"banner\") aus der anderen Landmarke; ein banner gehört auf die oberste Ebene der Seite.",
+      "landmarkBannerIsTopLevel_lean_why": "Der banner-Landmark liegt in einem anderen Landmark.",
       "landmarkContentinfoIsTopLevel_title": "Die contentinfo-Landmarke muss auf oberster Ebene liegen",
       "landmarkContentinfoIsTopLevel_description": "Prüft, ob die contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Diese contentinfo-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Verschieben Sie die contentinfo-Landmarke (<footer> oder role=\"contentinfo\") aus der anderen Landmarke; contentinfo gehört auf die oberste Ebene der Seite.",
+      "landmarkContentinfoIsTopLevel_lean_why": "Der contentinfo-Landmark liegt in einem anderen Landmark.",
       "landmarkComplementaryIsTopLevel_title": "Die complementary-Landmarke muss auf oberster Ebene liegen",
       "landmarkComplementaryIsTopLevel_description": "Prüft, dass die complementary-Landmarke (role=\"complementary\" oder ein <aside>, das seine implizite Rolle behält) nicht in einem anderen Landmarkenbereich verschachtelt ist.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Diese complementary-Landmarke ist in einem anderen Landmarkenbereich verschachtelt.",
@@ -34803,22 +34897,27 @@ const RUNTIME_CATALOG = {
       "landmarkMainIsTopLevel_description": "Prüft, ob die main-Landmarke (role=\"main\" oder <main>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkMainIsTopLevel_summary_cantTell": "Diese main-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkMainIsTopLevel_hint_cantTell": "Verschieben Sie die main-Landmarke (<main> oder role=\"main\") aus der anderen Landmarke; main gehört auf die oberste Ebene der Seite.",
+      "landmarkMainIsTopLevel_lean_why": "Der main-Landmark liegt in einem anderen Landmark.",
       "landmarkNoDuplicateBanner_title": "Die Seite darf nicht mehr als eine banner-Landmarke haben",
       "landmarkNoDuplicateBanner_description": "Prüft, ob höchstens eine banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Diese Seite hat mehr als eine banner-Landmarke.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Behalten Sie nur eine banner-Landmarke (<header> oder role=\"banner\") auf der Seite.",
+      "landmarkNoDuplicateBanner_lean_why": "Die Seite stellt mehr als einen banner-Landmark bereit.",
       "landmarkNoDuplicateContentinfo_title": "Die Seite darf nicht mehr als eine contentinfo-Landmarke haben",
       "landmarkNoDuplicateContentinfo_description": "Prüft, ob höchstens eine contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Diese Seite hat mehr als eine contentinfo-Landmarke.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Behalten Sie nur eine contentinfo-Landmarke (<footer> oder role=\"contentinfo\") auf der Seite.",
+      "landmarkNoDuplicateContentinfo_lean_why": "Die Seite stellt mehr als einen contentinfo-Landmark bereit.",
       "landmarkNoDuplicateMain_title": "Die Seite darf nicht mehr als eine main-Landmarke haben",
       "landmarkNoDuplicateMain_description": "Prüft, ob höchstens eine main-Landmarke (role=\"main\" oder <main>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateMain_summary_cantTell": "Diese Seite hat mehr als eine main-Landmarke.",
       "landmarkNoDuplicateMain_hint_cantTell": "Behalten Sie nur eine main-Landmarke (<main> oder role=\"main\") auf der Seite.",
+      "landmarkNoDuplicateMain_lean_why": "Die Seite stellt mehr als einen main-Landmark bereit.",
       "landmarkOneMain_title": "Die Seite sollte eine main-Landmarke haben",
       "landmarkOneMain_description": "Prüft, ob die Seite mindestens eine main-Landmarke (role=\"main\" oder <main>) hat.",
       "landmarkOneMain_summary_cantTell_missing": "Diese Seite hat keine main-Landmarke.",
       "landmarkOneMain_hint_cantTell_missing": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\") um den primären Inhalt der Seite hinzu.",
+      "landmarkOneMain_lean_why": "Die Seite hat keinen main-Landmark.",
       "landmarkUnique_title": "Landmarken mit derselben Rolle müssen eindeutige Namen haben",
       "landmarkUnique_description": "Prüft, ob bei zwei oder mehr Landmarken mit derselben Rolle jede einen eigenen zugänglichen Namen hat.",
       "landmarkUnique_summary_cantTell_duplicateName": "Diese {{role}}-Landmarke teilt ihren zugänglichen Namen mit einer anderen {{role}}-Landmarke.",
@@ -34828,6 +34927,7 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_description": "Prüft, ob ein Element mit role=\"region\" oder role=\"form\" einen zugänglichen Namen hat, ohne den es nicht als Landmarke bereitgestellt wird.",
       "landmarkRoleNamePresent_summary_cantTell": "Dieses Element hat role=\"{{role}}\", aber keinen zugänglichen Namen, daher wird es nicht als Landmarke bereitgestellt.",
       "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
+      "landmarkRoleNamePresent_lean_why": "Der Landmark hat keinen Namen, obwohl WAI-ARIA für seine Rolle einen verlangt.",
       "emptyHeading_title": "Überschriften dürfen nicht leer sein",
       "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
       "emptyHeading_summary_fail": "Diese Überschrift hat keinen zugänglichen Namen.",
@@ -34840,14 +34940,17 @@ const RUNTIME_CATALOG = {
       "headingOrder_description": "Prüft, ob Überschriftenebenen in Dokumentreihenfolge jeweils höchstens um eine Ebene steigen.",
       "headingOrder_summary_cantTell": "Diese Überschrift springt von Ebene {{fromLevel}} auf Ebene {{toLevel}} und überspringt dabei eine Ebene.",
       "headingOrder_hint_cantTell": "Gehen Sie immer nur eine Ebene tiefer, sodass auf ein <h2> ein <h3> folgt und kein <h4>, damit die Gliederung der Seite leicht nachvollziehbar bleibt.",
+      "headingOrder_lean_why": "Die Überschrift überspringt eine Ebene gegenüber der vorherigen.",
       "pageHasHeadingOne_title": "Die Seite sollte eine Überschrift der Ebene eins haben",
       "pageHasHeadingOne_description": "Prüft, ob die Seite mindestens eine Überschrift der Ebene eins hat (<h1> oder role=\"heading\" mit aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Diese Seite hat keine Überschrift der Ebene eins.",
       "pageHasHeadingOne_hint_cantTell": "Fügen Sie eine Überschrift der Ebene eins hinzu (<h1> oder role=\"heading\" aria-level=\"1\"), die den Hauptinhalt der Seite identifiziert.",
+      "pageHasHeadingOne_lean_why": "Die Seite hat keine Überschrift der ersten Ebene.",
       "accesskeys_title": "accesskey-Werte müssen eindeutig sein",
       "accesskeys_description": "Prüft, ob nicht zwei Elemente auf der Seite denselben accesskey-Attributwert teilen.",
       "accesskeys_summary_cantTell": "Der accesskey dieses Elements wird mit einem anderen Element auf der Seite geteilt.",
       "accesskeys_hint_cantTell": "Geben Sie jedem accesskey einen eigenen Wert.",
+      "accesskeys_lean_why": "Ein anderes Element der Seite verwendet dieselbe Zugriffstaste.",
       "scopeAttrValid_title": "Das scope-Attribut muss einen gültigen Wert haben",
       "scopeAttrValid_description": "Prüft, ob scope=\"…\" row, col, rowgroup oder colgroup ist.",
       "scopeAttrValid_summary_cantTell": "Dieser scope-Attributwert wird nicht erkannt.",
@@ -34862,6 +34965,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_hint_cantTell": "Geben Sie der Kopfzelle Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
+      "emptyTableHeader_lean_why_notVisible": "Die Kopfzelle hat keinen sichtbaren Text; ihr einziger Name stammt aus ARIA, den manche Screenreader bei Kopfzellen ignorieren.",
       "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
       "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
@@ -34872,18 +34976,22 @@ const RUNTIME_CATALOG = {
       "tableDuplicateName_description": "Prüft, ob der <caption>-Text einer <table> nicht identisch mit ihrem (veralteten) summary-Attribut ist.",
       "tableDuplicateName_summary_cantTell": "Die Beschriftung dieser Tabelle dupliziert ihr summary-Attribut.",
       "tableDuplicateName_hint_cantTell": "Entfernen Sie das summary-Attribut, oder sagen Sie darin etwas, das die Beschriftung nicht sagt.",
+      "tableDuplicateName_lean_why": "Beschriftung und Zusammenfassung der Tabelle sagen dasselbe, es wird also zweimal vorgelesen.",
       "metaViewportLarge_title": "Der Viewport-Meta-Tag sollte ein Zoomen bis zu 500 % erlauben",
       "metaViewportLarge_description": "Prüft, ob <meta name=\"viewport\"> nicht user-scalable=no oder maximum-scale unter 5 (500 %) setzt.",
       "metaViewportLarge_summary_cantTell": "Dieses viewport-Meta-Tag verhindert, dass Nutzende wie empfohlen auf 500 % vergrößern.",
       "metaViewportLarge_hint_cantTell": "Entfernen Sie user-scalable=no, und setzen Sie maximum-scale auf mindestens 5 oder lassen Sie es weg.",
+      "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
       "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
+      "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
       "region_description": "Prüft, ob Inhalt unter <body> innerhalb einer Landmarke enthalten ist.",
       "region_summary_cantTell": "Dieser Inhalt liegt außerhalb jeder Landmarke.",
       "region_hint_cantTell": "Verschieben Sie ihn in eine Landmarke, etwa <main>, <nav>, <aside> oder eine benannte <section>.",
+      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmark-Region.",
       "skipLink_title": "Ein Sprunglink muss ein auflösbares, nutzbares Ziel haben",
       "skipLink_description": "Prüft, ob das href-Fragment eines „Zu … springen“-Links auf ein reales, derzeit nutzbares Element im Dokument aufgelöst wird.",
       "skipLink_summary_cantTell": "Das Ziel dieses Sprunglinks existiert nicht.",
@@ -34993,6 +35101,8 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
       "ariaCheckedStateMismatch_hint_cantTell": "Bringen Sie aria-checked in Einklang mit dem tatsächlichen Zustand, oder entfernen Sie es; ein natives Kontrollkästchen oder Optionsfeld gibt seinen Zustand bereits aus.",
+      "ariaCheckedStateMismatch_lean_why": "Browser ignorieren aria-checked bei einem nativen Kontrollkästchen oder Optionsfeld und stellen dessen tatsächlichen Zustand bereit.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML verbietet aria-checked hier; entfernen Sie es, damit kein Werkzeug den falschen Zustand liest.",
       "ariaExpandedStateMismatch_title": "aria-expanded sollte damit übereinstimmen, ob der gesteuerte Inhalt angezeigt wird",
       "ariaExpandedStateMismatch_description": "Markiert zur manuellen Prüfung ein Element, dessen aria-expanded-Wert nicht damit übereinstimmt, ob die von seinem aria-controls genannten Elemente angezeigt werden.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" besagt, dass der gesteuerte Inhalt eingeklappt ist, er wird aber angezeigt.",
@@ -35017,10 +35127,10 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Prüfen Sie, ob dem Benutzer in Textform gesagt wird, was falsch ist, in der Beschriftung oder neben dem Feld; schreiben Sie diesen Text in die Fehlermeldung.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
@@ -35031,11 +35141,15 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
+      "invalidFieldErrorMessage_lean_why_hidden": "Die mit dem Feld verknüpfte Fehlermeldung ist ausgeblendet; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "Die mit dem Feld verknüpfte Fehlermeldung ist vor assistiven Technologien verborgen; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
       "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
       "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
       "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
       "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
+      "labelForValid_lean_why_notLabelable": "Das for-Attribut des Labels nennt ein Element, das nicht beschriftet werden kann; das Label beschriftet also nichts.",
+      "labelForValid_lean_why_targetMissing": "Das for-Attribut des Labels nennt kein Element; das Label beschriftet also nichts.",
       "controlNameTitleOnly_title": "Ein Button oder Link sollte seinen Namen nicht nur aus seinem title erhalten",
       "controlNameTitleOnly_description": "Meldet einen Button oder Link, dessen einziger zugänglicher Name sein title-Attribut ist, das nur beim Überfahren mit der Maus erscheint, zur manuellen Prüfung.",
       "controlNameTitleOnly_summary_cantTell_button": "Der einzige Name dieses Buttons ist sein title, der nur beim Überfahren mit der Maus erscheint.",
@@ -35056,6 +35170,7 @@ const RUNTIME_CATALOG = {
       "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
       "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält etwas, das den Fokus erhalten kann.",
       "ariaText_hint_cantTell": "Entfernen Sie role=\"text\", oder verschieben Sie den fokussierbaren Inhalt heraus.",
+      "ariaText_lean_why": "Ein fokussierbares Element liegt in role=\"text\", das es zu reinem Text verflacht.",
       "focusOrderSemantics_title": "Zur Tab-Reihenfolge hinzugefügte Elemente sollten interaktive Semantik haben",
       "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, note, presentation), zur manuellen Überprüfung.",
       "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
@@ -35084,9 +35199,11 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
       "focusNotRemovedByScript_description": "Fragt nach Elementen, deren Inline-Handler onfocus blur() oder focus() an einem anderen Element aufruft, was den Fokus entziehen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "Der onfocus-Handler dieses <{{element}}> verschiebt den Fokus beim Eintreffen auf ein anderes Element (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
+      "focusNotRemovedByScript_hint_fail": "Entfernen Sie den Aufruf von blur(), damit der Fokus auf dem Element bleibt, oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll (WCAG-Fehler F55).",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -35203,8 +35320,17 @@ const RUNTIME_CATALOG = {
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "WCAG {{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
+      "report_cards_group_leanFail": "Wahrscheinlich nicht erfüllt: bitte bestätigen",
+      "report_cards_group_leanPass": "Wahrscheinlich erfüllt: bitte bestätigen",
+      "report_cards_group_open": "Muss eine Person prüfen",
+      "report_card_leanFail": "Wahrscheinlich nicht erfüllt: {{why}}",
+      "report_card_leanPass": "Wahrscheinlich erfüllt: {{why}}",
+      "report_card_leanCaution": "Achtung: {{caution}}",
       "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
       "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet.",
+      "engine_lean_why_removedSc": "WCAG {{version}} hat das Kriterium gestrichen, nach dem dies gefunden wurde.",
+      "engine_lean_why_errata": "Die Errata von 2023 zu WCAG {{version}} werten das Kriterium, nach dem dies gefunden wurde, für HTML und XML als erfüllt.",
+      "engine_lean_caution_scopedSc": "Der Fehler selbst beeinträchtigt weiterhin, was davon abhängt, und eine Norm, die das Kriterium beibehält, wertet ihn als Verstoß.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
@@ -35820,10 +35946,12 @@ const RUNTIME_CATALOG = {
       "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
       "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Move the banner landmark (<header> or role=\"banner\") out of the other landmark; a banner belongs at the top level of the page.",
+      "landmarkBannerIsTopLevel_lean_why": "The banner landmark sits inside another landmark.",
       "landmarkContentinfoIsTopLevel_title": "Contentinfo landmark must be top-level",
       "landmarkContentinfoIsTopLevel_description": "Checks that the contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) is not nested inside another landmark region.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "This contentinfo landmark is nested inside another landmark region.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Move the contentinfo landmark (<footer> or role=\"contentinfo\") out of the other landmark; contentinfo belongs at the top level of the page.",
+      "landmarkContentinfoIsTopLevel_lean_why": "The contentinfo landmark sits inside another landmark.",
       "landmarkComplementaryIsTopLevel_title": "Complementary landmark must be top-level",
       "landmarkComplementaryIsTopLevel_description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "This complementary landmark is nested inside another landmark region.",
@@ -35832,22 +35960,27 @@ const RUNTIME_CATALOG = {
       "landmarkMainIsTopLevel_description": "Checks that the main landmark (role=\"main\" or <main>) is not nested inside another landmark region.",
       "landmarkMainIsTopLevel_summary_cantTell": "This main landmark is nested inside another landmark region.",
       "landmarkMainIsTopLevel_hint_cantTell": "Move the main landmark (<main> or role=\"main\") out of the other landmark; main belongs at the top level of the page.",
+      "landmarkMainIsTopLevel_lean_why": "The main landmark sits inside another landmark.",
       "landmarkNoDuplicateBanner_title": "Page must not have more than one banner landmark",
       "landmarkNoDuplicateBanner_description": "Checks that at most one banner landmark (role=\"banner\" or a non-nested <header>) exists on the page.",
       "landmarkNoDuplicateBanner_summary_cantTell": "This page has more than one banner landmark.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Keep only one banner landmark (<header> or role=\"banner\") on the page.",
+      "landmarkNoDuplicateBanner_lean_why": "The page exposes more than one banner landmark.",
       "landmarkNoDuplicateContentinfo_title": "Page must not have more than one contentinfo landmark",
       "landmarkNoDuplicateContentinfo_description": "Checks that at most one contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) exists on the page.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "This page has more than one contentinfo landmark.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Keep only one contentinfo landmark (<footer> or role=\"contentinfo\") on the page.",
+      "landmarkNoDuplicateContentinfo_lean_why": "The page exposes more than one contentinfo landmark.",
       "landmarkNoDuplicateMain_title": "Page must not have more than one main landmark",
       "landmarkNoDuplicateMain_description": "Checks that at most one main landmark (role=\"main\" or <main>) exists on the page.",
       "landmarkNoDuplicateMain_summary_cantTell": "This page has more than one main landmark.",
       "landmarkNoDuplicateMain_hint_cantTell": "Keep only one main landmark (<main> or role=\"main\") on the page.",
+      "landmarkNoDuplicateMain_lean_why": "The page exposes more than one main landmark.",
       "landmarkOneMain_title": "Page should have a main landmark",
       "landmarkOneMain_description": "Checks that the page has at least one main landmark (role=\"main\" or <main>).",
       "landmarkOneMain_summary_cantTell_missing": "This page has no main landmark.",
       "landmarkOneMain_hint_cantTell_missing": "Add a main landmark (<main> or role=\"main\") around the page's primary content.",
+      "landmarkOneMain_lean_why": "The page has no main landmark.",
       "landmarkUnique_title": "Landmarks with the same role must have unique names",
       "landmarkUnique_description": "Checks that when two or more landmarks share the same role, each has a distinct accessible name.",
       "landmarkUnique_summary_cantTell_duplicateName": "This {{role}} landmark shares its accessible name with another {{role}} landmark.",
@@ -35857,6 +35990,7 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
       "landmarkRoleNamePresent_summary_cantTell": "This element has role=\"{{role}}\" but no accessible name, so it is not exposed as a landmark.",
       "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
+      "landmarkRoleNamePresent_lean_why": "The landmark has no name, which WAI-ARIA requires for its role.",
       "emptyHeading_title": "Headings must not be empty",
       "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
       "emptyHeading_summary_fail": "This heading has no accessible name.",
@@ -35869,14 +36003,17 @@ const RUNTIME_CATALOG = {
       "headingOrder_description": "Checks that heading levels increase by at most one at a time in document order.",
       "headingOrder_summary_cantTell": "This heading jumps from level {{fromLevel}} to level {{toLevel}}, skipping a level.",
       "headingOrder_hint_cantTell": "Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.",
+      "headingOrder_lean_why": "The heading skips a level after the one before it.",
       "pageHasHeadingOne_title": "Page should have a level-one heading",
       "pageHasHeadingOne_description": "Checks that the page has at least one level-one heading (<h1> or role=\"heading\" with aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "This page has no level-one heading.",
       "pageHasHeadingOne_hint_cantTell": "Add a level-one heading (<h1> or role=\"heading\" aria-level=\"1\") that identifies the page's main content.",
+      "pageHasHeadingOne_lean_why": "The page has no level-one heading.",
       "accesskeys_title": "accesskey values must be unique",
       "accesskeys_description": "Checks that no two elements on the page share the same accesskey attribute value.",
       "accesskeys_summary_cantTell": "This element's accesskey is shared with another element on the page.",
       "accesskeys_hint_cantTell": "Give each accesskey its own value.",
+      "accesskeys_lean_why": "Another element on the page uses the same access key.",
       "scopeAttrValid_title": "scope attribute must have a valid value",
       "scopeAttrValid_description": "Checks that scope=\"...\" is one of row, col, rowgroup, or colgroup.",
       "scopeAttrValid_summary_cantTell": "This scope attribute value is not recognized.",
@@ -35891,6 +36028,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_hint_cantTell": "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
+      "emptyTableHeader_lean_why_notVisible": "The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.",
       "labelTitleOnly_title": "Title-only form labels (deprecated)",
       "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
@@ -35901,18 +36039,22 @@ const RUNTIME_CATALOG = {
       "tableDuplicateName_description": "Checks that a <table>'s <caption> text is not identical to its (deprecated) summary attribute.",
       "tableDuplicateName_summary_cantTell": "This table's caption duplicates its summary attribute.",
       "tableDuplicateName_hint_cantTell": "Remove the summary attribute, or use it to say something the caption doesn't.",
+      "tableDuplicateName_lean_why": "The table's caption and summary say the same thing, so it is read twice.",
       "metaViewportLarge_title": "Viewport meta tag should allow zooming up to 500%",
       "metaViewportLarge_description": "Checks that <meta name=\"viewport\"> does not set user-scalable=no or maximum-scale below 5 (500%).",
       "metaViewportLarge_summary_cantTell": "This viewport meta tag keeps users from zooming in to 500%, as recommended.",
       "metaViewportLarge_hint_cantTell": "Remove user-scalable=no, and set maximum-scale to at least 5 or leave it out.",
+      "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
       "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
+      "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
       "region_description": "Checks that content under <body> is contained within a landmark region.",
       "region_summary_cantTell": "This content is outside every landmark region.",
       "region_hint_cantTell": "Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.",
+      "region_lean_why": "The content is outside every landmark region.",
       "skipLink_title": "Skip link must have a resolvable, usable target",
       "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
       "skipLink_summary_cantTell": "The target of this skip link doesn't exist.",
@@ -36022,6 +36164,8 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
       "ariaCheckedStateMismatch_hint_cantTell": "Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.",
+      "ariaCheckedStateMismatch_lean_why": "Browsers ignore aria-checked on a native checkbox or radio button and expose its real state.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML forbids aria-checked here; remove it so no tool reads the wrong state.",
       "ariaExpandedStateMismatch_title": "aria-expanded should match whether the controlled content is shown",
       "ariaExpandedStateMismatch_description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" says the controlled content is collapsed, but it is shown.",
@@ -36046,10 +36190,10 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
@@ -36060,11 +36204,15 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
       "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "The error message tied to the field is hidden, so the error is probably not told.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.",
       "labelForValid_title": "A label’s for attribute should name a control it can label",
       "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
       "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
       "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
+      "labelForValid_lean_why_notLabelable": "The label's for attribute names an element that can't be labelled, so the label labels nothing.",
+      "labelForValid_lean_why_targetMissing": "The label's for attribute names no element, so the label labels nothing.",
       "controlNameTitleOnly_title": "A button or link should not take its name only from its title",
       "controlNameTitleOnly_description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
       "controlNameTitleOnly_summary_cantTell_button": "This button’s only name is its title, which is shown only on mouse hover.",
@@ -36085,6 +36233,7 @@ const RUNTIME_CATALOG = {
       "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
       "ariaText_summary_cantTell": "This role=\"text\" element contains something that can take focus.",
       "ariaText_hint_cantTell": "Remove role=\"text\", or move the focusable content out of it.",
+      "ariaText_lean_why": "A focusable element sits inside role=\"text\", which flattens it into plain text.",
       "focusOrderSemantics_title": "Elements added to the tab order should have interactive semantics",
       "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
       "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
@@ -36113,9 +36262,11 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
       "focusNotRemovedByScript_description": "Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "This <{{element}}>'s onfocus handler moves focus to another element as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
+      "focusNotRemovedByScript_hint_fail": "Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).",
       "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -36232,8 +36383,17 @@ const RUNTIME_CATALOG = {
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
+      "report_cards_group_leanFail": "Likely fails: confirm",
+      "report_cards_group_leanPass": "Likely passes: confirm",
+      "report_cards_group_open": "Needs a person",
+      "report_card_leanFail": "Likely fails: {{why}}",
+      "report_card_leanPass": "Likely passes: {{why}}",
+      "report_card_leanCaution": "Caution: {{caution}}",
       "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
       "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+      "engine_lean_why_removedSc": "WCAG {{version}} removed the criterion this was found against.",
+      "engine_lean_why_errata": "WCAG {{version}}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.",
+      "engine_lean_caution_scopedSc": "The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
@@ -36849,10 +37009,12 @@ const RUNTIME_CATALOG = {
       "landmarkBannerIsTopLevel_description": "Comprueba que la región de referencia banner (role=\"banner\" o un <header> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Esta región de referencia banner está anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Sacar el punto de referencia banner (<header> o role=\"banner\") del otro punto de referencia; un banner va en el nivel superior de la página.",
+      "landmarkBannerIsTopLevel_lean_why": "El punto de referencia banner está dentro de otro punto de referencia.",
       "landmarkContentinfoIsTopLevel_title": "La región de referencia contentinfo debe ser de nivel superior",
       "landmarkContentinfoIsTopLevel_description": "Comprueba que la región de referencia contentinfo (role=\"contentinfo\" o un <footer> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Esta región de referencia contentinfo está anidada dentro de otra región de referencia.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Sacar el punto de referencia contentinfo (<footer> o role=\"contentinfo\") del otro punto de referencia; contentinfo va en el nivel superior de la página.",
+      "landmarkContentinfoIsTopLevel_lean_why": "El punto de referencia contentinfo está dentro de otro punto de referencia.",
       "landmarkComplementaryIsTopLevel_title": "La región de referencia complementary debe ser de nivel superior",
       "landmarkComplementaryIsTopLevel_description": "Comprueba que la región de referencia complementary (role=\"complementary\" o un <aside> que conserva su rol implícito) no esté anidada dentro de otra región de referencia.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Esta región de referencia complementary está anidada dentro de otra región de referencia.",
@@ -36861,22 +37023,27 @@ const RUNTIME_CATALOG = {
       "landmarkMainIsTopLevel_description": "Comprueba que la región de referencia main (role=\"main\" o <main>) no esté anidada dentro de otra región de referencia.",
       "landmarkMainIsTopLevel_summary_cantTell": "Esta región de referencia main está anidada dentro de otra región de referencia.",
       "landmarkMainIsTopLevel_hint_cantTell": "Sacar el punto de referencia main (<main> o role=\"main\") del otro punto de referencia; main va en el nivel superior de la página.",
+      "landmarkMainIsTopLevel_lean_why": "El punto de referencia main está dentro de otro punto de referencia.",
       "landmarkNoDuplicateBanner_title": "La página no debe tener más de una región de referencia banner",
       "landmarkNoDuplicateBanner_description": "Comprueba que exista como máximo una región de referencia banner (role=\"banner\" o un <header> no anidado) en la página.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Esta página tiene más de una región de referencia banner.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Dejar un solo punto de referencia banner (<header> o role=\"banner\") en la página.",
+      "landmarkNoDuplicateBanner_lean_why": "La página expone más de un punto de referencia banner.",
       "landmarkNoDuplicateContentinfo_title": "La página no debe tener más de una región de referencia contentinfo",
       "landmarkNoDuplicateContentinfo_description": "Comprueba que exista como máximo una región de referencia contentinfo (role=\"contentinfo\" o un <footer> no anidado) en la página.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Esta página tiene más de una región de referencia contentinfo.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Dejar un solo punto de referencia contentinfo (<footer> o role=\"contentinfo\") en la página.",
+      "landmarkNoDuplicateContentinfo_lean_why": "La página expone más de un punto de referencia contentinfo.",
       "landmarkNoDuplicateMain_title": "La página no debe tener más de una región de referencia main",
       "landmarkNoDuplicateMain_description": "Comprueba que exista como máximo una región de referencia main (role=\"main\" o <main>) en la página.",
       "landmarkNoDuplicateMain_summary_cantTell": "Esta página tiene más de una región de referencia main.",
       "landmarkNoDuplicateMain_hint_cantTell": "Dejar un solo punto de referencia main (<main> o role=\"main\") en la página.",
+      "landmarkNoDuplicateMain_lean_why": "La página expone más de un punto de referencia main.",
       "landmarkOneMain_title": "La página debería tener una región de referencia main",
       "landmarkOneMain_description": "Comprueba que la página tenga al menos una región de referencia main (role=\"main\" o <main>).",
       "landmarkOneMain_summary_cantTell_missing": "Esta página no tiene ninguna región de referencia main.",
       "landmarkOneMain_hint_cantTell_missing": "Agregar una región de referencia main (<main> o role=\"main\") alrededor del contenido principal de la página.",
+      "landmarkOneMain_lean_why": "La página no tiene punto de referencia main.",
       "landmarkUnique_title": "Las regiones de referencia con el mismo rol deben tener nombres únicos",
       "landmarkUnique_description": "Comprueba que, cuando dos o más regiones de referencia comparten el mismo rol, cada una tenga un nombre accesible distinto.",
       "landmarkUnique_summary_cantTell_duplicateName": "Esta región de referencia {{role}} comparte su nombre accesible con otra región de referencia {{role}}.",
@@ -36886,6 +37053,7 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_description": "Comprueba que un elemento con role=\"region\" o role=\"form\" tenga un nombre accesible, sin el cual no se expone como región de referencia.",
       "landmarkRoleNamePresent_summary_cantTell": "Este elemento tiene role=\"{{role}}\" pero no tiene nombre accesible, así que no se expone como región de referencia.",
       "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
+      "landmarkRoleNamePresent_lean_why": "El punto de referencia no tiene nombre, aunque WAI-ARIA lo exige para su rol.",
       "emptyHeading_title": "Los encabezados no deben estar vacíos",
       "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
       "emptyHeading_summary_fail": "Este encabezado no tiene nombre accesible.",
@@ -36898,14 +37066,17 @@ const RUNTIME_CATALOG = {
       "headingOrder_description": "Comprueba que los niveles de encabezado aumenten como máximo en uno a la vez en el orden del documento.",
       "headingOrder_summary_cantTell": "Este encabezado salta del nivel {{fromLevel}} al nivel {{toLevel}}, saltándose un nivel.",
       "headingOrder_hint_cantTell": "Bajar de nivel de uno en uno, de modo que tras un <h2> venga un <h3> y no un <h4>, y la estructura de la página sea fácil de seguir.",
+      "headingOrder_lean_why": "El encabezado se salta un nivel respecto al anterior.",
       "pageHasHeadingOne_title": "La página debería tener un encabezado de nivel uno",
       "pageHasHeadingOne_description": "Comprueba que la página tenga al menos un encabezado de nivel uno (<h1> o role=\"heading\" con aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Esta página no tiene ningún encabezado de nivel uno.",
       "pageHasHeadingOne_hint_cantTell": "Agregar un encabezado de nivel uno (<h1> o role=\"heading\" aria-level=\"1\") que identifique el contenido principal de la página.",
+      "pageHasHeadingOne_lean_why": "La página no tiene un encabezado de nivel uno.",
       "accesskeys_title": "Los valores de accesskey deben ser únicos",
       "accesskeys_description": "Comprueba que no haya dos elementos en la página que compartan el mismo valor de atributo accesskey.",
       "accesskeys_summary_cantTell": "El accesskey de este elemento se comparte con otro elemento de la página.",
       "accesskeys_hint_cantTell": "Darle a cada accesskey su propio valor.",
+      "accesskeys_lean_why": "Otro elemento de la página usa la misma tecla de acceso.",
       "scopeAttrValid_title": "El atributo scope debe tener un valor válido",
       "scopeAttrValid_description": "Comprueba que scope=\"...\" sea uno de los valores row, col, rowgroup o colgroup.",
       "scopeAttrValid_summary_cantTell": "Este valor del atributo scope no se reconoce.",
@@ -36920,6 +37091,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_hint_cantTell": "Darle texto a la celda de encabezado, o un nombre con aria-label o aria-labelledby; quitarla si no hace falta.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
+      "emptyTableHeader_lean_why_notVisible": "La celda de encabezado no tiene texto visible; su único nombre viene de ARIA, que algunos lectores de pantalla ignoran en las celdas de encabezado.",
       "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
       "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
@@ -36930,18 +37102,22 @@ const RUNTIME_CATALOG = {
       "tableDuplicateName_description": "Comprueba que el texto del <caption> de una <table> no sea idéntico a su atributo summary (obsoleto).",
       "tableDuplicateName_summary_cantTell": "El <caption> de esta tabla duplica su atributo summary.",
       "tableDuplicateName_hint_cantTell": "Quitar el atributo summary, o usarlo para decir algo que el <caption> no dice.",
+      "tableDuplicateName_lean_why": "El título y el resumen de la tabla dicen lo mismo, así que se lee dos veces.",
       "metaViewportLarge_title": "La etiqueta meta viewport debería permitir el zoom hasta el 500%",
       "metaViewportLarge_description": "Comprueba que <meta name=\"viewport\"> no establezca user-scalable=no ni maximum-scale por debajo de 5 (500%).",
       "metaViewportLarge_summary_cantTell": "Esta etiqueta meta viewport impide ampliar la página al 500 %, como se recomienda.",
       "metaViewportLarge_hint_cantTell": "Quitar user-scalable=no, y poner maximum-scale en 5 como mínimo u omitirlo.",
+      "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
       "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
+      "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
       "region_description": "Comprueba que el contenido bajo <body> esté contenido dentro de una región de referencia.",
       "region_summary_cantTell": "Este contenido está fuera de cualquier región de punto de referencia.",
       "region_hint_cantTell": "Moverlo a un punto de referencia, como <main>, <nav>, <aside> o un <section> con nombre.",
+      "region_lean_why": "El contenido está fuera de toda región de punto de referencia.",
       "skipLink_title": "El enlace de salto debe tener un destino resoluble y utilizable",
       "skipLink_description": "Comprueba que el fragmento href de un enlace de \"saltar a...\" se resuelva en un elemento real y actualmente utilizable del documento.",
       "skipLink_summary_cantTell": "El destino de este enlace de salto no existe.",
@@ -37051,6 +37227,8 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
       "ariaCheckedStateMismatch_hint_cantTell": "Hacer que aria-checked coincida con el estado real, o quitarlo; una casilla o un botón de opción nativos ya exponen su estado.",
+      "ariaCheckedStateMismatch_lean_why": "Los navegadores ignoran aria-checked en una casilla o un botón de opción nativos y exponen su estado real.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML prohíbe aria-checked aquí; quítelo para que ninguna herramienta lea un estado erróneo.",
       "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
       "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
@@ -37075,10 +37253,10 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
@@ -37089,11 +37267,15 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
       "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
       "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "labelForValid_lean_why_notLabelable": "El atributo for de la etiqueta nombra un elemento que no se puede etiquetar, así que la etiqueta no etiqueta nada.",
+      "labelForValid_lean_why_targetMissing": "El atributo for de la etiqueta no nombra ningún elemento, así que la etiqueta no etiqueta nada.",
       "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
       "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
       "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
@@ -37114,6 +37296,7 @@ const RUNTIME_CATALOG = {
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
       "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene algo que puede recibir el foco.",
       "ariaText_hint_cantTell": "Quitar role=\"text\", o sacar de él el contenido enfocable.",
+      "ariaText_lean_why": "Un elemento enfocable está dentro de role=\"text\", que lo reduce a texto plano.",
       "focusOrderSemantics_title": "Los elementos agregados al orden de tabulación deberían tener semántica interactiva",
       "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, note, presentation), para su revisión manual.",
       "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
@@ -37142,9 +37325,11 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
       "focusNotRemovedByScript_description": "Pregunta por los elementos cuyo manejador onfocus en línea llama a blur(), o a focus() en otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
+      "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -37261,8 +37446,17 @@ const RUNTIME_CATALOG = {
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
+      "report_cards_group_leanFail": "Probable fallo: confírmelo",
+      "report_cards_group_leanPass": "Probablemente cumple: confírmelo",
+      "report_cards_group_open": "Lo debe revisar una persona",
+      "report_card_leanFail": "Probable fallo: {{why}}",
+      "report_card_leanPass": "Probablemente cumple: {{why}}",
+      "report_card_leanCaution": "Atención: {{caution}}",
       "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
       "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición.",
+      "engine_lean_why_removedSc": "WCAG {{version}} eliminó el criterio con el que se detectó esto.",
+      "engine_lean_why_errata": "La fe de erratas de 2023 de WCAG {{version}} da por cumplido para HTML y XML el criterio con el que se detectó esto.",
+      "engine_lean_caution_scopedSc": "El defecto en sí sigue rompiendo lo que depende de él, y una norma que mantiene el criterio lo da por incumplido.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
@@ -37878,10 +38072,12 @@ const RUNTIME_CATALOG = {
       "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Sortez le repère banner (<header> ou role=\"banner\") de l’autre repère ; un banner se place au premier niveau de la page.",
+      "landmarkBannerIsTopLevel_lean_why": "Le repère banner se trouve dans un autre repère.",
       "landmarkContentinfoIsTopLevel_title": "Le point de repère contentinfo doit être de premier niveau",
       "landmarkContentinfoIsTopLevel_description": "Vérifie que le point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Ce point de repère contentinfo est imbriqué dans un autre point de repère.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Sortez le repère contentinfo (<footer> ou role=\"contentinfo\") de l’autre repère ; contentinfo se place au premier niveau de la page.",
+      "landmarkContentinfoIsTopLevel_lean_why": "Le repère contentinfo se trouve dans un autre repère.",
       "landmarkComplementaryIsTopLevel_title": "Le point de repère complementary doit être de premier niveau",
       "landmarkComplementaryIsTopLevel_description": "Vérifie que le point de repère complementary (role=\"complementary\" ou un <aside> qui conserve son rôle implicite) n'est pas imbriqué dans une autre région de repère.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Ce point de repère complementary est imbriqué dans une autre région de repère.",
@@ -37890,22 +38086,27 @@ const RUNTIME_CATALOG = {
       "landmarkMainIsTopLevel_description": "Vérifie que le point de repère main (role=\"main\" ou <main>) n’est pas imbriqué dans un autre point de repère.",
       "landmarkMainIsTopLevel_summary_cantTell": "Ce point de repère main est imbriqué dans un autre point de repère.",
       "landmarkMainIsTopLevel_hint_cantTell": "Sortez le repère main (<main> ou role=\"main\") de l’autre repère ; main se place au premier niveau de la page.",
+      "landmarkMainIsTopLevel_lean_why": "Le repère main se trouve dans un autre repère.",
       "landmarkNoDuplicateBanner_title": "La page ne doit pas avoir plus d’un point de repère banner",
       "landmarkNoDuplicateBanner_description": "Vérifie qu’au plus un point de repère banner (role=\"banner\" ou un <header> non imbriqué) existe sur la page.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Cette page a plus d’un point de repère banner.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Ne gardez qu’un seul repère banner (<header> ou role=\"banner\") sur la page.",
+      "landmarkNoDuplicateBanner_lean_why": "La page expose plus d’un repère banner.",
       "landmarkNoDuplicateContentinfo_title": "La page ne doit pas avoir plus d’un point de repère contentinfo",
       "landmarkNoDuplicateContentinfo_description": "Vérifie qu’au plus un point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) existe sur la page.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Cette page a plus d’un point de repère contentinfo.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Ne gardez qu’un seul repère contentinfo (<footer> ou role=\"contentinfo\") sur la page.",
+      "landmarkNoDuplicateContentinfo_lean_why": "La page expose plus d’un repère contentinfo.",
       "landmarkNoDuplicateMain_title": "La page ne doit pas avoir plus d’un point de repère main",
       "landmarkNoDuplicateMain_description": "Vérifie qu’au plus un point de repère main (role=\"main\" ou <main>) existe sur la page.",
       "landmarkNoDuplicateMain_summary_cantTell": "Cette page a plus d’un point de repère main.",
       "landmarkNoDuplicateMain_hint_cantTell": "Ne gardez qu’un seul repère main (<main> ou role=\"main\") sur la page.",
+      "landmarkNoDuplicateMain_lean_why": "La page expose plus d’un repère main.",
       "landmarkOneMain_title": "La page devrait avoir un point de repère main",
       "landmarkOneMain_description": "Vérifie que la page a au moins un point de repère main (role=\"main\" ou <main>).",
       "landmarkOneMain_summary_cantTell_missing": "Cette page n’a aucun point de repère main.",
       "landmarkOneMain_hint_cantTell_missing": "Ajoutez un point de repère main (<main> ou role=\"main\") autour du contenu principal de la page.",
+      "landmarkOneMain_lean_why": "La page n’a pas de repère main.",
       "landmarkUnique_title": "Les points de repère partageant le même rôle doivent avoir des noms uniques",
       "landmarkUnique_description": "Vérifie que lorsque deux points de repère ou plus partagent le même rôle, chacun a un nom accessible distinct.",
       "landmarkUnique_summary_cantTell_duplicateName": "Ce point de repère {{role}} partage son nom accessible avec un autre point de repère {{role}}.",
@@ -37915,6 +38116,7 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_description": "Vérifie qu’un élément doté de role=\"region\" ou role=\"form\" a un nom accessible, sans lequel il n’est pas exposé comme point de repère.",
       "landmarkRoleNamePresent_summary_cantTell": "Cet élément a role=\"{{role}}\" mais pas de nom accessible, il n’est donc pas exposé comme point de repère.",
       "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
+      "landmarkRoleNamePresent_lean_why": "Le repère n’a pas de nom, alors que WAI-ARIA en exige un pour son rôle.",
       "emptyHeading_title": "Les titres ne doivent pas être vides",
       "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
       "emptyHeading_summary_fail": "Ce titre n’a pas de nom accessible.",
@@ -37927,14 +38129,17 @@ const RUNTIME_CATALOG = {
       "headingOrder_description": "Vérifie que les niveaux de titre n’augmentent que d’un niveau à la fois, dans l’ordre du document.",
       "headingOrder_summary_cantTell": "Ce titre passe du niveau {{fromLevel}} au niveau {{toLevel}}, en sautant un niveau.",
       "headingOrder_hint_cantTell": "Descendez d’un niveau à la fois, pour qu’un <h2> soit suivi d’un <h3> et non d’un <h4>, et que le plan de la page reste facile à suivre.",
+      "headingOrder_lean_why": "Le titre saute un niveau par rapport au précédent.",
       "pageHasHeadingOne_title": "La page devrait avoir un titre de niveau un",
       "pageHasHeadingOne_description": "Vérifie que la page a au moins un titre de niveau un (<h1> ou role=\"heading\" avec aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Cette page n’a aucun titre de niveau un.",
       "pageHasHeadingOne_hint_cantTell": "Ajoutez un titre de niveau un (<h1> ou role=\"heading\" aria-level=\"1\") identifiant le contenu principal de la page.",
+      "pageHasHeadingOne_lean_why": "La page n’a pas de titre de niveau un.",
       "accesskeys_title": "Les valeurs accesskey doivent être uniques",
       "accesskeys_description": "Vérifie qu’aucun élément de la page ne partage la même valeur d’attribut accesskey qu’un autre.",
       "accesskeys_summary_cantTell": "L’accesskey de cet élément est partagée avec un autre élément de la page.",
       "accesskeys_hint_cantTell": "Donnez à chaque accesskey sa propre valeur.",
+      "accesskeys_lean_why": "Un autre élément de la page utilise la même touche d’accès.",
       "scopeAttrValid_title": "L’attribut scope doit avoir une valeur valide",
       "scopeAttrValid_description": "Vérifie que scope=\"...\" vaut row, col, rowgroup, ou colgroup.",
       "scopeAttrValid_summary_cantTell": "Cette valeur d’attribut scope n’est pas reconnue.",
@@ -37949,6 +38154,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_hint_cantTell": "Donnez du texte à la cellule d’en-tête, ou nommez-la avec aria-label ou aria-labelledby ; retirez-la si elle n’est pas utile.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
+      "emptyTableHeader_lean_why_notVisible": "La cellule d’en-tête n’a pas de texte visible ; son seul nom vient d’ARIA, que certains lecteurs d’écran ignorent sur les cellules d’en-tête.",
       "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
       "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
@@ -37959,18 +38165,22 @@ const RUNTIME_CATALOG = {
       "tableDuplicateName_description": "Vérifie que le texte de la <caption> d’un <table> n’est pas identique à son attribut summary (obsolète).",
       "tableDuplicateName_summary_cantTell": "La légende de ce tableau duplique son attribut summary.",
       "tableDuplicateName_hint_cantTell": "Retirez l’attribut summary, ou utilisez-le pour dire quelque chose que la légende ne dit pas.",
+      "tableDuplicateName_lean_why": "La légende et le résumé du tableau disent la même chose, qui est donc lue deux fois.",
       "metaViewportLarge_title": "La balise meta viewport devrait permettre un zoom jusqu’à 500 %",
       "metaViewportLarge_description": "Vérifie que <meta name=\"viewport\"> ne définit pas user-scalable=no ni maximum-scale en dessous de 5 (500 %).",
       "metaViewportLarge_summary_cantTell": "Cette balise meta viewport empêche de zoomer jusqu’à 500 %, comme recommandé.",
       "metaViewportLarge_hint_cantTell": "Retirez user-scalable=no, et donnez à maximum-scale au moins 5 ou omettez-le.",
+      "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
       "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
+      "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
       "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
       "region_summary_cantTell": "Ce contenu se trouve hors de toute région de repère.",
       "region_hint_cantTell": "Placez-le dans un repère, comme <main>, <nav>, <aside> ou une <section> nommée.",
+      "region_lean_why": "Le contenu se trouve en dehors de toute région de repère.",
       "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
       "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.",
       "skipLink_summary_cantTell": "La cible de ce lien d’évitement n’existe pas.",
@@ -38080,6 +38290,8 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
       "ariaCheckedStateMismatch_hint_cantTell": "Faites correspondre aria-checked à l’état réel, ou retirez-le ; une case à cocher ou un bouton radio natif expose déjà son état.",
+      "ariaCheckedStateMismatch_lean_why": "Les navigateurs ignorent aria-checked sur une case à cocher ou un bouton radio natifs et exposent leur état réel.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML interdit aria-checked ici ; supprimez-le pour qu’aucun outil ne lise un état erroné.",
       "ariaExpandedStateMismatch_title": "aria-expanded devrait correspondre à l’affichage du contenu contrôlé",
       "ariaExpandedStateMismatch_description": "Signale, pour revue manuelle, un élément dont la valeur d’aria-expanded ne correspond pas à l’affichage des éléments que nomme son aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indique que le contenu contrôlé est replié, mais il est affiché.",
@@ -38104,10 +38316,10 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Vérifiez que l’utilisateur est informé, par un texte, de ce qui ne va pas, dans l’étiquette ou à côté du champ ; mettez ce texte dans le message d’erreur.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
@@ -38118,11 +38330,15 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "Le message d’erreur lié au champ est masqué : l’erreur n’est probablement pas signalée.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "Le message d’erreur lié au champ est masqué aux technologies d’assistance : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
       "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
       "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
       "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
       "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
+      "labelForValid_lean_why_notLabelable": "L’attribut for du label désigne un élément qui ne peut pas être étiqueté : le label n’étiquette rien.",
+      "labelForValid_lean_why_targetMissing": "L’attribut for du label ne désigne aucun élément : le label n’étiquette rien.",
       "controlNameTitleOnly_title": "Un bouton ou un lien ne devrait pas tirer son nom uniquement de son title",
       "controlNameTitleOnly_description": "Signale un bouton ou un lien dont le seul nom accessible est son attribut title, affiché seulement au survol de la souris, pour revue manuelle.",
       "controlNameTitleOnly_summary_cantTell_button": "Le seul nom de ce bouton est son title, affiché seulement au survol de la souris.",
@@ -38143,6 +38359,7 @@ const RUNTIME_CATALOG = {
       "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
       "ariaText_summary_cantTell": "Cet élément avec role=\"text\" contient quelque chose qui peut recevoir le focus.",
       "ariaText_hint_cantTell": "Retirez role=\"text\", ou sortez-en le contenu focalisable.",
+      "ariaText_lean_why": "Un élément focalisable se trouve dans role=\"text\", qui le réduit à du texte simple.",
       "focusOrderSemantics_title": "Les éléments ajoutés à l’ordre de tabulation devraient avoir une sémantique interactive",
       "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, note, presentation), pour une vérification manuelle.",
       "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
@@ -38171,9 +38388,11 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
       "focusNotRemovedByScript_description": "Signale les éléments dont le gestionnaire onfocus en ligne appelle blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "Le gestionnaire onfocus de cet élément <{{element}}> déplace le focus vers un autre élément dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
+      "focusNotRemovedByScript_hint_fail": "Supprimez l’appel à blur() pour que le focus reste sur l’élément, ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus (échec WCAG F55).",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -38290,8 +38509,17 @@ const RUNTIME_CATALOG = {
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
+      "report_cards_group_leanFail": "Échec probable : à confirmer",
+      "report_cards_group_leanPass": "Réussite probable : à confirmer",
+      "report_cards_group_open": "À examiner par une personne",
+      "report_card_leanFail": "Échec probable : {{why}}",
+      "report_card_leanPass": "Réussite probable : {{why}}",
+      "report_card_leanCaution": "Attention : {{caution}}",
       "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
       "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence.",
+      "engine_lean_why_removedSc": "Les WCAG {{version}} ont supprimé le critère au regard duquel ce point a été relevé.",
+      "engine_lean_why_errata": "Les errata de 2023 des WCAG {{version}} considèrent le critère au regard duquel ce point a été relevé comme satisfait pour HTML et XML.",
+      "engine_lean_caution_scopedSc": "Le défaut lui-même casse toujours ce qui en dépend, et une norme qui conserve le critère le considère comme un échec.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
@@ -38907,10 +39135,12 @@ const RUNTIME_CATALOG = {
       "landmarkBannerIsTopLevel_description": "banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkBannerIsTopLevel_summary_cantTell": "この banner ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkBannerIsTopLevel_hint_cantTell": "banner ランドマーク (<header> または role=\"banner\") を、ほかのランドマークの外に移してください。banner はページの最上位に置くものです。",
+      "landmarkBannerIsTopLevel_lean_why": "banner ランドマークが別のランドマークの中にあります。",
       "landmarkContentinfoIsTopLevel_title": "contentinfo ランドマークは最上位にあること",
       "landmarkContentinfoIsTopLevel_description": "contentinfo ランドマーク (role=\"contentinfo\" または入れ子になっていない <footer>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "この contentinfo ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "contentinfo ランドマーク (<footer> または role=\"contentinfo\") を、ほかのランドマークの外に移してください。contentinfo はページの最上位に置くものです。",
+      "landmarkContentinfoIsTopLevel_lean_why": "contentinfo ランドマークが別のランドマークの中にあります。",
       "landmarkComplementaryIsTopLevel_title": "complementary ランドマークは最上位にあること",
       "landmarkComplementaryIsTopLevel_description": "complementary ランドマーク (role=\"complementary\" または暗黙のロールを保持している <aside>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "この complementary ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
@@ -38919,22 +39149,27 @@ const RUNTIME_CATALOG = {
       "landmarkMainIsTopLevel_description": "main ランドマーク (role=\"main\" または <main>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkMainIsTopLevel_summary_cantTell": "この main ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkMainIsTopLevel_hint_cantTell": "main ランドマーク (<main> または role=\"main\") を、ほかのランドマークの外に移してください。main はページの最上位に置くものです。",
+      "landmarkMainIsTopLevel_lean_why": "main ランドマークが別のランドマークの中にあります。",
       "landmarkNoDuplicateBanner_title": "ページに banner ランドマークが複数あってはならない",
       "landmarkNoDuplicateBanner_description": "ページ内の banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateBanner_summary_cantTell": "このページには banner ランドマークが複数あります。",
       "landmarkNoDuplicateBanner_hint_cantTell": "ページ内の banner ランドマーク (<header> または role=\"banner\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateBanner_lean_why": "ページに banner ランドマークが複数あります。",
       "landmarkNoDuplicateContentinfo_title": "ページに contentinfo ランドマークが複数あってはならない",
       "landmarkNoDuplicateContentinfo_description": "ページ内の contentinfo ランドマーク (role=\"contentinfo\" または入れ子になっていない <footer>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "このページには contentinfo ランドマークが複数あります。",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "ページ内の contentinfo ランドマーク (<footer> または role=\"contentinfo\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateContentinfo_lean_why": "ページに contentinfo ランドマークが複数あります。",
       "landmarkNoDuplicateMain_title": "ページに main ランドマークが複数あってはならない",
       "landmarkNoDuplicateMain_description": "ページ内の main ランドマーク (role=\"main\" または <main>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateMain_summary_cantTell": "このページには main ランドマークが複数あります。",
       "landmarkNoDuplicateMain_hint_cantTell": "ページ内の main ランドマーク (<main> または role=\"main\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateMain_lean_why": "ページに main ランドマークが複数あります。",
       "landmarkOneMain_title": "ページに main ランドマークがあることが望ましい",
       "landmarkOneMain_description": "ページに main ランドマーク (role=\"main\" または <main>) が少なくとも 1 つあるかを確認します。",
       "landmarkOneMain_summary_cantTell_missing": "このページには main ランドマークがありません。",
       "landmarkOneMain_hint_cantTell_missing": "ページの主要なコンテンツを main ランドマーク (<main> または role=\"main\") で囲んでください。",
+      "landmarkOneMain_lean_why": "ページに main ランドマークがありません。",
       "landmarkUnique_title": "同じロールのランドマークには、それぞれ異なる名前が必要",
       "landmarkUnique_description": "同じロールを持つランドマークが 2 つ以上ある場合に、それぞれに異なるアクセシブルな名前があるかを確認します。",
       "landmarkUnique_summary_cantTell_duplicateName": "この {{role}} ランドマークは、別の {{role}} ランドマークと同じアクセシブルな名前を持っています。",
@@ -38944,6 +39179,7 @@ const RUNTIME_CATALOG = {
       "landmarkRoleNamePresent_description": "role=\"region\" または role=\"form\" を指定した要素にアクセシブルな名前があるかを確認します。名前がないと、ランドマークとして公開されません。",
       "landmarkRoleNamePresent_summary_cantTell": "この要素には role=\"{{role}}\" がありますが、アクセシブルな名前がないため、ランドマークとして公開されません。",
       "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
+      "landmarkRoleNamePresent_lean_why": "このランドマークには名前がありません。WAI-ARIA はこのロールに名前を求めています。",
       "emptyHeading_title": "見出しを空にしてはならない",
       "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
       "emptyHeading_summary_fail": "この見出しにはアクセシブルな名前がありません。",
@@ -38956,14 +39192,17 @@ const RUNTIME_CATALOG = {
       "headingOrder_description": "文書の順序において、見出しレベルが一度に 1 つずつしか深くならないかを確認します。",
       "headingOrder_summary_cantTell": "この見出しはレベル {{fromLevel}} からレベル {{toLevel}} に飛んでおり、途中のレベルが抜けています。",
       "headingOrder_hint_cantTell": "見出しレベルは 1 つずつ下げてください (<h2> の次は <h4> ではなく <h3>)。ページの構成がたどりやすくなります。",
+      "headingOrder_lean_why": "この見出しは、前の見出しからレベルを飛ばしています。",
       "pageHasHeadingOne_title": "ページにレベル 1 の見出しがあることが望ましい",
       "pageHasHeadingOne_description": "ページにレベル 1 の見出し (<h1> または aria-level=\"1\" の role=\"heading\") が少なくとも 1 つあるかを確認します。",
       "pageHasHeadingOne_summary_cantTell": "このページにはレベル 1 の見出しがありません。",
       "pageHasHeadingOne_hint_cantTell": "ページのメインコンテンツを示すレベル 1 の見出し (<h1> または role=\"heading\" aria-level=\"1\") を追加してください。",
+      "pageHasHeadingOne_lean_why": "ページにレベル 1 の見出しがありません。",
       "accesskeys_title": "accesskey の値は一意であること",
       "accesskeys_description": "ページ内で同じ accesskey 属性の値を持つ要素がないかを確認します。",
       "accesskeys_summary_cantTell": "この要素の accesskey は、ページ内の別の要素と重複しています。",
       "accesskeys_hint_cantTell": "accesskey にはそれぞれ別の値を付けてください。",
+      "accesskeys_lean_why": "ページ内の別の要素が同じアクセスキーを使っています。",
       "scopeAttrValid_title": "scope 属性には有効な値が必要",
       "scopeAttrValid_description": "scope=\"...\" の値が row、col、rowgroup、colgroup のいずれかであるかを確認します。",
       "scopeAttrValid_summary_cantTell": "この scope 属性の値は認識されません。",
@@ -38978,6 +39217,7 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_hint_cantTell": "見出しセルにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
+      "emptyTableHeader_lean_why_notVisible": "見出しセルに表示テキストがありません。名前は ARIA のみで、見出しセルでは一部のスクリーンリーダーがこれを無視します。",
       "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
       "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
       "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
@@ -38988,18 +39228,22 @@ const RUNTIME_CATALOG = {
       "tableDuplicateName_description": "<table> の <caption> のテキストが、(非推奨の) summary 属性と同一でないかを確認します。",
       "tableDuplicateName_summary_cantTell": "この表の caption は summary 属性と重複しています。",
       "tableDuplicateName_hint_cantTell": "summary 属性を削除するか、キャプションにない情報を伝えるのに使ってください。",
+      "tableDuplicateName_lean_why": "表のキャプションと要約が同じ内容のため、二度読み上げられます。",
       "metaViewportLarge_title": "viewport の meta タグは 500% までのズームを許可することが望ましい",
       "metaViewportLarge_description": "<meta name=\"viewport\"> で user-scalable=no や 5 (500%) 未満の maximum-scale が指定されていないかを確認します。",
       "metaViewportLarge_summary_cantTell": "この viewport の meta タグは、推奨される 500% までの拡大を妨げています。",
       "metaViewportLarge_hint_cantTell": "user-scalable=no を削除し、maximum-scale は 5 以上にするか、指定しないでください。",
+      "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
       "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
+      "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
       "region_description": "<body> 以下のコンテンツが、ランドマーク領域に含まれているかを確認します。",
       "region_summary_cantTell": "この内容は、どのランドマーク領域にも含まれていません。",
       "region_hint_cantTell": "<main>、<nav>、<aside>、名前付きの <section> などのランドマークの中に移してください。",
+      "region_lean_why": "このコンテンツはどのランドマーク領域にも含まれていません。",
       "skipLink_title": "スキップリンクには解決可能で利用できるリンク先が必要",
       "skipLink_description": "「〜へスキップ」リンクの href のフラグメントが、文書内に実在し、現在利用できる要素を指しているかを確認します。",
       "skipLink_summary_cantTell": "このスキップリンクの移動先が存在しません。",
@@ -39109,6 +39353,8 @@ const RUNTIME_CATALOG = {
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
       "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を実際の状態に合わせるか、削除してください。ネイティブのチェックボックスやラジオボタンは、状態を自ら公開します。",
+      "ariaCheckedStateMismatch_lean_why": "ブラウザーはネイティブのチェックボックスやラジオボタンの aria-checked を無視し、実際の状態を公開します。",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML はここでの aria-checked を禁止しています。誤った状態を読み取るツールがないよう削除してください。",
       "ariaExpandedStateMismatch_title": "aria-expanded は、制御するコンテンツが表示されているかどうかと一致することが望ましい",
       "ariaExpandedStateMismatch_description": "aria-expanded の値が、aria-controls が指す要素が表示されているかどうかと一致しない要素を、手動確認のために報告します。",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" は制御するコンテンツが折りたたまれていることを示していますが、コンテンツは表示されています。",
@@ -39133,10 +39379,10 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
-      "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
-      "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
       "invalidFieldErrorMessage_summary_cantTell_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
       "invalidFieldErrorMessage_hint_cantTell_empty": "何が誤っているかが、ラベルやフィールドの横などにテキストで示されているか確認してください。そのテキストをエラーメッセージに入れてください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
@@ -39147,11 +39393,15 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
       "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
+      "invalidFieldErrorMessage_lean_why_hidden": "フィールドに結び付けられたエラーメッセージが非表示のため、エラーはおそらく伝えられていません。",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "フィールドに結び付けられたエラーメッセージが支援技術から隠されているため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
       "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
       "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
       "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
       "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
+      "labelForValid_lean_why_notLabelable": "label の for 属性がラベル付けできない要素を指しているため、この label は何もラベル付けしていません。",
+      "labelForValid_lean_why_targetMissing": "label の for 属性がどの要素も指していないため、この label は何もラベル付けしていません。",
       "controlNameTitleOnly_title": "ボタンやリンクの名前を title だけから得るべきではありません",
       "controlNameTitleOnly_description": "アクセシブルな名前が title 属性だけのボタンやリンクを、手動での確認のために示します。title はマウスを重ねたときにしか表示されません。",
       "controlNameTitleOnly_summary_cantTell_button": "このボタンの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
@@ -39172,6 +39422,7 @@ const RUNTIME_CATALOG = {
       "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
       "ariaText_summary_cantTell": "role=\"text\" のこの要素の中に、フォーカスを受け取れるものがあります。",
       "ariaText_hint_cantTell": "role=\"text\" を削除するか、フォーカス可能な内容を外に移してください。",
+      "ariaText_lean_why": "フォーカス可能な要素が role=\"text\" の中にあり、ただのテキストとして扱われます。",
       "focusOrderSemantics_title": "タブ順序に加えた要素にはインタラクティブなセマンティクスがあることが望ましい",
       "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、note、presentation など) である要素を検出し、人が確認できるようにします。",
       "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
@@ -39200,9 +39451,11 @@ const RUNTIME_CATALOG = {
       "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
       "focusNotRemovedByScript_description": "インラインの onfocus ハンドラーが blur()、または別の要素の focus() を呼び出す要素について確認を求めます。要素がフォーカスを受け取った直後にフォーカスが外れる可能性があります (WCAG の失敗例 F55)。",
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_summary_fail_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_moves": "この <{{element}}> の onfocus ハンドラーは、フォーカスが届いた時点で別の要素にフォーカスを移します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
+      "focusNotRemovedByScript_hint_fail": "フォーカスが要素に留まるよう blur() の呼び出しを削除するか、フォーカスを受けるべきでない場合は要素をフォーカス不可にしてください (WCAG 失敗例 F55)。",
       "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -39319,8 +39572,17 @@ const RUNTIME_CATALOG = {
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
+      "report_cards_group_leanFail": "不適合の可能性が高い: 確認してください",
+      "report_cards_group_leanPass": "適合の可能性が高い: 確認してください",
+      "report_cards_group_open": "人による確認が必要",
+      "report_card_leanFail": "不適合の可能性が高い: {{why}}",
+      "report_card_leanPass": "適合の可能性が高い: {{why}}",
+      "report_card_leanCaution": "注意: {{caution}}",
       "engine_failWithoutOccurrence_summary": "このルールは、対象の要素を示さずにページを不合格と判定しました。",
       "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。",
+      "engine_lean_why_removedSc": "WCAG {{version}} では、これを検出した達成基準が削除されています。",
+      "engine_lean_why_errata": "WCAG {{version}} の 2023 年の正誤表では、これを検出した達成基準は HTML と XML について満たされているとみなされます。",
+      "engine_lean_caution_scopedSc": "欠陥そのものは、それに依存する機能を引き続き損ない、この達成基準を維持する規格では不適合となります。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
@@ -39478,7 +39740,7 @@ const RULE_MODULES = [
   "./checks/manual/embed-text-alternative-quality-manual.js",
   "./checks/automatic/empty-heading.js",
   "./checks/manual/empty-table-header-manual.js",
-  "./checks/manual/focus-not-removed-by-script-manual.js",
+  "./checks/automatic/focus-not-removed-by-script.js",
   "./checks/manual/focus-order-semantics-manual.js",
   "./checks/manual/form-control-label-quality-manual.js",
   "./checks/automatic/form-control-programmatic-label-present.js",
@@ -43349,7 +43611,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "focus-not-removed-by-script",
     "title": "A script does not remove focus from an element as it receives it",
-    "description": "Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
+    "description": "Fails elements whose inline onfocus handler only calls blur() on them, and asks about those whose handler calls blur() otherwise, or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
     "i18n": {
       "titleKey": "focusNotRemovedByScript_title",
       "descriptionKey": "focusNotRemovedByScript_description"
@@ -43363,7 +43625,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "navigation",
       "focus",
       "atomic",
-      "manual",
+      "automatic",
       "a11ycore"
     ],
     "wcagSc": [
@@ -43427,8 +43689,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     ],
     "defaultSeverity": "serious",
-    "defaultConfidence": "low",
-    "type": "manual",
+    "defaultConfidence": "medium",
+    "type": "automatic",
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
@@ -51480,6 +51742,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'accesskeys_hint_cantTell',
             params: { accesskey: key, duplicateCount: String(els.length) }
           },
+          lean: {
+            toward: 'fail',
+            why: 'Another element on the page uses the same access key.',
+            signals: [{ signal: 'accesskey-shared', value: true }],
+            i18n: { whyKey: 'accesskeys_lean_why' }
+          },
           data: {
             details: {
               reasonCode: 'ACCESSKEY_DUPLICATE',
@@ -53295,6 +53563,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
           params: { ariaChecked: normalizedAriaChecked, actualState, type }
+        },
+        // Browsers expose a native checkbox's or radio's own state and ignore
+        // aria-checked on it (Chromium, checked 2026-10-25), so assistive
+        // technology hears the real state.
+        lean: {
+          toward: 'pass',
+          why: 'Browsers ignore aria-checked on a native checkbox or radio button and expose its real state.',
+          signals: [{ signal: 'native-checkable', value: true }],
+          caution:
+            'ARIA in HTML forbids aria-checked here; remove it so no tool reads the wrong state.',
+          i18n: {
+            whyKey: 'ariaCheckedStateMismatch_lean_why',
+            cautionKey: 'ariaCheckedStateMismatch_lean_caution'
+          }
         },
         data: {
           details: {
@@ -56571,6 +56853,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',
         params: {}
+      },
+      lean: {
+        toward: 'fail',
+        why: 'A focusable element sits inside role="text", which flattens it into plain text.',
+        signals: [{ signal: 'focusable-descendant', value: true }],
+        i18n: { whyKey: 'ariaText_lean_why' }
       },
       data: {
         details: { reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT' }
@@ -65144,6 +65432,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
       if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
+      // An image shows its text: its alt (or, for role="img", its ARIA name)
+      // is what a screen reader reads and what the picture says, so a header
+      // holding <img alt="Price"> is not empty.
+      const tag = String(dom.tagName(node) || '').toLowerCase();
+      const type = String(dom.getAttribute(node, 'type') || '').toLowerCase();
+      if (tag === 'img' || (tag === 'input' && type === 'image')) {
+        return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
+      }
+      if (
+        String(dom.getAttribute(node, 'role') || '')
+          .trim()
+          .toLowerCase() === 'img'
+      ) {
+        return ' ' + String(dom.getAttribute(node, 'aria-label') || '') + ' ';
+      }
       let text = '';
       for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
@@ -65223,6 +65526,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             summaryKey: 'emptyTableHeader_summary_cantTell_ariaOnly',
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
             params: {}
+          },
+          lean: {
+            toward: 'fail',
+            why: 'The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.',
+            signals: [{ signal: 'visible-text-absent', value: true }],
+            i18n: { whyKey: 'emptyTableHeader_lean_why_notVisible' }
           },
           data: {
             details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
@@ -65304,6 +65613,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     : helpers.queryAll('[onfocus]');
 
   const occurrences = [];
+  const fails = [];
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const handler = String(dom.getAttribute(el, 'onfocus') || '')
@@ -65332,6 +65642,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       calls: 'FOCUS_HANDLER_CALLS_BLUR',
       moves: 'FOCUS_HANDLER_MOVES_FOCUS'
     };
+    const details = {
+      reasonCode: CODES[kind],
+      handler: shown,
+      tabbable: focus.tabbable
+    };
+    // F55 is about keyboard focus: an element in the tab order that drops
+    // it fails; one outside it is reached by click or script only, and asked
+    // about like the rest.
+    if (self && focus.tabbable) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary: SUMMARIES.self,
+          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).',
+          i18n: {
+            summaryKey: 'focusNotRemovedByScript_summary_fail_self',
+            hintKey: 'focusNotRemovedByScript_hint_fail',
+            params: { element: tag, handler: shown }
+          },
+          occurrenceOutcome: 'fail',
+          data: { details }
+        })
+      );
+      continue;
+    }
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: SUMMARIES[kind],
@@ -65356,14 +65690,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  if (!occurrences.length) {
+  if (!occurrences.length && !fails.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   return {
     ruleId: rule.ruleId,
-    outcome: 'cantTell',
-    severity: rule.defaultSeverity || 'serious',
-    occurrences
+    ...helpers.resolveTieredOutcome(fails, occurrences, rule.defaultSeverity || 'serious')
   };
 }), applicability: null },
     "focus-order-semantics": { run: (function runInPage(ctx) {
@@ -67000,6 +67332,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'headingOrder_hint_cantTell',
             params: { fromLevel: String(previousLevel), toLevel: String(level) }
           },
+          lean: {
+            toward: 'fail',
+            why: 'The heading skips a level after the one before it.',
+            signals: [{ signal: 'heading-level-skipped', value: true }],
+            i18n: { whyKey: 'headingOrder_lean_why' }
+          },
           data: {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
@@ -68598,6 +68936,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const alt = normalizeWs(dom.getAttribute(el, 'alt'));
     if (!alt) continue;
+    // An image assistive technology never reads (aria-hidden on it or around
+    // it) can't say anything twice.
+    if (helpers && typeof helpers.isAccTreeEligible === 'function') {
+      let elig;
+      try {
+        elig = helpers.isAccTreeEligible(el, ctx);
+      } catch {
+        elig = true;
+      }
+      if ((typeof elig === 'boolean' ? elig : !!(elig && elig.eligible)) === false) continue;
+    }
 
     const parent = dom.parentElement(el);
     if (!parent) continue;
@@ -70284,7 +70633,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // as for NO_ERROR_MESSAGE.
           reasonCode = 'ERROR_MESSAGE_EMPTY';
         } else {
-          tier = 'fail';
           reasonCode = 'ERROR_MESSAGE_HIDDEN';
           if (infos.every((i) => i.hiddenByAria)) hiddenBy = 'aria-hidden';
         }
@@ -70301,16 +70649,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
-        key: 'fail_hidden',
+        key: 'cantTell_hidden',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden.',
-        hint: 'Show the error message while the field is invalid.'
+        hint: 'Show the error message while the field is invalid.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
+        lean: {
+          why: 'The error message tied to the field is hidden, so the error is probably not told.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_hidden',
+          signal: 'error-message-hidden'
+        }
       },
       ERROR_MESSAGE_HIDDEN_ARIA: {
-        key: 'fail_hiddenAria',
+        key: 'cantTell_hiddenAria',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
-        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
+        hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether screen reader users are told about the error some other way.',
+        lean: {
+          why: 'The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_hiddenAria',
+          signal: 'error-message-aria-hidden'
+        }
       },
       ERROR_MESSAGE_EMPTY: {
         key: 'cantTell_empty',
@@ -70370,6 +70732,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fails.push(helpers.reportOccurrence(el, occurrence));
     } else {
       occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
+      if (m.lean)
+        occurrence.lean = {
+          toward: 'fail',
+          why: m.lean.why,
+          signals: [{ signal: m.lean.signal, value: true }],
+          i18n: { whyKey: m.lean.whyKey }
+        };
       questions.push(helpers.reportOccurrence(el, occurrence));
     }
   }
@@ -70431,6 +70800,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'labelForValid_hint_cantTell',
           params: missing ? { for: forId } : { for: forId, element: targetElement }
         },
+        lean: missing
+          ? {
+              toward: 'fail',
+              why: "The label's for attribute names no element, so the label labels nothing.",
+              signals: [{ signal: 'for-target-missing', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_targetMissing' }
+            }
+          : {
+              toward: 'fail',
+              why: "The label's for attribute names an element that can't be labelled, so the label labels nothing.",
+              signals: [{ signal: 'for-target-not-labelable', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_notLabelable' }
+            },
         data: {
           details: missing
             ? { reasonCode: 'LABEL_FOR_TARGET_MISSING', for: forId }
@@ -71171,6 +71553,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'landmarkBannerIsTopLevel_hint_cantTell',
           params: {}
         },
+        lean: {
+          toward: 'fail',
+          why: 'The banner landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkBannerIsTopLevel_lean_why' }
+        },
         data: {
           details: { reasonCode: 'LANDMARK_BANNER_NOT_TOP_LEVEL' }
         }
@@ -71377,6 +71765,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
           params: {}
         },
+        lean: {
+          toward: 'fail',
+          why: 'The contentinfo landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkContentinfoIsTopLevel_lean_why' }
+        },
         data: {
           details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }
         }
@@ -71474,6 +71868,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
           params: {}
         },
+        lean: {
+          toward: 'fail',
+          why: 'The main landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkMainIsTopLevel_lean_why' }
+        },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
         }
@@ -71556,6 +71956,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',
         params: { count: String(banners.length) }
       },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one banner landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateBanner_lean_why' }
+      },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }
       }
@@ -71627,6 +72033,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'landmarkNoDuplicateContentinfo_hint_cantTell',
         params: { count: String(contentinfos.length) }
       },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one contentinfo landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateContentinfo_lean_why' }
+      },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }
       }
@@ -71697,6 +72109,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey: 'landmarkNoDuplicateMain_summary_cantTell',
         hintKey: 'landmarkNoDuplicateMain_hint_cantTell',
         params: { count: String(mains.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one main landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateMain_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_MAIN', count: mains.length }
@@ -71771,6 +72189,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'landmarkOneMain_hint_cantTell_missing',
           params: {}
         },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no main landmark.',
+          signals: [{ signal: 'main-landmark-absent', value: true }],
+          i18n: { whyKey: 'landmarkOneMain_lean_why' }
+        },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
         }
@@ -71821,6 +72245,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           code: 'spec-only',
           needed: 'Whether losing the landmark matters to people navigating this page by landmark.',
           evidence: { role, source: 'WAI-ARIA 1.2, roles region and form', wcagSc: [] }
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The landmark has no name, which WAI-ARIA requires for its role.',
+          signals: [{ signal: 'landmark-name-missing', value: true }],
+          i18n: { whyKey: 'landmarkRoleNamePresent_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_ROLE_NAME_MISSING', role }
@@ -75213,6 +75643,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'metaViewportLarge_hint_cantTell',
           params: { reasons: reasons.join(', ') }
         },
+        lean: {
+          toward: 'fail',
+          why: 'The viewport meta tag keeps zoom below 500%.',
+          signals: [{ signal: 'zoom-limited', value: true }],
+          i18n: { whyKey: 'metaViewportLarge_lean_why' }
+        },
         data: {
           details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }
         }
@@ -77350,6 +77786,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'pageHasHeadingOne_hint_cantTell',
           params: {}
         },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no level-one heading.',
+          signals: [{ signal: 'heading-one-absent', value: true }],
+          i18n: { whyKey: 'pageHasHeadingOne_lean_why' }
+        },
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }
         }
@@ -78109,6 +78551,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'presentationRoleConflict_hint_cantTell',
           params: { role, attrs: parts.join(', ') }
         },
+        ...((() => {
+          try {
+            const nr = helpers.aria.getNativeRoleForElement(el);
+            return !!nr && !['generic', 'none', 'presentation'].includes(nr);
+          } catch {
+            return false;
+          }
+        })()
+          ? {
+              lean: {
+                toward: 'fail',
+                why: "Browsers ignore the presentational role here and expose the element's own role.",
+                signals: [{ signal: 'native-role-exposed', value: true }],
+                i18n: { whyKey: 'presentationRoleConflict_lean_why' }
+              }
+            }
+          : {}),
         data: {
           details: {
             reasonCode: 'PRESENTATION_ROLE_CONFLICT',
@@ -78798,6 +79257,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'region_hint_cantTell',
         params: { element: tag }
       },
+      ...(tag !== 'iframe' && tag !== 'frame'
+        ? {
+            lean: {
+              toward: 'fail',
+              why: 'The content is outside every landmark region.',
+              signals: [{ signal: 'outside-landmark', value: true }],
+              i18n: { whyKey: 'region_lean_why' }
+            }
+          }
+        : {}),
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }
@@ -81612,6 +82081,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'tableDuplicateName_summary_cantTell',
           hintKey: 'tableDuplicateName_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: "The table's caption and summary say the same thing, so it is read twice.",
+          signals: [{ signal: 'caption-equals-summary', value: true }],
+          i18n: { whyKey: 'tableDuplicateName_lean_why' }
         },
         data: {
           details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }
@@ -87227,10 +87702,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkBannerIsTopLevel_description": "Prüft, ob die banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Diese banner-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Verschieben Sie die banner-Landmarke (<header> oder role=\"banner\") aus der anderen Landmarke; ein banner gehört auf die oberste Ebene der Seite.",
+      "landmarkBannerIsTopLevel_lean_why": "Der banner-Landmark liegt in einem anderen Landmark.",
       "landmarkContentinfoIsTopLevel_title": "Die contentinfo-Landmarke muss auf oberster Ebene liegen",
       "landmarkContentinfoIsTopLevel_description": "Prüft, ob die contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Diese contentinfo-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Verschieben Sie die contentinfo-Landmarke (<footer> oder role=\"contentinfo\") aus der anderen Landmarke; contentinfo gehört auf die oberste Ebene der Seite.",
+      "landmarkContentinfoIsTopLevel_lean_why": "Der contentinfo-Landmark liegt in einem anderen Landmark.",
       "landmarkComplementaryIsTopLevel_title": "Die complementary-Landmarke muss auf oberster Ebene liegen",
       "landmarkComplementaryIsTopLevel_description": "Prüft, dass die complementary-Landmarke (role=\"complementary\" oder ein <aside>, das seine implizite Rolle behält) nicht in einem anderen Landmarkenbereich verschachtelt ist.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Diese complementary-Landmarke ist in einem anderen Landmarkenbereich verschachtelt.",
@@ -87239,22 +87716,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkMainIsTopLevel_description": "Prüft, ob die main-Landmarke (role=\"main\" oder <main>) nicht innerhalb einer anderen Landmarke verschachtelt ist.",
       "landmarkMainIsTopLevel_summary_cantTell": "Diese main-Landmarke ist innerhalb einer anderen Landmarke verschachtelt.",
       "landmarkMainIsTopLevel_hint_cantTell": "Verschieben Sie die main-Landmarke (<main> oder role=\"main\") aus der anderen Landmarke; main gehört auf die oberste Ebene der Seite.",
+      "landmarkMainIsTopLevel_lean_why": "Der main-Landmark liegt in einem anderen Landmark.",
       "landmarkNoDuplicateBanner_title": "Die Seite darf nicht mehr als eine banner-Landmarke haben",
       "landmarkNoDuplicateBanner_description": "Prüft, ob höchstens eine banner-Landmarke (role=\"banner\" oder ein nicht verschachtelter <header>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Diese Seite hat mehr als eine banner-Landmarke.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Behalten Sie nur eine banner-Landmarke (<header> oder role=\"banner\") auf der Seite.",
+      "landmarkNoDuplicateBanner_lean_why": "Die Seite stellt mehr als einen banner-Landmark bereit.",
       "landmarkNoDuplicateContentinfo_title": "Die Seite darf nicht mehr als eine contentinfo-Landmarke haben",
       "landmarkNoDuplicateContentinfo_description": "Prüft, ob höchstens eine contentinfo-Landmarke (role=\"contentinfo\" oder ein nicht verschachtelter <footer>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Diese Seite hat mehr als eine contentinfo-Landmarke.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Behalten Sie nur eine contentinfo-Landmarke (<footer> oder role=\"contentinfo\") auf der Seite.",
+      "landmarkNoDuplicateContentinfo_lean_why": "Die Seite stellt mehr als einen contentinfo-Landmark bereit.",
       "landmarkNoDuplicateMain_title": "Die Seite darf nicht mehr als eine main-Landmarke haben",
       "landmarkNoDuplicateMain_description": "Prüft, ob höchstens eine main-Landmarke (role=\"main\" oder <main>) auf der Seite vorhanden ist.",
       "landmarkNoDuplicateMain_summary_cantTell": "Diese Seite hat mehr als eine main-Landmarke.",
       "landmarkNoDuplicateMain_hint_cantTell": "Behalten Sie nur eine main-Landmarke (<main> oder role=\"main\") auf der Seite.",
+      "landmarkNoDuplicateMain_lean_why": "Die Seite stellt mehr als einen main-Landmark bereit.",
       "landmarkOneMain_title": "Die Seite sollte eine main-Landmarke haben",
       "landmarkOneMain_description": "Prüft, ob die Seite mindestens eine main-Landmarke (role=\"main\" oder <main>) hat.",
       "landmarkOneMain_summary_cantTell_missing": "Diese Seite hat keine main-Landmarke.",
       "landmarkOneMain_hint_cantTell_missing": "Fügen Sie eine main-Landmarke (<main> oder role=\"main\") um den primären Inhalt der Seite hinzu.",
+      "landmarkOneMain_lean_why": "Die Seite hat keinen main-Landmark.",
       "landmarkUnique_title": "Landmarken mit derselben Rolle müssen eindeutige Namen haben",
       "landmarkUnique_description": "Prüft, ob bei zwei oder mehr Landmarken mit derselben Rolle jede einen eigenen zugänglichen Namen hat.",
       "landmarkUnique_summary_cantTell_duplicateName": "Diese {{role}}-Landmarke teilt ihren zugänglichen Namen mit einer anderen {{role}}-Landmarke.",
@@ -87264,6 +87746,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_description": "Prüft, ob ein Element mit role=\"region\" oder role=\"form\" einen zugänglichen Namen hat, ohne den es nicht als Landmarke bereitgestellt wird.",
       "landmarkRoleNamePresent_summary_cantTell": "Dieses Element hat role=\"{{role}}\", aber keinen zugänglichen Namen, daher wird es nicht als Landmarke bereitgestellt.",
       "landmarkRoleNamePresent_hint_cantTell": "Benennen Sie es mit aria-labelledby, das auf seine sichtbare Überschrift verweist, oder mit aria-label; oder entfernen Sie role=\"{{role}}\", wenn es keine Landmarke sein soll.",
+      "landmarkRoleNamePresent_lean_why": "Der Landmark hat keinen Namen, obwohl WAI-ARIA für seine Rolle einen verlangt.",
       "emptyHeading_title": "Überschriften dürfen nicht leer sein",
       "emptyHeading_description": "Prüft, ob Überschriften-Elemente (<h1>-<h6> oder role=\"heading\") einen nicht leeren zugänglichen Namen haben.",
       "emptyHeading_summary_fail": "Diese Überschrift hat keinen zugänglichen Namen.",
@@ -87276,14 +87759,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingOrder_description": "Prüft, ob Überschriftenebenen in Dokumentreihenfolge jeweils höchstens um eine Ebene steigen.",
       "headingOrder_summary_cantTell": "Diese Überschrift springt von Ebene {{fromLevel}} auf Ebene {{toLevel}} und überspringt dabei eine Ebene.",
       "headingOrder_hint_cantTell": "Gehen Sie immer nur eine Ebene tiefer, sodass auf ein <h2> ein <h3> folgt und kein <h4>, damit die Gliederung der Seite leicht nachvollziehbar bleibt.",
+      "headingOrder_lean_why": "Die Überschrift überspringt eine Ebene gegenüber der vorherigen.",
       "pageHasHeadingOne_title": "Die Seite sollte eine Überschrift der Ebene eins haben",
       "pageHasHeadingOne_description": "Prüft, ob die Seite mindestens eine Überschrift der Ebene eins hat (<h1> oder role=\"heading\" mit aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Diese Seite hat keine Überschrift der Ebene eins.",
       "pageHasHeadingOne_hint_cantTell": "Fügen Sie eine Überschrift der Ebene eins hinzu (<h1> oder role=\"heading\" aria-level=\"1\"), die den Hauptinhalt der Seite identifiziert.",
+      "pageHasHeadingOne_lean_why": "Die Seite hat keine Überschrift der ersten Ebene.",
       "accesskeys_title": "accesskey-Werte müssen eindeutig sein",
       "accesskeys_description": "Prüft, ob nicht zwei Elemente auf der Seite denselben accesskey-Attributwert teilen.",
       "accesskeys_summary_cantTell": "Der accesskey dieses Elements wird mit einem anderen Element auf der Seite geteilt.",
       "accesskeys_hint_cantTell": "Geben Sie jedem accesskey einen eigenen Wert.",
+      "accesskeys_lean_why": "Ein anderes Element der Seite verwendet dieselbe Zugriffstaste.",
       "scopeAttrValid_title": "Das scope-Attribut muss einen gültigen Wert haben",
       "scopeAttrValid_description": "Prüft, ob scope=\"…\" row, col, rowgroup oder colgroup ist.",
       "scopeAttrValid_summary_cantTell": "Dieser scope-Attributwert wird nicht erkannt.",
@@ -87298,6 +87784,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_hint_cantTell": "Geben Sie der Kopfzelle Text oder einen Namen mit aria-label oder aria-labelledby; entfernen Sie sie, wenn sie nicht gebraucht wird.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
+      "emptyTableHeader_lean_why_notVisible": "Die Kopfzelle hat keinen sichtbaren Text; ihr einziger Name stammt aus ARIA, den manche Screenreader bei Kopfzellen ignorieren.",
       "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
       "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
@@ -87308,18 +87795,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableDuplicateName_description": "Prüft, ob der <caption>-Text einer <table> nicht identisch mit ihrem (veralteten) summary-Attribut ist.",
       "tableDuplicateName_summary_cantTell": "Die Beschriftung dieser Tabelle dupliziert ihr summary-Attribut.",
       "tableDuplicateName_hint_cantTell": "Entfernen Sie das summary-Attribut, oder sagen Sie darin etwas, das die Beschriftung nicht sagt.",
+      "tableDuplicateName_lean_why": "Beschriftung und Zusammenfassung der Tabelle sagen dasselbe, es wird also zweimal vorgelesen.",
       "metaViewportLarge_title": "Der Viewport-Meta-Tag sollte ein Zoomen bis zu 500 % erlauben",
       "metaViewportLarge_description": "Prüft, ob <meta name=\"viewport\"> nicht user-scalable=no oder maximum-scale unter 5 (500 %) setzt.",
       "metaViewportLarge_summary_cantTell": "Dieses viewport-Meta-Tag verhindert, dass Nutzende wie empfohlen auf 500 % vergrößern.",
       "metaViewportLarge_hint_cantTell": "Entfernen Sie user-scalable=no, und setzen Sie maximum-scale auf mindestens 5 oder lassen Sie es weg.",
+      "metaViewportLarge_lean_why": "Das Viewport-Meta-Tag begrenzt den Zoom auf unter 500 %.",
       "presentationRoleConflict_title": "Eine präsentationale Rolle darf nicht mit einem globalen ARIA-Attribut oder Fokussierbarkeit im Konflikt stehen",
       "presentationRoleConflict_description": "Prüft, ob role=\"presentation\"/\"none\" (einschließlich der impliziten presentation-Rolle eines <img alt=\"\">) nicht mit einem globalen ARIA-Attribut (aria-label, aria-hidden, aria-describedby, …) oder Fokussierbarkeit (tabindex/nativ) kombiniert wird.",
       "presentationRoleConflict_summary_cantTell": "Dieses Element mit role=\"{{role}}\" hat außerdem {{attrs}}, daher ignorieren Browser die Rolle und geben das Element trotzdem aus.",
       "presentationRoleConflict_hint_cantTell": "Soll es vor assistiven Technologien verborgen bleiben, entfernen Sie die Namensattribute und machen Sie es nicht fokussierbar. Soll es ausgegeben werden, entfernen Sie role=\"presentation\" bzw. role=\"none\".",
+      "presentationRoleConflict_lean_why": "Browser ignorieren hier die Präsentationsrolle und stellen die eigene Rolle des Elements bereit.",
       "region_title": "Der Seiteninhalt sollte sich innerhalb einer Landmarke befinden",
       "region_description": "Prüft, ob Inhalt unter <body> innerhalb einer Landmarke enthalten ist.",
       "region_summary_cantTell": "Dieser Inhalt liegt außerhalb jeder Landmarke.",
       "region_hint_cantTell": "Verschieben Sie ihn in eine Landmarke, etwa <main>, <nav>, <aside> oder eine benannte <section>.",
+      "region_lean_why": "Der Inhalt liegt außerhalb jeder Landmark-Region.",
       "skipLink_title": "Ein Sprunglink muss ein auflösbares, nutzbares Ziel haben",
       "skipLink_description": "Prüft, ob das href-Fragment eines „Zu … springen“-Links auf ein reales, derzeit nutzbares Element im Dokument aufgelöst wird.",
       "skipLink_summary_cantTell": "Das Ziel dieses Sprunglinks existiert nicht.",
@@ -87429,6 +87920,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Markiert ein natives <input type=\"checkbox\">/<input type=\"radio\">, dessen expliziter aria-checked-Wert nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand übereinstimmt, zur manuellen Überprüfung.",
       "ariaCheckedStateMismatch_summary_cantTell": "Der aria-checked-Wert dieses Elements stimmt nicht mit seinem tatsächlichen aktivierten/unbestimmten Zustand überein.",
       "ariaCheckedStateMismatch_hint_cantTell": "Bringen Sie aria-checked in Einklang mit dem tatsächlichen Zustand, oder entfernen Sie es; ein natives Kontrollkästchen oder Optionsfeld gibt seinen Zustand bereits aus.",
+      "ariaCheckedStateMismatch_lean_why": "Browser ignorieren aria-checked bei einem nativen Kontrollkästchen oder Optionsfeld und stellen dessen tatsächlichen Zustand bereit.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML verbietet aria-checked hier; entfernen Sie es, damit kein Werkzeug den falschen Zustand liest.",
       "ariaExpandedStateMismatch_title": "aria-expanded sollte damit übereinstimmen, ob der gesteuerte Inhalt angezeigt wird",
       "ariaExpandedStateMismatch_description": "Markiert zur manuellen Prüfung ein Element, dessen aria-expanded-Wert nicht damit übereinstimmt, ob die von seinem aria-controls genannten Elemente angezeigt werden.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" besagt, dass der gesteuerte Inhalt eingeklappt ist, er wird aber angezeigt.",
@@ -87453,10 +87946,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Prüfen Sie, ob Personen, die die Tastatur nutzen, es erreichen können: aria-activedescendant wird nur angesagt, solange das Element mit diesem Attribut den Fokus hat; geben Sie ihm daher tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
       "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Entfernen Sie aria-hidden von der Fehlermeldung und von dem, was sie enthält, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung hat keinen Text.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Prüfen Sie, ob dem Benutzer in Textform gesagt wird, was falsch ist, in der Beschriftung oder neben dem Feld; schreiben Sie diesen Text in die Fehlermeldung.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Dieses Feld ist als ungültig markiert, und die von aria-errormessage genannte Fehlermeldung ist ausgeblendet oder hat keinen Text; seine Beschreibung enthält den Fehler möglicherweise.",
@@ -87467,11 +87960,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Prüfen Sie, ob die Fehlermeldung auf der Seite ist, solange das Feld ungültig ist, mit der von aria-errormessage genannten ID.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Dieses Feld ist als ungültig markiert, aber keine Fehlermeldung ist mit aria-errormessage oder aria-describedby mit ihm verknüpft.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
+      "invalidFieldErrorMessage_lean_why_hidden": "Die mit dem Feld verknüpfte Fehlermeldung ist ausgeblendet; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "Die mit dem Feld verknüpfte Fehlermeldung ist vor assistiven Technologien verborgen; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
       "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
       "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
       "labelForValid_summary_cantTell_notLabelable": "Das for=\"{{for}}\" dieser Beschriftung nennt ein <{{element}}>, das sich nicht beschriften lässt, daher beschriftet sie nichts.",
       "labelForValid_hint_cantTell": "Prüfen Sie, für welches Bedienelement die Beschriftung gedacht ist, und setzen Sie for auf dessen ID.",
+      "labelForValid_lean_why_notLabelable": "Das for-Attribut des Labels nennt ein Element, das nicht beschriftet werden kann; das Label beschriftet also nichts.",
+      "labelForValid_lean_why_targetMissing": "Das for-Attribut des Labels nennt kein Element; das Label beschriftet also nichts.",
       "controlNameTitleOnly_title": "Ein Button oder Link sollte seinen Namen nicht nur aus seinem title erhalten",
       "controlNameTitleOnly_description": "Meldet einen Button oder Link, dessen einziger zugänglicher Name sein title-Attribut ist, das nur beim Überfahren mit der Maus erscheint, zur manuellen Prüfung.",
       "controlNameTitleOnly_summary_cantTell_button": "Der einzige Name dieses Buttons ist sein title, der nur beim Überfahren mit der Maus erscheint.",
@@ -87492,6 +87989,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaText_description": "Prüft, ob Elemente mit role=\"text\" keinen fokussierbaren Nachfahren enthalten (Link, Schaltfläche, Formularelement, tabindex, iframe oder contenteditable).",
       "ariaText_summary_cantTell": "Dieses Element mit role=\"text\" enthält etwas, das den Fokus erhalten kann.",
       "ariaText_hint_cantTell": "Entfernen Sie role=\"text\", oder verschieben Sie den fokussierbaren Inhalt heraus.",
+      "ariaText_lean_why": "Ein fokussierbares Element liegt in role=\"text\", das es zu reinem Text verflacht.",
       "focusOrderSemantics_title": "Zur Tab-Reihenfolge hinzugefügte Elemente sollten interaktive Semantik haben",
       "focusOrderSemantics_description": "Markiert Elemente mit tabindex >= 0, deren explizite Rolle eine nicht interaktive strukturelle/dokumentarische Rolle ist (z. B. heading, list, note, presentation), zur manuellen Überprüfung.",
       "focusOrderSemantics_summary_cantTell": "Dieses Element befindet sich in der Tab-Reihenfolge (tabindex=\"{{tabindex}}\"), hat jedoch eine nicht interaktive Rolle („{{role}}“).",
@@ -87520,9 +88018,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
       "focusNotRemovedByScript_description": "Fragt nach Elementen, deren Inline-Handler onfocus blur() oder focus() an einem anderen Element aufruft, was den Fokus entziehen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Der onfocus-Handler dieses <{{element}}> ruft blur() auf, was den Fokus beim Eintreffen entziehen kann (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "Der onfocus-Handler dieses <{{element}}> verschiebt den Fokus beim Eintreffen auf ein anderes Element (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Gehen Sie mit der Tabulatortaste zum Element und prüfen Sie, ob der Fokus dort bleibt. Ein Skript darf einem Element, das den Fokus erhält, diesen nicht entziehen (WCAG-Fehler F55): Entfernen Sie den Aufruf von blur(), oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll.",
+      "focusNotRemovedByScript_hint_fail": "Entfernen Sie den Aufruf von blur(), damit der Fokus auf dem Element bleibt, oder machen Sie das Element nicht fokussierbar, wenn es keinen Fokus erhalten soll (WCAG-Fehler F55).",
       "mouseOnlyEventHandlers_title": "Nur für den Zeiger bestimmte Event-Handler sollten ein per Tastatur erreichbares Äquivalent haben",
       "mouseOnlyEventHandlers_description": "Markiert Elemente mit einem nur für den Zeiger bestimmten Event-Handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline oder, mit dem Listener-Hook, per Skript hinzugefügt, ohne per Tastatur erreichbares Äquivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), zur manuellen Überprüfung.",
       "mouseOnlyEventHandlers_summary_cantTell": "Dieses Element hat {{attrs}}, aber keinen entsprechenden, per Tastatur erreichbaren Handler.",
@@ -87639,8 +88139,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_help": "So beheben Sie {{rule}}",
       "report_card_understanding": "WCAG {{sc}} {{title}} verstehen",
       "report_cards_overflow": "Angezeigt werden die {{shown}} Regeln mit der höchsten Priorität von {{total}} mit Problemen. Die übrigen finden Sie in den vollständigen technischen Daten unten.",
+      "report_cards_group_leanFail": "Wahrscheinlich nicht erfüllt: bitte bestätigen",
+      "report_cards_group_leanPass": "Wahrscheinlich erfüllt: bitte bestätigen",
+      "report_cards_group_open": "Muss eine Person prüfen",
+      "report_card_leanFail": "Wahrscheinlich nicht erfüllt: {{why}}",
+      "report_card_leanPass": "Wahrscheinlich erfüllt: {{why}}",
+      "report_card_leanCaution": "Achtung: {{caution}}",
       "engine_failWithoutOccurrence_summary": "Die Regel ist für die Seite fehlgeschlagen, ohne ein Element zu nennen.",
       "engine_failWithoutOccurrence_hint": "Prüfen Sie die Seite anhand der Beschreibung der Regel. Eine eigene Regel kann das fehlerhafte Element nennen, indem sie es als Fundstelle meldet.",
+      "engine_lean_why_removedSc": "WCAG {{version}} hat das Kriterium gestrichen, nach dem dies gefunden wurde.",
+      "engine_lean_why_errata": "Die Errata von 2023 zu WCAG {{version}} werten das Kriterium, nach dem dies gefunden wurde, für HTML und XML als erfüllt.",
+      "engine_lean_caution_scopedSc": "Der Fehler selbst beeinträchtigt weiterhin, was davon abhängt, und eine Norm, die das Kriterium beibehält, wertet ihn als Verstoß.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
@@ -88256,10 +88765,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkBannerIsTopLevel_description": "Checks that the banner landmark (role=\"banner\" or a non-nested <header>) is not nested inside another landmark region.",
       "landmarkBannerIsTopLevel_summary_cantTell": "This banner landmark is nested inside another landmark region.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Move the banner landmark (<header> or role=\"banner\") out of the other landmark; a banner belongs at the top level of the page.",
+      "landmarkBannerIsTopLevel_lean_why": "The banner landmark sits inside another landmark.",
       "landmarkContentinfoIsTopLevel_title": "Contentinfo landmark must be top-level",
       "landmarkContentinfoIsTopLevel_description": "Checks that the contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) is not nested inside another landmark region.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "This contentinfo landmark is nested inside another landmark region.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Move the contentinfo landmark (<footer> or role=\"contentinfo\") out of the other landmark; contentinfo belongs at the top level of the page.",
+      "landmarkContentinfoIsTopLevel_lean_why": "The contentinfo landmark sits inside another landmark.",
       "landmarkComplementaryIsTopLevel_title": "Complementary landmark must be top-level",
       "landmarkComplementaryIsTopLevel_description": "Checks that the complementary landmark (role=\"complementary\" or an <aside> that keeps its implicit role) is not nested inside another landmark region.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "This complementary landmark is nested inside another landmark region.",
@@ -88268,22 +88779,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkMainIsTopLevel_description": "Checks that the main landmark (role=\"main\" or <main>) is not nested inside another landmark region.",
       "landmarkMainIsTopLevel_summary_cantTell": "This main landmark is nested inside another landmark region.",
       "landmarkMainIsTopLevel_hint_cantTell": "Move the main landmark (<main> or role=\"main\") out of the other landmark; main belongs at the top level of the page.",
+      "landmarkMainIsTopLevel_lean_why": "The main landmark sits inside another landmark.",
       "landmarkNoDuplicateBanner_title": "Page must not have more than one banner landmark",
       "landmarkNoDuplicateBanner_description": "Checks that at most one banner landmark (role=\"banner\" or a non-nested <header>) exists on the page.",
       "landmarkNoDuplicateBanner_summary_cantTell": "This page has more than one banner landmark.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Keep only one banner landmark (<header> or role=\"banner\") on the page.",
+      "landmarkNoDuplicateBanner_lean_why": "The page exposes more than one banner landmark.",
       "landmarkNoDuplicateContentinfo_title": "Page must not have more than one contentinfo landmark",
       "landmarkNoDuplicateContentinfo_description": "Checks that at most one contentinfo landmark (role=\"contentinfo\" or a non-nested <footer>) exists on the page.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "This page has more than one contentinfo landmark.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Keep only one contentinfo landmark (<footer> or role=\"contentinfo\") on the page.",
+      "landmarkNoDuplicateContentinfo_lean_why": "The page exposes more than one contentinfo landmark.",
       "landmarkNoDuplicateMain_title": "Page must not have more than one main landmark",
       "landmarkNoDuplicateMain_description": "Checks that at most one main landmark (role=\"main\" or <main>) exists on the page.",
       "landmarkNoDuplicateMain_summary_cantTell": "This page has more than one main landmark.",
       "landmarkNoDuplicateMain_hint_cantTell": "Keep only one main landmark (<main> or role=\"main\") on the page.",
+      "landmarkNoDuplicateMain_lean_why": "The page exposes more than one main landmark.",
       "landmarkOneMain_title": "Page should have a main landmark",
       "landmarkOneMain_description": "Checks that the page has at least one main landmark (role=\"main\" or <main>).",
       "landmarkOneMain_summary_cantTell_missing": "This page has no main landmark.",
       "landmarkOneMain_hint_cantTell_missing": "Add a main landmark (<main> or role=\"main\") around the page's primary content.",
+      "landmarkOneMain_lean_why": "The page has no main landmark.",
       "landmarkUnique_title": "Landmarks with the same role must have unique names",
       "landmarkUnique_description": "Checks that when two or more landmarks share the same role, each has a distinct accessible name.",
       "landmarkUnique_summary_cantTell_duplicateName": "This {{role}} landmark shares its accessible name with another {{role}} landmark.",
@@ -88293,6 +88809,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_description": "Checks that an element given role=\"region\" or role=\"form\" has an accessible name, without which it is not exposed as a landmark.",
       "landmarkRoleNamePresent_summary_cantTell": "This element has role=\"{{role}}\" but no accessible name, so it is not exposed as a landmark.",
       "landmarkRoleNamePresent_hint_cantTell": "Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role=\"{{role}}\" if it is not meant to be a landmark.",
+      "landmarkRoleNamePresent_lean_why": "The landmark has no name, which WAI-ARIA requires for its role.",
       "emptyHeading_title": "Headings must not be empty",
       "emptyHeading_description": "Checks that heading elements (<h1>-<h6> or role=\"heading\") have a non-empty accessible name.",
       "emptyHeading_summary_fail": "This heading has no accessible name.",
@@ -88305,14 +88822,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingOrder_description": "Checks that heading levels increase by at most one at a time in document order.",
       "headingOrder_summary_cantTell": "This heading jumps from level {{fromLevel}} to level {{toLevel}}, skipping a level.",
       "headingOrder_hint_cantTell": "Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.",
+      "headingOrder_lean_why": "The heading skips a level after the one before it.",
       "pageHasHeadingOne_title": "Page should have a level-one heading",
       "pageHasHeadingOne_description": "Checks that the page has at least one level-one heading (<h1> or role=\"heading\" with aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "This page has no level-one heading.",
       "pageHasHeadingOne_hint_cantTell": "Add a level-one heading (<h1> or role=\"heading\" aria-level=\"1\") that identifies the page's main content.",
+      "pageHasHeadingOne_lean_why": "The page has no level-one heading.",
       "accesskeys_title": "accesskey values must be unique",
       "accesskeys_description": "Checks that no two elements on the page share the same accesskey attribute value.",
       "accesskeys_summary_cantTell": "This element's accesskey is shared with another element on the page.",
       "accesskeys_hint_cantTell": "Give each accesskey its own value.",
+      "accesskeys_lean_why": "Another element on the page uses the same access key.",
       "scopeAttrValid_title": "scope attribute must have a valid value",
       "scopeAttrValid_description": "Checks that scope=\"...\" is one of row, col, rowgroup, or colgroup.",
       "scopeAttrValid_summary_cantTell": "This scope attribute value is not recognized.",
@@ -88327,6 +88847,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_hint_cantTell": "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
+      "emptyTableHeader_lean_why_notVisible": "The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.",
       "labelTitleOnly_title": "Title-only form labels (deprecated)",
       "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
@@ -88337,18 +88858,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableDuplicateName_description": "Checks that a <table>'s <caption> text is not identical to its (deprecated) summary attribute.",
       "tableDuplicateName_summary_cantTell": "This table's caption duplicates its summary attribute.",
       "tableDuplicateName_hint_cantTell": "Remove the summary attribute, or use it to say something the caption doesn't.",
+      "tableDuplicateName_lean_why": "The table's caption and summary say the same thing, so it is read twice.",
       "metaViewportLarge_title": "Viewport meta tag should allow zooming up to 500%",
       "metaViewportLarge_description": "Checks that <meta name=\"viewport\"> does not set user-scalable=no or maximum-scale below 5 (500%).",
       "metaViewportLarge_summary_cantTell": "This viewport meta tag keeps users from zooming in to 500%, as recommended.",
       "metaViewportLarge_hint_cantTell": "Remove user-scalable=no, and set maximum-scale to at least 5 or leave it out.",
+      "metaViewportLarge_lean_why": "The viewport meta tag keeps zoom below 500%.",
       "presentationRoleConflict_title": "Presentational role must not conflict with a global ARIA attribute or focusability",
       "presentationRoleConflict_description": "Checks that role=\"presentation\"/\"none\" (including an <img alt=\"\"> implicit presentation role) is not combined with a global ARIA attribute (aria-label, aria-hidden, aria-describedby, ...) or focusability (tabindex/native).",
       "presentationRoleConflict_summary_cantTell": "This role=\"{{role}}\" element also has {{attrs}}, so browsers ignore the role and expose the element anyway.",
       "presentationRoleConflict_hint_cantTell": "If it should stay hidden from assistive technology, remove the naming attributes and make it unfocusable. If it should be exposed, remove role=\"presentation\" or role=\"none\".",
+      "presentationRoleConflict_lean_why": "Browsers ignore the presentational role here and expose the element's own role.",
       "region_title": "Page content should be inside a landmark region",
       "region_description": "Checks that content under <body> is contained within a landmark region.",
       "region_summary_cantTell": "This content is outside every landmark region.",
       "region_hint_cantTell": "Move it into a landmark, such as <main>, <nav>, <aside>, or a <section> with a name.",
+      "region_lean_why": "The content is outside every landmark region.",
       "skipLink_title": "Skip link must have a resolvable, usable target",
       "skipLink_description": "Checks that a \"skip to ...\" link's href fragment resolves to a real, currently usable element in the document.",
       "skipLink_summary_cantTell": "The target of this skip link doesn't exist.",
@@ -88458,6 +88983,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Flags a native <input type=\"checkbox\">/<input type=\"radio\"> whose explicit aria-checked value disagrees with its actual checked/indeterminate state, for manual review.",
       "ariaCheckedStateMismatch_summary_cantTell": "This element’s aria-checked value does not match its actual checked/indeterminate state.",
       "ariaCheckedStateMismatch_hint_cantTell": "Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.",
+      "ariaCheckedStateMismatch_lean_why": "Browsers ignore aria-checked on a native checkbox or radio button and expose its real state.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML forbids aria-checked here; remove it so no tool reads the wrong state.",
       "ariaExpandedStateMismatch_title": "aria-expanded should match whether the controlled content is shown",
       "ariaExpandedStateMismatch_description": "Flags an element whose aria-expanded value disagrees with whether the elements its aria-controls names are shown, for manual review.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" says the controlled content is collapsed, but it is shown.",
@@ -88482,10 +89009,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Check that a keyboard user can reach it: aria-activedescendant is announced only while the element that carries it has focus, so give it tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
       "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Show the error message while the field is invalid.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Show the error message while the field is invalid.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Remove aria-hidden from the error message, and from what contains it, while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "This field is marked invalid, but the error message aria-errormessage names has no text.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.",
@@ -88496,11 +89023,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.",
       "invalidFieldErrorMessage_summary_cantTell_none": "This field is marked invalid, but no error message is tied to it with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "The error message tied to the field is hidden, so the error is probably not told.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.",
       "labelForValid_title": "A label’s for attribute should name a control it can label",
       "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
       "labelForValid_summary_cantTell_notLabelable": "This label’s for=\"{{for}}\" names a <{{element}}>, which can’t be labelled, so it labels nothing.",
       "labelForValid_hint_cantTell": "Check which control the label is meant for, and set for to that control’s id.",
+      "labelForValid_lean_why_notLabelable": "The label's for attribute names an element that can't be labelled, so the label labels nothing.",
+      "labelForValid_lean_why_targetMissing": "The label's for attribute names no element, so the label labels nothing.",
       "controlNameTitleOnly_title": "A button or link should not take its name only from its title",
       "controlNameTitleOnly_description": "Flags a button or link whose only accessible name is its title attribute, shown only on mouse hover, for manual review.",
       "controlNameTitleOnly_summary_cantTell_button": "This button’s only name is its title, which is shown only on mouse hover.",
@@ -88521,6 +89052,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaText_description": "Checks that elements with role=\"text\" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).",
       "ariaText_summary_cantTell": "This role=\"text\" element contains something that can take focus.",
       "ariaText_hint_cantTell": "Remove role=\"text\", or move the focusable content out of it.",
+      "ariaText_lean_why": "A focusable element sits inside role=\"text\", which flattens it into plain text.",
       "focusOrderSemantics_title": "Elements added to the tab order should have interactive semantics",
       "focusOrderSemantics_description": "Flags elements with tabindex >= 0 whose explicit role is a non-interactive structural/document role (e.g. heading, list, note, presentation), for manual review.",
       "focusOrderSemantics_summary_cantTell": "This element is in the tab order (tabindex=\"{{tabindex}}\") but has a non-interactive role (\"{{role}}\").",
@@ -88549,9 +89081,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
       "focusNotRemovedByScript_description": "Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "This <{{element}}>'s onfocus handler calls blur(), which may remove focus as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "This <{{element}}>'s onfocus handler moves focus to another element as it arrives (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.",
+      "focusNotRemovedByScript_hint_fail": "Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).",
       "mouseOnlyEventHandlers_title": "Pointer-only event handlers should have a keyboard-reachable equivalent",
       "mouseOnlyEventHandlers_description": "Flags elements with a pointer-only event handler (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), inline or, with the listener hook, added from script, and no keyboard-reachable equivalent (onkeydown/onkeyup/onkeypress/onfocus/onblur), for manual review.",
       "mouseOnlyEventHandlers_summary_cantTell": "This element has {{attrs}} but no keyboard-reachable equivalent handler.",
@@ -88668,8 +89202,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_help": "How to fix {{rule}}",
       "report_card_understanding": "Understanding {{sc}} {{title}}",
       "report_cards_overflow": "Showing the {{shown}} highest-priority rules of {{total}} with issues. See the full technical data below for the rest.",
+      "report_cards_group_leanFail": "Likely fails: confirm",
+      "report_cards_group_leanPass": "Likely passes: confirm",
+      "report_cards_group_open": "Needs a person",
+      "report_card_leanFail": "Likely fails: {{why}}",
+      "report_card_leanPass": "Likely passes: {{why}}",
+      "report_card_leanCaution": "Caution: {{caution}}",
       "engine_failWithoutOccurrence_summary": "The rule failed for the page without naming an element.",
       "engine_failWithoutOccurrence_hint": "Review the page against the rule's description. A custom rule can name the element that fails by reporting it as an occurrence.",
+      "engine_lean_why_removedSc": "WCAG {{version}} removed the criterion this was found against.",
+      "engine_lean_why_errata": "WCAG {{version}}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.",
+      "engine_lean_caution_scopedSc": "The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
@@ -89285,10 +89828,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkBannerIsTopLevel_description": "Comprueba que la región de referencia banner (role=\"banner\" o un <header> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Esta región de referencia banner está anidada dentro de otra región de referencia.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Sacar el punto de referencia banner (<header> o role=\"banner\") del otro punto de referencia; un banner va en el nivel superior de la página.",
+      "landmarkBannerIsTopLevel_lean_why": "El punto de referencia banner está dentro de otro punto de referencia.",
       "landmarkContentinfoIsTopLevel_title": "La región de referencia contentinfo debe ser de nivel superior",
       "landmarkContentinfoIsTopLevel_description": "Comprueba que la región de referencia contentinfo (role=\"contentinfo\" o un <footer> no anidado) no esté anidada dentro de otra región de referencia.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Esta región de referencia contentinfo está anidada dentro de otra región de referencia.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Sacar el punto de referencia contentinfo (<footer> o role=\"contentinfo\") del otro punto de referencia; contentinfo va en el nivel superior de la página.",
+      "landmarkContentinfoIsTopLevel_lean_why": "El punto de referencia contentinfo está dentro de otro punto de referencia.",
       "landmarkComplementaryIsTopLevel_title": "La región de referencia complementary debe ser de nivel superior",
       "landmarkComplementaryIsTopLevel_description": "Comprueba que la región de referencia complementary (role=\"complementary\" o un <aside> que conserva su rol implícito) no esté anidada dentro de otra región de referencia.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Esta región de referencia complementary está anidada dentro de otra región de referencia.",
@@ -89297,22 +89842,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkMainIsTopLevel_description": "Comprueba que la región de referencia main (role=\"main\" o <main>) no esté anidada dentro de otra región de referencia.",
       "landmarkMainIsTopLevel_summary_cantTell": "Esta región de referencia main está anidada dentro de otra región de referencia.",
       "landmarkMainIsTopLevel_hint_cantTell": "Sacar el punto de referencia main (<main> o role=\"main\") del otro punto de referencia; main va en el nivel superior de la página.",
+      "landmarkMainIsTopLevel_lean_why": "El punto de referencia main está dentro de otro punto de referencia.",
       "landmarkNoDuplicateBanner_title": "La página no debe tener más de una región de referencia banner",
       "landmarkNoDuplicateBanner_description": "Comprueba que exista como máximo una región de referencia banner (role=\"banner\" o un <header> no anidado) en la página.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Esta página tiene más de una región de referencia banner.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Dejar un solo punto de referencia banner (<header> o role=\"banner\") en la página.",
+      "landmarkNoDuplicateBanner_lean_why": "La página expone más de un punto de referencia banner.",
       "landmarkNoDuplicateContentinfo_title": "La página no debe tener más de una región de referencia contentinfo",
       "landmarkNoDuplicateContentinfo_description": "Comprueba que exista como máximo una región de referencia contentinfo (role=\"contentinfo\" o un <footer> no anidado) en la página.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Esta página tiene más de una región de referencia contentinfo.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Dejar un solo punto de referencia contentinfo (<footer> o role=\"contentinfo\") en la página.",
+      "landmarkNoDuplicateContentinfo_lean_why": "La página expone más de un punto de referencia contentinfo.",
       "landmarkNoDuplicateMain_title": "La página no debe tener más de una región de referencia main",
       "landmarkNoDuplicateMain_description": "Comprueba que exista como máximo una región de referencia main (role=\"main\" o <main>) en la página.",
       "landmarkNoDuplicateMain_summary_cantTell": "Esta página tiene más de una región de referencia main.",
       "landmarkNoDuplicateMain_hint_cantTell": "Dejar un solo punto de referencia main (<main> o role=\"main\") en la página.",
+      "landmarkNoDuplicateMain_lean_why": "La página expone más de un punto de referencia main.",
       "landmarkOneMain_title": "La página debería tener una región de referencia main",
       "landmarkOneMain_description": "Comprueba que la página tenga al menos una región de referencia main (role=\"main\" o <main>).",
       "landmarkOneMain_summary_cantTell_missing": "Esta página no tiene ninguna región de referencia main.",
       "landmarkOneMain_hint_cantTell_missing": "Agregar una región de referencia main (<main> o role=\"main\") alrededor del contenido principal de la página.",
+      "landmarkOneMain_lean_why": "La página no tiene punto de referencia main.",
       "landmarkUnique_title": "Las regiones de referencia con el mismo rol deben tener nombres únicos",
       "landmarkUnique_description": "Comprueba que, cuando dos o más regiones de referencia comparten el mismo rol, cada una tenga un nombre accesible distinto.",
       "landmarkUnique_summary_cantTell_duplicateName": "Esta región de referencia {{role}} comparte su nombre accesible con otra región de referencia {{role}}.",
@@ -89322,6 +89872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_description": "Comprueba que un elemento con role=\"region\" o role=\"form\" tenga un nombre accesible, sin el cual no se expone como región de referencia.",
       "landmarkRoleNamePresent_summary_cantTell": "Este elemento tiene role=\"{{role}}\" pero no tiene nombre accesible, así que no se expone como región de referencia.",
       "landmarkRoleNamePresent_hint_cantTell": "Asignarle un nombre con aria-labelledby apuntando a su encabezado visible, o con aria-label; o quitar role=\"{{role}}\" si no debe ser una región de referencia.",
+      "landmarkRoleNamePresent_lean_why": "El punto de referencia no tiene nombre, aunque WAI-ARIA lo exige para su rol.",
       "emptyHeading_title": "Los encabezados no deben estar vacíos",
       "emptyHeading_description": "Comprueba que los elementos de encabezado (<h1>-<h6> o role=\"heading\") tengan un nombre accesible no vacío.",
       "emptyHeading_summary_fail": "Este encabezado no tiene nombre accesible.",
@@ -89334,14 +89885,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingOrder_description": "Comprueba que los niveles de encabezado aumenten como máximo en uno a la vez en el orden del documento.",
       "headingOrder_summary_cantTell": "Este encabezado salta del nivel {{fromLevel}} al nivel {{toLevel}}, saltándose un nivel.",
       "headingOrder_hint_cantTell": "Bajar de nivel de uno en uno, de modo que tras un <h2> venga un <h3> y no un <h4>, y la estructura de la página sea fácil de seguir.",
+      "headingOrder_lean_why": "El encabezado se salta un nivel respecto al anterior.",
       "pageHasHeadingOne_title": "La página debería tener un encabezado de nivel uno",
       "pageHasHeadingOne_description": "Comprueba que la página tenga al menos un encabezado de nivel uno (<h1> o role=\"heading\" con aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Esta página no tiene ningún encabezado de nivel uno.",
       "pageHasHeadingOne_hint_cantTell": "Agregar un encabezado de nivel uno (<h1> o role=\"heading\" aria-level=\"1\") que identifique el contenido principal de la página.",
+      "pageHasHeadingOne_lean_why": "La página no tiene un encabezado de nivel uno.",
       "accesskeys_title": "Los valores de accesskey deben ser únicos",
       "accesskeys_description": "Comprueba que no haya dos elementos en la página que compartan el mismo valor de atributo accesskey.",
       "accesskeys_summary_cantTell": "El accesskey de este elemento se comparte con otro elemento de la página.",
       "accesskeys_hint_cantTell": "Darle a cada accesskey su propio valor.",
+      "accesskeys_lean_why": "Otro elemento de la página usa la misma tecla de acceso.",
       "scopeAttrValid_title": "El atributo scope debe tener un valor válido",
       "scopeAttrValid_description": "Comprueba que scope=\"...\" sea uno de los valores row, col, rowgroup o colgroup.",
       "scopeAttrValid_summary_cantTell": "Este valor del atributo scope no se reconoce.",
@@ -89356,6 +89910,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_hint_cantTell": "Darle texto a la celda de encabezado, o un nombre con aria-label o aria-labelledby; quitarla si no hace falta.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
+      "emptyTableHeader_lean_why_notVisible": "La celda de encabezado no tiene texto visible; su único nombre viene de ARIA, que algunos lectores de pantalla ignoran en las celdas de encabezado.",
       "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
       "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
@@ -89366,18 +89921,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableDuplicateName_description": "Comprueba que el texto del <caption> de una <table> no sea idéntico a su atributo summary (obsoleto).",
       "tableDuplicateName_summary_cantTell": "El <caption> de esta tabla duplica su atributo summary.",
       "tableDuplicateName_hint_cantTell": "Quitar el atributo summary, o usarlo para decir algo que el <caption> no dice.",
+      "tableDuplicateName_lean_why": "El título y el resumen de la tabla dicen lo mismo, así que se lee dos veces.",
       "metaViewportLarge_title": "La etiqueta meta viewport debería permitir el zoom hasta el 500%",
       "metaViewportLarge_description": "Comprueba que <meta name=\"viewport\"> no establezca user-scalable=no ni maximum-scale por debajo de 5 (500%).",
       "metaViewportLarge_summary_cantTell": "Esta etiqueta meta viewport impide ampliar la página al 500 %, como se recomienda.",
       "metaViewportLarge_hint_cantTell": "Quitar user-scalable=no, y poner maximum-scale en 5 como mínimo u omitirlo.",
+      "metaViewportLarge_lean_why": "La etiqueta meta viewport limita el zoom por debajo del 500 %.",
       "presentationRoleConflict_title": "El rol presentacional no debe entrar en conflicto con un atributo ARIA global ni con la capacidad de enfoque",
       "presentationRoleConflict_description": "Comprueba que role=\"presentation\"/\"none\" (incluido el rol de presentación implícito de <img alt=\"\">) no se combine con un atributo ARIA global (aria-label, aria-hidden, aria-describedby, ...) ni con la capacidad de enfoque (tabindex/nativa).",
       "presentationRoleConflict_summary_cantTell": "Este elemento con role=\"{{role}}\" también tiene {{attrs}}, así que los navegadores ignoran el rol y exponen el elemento de todos modos.",
       "presentationRoleConflict_hint_cantTell": "Si debe permanecer oculto a las tecnologías de apoyo, quitar los atributos de nombre y hacer que no pueda recibir el foco. Si debe exponerse, quitar role=\"presentation\" o role=\"none\".",
+      "presentationRoleConflict_lean_why": "Los navegadores ignoran aquí el rol de presentación y exponen el rol propio del elemento.",
       "region_title": "El contenido de la página debería estar dentro de una región de referencia",
       "region_description": "Comprueba que el contenido bajo <body> esté contenido dentro de una región de referencia.",
       "region_summary_cantTell": "Este contenido está fuera de cualquier región de punto de referencia.",
       "region_hint_cantTell": "Moverlo a un punto de referencia, como <main>, <nav>, <aside> o un <section> con nombre.",
+      "region_lean_why": "El contenido está fuera de toda región de punto de referencia.",
       "skipLink_title": "El enlace de salto debe tener un destino resoluble y utilizable",
       "skipLink_description": "Comprueba que el fragmento href de un enlace de \"saltar a...\" se resuelva en un elemento real y actualmente utilizable del documento.",
       "skipLink_summary_cantTell": "El destino de este enlace de salto no existe.",
@@ -89487,6 +90046,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Señala un <input type=\"checkbox\">/<input type=\"radio\"> nativo cuyo valor explícito de aria-checked no coincide con su estado real marcado/indeterminado, para su revisión manual.",
       "ariaCheckedStateMismatch_summary_cantTell": "El valor de aria-checked de este elemento no coincide con su estado real marcado/indeterminado.",
       "ariaCheckedStateMismatch_hint_cantTell": "Hacer que aria-checked coincida con el estado real, o quitarlo; una casilla o un botón de opción nativos ya exponen su estado.",
+      "ariaCheckedStateMismatch_lean_why": "Los navegadores ignoran aria-checked en una casilla o un botón de opción nativos y exponen su estado real.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML prohíbe aria-checked aquí; quítelo para que ninguna herramienta lea un estado erróneo.",
       "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
       "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
@@ -89511,10 +90072,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
       "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
@@ -89525,11 +90086,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
       "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
       "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "labelForValid_lean_why_notLabelable": "El atributo for de la etiqueta nombra un elemento que no se puede etiquetar, así que la etiqueta no etiqueta nada.",
+      "labelForValid_lean_why_targetMissing": "El atributo for de la etiqueta no nombra ningún elemento, así que la etiqueta no etiqueta nada.",
       "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
       "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
       "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
@@ -89550,6 +90115,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
       "ariaText_summary_cantTell": "Este elemento con role=\"text\" contiene algo que puede recibir el foco.",
       "ariaText_hint_cantTell": "Quitar role=\"text\", o sacar de él el contenido enfocable.",
+      "ariaText_lean_why": "Un elemento enfocable está dentro de role=\"text\", que lo reduce a texto plano.",
       "focusOrderSemantics_title": "Los elementos agregados al orden de tabulación deberían tener semántica interactiva",
       "focusOrderSemantics_description": "Señala elementos con tabindex >= 0 cuyo rol explícito es un rol estructural/documental no interactivo (por ejemplo, heading, list, note, presentation), para su revisión manual.",
       "focusOrderSemantics_summary_cantTell": "Este elemento está en el orden de tabulación (tabindex=\"{{tabindex}}\") pero tiene un rol no interactivo (\"{{role}}\").",
@@ -89578,9 +90144,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
       "focusNotRemovedByScript_description": "Pregunta por los elementos cuyo manejador onfocus en línea llama a blur(), o a focus() en otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
+      "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
       "mouseOnlyEventHandlers_title": "Los controladores de eventos exclusivos de puntero deberían tener un equivalente alcanzable por teclado",
       "mouseOnlyEventHandlers_description": "Señala elementos con un controlador de eventos exclusivo de puntero (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en línea o, con el hook de detectores, añadido por script, y sin un controlador equivalente alcanzable por teclado (onkeydown/onkeyup/onkeypress/onfocus/onblur), para su revisión manual.",
       "mouseOnlyEventHandlers_summary_cantTell": "Este elemento tiene {{attrs}} pero ningún controlador equivalente alcanzable por teclado.",
@@ -89697,8 +90265,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_help": "Cómo corregir {{rule}}",
       "report_card_understanding": "Comprender {{sc}} {{title}}",
       "report_cards_overflow": "Se muestran las {{shown}} reglas de mayor prioridad de {{total}} con problemas. Consultar el resto en los datos técnicos completos más abajo.",
+      "report_cards_group_leanFail": "Probable fallo: confírmelo",
+      "report_cards_group_leanPass": "Probablemente cumple: confírmelo",
+      "report_cards_group_open": "Lo debe revisar una persona",
+      "report_card_leanFail": "Probable fallo: {{why}}",
+      "report_card_leanPass": "Probablemente cumple: {{why}}",
+      "report_card_leanCaution": "Atención: {{caution}}",
       "engine_failWithoutOccurrence_summary": "La regla ha fallado para la página sin indicar ningún elemento.",
       "engine_failWithoutOccurrence_hint": "Revisar la página según la descripción de la regla. Una regla personalizada puede indicar el elemento que falla notificándolo como una aparición.",
+      "engine_lean_why_removedSc": "WCAG {{version}} eliminó el criterio con el que se detectó esto.",
+      "engine_lean_why_errata": "La fe de erratas de 2023 de WCAG {{version}} da por cumplido para HTML y XML el criterio con el que se detectó esto.",
+      "engine_lean_caution_scopedSc": "El defecto en sí sigue rompiendo lo que depende de él, y una norma que mantiene el criterio lo da por incumplido.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
@@ -90314,10 +90891,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkBannerIsTopLevel_description": "Vérifie que le point de repère banner (role=\"banner\" ou un <header> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_summary_cantTell": "Ce point de repère banner est imbriqué dans un autre point de repère.",
       "landmarkBannerIsTopLevel_hint_cantTell": "Sortez le repère banner (<header> ou role=\"banner\") de l’autre repère ; un banner se place au premier niveau de la page.",
+      "landmarkBannerIsTopLevel_lean_why": "Le repère banner se trouve dans un autre repère.",
       "landmarkContentinfoIsTopLevel_title": "Le point de repère contentinfo doit être de premier niveau",
       "landmarkContentinfoIsTopLevel_description": "Vérifie que le point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) n’est pas imbriqué dans un autre point de repère.",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "Ce point de repère contentinfo est imbriqué dans un autre point de repère.",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "Sortez le repère contentinfo (<footer> ou role=\"contentinfo\") de l’autre repère ; contentinfo se place au premier niveau de la page.",
+      "landmarkContentinfoIsTopLevel_lean_why": "Le repère contentinfo se trouve dans un autre repère.",
       "landmarkComplementaryIsTopLevel_title": "Le point de repère complementary doit être de premier niveau",
       "landmarkComplementaryIsTopLevel_description": "Vérifie que le point de repère complementary (role=\"complementary\" ou un <aside> qui conserve son rôle implicite) n'est pas imbriqué dans une autre région de repère.",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "Ce point de repère complementary est imbriqué dans une autre région de repère.",
@@ -90326,22 +90905,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkMainIsTopLevel_description": "Vérifie que le point de repère main (role=\"main\" ou <main>) n’est pas imbriqué dans un autre point de repère.",
       "landmarkMainIsTopLevel_summary_cantTell": "Ce point de repère main est imbriqué dans un autre point de repère.",
       "landmarkMainIsTopLevel_hint_cantTell": "Sortez le repère main (<main> ou role=\"main\") de l’autre repère ; main se place au premier niveau de la page.",
+      "landmarkMainIsTopLevel_lean_why": "Le repère main se trouve dans un autre repère.",
       "landmarkNoDuplicateBanner_title": "La page ne doit pas avoir plus d’un point de repère banner",
       "landmarkNoDuplicateBanner_description": "Vérifie qu’au plus un point de repère banner (role=\"banner\" ou un <header> non imbriqué) existe sur la page.",
       "landmarkNoDuplicateBanner_summary_cantTell": "Cette page a plus d’un point de repère banner.",
       "landmarkNoDuplicateBanner_hint_cantTell": "Ne gardez qu’un seul repère banner (<header> ou role=\"banner\") sur la page.",
+      "landmarkNoDuplicateBanner_lean_why": "La page expose plus d’un repère banner.",
       "landmarkNoDuplicateContentinfo_title": "La page ne doit pas avoir plus d’un point de repère contentinfo",
       "landmarkNoDuplicateContentinfo_description": "Vérifie qu’au plus un point de repère contentinfo (role=\"contentinfo\" ou un <footer> non imbriqué) existe sur la page.",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "Cette page a plus d’un point de repère contentinfo.",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "Ne gardez qu’un seul repère contentinfo (<footer> ou role=\"contentinfo\") sur la page.",
+      "landmarkNoDuplicateContentinfo_lean_why": "La page expose plus d’un repère contentinfo.",
       "landmarkNoDuplicateMain_title": "La page ne doit pas avoir plus d’un point de repère main",
       "landmarkNoDuplicateMain_description": "Vérifie qu’au plus un point de repère main (role=\"main\" ou <main>) existe sur la page.",
       "landmarkNoDuplicateMain_summary_cantTell": "Cette page a plus d’un point de repère main.",
       "landmarkNoDuplicateMain_hint_cantTell": "Ne gardez qu’un seul repère main (<main> ou role=\"main\") sur la page.",
+      "landmarkNoDuplicateMain_lean_why": "La page expose plus d’un repère main.",
       "landmarkOneMain_title": "La page devrait avoir un point de repère main",
       "landmarkOneMain_description": "Vérifie que la page a au moins un point de repère main (role=\"main\" ou <main>).",
       "landmarkOneMain_summary_cantTell_missing": "Cette page n’a aucun point de repère main.",
       "landmarkOneMain_hint_cantTell_missing": "Ajoutez un point de repère main (<main> ou role=\"main\") autour du contenu principal de la page.",
+      "landmarkOneMain_lean_why": "La page n’a pas de repère main.",
       "landmarkUnique_title": "Les points de repère partageant le même rôle doivent avoir des noms uniques",
       "landmarkUnique_description": "Vérifie que lorsque deux points de repère ou plus partagent le même rôle, chacun a un nom accessible distinct.",
       "landmarkUnique_summary_cantTell_duplicateName": "Ce point de repère {{role}} partage son nom accessible avec un autre point de repère {{role}}.",
@@ -90351,6 +90935,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_description": "Vérifie qu’un élément doté de role=\"region\" ou role=\"form\" a un nom accessible, sans lequel il n’est pas exposé comme point de repère.",
       "landmarkRoleNamePresent_summary_cantTell": "Cet élément a role=\"{{role}}\" mais pas de nom accessible, il n’est donc pas exposé comme point de repère.",
       "landmarkRoleNamePresent_hint_cantTell": "Nommez-le avec aria-labelledby pointant vers son titre visible, ou avec aria-label ; ou retirez role=\"{{role}}\" s’il ne doit pas être un point de repère.",
+      "landmarkRoleNamePresent_lean_why": "Le repère n’a pas de nom, alors que WAI-ARIA en exige un pour son rôle.",
       "emptyHeading_title": "Les titres ne doivent pas être vides",
       "emptyHeading_description": "Vérifie que les éléments de titre (<h1>-<h6> ou role=\"heading\") ont un nom accessible non vide.",
       "emptyHeading_summary_fail": "Ce titre n’a pas de nom accessible.",
@@ -90363,14 +90948,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingOrder_description": "Vérifie que les niveaux de titre n’augmentent que d’un niveau à la fois, dans l’ordre du document.",
       "headingOrder_summary_cantTell": "Ce titre passe du niveau {{fromLevel}} au niveau {{toLevel}}, en sautant un niveau.",
       "headingOrder_hint_cantTell": "Descendez d’un niveau à la fois, pour qu’un <h2> soit suivi d’un <h3> et non d’un <h4>, et que le plan de la page reste facile à suivre.",
+      "headingOrder_lean_why": "Le titre saute un niveau par rapport au précédent.",
       "pageHasHeadingOne_title": "La page devrait avoir un titre de niveau un",
       "pageHasHeadingOne_description": "Vérifie que la page a au moins un titre de niveau un (<h1> ou role=\"heading\" avec aria-level=\"1\").",
       "pageHasHeadingOne_summary_cantTell": "Cette page n’a aucun titre de niveau un.",
       "pageHasHeadingOne_hint_cantTell": "Ajoutez un titre de niveau un (<h1> ou role=\"heading\" aria-level=\"1\") identifiant le contenu principal de la page.",
+      "pageHasHeadingOne_lean_why": "La page n’a pas de titre de niveau un.",
       "accesskeys_title": "Les valeurs accesskey doivent être uniques",
       "accesskeys_description": "Vérifie qu’aucun élément de la page ne partage la même valeur d’attribut accesskey qu’un autre.",
       "accesskeys_summary_cantTell": "L’accesskey de cet élément est partagée avec un autre élément de la page.",
       "accesskeys_hint_cantTell": "Donnez à chaque accesskey sa propre valeur.",
+      "accesskeys_lean_why": "Un autre élément de la page utilise la même touche d’accès.",
       "scopeAttrValid_title": "L’attribut scope doit avoir une valeur valide",
       "scopeAttrValid_description": "Vérifie que scope=\"...\" vaut row, col, rowgroup, ou colgroup.",
       "scopeAttrValid_summary_cantTell": "Cette valeur d’attribut scope n’est pas reconnue.",
@@ -90385,6 +90973,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_hint_cantTell": "Donnez du texte à la cellule d’en-tête, ou nommez-la avec aria-label ou aria-labelledby ; retirez-la si elle n’est pas utile.",
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
+      "emptyTableHeader_lean_why_notVisible": "La cellule d’en-tête n’a pas de texte visible ; son seul nom vient d’ARIA, que certains lecteurs d’écran ignorent sur les cellules d’en-tête.",
       "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
       "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
@@ -90395,18 +90984,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableDuplicateName_description": "Vérifie que le texte de la <caption> d’un <table> n’est pas identique à son attribut summary (obsolète).",
       "tableDuplicateName_summary_cantTell": "La légende de ce tableau duplique son attribut summary.",
       "tableDuplicateName_hint_cantTell": "Retirez l’attribut summary, ou utilisez-le pour dire quelque chose que la légende ne dit pas.",
+      "tableDuplicateName_lean_why": "La légende et le résumé du tableau disent la même chose, qui est donc lue deux fois.",
       "metaViewportLarge_title": "La balise meta viewport devrait permettre un zoom jusqu’à 500 %",
       "metaViewportLarge_description": "Vérifie que <meta name=\"viewport\"> ne définit pas user-scalable=no ni maximum-scale en dessous de 5 (500 %).",
       "metaViewportLarge_summary_cantTell": "Cette balise meta viewport empêche de zoomer jusqu’à 500 %, comme recommandé.",
       "metaViewportLarge_hint_cantTell": "Retirez user-scalable=no, et donnez à maximum-scale au moins 5 ou omettez-le.",
+      "metaViewportLarge_lean_why": "La balise meta viewport limite le zoom en dessous de 500 %.",
       "presentationRoleConflict_title": "Un rôle de présentation ne doit pas entrer en conflit avec un attribut ARIA global ou la focalisabilité",
       "presentationRoleConflict_description": "Vérifie que role=\"presentation\"/\"none\" (y compris le rôle presentation implicite d’un <img alt=\"\">) n’est pas combiné avec un attribut ARIA global (aria-label, aria-hidden, aria-describedby, ...) ou avec la focalisabilité (tabindex/native).",
       "presentationRoleConflict_summary_cantTell": "Cet élément avec role=\"{{role}}\" a aussi {{attrs}} : les navigateurs ignorent donc le rôle et exposent l’élément malgré tout.",
       "presentationRoleConflict_hint_cantTell": "S’il doit rester caché aux technologies d’assistance, retirez les attributs de nom et rendez-le non focalisable. S’il doit être exposé, retirez role=\"presentation\" ou role=\"none\".",
+      "presentationRoleConflict_lean_why": "Les navigateurs ignorent ici le rôle de présentation et exposent le rôle propre de l’élément.",
       "region_title": "Le contenu de la page devrait se trouver à l’intérieur d’un point de repère",
       "region_description": "Vérifie que le contenu sous <body> est contenu dans un point de repère.",
       "region_summary_cantTell": "Ce contenu se trouve hors de toute région de repère.",
       "region_hint_cantTell": "Placez-le dans un repère, comme <main>, <nav>, <aside> ou une <section> nommée.",
+      "region_lean_why": "Le contenu se trouve en dehors de toute région de repère.",
       "skipLink_title": "Un lien d’évitement doit avoir une cible qui se résout et qui est utilisable",
       "skipLink_description": "Vérifie que le fragment href d’un lien « aller au... » se résout vers un élément réel et actuellement utilisable du document.",
       "skipLink_summary_cantTell": "La cible de ce lien d’évitement n’existe pas.",
@@ -90516,6 +91109,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "Signale un <input type=\"checkbox\">/<input type=\"radio\"> natif dont la valeur explicite d’aria-checked ne correspond pas à son état réel (coché/indéterminé), pour une vérification manuelle.",
       "ariaCheckedStateMismatch_summary_cantTell": "La valeur d’aria-checked de cet élément ne correspond pas à son état réel (coché/indéterminé).",
       "ariaCheckedStateMismatch_hint_cantTell": "Faites correspondre aria-checked à l’état réel, ou retirez-le ; une case à cocher ou un bouton radio natif expose déjà son état.",
+      "ariaCheckedStateMismatch_lean_why": "Les navigateurs ignorent aria-checked sur une case à cocher ou un bouton radio natifs et exposent leur état réel.",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML interdit aria-checked ici ; supprimez-le pour qu’aucun outil ne lise un état erroné.",
       "ariaExpandedStateMismatch_title": "aria-expanded devrait correspondre à l’affichage du contenu contrôlé",
       "ariaExpandedStateMismatch_description": "Signale, pour revue manuelle, un élément dont la valeur d’aria-expanded ne correspond pas à l’affichage des éléments que nomme son aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indique que le contenu contrôlé est replié, mais il est affiché.",
@@ -90540,10 +91135,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Vérifiez qu’une personne utilisant le clavier peut l’atteindre : aria-activedescendant n’est annoncé que lorsque l’élément qui le porte a le focus ; donnez-lui donc tabindex=\"0\".",
       "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
       "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
-      "invalidFieldErrorMessage_summary_fail_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
-      "invalidFieldErrorMessage_hint_fail_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Retirez aria-hidden du message d’erreur, et de ce qui le contient, tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage ne contient pas de texte.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Vérifiez que l’utilisateur est informé, par un texte, de ce qui ne va pas, dans l’étiquette ou à côté du champ ; mettez ce texte dans le message d’erreur.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Ce champ est marqué comme invalide, et le message d’erreur que nomme aria-errormessage est masqué ou sans texte ; sa description contient peut-être l’erreur.",
@@ -90554,11 +91149,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Vérifiez que le message d’erreur est dans la page tant que le champ est invalide, avec l’id que nomme aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Ce champ est marqué comme invalide, mais aucun message d’erreur ne lui est associé par aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
+      "invalidFieldErrorMessage_lean_why_hidden": "Le message d’erreur lié au champ est masqué : l’erreur n’est probablement pas signalée.",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "Le message d’erreur lié au champ est masqué aux technologies d’assistance : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
       "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
       "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
       "labelForValid_summary_cantTell_notLabelable": "Le for=\"{{for}}\" de ce libellé nomme un <{{element}}>, qui ne peut pas être libellé : il ne libelle rien.",
       "labelForValid_hint_cantTell": "Vérifiez à quel contrôle le libellé est destiné, et mettez dans for l’id de ce contrôle.",
+      "labelForValid_lean_why_notLabelable": "L’attribut for du label désigne un élément qui ne peut pas être étiqueté : le label n’étiquette rien.",
+      "labelForValid_lean_why_targetMissing": "L’attribut for du label ne désigne aucun élément : le label n’étiquette rien.",
       "controlNameTitleOnly_title": "Un bouton ou un lien ne devrait pas tirer son nom uniquement de son title",
       "controlNameTitleOnly_description": "Signale un bouton ou un lien dont le seul nom accessible est son attribut title, affiché seulement au survol de la souris, pour revue manuelle.",
       "controlNameTitleOnly_summary_cantTell_button": "Le seul nom de ce bouton est son title, affiché seulement au survol de la souris.",
@@ -90579,6 +91178,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaText_description": "Vérifie que les éléments ayant role=\"text\" ne contiennent aucun descendant focalisable (lien, bouton, contrôle de formulaire, tabindex, iframe, ou contenteditable).",
       "ariaText_summary_cantTell": "Cet élément avec role=\"text\" contient quelque chose qui peut recevoir le focus.",
       "ariaText_hint_cantTell": "Retirez role=\"text\", ou sortez-en le contenu focalisable.",
+      "ariaText_lean_why": "Un élément focalisable se trouve dans role=\"text\", qui le réduit à du texte simple.",
       "focusOrderSemantics_title": "Les éléments ajoutés à l’ordre de tabulation devraient avoir une sémantique interactive",
       "focusOrderSemantics_description": "Signale les éléments ayant tabindex >= 0 dont le rôle explicite est un rôle structurel/documentaire non interactif (ex. heading, list, note, presentation), pour une vérification manuelle.",
       "focusOrderSemantics_summary_cantTell": "Cet élément est dans l’ordre de tabulation (tabindex=\"{{tabindex}}\") mais a un rôle non interactif (« {{role}} »).",
@@ -90607,9 +91207,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
       "focusNotRemovedByScript_description": "Signale les éléments dont le gestionnaire onfocus en ligne appelle blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
+      "focusNotRemovedByScript_summary_fail_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "Le gestionnaire onfocus de cet élément <{{element}}> appelle blur(), ce qui peut retirer le focus dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "Le gestionnaire onfocus de cet élément <{{element}}> déplace le focus vers un autre élément dès son arrivée (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_hint_cantTell": "Atteignez l’élément avec la touche Tab et vérifiez que le focus y reste. Un script ne doit pas retirer le focus d’un élément qui le reçoit (échec WCAG F55) : supprimez l’appel à blur(), ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus.",
+      "focusNotRemovedByScript_hint_fail": "Supprimez l’appel à blur() pour que le focus reste sur l’élément, ou rendez l’élément non focalisable s’il ne doit pas recevoir le focus (échec WCAG F55).",
       "mouseOnlyEventHandlers_title": "Les gestionnaires d’événements réservés au pointeur devraient avoir un équivalent accessible au clavier",
       "mouseOnlyEventHandlers_description": "Signale les éléments ayant un gestionnaire d’événement réservé au pointeur (onmouseover, onmouseout, onmousedown, onmouseup, ondblclick, onmousemove, onmouseenter, onmouseleave), en ligne ou, avec le hook d’écouteurs, ajouté par script, sans équivalent accessible au clavier (onkeydown/onkeyup/onkeypress/onfocus/onblur), pour une vérification manuelle.",
       "mouseOnlyEventHandlers_summary_cantTell": "Cet élément a {{attrs}} mais aucun gestionnaire équivalent accessible au clavier.",
@@ -90726,8 +91328,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_help": "Comment corriger {{rule}}",
       "report_card_understanding": "Comprendre {{sc}} {{title}}",
       "report_cards_overflow": "Affichage des {{shown}} règles les plus prioritaires sur {{total}} présentant des problèmes. Consultez les données techniques complètes ci-dessous pour les autres.",
+      "report_cards_group_leanFail": "Échec probable : à confirmer",
+      "report_cards_group_leanPass": "Réussite probable : à confirmer",
+      "report_cards_group_open": "À examiner par une personne",
+      "report_card_leanFail": "Échec probable : {{why}}",
+      "report_card_leanPass": "Réussite probable : {{why}}",
+      "report_card_leanCaution": "Attention : {{caution}}",
       "engine_failWithoutOccurrence_summary": "La règle a échoué pour la page sans indiquer d'élément.",
       "engine_failWithoutOccurrence_hint": "Vérifiez la page au regard de la description de la règle. Une règle personnalisée peut indiquer l'élément en échec en le signalant comme une occurrence.",
+      "engine_lean_why_removedSc": "Les WCAG {{version}} ont supprimé le critère au regard duquel ce point a été relevé.",
+      "engine_lean_why_errata": "Les errata de 2023 des WCAG {{version}} considèrent le critère au regard duquel ce point a été relevé comme satisfait pour HTML et XML.",
+      "engine_lean_caution_scopedSc": "Le défaut lui-même casse toujours ce qui en dépend, et une norme qui conserve le critère le considère comme un échec.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
@@ -91343,10 +91954,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkBannerIsTopLevel_description": "banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkBannerIsTopLevel_summary_cantTell": "この banner ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkBannerIsTopLevel_hint_cantTell": "banner ランドマーク (<header> または role=\"banner\") を、ほかのランドマークの外に移してください。banner はページの最上位に置くものです。",
+      "landmarkBannerIsTopLevel_lean_why": "banner ランドマークが別のランドマークの中にあります。",
       "landmarkContentinfoIsTopLevel_title": "contentinfo ランドマークは最上位にあること",
       "landmarkContentinfoIsTopLevel_description": "contentinfo ランドマーク (role=\"contentinfo\" または入れ子になっていない <footer>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkContentinfoIsTopLevel_summary_cantTell": "この contentinfo ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkContentinfoIsTopLevel_hint_cantTell": "contentinfo ランドマーク (<footer> または role=\"contentinfo\") を、ほかのランドマークの外に移してください。contentinfo はページの最上位に置くものです。",
+      "landmarkContentinfoIsTopLevel_lean_why": "contentinfo ランドマークが別のランドマークの中にあります。",
       "landmarkComplementaryIsTopLevel_title": "complementary ランドマークは最上位にあること",
       "landmarkComplementaryIsTopLevel_description": "complementary ランドマーク (role=\"complementary\" または暗黙のロールを保持している <aside>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkComplementaryIsTopLevel_summary_cantTell": "この complementary ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
@@ -91355,22 +91968,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkMainIsTopLevel_description": "main ランドマーク (role=\"main\" または <main>) が、ほかのランドマーク領域の中に入れ子になっていないかを確認します。",
       "landmarkMainIsTopLevel_summary_cantTell": "この main ランドマークは、ほかのランドマーク領域の中に入れ子になっています。",
       "landmarkMainIsTopLevel_hint_cantTell": "main ランドマーク (<main> または role=\"main\") を、ほかのランドマークの外に移してください。main はページの最上位に置くものです。",
+      "landmarkMainIsTopLevel_lean_why": "main ランドマークが別のランドマークの中にあります。",
       "landmarkNoDuplicateBanner_title": "ページに banner ランドマークが複数あってはならない",
       "landmarkNoDuplicateBanner_description": "ページ内の banner ランドマーク (role=\"banner\" または入れ子になっていない <header>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateBanner_summary_cantTell": "このページには banner ランドマークが複数あります。",
       "landmarkNoDuplicateBanner_hint_cantTell": "ページ内の banner ランドマーク (<header> または role=\"banner\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateBanner_lean_why": "ページに banner ランドマークが複数あります。",
       "landmarkNoDuplicateContentinfo_title": "ページに contentinfo ランドマークが複数あってはならない",
       "landmarkNoDuplicateContentinfo_description": "ページ内の contentinfo ランドマーク (role=\"contentinfo\" または入れ子になっていない <footer>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateContentinfo_summary_cantTell": "このページには contentinfo ランドマークが複数あります。",
       "landmarkNoDuplicateContentinfo_hint_cantTell": "ページ内の contentinfo ランドマーク (<footer> または role=\"contentinfo\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateContentinfo_lean_why": "ページに contentinfo ランドマークが複数あります。",
       "landmarkNoDuplicateMain_title": "ページに main ランドマークが複数あってはならない",
       "landmarkNoDuplicateMain_description": "ページ内の main ランドマーク (role=\"main\" または <main>) が 1 つ以下であるかを確認します。",
       "landmarkNoDuplicateMain_summary_cantTell": "このページには main ランドマークが複数あります。",
       "landmarkNoDuplicateMain_hint_cantTell": "ページ内の main ランドマーク (<main> または role=\"main\") は 1 つだけにしてください。",
+      "landmarkNoDuplicateMain_lean_why": "ページに main ランドマークが複数あります。",
       "landmarkOneMain_title": "ページに main ランドマークがあることが望ましい",
       "landmarkOneMain_description": "ページに main ランドマーク (role=\"main\" または <main>) が少なくとも 1 つあるかを確認します。",
       "landmarkOneMain_summary_cantTell_missing": "このページには main ランドマークがありません。",
       "landmarkOneMain_hint_cantTell_missing": "ページの主要なコンテンツを main ランドマーク (<main> または role=\"main\") で囲んでください。",
+      "landmarkOneMain_lean_why": "ページに main ランドマークがありません。",
       "landmarkUnique_title": "同じロールのランドマークには、それぞれ異なる名前が必要",
       "landmarkUnique_description": "同じロールを持つランドマークが 2 つ以上ある場合に、それぞれに異なるアクセシブルな名前があるかを確認します。",
       "landmarkUnique_summary_cantTell_duplicateName": "この {{role}} ランドマークは、別の {{role}} ランドマークと同じアクセシブルな名前を持っています。",
@@ -91380,6 +91998,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "landmarkRoleNamePresent_description": "role=\"region\" または role=\"form\" を指定した要素にアクセシブルな名前があるかを確認します。名前がないと、ランドマークとして公開されません。",
       "landmarkRoleNamePresent_summary_cantTell": "この要素には role=\"{{role}}\" がありますが、アクセシブルな名前がないため、ランドマークとして公開されません。",
       "landmarkRoleNamePresent_hint_cantTell": "表示されている見出しを指す aria-labelledby、または aria-label で名前を付けてください。ランドマークにする意図がない場合は role=\"{{role}}\" を削除してください。",
+      "landmarkRoleNamePresent_lean_why": "このランドマークには名前がありません。WAI-ARIA はこのロールに名前を求めています。",
       "emptyHeading_title": "見出しを空にしてはならない",
       "emptyHeading_description": "見出し要素 (<h1>〜<h6> または role=\"heading\") に、空でないアクセシブルな名前があるかを確認します。",
       "emptyHeading_summary_fail": "この見出しにはアクセシブルな名前がありません。",
@@ -91392,14 +92011,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "headingOrder_description": "文書の順序において、見出しレベルが一度に 1 つずつしか深くならないかを確認します。",
       "headingOrder_summary_cantTell": "この見出しはレベル {{fromLevel}} からレベル {{toLevel}} に飛んでおり、途中のレベルが抜けています。",
       "headingOrder_hint_cantTell": "見出しレベルは 1 つずつ下げてください (<h2> の次は <h4> ではなく <h3>)。ページの構成がたどりやすくなります。",
+      "headingOrder_lean_why": "この見出しは、前の見出しからレベルを飛ばしています。",
       "pageHasHeadingOne_title": "ページにレベル 1 の見出しがあることが望ましい",
       "pageHasHeadingOne_description": "ページにレベル 1 の見出し (<h1> または aria-level=\"1\" の role=\"heading\") が少なくとも 1 つあるかを確認します。",
       "pageHasHeadingOne_summary_cantTell": "このページにはレベル 1 の見出しがありません。",
       "pageHasHeadingOne_hint_cantTell": "ページのメインコンテンツを示すレベル 1 の見出し (<h1> または role=\"heading\" aria-level=\"1\") を追加してください。",
+      "pageHasHeadingOne_lean_why": "ページにレベル 1 の見出しがありません。",
       "accesskeys_title": "accesskey の値は一意であること",
       "accesskeys_description": "ページ内で同じ accesskey 属性の値を持つ要素がないかを確認します。",
       "accesskeys_summary_cantTell": "この要素の accesskey は、ページ内の別の要素と重複しています。",
       "accesskeys_hint_cantTell": "accesskey にはそれぞれ別の値を付けてください。",
+      "accesskeys_lean_why": "ページ内の別の要素が同じアクセスキーを使っています。",
       "scopeAttrValid_title": "scope 属性には有効な値が必要",
       "scopeAttrValid_description": "scope=\"...\" の値が row、col、rowgroup、colgroup のいずれかであるかを確認します。",
       "scopeAttrValid_summary_cantTell": "この scope 属性の値は認識されません。",
@@ -91414,6 +92036,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_hint_cantTell": "見出しセルにテキストを入れるか、aria-label または aria-labelledby で名前を付けてください。不要であれば削除してください。",
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
+      "emptyTableHeader_lean_why_notVisible": "見出しセルに表示テキストがありません。名前は ARIA のみで、見出しセルでは一部のスクリーンリーダーがこれを無視します。",
       "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
       "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
       "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
@@ -91424,18 +92047,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableDuplicateName_description": "<table> の <caption> のテキストが、(非推奨の) summary 属性と同一でないかを確認します。",
       "tableDuplicateName_summary_cantTell": "この表の caption は summary 属性と重複しています。",
       "tableDuplicateName_hint_cantTell": "summary 属性を削除するか、キャプションにない情報を伝えるのに使ってください。",
+      "tableDuplicateName_lean_why": "表のキャプションと要約が同じ内容のため、二度読み上げられます。",
       "metaViewportLarge_title": "viewport の meta タグは 500% までのズームを許可することが望ましい",
       "metaViewportLarge_description": "<meta name=\"viewport\"> で user-scalable=no や 5 (500%) 未満の maximum-scale が指定されていないかを確認します。",
       "metaViewportLarge_summary_cantTell": "この viewport の meta タグは、推奨される 500% までの拡大を妨げています。",
       "metaViewportLarge_hint_cantTell": "user-scalable=no を削除し、maximum-scale は 5 以上にするか、指定しないでください。",
+      "metaViewportLarge_lean_why": "viewport メタタグがズームを 500% 未満に制限しています。",
       "presentationRoleConflict_title": "プレゼンテーショナルなロールが、グローバル ARIA 属性やフォーカス可能性と矛盾してはならない",
       "presentationRoleConflict_description": "role=\"presentation\"/\"none\" (<img alt=\"\"> の暗黙の presentation ロールを含む) が、グローバル ARIA 属性 (aria-label、aria-hidden、aria-describedby など) やフォーカス可能性 (tabindex/ネイティブ) と組み合わされていないかを確認します。",
       "presentationRoleConflict_summary_cantTell": "role=\"{{role}}\" のこの要素には {{attrs}} もあるため、ブラウザーはロールを無視し、要素をそのまま公開します。",
       "presentationRoleConflict_hint_cantTell": "支援技術から隠したままにする場合は、名前を付ける属性を外し、フォーカスできないようにしてください。公開する場合は、role=\"presentation\" または role=\"none\" を削除してください。",
+      "presentationRoleConflict_lean_why": "ブラウザーはここでプレゼンテーションロールを無視し、要素本来のロールを公開します。",
       "region_title": "ページのコンテンツはランドマーク領域内にあることが望ましい",
       "region_description": "<body> 以下のコンテンツが、ランドマーク領域に含まれているかを確認します。",
       "region_summary_cantTell": "この内容は、どのランドマーク領域にも含まれていません。",
       "region_hint_cantTell": "<main>、<nav>、<aside>、名前付きの <section> などのランドマークの中に移してください。",
+      "region_lean_why": "このコンテンツはどのランドマーク領域にも含まれていません。",
       "skipLink_title": "スキップリンクには解決可能で利用できるリンク先が必要",
       "skipLink_description": "「〜へスキップ」リンクの href のフラグメントが、文書内に実在し、現在利用できる要素を指しているかを確認します。",
       "skipLink_summary_cantTell": "このスキップリンクの移動先が存在しません。",
@@ -91545,6 +92172,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaCheckedStateMismatch_description": "明示的な aria-checked の値が、実際の checked/indeterminate の状態と食い違っているネイティブの <input type=\"checkbox\">/<input type=\"radio\"> を検出し、人が確認できるようにします。",
       "ariaCheckedStateMismatch_summary_cantTell": "この要素の aria-checked の値は、実際の checked/indeterminate の状態と一致していません。",
       "ariaCheckedStateMismatch_hint_cantTell": "aria-checked を実際の状態に合わせるか、削除してください。ネイティブのチェックボックスやラジオボタンは、状態を自ら公開します。",
+      "ariaCheckedStateMismatch_lean_why": "ブラウザーはネイティブのチェックボックスやラジオボタンの aria-checked を無視し、実際の状態を公開します。",
+      "ariaCheckedStateMismatch_lean_caution": "ARIA in HTML はここでの aria-checked を禁止しています。誤った状態を読み取るツールがないよう削除してください。",
       "ariaExpandedStateMismatch_title": "aria-expanded は、制御するコンテンツが表示されているかどうかと一致することが望ましい",
       "ariaExpandedStateMismatch_description": "aria-expanded の値が、aria-controls が指す要素が表示されているかどうかと一致しない要素を、手動確認のために報告します。",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" は制御するコンテンツが折りたたまれていることを示していますが、コンテンツは表示されています。",
@@ -91569,10 +92198,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "キーボード利用者が到達できることを確認してください。aria-activedescendant は、それを持つ要素にフォーカスがある間しか伝わらないため、tabindex=\"0\" を指定してください。",
       "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
       "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
-      "invalidFieldErrorMessage_summary_fail_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
-      "invalidFieldErrorMessage_hint_fail_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
-      "invalidFieldErrorMessage_summary_fail_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
-      "invalidFieldErrorMessage_hint_fail_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
+      "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
+      "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "フィールドが無効な間は、エラーメッセージとそれを含む要素から aria-hidden を外してください。",
       "invalidFieldErrorMessage_summary_cantTell_empty": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージにテキストがありません。",
       "invalidFieldErrorMessage_hint_cantTell_empty": "何が誤っているかが、ラベルやフィールドの横などにテキストで示されているか確認してください。そのテキストをエラーメッセージに入れてください。",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "このフィールドは無効とマークされており、aria-errormessage が指すエラーメッセージは隠れているかテキストがありません。説明にエラーが含まれている可能性があります。",
@@ -91583,11 +92212,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_targetMissing": "フィールドが無効な間、aria-errormessage が指す id を持つエラーメッセージがページにあることを確認してください。",
       "invalidFieldErrorMessage_summary_cantTell_none": "このフィールドは無効とマークされていますが、aria-errormessage や aria-describedby で関連付けられたエラーメッセージがありません。",
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
+      "invalidFieldErrorMessage_lean_why_hidden": "フィールドに結び付けられたエラーメッセージが非表示のため、エラーはおそらく伝えられていません。",
+      "invalidFieldErrorMessage_lean_why_hiddenAria": "フィールドに結び付けられたエラーメッセージが支援技術から隠されているため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
       "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
       "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
       "labelForValid_summary_cantTell_notLabelable": "このラベルの for=\"{{for}}\" はラベル付けできない <{{element}}> を指しているため、何もラベル付けしていません。",
       "labelForValid_hint_cantTell": "このラベルがどのコントロール用か確認し、for にそのコントロールの id を指定してください。",
+      "labelForValid_lean_why_notLabelable": "label の for 属性がラベル付けできない要素を指しているため、この label は何もラベル付けしていません。",
+      "labelForValid_lean_why_targetMissing": "label の for 属性がどの要素も指していないため、この label は何もラベル付けしていません。",
       "controlNameTitleOnly_title": "ボタンやリンクの名前を title だけから得るべきではありません",
       "controlNameTitleOnly_description": "アクセシブルな名前が title 属性だけのボタンやリンクを、手動での確認のために示します。title はマウスを重ねたときにしか表示されません。",
       "controlNameTitleOnly_summary_cantTell_button": "このボタンの名前は title だけです。title はマウスを重ねたときにしか表示されません。",
@@ -91608,6 +92241,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaText_description": "role=\"text\" を持つ要素に、フォーカス可能な子孫要素 (リンク、ボタン、フォームコントロール、tabindex、iframe、contenteditable) が含まれていないかを確認します。",
       "ariaText_summary_cantTell": "role=\"text\" のこの要素の中に、フォーカスを受け取れるものがあります。",
       "ariaText_hint_cantTell": "role=\"text\" を削除するか、フォーカス可能な内容を外に移してください。",
+      "ariaText_lean_why": "フォーカス可能な要素が role=\"text\" の中にあり、ただのテキストとして扱われます。",
       "focusOrderSemantics_title": "タブ順序に加えた要素にはインタラクティブなセマンティクスがあることが望ましい",
       "focusOrderSemantics_description": "tabindex >= 0 を持ち、明示的なロールがインタラクティブでない構造/文書のロール (heading、list、note、presentation など) である要素を検出し、人が確認できるようにします。",
       "focusOrderSemantics_summary_cantTell": "この要素はタブ順序に含まれています (tabindex=\"{{tabindex}}\") が、インタラクティブでないロール (\"{{role}}\") を持っています。",
@@ -91636,9 +92270,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
       "focusNotRemovedByScript_description": "インラインの onfocus ハンドラーが blur()、または別の要素の focus() を呼び出す要素について確認を求めます。要素がフォーカスを受け取った直後にフォーカスが外れる可能性があります (WCAG の失敗例 F55)。",
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
+      "focusNotRemovedByScript_summary_fail_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_calls": "この <{{element}}> の onfocus ハンドラーは blur() を呼び出しており、フォーカスが届いた時点で外れる可能性があります (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_cantTell_moves": "この <{{element}}> の onfocus ハンドラーは、フォーカスが届いた時点で別の要素にフォーカスを移します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_hint_cantTell": "Tab キーで要素に移動し、フォーカスがとどまることを確認してください。スクリプトは、フォーカスを受け取った要素からフォーカスを外してはいけません (WCAG の失敗例 F55)。blur() の呼び出しを削除するか、フォーカスを受け取るべきでない要素であればフォーカスできないようにしてください。",
+      "focusNotRemovedByScript_hint_fail": "フォーカスが要素に留まるよう blur() の呼び出しを削除するか、フォーカスを受けるべきでない場合は要素をフォーカス不可にしてください (WCAG 失敗例 F55)。",
       "mouseOnlyEventHandlers_title": "ポインター専用のイベントハンドラーには、キーボードで操作できる同等の手段があることが望ましい",
       "mouseOnlyEventHandlers_description": "ポインター専用のイベントハンドラー (onmouseover、onmouseout、onmousedown、onmouseup、ondblclick、onmousemove、onmouseenter、onmouseleave) を、インラインで、またはリスナー フックがある場合はスクリプトで追加されたものとして持ち、キーボードで操作できる同等のハンドラー (onkeydown/onkeyup/onkeypress/onfocus/onblur) がない要素を検出し、人が確認できるようにします。",
       "mouseOnlyEventHandlers_summary_cantTell": "この要素には {{attrs}} がありますが、キーボードで操作できる同等のハンドラーがありません。",
@@ -91755,8 +92391,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_help": "{{rule}} の修正方法",
       "report_card_understanding": "{{sc}} {{title}} の解説",
       "report_cards_overflow": "問題のある {{total}} 件のルールのうち、優先度の高い {{shown}} 件を表示しています。残りは下の詳細な技術データを参照してください。",
+      "report_cards_group_leanFail": "不適合の可能性が高い: 確認してください",
+      "report_cards_group_leanPass": "適合の可能性が高い: 確認してください",
+      "report_cards_group_open": "人による確認が必要",
+      "report_card_leanFail": "不適合の可能性が高い: {{why}}",
+      "report_card_leanPass": "適合の可能性が高い: {{why}}",
+      "report_card_leanCaution": "注意: {{caution}}",
       "engine_failWithoutOccurrence_summary": "このルールは、対象の要素を示さずにページを不合格と判定しました。",
       "engine_failWithoutOccurrence_hint": "ルールの説明に照らしてページを確認してください。カスタムルールは、失敗した要素を検出箇所として報告することで示せます。",
+      "engine_lean_why_removedSc": "WCAG {{version}} では、これを検出した達成基準が削除されています。",
+      "engine_lean_why_errata": "WCAG {{version}} の 2023 年の正誤表では、これを検出した達成基準は HTML と XML について満たされているとみなされます。",
+      "engine_lean_caution_scopedSc": "欠陥そのものは、それに依存する機能を引き続き損ない、この達成基準を維持する規格では不適合となります。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
@@ -93782,6 +94427,18 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       }
       delete o.uncertainty;
     }
+
+    // A lean says which way a cantTell points; on a decided occurrence it has
+    // nothing to say, so it is dropped there, as uncertainty is.
+    const normalizedLean = occTier === 'cantTell' ? normalizeLean(o.lean) : null;
+    if (normalizedLean) {
+      const li = normalizedLean.i18n;
+      const params = (li && li.params) || {};
+      if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
+      if (li && li.cautionKey && normalizedLean.caution)
+        normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      o.lean = normalizedLean;
+    } else delete o.lean;
 
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
@@ -110388,6 +111045,64 @@ const normalizeUncertainty = (function normalizeUncertainty(input) {
   return out;
 });
 
+// Inlined from src/core/lean.js -- which way a cantTell finding points.
+const LEAN_DIRECTIONS = [
+  "pass",
+  "fail"
+];
+const SIGNAL_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
+const signalValue = (function signalValue(v) {
+  if (v === null || typeof v === 'string' || typeof v === 'boolean') return { ok: true, v };
+  if (typeof v === 'number' && Number.isFinite(v)) return { ok: true, v };
+  return { ok: false };
+});
+const normalizeLean = (function normalizeLean(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return null;
+  if (LEAN_DIRECTIONS.indexOf(input.toward) === -1) return null;
+  if (typeof input.why !== 'string' || !input.why.trim()) return null;
+
+  const out = { toward: input.toward, why: input.why.trim() };
+
+  const signals = [];
+  for (const s of Array.isArray(input.signals) ? input.signals : []) {
+    if (!s || typeof s !== 'object' || typeof s.signal !== 'string') continue;
+    if (!SIGNAL_NAME.test(s.signal)) continue;
+    const value = signalValue(s.value === undefined ? null : s.value);
+    if (!value.ok) continue;
+    signals.push({ signal: s.signal, value: value.v });
+  }
+  out.signals = signals;
+
+  if (typeof input.caution === 'string' && input.caution.trim()) out.caution = input.caution.trim();
+
+  const m = input.measured;
+  if (
+    m &&
+    typeof m === 'object' &&
+    Number.isInteger(m.agreed) &&
+    Number.isInteger(m.cases) &&
+    m.cases > 0 &&
+    m.agreed >= 0 &&
+    m.agreed <= m.cases
+  ) {
+    out.measured = { agreed: m.agreed, cases: m.cases };
+    if (typeof m.corpus === 'string' && m.corpus) out.measured.corpus = m.corpus;
+    if (typeof m.coreVersion === 'string' && m.coreVersion)
+      out.measured.coreVersion = m.coreVersion;
+  }
+
+  const i = input.i18n;
+  if (i && typeof i === 'object' && !Array.isArray(i)) {
+    const ii = {};
+    if (typeof i.whyKey === 'string' && i.whyKey) ii.whyKey = i.whyKey;
+    if (typeof i.cautionKey === 'string' && i.cautionKey) ii.cautionKey = i.cautionKey;
+    if (i.params && typeof i.params === 'object' && !Array.isArray(i.params))
+      ii.params = { ...i.params };
+    if (ii.whyKey || ii.cautionKey) out.i18n = ii;
+  }
+  return out;
+});
+
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 const resolveMargin = (function resolveMargin(declaration, candidates, measuredCount, helpers, options) {
@@ -112556,6 +113271,28 @@ const runCoreSettled = (function runCoreSettled(
                   ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
                   : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          // Under the target the criterion is met, by its removal or by the
+          // errata: the finding still stands, as a defect of its own.
+          if (!next.lean) {
+            next.lean = {
+              toward: 'pass',
+              why:
+                why === 'removed'
+                  ? `WCAG ${targetWcagVersion} removed the criterion this was found against.`
+                  : `WCAG ${targetWcagVersion}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.`,
+              signals: [
+                { signal: 'target-wcag-version', value: targetWcagVersion },
+                { signal: 'criterion-scope', value: why }
+              ],
+              caution:
+                'The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.',
+              i18n: {
+                whyKey: why === 'removed' ? 'engine_lean_why_removedSc' : 'engine_lean_why_errata',
+                cautionKey: 'engine_lean_caution_scopedSc',
+                params: { version: targetWcagVersion }
+              }
             };
           }
           return next;

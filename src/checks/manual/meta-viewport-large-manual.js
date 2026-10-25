@@ -24,6 +24,7 @@
  * @reason-codes
  *   - `VIEWPORT_ZOOM_BELOW_500` (cantTell): the viewport meta tag blocks
  *     zoom or caps it below 500%.
+ *     It leans fail: the page states it.
  *     Basis: WCAG 1.4.4 (best practice); CSS Viewport meta viewport.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
@@ -99,6 +100,12 @@ function runInPage(ctx) {
           summaryKey: 'metaViewportLarge_summary_cantTell',
           hintKey: 'metaViewportLarge_hint_cantTell',
           params: { reasons: reasons.join(', ') }
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The viewport meta tag keeps zoom below 500%.',
+          signals: [{ signal: 'zoom-limited', value: true }],
+          i18n: { whyKey: 'metaViewportLarge_lean_why' }
         },
         data: {
           details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }

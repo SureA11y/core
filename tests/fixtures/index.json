@@ -932,20 +932,20 @@
     {
       "ruleId": "focus-not-removed-by-script",
       "title": "A script does not remove focus from an element as it receives it",
-      "type": "manual",
+      "type": "automatic",
       "wcagSc": [
         "2.1.1",
         "2.4.7"
       ],
-      "ruleFile": "src/checks/manual/focus-not-removed-by-script-manual.js",
-      "testFile": "tests/engine-checks/manual/focus-not-removed-by-script.test.js",
+      "ruleFile": "src/checks/automatic/focus-not-removed-by-script.js",
+      "testFile": "tests/engine-checks/automatic/focus-not-removed-by-script.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/focus-not-removed-by-script-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
         "PASS": 0,
-        "FAIL": 0,
-        "CANTTELL": 3,
+        "FAIL": 2,
+        "CANTTELL": 2,
         "OTHER": 3
       }
     },
@@ -1373,8 +1373,8 @@
       "totalCases": 16,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 3,
-        "CANTTELL": 5,
+        "FAIL": 0,
+        "CANTTELL": 8,
         "OTHER": 4
       }
     },

@@ -49,13 +49,13 @@ test(`${RULE_ID}: pass with a shown, linked error message`, () => {
   );
 });
 
-test(`${RULE_ID}: fail when aria-errormessage names a hidden message`, () => {
+test(`${RULE_ID}: ask, leaning fail, when aria-errormessage names a hidden message`, () => {
   const rule = assertRule(
     run(
       '<input aria-label="Email" aria-invalid="true" aria-errormessage="e"><p id="e" hidden>Enter an email address.</p>'
     ),
     RULE_ID,
-    'fail',
+    'cantTell',
     { minOccurrences: 1, maxOccurrences: 1 }
   );
   assert.deepEqual(rule.occurrences[0].data.details, {
@@ -63,7 +63,11 @@ test(`${RULE_ID}: fail when aria-errormessage names a hidden message`, () => {
     ariaInvalid: 'true',
     errorMessageIds: ['e']
   });
-  assert.equal(rule.occurrences[0].uncertainty, undefined);
+  assert.equal(rule.occurrences[0].uncertainty.code, 'judgement-required');
+  // As for an empty message, the error may be told elsewhere; but the one
+  // tied to the field can't be seen, so it leans fail.
+  assert.equal(rule.occurrences[0].lean.toward, 'fail');
+  assert.equal(rule.occurrences[0].lean.i18n.whyKey, 'invalidFieldErrorMessage_lean_why_hidden');
 });
 
 test(`${RULE_ID}: ask when the message is shown but empty`, () => {
@@ -112,7 +116,7 @@ test(`${RULE_ID}: text brought back into view inside a visibility: hidden messag
           `${field}<div id="e" style="visibility:hidden"><span>Enter a valid email.</span></div>`
         ),
         RULE_ID,
-        'fail'
+        'cantTell'
       )
     ),
     ['ERROR_MESSAGE_HIDDEN']
@@ -129,25 +133,29 @@ test(`${RULE_ID}: a shown message whose text aria-hidden keeps from assistive te
   assert.deepEqual(codes(rule), ['ERROR_MESSAGE_ARIA_HIDDEN']);
 });
 
-test(`${RULE_ID}: a message that is aria-hidden itself, or inside an aria-hidden element, fails as hidden`, () => {
+test(`${RULE_ID}: a message that is aria-hidden itself, or inside an aria-hidden element, is asked about as hidden`, () => {
   const field = '<input aria-label="Email" aria-invalid="true" aria-errormessage="e">';
   for (const message of [
     '<p id="e" aria-hidden="true">Enter a valid email.</p>',
     '<div aria-hidden="true"><p id="e">Enter a valid email.</p></div>'
   ]) {
-    const rule = assertRule(run(field + message), RULE_ID, 'fail');
+    const rule = assertRule(run(field + message), RULE_ID, 'cantTell');
     assert.deepEqual(codes(rule), ['ERROR_MESSAGE_HIDDEN'], message);
     assert.equal(rule.occurrences[0].data.details.hiddenBy, 'aria-hidden', message);
     assert.equal(
       rule.occurrences[0].i18n.summaryKey,
-      'invalidFieldErrorMessage_summary_fail_hiddenAria'
+      'invalidFieldErrorMessage_summary_cantTell_hiddenAria'
+    );
+    assert.equal(
+      rule.occurrences[0].lean.i18n.whyKey,
+      'invalidFieldErrorMessage_lean_why_hiddenAria'
     );
   }
   // A message nobody sees says nothing of aria-hidden.
   const hidden = assertRule(
     run(field + '<p id="e" hidden>Enter a valid email.</p>'),
     RULE_ID,
-    'fail'
+    'cantTell'
   );
   assert.equal(hidden.occurrences[0].data.details.hiddenBy, undefined);
   // With a description, the error may be there, as for any hidden message.
@@ -169,7 +177,7 @@ test(`${RULE_ID}: a value ARIA reads as true counts as invalid`, () => {
           '<input aria-label="City" aria-invalid="yes" aria-errormessage="e"><span id="e" hidden>Bad</span>'
         ),
         RULE_ID,
-        'fail'
+        'cantTell'
       )
     ),
     ['ERROR_MESSAGE_HIDDEN']
@@ -219,7 +227,7 @@ test(`${RULE_ID}: one message shared by several fields`, () => {
       '<input aria-label="A" aria-invalid="true" aria-errormessage="e"><input aria-label="B" aria-invalid="true" aria-errormessage="e"><p id="e" hidden>Fix the fields above.</p>'
     ),
     RULE_ID,
-    'fail',
+    'cantTell',
     { minOccurrences: 2, maxOccurrences: 2 }
   );
   assert.deepEqual(codes(rule), ['ERROR_MESSAGE_HIDDEN', 'ERROR_MESSAGE_HIDDEN']);
@@ -234,7 +242,7 @@ test(`${RULE_ID}: hidden messages are read the same under includeHiddenElements`
       }
     ),
     RULE_ID,
-    'fail'
+    'cantTell'
   );
   assert.deepEqual(codes(rule), ['ERROR_MESSAGE_HIDDEN']);
 });
@@ -258,7 +266,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/invalid-field-error-message-a
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
   assert.deepEqual(
     rule.occurrences.map((o) => [
       o.html.match(/id="(ifem_case_\d+)"/)[1],

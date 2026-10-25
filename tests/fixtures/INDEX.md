@@ -67,7 +67,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 11 | 5 | 1 | 3 | 2 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 1 | 0 | 4 | 1 |
-| focus-not-removed-by-script | manual | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 6 | 0 | 0 | 3 | 3 |
+| focus-not-removed-by-script | automatic | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 7 | 0 | 2 | 2 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 11 | 5 | 0 | 5 | 1 |
 | form-control-programmatic-label-present | automatic | `tests/fixtures/form-control-programmatic-label-all-scenarios.html` | 43 | 13 | 12 | 0 | 18 |
@@ -89,7 +89,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | input-image-alt-decorative | manual | `tests/fixtures/input-image-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 16 | 4 | 3 | 5 | 4 |
+| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 16 | 4 | 0 | 8 | 4 |
 | label-for-valid | manual | `tests/fixtures/label-for-valid-all-scenarios.html` | 8 | 3 | 0 | 3 | 2 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 28 | 10 | 9 | 0 | 9 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |

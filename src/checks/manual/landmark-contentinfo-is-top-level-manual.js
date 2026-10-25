@@ -22,6 +22,7 @@
  * @reason-codes
  *   - `LANDMARK_CONTENTINFO_NOT_TOP_LEVEL` (cantTell): a contentinfo landmark
  *     sits inside another landmark instead of at the top level of the page.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 contentinfo role (best practice); HTML-AAM footer
  *     element.
  * @implementation-notes
@@ -134,6 +135,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
           hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The contentinfo landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkContentinfoIsTopLevel_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }

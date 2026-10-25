@@ -12,6 +12,8 @@ export interface SarifOptions {
   baselineEntries?: BaselineEntry[] | BaselineFile;
   /** runs[0].automationDetails.id, for one analysis per viewport width or page. */
   category?: string;
+  /** 'error' reports an undecided finding whose lean points to fail at "error". Default 'warning'. */
+  leanFailAs?: 'warning' | 'error';
 }
 
 /** A SARIF 2.1.0 log, as JSON text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

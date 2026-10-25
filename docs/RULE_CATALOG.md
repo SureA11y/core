@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**145 rules total: 85 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
+**145 rules total: 86 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 59 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (85), can return `fail`
+## Automatic rules (86), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -53,6 +53,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`duplicate-id-aria`](#duplicate-id-aria) | IDs referenced by ARIA must be unique | 4.1.2 | A | high | serious |
 | [`embed-text-alternative-present`](#embed-text-alternative-present) | &lt;embed&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | high | minor |
+| [`focus-not-removed-by-script`](#focus-not-removed-by-script) | A script does not remove focus from an element as it receives it | 2.1.1, 2.4.7 | A, AA | medium | serious |
 | [`form-control-programmatic-label-present`](#form-control-programmatic-label-present) | Form controls must have a programmatic label | 1.3.1, 3.3.2, 4.1.2 | A | medium | serious |
 | [`form-control-single-label`](#form-control-single-label) | Form controls must not have multiple labels | 3.3.2 | A | high | moderate |
 | [`html-lang-attr-present`](#html-lang-attr-present) | Page language is declared | 3.1.1 | A | high | serious |
@@ -102,7 +103,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (60), never `fail`
+## Manual rules (59), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -118,7 +119,6 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
-| [`focus-not-removed-by-script`](#focus-not-removed-by-script) | A script does not remove focus from an element as it receives it | 2.1.1, 2.4.7 | A, AA | low | serious |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should have a label shown on screen | 3.3.2 | A | medium | moderate |
@@ -236,7 +236,7 @@ Checks that no two elements on the page share the same accesskey attribute value
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ACCESSKEY_DUPLICATE` | cantTell | This element's accesskey value is also used by another element on the page, so the shortcut may not reach it. | WCAG 2.1.1 (best practice); HTML accesskey attribute (not settled) |
+| `ACCESSKEY_DUPLICATE` | cantTell | This element's accesskey value is also used by another element on the page, so the shortcut may not reach it. It leans fail: the page states it. | WCAG 2.1.1 (best practice); HTML accesskey attribute (not settled) |
 
 ### `area-alt-present`
 
@@ -382,7 +382,7 @@ Flags a native &lt;input type="checkbox"&gt;/&lt;input type="radio"&gt; whose ex
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_CHECKED_STATE_MISMATCH` | cantTell | A native checkbox or radio button whose aria-checked says a different state from the one the control is in; a script may still set them to agree. | WCAG 4.1.2 (not settled); ARIA in HTML; HTML-AAM input |
+| `ARIA_CHECKED_STATE_MISMATCH` | cantTell | A native checkbox or radio button whose aria-checked says a different state from the one the control is in; a script may still set them to agree. It leans pass: browsers expose the native state, not aria-checked. | WCAG 4.1.2 (not settled); ARIA in HTML; HTML-AAM input |
 
 ### `aria-conditional-attr`
 
@@ -753,7 +753,7 @@ Checks that elements with role="text" contain no focusable descendant (link, but
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` | cantTell | An element with role="text" contains content that can take keyboard focus. | WAI-ARIA Authoring Practices (best practice) |
+| `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` | cantTell | An element with role="text" contains content that can take keyboard focus. It leans fail: the page states it. | WAI-ARIA Authoring Practices (best practice) |
 
 ### `aria-valid-attr`
 
@@ -1504,13 +1504,13 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `TABLE_HEADER_EMPTY` | cantTell | A header cell has no visible text and no name from aria-label or aria-labelledby. | HTML table model th element (best practice); WAI-ARIA 1.2 columnheader role (best practice) |
-| `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | cantTell | A header cell has no visible text and is named only by aria-label or aria-labelledby, which some screen readers do not read on header cells. | accname 1.2 (best practice) |
+| `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | cantTell | A header cell has no visible text and is named only by aria-label or aria-labelledby, which some screen readers do not read on header cells. It leans fail: the page states it. | accname 1.2 (best practice) |
 
 ### `focus-not-removed-by-script`
 
 **A script does not remove focus from an element as it receives it**
 
-manual · WCAG 2.1.1, 2.4.7 (A, AA) · confidence low · default severity serious
+automatic · WCAG 2.1.1, 2.4.7 (A, AA) · confidence medium · default severity serious
 
 Asks about elements whose inline onfocus handler calls blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).
 
@@ -1518,13 +1518,16 @@ Asks about elements whose inline onfocus handler calls blur(), or focus() on ano
 
 **Expectation.**
 
-WCAG failure F55: a script that removes focus from an element when it receives it leaves a keyboard user unable to reach or operate it, and unable to see where focus is. Each element is asked about (cantTell):
+WCAG failure F55: a script that removes focus from an element when it receives it leaves a keyboard user unable to reach or operate it, and unable to see where focus is.
 
-- `FOCUS_HANDLER_BLURS_SELF` when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, by name or in brackets, possibly behind `if (this.blur)`, with at most a `return`), as F55's examples do;
+- `FOCUS_HANDLER_BLURS_SELF`: fail, when the handler does only that (`this.blur()`, `blur()`, or `blur()` on `event.target` or `event.currentTarget`, by name or in brackets, possibly behind `if (this.blur)`, with at most a `return`), as F55's examples do. Focus goes nowhere: it is dropped, not sent elsewhere.
+
+Each other element is asked about (cantTell):
+
 - `FOCUS_HANDLER_CALLS_BLUR` when it calls `blur()` among other code, or on another element, where whether focus is lost depends on the script;
 - `FOCUS_HANDLER_MOVES_FOCUS` when it calls `focus()` on another element (`document.body.focus()`), which takes focus away as it arrives, as F55's test checks.
 
-It never fails: it reads the handler's text, not what the page does, and a person can confirm it by tabbing to the element.
+A handler that sends focus somewhere (a focus-trap sentinel, a redirect) is the moves case and is asked about, never failed: the rule reads the handler's text, not what the page does, and a person can confirm it by tabbing to the element.
 
 **What a finding reports.**
 
@@ -1536,7 +1539,7 @@ It never fails: it reads the handler's text, not what the page does, and a perso
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_HANDLER_BLURS_SELF` | cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives. | WCAG 2.1.1; WCAG 2.4.7; F55 |
+| `FOCUS_HANDLER_BLURS_SELF` | fail | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives. | WCAG 2.1.1; WCAG 2.4.7; F55 |
 | `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 | `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
 
@@ -1704,7 +1707,7 @@ Checks that heading levels increase by at most one at a time in document order.
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `HEADING_ORDER_SKIPPED_LEVEL` | cantTell | A heading is more than one level deeper than the previous heading exposed to assistive technology, skipping a level. | G141 (best practice); WAI-ARIA 1.2 heading role |
+| `HEADING_ORDER_SKIPPED_LEVEL` | cantTell | A heading is more than one level deeper than the previous heading exposed to assistive technology, skipping a level. It leans fail: the page states it. | G141 (best practice); WAI-ARIA 1.2 heading role |
 
 ### `heading-quality`
 
@@ -2072,12 +2075,12 @@ Checks that an element with aria-invalid has an error message in text: its aria-
 The error is identified and described to the user in text (WCAG 3.3.1).
 
 - `aria-errormessage` names an element that is shown and has text: pass.
-- `aria-errormessage` names only elements that are hidden (`ERROR_MESSAGE_HIDDEN`): fail. ARIA requires the message to be shown while the field is invalid, and the page states it isn't.
+- `aria-errormessage` names only elements that are hidden (`ERROR_MESSAGE_HIDDEN`): cantTell, leaning fail. ARIA requires the message to be shown while the field is invalid, and the page states it isn't; but, as for an empty message, the error may still be told in the label or next to the field, which meets 3.3.1.
 - `aria-errormessage` names only shown elements with no text (`ERROR_MESSAGE_EMPTY`): cantTell. ARIA sets no MUST on the message's text, and the error may be told in the label or next to the field, which meets 3.3.1. When the field's `aria-describedby` gives a description, the error may be there: cantTell (`ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`).
 - `aria-errormessage` names no element of the page: cantTell (`ERROR_MESSAGE_TARGET_MISSING`); a script may add it.
 - No `aria-errormessage`, and `aria-describedby` gives a description: pass.
 - Neither: cantTell (`NO_ERROR_MESSAGE`). The error may be in the label or in text next to the field, which the markup doesn't tie to it; check that the user is told, in text, which field is in error and what is wrong.
-- `aria-errormessage` names a message that is `aria-hidden` itself or inside an `aria-hidden` element: fail (`ERROR_MESSAGE_HIDDEN`, with `hiddenBy: 'aria-hidden'`). ARIA counts such an element as hidden, and requires a pertinent error message not to be.
+- `aria-errormessage` names a message that is `aria-hidden` itself or inside an `aria-hidden` element: cantTell, leaning fail (`ERROR_MESSAGE_HIDDEN`, with `hiddenBy: 'aria-hidden'`). ARIA counts such an element as hidden, and requires a pertinent error message not to be.
 - `aria-errormessage` names a shown message all of whose text is inside `aria-hidden` elements, while the message itself is not: cantTell (`ERROR_MESSAGE_ARIA_HIDDEN`). People who see it are told; screen reader users may not be.
 
 An element counts as hidden when nobody sees it: `display: none`, `visibility: hidden`, `hidden`, a closed `<details>` or `content-visibility: hidden` on it or an ancestor; a message hidden with `visibility: hidden` whose text is brought back with `visibility: visible` is shown. Text is what the accessible name computation reads: an image's alt counts, and text hidden inside the message doesn't. The message may be named by id or set from script as an element (`ariaErrorMessageElements`).
@@ -2092,7 +2095,7 @@ An element counts as hidden when nobody sees it: `display: none`, `visibility: h
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ERROR_MESSAGE_HIDDEN` | fail | Aria-errormessage names only messages that are hidden: nobody sees them, or aria-hidden, on the message or around it, hides them from assistive technology. | WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21 |
+| `ERROR_MESSAGE_HIDDEN` | cantTell | Aria-errormessage names only messages that are hidden: nobody sees them, or aria-hidden, on the message or around it, hides them from assistive technology. It leans fail: the message tied to the field can't be seen or heard. | WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1 (not settled); ARIA21 |
 | `ERROR_MESSAGE_EMPTY` | cantTell | Aria-errormessage names only shown messages that have no text; the error may be told in text elsewhere. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
 | `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` | cantTell | The named message is hidden or empty, but the field's aria-describedby gives a description that may carry the error. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage |
 | `ERROR_MESSAGE_ARIA_HIDDEN` | cantTell | The named message is shown, but all its text is inside aria-hidden elements, so people who see it are told and screen reader users may not be. | WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage (MUST) |
@@ -2128,8 +2131,8 @@ Either way the label labels nothing. Check which control it was meant for: that 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LABEL_FOR_NOT_LABELABLE` | cantTell | The label's for attribute names an element that cannot be labelled, so the label labels nothing. | HTML labeled control (best practice) |
-| `LABEL_FOR_TARGET_MISSING` | cantTell | The label's for attribute names no element in its tree, so the label labels nothing. | HTML labeled control (best practice) |
+| `LABEL_FOR_NOT_LABELABLE` | cantTell | The label's for attribute names an element that cannot be labelled, so the label labels nothing. It leans fail: the page states it. | HTML labeled control (best practice) |
+| `LABEL_FOR_TARGET_MISSING` | cantTell | The label's for attribute names no element in its tree, so the label labels nothing. It leans fail: the page states it. | HTML labeled control (best practice) |
 
 ### `label-in-name`
 
@@ -2189,7 +2192,7 @@ Checks that the banner landmark (role="banner" or a non-nested &lt;header&gt;) i
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_BANNER_NOT_TOP_LEVEL` | cantTell | A banner landmark sits inside another landmark instead of at the top level of the page. | WAI-ARIA 1.2 banner role (best practice); HTML-AAM header element |
+| `LANDMARK_BANNER_NOT_TOP_LEVEL` | cantTell | A banner landmark sits inside another landmark instead of at the top level of the page. It leans fail: the page states it. | WAI-ARIA 1.2 banner role (best practice); HTML-AAM header element |
 
 ### `landmark-complementary-is-top-level`
 
@@ -2225,7 +2228,7 @@ Checks that the contentinfo landmark (role="contentinfo" or a non-nested &lt;foo
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_CONTENTINFO_NOT_TOP_LEVEL` | cantTell | A contentinfo landmark sits inside another landmark instead of at the top level of the page. | WAI-ARIA 1.2 contentinfo role (best practice); HTML-AAM footer element |
+| `LANDMARK_CONTENTINFO_NOT_TOP_LEVEL` | cantTell | A contentinfo landmark sits inside another landmark instead of at the top level of the page. It leans fail: the page states it. | WAI-ARIA 1.2 contentinfo role (best practice); HTML-AAM footer element |
 
 ### `landmark-main-is-top-level`
 
@@ -2243,7 +2246,7 @@ Checks that the main landmark (role="main" or &lt;main&gt;) is not nested inside
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_MAIN_NOT_TOP_LEVEL` | cantTell | A main landmark sits inside another landmark instead of at the top level of the page. | WAI-ARIA 1.2 main role (best practice); HTML-AAM main element |
+| `LANDMARK_MAIN_NOT_TOP_LEVEL` | cantTell | A main landmark sits inside another landmark instead of at the top level of the page. It leans fail: the page states it. | WAI-ARIA 1.2 main role (best practice); HTML-AAM main element |
 
 ### `landmark-no-duplicate-banner`
 
@@ -2265,7 +2268,7 @@ Checks that at most one banner landmark (role="banner" or a non-nested &lt;heade
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_DUPLICATE_BANNER` | cantTell | The page exposes more than one banner landmark; each one is reported. | WAI-ARIA 1.2 banner role (SHOULD) |
+| `LANDMARK_DUPLICATE_BANNER` | cantTell | The page exposes more than one banner landmark; each one is reported. It leans fail: the page states it. | WAI-ARIA 1.2 banner role (SHOULD) |
 
 ### `landmark-no-duplicate-contentinfo`
 
@@ -2287,7 +2290,7 @@ Checks that at most one contentinfo landmark (role="contentinfo" or a non-nested
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_DUPLICATE_CONTENTINFO` | cantTell | The page exposes more than one contentinfo landmark; each one is reported. | WAI-ARIA 1.2 contentinfo role (SHOULD) |
+| `LANDMARK_DUPLICATE_CONTENTINFO` | cantTell | The page exposes more than one contentinfo landmark; each one is reported. It leans fail: the page states it. | WAI-ARIA 1.2 contentinfo role (SHOULD) |
 
 ### `landmark-no-duplicate-main`
 
@@ -2309,7 +2312,7 @@ Checks that at most one main landmark (role="main" or &lt;main&gt;) exists on th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_DUPLICATE_MAIN` | cantTell | The page exposes more than one main landmark; each one is reported. | WAI-ARIA 1.2 main role (SHOULD) |
+| `LANDMARK_DUPLICATE_MAIN` | cantTell | The page exposes more than one main landmark; each one is reported. It leans fail: the page states it. | WAI-ARIA 1.2 main role (SHOULD) |
 
 ### `landmark-one-main`
 
@@ -2327,7 +2330,7 @@ Checks that the page has at least one main landmark (role="main" or &lt;main&gt;
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_MAIN_MISSING` | cantTell | The page exposes no main landmark to assistive technology. | WAI-ARIA 1.2 main role (best practice) |
+| `LANDMARK_MAIN_MISSING` | cantTell | The page exposes no main landmark to assistive technology. It leans fail: the page states it. | WAI-ARIA 1.2 main role (best practice) |
 
 ### `landmark-role-name-present`
 
@@ -2349,7 +2352,7 @@ Checks that an element given role="region" or role="form" has an accessible name
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LANDMARK_ROLE_NAME_MISSING` | cantTell | An element given the region or form role has no accessible name, so it is not exposed as a landmark. | WAI-ARIA 1.2 region role (MUST); WAI-ARIA 1.2 form role (MUST); ARIA13 |
+| `LANDMARK_ROLE_NAME_MISSING` | cantTell | An element given the region or form role has no accessible name, so it is not exposed as a landmark. It leans fail: the page states it. | WAI-ARIA 1.2 region role (MUST); WAI-ARIA 1.2 form role (MUST); ARIA13 |
 
 ### `landmark-unique`
 
@@ -2708,7 +2711,7 @@ Checks that &lt;meta name="viewport"&gt; does not set user-scalable=no or maximu
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `VIEWPORT_ZOOM_BELOW_500` | cantTell | The viewport meta tag blocks zoom or caps it below 500%. | WCAG 1.4.4 (best practice); CSS Viewport meta viewport |
+| `VIEWPORT_ZOOM_BELOW_500` | cantTell | The viewport meta tag blocks zoom or caps it below 500%. It leans fail: the page states it. | WCAG 1.4.4 (best practice); CSS Viewport meta viewport |
 
 ### `meta-viewport-zoom-enabled`
 
@@ -2956,7 +2959,7 @@ Checks that the page has at least one level-one heading (&lt;h1&gt; or role="hea
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `HEADING_ONE_MISSING` | cantTell | The page exposes no level-one heading to assistive technology. | G141 (best practice); WAI-ARIA 1.2 heading role |
+| `HEADING_ONE_MISSING` | cantTell | The page exposes no level-one heading to assistive technology. It leans fail: the page states it. | G141 (best practice); WAI-ARIA 1.2 heading role |
 
 ### `page-title-patterns`
 
@@ -3054,7 +3057,7 @@ Checks that role="presentation"/"none" (including an &lt;img alt=""&gt; implicit
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `PRESENTATION_ROLE_CONFLICT` | cantTell | An element with role="presentation" or "none", or an &lt;img alt=""&gt;, that carries a global aria-* attribute or can take focus, so browsers expose its own role again. | WAI-ARIA 1.2 presentational roles conflict resolution (best practice); ACT 46ca7f; HTML-AAM img |
+| `PRESENTATION_ROLE_CONFLICT` | cantTell | An element with role="presentation" or "none", or an &lt;img alt=""&gt;, that carries a global aria-* attribute or can take focus, so browsers expose its own role again. It leans fail when the element has a meaningful native role. | WAI-ARIA 1.2 presentational roles conflict resolution (best practice); ACT 46ca7f; HTML-AAM img |
 
 ### `presentational-children-focusable-absent`
 
@@ -3114,7 +3117,7 @@ Checks that content under &lt;body&gt; is contained within a landmark region.
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `CONTENT_OUTSIDE_LANDMARK` | cantTell | Content on the page, or an iframe whose content can't be seen from the page, is outside every landmark region. | WAI-ARIA 1.2 landmark role (best practice); ARIA11 |
+| `CONTENT_OUTSIDE_LANDMARK` | cantTell | Content on the page, or an iframe whose content can't be seen from the page, is outside every landmark region. It leans fail, except for an iframe or frame. | WAI-ARIA 1.2 landmark role (best practice); ARIA11 |
 
 ### `role-img-text-alternative-present`
 
@@ -3466,7 +3469,7 @@ Checks that a &lt;table&gt;'s &lt;caption&gt; text is not identical to its (depr
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `TABLE_CAPTION_SUMMARY_DUPLICATE` | cantTell | The table's caption and its summary attribute say the same text, which may be announced twice. | HTML table element summary attribute (best practice); H39 |
+| `TABLE_CAPTION_SUMMARY_DUPLICATE` | cantTell | The table's caption and its summary attribute say the same text, which may be announced twice. It leans fail: the page states it. | HTML table element summary attribute (best practice); H39 |
 
 ### `table-fake-caption`
 

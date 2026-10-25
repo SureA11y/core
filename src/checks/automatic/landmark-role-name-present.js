@@ -30,6 +30,7 @@
  * @reason-codes
  *   - `LANDMARK_ROLE_NAME_MISSING` (cantTell): an element given the region or
  *     form role has no accessible name, so it is not exposed as a landmark.
+ *     It leans fail: the page states it.
  *     Basis: WAI-ARIA 1.2 region role (MUST); WAI-ARIA 1.2 form role (MUST);
  *     ARIA13.
  * @implementation-notes
@@ -104,6 +105,12 @@ function runInPage(ctx) {
           code: 'spec-only',
           needed: 'Whether losing the landmark matters to people navigating this page by landmark.',
           evidence: { role, source: 'WAI-ARIA 1.2, roles region and form', wcagSc: [] }
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The landmark has no name, which WAI-ARIA requires for its role.',
+          signals: [{ signal: 'landmark-name-missing', value: true }],
+          i18n: { whyKey: 'landmarkRoleNamePresent_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_ROLE_NAME_MISSING', role }

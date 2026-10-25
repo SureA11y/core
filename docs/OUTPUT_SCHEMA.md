@@ -204,6 +204,14 @@ A `fail` always has at least one: a custom rule's `fail` that names no element g
     needed?: string,       // what would settle the question
     evidence?: object      // what the rule did establish, rule-specific
   },
+  lean?: {                 // present only on a cantTell-tier occurrence, and only with evidence
+    toward: "pass" | "fail",
+    why: string,           // localized: what in the page points that way
+    signals: { signal: string, value: string | number | boolean | null }[],
+    caution?: string,      // localized: what could make it wrong
+    measured?: { agreed: number, cases: number, corpus?: string, coreVersion?: string },
+    i18n?: { whyKey?: string, cautionKey?: string, params?: object }
+  },
   data?: {               // absent on manual-review's page-level finding
     visibilityFilter?: { eligible?: boolean, targetSet: string, accEligible: boolean | null, reasons: string[] },
     details?: object   // rule-specific, non-normative — see below
@@ -224,6 +232,7 @@ A `fail` always has at least one: a custom rule's `fail` that names no element g
 | `data.details` | Rule-specific structured data (computed metrics, resolved references) — **non-normative**: useful for building richer UI or debugging, but never changes what `outcome`/`severity` mean. Shape varies per rule; treat as best-effort extra context, not a stable contract. The one exception is `data.details.reasonCode`, which **is** stable: it identifies *which* of a rule's findings this is, and together with `ruleId` and `html` forms the fingerprint baselines and SARIF are keyed on. A rule may gain a new reason code in a minor release, or split one by cause; see [`API_STABILITY.md`](./API_STABILITY.md#finding-identity). The size and ratio fields of a contrast failure (`metrics.ratio`, `metrics.threshold`, and `typography`'s `fontSizePx`, `fontSizePt`, `fontWeight`, `isBold` and `isLargeText`) are stable too, so a report or pack can tell which kind of text failed, and so are `element` in `list-children-valid` findings, `parentElement` in `listitem-parent-valid` findings and `role` in `aria-role-name-present` findings, which say which kind of list or widget failed. |
 | `occurrenceOutcome` | Which tier this occurrence belongs to, on a rule that graded its findings into a confident `fail` tier and a needs-review `cantTell` tier. A rule reporting one tier only omits it, in which case the result's own `outcome` is the occurrence's tier. This is why a `fail` result can carry `cantTell`-tier occurrences: the aggregate outcome stays singular so CI can still gate on it, without discarding the findings that only warranted review. The outcome always agrees with the tiers: any `fail`-tier occurrence makes it `fail`, and a `fail` whose occurrences are all `cantTell`-tier is `cantTell`, so SARIF, JUnit, EARL and baselines give one answer. The engine settles a custom or pack rule that returns them at odds; a manual rule is never `fail`, and its `fail`-tier occurrences become `cantTell`. The reporters read a result stored before the engine did by the same rule, under the policy its `engineOptions` record, and roll its WCAG rollups up again from what they read. |
 | `uncertainty` | Why this finding could not be decided — see [Uncertainty codes](#uncertainty-codes) below. |
+| `lean` | Which way this undecided finding points, when the page gives evidence for one — see [Leans](#leans) below. |
 
 ### Uncertainty codes
 
@@ -241,6 +250,16 @@ A `cantTell` says the engine did not decide. `uncertainty` says **why**, from a 
 `needed` states, in one sentence, what would settle the question — the thing a reviewer has to go and check. `evidence` carries what the rule *did* establish, so the reviewer starts from the engine's work rather than repeating it; its shape is rule-specific and, like `data.details`, not a stable contract. The `code` is: new codes may be added in a minor release, but an existing one does not change meaning, so branch on the codes you know and treat an unrecognised one as "needs review" rather than an error.
 
 Every automatic rule that can report `cantTell` carries this, and a test holds that line so a new one cannot arrive without it. The `out-of-scope` code is attached by the engine rather than by a rule, on the same occurrences that produce a result-level `wcagVersionScope`. Manual rules do not carry it: `judgement-required` is what `type: "manual"` already means, so repeating it per occurrence would say nothing the result does not.
+
+### Leans
+
+A `cantTell` can still point one way. `lean` says which, when the page gives evidence for it: `toward` is the answer that evidence makes likely, `why` says what the evidence is, and `signals` lists the facts the rule read, each a kebab-case name and a plain value, so a tool can show or weigh them. `caution` says what could make the lean wrong, when that isn't plain from `uncertainty.needed`. The outcome stays `cantTell`: a lean is advice, not a verdict, and nothing that reads outcomes or tiers changes because of it.
+
+`lean` is present only where the rule has evidence. Its absence is information too: only a person can judge this one. It is present only on a `cantTell`-tier occurrence, as `uncertainty` is; the engine drops one on a decided occurrence, and drops a malformed one (a `toward` other than `pass` or `fail`, or no `why`) without touching the finding. `measured` appears once a lean has been counted against cases with known answers: how many times it was right (`agreed`) out of how many (`cases`). Until then it is absent; there is no confidence number.
+
+`why` and `caution` are in the scan's locale; `i18n` holds their keys and parameters, as an occurrence's `i18n` does for `summary` and `hint`. The engine itself leans one finding: a rule mapped only to a criterion the target WCAG version removed, or that the 2023 errata count as satisfied, leans `pass` beside its `out-of-scope` uncertainty.
+
+New leans arrive in minor releases, rule by rule, and a lean may be removed if measuring shows it is wrong too often: treat a lean as present-or-absent advice, never as part of a finding's identity. It does not enter the fingerprint.
 
 ## A composite result (`rulesResults[i]`)
 

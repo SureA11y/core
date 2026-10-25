@@ -2156,6 +2156,28 @@ function runCoreSettled(
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
             };
           }
+          // Under the target the criterion is met, by its removal or by the
+          // errata: the finding still stands, as a defect of its own.
+          if (!next.lean) {
+            next.lean = {
+              toward: 'pass',
+              why:
+                why === 'removed'
+                  ? `WCAG ${targetWcagVersion} removed the criterion this was found against.`
+                  : `WCAG ${targetWcagVersion}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.`,
+              signals: [
+                { signal: 'target-wcag-version', value: targetWcagVersion },
+                { signal: 'criterion-scope', value: why }
+              ],
+              caution:
+                'The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.',
+              i18n: {
+                whyKey: why === 'removed' ? 'engine_lean_why_removedSc' : 'engine_lean_why_errata',
+                cautionKey: 'engine_lean_caution_scopedSc',
+                params: { version: targetWcagVersion }
+              }
+            };
+          }
           return next;
         })
       : result.occurrences;

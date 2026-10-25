@@ -15,7 +15,8 @@ const page = (body) =>
 const run = (body, opts = { runOnly: [RULE_ID] }) => runa11yCoreOnHtml(page(body), opts);
 const reasons = (rule) => rule.occurrences.map((o) => o.data.details.reasonCode);
 
-test(`${RULE_ID}: a handler that only blurs its own element is asked about, never failed`, () => {
+// F55: focus is dropped as it arrives, on an element a keyboard user tabs to.
+test(`${RULE_ID}: a handler that only blurs its own element in the tab order fails`, () => {
   for (const handler of [
     'this.blur()',
     'this.blur();',
@@ -27,15 +28,16 @@ test(`${RULE_ID}: a handler that only blurs its own element is asked about, neve
     // F55's Example 3.
     'if(this.blur)this.blur();'
   ]) {
-    const rule = assertRule(run(`<a href="/x" onfocus="${handler}">X</a>`), RULE_ID, 'cantTell', {
+    const rule = assertRule(run(`<a href="/x" onfocus="${handler}">X</a>`), RULE_ID, 'fail', {
       minOccurrences: 1,
       maxOccurrences: 1
     });
     assert.deepStrictEqual(reasons(rule), ['FOCUS_HANDLER_BLURS_SELF'], handler);
     const occ = rule.occurrences[0];
-    assert.equal(occ.i18n.summaryKey, 'focusNotRemovedByScript_summary_cantTell_self');
-    assert.equal(occ.i18n.hintKey, 'focusNotRemovedByScript_hint_cantTell');
-    assert.equal(occ.uncertainty.code, 'judgement-required');
+    assert.equal(occ.occurrenceOutcome, 'fail');
+    assert.equal(occ.i18n.summaryKey, 'focusNotRemovedByScript_summary_fail_self');
+    assert.equal(occ.i18n.hintKey, 'focusNotRemovedByScript_hint_fail');
+    assert.equal(occ.uncertainty, undefined);
     assert.equal(occ.data.details.tabbable, true);
   }
 });
@@ -84,6 +86,7 @@ test(`${RULE_ID}: a handler longer than 120 characters is cut and marked with an
   const handler = `${'track();'.repeat(20)}this.blur()`;
   const rule = assertRule(run(`<a href="/x" onfocus="${handler}">X</a>`), RULE_ID, 'cantTell');
   const occ = rule.occurrences[0];
+  assert.equal(occ.data.details.reasonCode, 'FOCUS_HANDLER_CALLS_BLUR');
   assert.equal(occ.data.details.handler, `${handler.slice(0, 119)}…`);
   assert.equal(occ.i18n.params.handler, occ.data.details.handler);
 });
@@ -95,6 +98,11 @@ test(`${RULE_ID}: an element outside the tab order that can still take focus is 
     'cantTell'
   );
   assert.equal(rule.occurrences[0].data.details.tabbable, false);
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'FOCUS_HANDLER_BLURS_SELF');
+  assert.equal(
+    rule.occurrences[0].i18n.summaryKey,
+    'focusNotRemovedByScript_summary_cantTell_self'
+  );
 });
 
 test(`${RULE_ID}: not applicable without a focusable, rendered element whose focus handler calls blur()`, () => {
@@ -111,14 +119,14 @@ test(`${RULE_ID}: not applicable without a focusable, rendered element whose foc
   }
 });
 
-test(`${RULE_ID}: counts toward WCAG 2.1.1 and 2.4.7 as a question, never a failure`, () => {
+test(`${RULE_ID}: fails WCAG 2.1.1 and 2.4.7 for a blur-only handler, and only asks for the rest`, () => {
   const result = run('<main><a href="/x" onfocus="this.blur()">X</a></main>', {});
   const check = result.checksResults.find((r) => r.ruleId === RULE_ID);
-  assert.equal(check.outcome, 'cantTell');
+  assert.equal(check.outcome, 'fail');
   for (const id of ['wcag-2.1.1-keyboard', 'wcag-2.4.7-focus-visible']) {
     const rollup = result.rulesResults.find((r) => r.ruleId === id);
     assert.ok(rollup, id);
-    assert.notEqual(rollup.outcome, 'fail', id);
+    assert.equal(rollup.outcome, 'fail', id);
     assert.ok(check.rollupIds.includes(id), id);
   }
 });
@@ -131,7 +139,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/focus-not-removed-by-script-a
     'focus-not-removed-by-script-all-scenarios.html'
   );
   const result = runa11yCoreOnHtml(fs.readFileSync(fixturePath, 'utf8'), { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
   const got = rule.occurrences.map((o) => [
     (o.html.match(/id="([^"]+)"/) || [])[1],
     o.data.details.reasonCode
@@ -139,6 +147,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/focus-not-removed-by-script-a
   assert.deepStrictEqual(got, [
     ['fnrs_case_01', 'FOCUS_HANDLER_BLURS_SELF'],
     ['fnrs_case_02', 'FOCUS_HANDLER_BLURS_SELF'],
-    ['fnrs_case_03', 'FOCUS_HANDLER_CALLS_BLUR']
+    ['fnrs_case_03', 'FOCUS_HANDLER_CALLS_BLUR'],
+    ['fnrs_case_07', 'FOCUS_HANDLER_BLURS_SELF']
   ]);
+  assert.deepStrictEqual(
+    rule.occurrences.map((o) => o.occurrenceOutcome),
+    ['fail', 'fail', 'cantTell', 'cantTell']
+  );
 });
