@@ -152,3 +152,37 @@ test(`${RULE_ID}: an object that embeds a page, a PDF or text is not asked about
     maxOccurrences: 1
   });
 });
+
+// Text that is the data file's name, a generic word, or only a note that a
+// plugin is missing says nothing of the content: it leans fail. A note
+// beside a real description, or any other text, needs a person.
+test(`${RULE_ID}: leans fail on a file name, a placeholder or a missing-plugin note`, () => {
+  const run = (obj) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body><main>${obj}</main></body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const plugin = run(
+    '<object data="intro.mp4" type="video/mp4">Your browser does not support this video. Download a newer player.</object>'
+  );
+  assert.strictEqual(plugin.lean.toward, 'fail');
+  assert.strictEqual(plugin.lean.i18n.whyKey, 'object_textAltQuality_lean_why_plugin');
+  for (const obj of [
+    '<object data="intro.mp4" type="video/mp4">intro.mp4</object>',
+    '<object data="intro.mp4" type="video/mp4" aria-label="Video"></object>'
+  ]) {
+    const o = run(obj);
+    assert.strictEqual(o.lean.toward, 'fail', obj);
+    assert.strictEqual(o.lean.i18n.whyKey, 'object_textAltQuality_lean_why', obj);
+  }
+  for (const obj of [
+    '<object data="intro.mp4" type="video/mp4">Your browser does not support this video. A tour of the new library, floor by floor.</object>',
+    '<object data="intro.mp4" type="video/mp4">A tour of the new library, floor by floor.</object>'
+  ]) {
+    assert.strictEqual(run(obj).lean, undefined, obj);
+  }
+});

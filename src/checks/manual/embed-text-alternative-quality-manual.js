@@ -32,6 +32,8 @@
  *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <embed> has a text
  *     alternative, and a person checks that it describes the embedded
  *     content.
+ *     It leans fail when its name is the embedded file's name (or looks
+ *     like a file name) or a placeholder word.
  *     Basis: WCAG 1.1.1 (not settled).
  */
 
@@ -227,7 +229,34 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // The name users get: aria-label, else aria-labelledby, else title. A
+    // file name or a generic word says nothing of what is embedded (F30).
+    const name = ariaLabel || labelledByText || title;
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const lean =
+      signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')
+        ? {
+            toward: 'fail',
+            why: 'A file name or a generic word does not say what is embedded.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            caution: "A document's file name can be its real title.",
+            i18n: {
+              whyKey: 'embed_textAltQuality_lean_why',
+              cautionKey: 'embed_textAltQuality_lean_caution'
+            }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <embed> is accurate.',
       hint: 'The ARIA name or title should say what is embedded.',
       i18n: {

@@ -61,10 +61,14 @@
  *   - `EXCLUDED_ELEMENT_REVIEW` (cantTell): a visible image, <svg> or
  *     <canvas> is hidden from assistive technology, and a person checks
  *     that it is purely decorative.
+ *     It leans pass when the element is 2 px or less wide or high, or is an
+ *     <img> whose file is named as a spacer (spacer.gif, blank.png, 1x1.gif).
  *     Basis: WCAG 1.1.1 (not settled); H67; ACT e88epe.
  *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): an image hidden from
  *     assistive technology is the only content of a link or button, so the
  *     control gets no name from it.
+ *     It leans fail: the control has no author name either (aria-label,
+ *     aria-labelledby, title or label), so nothing in it names it.
  *     Basis: WCAG 1.1.1 (not settled); F89; ACT e88epe.
  * @implementation-notes
  * - Every copy of a repeated image stays a finding of its own, as each
@@ -518,6 +522,91 @@ function runInPage(ctx) {
     return other ? '' : role;
   }
 
+  // Spacer and pixel images: a file named for what it is, no picture.
+  const SPACER_FILE_RE =
+    /^(?:spacer|blank|pixel|transparent|clear|shim|1x1)(?:[-_.]?\d+(?:x\d+)?)?$/i;
+  function spacerFileName(el, tag) {
+    if (tag !== 'img') return '';
+    try {
+      const src = trim(dom.getAttribute(el, 'src'));
+      if (!src || /^data:/i.test(src)) return '';
+      const path = src.split(/[?#]/)[0];
+      let name = path.slice(path.lastIndexOf('/') + 1);
+      try {
+        name = decodeURIComponent(name);
+      } catch {
+        // keep it as written
+      }
+      const stem = name.replace(/\.[a-z0-9]+$/i, '');
+      return SPACER_FILE_RE.test(stem) ? name : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The smaller side of the box the browser draws, in px; without a layout
+  // (jsdom), the width and height attributes; null when neither is known.
+  function smallerSide(el) {
+    try {
+      const r = dom.getBoundingClientRect(el);
+      if (r && r.width > 0 && r.height > 0) return Math.min(r.width, r.height);
+    } catch {
+      // fall back to the attributes
+    }
+    const ws = trim(dom.getAttribute(el, 'width'));
+    const hs = trim(dom.getAttribute(el, 'height'));
+    const w = Number(ws);
+    const h = Number(hs);
+    if (ws && hs && Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0)
+      return Math.min(w, h);
+    return null;
+  }
+
+  // A control whose only content is a hidden image, with no author name of
+  // its own (those are skipped above), has nothing to name it (F89). An
+  // image 2 px wide or high, or a file named as a spacer, shows no picture
+  // to describe.
+  function leanFor(el, tag, controlContent) {
+    if (controlContent) {
+      return {
+        toward: 'fail',
+        why: 'The hidden image is all the control holds, and the control has no name of its own, so nothing names it.',
+        signals: [
+          { signal: 'control-content-only-image', value: controlContent },
+          { signal: 'control-author-name', value: false }
+        ],
+        caution: 'Text added with CSS (::before or ::after) can still name the control.',
+        i18n: {
+          whyKey: 'img_altDecorative_lean_why_control',
+          cautionKey: 'img_altDecorative_lean_caution_control'
+        }
+      };
+    }
+    const side = smallerSide(el);
+    if (side != null && side <= 2) {
+      return {
+        toward: 'pass',
+        why: 'The image is 2 px or less wide or high, too thin to show anything to describe.',
+        signals: [{ signal: 'smaller-side-px', value: Math.round(side * 100) / 100 }],
+        i18n: { whyKey: 'img_altDecorative_lean_why_tiny' }
+      };
+    }
+    const spacer = spacerFileName(el, tag);
+    if (spacer) {
+      return {
+        toward: 'pass',
+        why: 'The image file is named as a spacer, an image that only takes up room.',
+        signals: [{ signal: 'spacer-file-name', value: spacer }],
+        caution: 'Check that the image shows nothing: a file can keep an old name.',
+        i18n: {
+          whyKey: 'img_altDecorative_lean_why_spacer',
+          cautionKey: 'img_altDecorative_lean_caution_spacer'
+        }
+      };
+    }
+    return null;
+  }
+
   const reported = [];
 
   for (const el of uniqueEls) {
@@ -554,7 +643,9 @@ function runInPage(ctx) {
     };
     if (key) seenKeys.add(key);
 
+    const lean = leanFor(el, tag, controlContent);
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: `Check whether this <${tag}> is purely decorative.`,
       hint: 'If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.',
       i18n: {

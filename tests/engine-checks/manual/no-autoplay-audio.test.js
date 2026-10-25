@@ -207,3 +207,39 @@ test(`${RULE_ID}: an element without controls inside a hidden ancestor is still 
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'AUTOPLAY_NO_CONTROLS_MECHANISM');
 });
+
+// loop plays past the 3 seconds 1.4.2 allows: it leans fail. A duration the
+// browser has read decides either way, and needs real media; jsdom reads
+// none, so a plain autoplaying clip gets no lean here. A <bgsound> or a
+// Flash plugin plays nothing in current browsers: it leans pass.
+test(`${RULE_ID}: leans fail with loop, pass on bgsound and Flash, none otherwise`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+  const run = (body) =>
+    assertRule(runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }).occurrences[0];
+
+  const loop = run('<audio src="theme.mp3" autoplay loop></audio>');
+  assert.strictEqual(loop.data.details.reasonCode, 'AUTOPLAY_NO_CONTROLS_MECHANISM');
+  assert.strictEqual(loop.lean.toward, 'fail');
+  assert.strictEqual(loop.lean.i18n.whyKey, 'noAutoplayAudio_lean_why_loop');
+  const hiddenLoop = run('<div hidden><video src="a.mp4" autoplay loop controls></video></div>');
+  assert.strictEqual(hiddenLoop.data.details.reasonCode, 'AUTOPLAY_CONTROLS_HIDDEN');
+  assert.strictEqual(hiddenLoop.lean.toward, 'fail');
+  assert.strictEqual(run('<audio src="theme.mp3" autoplay></audio>').lean, undefined);
+
+  const bgsound = run('<bgsound src="tune.mid">');
+  assert.strictEqual(bgsound.lean.toward, 'pass');
+  assert.strictEqual(bgsound.lean.i18n.whyKey, 'noAutoplayAudio_lean_why_bgsound');
+  for (const body of [
+    '<object type="application/x-shockwave-flash" data="player.swf"></object>',
+    '<embed src="intro.swf">'
+  ]) {
+    const o = run(body);
+    assert.strictEqual(o.lean.toward, 'pass', body);
+    assert.strictEqual(o.lean.i18n.whyKey, 'noAutoplayAudio_lean_why_flash', body);
+  }
+  assert.strictEqual(run('<embed src="welcome.mp3">').lean, undefined);
+});

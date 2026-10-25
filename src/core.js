@@ -34330,10 +34330,20 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
       "img_altDecorative_summary_cantTell": "Prüfen Sie, ob dieses <{{element}}> rein dekorativ ist.",
       "img_altDecorative_hint_cantTell": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt oder etwas bewirkt, geben Sie ihm eine Textalternative, die das sagt.",
+      "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
+      "img_altQuality_lean_why_control": "Der Alternativtext ist der Name des Bedienelements, und ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
+      "img_altQuality_lean_caution": "Das Wort kann alles sein, was das Bild zeigt, etwa ein Bild genau dieses Worts.",
+      "img_altDecorative_lean_why_control": "Das verborgene Bild ist der ganze Inhalt des Bedienelements, und es hat keinen eigenen Namen, also benennt es nichts.",
+      "img_altDecorative_lean_caution_control": "Mit CSS eingefügter Text (::before oder ::after) kann das Bedienelement dennoch benennen.",
+      "img_altDecorative_lean_why_tiny": "Das Bild ist höchstens 2 px breit oder hoch, zu schmal, um etwas Beschreibenswertes zu zeigen.",
+      "img_altDecorative_lean_why_spacer": "Die Bilddatei ist als Platzhalterbild benannt, ein Bild, das nur Raum einnimmt.",
+      "img_altDecorative_lean_caution_spacer": "Prüfen Sie, dass das Bild nichts zeigt: Eine Datei kann einen alten Namen behalten.",
       "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
       "area_altQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <area> ({{sources}}) zutrifft.",
       "area_altQuality_hint_cantTell": "Jede aufgeführte Textalternative sollte sagen, wohin dieser Bereich der Image-Map führt oder was er tut.",
+      "area_altQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, wohin der Link führt.",
+      "area_altQuality_lean_caution": "Das Wort kann alles sein, was dieser Bereich des Bildes zeigt.",
       "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
       "inputImage_altQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <input type=\"image\"> ({{sources}}) zutrifft.",
@@ -34342,22 +34352,35 @@ const RUNTIME_CATALOG = {
       "inputImage_altDecorative_description": "Markiert <input type=\"image\">-Elemente mit leerem alt zur manuellen Überprüfung (in der Regel bei funktionalen Formularelementen nicht angemessen).",
       "inputImage_altDecorative_summary_cantTell": "Dieses <input type=\"image\"> hat alt=\"\" und bezieht seinen Namen aus einer anderen Quelle.",
       "inputImage_altDecorative_hint_cantTell": "Prüfen Sie, ob dieser Name sagt, was die Schaltfläche tut. Eine Schaltfläche ist nie dekorativ; passt der Name nicht, geben Sie in alt an, was sie tut.",
+      "inputImage_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was die Schaltfläche tut.",
+      "inputImage_altDecorative_lean_why": "Sein Name ist ein Dateiname, eine Webadresse oder ein allgemeines Wort, das nicht sagt, was die Schaltfläche tut.",
       "canvas_textAltQuality_title": "<canvas>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "canvas_textAltQuality_description": "Markiert <canvas>-Elemente mit erkannter Textalternative zur manuellen Überprüfung von Gleichwertigkeit und Angemessenheit.",
       "canvas_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <canvas> vermittelt, was es zeigt.",
       "canvas_textAltQuality_hint_cantTell": "Ersatztext oder zugänglicher Name sollte dieselbe Information geben oder denselben Zweck erfüllen wie das Gezeichnete.",
+      "canvas_textAltQuality_lean_why_unsupported": "Der Ersatzinhalt sagt nur, dass der Browser canvas nicht unterstützt, und nichts über das Gezeichnete.",
+      "canvas_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was das canvas zeigt.",
+      "canvas_textAltQuality_lean_caution": "Das Wort kann alles sein, was das canvas zeigt.",
       "svg_textAltQuality_title": "<svg>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "svg_textAltQuality_description": "Markiert relevante <svg>-Grafiken mit erkannter Textalternative zur manuellen Überprüfung der Angemessenheit.",
       "svg_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <svg> zutrifft.",
       "svg_textAltQuality_hint_cantTell": "<title>, <desc> oder der ARIA-Name sollte sagen, was die Grafik hier bedeutet oder bewirkt.",
+      "svg_textAltQuality_lean_why": "Ein vom Zeichenprogramm hinterlassener Name, ein Dateiname oder ein allgemeines Wort sagt nicht, was die Grafik zeigt.",
+      "svg_textAltQuality_lean_why_control": "Der Name der Grafik ist der Name des Bedienelements, und ein vom Zeichenprogramm hinterlassener Name, ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
+      "svg_textAltQuality_lean_caution": "Ein <desc>, als Beschreibung gelesen, kann dennoch sagen, was die Grafik zeigt.",
       "object_textAltQuality_title": "<object>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "object_textAltQuality_description": "Markiert <object>-Elemente mit erkanntem Ersatzinhalt oder Namen zur manuellen Überprüfung von Gleichwertigkeit und Angemessenheit.",
       "object_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <object> vermittelt, was es einbettet.",
       "object_textAltQuality_hint_cantTell": "Ersatzinhalt oder ARIA-Name sollte dieselbe Information geben wie der eingebettete Inhalt.",
+      "object_textAltQuality_lean_why_plugin": "Der Text sagt nur, dass ein Plug-in oder Player fehlt, und nichts über den Inhalt.",
+      "object_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was das Objekt zeigt.",
+      "object_textAltQuality_lean_caution": "Das Wort kann alles sein, was das Objekt zeigt.",
       "embed_textAltQuality_title": "<embed>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "embed_textAltQuality_description": "Markiert <embed>-Elemente mit erkanntem Namen zur manuellen Überprüfung der Angemessenheit.",
       "embed_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <embed> zutrifft.",
       "embed_textAltQuality_hint_cantTell": "ARIA-Name oder title sollte sagen, was eingebettet ist.",
+      "embed_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was eingebettet ist.",
+      "embed_textAltQuality_lean_caution": "Der Dateiname eines Dokuments kann sein tatsächlicher Titel sein.",
       "videoPoster_textAltPresent_title": "Das Vorschaubild (poster) von <video> muss eine Textalternative haben",
       "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
       "videoPoster_textAltPresent_summary_fail": "Das Posterbild dieses <video> hat keine Textalternative.",
@@ -34972,6 +34995,7 @@ const RUNTIME_CATALOG = {
       "imageRedundantAlt_description": "Prüft, ob der Alternativtext eines <img> nicht mit anderem, bereits in seinem unmittelbaren übergeordneten Element vorhandenem sichtbaren Text identisch ist.",
       "imageRedundantAlt_summary_cantTell": "Der Alternativtext dieses Bildes dupliziert anderen sichtbaren Text direkt daneben.",
       "imageRedundantAlt_hint_cantTell": "Wenn das Bild nichts über diesen Text hinaus beiträgt, verwenden Sie alt=\"\"; andernfalls formulieren Sie den alt-Text so um, dass er ihn nicht wiederholt.",
+      "imageRedundantAlt_lean_why": "Der Alternativtext des Bildes ist derselbe wie der Text daneben, sodass die Wörter zweimal vorgelesen werden.",
       "tableDuplicateName_title": "Die Tabellenbeschriftung darf ihr summary-Attribut nicht duplizieren",
       "tableDuplicateName_description": "Prüft, ob der <caption>-Text einer <table> nicht identisch mit ihrem (veralteten) summary-Attribut ist.",
       "tableDuplicateName_summary_cantTell": "Die Beschriftung dieser Tabelle dupliziert ihr summary-Attribut.",
@@ -35065,6 +35089,14 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Wenn der Clip länger als 3 Sekunden läuft, blenden Sie das Element ein, damit seine Bedienelemente nutzbar sind, oder bieten Sie eine andere Möglichkeit, ihn anzuhalten/zu stoppen oder seine Lautstärke zu regeln.",
       "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
       "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
+      "noAutoplayAudio_lean_why_muted": "Ein Skript hat es stummgeschaltet, also spielt es keinen Ton ab.",
+      "noAutoplayAudio_lean_why_loop": "Es hat das Attribut loop und spielt deshalb immer wieder, länger als 3 Sekunden.",
+      "noAutoplayAudio_lean_why_short": "Es dauert höchstens 3 Sekunden, was WCAG 1.4.2 erlaubt.",
+      "noAutoplayAudio_lean_why_long": "Es dauert länger als 3 Sekunden.",
+      "noAutoplayAudio_lean_caution": "Der Browser kann Ton blockieren, der von selbst startet, die Datei kann ohne Ton sein, und ein Bedienelement an anderer Stelle kann ihn stoppen.",
+      "noAutoplayAudio_lean_why_bgsound": "Aktuelle Browser ignorieren <bgsound>, also spielt es nichts ab.",
+      "noAutoplayAudio_lean_why_flash": "Aktuelle Browser führen Flash nicht mehr aus, also spielt es nichts ab.",
+      "noAutoplayAudio_lean_caution_obsolete": "Ältere Browser spielen es noch ab.",
       "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
       "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
@@ -35073,6 +35105,8 @@ const RUNTIME_CATALOG = {
       "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
       "videoCaption_summary_cantTell_review": "Dieses Video hat eine Untertitelspur für Hörgeschädigte. Prüfen Sie, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_hint_cantTell_review": "Sehen Sie das Video mit eingeschalteten Untertiteln an: Sie sollten den gesamten Dialog wiedergeben, angeben, wer spricht, wenn das nicht klar ist, und die wichtigen Geräusche beschreiben. Untertitel, denen etwas davon fehlt, erfüllen das Kriterium nicht.",
+      "videoCaption_lean_why_background": "Das Video ist stummgeschaltet, startet von selbst, läuft in Schleife und hat keine Bedienelemente, sodass Nutzende keinen Ton davon hören.",
+      "videoCaption_lean_caution_background": "Ein von der Seite selbst gebautes Bedienelement kann den Ton dennoch einschalten.",
       "imagesOfText_title": "Text sollte echter Text sein, kein Bild von Text",
       "imagesOfText_description": "Fragt bei Bildern, die laut Markup wahrscheinlich Text enthalten (ein <input type=\"image\"> oder ein <img>, das ein SVG mit <text> zeigt), ob dieser Text echter Text sein könnte.",
       "imagesOfText_summary_cantTell_button": "Diese Schaltfläche wird als Bild dargestellt. Prüfen Sie, ob das Bild Text enthält, der echter Text sein könnte.",
@@ -35396,10 +35430,20 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
       "img_altDecorative_summary_cantTell": "Check whether this <{{element}}> is purely decorative.",
       "img_altDecorative_hint_cantTell": "If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.",
+      "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
+      "img_altQuality_lean_why_control": "The alt text is the control's name, and a file name or a generic word does not say what the control does.",
+      "img_altQuality_lean_caution": "The word may be all the image shows, such as an image of that word.",
+      "img_altDecorative_lean_why_control": "The hidden image is all the control holds, and the control has no name of its own, so nothing names it.",
+      "img_altDecorative_lean_caution_control": "Text added with CSS (::before or ::after) can still name the control.",
+      "img_altDecorative_lean_why_tiny": "The image is 2 px or less wide or high, too thin to show anything to describe.",
+      "img_altDecorative_lean_why_spacer": "The image file is named as a spacer, an image that only takes up room.",
+      "img_altDecorative_lean_caution_spacer": "Check that the image shows nothing: a file can keep an old name.",
       "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
       "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
       "area_altQuality_summary_cantTell": "Check that the text alternative of this <area> ({{sources}}) is accurate.",
       "area_altQuality_hint_cantTell": "Each text alternative listed should say where this area of the image map leads or what it does.",
+      "area_altQuality_lean_why": "A file name or a generic word does not say where the link leads.",
+      "area_altQuality_lean_caution": "The word may be all the area of the image shows.",
       "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
       "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
       "inputImage_altQuality_summary_cantTell": "Check that the text alternative of this <input type=\"image\"> ({{sources}}) is accurate.",
@@ -35408,22 +35452,35 @@ const RUNTIME_CATALOG = {
       "inputImage_altDecorative_description": "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
       "inputImage_altDecorative_summary_cantTell": "This <input type=\"image\"> has alt=\"\" and takes its name from elsewhere.",
       "inputImage_altDecorative_hint_cantTell": "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
+      "inputImage_altQuality_lean_why": "A file name, a web address or a generic word does not say what the button does.",
+      "inputImage_altDecorative_lean_why": "Its name is a file name, a web address or a generic word, which does not say what the button does.",
       "canvas_textAltQuality_title": "<canvas> text alternative must be appropriate (manual review)",
       "canvas_textAltQuality_description": "Flags <canvas> elements with a detected text alternative for human review of equivalence and appropriateness.",
       "canvas_textAltQuality_summary_cantTell": "Check that the text alternative of this <canvas> conveys what it shows.",
       "canvas_textAltQuality_hint_cantTell": "The fallback text or accessible name should give the same information, or do the same job, as what is drawn.",
+      "canvas_textAltQuality_lean_why_unsupported": "The fallback only says the browser does not support canvas, which tells nothing of the drawing.",
+      "canvas_textAltQuality_lean_why": "A file name or a generic word does not say what the canvas shows.",
+      "canvas_textAltQuality_lean_caution": "The word may be all the canvas shows.",
       "svg_textAltQuality_title": "<svg> text alternative must be appropriate (manual review)",
       "svg_textAltQuality_description": "Flags applicable <svg> graphics with a detected text alternative for human review of appropriateness.",
       "svg_textAltQuality_summary_cantTell": "Check that the text alternative of this <svg> is accurate.",
       "svg_textAltQuality_hint_cantTell": "The <title>, <desc> or ARIA name should say what the graphic means or does here.",
+      "svg_textAltQuality_lean_why": "A name left by the drawing tool, a file name or a generic word does not say what the graphic shows.",
+      "svg_textAltQuality_lean_why_control": "The graphic's name is the control's name, and a name left by the drawing tool, a file name or a generic word does not say what the control does.",
+      "svg_textAltQuality_lean_caution": "A <desc>, read as the description, may still say what the graphic shows.",
       "object_textAltQuality_title": "<object> text alternative must be appropriate (manual review)",
       "object_textAltQuality_description": "Flags <object> elements with detected fallback or name for human review of equivalence and appropriateness.",
       "object_textAltQuality_summary_cantTell": "Check that the text alternative of this <object> conveys what it embeds.",
       "object_textAltQuality_hint_cantTell": "The fallback content or ARIA name should give the same information as the embedded content.",
+      "object_textAltQuality_lean_why_plugin": "The text only says a plugin or player is missing, which tells nothing of the content.",
+      "object_textAltQuality_lean_why": "A file name or a generic word does not say what the object shows.",
+      "object_textAltQuality_lean_caution": "The word may be all the object shows.",
       "embed_textAltQuality_title": "<embed> text alternative must be appropriate (manual review)",
       "embed_textAltQuality_description": "Flags <embed> elements with a detected name for human review of appropriateness.",
       "embed_textAltQuality_summary_cantTell": "Check that the text alternative of this <embed> is accurate.",
       "embed_textAltQuality_hint_cantTell": "The ARIA name or title should say what is embedded.",
+      "embed_textAltQuality_lean_why": "A file name or a generic word does not say what is embedded.",
+      "embed_textAltQuality_lean_caution": "A document's file name can be its real title.",
       "videoPoster_textAltPresent_title": "<video> poster must have a text alternative",
       "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
       "videoPoster_textAltPresent_summary_fail": "This <video> poster image has no text alternative.",
@@ -36038,6 +36095,7 @@ const RUNTIME_CATALOG = {
       "imageRedundantAlt_description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
       "imageRedundantAlt_summary_cantTell": "This image's alt text duplicates other visible text right next to it.",
       "imageRedundantAlt_hint_cantTell": "If the image adds nothing beyond that text, use alt=\"\"; otherwise rewrite the alt text so it doesn't repeat it.",
+      "imageRedundantAlt_lean_why": "The image's alt text is the same as the text beside it, so the words are read twice.",
       "tableDuplicateName_title": "Table caption must not duplicate its summary attribute",
       "tableDuplicateName_description": "Checks that a <table>'s <caption> text is not identical to its (deprecated) summary attribute.",
       "tableDuplicateName_summary_cantTell": "This table's caption duplicates its summary attribute.",
@@ -36131,6 +36189,14 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.",
       "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
       "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
+      "noAutoplayAudio_lean_why_muted": "A script has muted it, so it plays no sound.",
+      "noAutoplayAudio_lean_why_loop": "It has the loop attribute, so it plays again and again, for more than 3 seconds.",
+      "noAutoplayAudio_lean_why_short": "It lasts 3 seconds or less, which WCAG 1.4.2 allows.",
+      "noAutoplayAudio_lean_why_long": "It lasts more than 3 seconds.",
+      "noAutoplayAudio_lean_caution": "The browser may block sound that plays by itself, the file may have no sound, and a control elsewhere may stop it.",
+      "noAutoplayAudio_lean_why_bgsound": "Current browsers ignore <bgsound>, so it plays nothing.",
+      "noAutoplayAudio_lean_why_flash": "Current browsers no longer run Flash, so it plays nothing.",
+      "noAutoplayAudio_lean_caution_obsolete": "Older browsers still play it.",
       "videoCaption_title": "Prerecorded video should provide a captions track",
       "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
@@ -36139,6 +36205,8 @@ const RUNTIME_CATALOG = {
       "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
       "videoCaption_summary_cantTell_review": "This video has a captions track. Check that its captions are complete and match the audio.",
       "videoCaption_hint_cantTell_review": "Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.",
+      "videoCaption_lean_why_background": "The video is muted, plays by itself, loops and has no controls, so users get no sound from it.",
+      "videoCaption_lean_caution_background": "A control the page builds itself may still turn the sound on.",
       "imagesOfText_title": "Text should be real text, not an image of text",
       "imagesOfText_description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
       "imagesOfText_summary_cantTell_button": "This button is drawn as an image. Check whether the image holds text that could be real text.",
@@ -36462,10 +36530,20 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
       "img_altDecorative_summary_cantTell": "Comprobar si este <{{element}}> es solo decorativo.",
       "img_altDecorative_hint_cantTell": "Si solo decora, no hay que cambiar nada. Si transmite información o hace algo, darle una alternativa textual que lo diga.",
+      "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
+      "img_altQuality_lean_why_control": "El texto alt es el nombre del control, y un nombre de archivo o una palabra genérica no dice lo que hace.",
+      "img_altQuality_lean_caution": "La palabra puede ser todo lo que muestra la imagen, como una imagen de esa palabra.",
+      "img_altDecorative_lean_why_control": "La imagen oculta es todo lo que contiene el control, y el control no tiene nombre propio, así que nada le da nombre.",
+      "img_altDecorative_lean_caution_control": "Un texto añadido con CSS (::before o ::after) puede dar nombre al control de todos modos.",
+      "img_altDecorative_lean_why_tiny": "La imagen mide 2 px o menos de ancho o de alto, demasiado poco para mostrar algo que describir.",
+      "img_altDecorative_lean_why_spacer": "El archivo de la imagen tiene nombre de espaciador, una imagen que solo ocupa espacio.",
+      "img_altDecorative_lean_caution_spacer": "Comprobar que la imagen no muestra nada: un archivo puede conservar un nombre antiguo.",
       "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
       "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un texto provisional, empieza por «imagen de» o es muy largo.",
       "area_altQuality_summary_cantTell": "Comprobar que la alternativa textual de este <area> ({{sources}}) es correcta.",
       "area_altQuality_hint_cantTell": "Cada alternativa textual de la lista debería decir adónde lleva esta zona del mapa de imagen o qué hace.",
+      "area_altQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice adónde lleva el enlace.",
+      "area_altQuality_lean_caution": "La palabra puede ser todo lo que muestra esta zona de la imagen.",
       "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
       "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un texto provisional, empieza por «imagen de» o es muy largo.",
       "inputImage_altQuality_summary_cantTell": "Comprobar que la alternativa textual de este <input type=\"image\"> ({{sources}}) es correcta.",
@@ -36474,22 +36552,35 @@ const RUNTIME_CATALOG = {
       "inputImage_altDecorative_description": "Señala elementos <input type=\"image\"> con alt vacío para su revisión manual (normalmente no es apropiado para controles funcionales).",
       "inputImage_altDecorative_summary_cantTell": "Este <input type=\"image\"> tiene alt=\"\" y toma su nombre de otra fuente.",
       "inputImage_altDecorative_hint_cantTell": "Comprobar que ese nombre dice lo que hace el botón. Un botón nunca es decorativo; si el nombre no encaja, decir en alt lo que hace.",
+      "inputImage_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que hace el botón.",
+      "inputImage_altDecorative_lean_why": "Su nombre es un nombre de archivo, una dirección web o una palabra genérica, que no dice lo que hace el botón.",
       "canvas_textAltQuality_title": "La alternativa textual de <canvas> debe ser apropiada (revisión manual)",
       "canvas_textAltQuality_description": "Señala elementos <canvas> con una alternativa textual detectada para su revisión manual en cuanto a equivalencia e idoneidad.",
       "canvas_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <canvas> transmite lo que muestra.",
       "canvas_textAltQuality_hint_cantTell": "El texto alternativo o el nombre accesible debería dar la misma información, o cumplir la misma función, que lo que se dibuja.",
+      "canvas_textAltQuality_lean_why_unsupported": "El contenido alternativo solo dice que el navegador no admite canvas, lo que no dice nada del dibujo.",
+      "canvas_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice lo que muestra el canvas.",
+      "canvas_textAltQuality_lean_caution": "La palabra puede ser todo lo que muestra el canvas.",
       "svg_textAltQuality_title": "La alternativa textual de <svg> debe ser apropiada (revisión manual)",
       "svg_textAltQuality_description": "Señala gráficos <svg> aplicables con una alternativa textual detectada para su revisión manual en cuanto a idoneidad.",
       "svg_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <svg> es correcta.",
       "svg_textAltQuality_hint_cantTell": "El <title>, el <desc> o el nombre ARIA debería decir qué significa o qué hace el gráfico aquí.",
+      "svg_textAltQuality_lean_why": "Un nombre que dejó la herramienta de dibujo, un nombre de archivo o una palabra genérica no dice lo que muestra el gráfico.",
+      "svg_textAltQuality_lean_why_control": "El nombre del gráfico es el nombre del control, y un nombre que dejó la herramienta de dibujo, un nombre de archivo o una palabra genérica no dice lo que hace.",
+      "svg_textAltQuality_lean_caution": "Un <desc>, leído como descripción, puede decir de todos modos lo que muestra el gráfico.",
       "object_textAltQuality_title": "La alternativa textual de <object> debe ser apropiada (revisión manual)",
       "object_textAltQuality_description": "Señala elementos <object> con contenido de reserva o nombre detectados para su revisión manual en cuanto a equivalencia e idoneidad.",
       "object_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <object> transmite lo que incrusta.",
       "object_textAltQuality_hint_cantTell": "El contenido alternativo o el nombre ARIA debería dar la misma información que el contenido incrustado.",
+      "object_textAltQuality_lean_why_plugin": "El texto solo dice que falta un complemento o un reproductor, lo que no dice nada del contenido.",
+      "object_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice lo que muestra el objeto.",
+      "object_textAltQuality_lean_caution": "La palabra puede ser todo lo que muestra el objeto.",
       "embed_textAltQuality_title": "La alternativa textual de <embed> debe ser apropiada (revisión manual)",
       "embed_textAltQuality_description": "Señala elementos <embed> con un nombre detectado para su revisión manual en cuanto a idoneidad.",
       "embed_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <embed> es correcta.",
       "embed_textAltQuality_hint_cantTell": "El nombre ARIA o el title debería decir qué se incrusta.",
+      "embed_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice qué se incrusta.",
+      "embed_textAltQuality_lean_caution": "El nombre de archivo de un documento puede ser su verdadero título.",
       "videoPoster_textAltPresent_title": "La imagen de portada (poster) de <video> debe tener una alternativa textual",
       "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de portada (atributo poster) proporcionen una alternativa textual (nombre accesible).",
       "videoPoster_textAltPresent_summary_fail": "La imagen de portada de este <video> no tiene alternativa textual.",
@@ -37104,6 +37195,7 @@ const RUNTIME_CATALOG = {
       "imageRedundantAlt_description": "Comprueba que el texto alt de un <img> no sea idéntico a otro texto visible ya presente en su elemento padre inmediato.",
       "imageRedundantAlt_summary_cantTell": "El texto alt de esta imagen duplica otro texto visible justo al lado.",
       "imageRedundantAlt_hint_cantTell": "Si la imagen no aporta nada más que ese texto, usar alt=\"\"; si no, reescribir el texto alt para que no lo repita.",
+      "imageRedundantAlt_lean_why": "El texto alt de la imagen es el mismo que el texto de al lado, así que las palabras se leen dos veces.",
       "tableDuplicateName_title": "El <caption> de la tabla no debe duplicar su atributo summary",
       "tableDuplicateName_description": "Comprueba que el texto del <caption> de una <table> no sea idéntico a su atributo summary (obsoleto).",
       "tableDuplicateName_summary_cantTell": "El <caption> de esta tabla duplica su atributo summary.",
@@ -37197,6 +37289,14 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Si el clip dura más de 3 segundos, mostrar el elemento para que sus controles se puedan usar, u ofrecer otra forma de pausarlo/detenerlo o de controlar su volumen.",
       "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
       "noAutoplayAudio_hint_cantTell_embedded": "Comprobar si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
+      "noAutoplayAudio_lean_why_muted": "Un script lo ha silenciado, así que no reproduce sonido.",
+      "noAutoplayAudio_lean_why_loop": "Tiene el atributo loop, así que se repite una y otra vez, más de 3 segundos.",
+      "noAutoplayAudio_lean_why_short": "Dura 3 segundos o menos, lo que permite WCAG 1.4.2.",
+      "noAutoplayAudio_lean_why_long": "Dura más de 3 segundos.",
+      "noAutoplayAudio_lean_caution": "El navegador puede bloquear el sonido que empieza solo, el archivo puede no tener sonido y un control en otra parte puede detenerlo.",
+      "noAutoplayAudio_lean_why_bgsound": "Los navegadores actuales ignoran <bgsound>, así que no reproduce nada.",
+      "noAutoplayAudio_lean_why_flash": "Los navegadores actuales ya no ejecutan Flash, así que no reproduce nada.",
+      "noAutoplayAudio_lean_caution_obsolete": "Los navegadores más antiguos todavía lo reproducen.",
       "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
       "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
@@ -37205,6 +37305,8 @@ const RUNTIME_CATALOG = {
       "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
       "videoCaption_summary_cantTell_review": "Este vídeo tiene una pista de subtítulos para personas sordas. Comprobar que los subtítulos están completos y coinciden con el audio.",
       "videoCaption_hint_cantTell_review": "Ver el vídeo con los subtítulos activados: deben recoger todo el diálogo, indicar quién habla cuando no está claro y describir los sonidos importantes. Unos subtítulos a los que les falte algo de esto no cumplen el criterio.",
+      "videoCaption_lean_why_background": "El video está silenciado, se reproduce solo, se repite y no tiene controles, así que los usuarios no oyen ningún sonido.",
+      "videoCaption_lean_caution_background": "Un control que crea la propia página puede activar el sonido de todos modos.",
       "imagesOfText_title": "El texto debe ser texto real, no una imagen de texto",
       "imagesOfText_description": "Pregunta por las imágenes que, según el marcado, probablemente contienen texto (un <input type=\"image\"> o un <img> que muestra un SVG con <text>), si ese texto podría ser texto real.",
       "imagesOfText_summary_cantTell_button": "Este botón se dibuja como una imagen. Comprobar si la imagen contiene texto que podría ser texto real.",
@@ -37528,10 +37630,20 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
       "img_altDecorative_summary_cantTell": "Vérifiez si cet élément <{{element}}> est purement décoratif.",
       "img_altDecorative_hint_cantTell": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information ou une fonction, donnez-lui un équivalent textuel qui la dit.",
+      "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
+      "img_altQuality_lean_why_control": "Le texte alt est le nom de la commande, et un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
+      "img_altQuality_lean_caution": "Le mot est peut-être tout ce que montre l’image, par exemple une image de ce mot.",
+      "img_altDecorative_lean_why_control": "L’image masquée est tout le contenu de la commande, qui n’a pas de nom propre : rien ne la nomme.",
+      "img_altDecorative_lean_caution_control": "Un texte ajouté en CSS (::before ou ::after) peut quand même nommer la commande.",
+      "img_altDecorative_lean_why_tiny": "L’image fait 2 px ou moins de large ou de haut, trop peu pour montrer quoi que ce soit à décrire.",
+      "img_altDecorative_lean_why_spacer": "Le fichier de l’image porte un nom d’image d’espacement, qui ne sert qu’à occuper de la place.",
+      "img_altDecorative_lean_caution_spacer": "Vérifiez que l’image ne montre rien : un fichier peut garder un ancien nom.",
       "area_altQuality_title": "L’équivalent textuel de <area> doit être approprié (vérification manuelle)",
       "area_altQuality_description": "Signale les éléments <area> dont l’équivalent textuel (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
       "area_altQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet élément <area> ({{sources}}) est exact.",
       "area_altQuality_hint_cantTell": "Chaque équivalent textuel listé devrait dire où mène cette zone de l’image map ou ce qu’elle fait.",
+      "area_altQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas où mène le lien.",
+      "area_altQuality_lean_caution": "Le mot est peut-être tout ce que montre cette zone de l’image.",
       "inputImage_altQuality_title": "L’équivalent textuel de <input type=\"image\"> doit être approprié (vérification manuelle)",
       "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’équivalent textuel (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
       "inputImage_altQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet élément <input type=\"image\"> ({{sources}}) est exact.",
@@ -37540,22 +37652,35 @@ const RUNTIME_CATALOG = {
       "inputImage_altDecorative_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt est vide afin de vérifier manuellement (souvent inadapté pour un contrôle fonctionnel).",
       "inputImage_altDecorative_summary_cantTell": "Cet élément <input type=\"image\"> a alt=\"\" et tire son nom d’une autre source.",
       "inputImage_altDecorative_hint_cantTell": "Vérifiez que ce nom dit ce que fait le bouton. Un bouton n’est jamais décoratif : si le nom ne convient pas, indiquez dans alt ce qu’il fait.",
+      "inputImage_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que fait le bouton.",
+      "inputImage_altDecorative_lean_why": "Son nom est un nom de fichier, une adresse web ou un mot générique, qui ne dit pas ce que fait le bouton.",
       "canvas_textAltQuality_title": "L’équivalent textuel de <canvas> doit être approprié (vérification manuelle)",
       "canvas_textAltQuality_description": "Signale les éléments <canvas> pour lesquels un équivalent textuel a été détecté, afin de vérifier manuellement son équivalence et sa pertinence.",
       "canvas_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de ce <canvas> transmet ce qu’il affiche.",
       "canvas_textAltQuality_hint_cantTell": "Le texte de remplacement ou le nom accessible devrait donner la même information, ou remplir la même fonction, que ce qui est dessiné.",
+      "canvas_textAltQuality_lean_why_unsupported": "Le contenu de remplacement dit seulement que le navigateur ne prend pas en charge canvas, ce qui n’apprend rien du dessin.",
+      "canvas_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce que montre le canvas.",
+      "canvas_textAltQuality_lean_caution": "Le mot est peut-être tout ce que montre le canvas.",
       "svg_textAltQuality_title": "L’équivalent textuel de <svg> doit être approprié (vérification manuelle)",
       "svg_textAltQuality_description": "Signale les graphiques <svg> concernés pour lesquels un équivalent textuel a été détecté, afin de vérifier manuellement sa pertinence.",
       "svg_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de ce <svg> est exact.",
       "svg_textAltQuality_hint_cantTell": "Le <title>, le <desc> ou le nom ARIA devrait dire ce que le graphique signifie ou fait ici.",
+      "svg_textAltQuality_lean_why": "Un nom laissé par l’outil de dessin, un nom de fichier ou un mot générique ne dit pas ce que montre le graphique.",
+      "svg_textAltQuality_lean_why_control": "Le nom du graphique est celui de la commande, et un nom laissé par l’outil de dessin, un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
+      "svg_textAltQuality_lean_caution": "Un <desc>, lu comme description, peut quand même dire ce que montre le graphique.",
       "object_textAltQuality_title": "L’équivalent textuel de <object> doit être approprié (vérification manuelle)",
       "object_textAltQuality_description": "Signale les éléments <object> pour lesquels un contenu de secours ou un nom a été détecté, afin de vérifier manuellement son équivalence et sa pertinence.",
       "object_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet <object> transmet ce qu’il intègre.",
       "object_textAltQuality_hint_cantTell": "Le contenu de remplacement ou le nom ARIA devrait donner la même information que le contenu intégré.",
+      "object_textAltQuality_lean_why_plugin": "Le texte dit seulement qu’un plugin ou un lecteur manque, ce qui n’apprend rien du contenu.",
+      "object_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce que montre l’objet.",
+      "object_textAltQuality_lean_caution": "Le mot est peut-être tout ce que montre l’objet.",
       "embed_textAltQuality_title": "L’équivalent textuel de <embed> doit être approprié (vérification manuelle)",
       "embed_textAltQuality_description": "Signale les éléments <embed> avec nom détecté, afin de vérifier manuellement sa pertinence.",
       "embed_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet <embed> est exact.",
       "embed_textAltQuality_hint_cantTell": "Le nom ARIA ou le title devrait dire ce qui est intégré.",
+      "embed_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce qui est intégré.",
+      "embed_textAltQuality_lean_caution": "Le nom de fichier d’un document peut être son vrai titre.",
       "videoPoster_textAltPresent_title": "L’image poster de <video> doit avoir un équivalent textuel",
       "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent un équivalent textuel (nom accessible).",
       "videoPoster_textAltPresent_summary_fail": "L’image poster de cette <video> n’a pas d’équivalent textuel.",
@@ -38170,6 +38295,7 @@ const RUNTIME_CATALOG = {
       "imageRedundantAlt_description": "Vérifie que le texte alt d’un <img> n’est pas identique à un autre texte visible déjà présent dans son élément parent immédiat.",
       "imageRedundantAlt_summary_cantTell": "Le texte alt de cette image duplique un autre texte visible juste à côté.",
       "imageRedundantAlt_hint_cantTell": "Si l’image n’apporte rien de plus que ce texte, utilisez alt=\"\" ; sinon, réécrivez le texte alt pour qu’il ne le répète pas.",
+      "imageRedundantAlt_lean_why": "Le texte alt de l’image est identique au texte à côté, si bien que les mots sont lus deux fois.",
       "tableDuplicateName_title": "La légende d’un tableau ne doit pas dupliquer son attribut summary",
       "tableDuplicateName_description": "Vérifie que le texte de la <caption> d’un <table> n’est pas identique à son attribut summary (obsolète).",
       "tableDuplicateName_summary_cantTell": "La légende de ce tableau duplique son attribut summary.",
@@ -38263,6 +38389,14 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Si l’extrait dure plus de 3 secondes, affichez l’élément pour que ses commandes soient utilisables, ou proposez un autre moyen de le mettre en pause/l’arrêter ou d’en régler le volume.",
       "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
       "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez si cet élément produit automatiquement un son. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir le mettre en pause, l’arrêter ou en régler le volume indépendamment du volume du système.",
+      "noAutoplayAudio_lean_why_muted": "Un script l’a rendu muet : il ne joue aucun son.",
+      "noAutoplayAudio_lean_why_loop": "Il a l’attribut loop : il joue en boucle, plus de 3 secondes.",
+      "noAutoplayAudio_lean_why_short": "Il dure 3 secondes ou moins, ce que permet le WCAG 1.4.2.",
+      "noAutoplayAudio_lean_why_long": "Il dure plus de 3 secondes.",
+      "noAutoplayAudio_lean_caution": "Le navigateur peut bloquer un son qui démarre seul, le fichier peut ne pas avoir de son, et une commande ailleurs peut l’arrêter.",
+      "noAutoplayAudio_lean_why_bgsound": "Les navigateurs actuels ignorent <bgsound> : il ne joue rien.",
+      "noAutoplayAudio_lean_why_flash": "Les navigateurs actuels n’exécutent plus Flash : il ne joue rien.",
+      "noAutoplayAudio_lean_caution_obsolete": "Des navigateurs plus anciens le jouent encore.",
       "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
       "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
@@ -38271,6 +38405,8 @@ const RUNTIME_CATALOG = {
       "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
       "videoCaption_summary_cantTell_review": "Cette vidéo a une piste de sous-titres pour sourds et malentendants. Vérifiez que les sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_hint_cantTell_review": "Regardez la vidéo avec les sous-titres activés : ils doivent restituer tout le dialogue, dire qui parle quand ce n’est pas clair, et décrire les sons qui comptent. Des sous-titres qui omettent l’un de ces points ne satisfont pas le critère.",
+      "videoCaption_lean_why_background": "La vidéo est muette, démarre seule, tourne en boucle et n’a pas de commandes : les utilisateurs n’en entendent aucun son.",
+      "videoCaption_lean_caution_background": "Une commande créée par la page elle-même peut quand même activer le son.",
       "imagesOfText_title": "Le texte doit être du vrai texte, pas une image de texte",
       "imagesOfText_description": "Pose une question sur les images dont le balisage montre qu’elles contiennent probablement du texte (un <input type=\"image\">, ou un <img> affichant un SVG avec <text>) : ce texte pourrait-il être du vrai texte ?",
       "imagesOfText_summary_cantTell_button": "Ce bouton est dessiné sous forme d’image. Vérifiez si l’image contient du texte qui pourrait être du vrai texte.",
@@ -38594,10 +38730,20 @@ const RUNTIME_CATALOG = {
       "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
       "img_altDecorative_summary_cantTell": "この <{{element}}> が純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_cantTell": "装飾だけであれば、変更は不要です。情報を伝えたり何らかの働きをしたりする場合は、それを伝えるテキストによる代替を付けてください。",
+      "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
+      "img_altQuality_lean_why_control": "代替テキストはこのコントロールの名前であり、ファイル名や汎用的な語では、コントロールの働きは伝わりません。",
+      "img_altQuality_lean_caution": "その語の画像のように、その語が画像の示すすべてである場合もあります。",
+      "img_altDecorative_lean_why_control": "このコントロールの内容は非表示の画像だけで、コントロール自体にも名前がないため、名前を与えるものがありません。",
+      "img_altDecorative_lean_caution_control": "CSS で追加されたテキスト（::before や ::after）が、コントロールの名前になる場合もあります。",
+      "img_altDecorative_lean_why_tiny": "この画像は幅か高さが 2 px 以下で、説明が必要なものを示すには細すぎます。",
+      "img_altDecorative_lean_why_spacer": "この画像ファイルはスペーサー（場所を空けるだけの画像）の名前が付いています。",
+      "img_altDecorative_lean_caution_spacer": "画像に何も表示されていないことを確認してください。ファイルが古い名前のままの場合もあります。",
       "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
       "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
       "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確か確認してください。",
       "area_altQuality_hint_cantTell": "一覧の各テキストによる代替は、イメージマップのこの領域のリンク先や働きを伝えるものにしてください。",
+      "area_altQuality_lean_why": "ファイル名や汎用的な語では、リンク先は伝わりません。",
+      "area_altQuality_lean_caution": "その語が、画像のこの領域が示すすべてである場合もあります。",
       "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
       "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
       "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確か確認してください。",
@@ -38606,22 +38752,35 @@ const RUNTIME_CATALOG = {
       "inputImage_altDecorative_description": "alt が空の <input type=\"image\"> 要素を検出し、人が確認できるようにします (機能を持つコントロールで alt を空にするのは、通常は適切ではありません)。",
       "inputImage_altDecorative_summary_cantTell": "この <input type=\"image\"> は alt=\"\" で、名前を別のところから得ています。",
       "inputImage_altDecorative_hint_cantTell": "その名前がボタンの働きを伝えているか確認してください。ボタンが装飾になることはないので、名前が合っていなければ alt で働きを伝えてください。",
+      "inputImage_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、ボタンの働きは伝わりません。",
+      "inputImage_altDecorative_lean_why": "この名前はファイル名、Web アドレス、または汎用的な語であり、ボタンの働きを伝えません。",
       "canvas_textAltQuality_title": "<canvas> のテキストによる代替が適切であること (手動確認)",
       "canvas_textAltQuality_description": "テキストによる代替が検出された <canvas> 要素を示し、同等性と適切さを人が確認できるようにします。",
       "canvas_textAltQuality_summary_cantTell": "この <canvas> のテキストによる代替が、表示内容を伝えているか確認してください。",
       "canvas_textAltQuality_hint_cantTell": "代替テキストやアクセシブルな名前は、描画内容と同じ情報を伝えるか、同じ働きをするものにしてください。",
+      "canvas_textAltQuality_lean_why_unsupported": "代替コンテンツは、ブラウザーが canvas に対応していないことを伝えるだけで、描画内容については何も伝えません。",
+      "canvas_textAltQuality_lean_why": "ファイル名や汎用的な語では、canvas が何を示しているかは伝わりません。",
+      "canvas_textAltQuality_lean_caution": "その語が、canvas の示すすべてである場合もあります。",
       "svg_textAltQuality_title": "<svg> のテキストによる代替が適切であること (手動確認)",
       "svg_textAltQuality_description": "テキストによる代替が検出された対象の <svg> グラフィックを示し、その内容が適切かを人が確認できるようにします。",
       "svg_textAltQuality_summary_cantTell": "この <svg> のテキストによる代替が正確か確認してください。",
       "svg_textAltQuality_hint_cantTell": "<title>、<desc>、または ARIA の名前は、この場所でその図が意味することや働きを伝えるものにしてください。",
+      "svg_textAltQuality_lean_why": "作画ツールが残した名前、ファイル名、汎用的な語では、図が何を示しているかは伝わりません。",
+      "svg_textAltQuality_lean_why_control": "図の名前はこのコントロールの名前であり、作画ツールが残した名前、ファイル名、汎用的な語では、コントロールの働きは伝わりません。",
+      "svg_textAltQuality_lean_caution": "説明として読まれる <desc> が、図の内容を伝えている場合もあります。",
       "object_textAltQuality_title": "<object> のテキストによる代替が適切であること (手動確認)",
       "object_textAltQuality_description": "フォールバックコンテンツまたは名前が検出された <object> 要素を示し、同等性と適切さを人が確認できるようにします。",
       "object_textAltQuality_summary_cantTell": "この <object> のテキストによる代替が、埋め込まれた内容を伝えているか確認してください。",
       "object_textAltQuality_hint_cantTell": "代替コンテンツや ARIA の名前は、埋め込まれた内容と同じ情報を伝えるものにしてください。",
+      "object_textAltQuality_lean_why_plugin": "このテキストはプラグインやプレーヤーがないことを伝えるだけで、内容については何も伝えません。",
+      "object_textAltQuality_lean_why": "ファイル名や汎用的な語では、オブジェクトが何を示しているかは伝わりません。",
+      "object_textAltQuality_lean_caution": "その語が、オブジェクトの示すすべてである場合もあります。",
       "embed_textAltQuality_title": "<embed> のテキストによる代替が適切であること (手動確認)",
       "embed_textAltQuality_description": "名前が検出された <embed> 要素を検出し、その内容が適切かを人が確認できるようにします。",
       "embed_textAltQuality_summary_cantTell": "この <embed> のテキストによる代替が正確か確認してください。",
       "embed_textAltQuality_hint_cantTell": "ARIA の名前や title は、何が埋め込まれているかを伝えるものにしてください。",
+      "embed_textAltQuality_lean_why": "ファイル名や汎用的な語では、何が埋め込まれているかは伝わりません。",
+      "embed_textAltQuality_lean_caution": "文書のファイル名が、その文書の実際のタイトルである場合もあります。",
       "videoPoster_textAltPresent_title": "<video> のポスター画像にはテキストによる代替が必要",
       "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
       "videoPoster_textAltPresent_summary_fail": "この <video> のポスター画像にはテキストによる代替がありません。",
@@ -39236,6 +39395,7 @@ const RUNTIME_CATALOG = {
       "imageRedundantAlt_description": "<img> の代替テキストが、すぐ上の親要素にすでにある表示テキストと同一でないかを確認します。",
       "imageRedundantAlt_summary_cantTell": "この画像の代替テキストは、すぐ隣に表示されているテキストと重複しています。",
       "imageRedundantAlt_hint_cantTell": "画像がそのテキスト以上のものを伝えないなら alt=\"\" にしてください。そうでなければ、繰り返しにならないよう alt テキストを書き直してください。",
+      "imageRedundantAlt_lean_why": "画像の代替テキストが隣のテキストと同じなので、同じ語が 2 回読み上げられます。",
       "tableDuplicateName_title": "表の caption は summary 属性と重複してはならない",
       "tableDuplicateName_description": "<table> の <caption> のテキストが、(非推奨の) summary 属性と同一でないかを確認します。",
       "tableDuplicateName_summary_cantTell": "この表の caption は summary 属性と重複しています。",
@@ -39329,6 +39489,14 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "再生が 3 秒を超える場合は、コントロールを使えるよう要素を表示するか、一時停止・停止または音量調整の別の手段を用意してください。",
       "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
       "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
+      "noAutoplayAudio_lean_why_muted": "スクリプトによってミュートされているため、音声は再生されません。",
+      "noAutoplayAudio_lean_why_loop": "loop 属性があるため繰り返し再生され、3 秒を超えて続きます。",
+      "noAutoplayAudio_lean_why_short": "長さが 3 秒以下であり、WCAG 1.4.2 で認められています。",
+      "noAutoplayAudio_lean_why_long": "長さが 3 秒を超えています。",
+      "noAutoplayAudio_lean_caution": "ブラウザーが自動再生の音声をブロックすることや、ファイルに音声がないこと、ページの別の場所のコントロールで停止できることもあります。",
+      "noAutoplayAudio_lean_why_bgsound": "現在のブラウザーは <bgsound> を無視するため、何も再生されません。",
+      "noAutoplayAudio_lean_why_flash": "現在のブラウザーは Flash を実行しないため、何も再生されません。",
+      "noAutoplayAudio_lean_caution_obsolete": "古いブラウザーでは今も再生されます。",
       "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
       "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
@@ -39337,6 +39505,8 @@ const RUNTIME_CATALOG = {
       "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
       "videoCaption_summary_cantTell_review": "この動画にはキャプショントラックがあります。キャプションが完全で、音声と一致しているか確認してください。",
       "videoCaption_hint_cantTell_review": "キャプションをオンにして動画を視聴してください。すべての会話を含み、話者が明らかでない場合は誰が話しているかを示し、重要な音を説明している必要があります。これらのいずれかが欠けているキャプションは達成基準を満たしません。",
+      "videoCaption_lean_why_background": "この動画はミュートされ、自動で再生され、ループし、コントロールがないため、利用者に音声は届きません。",
+      "videoCaption_lean_caution_background": "ページが独自に用意したコントロールで、音声を有効にできる場合もあります。",
       "imagesOfText_title": "テキストは画像化されたテキストではなく、実際のテキストにしてください",
       "imagesOfText_description": "マークアップからテキストを含む可能性が高い画像 (<input type=\"image\">、または <text> を含む SVG を表示する <img>) について、そのテキストを実際のテキストにできないか確認を求めます。",
       "imagesOfText_summary_cantTell_button": "このボタンは画像として描画されています。画像に、実際のテキストにできるテキストが含まれていないか確認してください。",
@@ -52249,7 +52419,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // One code whatever the signal, which changes the message only.
     details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
+    // A file name or a generic word says nothing of where the link leads
+    // (F30). An address does, so it gets no lean.
+    const lean =
+      signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')
+        ? {
+            toward: 'fail',
+            why: 'A file name or a generic word does not say where the link leads.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            caution: 'The word may be all the area of the image shows.',
+            i18n: { whyKey: 'area_altQuality_lean_why', cautionKey: 'area_altQuality_lean_caution' }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : `Check that the text alternative of this <area> (${sourcesText}) is accurate.`,
@@ -59082,6 +59266,80 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // A note that the browser can't draw the canvas speaks of the browser, not
+  // of the drawing. Every sentence of the text must be one, so a note beside
+  // a real description gets no lean. English wording only.
+  const UNSUPPORTED_SENTENCE_RE = new RegExp(
+    [
+      "\\bbrowsers?\\b.*\\b(?:does not|doesn't|do not|don't|cannot|can't|can not) (?:yet )?support\\b",
+      "\\b(?:canvas|html5|browsers?)\\b.*\\b(?:not supported|isn't supported|unsupported)\\b",
+      '\\b(?:update|upgrade|switch|use) (?:to )?(?:your|a (?:modern|newer|different|supported|compatible)) browser\\b',
+      '^(?:sorry|oops)[.!,]?$'
+    ].join('|'),
+    'i'
+  );
+  function isUnsupportedBrowserNote(text) {
+    const sentences = String(text || '')
+      .split(/(?<=[.!?])\s+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return sentences.length > 0 && sentences.every((x) => UNSUPPORTED_SENTENCE_RE.test(x));
+  }
+
+  // The text a user gets: the ARIA name when there is one, which wins over
+  // the fallback content, else the alternative the shared helper found.
+  function textToJudge(el, textAltInfo) {
+    if (typeof helpers.getAriaNameInfo === 'function') {
+      try {
+        const aria = helpers.getAriaNameInfo(el, ctx);
+        const v = aria && aria.present ? String(aria.value || '').trim() : '';
+        if (v) return { text: v, fallback: false };
+      } catch {
+        // use the helper's value
+      }
+    }
+    if (!textAltInfo || textAltInfo.value === 'fallback-content') return null;
+    return {
+      text: String(textAltInfo.value || '').trim(),
+      fallback: textAltInfo.mechanism === 'canvas-fallback'
+    };
+  }
+
+  function leanFor(el, textAltInfo) {
+    const judged = textToJudge(el, textAltInfo);
+    if (!judged || !judged.text) return null;
+    if (judged.fallback && isUnsupportedBrowserNote(judged.text)) {
+      return {
+        toward: 'fail',
+        why: 'The fallback only says the browser does not support canvas, which tells nothing of the drawing.',
+        signals: [{ signal: 'unsupported-browser-text', value: true }],
+        i18n: { whyKey: 'canvas_textAltQuality_lean_why_unsupported' }
+      };
+    }
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, judged.text)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    if (signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')) {
+      return {
+        toward: 'fail',
+        why: 'A file name or a generic word does not say what the canvas shows.',
+        signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+        caution: 'The word may be all the canvas shows.',
+        i18n: {
+          whyKey: 'canvas_textAltQuality_lean_why',
+          cautionKey: 'canvas_textAltQuality_lean_caution'
+        }
+      };
+    }
+    return null;
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -59117,7 +59375,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const lean = leanFor(el, textAltInfo);
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <canvas> conveys what it shows.',
       hint: 'The fallback text or accessible name should give the same information, or do the same job, as what is drawn.',
       i18n: {
@@ -65181,7 +65441,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // The name users get: aria-label, else aria-labelledby, else title. A
+    // file name or a generic word says nothing of what is embedded (F30).
+    const name = ariaLabel || labelledByText || title;
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const lean =
+      signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')
+        ? {
+            toward: 'fail',
+            why: 'A file name or a generic word does not say what is embedded.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            caution: "A document's file name can be its real title.",
+            i18n: {
+              whyKey: 'embed_textAltQuality_lean_why',
+              cautionKey: 'embed_textAltQuality_lean_caution'
+            }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <embed> is accurate.',
       hint: 'The ARIA name or title should say what is embedded.',
       i18n: {
@@ -68969,8 +69256,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
+    // The repetition is a fact the page states; this best practice never
+    // fails, so it leans fail. A presentational role may take the image's
+    // alt out of what is read, so that case gets no lean.
+    const explicitRole = (() => {
+      try {
+        return (helpers.aria && helpers.aria.getExplicitRole(el)) || '';
+      } catch {
+        return '';
+      }
+    })();
+    const presentational = explicitRole === 'none' || explicitRole === 'presentation';
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(presentational
+          ? {}
+          : {
+              lean: {
+                toward: 'fail',
+                why: "The image's alt text is the same as the text beside it, so the words are read twice.",
+                signals: [{ signal: 'alt-equals-adjacent-text', value: true }],
+                i18n: { whyKey: 'imageRedundantAlt_lean_why' }
+              }
+            }),
         summary: "This image's alt text duplicates other visible text right next to it.",
         hint: 'If the image adds nothing beyond that text, use alt=""; otherwise rewrite the alt text so it doesn\'t repeat it.',
         i18n: {
@@ -69383,6 +69691,91 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return other ? '' : role;
   }
 
+  // Spacer and pixel images: a file named for what it is, no picture.
+  const SPACER_FILE_RE =
+    /^(?:spacer|blank|pixel|transparent|clear|shim|1x1)(?:[-_.]?\d+(?:x\d+)?)?$/i;
+  function spacerFileName(el, tag) {
+    if (tag !== 'img') return '';
+    try {
+      const src = trim(dom.getAttribute(el, 'src'));
+      if (!src || /^data:/i.test(src)) return '';
+      const path = src.split(/[?#]/)[0];
+      let name = path.slice(path.lastIndexOf('/') + 1);
+      try {
+        name = decodeURIComponent(name);
+      } catch {
+        // keep it as written
+      }
+      const stem = name.replace(/\.[a-z0-9]+$/i, '');
+      return SPACER_FILE_RE.test(stem) ? name : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // The smaller side of the box the browser draws, in px; without a layout
+  // (jsdom), the width and height attributes; null when neither is known.
+  function smallerSide(el) {
+    try {
+      const r = dom.getBoundingClientRect(el);
+      if (r && r.width > 0 && r.height > 0) return Math.min(r.width, r.height);
+    } catch {
+      // fall back to the attributes
+    }
+    const ws = trim(dom.getAttribute(el, 'width'));
+    const hs = trim(dom.getAttribute(el, 'height'));
+    const w = Number(ws);
+    const h = Number(hs);
+    if (ws && hs && Number.isFinite(w) && Number.isFinite(h) && w > 0 && h > 0)
+      return Math.min(w, h);
+    return null;
+  }
+
+  // A control whose only content is a hidden image, with no author name of
+  // its own (those are skipped above), has nothing to name it (F89). An
+  // image 2 px wide or high, or a file named as a spacer, shows no picture
+  // to describe.
+  function leanFor(el, tag, controlContent) {
+    if (controlContent) {
+      return {
+        toward: 'fail',
+        why: 'The hidden image is all the control holds, and the control has no name of its own, so nothing names it.',
+        signals: [
+          { signal: 'control-content-only-image', value: controlContent },
+          { signal: 'control-author-name', value: false }
+        ],
+        caution: 'Text added with CSS (::before or ::after) can still name the control.',
+        i18n: {
+          whyKey: 'img_altDecorative_lean_why_control',
+          cautionKey: 'img_altDecorative_lean_caution_control'
+        }
+      };
+    }
+    const side = smallerSide(el);
+    if (side != null && side <= 2) {
+      return {
+        toward: 'pass',
+        why: 'The image is 2 px or less wide or high, too thin to show anything to describe.',
+        signals: [{ signal: 'smaller-side-px', value: Math.round(side * 100) / 100 }],
+        i18n: { whyKey: 'img_altDecorative_lean_why_tiny' }
+      };
+    }
+    const spacer = spacerFileName(el, tag);
+    if (spacer) {
+      return {
+        toward: 'pass',
+        why: 'The image file is named as a spacer, an image that only takes up room.',
+        signals: [{ signal: 'spacer-file-name', value: spacer }],
+        caution: 'Check that the image shows nothing: a file can keep an old name.',
+        i18n: {
+          whyKey: 'img_altDecorative_lean_why_spacer',
+          cautionKey: 'img_altDecorative_lean_caution_spacer'
+        }
+      };
+    }
+    return null;
+  }
+
   const reported = [];
 
   for (const el of uniqueEls) {
@@ -69419,7 +69812,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
     if (key) seenKeys.add(key);
 
+    const lean = leanFor(el, tag, controlContent);
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: `Check whether this <${tag}> is purely decorative.`,
       hint: 'If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.',
       i18n: {
@@ -69716,6 +70111,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.describeTextAlternativeSignal
       : () => null;
 
+  // The signals a lean fail rests on: text that is not a description.
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
+  const LEAN_SIGNALS_CONTROL = new Set(['file-name', 'placeholder']);
+
   const selector = 'img[alt]:not([alt=""])';
   const els = (() => {
     try {
@@ -69856,7 +70255,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
     const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
+    // A file name, an address or a generic word is the page's own text, and
+    // none of them says what an image shows (F30). On a link or button an
+    // address does say where it leads, so it gets no lean there.
+    const leanSignals = controlContent ? LEAN_SIGNALS_CONTROL : LEAN_SIGNALS;
+    const lean =
+      signal && leanSignals.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: controlContent
+              ? "The alt text is the control's name, and a file name or a generic word does not say what the control does."
+              : 'A file name, a web address or a generic word does not say what the image shows.',
+            signals: [
+              { signal: 'alt-signal', value: signal.altSignal },
+              ...(controlContent ? [{ signal: 'control-content-only-image', value: true }] : [])
+            ],
+            caution: 'The word may be all the image shows, such as an image of that word.',
+            i18n: {
+              whyKey: controlContent
+                ? 'img_altQuality_lean_why_control'
+                : 'img_altQuality_lean_why',
+              cautionKey: 'img_altQuality_lean_caution'
+            }
+          }
+        : null;
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : "Check that this image's alt text is accurate and fits its context.",
@@ -69995,22 +70419,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // alt="" plus a name from aria-label/aria-labelledby/title is the judgement
   // call this rule reviews. alt="" with no other source leaves the control
   // unnamed, which input-image-alt-present fails outright.
-  function hasNameFromOtherSource(el) {
+  // The name, '' when there is none: the ARIA name wins over title.
+  function nameFromOtherSource(el) {
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(el, ctx);
-        if (aria && aria.present && String(aria.value || '').trim()) return true;
+        if (aria && aria.present && String(aria.value || '').trim())
+          return String(aria.value).trim();
       } catch {
         // fall through to title
       }
     }
     try {
-      const title = dom.getAttribute(el, 'title');
-      return title != null && String(title).trim() !== '';
+      return String(dom.getAttribute(el, 'title') || '').trim();
     } catch {
-      return false;
+      return '';
     }
   }
+
+  // The signals a lean fail rests on: a name that is not a label (F30).
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
 
   const els = (() => {
     try {
@@ -70049,13 +70477,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(dom.getAttribute(el, 'alt') != null && String(dom.getAttribute(el, 'alt')).trim() === ''))
       continue;
-    if (!hasNameFromOtherSource(el)) continue;
+    const name = nameFromOtherSource(el);
+    if (!name) continue;
 
     applicableCount += 1;
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const lean =
+      signal && LEAN_SIGNALS.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: 'Its name is a file name, a web address or a generic word, which does not say what the button does.',
+            signals: [{ signal: 'name-signal', value: signal.altSignal }],
+            i18n: { whyKey: 'inputImage_altDecorative_lean_why' }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'This <input type="image"> has alt="" and takes its name from elsewhere.',
       hint: "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
       i18n: {
@@ -70406,6 +70855,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // early on can't hide a suspicious one further down.
   const MAX_OCCURRENCES = 50;
   const MAX_SUSPICIOUS = 50;
+  // The signals a lean fail rests on: text that is not a label.
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
   let ordinaryReported = 0;
   let suspiciousReported = 0;
   let suspiciousCount = 0;
@@ -70472,7 +70923,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // One code whatever the signal, which changes the message only.
     details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
+    // The name is the button's whole label: a file name, an address or a
+    // generic word can't say what it does (F30).
+    const lean =
+      signal && LEAN_SIGNALS.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: 'A file name, a web address or a generic word does not say what the button does.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            i18n: { whyKey: 'inputImage_altQuality_lean_why' }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate.`,
@@ -76507,6 +76971,62 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const nodes = queryAllUnfiltered('audio[autoplay], video[autoplay]');
 
+  // What the element states about its sound: muted by a script (the
+  // property, with no attribute), set to loop, or a duration the browser
+  // has read (readyState 1 or more). The 3-second limit is 1.4.2's.
+  function mediaLean(el) {
+    let muted;
+    let readyState;
+    let duration;
+    try {
+      muted = dom.get(el, 'muted') === true;
+      readyState = Number(dom.get(el, 'readyState')) || 0;
+      duration = Number(dom.get(el, 'duration'));
+    } catch {
+      return null;
+    }
+    const known = readyState >= 1 && !Number.isNaN(duration);
+    const seconds = known && Number.isFinite(duration) ? Math.round(duration * 100) / 100 : null;
+    const failCaution = {
+      caution:
+        'The browser may block sound that plays by itself, the file may have no sound, and a control elsewhere may stop it.',
+      cautionKey: 'noAutoplayAudio_lean_caution'
+    };
+    if (muted) {
+      return {
+        toward: 'pass',
+        why: 'A script has muted it, so it plays no sound.',
+        signals: [{ signal: 'muted-property', value: true }],
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_muted' }
+      };
+    }
+    if (dom.hasAttribute(el, 'loop')) {
+      return {
+        toward: 'fail',
+        why: 'It has the loop attribute, so it plays again and again, for more than 3 seconds.',
+        signals: [{ signal: 'loop-attribute', value: true }],
+        caution: failCaution.caution,
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_loop', cautionKey: failCaution.cautionKey }
+      };
+    }
+    if (!known) return null;
+    if (seconds != null && seconds <= 3) {
+      return {
+        toward: 'pass',
+        why: 'It lasts 3 seconds or less, which WCAG 1.4.2 allows.',
+        signals: [{ signal: 'media-duration-s', value: seconds }],
+        i18n: { whyKey: 'noAutoplayAudio_lean_why_short' }
+      };
+    }
+    return {
+      toward: 'fail',
+      why: 'It lasts more than 3 seconds.',
+      signals: [{ signal: 'media-duration-s', value: seconds }],
+      caution: failCaution.caution,
+      i18n: { whyKey: 'noAutoplayAudio_lean_why_long', cautionKey: failCaution.cautionKey }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -76523,8 +77043,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ignoreOpacity: true
       });
       if (shown.eligible) continue;
+      const hiddenLean = mediaLean(el);
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(hiddenLean ? { lean: hiddenLean } : {}),
           summary:
             'This element autoplays audio with native controls, but it is hidden, so its controls cannot be reached.',
           hint: 'If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.',
@@ -76546,7 +77068,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
+    const lean = mediaLean(el);
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       selector: stableSelector,
       html,
       summary:
@@ -76614,7 +77138,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     applicableCount += 1;
     if (tag === 'object') askedObjects.push(el);
 
+    // Current browsers play neither a <bgsound> nor a Flash plugin.
+    const urlAttr = tag === 'object' ? 'data' : 'src';
+    const flash =
+      tag !== 'bgsound' &&
+      (PLUGIN_TYPES.test(attr(el, 'type').toLowerCase().split(';')[0].trim()) ||
+        /\.swf(?:[?#]|$)/i.test(attr(el, urlAttr)));
+    const embeddedLean =
+      tag === 'bgsound' || flash
+        ? {
+            toward: 'pass',
+            why:
+              tag === 'bgsound'
+                ? 'Current browsers ignore <bgsound>, so it plays nothing.'
+                : 'Current browsers no longer run Flash, so it plays nothing.',
+            signals: [
+              { signal: tag === 'bgsound' ? 'bgsound-element' : 'flash-plugin', value: true }
+            ],
+            caution: 'Older browsers still play it.',
+            i18n: {
+              whyKey:
+                tag === 'bgsound'
+                  ? 'noAutoplayAudio_lean_why_bgsound'
+                  : 'noAutoplayAudio_lean_why_flash',
+              cautionKey: 'noAutoplayAudio_lean_caution_obsolete'
+            }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(embeddedLean ? { lean: embeddedLean } : {}),
       selector: helpers.buildSelector ? helpers.buildSelector(el) : 'html',
       html: helpers.getOuterHtmlSnippet ? helpers.getOuterHtmlSnippet(el) : dom.outerHTML(el) || '',
       summary: 'This element may play sound as soon as the page loads.',
@@ -76997,6 +77550,94 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Text that stands in for the object without describing it: the words
+  // for an object itself, and notes that a plugin or player is missing.
+  // Every sentence must be such a note, so one beside a real description
+  // gets no lean. English wording only.
+  const OBJECT_PLACEHOLDER_WORDS = new Set([
+    'object',
+    'embed',
+    'flash',
+    'flash movie',
+    'movie',
+    'video',
+    'audio',
+    'media',
+    'plugin',
+    'plug-in'
+  ]);
+  const MISSING_PLUGIN_SENTENCE_RE = new RegExp(
+    [
+      "\\b(?:flash|plug-?ins?|player|browsers?)\\b.*\\b(?:not installed|is required|are required|required|needed|not supported|isn't supported|unsupported|(?:does not|doesn't|do not|don't|cannot|can't) (?:support|play|display|show))\\b",
+      '\\b(?:install|download|get|update|upgrade|enable)\\b.*\\b(?:flash|plug-?ins?|player|browser)\\b',
+      '^(?:sorry|oops)[.!,]?$'
+    ].join('|'),
+    'i'
+  );
+  function isMissingPluginNote(text) {
+    const sentences = String(text || '')
+      .split(/(?<=[.!?])\s+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return sentences.length > 0 && sentences.every((x) => MISSING_PLUGIN_SENTENCE_RE.test(x));
+  }
+  function normalized(v) {
+    return String(v || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+  function dataFileName(data) {
+    const path = String(data || '').split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {
+      // keep it as written
+    }
+    return normalized(name);
+  }
+
+  function leanFor(el, text, data) {
+    const t = normalized(text);
+    if (!t) return null;
+    if (isMissingPluginNote(t)) {
+      return {
+        toward: 'fail',
+        why: 'The text only says a plugin or player is missing, which tells nothing of the content.',
+        signals: [{ signal: 'missing-plugin-text', value: true }],
+        i18n: { whyKey: 'object_textAltQuality_lean_why_plugin' }
+      };
+    }
+    let signal = null;
+    const fileName = dataFileName(data);
+    if (fileName && /\./.test(fileName) && t === fileName) signal = 'file-name';
+    if (!signal) {
+      try {
+        const s =
+          typeof helpers.getTextAlternativeSignal === 'function'
+            ? helpers.getTextAlternativeSignal(el, text)
+            : null;
+        if (s && (s.altSignal === 'file-name' || s.altSignal === 'placeholder'))
+          signal = s.altSignal;
+      } catch {
+        signal = null;
+      }
+    }
+    if (!signal && OBJECT_PLACEHOLDER_WORDS.has(t.replace(/[.!?:]+$/, ''))) signal = 'placeholder';
+    if (!signal) return null;
+    return {
+      toward: 'fail',
+      why: 'A file name or a generic word does not say what the object shows.',
+      signals: [{ signal: 'alt-signal', value: signal }],
+      caution: 'The word may be all the object shows.',
+      i18n: {
+        whyKey: 'object_textAltQuality_lean_why',
+        cautionKey: 'object_textAltQuality_lean_caution'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -77066,7 +77707,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const lean = leanFor(
+      el,
+      ariaLabel || labelledByText || fallbackText || title,
+      dom.getAttribute(el, 'data')
+    );
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <object> conveys what it embeds.',
       hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {
@@ -81663,6 +82310,52 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return other ? '' : role;
   }
 
+  // Names a drawing tool or an export leaves behind: layer and shape names,
+  // the "Created with" note, icon ids. None is written to describe.
+  const TOOL_ARTEFACT_RES = [
+    /^(?:layer|group|path|shape|artboard|vector|frame|combined shape|compound path|clip ?path|mask)(?:[ _-]*\d+)?(?:[ _-]*copy(?:[ _-]*\d+)?)?$/i,
+    /^(?:rectangle|rect|ellipse|oval|polygon|line)(?:[ _-]*\d+|[ _-]*copy(?:[ _-]*\d+)?)+$/i,
+    /^created with (?:sketch|figma|adobe illustrator|illustrator|inkscape|method draw|svg-edit)\b/i,
+    /^(?:icon|ic|ico|svg)[-_][a-z0-9][a-z0-9_-]*$/i,
+    /^svg$/i
+  ];
+  function leanFor(el, rawName, controlContent) {
+    const name = trim(rawName).replace(/\s+/g, ' ');
+    if (!name) return null;
+    let value = '';
+    if (TOOL_ARTEFACT_RES.some((re) => re.test(name))) value = 'tool-artefact';
+    if (!value) {
+      try {
+        const s =
+          typeof helpers.getTextAlternativeSignal === 'function'
+            ? helpers.getTextAlternativeSignal(el, name)
+            : null;
+        if (s && (s.altSignal === 'file-name' || s.altSignal === 'placeholder'))
+          value = s.altSignal;
+      } catch {
+        value = '';
+      }
+    }
+    if (!value) return null;
+    return {
+      toward: 'fail',
+      why: controlContent
+        ? "The graphic's name is the control's name, and a name left by the drawing tool, a file name or a generic word does not say what the control does."
+        : 'A name left by the drawing tool, a file name or a generic word does not say what the graphic shows.',
+      signals: [
+        { signal: 'name-signal', value },
+        ...(controlContent ? [{ signal: 'control-content-only-image', value: controlContent }] : [])
+      ],
+      caution: 'A <desc>, read as the description, may still say what the graphic shows.',
+      i18n: {
+        whyKey: controlContent
+          ? 'svg_textAltQuality_lean_why_control'
+          : 'svg_textAltQuality_lean_why',
+        cautionKey: 'svg_textAltQuality_lean_caution'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -81727,8 +82420,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     const controlContent = onlyContentOf(el);
+    const lean = leanFor(el, ariaLabel || labelledByText || titleText, controlContent);
 
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <svg> is accurate.',
       hint: 'The <title>, <desc> or ARIA name should say what the graphic means or does here.',
       i18n: {
@@ -86523,6 +87218,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Muted, autoplaying, looping and without controls: the browser gives no
+  // way to turn its sound on, so it presents no audio to caption.
+  function isBackgroundVideo(el) {
+    return (
+      ['muted', 'autoplay', 'loop'].every((a) => dom.hasAttribute(el, a)) &&
+      !dom.hasAttribute(el, 'controls')
+    );
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'querySelectorAll')) continue;
 
@@ -86595,6 +87299,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               hintKey: 'videoCaption_hint_cantTell',
               params: {}
             },
+            ...(isBackgroundVideo(el)
+              ? {
+                  lean: {
+                    toward: 'pass',
+                    why: 'The video is muted, plays by itself, loops and has no controls, so users get no sound from it.',
+                    signals: [{ signal: 'background-video', value: true }],
+                    caution: 'A control the page builds itself may still turn the sound on.',
+                    i18n: {
+                      whyKey: 'videoCaption_lean_why_background',
+                      cautionKey: 'videoCaption_lean_caution_background'
+                    }
+                  }
+                }
+              : {}),
             data: {
               details: { reasonCode: 'CAPTIONS_TRACK_NOT_DETECTED' }
             }
@@ -87160,10 +87878,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_description": "Markiert <img>-, <canvas>- und <svg>-Elemente, die vom Accessibility-Tree ausgeschlossen sind (aria-hidden, role=\"none\"/\"presentation\", leeres alt, oder ein unbeschriftetes svg/canvas), zur manuellen Überprüfung, ob sie rein dekorativ sind.",
       "img_altDecorative_summary_cantTell": "Prüfen Sie, ob dieses <{{element}}> rein dekorativ ist.",
       "img_altDecorative_hint_cantTell": "Wenn es nur schmückt, ist nichts zu ändern. Wenn es eine Information trägt oder etwas bewirkt, geben Sie ihm eine Textalternative, die das sagt.",
+      "img_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was das Bild zeigt.",
+      "img_altQuality_lean_why_control": "Der Alternativtext ist der Name des Bedienelements, und ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
+      "img_altQuality_lean_caution": "Das Wort kann alles sein, was das Bild zeigt, etwa ein Bild genau dieses Worts.",
+      "img_altDecorative_lean_why_control": "Das verborgene Bild ist der ganze Inhalt des Bedienelements, und es hat keinen eigenen Namen, also benennt es nichts.",
+      "img_altDecorative_lean_caution_control": "Mit CSS eingefügter Text (::before oder ::after) kann das Bedienelement dennoch benennen.",
+      "img_altDecorative_lean_why_tiny": "Das Bild ist höchstens 2 px breit oder hoch, zu schmal, um etwas Beschreibenswertes zu zeigen.",
+      "img_altDecorative_lean_why_spacer": "Die Bilddatei ist als Platzhalterbild benannt, ein Bild, das nur Raum einnimmt.",
+      "img_altDecorative_lean_caution_spacer": "Prüfen Sie, dass das Bild nichts zeigt: Eine Datei kann einen alten Namen behalten.",
       "area_altQuality_title": "<area>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "area_altQuality_description": "Markiert <area>-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
       "area_altQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <area> ({{sources}}) zutrifft.",
       "area_altQuality_hint_cantTell": "Jede aufgeführte Textalternative sollte sagen, wohin dieser Bereich der Image-Map führt oder was er tut.",
+      "area_altQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, wohin der Link führt.",
+      "area_altQuality_lean_caution": "Das Wort kann alles sein, was dieser Bereich des Bildes zeigt.",
       "inputImage_altQuality_title": "<input type=\"image\">-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "inputImage_altQuality_description": "Markiert <input type=\"image\">-Elemente mit nicht leerer Textalternative (alt, aria-label, aria-labelledby oder title) zur manuellen Überprüfung der Angemessenheit. Weist darauf hin, wenn der Name wie ein Dateiname, eine Webadresse oder ein Platzhalter aussieht, mit „Bild von“ beginnt oder sehr lang ist.",
       "inputImage_altQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <input type=\"image\"> ({{sources}}) zutrifft.",
@@ -87172,22 +87900,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "inputImage_altDecorative_description": "Markiert <input type=\"image\">-Elemente mit leerem alt zur manuellen Überprüfung (in der Regel bei funktionalen Formularelementen nicht angemessen).",
       "inputImage_altDecorative_summary_cantTell": "Dieses <input type=\"image\"> hat alt=\"\" und bezieht seinen Namen aus einer anderen Quelle.",
       "inputImage_altDecorative_hint_cantTell": "Prüfen Sie, ob dieser Name sagt, was die Schaltfläche tut. Eine Schaltfläche ist nie dekorativ; passt der Name nicht, geben Sie in alt an, was sie tut.",
+      "inputImage_altQuality_lean_why": "Ein Dateiname, eine Webadresse oder ein allgemeines Wort sagt nicht, was die Schaltfläche tut.",
+      "inputImage_altDecorative_lean_why": "Sein Name ist ein Dateiname, eine Webadresse oder ein allgemeines Wort, das nicht sagt, was die Schaltfläche tut.",
       "canvas_textAltQuality_title": "<canvas>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "canvas_textAltQuality_description": "Markiert <canvas>-Elemente mit erkannter Textalternative zur manuellen Überprüfung von Gleichwertigkeit und Angemessenheit.",
       "canvas_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <canvas> vermittelt, was es zeigt.",
       "canvas_textAltQuality_hint_cantTell": "Ersatztext oder zugänglicher Name sollte dieselbe Information geben oder denselben Zweck erfüllen wie das Gezeichnete.",
+      "canvas_textAltQuality_lean_why_unsupported": "Der Ersatzinhalt sagt nur, dass der Browser canvas nicht unterstützt, und nichts über das Gezeichnete.",
+      "canvas_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was das canvas zeigt.",
+      "canvas_textAltQuality_lean_caution": "Das Wort kann alles sein, was das canvas zeigt.",
       "svg_textAltQuality_title": "<svg>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "svg_textAltQuality_description": "Markiert relevante <svg>-Grafiken mit erkannter Textalternative zur manuellen Überprüfung der Angemessenheit.",
       "svg_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <svg> zutrifft.",
       "svg_textAltQuality_hint_cantTell": "<title>, <desc> oder der ARIA-Name sollte sagen, was die Grafik hier bedeutet oder bewirkt.",
+      "svg_textAltQuality_lean_why": "Ein vom Zeichenprogramm hinterlassener Name, ein Dateiname oder ein allgemeines Wort sagt nicht, was die Grafik zeigt.",
+      "svg_textAltQuality_lean_why_control": "Der Name der Grafik ist der Name des Bedienelements, und ein vom Zeichenprogramm hinterlassener Name, ein Dateiname oder ein allgemeines Wort sagt nicht, was es tut.",
+      "svg_textAltQuality_lean_caution": "Ein <desc>, als Beschreibung gelesen, kann dennoch sagen, was die Grafik zeigt.",
       "object_textAltQuality_title": "<object>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "object_textAltQuality_description": "Markiert <object>-Elemente mit erkanntem Ersatzinhalt oder Namen zur manuellen Überprüfung von Gleichwertigkeit und Angemessenheit.",
       "object_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <object> vermittelt, was es einbettet.",
       "object_textAltQuality_hint_cantTell": "Ersatzinhalt oder ARIA-Name sollte dieselbe Information geben wie der eingebettete Inhalt.",
+      "object_textAltQuality_lean_why_plugin": "Der Text sagt nur, dass ein Plug-in oder Player fehlt, und nichts über den Inhalt.",
+      "object_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was das Objekt zeigt.",
+      "object_textAltQuality_lean_caution": "Das Wort kann alles sein, was das Objekt zeigt.",
       "embed_textAltQuality_title": "<embed>-Textalternative muss angemessen sein (manuelle Überprüfung)",
       "embed_textAltQuality_description": "Markiert <embed>-Elemente mit erkanntem Namen zur manuellen Überprüfung der Angemessenheit.",
       "embed_textAltQuality_summary_cantTell": "Prüfen Sie, ob die Textalternative dieses <embed> zutrifft.",
       "embed_textAltQuality_hint_cantTell": "ARIA-Name oder title sollte sagen, was eingebettet ist.",
+      "embed_textAltQuality_lean_why": "Ein Dateiname oder ein allgemeines Wort sagt nicht, was eingebettet ist.",
+      "embed_textAltQuality_lean_caution": "Der Dateiname eines Dokuments kann sein tatsächlicher Titel sein.",
       "videoPoster_textAltPresent_title": "Das Vorschaubild (poster) von <video> muss eine Textalternative haben",
       "videoPoster_textAltPresent_description": "Prüft, ob <video>-Elemente mit einem Vorschaubild (poster) eine Textalternative (zugänglicher Name) bereitstellen.",
       "videoPoster_textAltPresent_summary_fail": "Das Posterbild dieses <video> hat keine Textalternative.",
@@ -87802,6 +88543,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imageRedundantAlt_description": "Prüft, ob der Alternativtext eines <img> nicht mit anderem, bereits in seinem unmittelbaren übergeordneten Element vorhandenem sichtbaren Text identisch ist.",
       "imageRedundantAlt_summary_cantTell": "Der Alternativtext dieses Bildes dupliziert anderen sichtbaren Text direkt daneben.",
       "imageRedundantAlt_hint_cantTell": "Wenn das Bild nichts über diesen Text hinaus beiträgt, verwenden Sie alt=\"\"; andernfalls formulieren Sie den alt-Text so um, dass er ihn nicht wiederholt.",
+      "imageRedundantAlt_lean_why": "Der Alternativtext des Bildes ist derselbe wie der Text daneben, sodass die Wörter zweimal vorgelesen werden.",
       "tableDuplicateName_title": "Die Tabellenbeschriftung darf ihr summary-Attribut nicht duplizieren",
       "tableDuplicateName_description": "Prüft, ob der <caption>-Text einer <table> nicht identisch mit ihrem (veralteten) summary-Attribut ist.",
       "tableDuplicateName_summary_cantTell": "Die Beschriftung dieser Tabelle dupliziert ihr summary-Attribut.",
@@ -87895,6 +88637,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Wenn der Clip länger als 3 Sekunden läuft, blenden Sie das Element ein, damit seine Bedienelemente nutzbar sind, oder bieten Sie eine andere Möglichkeit, ihn anzuhalten/zu stoppen oder seine Lautstärke zu regeln.",
       "noAutoplayAudio_summary_cantTell_embedded": "Dieses Element kann Ton abspielen, sobald die Seite geladen ist.",
       "noAutoplayAudio_hint_cantTell_embedded": "Prüfen Sie, ob es von selbst Ton abspielt. Dauert der Ton länger als 3 Sekunden, müssen Nutzer ihn anhalten oder stoppen oder seine Lautstärke unabhängig von der Systemlautstärke ändern können.",
+      "noAutoplayAudio_lean_why_muted": "Ein Skript hat es stummgeschaltet, also spielt es keinen Ton ab.",
+      "noAutoplayAudio_lean_why_loop": "Es hat das Attribut loop und spielt deshalb immer wieder, länger als 3 Sekunden.",
+      "noAutoplayAudio_lean_why_short": "Es dauert höchstens 3 Sekunden, was WCAG 1.4.2 erlaubt.",
+      "noAutoplayAudio_lean_why_long": "Es dauert länger als 3 Sekunden.",
+      "noAutoplayAudio_lean_caution": "Der Browser kann Ton blockieren, der von selbst startet, die Datei kann ohne Ton sein, und ein Bedienelement an anderer Stelle kann ihn stoppen.",
+      "noAutoplayAudio_lean_why_bgsound": "Aktuelle Browser ignorieren <bgsound>, also spielt es nichts ab.",
+      "noAutoplayAudio_lean_why_flash": "Aktuelle Browser führen Flash nicht mehr aus, also spielt es nichts ab.",
+      "noAutoplayAudio_lean_caution_obsolete": "Ältere Browser spielen es noch ab.",
       "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
       "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
@@ -87903,6 +88653,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoCaption_hint_cantTell_subtitlesOnly": "Falls dieses Video eine informationstragende Audiospur hat, prüfen Sie, ob eine subtitles-Spur tatsächlich Untertitel (captions) enthält, und kennzeichnen Sie sie mit <track kind=\"captions\">; andernfalls fügen Sie eine captions-Spur hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
       "videoCaption_summary_cantTell_review": "Dieses Video hat eine Untertitelspur für Hörgeschädigte. Prüfen Sie, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_hint_cantTell_review": "Sehen Sie das Video mit eingeschalteten Untertiteln an: Sie sollten den gesamten Dialog wiedergeben, angeben, wer spricht, wenn das nicht klar ist, und die wichtigen Geräusche beschreiben. Untertitel, denen etwas davon fehlt, erfüllen das Kriterium nicht.",
+      "videoCaption_lean_why_background": "Das Video ist stummgeschaltet, startet von selbst, läuft in Schleife und hat keine Bedienelemente, sodass Nutzende keinen Ton davon hören.",
+      "videoCaption_lean_caution_background": "Ein von der Seite selbst gebautes Bedienelement kann den Ton dennoch einschalten.",
       "imagesOfText_title": "Text sollte echter Text sein, kein Bild von Text",
       "imagesOfText_description": "Fragt bei Bildern, die laut Markup wahrscheinlich Text enthalten (ein <input type=\"image\"> oder ein <img>, das ein SVG mit <text> zeigt), ob dieser Text echter Text sein könnte.",
       "imagesOfText_summary_cantTell_button": "Diese Schaltfläche wird als Bild dargestellt. Prüfen Sie, ob das Bild Text enthält, der echter Text sein könnte.",
@@ -88226,10 +88978,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_description": "Flags <img>, <canvas> and <svg> elements excluded from the accessibility tree (aria-hidden, role=\"none\"/\"presentation\", empty alt, or an unlabeled svg/canvas) for human review that they are purely decorative.",
       "img_altDecorative_summary_cantTell": "Check whether this <{{element}}> is purely decorative.",
       "img_altDecorative_hint_cantTell": "If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.",
+      "img_altQuality_lean_why": "A file name, a web address or a generic word does not say what the image shows.",
+      "img_altQuality_lean_why_control": "The alt text is the control's name, and a file name or a generic word does not say what the control does.",
+      "img_altQuality_lean_caution": "The word may be all the image shows, such as an image of that word.",
+      "img_altDecorative_lean_why_control": "The hidden image is all the control holds, and the control has no name of its own, so nothing names it.",
+      "img_altDecorative_lean_caution_control": "Text added with CSS (::before or ::after) can still name the control.",
+      "img_altDecorative_lean_why_tiny": "The image is 2 px or less wide or high, too thin to show anything to describe.",
+      "img_altDecorative_lean_why_spacer": "The image file is named as a spacer, an image that only takes up room.",
+      "img_altDecorative_lean_caution_spacer": "Check that the image shows nothing: a file can keep an old name.",
       "area_altQuality_title": "<area> text alternative must be appropriate (manual review)",
       "area_altQuality_description": "Flags <area> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
       "area_altQuality_summary_cantTell": "Check that the text alternative of this <area> ({{sources}}) is accurate.",
       "area_altQuality_hint_cantTell": "Each text alternative listed should say where this area of the image map leads or what it does.",
+      "area_altQuality_lean_why": "A file name or a generic word does not say where the link leads.",
+      "area_altQuality_lean_caution": "The word may be all the area of the image shows.",
       "inputImage_altQuality_title": "<input type=\"image\"> text alternative must be appropriate (manual review)",
       "inputImage_altQuality_description": "Flags <input type=\"image\"> elements with a non-empty text alternative (alt, aria-label, aria-labelledby or title) for human review of appropriateness. Says when the name looks like a file name, a web address, a placeholder, an \"image of\" opening or is very long.",
       "inputImage_altQuality_summary_cantTell": "Check that the text alternative of this <input type=\"image\"> ({{sources}}) is accurate.",
@@ -88238,22 +89000,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "inputImage_altDecorative_description": "Flags <input type=\"image\"> elements with empty alt for human review (usually not appropriate for functional controls).",
       "inputImage_altDecorative_summary_cantTell": "This <input type=\"image\"> has alt=\"\" and takes its name from elsewhere.",
       "inputImage_altDecorative_hint_cantTell": "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
+      "inputImage_altQuality_lean_why": "A file name, a web address or a generic word does not say what the button does.",
+      "inputImage_altDecorative_lean_why": "Its name is a file name, a web address or a generic word, which does not say what the button does.",
       "canvas_textAltQuality_title": "<canvas> text alternative must be appropriate (manual review)",
       "canvas_textAltQuality_description": "Flags <canvas> elements with a detected text alternative for human review of equivalence and appropriateness.",
       "canvas_textAltQuality_summary_cantTell": "Check that the text alternative of this <canvas> conveys what it shows.",
       "canvas_textAltQuality_hint_cantTell": "The fallback text or accessible name should give the same information, or do the same job, as what is drawn.",
+      "canvas_textAltQuality_lean_why_unsupported": "The fallback only says the browser does not support canvas, which tells nothing of the drawing.",
+      "canvas_textAltQuality_lean_why": "A file name or a generic word does not say what the canvas shows.",
+      "canvas_textAltQuality_lean_caution": "The word may be all the canvas shows.",
       "svg_textAltQuality_title": "<svg> text alternative must be appropriate (manual review)",
       "svg_textAltQuality_description": "Flags applicable <svg> graphics with a detected text alternative for human review of appropriateness.",
       "svg_textAltQuality_summary_cantTell": "Check that the text alternative of this <svg> is accurate.",
       "svg_textAltQuality_hint_cantTell": "The <title>, <desc> or ARIA name should say what the graphic means or does here.",
+      "svg_textAltQuality_lean_why": "A name left by the drawing tool, a file name or a generic word does not say what the graphic shows.",
+      "svg_textAltQuality_lean_why_control": "The graphic's name is the control's name, and a name left by the drawing tool, a file name or a generic word does not say what the control does.",
+      "svg_textAltQuality_lean_caution": "A <desc>, read as the description, may still say what the graphic shows.",
       "object_textAltQuality_title": "<object> text alternative must be appropriate (manual review)",
       "object_textAltQuality_description": "Flags <object> elements with detected fallback or name for human review of equivalence and appropriateness.",
       "object_textAltQuality_summary_cantTell": "Check that the text alternative of this <object> conveys what it embeds.",
       "object_textAltQuality_hint_cantTell": "The fallback content or ARIA name should give the same information as the embedded content.",
+      "object_textAltQuality_lean_why_plugin": "The text only says a plugin or player is missing, which tells nothing of the content.",
+      "object_textAltQuality_lean_why": "A file name or a generic word does not say what the object shows.",
+      "object_textAltQuality_lean_caution": "The word may be all the object shows.",
       "embed_textAltQuality_title": "<embed> text alternative must be appropriate (manual review)",
       "embed_textAltQuality_description": "Flags <embed> elements with a detected name for human review of appropriateness.",
       "embed_textAltQuality_summary_cantTell": "Check that the text alternative of this <embed> is accurate.",
       "embed_textAltQuality_hint_cantTell": "The ARIA name or title should say what is embedded.",
+      "embed_textAltQuality_lean_why": "A file name or a generic word does not say what is embedded.",
+      "embed_textAltQuality_lean_caution": "A document's file name can be its real title.",
       "videoPoster_textAltPresent_title": "<video> poster must have a text alternative",
       "videoPoster_textAltPresent_description": "Checks that <video> elements with a poster image provide a text alternative (accessible name).",
       "videoPoster_textAltPresent_summary_fail": "This <video> poster image has no text alternative.",
@@ -88868,6 +89643,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imageRedundantAlt_description": "Checks that an <img> alt text is not identical to other visible text already present in its immediate parent element.",
       "imageRedundantAlt_summary_cantTell": "This image's alt text duplicates other visible text right next to it.",
       "imageRedundantAlt_hint_cantTell": "If the image adds nothing beyond that text, use alt=\"\"; otherwise rewrite the alt text so it doesn't repeat it.",
+      "imageRedundantAlt_lean_why": "The image's alt text is the same as the text beside it, so the words are read twice.",
       "tableDuplicateName_title": "Table caption must not duplicate its summary attribute",
       "tableDuplicateName_description": "Checks that a <table>'s <caption> text is not identical to its (deprecated) summary attribute.",
       "tableDuplicateName_summary_cantTell": "This table's caption duplicates its summary attribute.",
@@ -88961,6 +89737,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "If this clip plays for more than 3 seconds, show the element so its controls can be used, or offer another way to pause/stop it or control its volume.",
       "noAutoplayAudio_summary_cantTell_embedded": "This element may play sound as soon as the page loads.",
       "noAutoplayAudio_hint_cantTell_embedded": "Check whether it plays sound on its own. If the sound lasts more than 3 seconds, users need a way to pause or stop it, or to change its volume without changing the system volume.",
+      "noAutoplayAudio_lean_why_muted": "A script has muted it, so it plays no sound.",
+      "noAutoplayAudio_lean_why_loop": "It has the loop attribute, so it plays again and again, for more than 3 seconds.",
+      "noAutoplayAudio_lean_why_short": "It lasts 3 seconds or less, which WCAG 1.4.2 allows.",
+      "noAutoplayAudio_lean_why_long": "It lasts more than 3 seconds.",
+      "noAutoplayAudio_lean_caution": "The browser may block sound that plays by itself, the file may have no sound, and a control elsewhere may stop it.",
+      "noAutoplayAudio_lean_why_bgsound": "Current browsers ignore <bgsound>, so it plays nothing.",
+      "noAutoplayAudio_lean_why_flash": "Current browsers no longer run Flash, so it plays nothing.",
+      "noAutoplayAudio_lean_caution_obsolete": "Older browsers still play it.",
       "videoCaption_title": "Prerecorded video should provide a captions track",
       "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
@@ -88969,6 +89753,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoCaption_hint_cantTell_subtitlesOnly": "If this video has an audio track that conveys information, check that a subtitles track is in fact captions, and mark it <track kind=\"captions\">; otherwise add a captions track. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
       "videoCaption_summary_cantTell_review": "This video has a captions track. Check that its captions are complete and match the audio.",
       "videoCaption_hint_cantTell_review": "Watch the video with its captions on: they should carry all the dialogue, say who is speaking when that is not clear, and describe the sounds that matter. Captions that leave any of these out do not meet the criterion.",
+      "videoCaption_lean_why_background": "The video is muted, plays by itself, loops and has no controls, so users get no sound from it.",
+      "videoCaption_lean_caution_background": "A control the page builds itself may still turn the sound on.",
       "imagesOfText_title": "Text should be real text, not an image of text",
       "imagesOfText_description": "Asks about images that markup shows are likely to hold text (an <input type=\"image\">, or an <img> showing an SVG with <text>), whether that text could be real text.",
       "imagesOfText_summary_cantTell_button": "This button is drawn as an image. Check whether the image holds text that could be real text.",
@@ -89292,10 +90078,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_description": "Señala elementos <img>, <canvas> y <svg> excluidos del árbol de accesibilidad (aria-hidden, role=\"none\"/\"presentation\", alt vacío, o un svg/canvas sin etiqueta) para su revisión manual de que son puramente decorativos.",
       "img_altDecorative_summary_cantTell": "Comprobar si este <{{element}}> es solo decorativo.",
       "img_altDecorative_hint_cantTell": "Si solo decora, no hay que cambiar nada. Si transmite información o hace algo, darle una alternativa textual que lo diga.",
+      "img_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que muestra la imagen.",
+      "img_altQuality_lean_why_control": "El texto alt es el nombre del control, y un nombre de archivo o una palabra genérica no dice lo que hace.",
+      "img_altQuality_lean_caution": "La palabra puede ser todo lo que muestra la imagen, como una imagen de esa palabra.",
+      "img_altDecorative_lean_why_control": "La imagen oculta es todo lo que contiene el control, y el control no tiene nombre propio, así que nada le da nombre.",
+      "img_altDecorative_lean_caution_control": "Un texto añadido con CSS (::before o ::after) puede dar nombre al control de todos modos.",
+      "img_altDecorative_lean_why_tiny": "La imagen mide 2 px o menos de ancho o de alto, demasiado poco para mostrar algo que describir.",
+      "img_altDecorative_lean_why_spacer": "El archivo de la imagen tiene nombre de espaciador, una imagen que solo ocupa espacio.",
+      "img_altDecorative_lean_caution_spacer": "Comprobar que la imagen no muestra nada: un archivo puede conservar un nombre antiguo.",
       "area_altQuality_title": "La alternativa textual de <area> debe ser apropiada (revisión manual)",
       "area_altQuality_description": "Señala elementos <area> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un texto provisional, empieza por «imagen de» o es muy largo.",
       "area_altQuality_summary_cantTell": "Comprobar que la alternativa textual de este <area> ({{sources}}) es correcta.",
       "area_altQuality_hint_cantTell": "Cada alternativa textual de la lista debería decir adónde lleva esta zona del mapa de imagen o qué hace.",
+      "area_altQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice adónde lleva el enlace.",
+      "area_altQuality_lean_caution": "La palabra puede ser todo lo que muestra esta zona de la imagen.",
       "inputImage_altQuality_title": "La alternativa textual de <input type=\"image\"> debe ser apropiada (revisión manual)",
       "inputImage_altQuality_description": "Señala elementos <input type=\"image\"> con una alternativa textual no vacía (alt, aria-label, aria-labelledby o title) para su revisión manual en cuanto a idoneidad. Indica cuándo el nombre parece un nombre de archivo, una dirección web o un texto provisional, empieza por «imagen de» o es muy largo.",
       "inputImage_altQuality_summary_cantTell": "Comprobar que la alternativa textual de este <input type=\"image\"> ({{sources}}) es correcta.",
@@ -89304,22 +90100,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "inputImage_altDecorative_description": "Señala elementos <input type=\"image\"> con alt vacío para su revisión manual (normalmente no es apropiado para controles funcionales).",
       "inputImage_altDecorative_summary_cantTell": "Este <input type=\"image\"> tiene alt=\"\" y toma su nombre de otra fuente.",
       "inputImage_altDecorative_hint_cantTell": "Comprobar que ese nombre dice lo que hace el botón. Un botón nunca es decorativo; si el nombre no encaja, decir en alt lo que hace.",
+      "inputImage_altQuality_lean_why": "Un nombre de archivo, una dirección web o una palabra genérica no dice lo que hace el botón.",
+      "inputImage_altDecorative_lean_why": "Su nombre es un nombre de archivo, una dirección web o una palabra genérica, que no dice lo que hace el botón.",
       "canvas_textAltQuality_title": "La alternativa textual de <canvas> debe ser apropiada (revisión manual)",
       "canvas_textAltQuality_description": "Señala elementos <canvas> con una alternativa textual detectada para su revisión manual en cuanto a equivalencia e idoneidad.",
       "canvas_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <canvas> transmite lo que muestra.",
       "canvas_textAltQuality_hint_cantTell": "El texto alternativo o el nombre accesible debería dar la misma información, o cumplir la misma función, que lo que se dibuja.",
+      "canvas_textAltQuality_lean_why_unsupported": "El contenido alternativo solo dice que el navegador no admite canvas, lo que no dice nada del dibujo.",
+      "canvas_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice lo que muestra el canvas.",
+      "canvas_textAltQuality_lean_caution": "La palabra puede ser todo lo que muestra el canvas.",
       "svg_textAltQuality_title": "La alternativa textual de <svg> debe ser apropiada (revisión manual)",
       "svg_textAltQuality_description": "Señala gráficos <svg> aplicables con una alternativa textual detectada para su revisión manual en cuanto a idoneidad.",
       "svg_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <svg> es correcta.",
       "svg_textAltQuality_hint_cantTell": "El <title>, el <desc> o el nombre ARIA debería decir qué significa o qué hace el gráfico aquí.",
+      "svg_textAltQuality_lean_why": "Un nombre que dejó la herramienta de dibujo, un nombre de archivo o una palabra genérica no dice lo que muestra el gráfico.",
+      "svg_textAltQuality_lean_why_control": "El nombre del gráfico es el nombre del control, y un nombre que dejó la herramienta de dibujo, un nombre de archivo o una palabra genérica no dice lo que hace.",
+      "svg_textAltQuality_lean_caution": "Un <desc>, leído como descripción, puede decir de todos modos lo que muestra el gráfico.",
       "object_textAltQuality_title": "La alternativa textual de <object> debe ser apropiada (revisión manual)",
       "object_textAltQuality_description": "Señala elementos <object> con contenido de reserva o nombre detectados para su revisión manual en cuanto a equivalencia e idoneidad.",
       "object_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <object> transmite lo que incrusta.",
       "object_textAltQuality_hint_cantTell": "El contenido alternativo o el nombre ARIA debería dar la misma información que el contenido incrustado.",
+      "object_textAltQuality_lean_why_plugin": "El texto solo dice que falta un complemento o un reproductor, lo que no dice nada del contenido.",
+      "object_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice lo que muestra el objeto.",
+      "object_textAltQuality_lean_caution": "La palabra puede ser todo lo que muestra el objeto.",
       "embed_textAltQuality_title": "La alternativa textual de <embed> debe ser apropiada (revisión manual)",
       "embed_textAltQuality_description": "Señala elementos <embed> con un nombre detectado para su revisión manual en cuanto a idoneidad.",
       "embed_textAltQuality_summary_cantTell": "Comprobar que la alternativa textual de este <embed> es correcta.",
       "embed_textAltQuality_hint_cantTell": "El nombre ARIA o el title debería decir qué se incrusta.",
+      "embed_textAltQuality_lean_why": "Un nombre de archivo o una palabra genérica no dice qué se incrusta.",
+      "embed_textAltQuality_lean_caution": "El nombre de archivo de un documento puede ser su verdadero título.",
       "videoPoster_textAltPresent_title": "La imagen de portada (poster) de <video> debe tener una alternativa textual",
       "videoPoster_textAltPresent_description": "Comprueba que los elementos <video> con una imagen de portada (atributo poster) proporcionen una alternativa textual (nombre accesible).",
       "videoPoster_textAltPresent_summary_fail": "La imagen de portada de este <video> no tiene alternativa textual.",
@@ -89934,6 +90743,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imageRedundantAlt_description": "Comprueba que el texto alt de un <img> no sea idéntico a otro texto visible ya presente en su elemento padre inmediato.",
       "imageRedundantAlt_summary_cantTell": "El texto alt de esta imagen duplica otro texto visible justo al lado.",
       "imageRedundantAlt_hint_cantTell": "Si la imagen no aporta nada más que ese texto, usar alt=\"\"; si no, reescribir el texto alt para que no lo repita.",
+      "imageRedundantAlt_lean_why": "El texto alt de la imagen es el mismo que el texto de al lado, así que las palabras se leen dos veces.",
       "tableDuplicateName_title": "El <caption> de la tabla no debe duplicar su atributo summary",
       "tableDuplicateName_description": "Comprueba que el texto del <caption> de una <table> no sea idéntico a su atributo summary (obsoleto).",
       "tableDuplicateName_summary_cantTell": "El <caption> de esta tabla duplica su atributo summary.",
@@ -90027,6 +90837,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Si el clip dura más de 3 segundos, mostrar el elemento para que sus controles se puedan usar, u ofrecer otra forma de pausarlo/detenerlo o de controlar su volumen.",
       "noAutoplayAudio_summary_cantTell_embedded": "Este elemento puede reproducir sonido en cuanto se carga la página.",
       "noAutoplayAudio_hint_cantTell_embedded": "Comprobar si reproduce sonido por sí solo. Si el sonido dura más de 3 segundos, el usuario necesita poder pausarlo o detenerlo, o cambiar su volumen sin cambiar el del sistema.",
+      "noAutoplayAudio_lean_why_muted": "Un script lo ha silenciado, así que no reproduce sonido.",
+      "noAutoplayAudio_lean_why_loop": "Tiene el atributo loop, así que se repite una y otra vez, más de 3 segundos.",
+      "noAutoplayAudio_lean_why_short": "Dura 3 segundos o menos, lo que permite WCAG 1.4.2.",
+      "noAutoplayAudio_lean_why_long": "Dura más de 3 segundos.",
+      "noAutoplayAudio_lean_caution": "El navegador puede bloquear el sonido que empieza solo, el archivo puede no tener sonido y un control en otra parte puede detenerlo.",
+      "noAutoplayAudio_lean_why_bgsound": "Los navegadores actuales ignoran <bgsound>, así que no reproduce nada.",
+      "noAutoplayAudio_lean_why_flash": "Los navegadores actuales ya no ejecutan Flash, así que no reproduce nada.",
+      "noAutoplayAudio_lean_caution_obsolete": "Los navegadores más antiguos todavía lo reproducen.",
       "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
       "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
@@ -90035,6 +90853,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoCaption_hint_cantTell_subtitlesOnly": "Si este video tiene una pista de audio que transmite información, comprobar que una pista subtitles contiene en realidad subtítulos para personas sordas y marcarla <track kind=\"captions\">; si no, agregar una pista captions. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
       "videoCaption_summary_cantTell_review": "Este vídeo tiene una pista de subtítulos para personas sordas. Comprobar que los subtítulos están completos y coinciden con el audio.",
       "videoCaption_hint_cantTell_review": "Ver el vídeo con los subtítulos activados: deben recoger todo el diálogo, indicar quién habla cuando no está claro y describir los sonidos importantes. Unos subtítulos a los que les falte algo de esto no cumplen el criterio.",
+      "videoCaption_lean_why_background": "El video está silenciado, se reproduce solo, se repite y no tiene controles, así que los usuarios no oyen ningún sonido.",
+      "videoCaption_lean_caution_background": "Un control que crea la propia página puede activar el sonido de todos modos.",
       "imagesOfText_title": "El texto debe ser texto real, no una imagen de texto",
       "imagesOfText_description": "Pregunta por las imágenes que, según el marcado, probablemente contienen texto (un <input type=\"image\"> o un <img> que muestra un SVG con <text>), si ese texto podría ser texto real.",
       "imagesOfText_summary_cantTell_button": "Este botón se dibuja como una imagen. Comprobar si la imagen contiene texto que podría ser texto real.",
@@ -90358,10 +91178,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_description": "Signale les éléments <img>, <canvas> et <svg> exclus de l’arbre d’accessibilité (aria-hidden, role=\"none\"/\"presentation\", alt vide, ou un svg/canvas sans étiquette) afin de confirmer qu’ils sont purement décoratifs.",
       "img_altDecorative_summary_cantTell": "Vérifiez si cet élément <{{element}}> est purement décoratif.",
       "img_altDecorative_hint_cantTell": "S’il ne fait que décorer, rien n’est à changer. S’il porte une information ou une fonction, donnez-lui un équivalent textuel qui la dit.",
+      "img_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que montre l’image.",
+      "img_altQuality_lean_why_control": "Le texte alt est le nom de la commande, et un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
+      "img_altQuality_lean_caution": "Le mot est peut-être tout ce que montre l’image, par exemple une image de ce mot.",
+      "img_altDecorative_lean_why_control": "L’image masquée est tout le contenu de la commande, qui n’a pas de nom propre : rien ne la nomme.",
+      "img_altDecorative_lean_caution_control": "Un texte ajouté en CSS (::before ou ::after) peut quand même nommer la commande.",
+      "img_altDecorative_lean_why_tiny": "L’image fait 2 px ou moins de large ou de haut, trop peu pour montrer quoi que ce soit à décrire.",
+      "img_altDecorative_lean_why_spacer": "Le fichier de l’image porte un nom d’image d’espacement, qui ne sert qu’à occuper de la place.",
+      "img_altDecorative_lean_caution_spacer": "Vérifiez que l’image ne montre rien : un fichier peut garder un ancien nom.",
       "area_altQuality_title": "L’équivalent textuel de <area> doit être approprié (vérification manuelle)",
       "area_altQuality_description": "Signale les éléments <area> dont l’équivalent textuel (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
       "area_altQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet élément <area> ({{sources}}) est exact.",
       "area_altQuality_hint_cantTell": "Chaque équivalent textuel listé devrait dire où mène cette zone de l’image map ou ce qu’elle fait.",
+      "area_altQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas où mène le lien.",
+      "area_altQuality_lean_caution": "Le mot est peut-être tout ce que montre cette zone de l’image.",
       "inputImage_altQuality_title": "L’équivalent textuel de <input type=\"image\"> doit être approprié (vérification manuelle)",
       "inputImage_altQuality_description": "Signale les éléments <input type=\"image\"> dont l’équivalent textuel (alt, aria-label, aria-labelledby ou title) n’est pas vide afin de vérifier manuellement sa pertinence. Indique quand le nom ressemble à un nom de fichier, à une adresse web ou à un texte provisoire, commence par « image de » ou est très long.",
       "inputImage_altQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet élément <input type=\"image\"> ({{sources}}) est exact.",
@@ -90370,22 +91200,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "inputImage_altDecorative_description": "Signale les éléments <input type=\"image\"> dont l’attribut alt est vide afin de vérifier manuellement (souvent inadapté pour un contrôle fonctionnel).",
       "inputImage_altDecorative_summary_cantTell": "Cet élément <input type=\"image\"> a alt=\"\" et tire son nom d’une autre source.",
       "inputImage_altDecorative_hint_cantTell": "Vérifiez que ce nom dit ce que fait le bouton. Un bouton n’est jamais décoratif : si le nom ne convient pas, indiquez dans alt ce qu’il fait.",
+      "inputImage_altQuality_lean_why": "Un nom de fichier, une adresse web ou un mot générique ne dit pas ce que fait le bouton.",
+      "inputImage_altDecorative_lean_why": "Son nom est un nom de fichier, une adresse web ou un mot générique, qui ne dit pas ce que fait le bouton.",
       "canvas_textAltQuality_title": "L’équivalent textuel de <canvas> doit être approprié (vérification manuelle)",
       "canvas_textAltQuality_description": "Signale les éléments <canvas> pour lesquels un équivalent textuel a été détecté, afin de vérifier manuellement son équivalence et sa pertinence.",
       "canvas_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de ce <canvas> transmet ce qu’il affiche.",
       "canvas_textAltQuality_hint_cantTell": "Le texte de remplacement ou le nom accessible devrait donner la même information, ou remplir la même fonction, que ce qui est dessiné.",
+      "canvas_textAltQuality_lean_why_unsupported": "Le contenu de remplacement dit seulement que le navigateur ne prend pas en charge canvas, ce qui n’apprend rien du dessin.",
+      "canvas_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce que montre le canvas.",
+      "canvas_textAltQuality_lean_caution": "Le mot est peut-être tout ce que montre le canvas.",
       "svg_textAltQuality_title": "L’équivalent textuel de <svg> doit être approprié (vérification manuelle)",
       "svg_textAltQuality_description": "Signale les graphiques <svg> concernés pour lesquels un équivalent textuel a été détecté, afin de vérifier manuellement sa pertinence.",
       "svg_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de ce <svg> est exact.",
       "svg_textAltQuality_hint_cantTell": "Le <title>, le <desc> ou le nom ARIA devrait dire ce que le graphique signifie ou fait ici.",
+      "svg_textAltQuality_lean_why": "Un nom laissé par l’outil de dessin, un nom de fichier ou un mot générique ne dit pas ce que montre le graphique.",
+      "svg_textAltQuality_lean_why_control": "Le nom du graphique est celui de la commande, et un nom laissé par l’outil de dessin, un nom de fichier ou un mot générique ne dit pas ce qu’elle fait.",
+      "svg_textAltQuality_lean_caution": "Un <desc>, lu comme description, peut quand même dire ce que montre le graphique.",
       "object_textAltQuality_title": "L’équivalent textuel de <object> doit être approprié (vérification manuelle)",
       "object_textAltQuality_description": "Signale les éléments <object> pour lesquels un contenu de secours ou un nom a été détecté, afin de vérifier manuellement son équivalence et sa pertinence.",
       "object_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet <object> transmet ce qu’il intègre.",
       "object_textAltQuality_hint_cantTell": "Le contenu de remplacement ou le nom ARIA devrait donner la même information que le contenu intégré.",
+      "object_textAltQuality_lean_why_plugin": "Le texte dit seulement qu’un plugin ou un lecteur manque, ce qui n’apprend rien du contenu.",
+      "object_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce que montre l’objet.",
+      "object_textAltQuality_lean_caution": "Le mot est peut-être tout ce que montre l’objet.",
       "embed_textAltQuality_title": "L’équivalent textuel de <embed> doit être approprié (vérification manuelle)",
       "embed_textAltQuality_description": "Signale les éléments <embed> avec nom détecté, afin de vérifier manuellement sa pertinence.",
       "embed_textAltQuality_summary_cantTell": "Vérifiez que l’équivalent textuel de cet <embed> est exact.",
       "embed_textAltQuality_hint_cantTell": "Le nom ARIA ou le title devrait dire ce qui est intégré.",
+      "embed_textAltQuality_lean_why": "Un nom de fichier ou un mot générique ne dit pas ce qui est intégré.",
+      "embed_textAltQuality_lean_caution": "Le nom de fichier d’un document peut être son vrai titre.",
       "videoPoster_textAltPresent_title": "L’image poster de <video> doit avoir un équivalent textuel",
       "videoPoster_textAltPresent_description": "Vérifie que les éléments <video> avec une image poster fournissent un équivalent textuel (nom accessible).",
       "videoPoster_textAltPresent_summary_fail": "L’image poster de cette <video> n’a pas d’équivalent textuel.",
@@ -91000,6 +91843,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imageRedundantAlt_description": "Vérifie que le texte alt d’un <img> n’est pas identique à un autre texte visible déjà présent dans son élément parent immédiat.",
       "imageRedundantAlt_summary_cantTell": "Le texte alt de cette image duplique un autre texte visible juste à côté.",
       "imageRedundantAlt_hint_cantTell": "Si l’image n’apporte rien de plus que ce texte, utilisez alt=\"\" ; sinon, réécrivez le texte alt pour qu’il ne le répète pas.",
+      "imageRedundantAlt_lean_why": "Le texte alt de l’image est identique au texte à côté, si bien que les mots sont lus deux fois.",
       "tableDuplicateName_title": "La légende d’un tableau ne doit pas dupliquer son attribut summary",
       "tableDuplicateName_description": "Vérifie que le texte de la <caption> d’un <table> n’est pas identique à son attribut summary (obsolète).",
       "tableDuplicateName_summary_cantTell": "La légende de ce tableau duplique son attribut summary.",
@@ -91093,6 +91937,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "Si l’extrait dure plus de 3 secondes, affichez l’élément pour que ses commandes soient utilisables, ou proposez un autre moyen de le mettre en pause/l’arrêter ou d’en régler le volume.",
       "noAutoplayAudio_summary_cantTell_embedded": "Cet élément peut jouer un son dès le chargement de la page.",
       "noAutoplayAudio_hint_cantTell_embedded": "Vérifiez si cet élément produit automatiquement un son. Si le son dure plus de 3 secondes, l’utilisateur doit pouvoir le mettre en pause, l’arrêter ou en régler le volume indépendamment du volume du système.",
+      "noAutoplayAudio_lean_why_muted": "Un script l’a rendu muet : il ne joue aucun son.",
+      "noAutoplayAudio_lean_why_loop": "Il a l’attribut loop : il joue en boucle, plus de 3 secondes.",
+      "noAutoplayAudio_lean_why_short": "Il dure 3 secondes ou moins, ce que permet le WCAG 1.4.2.",
+      "noAutoplayAudio_lean_why_long": "Il dure plus de 3 secondes.",
+      "noAutoplayAudio_lean_caution": "Le navigateur peut bloquer un son qui démarre seul, le fichier peut ne pas avoir de son, et une commande ailleurs peut l’arrêter.",
+      "noAutoplayAudio_lean_why_bgsound": "Les navigateurs actuels ignorent <bgsound> : il ne joue rien.",
+      "noAutoplayAudio_lean_why_flash": "Les navigateurs actuels n’exécutent plus Flash : il ne joue rien.",
+      "noAutoplayAudio_lean_caution_obsolete": "Des navigateurs plus anciens le jouent encore.",
       "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
       "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
@@ -91101,6 +91953,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoCaption_hint_cantTell_subtitlesOnly": "Si cette vidéo a une piste audio porteuse d’information, vérifiez qu’une piste subtitles est bien un sous-titrage pour sourds et malentendants et déclarez-la <track kind=\"captions\"> ; sinon, ajoutez une piste captions. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
       "videoCaption_summary_cantTell_review": "Cette vidéo a une piste de sous-titres pour sourds et malentendants. Vérifiez que les sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_hint_cantTell_review": "Regardez la vidéo avec les sous-titres activés : ils doivent restituer tout le dialogue, dire qui parle quand ce n’est pas clair, et décrire les sons qui comptent. Des sous-titres qui omettent l’un de ces points ne satisfont pas le critère.",
+      "videoCaption_lean_why_background": "La vidéo est muette, démarre seule, tourne en boucle et n’a pas de commandes : les utilisateurs n’en entendent aucun son.",
+      "videoCaption_lean_caution_background": "Une commande créée par la page elle-même peut quand même activer le son.",
       "imagesOfText_title": "Le texte doit être du vrai texte, pas une image de texte",
       "imagesOfText_description": "Pose une question sur les images dont le balisage montre qu’elles contiennent probablement du texte (un <input type=\"image\">, ou un <img> affichant un SVG avec <text>) : ce texte pourrait-il être du vrai texte ?",
       "imagesOfText_summary_cantTell_button": "Ce bouton est dessiné sous forme d’image. Vérifiez si l’image contient du texte qui pourrait être du vrai texte.",
@@ -91424,10 +92278,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "img_altDecorative_description": "アクセシビリティツリーから除外されている <img>、<canvas>、<svg> 要素 (aria-hidden、role=\"none\"/\"presentation\"、空の alt、ラベルのない svg/canvas) を検出し、純粋な装飾かどうかを人が確認できるようにします。",
       "img_altDecorative_summary_cantTell": "この <{{element}}> が純粋に装飾目的かどうか確認してください。",
       "img_altDecorative_hint_cantTell": "装飾だけであれば、変更は不要です。情報を伝えたり何らかの働きをしたりする場合は、それを伝えるテキストによる代替を付けてください。",
+      "img_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、画像が何を示しているかは伝わりません。",
+      "img_altQuality_lean_why_control": "代替テキストはこのコントロールの名前であり、ファイル名や汎用的な語では、コントロールの働きは伝わりません。",
+      "img_altQuality_lean_caution": "その語の画像のように、その語が画像の示すすべてである場合もあります。",
+      "img_altDecorative_lean_why_control": "このコントロールの内容は非表示の画像だけで、コントロール自体にも名前がないため、名前を与えるものがありません。",
+      "img_altDecorative_lean_caution_control": "CSS で追加されたテキスト（::before や ::after）が、コントロールの名前になる場合もあります。",
+      "img_altDecorative_lean_why_tiny": "この画像は幅か高さが 2 px 以下で、説明が必要なものを示すには細すぎます。",
+      "img_altDecorative_lean_why_spacer": "この画像ファイルはスペーサー（場所を空けるだけの画像）の名前が付いています。",
+      "img_altDecorative_lean_caution_spacer": "画像に何も表示されていないことを確認してください。ファイルが古い名前のままの場合もあります。",
       "area_altQuality_title": "<area> のテキストによる代替が適切であること (手動確認)",
       "area_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <area> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
       "area_altQuality_summary_cantTell": "この <area> のテキストによる代替 ({{sources}}) が正確か確認してください。",
       "area_altQuality_hint_cantTell": "一覧の各テキストによる代替は、イメージマップのこの領域のリンク先や働きを伝えるものにしてください。",
+      "area_altQuality_lean_why": "ファイル名や汎用的な語では、リンク先は伝わりません。",
+      "area_altQuality_lean_caution": "その語が、画像のこの領域が示すすべてである場合もあります。",
       "inputImage_altQuality_title": "<input type=\"image\"> のテキストによる代替が適切であること (手動確認)",
       "inputImage_altQuality_description": "空でないテキストによる代替 (alt、aria-label、aria-labelledby、title) を持つ <input type=\"image\"> 要素を検出し、その内容が適切かを人が確認できるようにします。名前がファイル名、Web アドレス、仮の文字列のように見える場合、「〜の画像」のように画像であることを述べている場合、非常に長い場合は、そのことも伝えます。",
       "inputImage_altQuality_summary_cantTell": "この <input type=\"image\"> のテキストによる代替 ({{sources}}) が正確か確認してください。",
@@ -91436,22 +92300,35 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "inputImage_altDecorative_description": "alt が空の <input type=\"image\"> 要素を検出し、人が確認できるようにします (機能を持つコントロールで alt を空にするのは、通常は適切ではありません)。",
       "inputImage_altDecorative_summary_cantTell": "この <input type=\"image\"> は alt=\"\" で、名前を別のところから得ています。",
       "inputImage_altDecorative_hint_cantTell": "その名前がボタンの働きを伝えているか確認してください。ボタンが装飾になることはないので、名前が合っていなければ alt で働きを伝えてください。",
+      "inputImage_altQuality_lean_why": "ファイル名、Web アドレス、汎用的な語では、ボタンの働きは伝わりません。",
+      "inputImage_altDecorative_lean_why": "この名前はファイル名、Web アドレス、または汎用的な語であり、ボタンの働きを伝えません。",
       "canvas_textAltQuality_title": "<canvas> のテキストによる代替が適切であること (手動確認)",
       "canvas_textAltQuality_description": "テキストによる代替が検出された <canvas> 要素を示し、同等性と適切さを人が確認できるようにします。",
       "canvas_textAltQuality_summary_cantTell": "この <canvas> のテキストによる代替が、表示内容を伝えているか確認してください。",
       "canvas_textAltQuality_hint_cantTell": "代替テキストやアクセシブルな名前は、描画内容と同じ情報を伝えるか、同じ働きをするものにしてください。",
+      "canvas_textAltQuality_lean_why_unsupported": "代替コンテンツは、ブラウザーが canvas に対応していないことを伝えるだけで、描画内容については何も伝えません。",
+      "canvas_textAltQuality_lean_why": "ファイル名や汎用的な語では、canvas が何を示しているかは伝わりません。",
+      "canvas_textAltQuality_lean_caution": "その語が、canvas の示すすべてである場合もあります。",
       "svg_textAltQuality_title": "<svg> のテキストによる代替が適切であること (手動確認)",
       "svg_textAltQuality_description": "テキストによる代替が検出された対象の <svg> グラフィックを示し、その内容が適切かを人が確認できるようにします。",
       "svg_textAltQuality_summary_cantTell": "この <svg> のテキストによる代替が正確か確認してください。",
       "svg_textAltQuality_hint_cantTell": "<title>、<desc>、または ARIA の名前は、この場所でその図が意味することや働きを伝えるものにしてください。",
+      "svg_textAltQuality_lean_why": "作画ツールが残した名前、ファイル名、汎用的な語では、図が何を示しているかは伝わりません。",
+      "svg_textAltQuality_lean_why_control": "図の名前はこのコントロールの名前であり、作画ツールが残した名前、ファイル名、汎用的な語では、コントロールの働きは伝わりません。",
+      "svg_textAltQuality_lean_caution": "説明として読まれる <desc> が、図の内容を伝えている場合もあります。",
       "object_textAltQuality_title": "<object> のテキストによる代替が適切であること (手動確認)",
       "object_textAltQuality_description": "フォールバックコンテンツまたは名前が検出された <object> 要素を示し、同等性と適切さを人が確認できるようにします。",
       "object_textAltQuality_summary_cantTell": "この <object> のテキストによる代替が、埋め込まれた内容を伝えているか確認してください。",
       "object_textAltQuality_hint_cantTell": "代替コンテンツや ARIA の名前は、埋め込まれた内容と同じ情報を伝えるものにしてください。",
+      "object_textAltQuality_lean_why_plugin": "このテキストはプラグインやプレーヤーがないことを伝えるだけで、内容については何も伝えません。",
+      "object_textAltQuality_lean_why": "ファイル名や汎用的な語では、オブジェクトが何を示しているかは伝わりません。",
+      "object_textAltQuality_lean_caution": "その語が、オブジェクトの示すすべてである場合もあります。",
       "embed_textAltQuality_title": "<embed> のテキストによる代替が適切であること (手動確認)",
       "embed_textAltQuality_description": "名前が検出された <embed> 要素を検出し、その内容が適切かを人が確認できるようにします。",
       "embed_textAltQuality_summary_cantTell": "この <embed> のテキストによる代替が正確か確認してください。",
       "embed_textAltQuality_hint_cantTell": "ARIA の名前や title は、何が埋め込まれているかを伝えるものにしてください。",
+      "embed_textAltQuality_lean_why": "ファイル名や汎用的な語では、何が埋め込まれているかは伝わりません。",
+      "embed_textAltQuality_lean_caution": "文書のファイル名が、その文書の実際のタイトルである場合もあります。",
       "videoPoster_textAltPresent_title": "<video> のポスター画像にはテキストによる代替が必要",
       "videoPoster_textAltPresent_description": "ポスター画像を持つ <video> 要素に、テキストによる代替 (アクセシブルな名前) があるかを確認します。",
       "videoPoster_textAltPresent_summary_fail": "この <video> のポスター画像にはテキストによる代替がありません。",
@@ -92066,6 +92943,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "imageRedundantAlt_description": "<img> の代替テキストが、すぐ上の親要素にすでにある表示テキストと同一でないかを確認します。",
       "imageRedundantAlt_summary_cantTell": "この画像の代替テキストは、すぐ隣に表示されているテキストと重複しています。",
       "imageRedundantAlt_hint_cantTell": "画像がそのテキスト以上のものを伝えないなら alt=\"\" にしてください。そうでなければ、繰り返しにならないよう alt テキストを書き直してください。",
+      "imageRedundantAlt_lean_why": "画像の代替テキストが隣のテキストと同じなので、同じ語が 2 回読み上げられます。",
       "tableDuplicateName_title": "表の caption は summary 属性と重複してはならない",
       "tableDuplicateName_description": "<table> の <caption> のテキストが、(非推奨の) summary 属性と同一でないかを確認します。",
       "tableDuplicateName_summary_cantTell": "この表の caption は summary 属性と重複しています。",
@@ -92159,6 +93037,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_hint_cantTell_controlsHidden": "再生が 3 秒を超える場合は、コントロールを使えるよう要素を表示するか、一時停止・停止または音量調整の別の手段を用意してください。",
       "noAutoplayAudio_summary_cantTell_embedded": "この要素はページの読み込みと同時に音声を再生する可能性があります。",
       "noAutoplayAudio_hint_cantTell_embedded": "自動で音声が再生されるかを確認してください。音声が 3 秒を超える場合、利用者が一時停止または停止できるか、システムの音量とは別に音量を変更できる必要があります。",
+      "noAutoplayAudio_lean_why_muted": "スクリプトによってミュートされているため、音声は再生されません。",
+      "noAutoplayAudio_lean_why_loop": "loop 属性があるため繰り返し再生され、3 秒を超えて続きます。",
+      "noAutoplayAudio_lean_why_short": "長さが 3 秒以下であり、WCAG 1.4.2 で認められています。",
+      "noAutoplayAudio_lean_why_long": "長さが 3 秒を超えています。",
+      "noAutoplayAudio_lean_caution": "ブラウザーが自動再生の音声をブロックすることや、ファイルに音声がないこと、ページの別の場所のコントロールで停止できることもあります。",
+      "noAutoplayAudio_lean_why_bgsound": "現在のブラウザーは <bgsound> を無視するため、何も再生されません。",
+      "noAutoplayAudio_lean_why_flash": "現在のブラウザーは Flash を実行しないため、何も再生されません。",
+      "noAutoplayAudio_lean_caution_obsolete": "古いブラウザーでは今も再生されます。",
       "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
       "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
@@ -92167,6 +93053,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "videoCaption_hint_cantTell_subtitlesOnly": "この動画に情報を伝える音声トラックがある場合は、字幕のトラックが実際にはキャプションであるかを確認し、<track kind=\"captions\"> と指定してください。そうでない場合は、キャプションのトラックを追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
       "videoCaption_summary_cantTell_review": "この動画にはキャプショントラックがあります。キャプションが完全で、音声と一致しているか確認してください。",
       "videoCaption_hint_cantTell_review": "キャプションをオンにして動画を視聴してください。すべての会話を含み、話者が明らかでない場合は誰が話しているかを示し、重要な音を説明している必要があります。これらのいずれかが欠けているキャプションは達成基準を満たしません。",
+      "videoCaption_lean_why_background": "この動画はミュートされ、自動で再生され、ループし、コントロールがないため、利用者に音声は届きません。",
+      "videoCaption_lean_caution_background": "ページが独自に用意したコントロールで、音声を有効にできる場合もあります。",
       "imagesOfText_title": "テキストは画像化されたテキストではなく、実際のテキストにしてください",
       "imagesOfText_description": "マークアップからテキストを含む可能性が高い画像 (<input type=\"image\">、または <text> を含む SVG を表示する <img>) について、そのテキストを実際のテキストにできないか確認を求めます。",
       "imagesOfText_summary_cantTell_button": "このボタンは画像として描画されています。画像に、実際のテキストにできるテキストが含まれていないか確認してください。",

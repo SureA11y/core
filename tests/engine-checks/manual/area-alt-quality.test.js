@@ -247,3 +247,22 @@ test('area-alt-quality: reports at most 50 ordinary and 50 suspicious elements',
   assert.strictEqual(mixed.occurrences.length, 55);
   assert.strictEqual(mixed.data.details.suspiciousCount, 5);
 });
+
+// A file name or a generic word says nothing of where an area leads: it
+// leans fail. An address does say where it leads, and ordinary text needs a
+// person, so neither leans.
+test(`${RULE_ID}: leans fail on a file name or a placeholder, not on an address`, () => {
+  const run = (alt) =>
+    runa11yCoreOnHtml(
+      mapPage(`<area href="/paris" alt="${alt}" shape="rect" coords="0,0,10,10">`),
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  for (const alt of ['region_03.png', 'image']) {
+    const o = run(alt);
+    assert.strictEqual(o.lean.toward, 'fail', alt);
+    assert.strictEqual(o.lean.i18n.whyKey, 'area_altQuality_lean_why', alt);
+  }
+  for (const alt of ['https://example.com/paris', 'Paris']) {
+    assert.strictEqual(run(alt).lean, undefined, alt);
+  }
+});

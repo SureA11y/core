@@ -40,6 +40,8 @@
  * @reason-codes
  *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an image button has a text
  *     alternative, and a person checks that it says what the button does.
+ *     It leans fail when the name is a file name, a web address or a
+ *     placeholder word.
  *     Basis: WCAG 1.1.1 (not settled); H36.
  * @implementation-notes
  * - A page reports at most 50 elements with an ordinary text alternative
@@ -228,6 +230,8 @@ function runInPage(ctx) {
   // early on can't hide a suspicious one further down.
   const MAX_OCCURRENCES = 50;
   const MAX_SUSPICIOUS = 50;
+  // The signals a lean fail rests on: text that is not a label.
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
   let ordinaryReported = 0;
   let suspiciousReported = 0;
   let suspiciousCount = 0;
@@ -294,7 +298,20 @@ function runInPage(ctx) {
     // One code whatever the signal, which changes the message only.
     details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
 
+    // The name is the button's whole label: a file name, an address or a
+    // generic word can't say what it does (F30).
+    const lean =
+      signal && LEAN_SIGNALS.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: 'A file name, a web address or a generic word does not say what the button does.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            i18n: { whyKey: 'inputImage_altQuality_lean_why' }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate.`,

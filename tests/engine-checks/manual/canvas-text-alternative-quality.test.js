@@ -133,3 +133,40 @@ test(`${RULE_ID}: maps to WCAG 1.1.1`, () => {
     rule.meta.normativeMappings.some((m) => m.standard === 'WCAG' && m.requirement === '1.1.1')
   );
 });
+
+// A fallback that only says the browser can't draw the canvas speaks of the
+// browser, and a file name or a generic word says nothing of the drawing:
+// both lean fail. A note beside a real description, or any other text,
+// needs a person.
+test(`${RULE_ID}: leans fail on an unsupported-browser note, a file name or a placeholder`, () => {
+  const run = (canvas) =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="en"><body><main>${canvas}</main></body></html>`,
+        {
+          runOnly: [RULE_ID]
+        }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const note = run('<canvas>Your browser does not support the canvas element.</canvas>');
+  assert.strictEqual(note.lean.toward, 'fail');
+  assert.strictEqual(note.lean.i18n.whyKey, 'canvas_textAltQuality_lean_why_unsupported');
+  const sorry = run(
+    "<canvas>Sorry, your browser doesn't support HTML5 canvas. Please use a modern browser.</canvas>"
+  );
+  assert.strictEqual(sorry.lean.toward, 'fail');
+  const word = run('<canvas aria-label="graphic"></canvas>');
+  assert.strictEqual(word.lean.toward, 'fail');
+  assert.strictEqual(word.lean.i18n.whyKey, 'canvas_textAltQuality_lean_why');
+  for (const canvas of [
+    '<canvas>Your browser does not support canvas. Sales rose 20% from 2023 to 2024.</canvas>',
+    '<canvas>Sales rose 20% from 2023 to 2024.</canvas>',
+    // The ARIA name wins over the fallback.
+    '<canvas aria-label="Sales by month">Your browser does not support canvas.</canvas>'
+  ]) {
+    assert.strictEqual(run(canvas).lean, undefined, canvas);
+  }
+});

@@ -86,3 +86,30 @@ test(`${RULE_ID}: a subtitles-only video is cantTell under wcag22-aa`, () => {
   const result = runa11yCoreOnHtml(html, { engineOptions: { profile: 'wcag22-aa' } });
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+// A muted video that plays by itself, loops and has no controls gives users
+// no sound to caption: it leans pass. Drop any of those and a person checks.
+test(`${RULE_ID}: a background video with no captions track leans pass`, () => {
+  const run = (video) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${video}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const bg = run('<video src="hero.mp4" muted autoplay loop playsinline></video>');
+  assert.strictEqual(bg.data.details.reasonCode, 'CAPTIONS_TRACK_NOT_DETECTED');
+  assert.strictEqual(bg.lean.toward, 'pass');
+  assert.strictEqual(bg.lean.i18n.whyKey, 'videoCaption_lean_why_background');
+  for (const video of [
+    '<video src="hero.mp4" muted autoplay loop controls></video>',
+    '<video src="hero.mp4" autoplay loop></video>',
+    '<video src="talk.mp4" controls></video>'
+  ]) {
+    const o = run(video);
+    assert.strictEqual(o.data.details.reasonCode, 'CAPTIONS_TRACK_NOT_DETECTED', video);
+    assert.strictEqual(o.lean, undefined, video);
+  }
+});
