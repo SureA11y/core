@@ -2307,13 +2307,13 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 **Failed**
 ```html
 <table>
-  <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
-  <tr><td>e</td><td>f</td><td>g</td><td>h</td></tr>
-  <tr><td>i</td><td>j</td><td>k</td><td>l</td></tr>
-  <tr><td>m</td><td>n</td><td>o</td><td>p</td></tr>
+  <tr><th>Name</th><th>Team</th><th>Room</th><td></td></tr>
+  <tr><td>Ana</td><td>Sales</td><td>2.01</td><td>Mon</td></tr>
+  <tr><td>Bo</td><td>Legal</td><td>2.04</td><td>Tue</td></tr>
+  <tr><td>Chen</td><td>IT</td><td>3.10</td><td>Fri</td></tr>
 </table>
 ```
-A 4x4 table with no `<th>` anywhere — no cell has a row, column, or `headers`-attribute association.
+The header row stops one column short: the last column's cells have no row, column, or `headers`-attribute association. A table with no header cell at all is asked about instead, since it may be a layout table, which needs none.
 
 ## text-spacing-content-loss
 

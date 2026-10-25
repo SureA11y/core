@@ -219,7 +219,8 @@ test('a scan with a target reports its version, and its rollups are the targetâ€
   const rollups21 = r21.rulesResults.map((r) => r.ruleId);
   assert.ok(rollups21.some((id) => id.startsWith('wcag-4.1.1')));
   assert.ok(!rollups21.includes('wcag-1.4.3-contrast-minimum'));
-  assert.equal(r21.checksResults.find((r) => r.ruleId === 'duplicate-id').outcome, 'fail');
+  // Its 2023 errata count 4.1.1 as satisfied for HTML: the duplicate is asked about.
+  assert.equal(r21.checksResults.find((r) => r.ruleId === 'duplicate-id').outcome, 'cantTell');
 
   const r20 = runa11yCoreOnHtml(HTML, { runOnly: { wcag: { version: '2.0', level: 'AA' } } });
   assert.ok(!r20.rulesResults.some((r) => r.ruleId === 'wcag-2.5.3-label-in-name'));

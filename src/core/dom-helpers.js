@@ -205,10 +205,15 @@ function createDomHelpers(opts) {
   // alone accepts "eng" and "em-US", which look like language tags but are not
   // registered: the IANA registry lists a three-letter subtag only when no
   // two-letter one exists, so "en" is registered and "eng" is not.
+  // The registry also lists the range qaa..qtz, reserved for private use, as
+  // one entry of Type: language, which the generated list doesn't spell out:
+  // ACT de46e4 counts it as a known language subtag too.
   let __languageSubtagSet = null;
   function isRegisteredLanguageSubtag(subtag) {
+    const c = String(subtag || '').toLowerCase();
+    if (/^q[a-t][a-z]$/.test(c)) return true;
     if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
-    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+    return __languageSubtagSet.has(c);
   }
 
   // <generated:iso-639-alpha3>

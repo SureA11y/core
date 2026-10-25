@@ -376,6 +376,12 @@ function wcagVersionProblems(wcagVersion, where) {
   ];
 }
 
+// keepsParsing, when given, is true or false.
+function keepsParsingProblems(keepsParsing, where) {
+  if (keepsParsing === undefined || typeof keepsParsing === 'boolean') return [];
+  return [`${where}.keepsParsing must be true or false, not ${JSON.stringify(keepsParsing)}`];
+}
+
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
 // core's is found by preparing it (preparePacks).
@@ -546,6 +552,7 @@ function packProblems(pack, withCoreVersion) {
       }
       problems.push(...excludeProblems(profile.exclude, `standard.profiles.${name}`));
       problems.push(...wcagVersionProblems(profile.wcagVersion, `standard.profiles.${name}`));
+      problems.push(...keepsParsingProblems(profile.keepsParsing, `standard.profiles.${name}`));
     }
     if (typeof st.composites === 'function') {
       let rollups = [];
@@ -610,6 +617,7 @@ function packProblems(pack, withCoreVersion) {
         } else {
           problems.push(...excludeProblems(profile.exclude, `profiles.${name}`));
           problems.push(...wcagVersionProblems(profile.wcagVersion, `profiles.${name}`));
+          problems.push(...keepsParsingProblems(profile.keepsParsing, `profiles.${name}`));
         }
       }
     }
@@ -793,7 +801,8 @@ function checklistStandard(pack) {
           ...(p.rules ? { rules: p.rules.slice() } : {}),
           ...(p.exclude ? { exclude: p.exclude } : {}),
           ...(p.severity ? { severity: p.severity } : {}),
-          ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
+          ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
+          ...(p.keepsParsing ? { keepsParsing: true } : {})
         }
       ])
     ),

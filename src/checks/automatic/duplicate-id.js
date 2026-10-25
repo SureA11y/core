@@ -26,8 +26,10 @@
  *   - `count`: how many elements in the same tree carry it.
  * @reason-codes
  *   - `DUPLICATE_ID` (fail, cantTell): two or more elements in the same tree
- *     have the same id; it fails under WCAG 2.0 and 2.1, and is asked about
- *     under WCAG 2.2, which removed 4.1.1.
+ *     have the same id; it is asked about under WCAG 2.2, which removed
+ *     4.1.1, and under 2.0 and 2.1, whose 2023 errata count 4.1.1 as always
+ *     satisfied for HTML and XML. It fails only under a standard's own
+ *     profile that keeps 4.1.1's text (EN 301 549 V3.2.1).
  *     Basis: WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST).
  *   - `DUPLICATE_ID_IN_SHADOW_TREE` (fail, cantTell): two or more elements in
  *     one shadow tree have the same id; it is graded as DUPLICATE_ID is.
@@ -41,11 +43,13 @@
  *   field saying why (see scopeOutcomeToWcagVersion in
  *   `src/core/dom-runner.js`). A consumer targeting 2.0 or 2.1
  *   (`engineOptions.wcagVersion`, or a tag set that implies it) gets the
- *   real 4.1.1 failure; one that would rather not see the rule at all
- *   under 2.2 still excludes it with `excludeTags: ['wcag22-removed']`.
- *   The alternative, dropping the SC mapping entirely, would have made a
- *   genuine 2.0/2.1 failure invisible to anyone conformance-testing
- *   against those versions. See `docs/ENGINE_OPTIONS.md` for the option
+ *   same cantTell, by the 2023 errata to WCAG 2.0 and 2.1, which count 4.1.1
+ *   as always satisfied for HTML and XML; only a standard's own profile
+ *   that keeps 4.1.1's text gets a fail. One that would rather not see
+ *   the rule at all still excludes it with `excludeTags: ['wcag22-removed']`.
+ *   The alternative, dropping the SC mapping entirely, would have hidden
+ *   the failure from a standard that keeps the criterion, and the finding
+ *   from everyone. See `docs/ENGINE_OPTIONS.md` for the option
  *   and the tag, and `docs/DESIGN_CHALLENGES.md` for the decision history.
  * - The defect outlives its Success Criterion: a duplicate id breaks
  *   `<label for>` association, fragment navigation, `getElementById`, and

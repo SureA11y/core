@@ -162,18 +162,16 @@ test(`${RULE_ID}: notApplicable when the element has the hidden attribute (not c
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the element has aria-busy="true" (extended by analogy from WAI-ARIA's required-owned-elements escape hatch)`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="true"></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: aria-busy="false" does NOT exempt a missing required attribute (only the exact string "true" counts)`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="false"></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
-});
+// WAI-ARIA's aria-busy exception covers required owned elements, not
+// required states, and ACT 4e8ab6 makes none.
+for (const busy of ['true', 'false']) {
+  test(`${RULE_ID}: aria-busy="${busy}" does not exempt a missing required state`, () => {
+    const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="${busy}"></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
+  });
+}
 
 test(`${RULE_ID}: fail when a focusable role="separator" has no aria-valuenow`, () => {
   const html = `<!doctype html><html><body><p>a</p><div role="separator" tabindex="0" id="a"></div><p>b</p></body></html>`;
@@ -221,9 +219,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
-  const expectedFailIds = ['ara_case_02', 'ara_case_03', 'ara_case_09', 'ara_case_15'];
+  const expectedFailIds = [
+    'ara_case_02',
+    'ara_case_03',
+    'ara_case_09',
+    'ara_case_14',
+    'ara_case_15'
+  ];
   const expectedCantTellIds = ['ara_case_07', 'ara_case_17'];
 
   for (const id of expectedCantTellIds) {
@@ -241,7 +245,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
     'ara_case_11',
     'ara_case_12',
     'ara_case_13',
-    'ara_case_14',
     'ara_case_16',
     'ara_case_18'
   ];

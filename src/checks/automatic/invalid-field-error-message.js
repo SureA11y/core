@@ -19,9 +19,12 @@
  *   - `aria-errormessage` names an element that is shown and has text:
  *     pass.
  *   - `aria-errormessage` names only elements that are hidden
- *     (`ERROR_MESSAGE_HIDDEN`) or that are shown with no text
- *     (`ERROR_MESSAGE_EMPTY`): fail. ARIA requires the message to be shown
- *     while the field is invalid, and the page states it isn't. When the
+ *     (`ERROR_MESSAGE_HIDDEN`): fail. ARIA requires the message to be shown
+ *     while the field is invalid, and the page states it isn't.
+ *   - `aria-errormessage` names only shown elements with no text
+ *     (`ERROR_MESSAGE_EMPTY`): cantTell. ARIA sets no MUST on the message's
+ *     text, and the error may be told in the label or next to the field,
+ *     which meets 3.3.1. When the
  *     field's `aria-describedby` gives a description, the error may be
  *     there: cantTell (`ERROR_MESSAGE_NOT_SHOWN_DESCRIBED`).
  *   - `aria-errormessage` names no element of the page: cantTell
@@ -60,9 +63,9 @@
  *     that are hidden: nobody sees them, or aria-hidden, on the message or
  *     around it, hides them from assistive technology.
  *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1; ARIA21.
- *   - `ERROR_MESSAGE_EMPTY` (fail): aria-errormessage names only shown
- *     messages that have no text.
- *     Basis: WAI-ARIA 1.2 aria-errormessage; WCAG 3.3.1.
+ *   - `ERROR_MESSAGE_EMPTY` (cantTell): aria-errormessage names only shown
+ *     messages that have no text; the error may be told in text elsewhere.
+ *     Basis: WCAG 3.3.1 (not settled); WAI-ARIA 1.2 aria-errormessage.
  *   - `ERROR_MESSAGE_NOT_SHOWN_DESCRIBED` (cantTell): the named message is
  *     hidden or empty, but the field's aria-describedby gives a description
  *     that may carry the error.
@@ -231,11 +234,15 @@ function runInPage(ctx) {
           reasonCode = 'ERROR_MESSAGE_ARIA_HIDDEN';
         } else if (described(el)) {
           reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
+        } else if (infos.some((i) => i.shown)) {
+          // A shown message with no text: ARIA sets no MUST on its text, and
+          // 3.3.1 is met by error text the markup doesn't tie to the field,
+          // as for NO_ERROR_MESSAGE.
+          reasonCode = 'ERROR_MESSAGE_EMPTY';
         } else {
           tier = 'fail';
-          reasonCode = infos.some((i) => i.shown) ? 'ERROR_MESSAGE_EMPTY' : 'ERROR_MESSAGE_HIDDEN';
-          if (reasonCode === 'ERROR_MESSAGE_HIDDEN' && infos.every((i) => i.hiddenByAria))
-            hiddenBy = 'aria-hidden';
+          reasonCode = 'ERROR_MESSAGE_HIDDEN';
+          if (infos.every((i) => i.hiddenByAria)) hiddenBy = 'aria-hidden';
         }
       }
     } else {
@@ -262,10 +269,12 @@ function runInPage(ctx) {
         hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.'
       },
       ERROR_MESSAGE_EMPTY: {
-        key: 'fail_empty',
+        key: 'cantTell_empty',
         summary:
           'This field is marked invalid, but the error message aria-errormessage names has no text.',
-        hint: 'Put text in the error message that says what is wrong and how to fix it.'
+        hint: 'Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.',
+        uncertainty: 'judgement-required',
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.'
       },
       ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
         key: 'cantTell_notShownDescribed',

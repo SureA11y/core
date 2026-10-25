@@ -13,6 +13,8 @@
  *   maximum-scale or user-scalable. Content setting neither cannot restrict
  *   zoom.
  * @expectation
+ *   In the viewport meta tag in effect, the last one with content (an
+ *   earlier one is replaced, and asked about if it restricts zoom):
  *   user-scalable is absent, yes, device-width, device-height, or a number
  *   outside the range -1 to 1; and maximum-scale is absent, device-width,
  *   device-height, negative, or 2 or more. Anything else stops the user
@@ -21,9 +23,13 @@
  *   - `reasons`: the settings that restrict zoom, one per item, written as
  *     in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
  * @reason-codes
- *   - `VIEWPORT_ZOOM_RESTRICTED` (fail): the viewport meta tag disables zoom
- *     or caps it below 200%.
+ *   - `VIEWPORT_ZOOM_RESTRICTED` (fail): the viewport meta tag in effect,
+ *     the last one with content, disables zoom or caps it below 200%.
  *     Basis: WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport.
+ *   - `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` (cantTell): a viewport meta tag
+ *     that a later one replaces restricts zoom; browsers apply the last,
+ *     and have not always agreed.
+ *     Basis: WCAG 1.4.4 (not settled); CSS Viewport meta viewport.
  * @implementation-notes
  * - The content attribute is read as browsers read it (CSS Viewport):
  *   whitespace separates settings as ',' and ';' do, so
@@ -81,7 +87,17 @@ function runInPage(ctx) {
     : [];
 
   const occurrences = [];
+  const questions = [];
   let applicableCount = 0;
+
+  // Browsers apply the last viewport meta tag that has content; an earlier
+  // one is overridden. One that restricts zoom fails; an earlier one that
+  // restricts is asked about, since browsers have differed on merging them.
+  const withContent = Array.from(nodes).filter(
+    (el) =>
+      el && dom.get(el, 'getAttribute') && String(dom.getAttribute(el, 'content') || '').trim()
+  );
+  const inEffect = withContent.length ? withContent[withContent.length - 1] : null;
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -104,8 +120,33 @@ function runInPage(ctx) {
 
     if (!reasons.length) continue;
 
+    if (el !== inEffect) {
+      questions.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.',
+          hint: 'Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'metaViewportZoomEnabled_summary_cantTell_overridden',
+            hintKey: 'metaViewportZoomEnabled_hint_cantTell_overridden',
+            params: { reasons: reasons.join(', ') }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether the browser in use applies only the last viewport meta tag.'
+          },
+          data: {
+            details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN', reasons }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'fail',
         summary: 'This viewport meta tag restricts the user’s ability to zoom.',
         hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
         i18n: {
@@ -123,15 +164,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage, applicability };

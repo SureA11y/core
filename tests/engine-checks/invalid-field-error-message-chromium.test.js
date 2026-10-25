@@ -28,7 +28,7 @@ const CASES = [
   ['<p id="e" class="sr-only">Enter an email address.</p>', 'pass', null],
   [
     '<p id="e"><span class="error">Enter an email address.</span></p>',
-    'fail',
+    'cantTell',
     'ERROR_MESSAGE_EMPTY'
   ]
 ];

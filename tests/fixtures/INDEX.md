@@ -33,8 +33,8 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | aria-owns-valid | automatic | `tests/fixtures/aria-owns-valid-all-scenarios.html` | 7 | 2 | 3 | 0 | 2 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 16 | 2 | 10 | 0 | 4 |
 | aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 20 | 10 | 8 | 0 | 2 |
-| aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 18 | 5 | 4 | 2 | 7 |
-| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 9 | 3 | 0 | 2 | 4 |
+| aria-required-attr | automatic | `tests/fixtures/aria-required-attr-all-scenarios.html` | 18 | 5 | 5 | 2 | 6 |
+| aria-required-children | automatic | `tests/fixtures/aria-required-children-all-scenarios.html` | 10 | 3 | 2 | 1 | 4 |
 | aria-required-parent | automatic | `tests/fixtures/aria-required-parent-all-scenarios.html` | 12 | 6 | 2 | 0 | 4 |
 | aria-role-name-present | automatic | `tests/fixtures/aria-role-name-present-all-scenarios.html` | 30 | 8 | 9 | 0 | 13 |
 | aria-roles-valid | automatic | `tests/fixtures/aria-roles-valid-all-scenarios.html` | 11 | 7 | 2 | 1 | 1 |
@@ -89,7 +89,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | input-image-alt-decorative | manual | `tests/fixtures/input-image-alt-decorative-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | input-image-alt-present | automatic | `tests/fixtures/input-image-alt-present-all-scenarios.html` | 20 | 3 | 9 | 1 | 7 |
 | input-image-alt-quality | manual | `tests/fixtures/input-image-alt-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
-| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 16 | 4 | 4 | 4 | 4 |
+| invalid-field-error-message | automatic | `tests/fixtures/invalid-field-error-message-all-scenarios.html` | 16 | 4 | 3 | 5 | 4 |
 | label-for-valid | manual | `tests/fixtures/label-for-valid-all-scenarios.html` | 8 | 3 | 0 | 3 | 2 |
 | label-in-name | automatic | `tests/fixtures/label-in-name-all-scenarios.html` | 28 | 10 | 9 | 0 | 9 |
 | landmark-banner-is-top-level | manual | `tests/fixtures/landmark-banner-is-top-level-all-scenarios.html` | 4 | 1 | 0 | 1 | 2 |
@@ -151,7 +151,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | table-headers-attr-valid | automatic | `tests/fixtures/table-headers-attr-valid-all-scenarios.html` | 9 | 2 | 4 | 0 | 3 |
 | table-th-has-data-cells | automatic | `tests/fixtures/table-th-has-data-cells-all-scenarios.html` | 4 | 1 | 2 | 0 | 1 |
 | target-size-minimum | automatic | `tests/fixtures/target-size-all-scenarios.html` | 25 | 8 | 8 | 1 | 8 |
-| td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 8 | 0 | 1 | 0 | 7 |
+| td-has-header | automatic | `tests/fixtures/td-has-header-all-scenarios.html` | 9 | 0 | 1 | 1 | 7 |
 | text-spacing-content-loss | automatic | `tests/fixtures/text-spacing-content-loss-all-scenarios.html` | 5 | 2 | 1 | 2 | 0 |
 | textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 28 | 7 | 10 | 0 | 11 |
 | tooltip-name-present | automatic | `tests/fixtures/tooltip-name-present-all-scenarios.html` | 7 | 4 | 2 | 0 | 1 |

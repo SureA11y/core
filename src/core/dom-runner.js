@@ -2117,8 +2117,19 @@ function runCoreSettled(
   }
   warnDeprecatedStandards(mappingSelection.tokens);
 
+  // W3C's 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as always satisfied
+  // for content in HTML or XML, so a 2.0 or 2.1 target is treated as 2.2 is.
+  // A profile whose standard keeps the criterion's text (keepsParsing in the
+  // registry: EN 301 549 V3.2.1) keeps the fail.
+  function removesParsing() {
+    if (targetWcagVersion === '2.2') return 'removed';
+    const keeps = (CATALOG && CATALOG.profileKeepsParsing) || [];
+    return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
-    if (targetWcagVersion !== '2.2') return result;
+    const why = removesParsing();
+    if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
@@ -2138,7 +2149,10 @@ function runCoreSettled(
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
-              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              needed:
+                why === 'removed'
+                  ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
+                  : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
             };
           }
@@ -2155,7 +2169,8 @@ function runCoreSettled(
       wcagVersionScope: {
         target: targetWcagVersion,
         removedSc,
-        coercedFrom: 'fail'
+        coercedFrom: 'fail',
+        ...(why === 'errata' ? { by: 'errata' } : {})
       }
     };
   }

@@ -80,11 +80,27 @@ test(`${RULE_ID}: pass when every <td> in a large table has an implicit row/colu
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when a large table has no headers at all`, () => {
+// A large table with no header cell at all may be a layout table, which
+// needs none (F46), or a data table missing them: asked about once.
+test(`${RULE_ID}: cantTell, once, when a large table has no headers at all`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TD_NO_ASSOCIATED_HEADER');
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+});
+
+test(`${RULE_ID}: fail when the table's headers leave a cell without one`, () => {
+  const html = `<!doctype html><html><body><table>
+    <tr><th>A</th><th>B</th><th>C</th><td></td></tr>
+    <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+    <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+    <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const o of rule.occurrences) {
+    assert.equal(o.data.details.reasonCode, 'TD_NO_ASSOCIATED_HEADER');
+    assert.equal(o.occurrenceOutcome, 'fail');
+  }
 });
 
 test(`${RULE_ID}: pass when a <td> has an explicit headers attribute referencing a <th>`, () => {
@@ -131,7 +147,7 @@ test(`${RULE_ID}: an aria-hidden <td> is not flagged (it isn't exposed to AT, so
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><table>${TABLE_4X4_NO_HEADERS}</table></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Data cells in large tables must have an associated header');
 });
 
@@ -140,9 +156,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/td-has-header-all-scenarios.h
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
 
-  const expectedFlaggedIds = ['tdh_case_01'];
+  const onTable = (id) => rule.occurrences.filter((o) => o.selector.includes(`#${id}`));
+  assert.deepEqual(
+    onTable('tdh_case_01').map((o) => o.occurrenceOutcome),
+    ['cantTell']
+  );
+  assert.deepEqual(
+    onTable('tdh_case_09').map((o) => o.occurrenceOutcome),
+    ['fail', 'fail', 'fail']
+  );
+  const expectedFlaggedIds = ['tdh_case_01', 'tdh_case_09'];
   const expectedNoOccIds = [
     'tdh_case_02',
     'tdh_case_03',
@@ -190,10 +215,12 @@ test(`${RULE_ID}: a <th> given another role is not a header`, () => {
     <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
     <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
     <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr></table></body></html>`;
-  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
-    minOccurrences: 16,
-    maxOccurrences: 16
+  // With no header left, the table is asked about as one with none.
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
 });
 
 test(`${RULE_ID}: a table whose role is not table, grid or treegrid is left out`, () => {
@@ -202,7 +229,7 @@ test(`${RULE_ID}: a table whose role is not table, grid or treegrid is left out`
     assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable');
   }
   const grid = `<!doctype html><html><body><table role="grid">${TABLE_4X4_NO_HEADERS}</table></body></html>`;
-  assertRule(runa11yCoreOnHtml(grid, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  assertRule(runa11yCoreOnHtml(grid, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
 });
 
 test(`${RULE_ID}: an empty cell needs no header; one holding an image does`, () => {

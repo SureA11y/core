@@ -168,3 +168,55 @@ test(`${RULE_ID}: settings separated by spaces, a name with no value, and case`,
     );
   }
 });
+
+// Browsers apply the last viewport meta tag that has content: that one is
+// judged, and a restricting one it replaces is asked about.
+test(`${RULE_ID}: judges the viewport tag in effect, the last with content`, () => {
+  const page = (...contents) =>
+    `<!doctype html><html><head>${contents
+      .map((c) => `<meta name="viewport" content="${c}">`)
+      .join('')}</head><body><p>x</p></body></html>`;
+  const run = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+
+  const replaced = assertRule(
+    run(page('user-scalable=no', 'width=device-width')),
+    RULE_ID,
+    'cantTell',
+    {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }
+  );
+  assert.equal(
+    replaced.occurrences[0].data.details.reasonCode,
+    'VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN'
+  );
+  assert.equal(replaced.occurrences[0].uncertainty.code, 'runtime-dependent');
+
+  const inEffect = assertRule(
+    run(page('width=device-width', 'user-scalable=no')),
+    RULE_ID,
+    'fail',
+    {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }
+  );
+  assert.equal(inEffect.occurrences[0].occurrenceOutcome, 'fail');
+
+  const both = assertRule(run(page('maximum-scale=1', 'user-scalable=no')), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  assert.deepEqual(
+    both.occurrences.map((o) => o.occurrenceOutcome),
+    ['fail', 'cantTell']
+  );
+
+  // A later tag with no content replaces nothing.
+  const empty = page('user-scalable=no').replace(
+    '</head>',
+    '<meta name="viewport" content=""></head>'
+  );
+  assertRule(run(empty), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+});
