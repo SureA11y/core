@@ -38,6 +38,11 @@
  * @reason-codes
  *   - `TABLE_HEADER_EMPTY` (cantTell): a header cell has no visible text and
  *     no name from aria-label or aria-labelledby.
+ *     It leans fail when the cell is a <th> holding nothing that could name
+ *     it (an svg, an element with an ARIA name or title, a control), is not
+ *     the top-left corner above a column of row headers, and has a data cell
+ *     with text below it or after it in a table with no spans; otherwise no
+ *     lean.
  *     Basis: HTML table model th element (best practice); WAI-ARIA 1.2
  *     columnheader role (best practice).
  *   - `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` (cantTell): a header cell has no
@@ -201,6 +206,64 @@ function runInPage(ctx) {
     return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
   });
 
+  // Which way an empty native header cell points. Content that may name
+  // it without text (an svg, an element with an ARIA name or a title, a
+  // control) gives no direction, nor does the corner cell above a column
+  // of row headers, the usual empty top-left cell. Otherwise a header with
+  // a data cell with text below it or after it in its row heads data and
+  // says nothing about it.
+  const MAY_NAME =
+    'svg, img, canvas, object, embed, input, select, textarea, button, [role], [aria-label], [aria-labelledby], [title]';
+  function emptyHeaderLean(th) {
+    if (String(dom.localName(th) || '').toLowerCase() !== 'th') return null;
+    try {
+      if (dom.querySelector(th, MAY_NAME)) return null;
+    } catch {
+      return null;
+    }
+    const row = dom.parentElement(th);
+    const table = row ? dom.closest(row, 'table') : null;
+    if (!table || !table.rows) return null;
+    const rows = Array.from(table.rows).map((tr) => Array.from(tr.cells || []));
+    const r = rows.findIndex((cells) => cells.indexOf(th) !== -1);
+    if (r === -1) return null;
+    const c = rows[r].indexOf(th);
+    const spans = rows.some((cells) =>
+      cells.some(
+        (x) =>
+          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
+          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+      )
+    );
+    if (spans) return null;
+    const isTh = (x) => !!x && String(dom.localName(x) || '').toLowerCase() === 'th';
+    if (r === 0 && c === 0 && rows.length > 1 && rows.slice(1).every((cells) => isTh(cells[0])))
+      return null;
+    const dataWithText = (x) =>
+      !!x &&
+      String(dom.localName(x) || '').toLowerCase() === 'td' &&
+      normalizeWs(dom.textContent(x)) !== '';
+    const hasData =
+      rows[r].slice(c + 1).some(dataWithText) ||
+      rows.slice(r + 1).some((cells) => dataWithText(cells[c]));
+    if (!hasData) return null;
+    return {
+      toward: 'fail',
+      why: 'The header cell is empty, holds nothing that could name it, and heads data cells with text.',
+      signals: [
+        { signal: 'named-content', value: false },
+        { signal: 'corner-cell', value: false },
+        { signal: 'heads-data-cells', value: true }
+      ],
+      caution:
+        'A header drawn only through CSS (a background image or generated content) has no text in the page.',
+      i18n: {
+        whyKey: 'emptyTableHeader_lean_why_empty',
+        cautionKey: 'emptyTableHeader_lean_caution_empty'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -242,8 +305,13 @@ function runInPage(ctx) {
       continue;
     }
 
+    let lean = null;
+    try {
+      lean = emptyHeaderLean(el);
+    } catch {}
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: 'This table header cell has no accessible name.',
         hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {

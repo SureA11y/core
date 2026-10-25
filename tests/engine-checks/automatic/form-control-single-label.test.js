@@ -170,3 +170,38 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-single-label-all
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+function leans(body) {
+  const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+    runOnly: [RULE_ID]
+  });
+  return assertRule(result, RULE_ID, 'cantTell').occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: labels that repeat each other or only mark the field required lean pass`, () => {
+  assert.deepEqual(
+    leans(
+      '<label for="a">Email</label><label for="a">Email address</label><input id="a">' +
+        '<label for="b">Name</label><label for="b">(required)</label><input id="b">'
+    ),
+    [
+      ['FORM_FIELD_MULTIPLE_LABELS', 'pass', 'formControlSingleLabel_lean_why_competing'],
+      ['FORM_FIELD_MULTIPLE_LABELS', 'pass', 'formControlSingleLabel_lean_why_competing']
+    ]
+  );
+  // Two unrelated labels: no lean.
+  assert.deepEqual(
+    leans('<label for="c">Email</label><label for="c">Phone</label><input id="c">'),
+    [['FORM_FIELD_MULTIPLE_LABELS', null, null]]
+  );
+});
+
+test(`${RULE_ID}: an extra empty label leans pass`, () => {
+  assert.deepEqual(leans('<label for="a">Name</label><label for="a"></label><input id="a">'), [
+    ['FORM_FIELD_EXTRA_EMPTY_LABEL', 'pass', 'formControlSingleLabel_lean_why']
+  ]);
+});

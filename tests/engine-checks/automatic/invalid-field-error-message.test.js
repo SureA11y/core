@@ -284,3 +284,64 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/invalid-field-error-message-a
     ]
   );
 });
+
+function leans(body) {
+  return assertRule(run(body), RULE_ID, 'cantTell').occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: an empty message with no description leans fail`, () => {
+  assert.deepEqual(
+    leans(
+      '<input aria-label="City" aria-invalid="true" aria-errormessage="e"><span id="e"> </span>'
+    ),
+    [['ERROR_MESSAGE_EMPTY', 'fail', 'invalidFieldErrorMessage_lean_why_empty']]
+  );
+});
+
+test(`${RULE_ID}: a description that is a shown live region leans pass; a plain one has no lean`, () => {
+  const field =
+    '<input aria-label="Date" aria-invalid="true" aria-errormessage="e" aria-describedby="d"><p id="e" hidden>x</p>';
+  assert.deepEqual(leans(field + '<p id="d" role="alert">Date must be in the future.</p>'), [
+    [
+      'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED',
+      'pass',
+      'invalidFieldErrorMessage_lean_why_liveDescription'
+    ]
+  ]);
+  assert.deepEqual(
+    leans(field + '<p id="d" aria-live="polite">Date must be in the future.</p>')[0][1],
+    'pass'
+  );
+  assert.deepEqual(leans(field + '<p id="d">Use dd/mm/yyyy.</p>'), [
+    ['ERROR_MESSAGE_NOT_SHOWN_DESCRIBED', null, null]
+  ]);
+});
+
+test(`${RULE_ID}: aria-hidden message text and a missing message lean fail only without a description`, () => {
+  const hidden = '<p id="e"><span aria-hidden="true">Enter a valid email.</span></p>';
+  assert.deepEqual(
+    leans('<input aria-label="Email" aria-invalid="true" aria-errormessage="e">' + hidden),
+    [['ERROR_MESSAGE_ARIA_HIDDEN', 'fail', 'invalidFieldErrorMessage_lean_why_ariaHidden']]
+  );
+  assert.deepEqual(
+    leans(
+      '<input aria-label="Email" aria-invalid="true" aria-errormessage="e" aria-describedby="d"><p id="d">Enter a valid email.</p>' +
+        hidden
+    ),
+    [['ERROR_MESSAGE_ARIA_HIDDEN', null, null]]
+  );
+  assert.deepEqual(
+    leans('<input aria-label="Code" aria-invalid="true" aria-errormessage="nope">'),
+    [['ERROR_MESSAGE_TARGET_MISSING', 'fail', 'invalidFieldErrorMessage_lean_why_targetMissing']]
+  );
+  assert.deepEqual(
+    leans(
+      '<input aria-label="Code" aria-invalid="true" aria-errormessage="nope" aria-describedby="d"><p id="d">Six digits.</p>'
+    ),
+    [['ERROR_MESSAGE_TARGET_MISSING', null, null]]
+  );
+});

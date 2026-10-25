@@ -76,18 +76,25 @@
  *   - `HYPHENATION_DIFFERS` (cantTell): the accessible name holds the visible
  *     label's words only when hyphens are ignored, so whether it contains the
  *     label is a judgment call.
+ *     It leans pass: the words are the same once hyphens are ignored.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
  *   - `POSSIBLE_ABBREVIATION` (cantTell): the accessible name holds the
  *     visible label only if a word ending in a period is read as an
  *     abbreviation of a longer word.
+ *     It leans pass when each shortened word has three letters or more and
+ *     starts the word in the name; otherwise no lean.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
  *   - `POSSIBLE_ICON_FONT_GLYPH` (cantTell): the visible label renders through
  *     an icon font, so its text may show as a symbol rather than readable
  *     words.
+ *     It leans pass when the text is a ligature name or Private Use Area
+ *     characters and the page has loaded that font; otherwise no lean.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
  *   - `POSSIBLE_SYMBOLIC_CHARACTER` (cantTell): the visible label is a single
  *     character missing from the accessible name, which may be a symbol rather
  *     than text.
+ *     It leans pass when the character is the letter x (a close icon), and
+ *     fail when it is a digit; other letters have no lean.
  *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
  *   - `VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME` (fail): the accessible name from
  *     aria-label or aria-labelledby does not contain the visible label's
@@ -622,9 +629,14 @@ function runInPage(ctx) {
   }
 
   function isIconFontElement(node) {
-    if (!node) return false;
+    return iconFontFamilyOf(node) !== '';
+  }
+
+  // The known icon font a node's font-family names, or ''.
+  function iconFontFamilyOf(node) {
+    if (!node) return '';
     const cs = computedStyleOf(node);
-    if (!cs) return false;
+    if (!cs) return '';
     let family;
     try {
       family =
@@ -632,7 +644,7 @@ function runInPage(ctx) {
     } catch {
       family = '';
     }
-    if (!family) return false;
+    if (!family) return '';
     const names = String(family)
       .split(',')
       .map((s) =>
@@ -641,7 +653,46 @@ function runInPage(ctx) {
           .replace(/^['"]|['"]$/g, '')
           .toLowerCase()
       );
-    return names.some((n) => ICON_FONT_FAMILIES.has(n));
+    return names.find((n) => ICON_FONT_FAMILIES.has(n)) || '';
+  }
+
+  // Whether the page has loaded a font face of that family: true, false
+  // when none is loaded, null when the page does not say (no font set).
+  function iconFontLoaded(family, node) {
+    try {
+      const fonts = dom.fonts(dom.ownerDocument(node));
+      if (!fonts || typeof fonts.forEach !== 'function') return null;
+      let loaded = false;
+      fonts.forEach((face) => {
+        const f = String((face && face.family) || '')
+          .trim()
+          .replace(/^['"]|['"]$/g, '')
+          .toLowerCase();
+        if (f === family && face.status === 'loaded') loaded = true;
+      });
+      return loaded;
+    } catch {
+      return null;
+    }
+  }
+
+  // Text an icon font draws as one glyph: a ligature name ("search",
+  // "arrow_back") or characters from the Private Use Area.
+  function isLigatureOrPua(text) {
+    const t = String(text || '').trim();
+    return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(t) || /^[\uE000-\uF8FF]+$/u.test(t);
+  }
+
+  // Which way a single visible character points: the letter x (a common
+  // close icon) or a symbol stands for an icon; a digit is text a user
+  // would say. Other letters give no direction. (A symbol alone has no
+  // words to compare, so it is not reported; it is read here all the same.)
+  function symbolicCharacterKind(text) {
+    const c = Array.from(norm(text))[0] || '';
+    if (c === 'x') return 'letter-x';
+    if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
+    if (/^\p{N}$/u.test(c)) return 'digit';
+    return '';
   }
 
   // ACT 2ee8b8's own passed example `<button aria-label="close">X</button>`:
@@ -726,6 +777,93 @@ function runInPage(ctx) {
       }
     }
 
+    // Which way the evidence points, for the shapes where it points one way.
+    let lean = null;
+    if (uncertainReason === 'HYPHENATION_DIFFERS') {
+      lean = {
+        toward: 'pass',
+        why: 'The name holds the label’s words once hyphens are ignored, so the label’s meaning is unchanged.',
+        signals: [{ signal: 'words-equal-without-hyphens', value: true }],
+        caution:
+          'Speech input may need the hyphenated word said differently ("e mail" against "email").',
+        i18n: {
+          whyKey: 'labelInName_lean_why_hyphenation',
+          cautionKey: 'labelInName_lean_caution_hyphenation'
+        }
+      };
+    } else if (uncertainReason === 'POSSIBLE_ABBREVIATION') {
+      // A stem of one or two letters ("N.", "No.") starts too many words to
+      // stand for the one in the name; three or more ("Ave.", "Dept.") does.
+      const longStems = new Set(
+        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+      );
+      if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
+        lean = {
+          toward: 'pass',
+          why: 'Each shortened word in the label starts the matching word in the name, as a conventional abbreviation does ("Ave." for "Avenue").',
+          signals: [
+            { signal: 'abbreviation-prefix-match', value: true },
+            {
+              signal: 'shortest-abbreviation-stem',
+              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+            }
+          ],
+          caution: 'A speech user may say the abbreviation as shown rather than the full word.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_abbreviation',
+            cautionKey: 'labelInName_lean_caution_abbreviation'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH') {
+      // ACT 2ee8b8 passes a ligature drawn as an icon; only when the page
+      // has loaded the font, else the word itself is drawn.
+      const source = (labelInfo.sourceElements || []).find(isIconFontElement);
+      const family = iconFontFamilyOf(source);
+      if (isLigatureOrPua(visibleLabel) && iconFontLoaded(family, source) === true) {
+        lean = {
+          toward: 'pass',
+          why: 'The label is an icon font’s ligature or symbol code, drawn as an icon, so it shows no readable words.',
+          signals: [
+            { signal: 'icon-font-family', value: family },
+            { signal: 'ligature-or-pua-text', value: true },
+            { signal: 'icon-font-loaded', value: true }
+          ],
+          caution:
+            'If the font fails to load for a user, the word itself is drawn and becomes a visible label.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_iconFont',
+            cautionKey: 'labelInName_lean_caution_iconFont'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER') {
+      const kind = symbolicCharacterKind(visibleLabel);
+      if (kind === 'letter-x' || kind === 'symbol') {
+        lean = {
+          toward: 'pass',
+          why: 'The label is a single symbol or an "X", which stands for an icon rather than words to say.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'A user may still say the character ("X") to reach the control.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_symbol',
+            cautionKey: 'labelInName_lean_caution_symbol'
+          }
+        };
+      } else if (kind === 'digit') {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a digit, text a speech user would say, and the name does not contain it.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'The name may spell the number out in words, which some speech input matches.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_digit',
+            cautionKey: 'labelInName_lean_caution_digit'
+          }
+        };
+      }
+    }
+
     const isSymbolicUncertainty =
       uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
       uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
@@ -762,6 +900,7 @@ function runInPage(ctx) {
           },
           ...(uncertainReason
             ? {
+                ...(lean ? { lean } : null),
                 uncertainty: {
                   code: 'equivalence-unknown',
                   needed:

@@ -30,10 +30,15 @@
  *   - `PASTE_CANCELLED` (cantTell): the authentication field has an inline
  *     paste handler whose only effect is to cancel the paste, which may stop a
  *     password manager or the clipboard filling it.
+ *     It leans fail, unless the field is a box of a split one-time code
+ *     (maxlength 1, among four or more such boxes), which has no lean.
  *     Basis: WCAG 3.3.8 (not settled).
  *   - `PASTE_HANDLER_OPAQUE` (cantTell): the authentication field has an
  *     inline paste handler that calls other script, so whether it blocks
  *     pasting could not be told.
+ *     It leans fail when the handler calls a function named to block
+ *     pasting (disablePaste) or shows an alert and cancels, and the field is
+ *     not a box of a split one-time code; otherwise no lean.
  *     Basis: WCAG 3.3.8 (not settled).
  * @implementation-notes
  * - Advisory and capped at cantTell. Whether a handler really stops the user
@@ -220,6 +225,36 @@ function runInPage(ctx) {
     return ONLY_PUNCTUATION.test(rest) ? 'cancelOnly' : 'opaque';
   }
 
+  // A box of a split one-time-code field: maxlength 1, among three or more
+  // such boxes in its parent. Its page usually spreads a pasted code across
+  // the boxes from script the markup does not carry.
+  function inSplitCodeGroup(el) {
+    const one = (n) => normalizeWs(dom.getAttribute(n, 'maxlength')) === '1';
+    if (!one(el)) return false;
+    const parent = dom.parentElement(el);
+    if (!parent) return false;
+    let boxes = 0;
+    try {
+      for (const n of dom.querySelectorAll(parent, 'input')) if (one(n)) boxes += 1;
+    } catch {
+      return false;
+    }
+    return boxes >= 4;
+  }
+
+  // A handler whose own words say it blocks pasting: a function named so
+  // (disablePaste, no_paste, preventCopyPaste), or a message shown before
+  // the paste is cancelled.
+  // Word-initial (disablePaste, no_paste) in any case, and camelCase within
+  // a name (onDisablePaste) in its own case, so "casinoPaste" is no match.
+  const BLOCK_NAME =
+    /(?:\b|_)(?:no|disable|block|prevent|deny|forbid|stop)_?(?:copy_?(?:and_?)?)?paste|paste_?(?:block|disable|prevent|deny|forbid)/i;
+  const BLOCK_NAME_CAMEL =
+    /[a-z0-9](?:No|Disable|Block|Prevent|Deny|Forbid|Stop)(?:Copy(?:And)?)?Paste|Paste(?:Block|Disable|Prevent|Deny|Forbid)/;
+  const CANCELS =
+    /\breturn\s+false\b|\breturn\s*!1\b|\bpreventDefault\s*\(|\breturnValue\s*=\s*(?:false|!1)\b/i;
+  const ALERTS = /\balert\s*\(/;
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, textarea')
     : helpers.queryAll('input, textarea');
@@ -248,6 +283,10 @@ function runInPage(ctx) {
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : { targetSet: 'acc', accEligible: null, reasons: [] };
 
+    // A split code box may have its paste put back by a listener added
+    // from script, which nothing here sees, so it has no lean.
+    const splitCode = inSplitCodeGroup(el);
+
     if (verdict === 'cancelOnly') {
       cancelling.push(
         helpers.reportOccurrence(el, {
@@ -255,10 +294,28 @@ function runInPage(ctx) {
             'This authentication field has a paste handler whose only effect is to cancel the paste.',
           hint: 'Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.',
           i18n: {
-            summaryKey: 'passwordPasteEnabled_summary_fail',
-            hintKey: 'passwordPasteEnabled_hint_fail',
+            summaryKey: 'passwordPasteEnabled_summary_cantTell_cancelled',
+            hintKey: 'passwordPasteEnabled_hint_cantTell_cancelled',
             params: {}
           },
+          ...(splitCode
+            ? {}
+            : {
+                lean: {
+                  toward: 'fail',
+                  why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
+                  signals: [
+                    { signal: 'handler', value: 'cancel-only' },
+                    { signal: 'split-code-box', value: false }
+                  ],
+                  caution:
+                    'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
+                  i18n: {
+                    whyKey: 'passwordPasteEnabled_lean_why_cancelled',
+                    cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+                  }
+                }
+              }),
           data: {
             visibilityFilter: eligInfo,
             details: { reasonCode: 'PASTE_CANCELLED', handler: normalizeWs(handler) }
@@ -269,7 +326,9 @@ function runInPage(ctx) {
     }
 
     // An inline handler that delegates: whether it cancels lives in code the
-    // markup does not carry.
+    // markup does not carry, unless its own words say it blocks.
+    const namedBlock = BLOCK_NAME.test(handler) || BLOCK_NAME_CAMEL.test(handler);
+    const alertsAndCancels = ALERTS.test(handler) && CANCELS.test(handler);
     undetermined.push(
       helpers.reportOccurrence(el, {
         summary:
@@ -280,6 +339,25 @@ function runInPage(ctx) {
           hintKey: 'passwordPasteEnabled_hint_cantTell',
           params: {}
         },
+        ...((namedBlock || alertsAndCancels) && !splitCode
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.',
+                signals: [
+                  { signal: 'handler-names-block', value: namedBlock },
+                  { signal: 'handler-alerts-and-cancels', value: alertsAndCancels },
+                  { signal: 'split-code-box', value: false }
+                ],
+                caution:
+                  'A function’s name can mislead; what it does is in script the markup does not carry.',
+                i18n: {
+                  whyKey: 'passwordPasteEnabled_lean_why_opaque',
+                  cautionKey: 'passwordPasteEnabled_lean_caution_opaque'
+                }
+              }
+            }
+          : {}),
         data: {
           visibilityFilter: eligInfo,
           details: { reasonCode: 'PASTE_HANDLER_OPAQUE', handler: normalizeWs(handler) }

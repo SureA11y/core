@@ -159,3 +159,27 @@ test(`${RULE_ID}: an upper-case role resolves too: role="COLUMNHEADER" is a head
   );
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: an empty header over data leans fail; the corner cell and one holding an svg have none`, () => {
+  const run = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell'
+    ).occurrences;
+  const empty = run(
+    '<table><tr><th>Name</th><th></th></tr><tr><td>Ann</td><td>12</td></tr></table>'
+  );
+  assert.equal(empty[0].data.details.reasonCode, 'TABLE_HEADER_EMPTY');
+  assert.equal(empty[0].lean.toward, 'fail');
+  assert.equal(empty[0].lean.i18n.whyKey, 'emptyTableHeader_lean_why_empty');
+  const corner = run(
+    '<table><tr><th></th><th>Q1</th></tr><tr><th>North</th><td>1</td></tr><tr><th>South</th><td>2</td></tr></table>'
+  );
+  assert.equal(corner[0].data.details.reasonCode, 'TABLE_HEADER_EMPTY');
+  assert.equal(corner[0].lean, undefined);
+  const svg = run(
+    '<table><tr><th>Name</th><th><svg><title>Sort</title></svg></th></tr><tr><td>Ann</td><td>12</td></tr></table>'
+  );
+  assert.equal(svg[0].lean, undefined);
+});

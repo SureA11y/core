@@ -266,3 +266,52 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/password-paste-enabled-all-sc
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+function leans(body) {
+  return assertRule(scan(body), RULE_ID, 'cantTell').occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: a handler that only cancels leans fail, with the cantTell message keys`, () => {
+  const rule = assertRule(
+    scan('<input type="password" onpaste="return false">'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(
+    rule.occurrences[0].i18n.summaryKey,
+    'passwordPasteEnabled_summary_cantTell_cancelled'
+  );
+  assert.equal(rule.occurrences[0].i18n.hintKey, 'passwordPasteEnabled_hint_cantTell_cancelled');
+  assert.deepEqual(leans('<input type="password" onpaste="return false">'), [
+    ['PASTE_CANCELLED', 'fail', 'passwordPasteEnabled_lean_why_cancelled']
+  ]);
+});
+
+test(`${RULE_ID}: a box of a split one-time code has no lean`, () => {
+  const box = (n) =>
+    `<input autocomplete="one-time-code" maxlength="1" aria-label="Digit ${n}" onpaste="return false">`;
+  const codes = leans(`<div>${box(1)}${box(2)}${box(3)}${box(4)}</div>`);
+  assert.equal(codes.length, 4);
+  assert.ok(codes.every(([code, toward]) => code === 'PASTE_CANCELLED' && toward === null));
+});
+
+test(`${RULE_ID}: an opaque handler leans fail only when its words say it blocks pasting`, () => {
+  assert.deepEqual(
+    leans(
+      '<input type="password" onpaste="return disablePaste(event)">' +
+        '<input type="password" onpaste="alert(\'Pasting is not allowed\'); return false">' +
+        '<input type="password" onpaste="handlePaste(event)">' +
+        '<input type="password" onpaste="casinoPaste(event)">'
+    ),
+    [
+      ['PASTE_HANDLER_OPAQUE', 'fail', 'passwordPasteEnabled_lean_why_opaque'],
+      ['PASTE_HANDLER_OPAQUE', 'fail', 'passwordPasteEnabled_lean_why_opaque'],
+      ['PASTE_HANDLER_OPAQUE', null, null],
+      ['PASTE_HANDLER_OPAQUE', null, null]
+    ]
+  );
+});

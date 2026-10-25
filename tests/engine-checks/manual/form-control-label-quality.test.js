@@ -326,3 +326,53 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+function leans(body) {
+  return assertRule(
+    runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'cantTell'
+  ).occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: a template-only placeholder label leans fail; a word that can be a real name has no lean`, () => {
+  assert.deepEqual(leans('<label>Enter text <input></label><label>Value <input></label>'), [
+    ['PLACEHOLDER_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_placeholder'],
+    ['PLACEHOLDER_LABEL_TEXT', null, null]
+  ]);
+});
+
+test(`${RULE_ID}: duplicate labels lean pass for copies of one widget, fail for distinct fields of one form`, () => {
+  const search = '<form action="/search"><label>Search <input name="q"></label></form>';
+  assert.deepEqual(leans(search + '<p>Content</p>' + search), [
+    ['DUPLICATE_LABEL_TEXT', 'pass', 'formControlLabelQuality_lean_why_duplicateWidget'],
+    ['DUPLICATE_LABEL_TEXT', 'pass', 'formControlLabelQuality_lean_why_duplicateWidget']
+  ]);
+  assert.deepEqual(
+    leans(
+      '<form><label>Name <input name="ship"></label><label>Name <input name="bill"></label></form>'
+    ),
+    [
+      ['DUPLICATE_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_duplicateFields'],
+      ['DUPLICATE_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_duplicateFields']
+    ]
+  );
+  // No form owner, or radio buttons: no lean.
+  assert.deepEqual(leans('<label>Phone <input></label><label>Phone <input></label>'), [
+    ['DUPLICATE_LABEL_TEXT', null, null],
+    ['DUPLICATE_LABEL_TEXT', null, null]
+  ]);
+  assert.deepEqual(
+    leans(
+      '<form><label>Yes <input type="radio" name="a"></label><label>Yes <input type="radio" name="b"></label></form>'
+    ),
+    [
+      ['DUPLICATE_LABEL_TEXT', null, null],
+      ['DUPLICATE_LABEL_TEXT', null, null]
+    ]
+  );
+});

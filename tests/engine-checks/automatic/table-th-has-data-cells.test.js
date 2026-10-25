@@ -217,3 +217,28 @@ test(`${RULE_ID}: a table with no data cell still fails, beside a question in an
   assert.equal(byId('f').occurrenceOutcome, 'fail');
   assert.equal(byId('q').occurrenceOutcome, 'cantTell');
 });
+
+test(`${RULE_ID}: a header with no cell after it leans fail; one over a column of headers has no lean`, () => {
+  const run = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell'
+    ).occurrences;
+  const ragged = run(
+    '<table><tr><th>A</th><th>B</th><th>C</th></tr><tr><td>1</td><td>2</td></tr></table>'
+  );
+  assert.equal(ragged.length, 1);
+  assert.equal(ragged[0].lean.toward, 'fail');
+  assert.equal(ragged[0].lean.i18n.whyKey, 'tableThHasDataCells_lean_why_unassigned');
+  const headed = run(
+    '<table><tr><th>A</th><th>B</th></tr><tr><td>1</td><th scope="col">2</th></tr></table>'
+  );
+  assert.equal(headed[0].data.details.reasonCode, 'TABLE_TH_NO_ASSIGNED_CELL');
+  assert.equal(headed[0].lean, undefined);
+  // Cells that name their headers: no lean.
+  const named = run(
+    '<table><tr><th id="a">A</th><th>B</th><th>C</th></tr><tr><td headers="a">1</td><td>2</td></tr></table>'
+  );
+  assert.ok(named.every((o) => o.lean === undefined));
+});

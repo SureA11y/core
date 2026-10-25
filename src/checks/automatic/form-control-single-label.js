@@ -44,9 +44,12 @@
  *   - `FORM_FIELD_MULTIPLE_LABELS` (cantTell): two or more labels with text
  *     name the field, and no aria-label or aria-labelledby overrides them;
  *     browsers join them into one name, which a person judges.
+ *     It leans pass when the labels repeat each other (one's words appear
+ *     in another) or the extra ones only mark the field as required.
  *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2.
  *   - `FORM_FIELD_EXTRA_EMPTY_LABEL` (cantTell): one label with text and one
  *     or more empty label associations, with no override.
+ *     It leans pass: browsers join the labels' text, so the empty one adds nothing.
  *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled).
  * @implementation-notes
  * - Distinct, atomic decision from form-control-programmatic-label-present
@@ -132,6 +135,56 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
+  // The text a label gives the control's name: its own aria name, else its
+  // content without the control, else its title.
+  function labelText(lab, control) {
+    try {
+      const aria = getAriaNameInfo ? getAriaNameInfo(lab, null, {}) : null;
+      if (aria && aria.present && String(aria.value || '').trim()) return String(aria.value);
+    } catch {}
+    try {
+      const info = helpers.getContentNameInfo(lab, null, { skipNode: control });
+      if (info && info.present && String(info.value || '').trim()) return String(info.value);
+    } catch {}
+    return String(dom.getAttribute(lab, 'title') || '');
+  }
+  // Letters and digits only, lower case, single-spaced.
+  function normalize(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+  // A label that only marks the field as required or optional ("*",
+  // "(required)"), in the languages the dictionaries cover.
+  const MARKERS = new Set([
+    'required',
+    'optional',
+    'mandatory',
+    'req',
+    'obligatoire',
+    'facultatif',
+    'requis',
+    'erforderlich',
+    'pflichtfeld',
+    'obligatorio',
+    'requerido',
+    'opcional',
+    '必須',
+    '任意'
+  ]);
+  const isMarker = (norm) => norm === '' || MARKERS.has(norm);
+  // Whether the joined name only repeats itself: after leaving out marker
+  // labels, every label's words appear, as a run, in the longest one.
+  function labelsRepeat(texts) {
+    const words = texts.map(normalize).filter((t) => !isMarker(t));
+    const markers = texts.length - words.length;
+    if (!words.length) return null;
+    const longest = words.reduce((a, b) => (b.length > a.length ? b : a));
+    const repeat = words.every((w) => (' ' + longest + ' ').indexOf(' ' + w + ' ') !== -1);
+    return repeat ? { markers, distinct: new Set(words).size } : null;
+  }
+
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
@@ -173,6 +226,9 @@ function runInPage(ctx) {
     const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
+      // Labels that repeat each other, or a marker such as "required",
+      // leave the joined name clear, if wordy.
+      const repeat = labelsRepeat(contributing.map((lab) => labelText(lab, el)));
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This form control is associated with more than one <label>.',
@@ -188,6 +244,24 @@ function runInPage(ctx) {
             needed: 'Whether the name the labels make together is clear.',
             evidence: { element: tag, labelCount: contributing.length }
           },
+          ...(repeat
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The labels repeat each other or only mark the field as required, so the joined name stays clear.',
+                  signals: [
+                    { signal: 'labels-repeat-each-other', value: true },
+                    { signal: 'marker-only-labels', value: repeat.markers }
+                  ],
+                  caution:
+                    'A repeated name such as "Email Email address" is wordy; a person judges whether it is still clear.',
+                  i18n: {
+                    whyKey: 'formControlSingleLabel_lean_why_competing',
+                    cautionKey: 'formControlSingleLabel_lean_caution_competing'
+                  }
+                }
+              }
+            : {}),
           data: {
             details: {
               reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
@@ -216,6 +290,18 @@ function runInPage(ctx) {
               element: tag,
               labelCount: eligibleLabels.size,
               contributingLabelCount: contributing.length
+            }
+          },
+          // Browsers join the labels' text, so an empty one adds nothing.
+          lean: {
+            toward: 'pass',
+            why: 'Browsers join the text of a field’s labels, so the empty label adds nothing and the name is the real label’s text.',
+            signals: [{ signal: 'contributing-label-count', value: contributing.length }],
+            caution:
+              'A user agent that reads only the first label may pick the empty one; a script may fill it in.',
+            i18n: {
+              whyKey: 'formControlSingleLabel_lean_why',
+              cautionKey: 'formControlSingleLabel_lean_caution'
             }
           },
           data: {

@@ -43,6 +43,10 @@
  *   - `DUPLICATE_LABEL_TEXT` (cantTell): the field's visible label is the same
  *     as another field's, with no visible legend, heading or row text telling
  *     them apart.
+ *     It leans pass when each field is in a form of its own with the same
+ *     name, type and action (copies of one widget), and fail when they are
+ *     fields of one form with different names (not radio buttons or
+ *     checkboxes); otherwise no lean.
  *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
  *   - `PARTIALLY_HIDDEN_LABEL` (cantTell): part of the field's programmatic
  *     label is hidden from sight, so the visible part may not identify the
@@ -51,6 +55,9 @@
  *   - `PLACEHOLDER_LABEL_TEXT` (cantTell): the field's visible label is
  *     generic placeholder text, such as "label" or "enter text", rather than a
  *     description of the field.
+ *     It leans fail when the label is a phrase only a template leaves
+ *     ("label", "enter text", "untitled"); words that can be a real field's
+ *     name ("text", "value", "test") have no lean.
  *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
@@ -256,6 +263,73 @@ function runInPage(ctx) {
       '未定',
       'テスト',
       'サンプル'
+    ])
+  };
+
+  // The part of each list that only a template leaves behind: words no
+  // field is really called. The rest ("Text", "Value", "Test") name real
+  // fields in key/value editors, messaging and test tools.
+  const TEMPLATE_ONLY_LABEL_TEXT = {
+    en: new Set([
+      'label',
+      'field',
+      'form field',
+      'input field',
+      'text field',
+      'enter text',
+      'type here',
+      'placeholder',
+      'untitled',
+      'tbd',
+      'todo',
+      'to do',
+      'n/a'
+    ]),
+    de: new Set([
+      'beschriftung',
+      'label',
+      'feld',
+      'formularfeld',
+      'eingabefeld',
+      'textfeld',
+      'text eingeben',
+      'hier eingeben',
+      'platzhalter',
+      'unbenannt'
+    ]),
+    es: new Set([
+      'etiqueta',
+      'campo',
+      'campo de formulario',
+      'campo de entrada',
+      'campo de texto',
+      'introduzca texto',
+      'escriba aquí',
+      'marcador de posición',
+      'sin título'
+    ]),
+    fr: new Set([
+      'libellé',
+      'étiquette',
+      'champ',
+      'champ de formulaire',
+      'champ de saisie',
+      'champ de texte',
+      'saisir du texte',
+      'saisissez ici',
+      'espace réservé',
+      'sans titre'
+    ]),
+    ja: new Set([
+      'ラベル',
+      'フィールド',
+      '入力欄',
+      '入力フィールド',
+      'テキストフィールド',
+      'ここに入力',
+      'プレースホルダー',
+      '無題',
+      '未定'
     ])
   };
 
@@ -726,6 +800,56 @@ function runInPage(ctx) {
     else byKey.set(field.key, [field]);
   }
 
+  // A native field's form owner and shape, read from attributes (a form's
+  // `action` and `name` properties can be shadowed by its own fields).
+  function attr(el, name) {
+    try {
+      return normalizeWs(dom.getAttribute(el, name));
+    } catch {
+      return '';
+    }
+  }
+  function shapeOf(el) {
+    let form = null;
+    try {
+      form = dom.get(el, 'form') || null;
+    } catch {}
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = tag === 'input' ? attr(el, 'type').toLowerCase() || 'text' : tag;
+    return { form, name: attr(el, 'name'), type, action: form ? attr(form, 'action') : '' };
+  }
+
+  // Which way a set of fields sharing a label points: copies of one widget
+  // (each in a form of its own, same name, type and action: a header and a
+  // footer search box) serve one purpose; distinct fields of one form
+  // (different names) with nothing visible apart are G131's shape. Radio
+  // buttons and checkboxes are left out: their question is often in text
+  // the rule does not read.
+  function duplicateLean(shared) {
+    const shapes = shared.map((f) => shapeOf(f.el));
+    if (shapes.some((x) => !x.form)) return null;
+    const forms = new Set(shapes.map((x) => x.form));
+    const first = shapes[0];
+    if (
+      forms.size === shapes.length &&
+      shapes.every(
+        (x) => x.name === first.name && x.type === first.type && x.action === first.action
+      )
+    ) {
+      return { toward: 'pass', sameForm: false, sameName: true };
+    }
+    const names = shapes.map((x) => x.name);
+    if (
+      forms.size === 1 &&
+      names.every(Boolean) &&
+      new Set(names).size === names.length &&
+      shapes.every((x) => x.type !== 'radio' && x.type !== 'checkbox')
+    ) {
+      return { toward: 'fail', sameForm: true, sameName: false };
+    }
+    return null;
+  }
+
   const occurrences = [];
 
   for (const field of fields) {
@@ -745,6 +869,45 @@ function runInPage(ctx) {
       : isDuplicate
         ? 'DUPLICATE_LABEL_TEXT'
         : 'PARTIALLY_HIDDEN_LABEL';
+
+    let lean = null;
+    if (reasonCode === 'PLACEHOLDER_LABEL_TEXT') {
+      if (inPhraseList(TEMPLATE_ONLY_LABEL_TEXT, field.normalized, primaryLangOf(field.el))) {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a phrase only a template leaves behind, which names no field’s purpose.',
+          signals: [{ signal: 'template-only-phrase', value: true }],
+          caution: 'A tool page, such as a form builder, can have a field really called "Label".',
+          i18n: {
+            whyKey: 'formControlLabelQuality_lean_why_placeholder',
+            cautionKey: 'formControlLabelQuality_lean_caution_placeholder'
+          }
+        };
+      }
+    } else if (reasonCode === 'DUPLICATE_LABEL_TEXT') {
+      const d = duplicateLean(shared);
+      if (d) {
+        lean = {
+          toward: d.toward,
+          why:
+            d.toward === 'pass'
+              ? 'The fields sharing the label are copies of one widget, each in its own form with the same name, type and action, so they serve the same purpose.'
+              : 'The fields sharing the label are different fields of one form, with different names, and nothing visible tells them apart.',
+          signals: [
+            { signal: 'same-form-owner', value: d.sameForm },
+            { signal: 'same-name-attribute', value: d.sameName }
+          ],
+          caution:
+            d.toward === 'pass'
+              ? 'Copies of a widget can still differ in purpose if their forms send different hidden values.'
+              : 'Visible text the rule does not read, such as a caption in a styled block, may tell the fields apart.',
+          i18n: {
+            whyKey: `formControlLabelQuality_lean_why_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`,
+            cautionKey: `formControlLabelQuality_lean_caution_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`
+          }
+        };
+      }
+    }
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -793,6 +956,7 @@ function runInPage(ctx) {
             hiddenCount: String(field.hiddenParts)
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode,

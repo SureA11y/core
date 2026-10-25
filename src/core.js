@@ -34408,6 +34408,12 @@ const RUNTIME_CATALOG = {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
+      "formControlLabelQuality_lean_why_placeholder": "Die Beschriftung ist eine Formulierung, die nur eine Vorlage hinterlässt und keinen Zweck eines Feldes nennt.",
+      "formControlLabelQuality_lean_caution_placeholder": "Eine Werkzeugseite, etwa ein Formulareditor, kann ein Feld haben, das wirklich „Beschriftung“ heißt.",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Die Felder mit derselben Beschriftung sind Kopien eines Widgets, jede in einem eigenen Formular mit gleichem Namen, Typ und gleicher Aktion; sie dienen demselben Zweck.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Kopien eines Widgets können sich dennoch im Zweck unterscheiden, wenn ihre Formulare unterschiedliche versteckte Werte senden.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Die Felder mit derselben Beschriftung sind verschiedene Felder eines Formulars mit unterschiedlichen Namen, und nichts Sichtbares unterscheidet sie.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Sichtbarer Text, den die Regel nicht liest, etwa eine Überschrift in einem gestalteten Block, kann die Felder unterscheiden.",
       "formControl_programmaticLabelQuality_title": "Formularelemente sollten eine auf dem Bildschirm sichtbare Beschriftung haben",
       "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren zugänglicher Name von placeholder, title, aria-label oder von aria-labelledby stammt, das nur auf verborgenen Text verweist; keines davon ist eine auf dem Bildschirm sichtbare Beschriftung. Bevorzugen Sie ein sichtbares <label> oder aria-labelledby, das auf sichtbaren Text verweist.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Dieses Formularfeld ist nur durch sein {{method}}-Attribut beschriftet.",
@@ -34691,6 +34697,16 @@ const RUNTIME_CATALOG = {
       "labelInName_hint_cantTell": "Prüfen Sie von Hand, ob die beiden Formulierungen übereinstimmen; am Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) wird möglicherweise als Symbol oder Icon dargestellt statt als wörtlicher Text und muss daher nicht zwingend im zugänglichen Namen (aus {{nameMechanism}}) enthalten sein.",
       "labelInName_hint_cantTell_symbolic": "Prüfen Sie manuell: Wird der sichtbare Text als Icon oder Symbol dargestellt, liegt kein Fehler vor; wird er als wörtliche Wörter dargestellt, ergänzen Sie den zugänglichen Namen entsprechend.",
+      "labelInName_lean_why_hyphenation": "Der Name enthält die Wörter der Beschriftung, sobald Bindestriche ignoriert werden; die Bedeutung der Beschriftung bleibt gleich.",
+      "labelInName_lean_caution_hyphenation": "Bei Spracheingabe muss das Wort mit Bindestrich womöglich anders gesprochen werden („E Mail“ statt „Email“).",
+      "labelInName_lean_why_abbreviation": "Jedes abgekürzte Wort der Beschriftung ist der Anfang des passenden Wortes im Namen, wie bei einer üblichen Abkürzung („Str.“ für „Straße“).",
+      "labelInName_lean_caution_abbreviation": "Menschen mit Spracheingabe sagen womöglich die Abkürzung, wie sie angezeigt wird, statt des ganzen Wortes.",
+      "labelInName_lean_why_iconFont": "Die Beschriftung ist eine Ligatur oder ein Symbolcode einer Icon-Schrift und wird als Icon gezeichnet; sie zeigt keine lesbaren Wörter.",
+      "labelInName_lean_caution_iconFont": "Lädt die Schrift für jemanden nicht, wird das Wort selbst gezeichnet und zur sichtbaren Beschriftung.",
+      "labelInName_lean_why_symbol": "Die Beschriftung ist ein einzelnes Symbol oder ein „X“, das für ein Icon steht und nicht für zu sprechende Wörter.",
+      "labelInName_lean_caution_symbol": "Manche sagen dennoch das Zeichen („X“), um das Bedienelement zu erreichen.",
+      "labelInName_lean_why_digit": "Die Beschriftung ist eine Ziffer, also Text, den Menschen mit Spracheingabe sagen würden, und der Name enthält sie nicht.",
+      "labelInName_lean_caution_digit": "Der Name schreibt die Zahl womöglich in Worten aus, was manche Spracheingabe erkennt.",
       "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
       "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
@@ -34807,6 +34823,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_hint_fail": "Fügen Sie der Tabelle Datenzellen (<td>) hinzu, oder entfernen Sie die Kopfzellen, wenn die Tabelle keine Daten enthält.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Dieser Kopfzelle ist keine Datenzelle der Tabelle zugeordnet.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Prüfen Sie, ob der Tabelle die Zellen fehlen, die diese Kopfzelle beschreibt. Wenn Zellen ihre Kopfzellen mit einem headers-Attribut angeben, nehmen Sie diese Kopfzelle dort auf, wo sie zutrifft.",
+      "tableThHasDataCells_lean_why_unassigned": "Dort, wo diese Kopfzelle gilt, folgt keine Zelle, und keine Zelle der Tabelle nennt ihre Kopfzellen; die Kopfzelle beschreibt daher nichts.",
+      "tableThHasDataCells_lean_caution_unassigned": "Ein Skript kann die fehlenden Zellen später hinzufügen.",
       "ariaHiddenBody_title": "Das <body>-Element des Dokuments darf nicht aria-hidden sein",
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
@@ -34890,6 +34908,10 @@ const RUNTIME_CATALOG = {
       "formControlSingleLabel_hint_cantTell_competing": "Browser fügen die Beschriftungen zu einem Namen zusammen. Prüfen Sie, ob er noch verständlich ist, oder behalten Sie ein <label> pro Feld.",
       "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein <label> mit Text und ein zusätzliches leeres; prüfen Sie, wie Screenreader es ansagen.",
       "formControlSingleLabel_hint_cantTell": "Entfernen Sie das leere <label>, damit das Feld genau eines hat.",
+      "formControlSingleLabel_lean_why_competing": "Die Beschriftungen wiederholen einander oder kennzeichnen das Feld nur als Pflichtfeld; der zusammengesetzte Name bleibt daher klar.",
+      "formControlSingleLabel_lean_caution_competing": "Ein wiederholter Name wie „E-Mail E-Mail-Adresse“ ist umständlich; ein Mensch beurteilt, ob er noch klar ist.",
+      "formControlSingleLabel_lean_why": "Browser verbinden den Text der Beschriftungen eines Feldes; die leere Beschriftung fügt nichts hinzu und der Name ist der Text der eigentlichen Beschriftung.",
+      "formControlSingleLabel_lean_caution": "Ein User Agent, der nur die erste Beschriftung liest, kann die leere wählen; ein Skript kann sie auch füllen.",
       "nestedInteractiveControlsAbsent_title": "Interaktive Bedienelemente dürfen nicht verschachtelt sein",
       "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
       "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält verschachtelte interaktive Bedienelemente: {{nestedElements}}.",
@@ -34978,6 +35000,8 @@ const RUNTIME_CATALOG = {
       "scopeAttrValid_description": "Prüft, ob scope=\"…\" row, col, rowgroup oder colgroup ist.",
       "scopeAttrValid_summary_cantTell": "Dieser scope-Attributwert wird nicht erkannt.",
       "scopeAttrValid_hint_cantTell": "Verwenden Sie row, col, rowgroup oder colgroup.",
+      "scopeAttrValid_lean_why": "Der scope-Wert ist keines der vier Schlüsselwörter und gibt daher keine Richtung der Kopfzelle an.",
+      "scopeAttrValid_lean_caution": "Browser erraten dann die Richtung, was bei einer Kopfzelle in der ersten Zeile oder Spalte meist stimmt.",
       "tabindex_title": "tabindex sollte nicht größer als 0 sein",
       "tabindex_description": "Prüft, ob tabindex-Werte 0 oder negativ sind, nicht eine positive Zahl.",
       "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
@@ -34989,6 +35013,8 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
       "emptyTableHeader_lean_why_notVisible": "Die Kopfzelle hat keinen sichtbaren Text; ihr einziger Name stammt aus ARIA, den manche Screenreader bei Kopfzellen ignorieren.",
+      "emptyTableHeader_lean_why_empty": "Die Kopfzelle ist leer, enthält nichts, das ihr einen Namen geben könnte, und steht über Datenzellen mit Text.",
+      "emptyTableHeader_lean_caution_empty": "Eine Kopfzelle, die nur per CSS dargestellt wird (Hintergrundbild oder generierter Inhalt), hat keinen Text auf der Seite.",
       "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
       "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
@@ -35028,10 +35054,14 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_hint_fail": "Verwenden Sie \"on\", \"off\" oder gültige Autofill-Token, etwa \"shipping postal-code\" oder \"cc-number\".",
       "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
       "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
-      "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
-      "passwordPasteEnabled_hint_fail": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
       "passwordPasteEnabled_summary_cantTell": "Dieses Authentifizierungsfeld hat einen Einfügehandler; ob er den Vorgang abbricht, ließ sich nicht ermitteln.",
       "passwordPasteEnabled_hint_cantTell": "Prüfen Sie von Hand, dass sich weiterhin in das Feld einfügen lässt, damit ein Passwortmanager oder die Zwischenablage es ausfüllen kann.",
+      "passwordPasteEnabled_lean_why_cancelled": "Der Einfügehandler des Feldes bricht das Einfügen nur ab; das Einfügen ist daher wahrscheinlich blockiert.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Ein per Skript hinzugefügter Listener am Feld oder um es herum kann den eingefügten Text einsetzen, nachdem der Handler abgebrochen hat.",
+      "passwordPasteEnabled_lean_why_opaque": "Der Einfügehandler sagt, was er tut: Er ruft eine Funktion auf, deren Name das Blockieren des Einfügens nennt, oder zeigt eine Meldung und bricht das Einfügen ab.",
+      "passwordPasteEnabled_lean_caution_opaque": "Der Name einer Funktion kann täuschen; was sie tut, steht in Skript, das das Markup nicht enthält.",
       "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
       "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
       "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -35177,6 +35207,14 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
       "invalidFieldErrorMessage_lean_why_hidden": "Die mit dem Feld verknüpfte Fehlermeldung ist ausgeblendet; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "Die mit dem Feld verknüpfte Fehlermeldung ist vor assistiven Technologien verborgen; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
+      "invalidFieldErrorMessage_lean_why_empty": "Die mit dem Feld verknüpfte Fehlermeldung ist leer und das Feld hat keine Beschreibung; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
+      "invalidFieldErrorMessage_lean_caution_empty": "Der Fehler kann in der Beschriftung oder in Text neben dem Feld stehen; eine Vorlage kann aria-invalid setzen, bevor etwas eingegeben wurde.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "Die Beschreibung des Feldes ist eine Live-Region mit Text, in der Seiten den Fehler üblicherweise ankündigen.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Eine Live-Region kann auch einen Hinweis statt des Fehlers enthalten.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "Der Text der Fehlermeldung ist vor assistiven Technologien verborgen und das Feld hat keine Beschreibung; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Eine separate Live-Ankündigung, die die Regel nicht sieht, kann sie informieren.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "Das Feld ist jetzt als ungültig markiert, aber die genannte Fehlermeldung ist nicht auf der Seite und das Feld hat keine Beschreibung.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Ein Scan während einer Aktualisierung der Seite kann das Feld erfassen, bevor ein Skript die Meldung hinzufügt.",
       "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
       "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
@@ -35219,12 +35257,18 @@ const RUNTIME_CATALOG = {
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
       "tableFakeCaption_hint_cantTell": "Wenn diese Zelle die Tabelle beschreiben soll, verwenden Sie ein echtes <caption>-Element anstelle einer einzelnen Zelle in der ersten Zeile.",
+      "tableFakeCaption_lean_why": "Die einzelne Zelle der ersten Zeile erstreckt sich über die ganze Tabelle, und keine andere Zeile besteht aus nur einer Zelle: das Muster eines als Zelle dargestellten Titels.",
+      "tableFakeCaption_lean_caution": "Eine erste Zeile über die volle Breite kann auch einer einzigen Spaltengruppe als Kopf dienen.",
       "tdHasHeader_title": "Datenzellen in großen Tabellen müssen eine zugeordnete Kopfzelle haben",
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
       "tdHasHeader_summary_cantTell_noHeaders": "Diese Tabelle hat keine Kopfzellen. Wenn sie Daten enthält, haben ihre Zellen keine Überschriften.",
       "tdHasHeader_hint_cantTell_noHeaders": "Wenn die Tabelle Daten enthält, kennzeichnen Sie ihre Kopfzellen mit <th> oder geben Sie ihren Zellen ein headers-Attribut. Dient sie nur dem Layout, geben Sie ihr role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "Die Tabelle wirkt wie eine Datentabelle: Die meisten Zellen sind Zahlen, oder sie hat eine Beschriftung, einen Tabellenkopf oder eine erste Zeile oder Spalte, die wie Kopfzellen dargestellt ist.",
+      "tdHasHeader_lean_caution_data": "Auch eine Layouttabelle kann Zahlen enthalten, etwa Preise neben Text.",
+      "tdHasHeader_lean_why_layout": "Die Tabelle wirkt wie ein Layout: Ihre Zellen enthalten eine verschachtelte Tabelle, Formularelemente, Bilder oder Textblöcke, und nichts weist sie als Datentabelle aus.",
+      "tdHasHeader_lean_caution_layout": "Auch eine Datentabelle kann Bilder oder Bedienelemente in ihren Zellen enthalten, etwa eine Produktliste.",
       "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
@@ -35508,6 +35552,12 @@ const RUNTIME_CATALOG = {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.",
+      "formControlLabelQuality_lean_why_placeholder": "The label is a phrase only a template leaves behind, which names no field’s purpose.",
+      "formControlLabelQuality_lean_caution_placeholder": "A tool page, such as a form builder, can have a field really called \"Label\".",
+      "formControlLabelQuality_lean_why_duplicateWidget": "The fields sharing the label are copies of one widget, each in its own form with the same name, type and action, so they serve the same purpose.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Copies of a widget can still differ in purpose if their forms send different hidden values.",
+      "formControlLabelQuality_lean_why_duplicateFields": "The fields sharing the label are different fields of one form, with different names, and nothing visible tells them apart.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Visible text the rule does not read, such as a caption in a styled block, may tell the fields apart.",
       "formControl_programmaticLabelQuality_title": "Form controls should have a label shown on screen",
       "formControl_programmaticLabelQuality_description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
       "formControl_programmaticLabelQuality_summary_cantTell": "This form field is labelled only by its {{method}} attribute.",
@@ -35791,6 +35841,16 @@ const RUNTIME_CATALOG = {
       "labelInName_hint_cantTell": "Check by hand whether the two wordings match; the markup can't tell an intended abbreviation from a mismatch.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) may render as an icon or symbol rather than literal text, so it may not need to appear in the accessible name (from {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Check by hand: if the visible text renders as an icon or symbol, this is not a defect; if it renders as literal words, update the accessible name to include them.",
+      "labelInName_lean_why_hyphenation": "The name holds the label’s words once hyphens are ignored, so the label’s meaning is unchanged.",
+      "labelInName_lean_caution_hyphenation": "Speech input may need the hyphenated word said differently (\"e mail\" against \"email\").",
+      "labelInName_lean_why_abbreviation": "Each shortened word in the label starts the matching word in the name, as a conventional abbreviation does (\"Ave.\" for \"Avenue\").",
+      "labelInName_lean_caution_abbreviation": "A speech user may say the abbreviation as shown rather than the full word.",
+      "labelInName_lean_why_iconFont": "The label is an icon font’s ligature or symbol code, drawn as an icon, so it shows no readable words.",
+      "labelInName_lean_caution_iconFont": "If the font fails to load for a user, the word itself is drawn and becomes a visible label.",
+      "labelInName_lean_why_symbol": "The label is a single symbol or an \"X\", which stands for an icon rather than words to say.",
+      "labelInName_lean_caution_symbol": "A user may still say the character (\"X\") to reach the control.",
+      "labelInName_lean_why_digit": "The label is a digit, text a speech user would say, and the name does not contain it.",
+      "labelInName_lean_caution_digit": "The name may spell the number out in words, which some speech input matches.",
       "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
       "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
@@ -35907,6 +35967,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_hint_fail": "Add data cells (<td>) to the table, or remove the header cells if the table has no data.",
       "tableThHasDataCells_summary_cantTell_unassigned": "No data cell in this table is assigned to this header cell.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.",
+      "tableThHasDataCells_lean_why_unassigned": "No cell follows this header where it applies, and no cell in the table names its headers, so the header describes nothing.",
+      "tableThHasDataCells_lean_caution_unassigned": "A script may add the missing cells later.",
       "ariaHiddenBody_title": "The document <body> must not be aria-hidden",
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
@@ -35990,6 +36052,10 @@ const RUNTIME_CATALOG = {
       "formControlSingleLabel_hint_cantTell_competing": "Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.",
       "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one <label> with text plus an extra empty one; check how screen readers announce it.",
       "formControlSingleLabel_hint_cantTell": "Remove the empty <label> so the field has exactly one.",
+      "formControlSingleLabel_lean_why_competing": "The labels repeat each other or only mark the field as required, so the joined name stays clear.",
+      "formControlSingleLabel_lean_caution_competing": "A repeated name such as \"Email Email address\" is wordy; a person judges whether it is still clear.",
+      "formControlSingleLabel_lean_why": "Browsers join the text of a field’s labels, so the empty label adds nothing and the name is the real label’s text.",
+      "formControlSingleLabel_lean_caution": "A user agent that reads only the first label may pick the empty one; a script may fill it in.",
       "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
       "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
       "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> has interactive controls nested inside it: {{nestedElements}}.",
@@ -36078,6 +36144,8 @@ const RUNTIME_CATALOG = {
       "scopeAttrValid_description": "Checks that scope=\"...\" is one of row, col, rowgroup, or colgroup.",
       "scopeAttrValid_summary_cantTell": "This scope attribute value is not recognized.",
       "scopeAttrValid_hint_cantTell": "Use row, col, rowgroup or colgroup.",
+      "scopeAttrValid_lean_why": "The scope value is not one of the four keywords, so it declares no header direction.",
+      "scopeAttrValid_lean_caution": "Browsers then guess the direction, which is usually right for a header in the first row or column.",
       "tabindex_title": "tabindex should not be greater than 0",
       "tabindex_description": "Checks that tabindex values are 0 or negative, not a positive number.",
       "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
@@ -36089,6 +36157,8 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
       "emptyTableHeader_lean_why_notVisible": "The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.",
+      "emptyTableHeader_lean_why_empty": "The header cell is empty, holds nothing that could name it, and heads data cells with text.",
+      "emptyTableHeader_lean_caution_empty": "A header drawn only through CSS (a background image or generated content) has no text in the page.",
       "labelTitleOnly_title": "Title-only form labels (deprecated)",
       "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
@@ -36128,10 +36198,14 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_hint_fail": "Use \"on\", \"off\", or valid autofill tokens, such as \"shipping postal-code\" or \"cc-number\".",
       "passwordPasteEnabled_title": "Authentication fields must not block pasting",
       "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
-      "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
-      "passwordPasteEnabled_hint_fail": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "This authentication field has a paste handler whose only effect is to cancel the paste.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
       "passwordPasteEnabled_summary_cantTell": "This authentication field has a paste handler, and whether it cancels pasting could not be determined.",
       "passwordPasteEnabled_hint_cantTell": "Check by hand that pasting into the field still works, so a password manager or the clipboard can fill it.",
+      "passwordPasteEnabled_lean_why_cancelled": "The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.",
+      "passwordPasteEnabled_lean_caution_cancelled": "A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.",
+      "passwordPasteEnabled_lean_why_opaque": "The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.",
+      "passwordPasteEnabled_lean_caution_opaque": "A function’s name can mislead; what it does is in script the markup does not carry.",
       "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
       "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
       "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -36277,6 +36351,14 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "The error message tied to the field is hidden, so the error is probably not told.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.",
+      "invalidFieldErrorMessage_lean_why_empty": "The error message tied to the field is empty, and the field has no description, so the error is probably not told.",
+      "invalidFieldErrorMessage_lean_caution_empty": "The error may be written in the label or in text next to the field; a template may set aria-invalid before anything is entered.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "The field’s description is a live region with text, where pages usually announce the error.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "A live region can also hold a hint rather than the error.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "The error message’s text is hidden from assistive technology, and the field has no description, so screen reader users are probably not told the error.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "A separate live announcement the rule cannot see may tell them.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "The field is marked invalid now, but the error message it names is not in the page and it has no description.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "A scan taken while the page updates may catch the field before a script adds the message.",
       "labelForValid_title": "A label’s for attribute should name a control it can label",
       "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
@@ -36319,12 +36401,18 @@ const RUNTIME_CATALOG = {
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
       "tableFakeCaption_hint_cantTell": "If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.",
+      "tableFakeCaption_lean_why": "The lone first-row cell spans the whole table, and no other row is a single cell: the pattern of a title drawn as a cell.",
+      "tableFakeCaption_lean_caution": "A full-width first row can also head a single group of columns.",
       "tdHasHeader_title": "Data cells in large tables must have an associated header",
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
       "tdHasHeader_summary_cantTell_noHeaders": "This table has no header cells. If it holds data, its cells have no headers.",
       "tdHasHeader_hint_cantTell_noHeaders": "If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "The table looks like data: most of its cells are numbers, or it has a caption, a table head, or a first row or column drawn as headers.",
+      "tdHasHeader_lean_caution_data": "A layout table can also hold numbers, such as prices beside text.",
+      "tdHasHeader_lean_why_layout": "The table looks like layout: its cells hold a nested table, form controls, images or blocks of text, and nothing marks it as data.",
+      "tdHasHeader_lean_caution_layout": "A data table can hold images or controls in its cells, such as a product list.",
       "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
@@ -36608,6 +36696,12 @@ const RUNTIME_CATALOG = {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
+      "formControlLabelQuality_lean_why_placeholder": "La etiqueta es una frase que solo deja una plantilla, que no nombra el propósito de ningún campo.",
+      "formControlLabelQuality_lean_caution_placeholder": "Una página de herramienta, como un generador de formularios, puede tener un campo que realmente se llame «Etiqueta».",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Los campos que comparten la etiqueta son copias de un mismo widget, cada una en su propio formulario con el mismo nombre, tipo y acción, así que sirven al mismo propósito.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Las copias de un widget pueden tener aun así distinto propósito si sus formularios envían valores ocultos diferentes.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Los campos que comparten la etiqueta son campos distintos de un mismo formulario, con nombres distintos, y nada visible los distingue.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Un texto visible que la regla no lee, como un título en un bloque con estilo, puede distinguir los campos.",
       "formControl_programmaticLabelQuality_title": "Los controles de formulario deberían tener una etiqueta visible en pantalla",
       "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible proviene de placeholder, title, aria-label o de aria-labelledby que apunta solo a texto oculto; ninguno de ellos es una etiqueta visible en pantalla. Se prefiere un <label> visible, o aria-labelledby que apunte a texto visible.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Este campo de formulario solo está etiquetado por su atributo {{method}}.",
@@ -36891,6 +36985,16 @@ const RUNTIME_CATALOG = {
       "labelInName_hint_cantTell": "Comprobar a mano si las dos formulaciones coinciden; el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) puede representarse como un icono o símbolo en lugar de texto literal, por lo que puede no ser necesario que aparezca en el nombre accesible (de {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Comprobar manualmente: si el texto visible se representa como un icono o símbolo, no es un error; si se representa como palabras literales, actualizar el nombre accesible para incluirlas.",
+      "labelInName_lean_why_hyphenation": "El nombre contiene las palabras de la etiqueta si se ignoran los guiones, así que el sentido de la etiqueta no cambia.",
+      "labelInName_lean_caution_hyphenation": "La entrada por voz puede exigir decir de otro modo la palabra con guion («e mail» frente a «email»).",
+      "labelInName_lean_why_abbreviation": "Cada palabra abreviada de la etiqueta es el comienzo de la palabra correspondiente del nombre, como en una abreviatura habitual («Avda.» por «Avenida»).",
+      "labelInName_lean_caution_abbreviation": "Quien usa entrada por voz puede decir la abreviatura tal como se muestra en lugar de la palabra completa.",
+      "labelInName_lean_why_iconFont": "La etiqueta es una ligadura o un código de símbolo de una fuente de iconos, que se dibuja como un icono, así que no muestra palabras legibles.",
+      "labelInName_lean_caution_iconFont": "Si la fuente no se carga para un usuario, se dibuja la propia palabra y pasa a ser una etiqueta visible.",
+      "labelInName_lean_why_symbol": "La etiqueta es un único símbolo o una «X», que representa un icono y no palabras que decir.",
+      "labelInName_lean_caution_symbol": "Un usuario puede aun así decir el carácter («X») para llegar al control.",
+      "labelInName_lean_why_digit": "La etiqueta es un dígito, texto que diría quien usa entrada por voz, y el nombre no lo contiene.",
+      "labelInName_lean_caution_digit": "Puede que el nombre escriba el número con letras, algo que algunas entradas por voz reconocen.",
       "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
       "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",
@@ -37007,6 +37111,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_hint_fail": "Agregar celdas de datos (<td>) a la tabla, o eliminar las celdas de encabezado si la tabla no tiene datos.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Ninguna celda de datos de esta tabla está asignada a esta celda de encabezado.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Comprobar si a la tabla le faltan las celdas que describe este encabezado. Si las celdas indican sus encabezados con un atributo headers, incluir este encabezado en las celdas a las que se aplica.",
+      "tableThHasDataCells_lean_why_unassigned": "Ninguna celda sigue a este encabezado donde se aplica, y ninguna celda de la tabla nombra sus encabezados, así que el encabezado no describe nada.",
+      "tableThHasDataCells_lean_caution_unassigned": "Un script puede añadir más tarde las celdas que faltan.",
       "ariaHiddenBody_title": "El <body> del documento no debe ser aria-hidden",
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
@@ -37090,6 +37196,10 @@ const RUNTIME_CATALOG = {
       "formControlSingleLabel_hint_cantTell_competing": "Los navegadores unen las etiquetas en un solo nombre. Comprobar que sigue teniendo sentido, o dejar un solo <label> por campo.",
       "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene un <label> con texto y otro adicional vacío; comprobar cómo lo anuncian los lectores de pantalla.",
       "formControlSingleLabel_hint_cantTell": "Quitar el <label> vacío para que el campo tenga exactamente uno.",
+      "formControlSingleLabel_lean_why_competing": "Las etiquetas se repiten entre sí o solo marcan el campo como obligatorio, así que el nombre que forman juntas sigue siendo claro.",
+      "formControlSingleLabel_lean_caution_competing": "Un nombre repetido como «Correo Correo electrónico» resulta redundante; una persona decide si sigue siendo claro.",
+      "formControlSingleLabel_lean_why": "Los navegadores unen el texto de las etiquetas de un campo, así que la etiqueta vacía no añade nada y el nombre es el texto de la etiqueta real.",
+      "formControlSingleLabel_lean_caution": "Un agente de usuario que solo lee la primera etiqueta puede quedarse con la vacía; un script también puede rellenarla.",
       "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
       "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
       "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> tiene controles interactivos anidados dentro: {{nestedElements}}.",
@@ -37178,6 +37288,8 @@ const RUNTIME_CATALOG = {
       "scopeAttrValid_description": "Comprueba que scope=\"...\" sea uno de los valores row, col, rowgroup o colgroup.",
       "scopeAttrValid_summary_cantTell": "Este valor del atributo scope no se reconoce.",
       "scopeAttrValid_hint_cantTell": "Usar row, col, rowgroup o colgroup.",
+      "scopeAttrValid_lean_why": "El valor de scope no es una de las cuatro palabras clave, así que no declara ninguna dirección de encabezado.",
+      "scopeAttrValid_lean_caution": "Los navegadores adivinan entonces la dirección, lo que suele acertar con un encabezado de la primera fila o columna.",
       "tabindex_title": "tabindex no debería ser mayor que 0",
       "tabindex_description": "Comprueba que los valores de tabindex sean 0 o negativos, no un número positivo.",
       "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
@@ -37189,6 +37301,8 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
       "emptyTableHeader_lean_why_notVisible": "La celda de encabezado no tiene texto visible; su único nombre viene de ARIA, que algunos lectores de pantalla ignoran en las celdas de encabezado.",
+      "emptyTableHeader_lean_why_empty": "La celda de encabezado está vacía, no contiene nada que pueda darle nombre y encabeza celdas de datos con texto.",
+      "emptyTableHeader_lean_caution_empty": "Un encabezado mostrado solo mediante CSS (una imagen de fondo o contenido generado) no tiene texto en la página.",
       "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
       "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
@@ -37228,10 +37342,14 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_hint_fail": "Usar \"on\", \"off\" o tokens de autorrelleno válidos, como \"shipping postal-code\" o \"cc-number\".",
       "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
       "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
-      "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
-      "passwordPasteEnabled_hint_fail": "Comprobar manualmente si aún se puede pegar. Si está bloqueado, eliminar el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Comprobar manualmente si aún se puede pegar. Si está bloqueado, eliminar el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
       "passwordPasteEnabled_summary_cantTell": "Este campo de autenticación tiene un controlador de pegado y no se ha podido determinar si cancela la acción.",
       "passwordPasteEnabled_hint_cantTell": "Comprobar manualmente que aún se puede pegar en el campo, de modo que un gestor de contraseñas o el portapapeles puedan rellenarlo.",
+      "passwordPasteEnabled_lean_why_cancelled": "El controlador de pegado del campo solo cancela el pegado, así que probablemente pegar está bloqueado.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Un detector añadido por script, en el campo o a su alrededor, puede insertar el texto pegado después de que el controlador lo cancele.",
+      "passwordPasteEnabled_lean_why_opaque": "El controlador de pegado dice lo que hace: llama a una función cuyo nombre indica que bloquea el pegado, o muestra un mensaje y cancela el pegado.",
+      "passwordPasteEnabled_lean_caution_opaque": "El nombre de una función puede engañar; lo que hace está en un script que el marcado no contiene.",
       "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
       "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
       "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -37377,6 +37495,14 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
+      "invalidFieldErrorMessage_lean_why_empty": "El mensaje de error vinculado al campo está vacío y el campo no tiene descripción, así que probablemente no se comunica el error.",
+      "invalidFieldErrorMessage_lean_caution_empty": "El error puede estar escrito en la etiqueta o en un texto junto al campo; una plantilla puede poner aria-invalid antes de que se introduzca nada.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "La descripción del campo es una región viva con texto, donde las páginas suelen anunciar el error.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Una región viva también puede contener una indicación en lugar del error.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "El texto del mensaje de error está oculto a las tecnologías de apoyo y el campo no tiene descripción, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Un anuncio vivo aparte, que la regla no ve, puede informarles.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "El campo está marcado como no válido ahora, pero el mensaje de error que nombra no está en la página y no tiene descripción.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Un análisis hecho mientras la página se actualiza puede captar el campo antes de que un script añada el mensaje.",
       "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
@@ -37419,12 +37545,18 @@ const RUNTIME_CATALOG = {
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
       "tableFakeCaption_hint_cantTell": "Si esta celda está pensada para describir la tabla, usar un elemento <caption> real en lugar de una única celda en la primera fila.",
+      "tableFakeCaption_lean_why": "La única celda de la primera fila abarca toda la tabla y ninguna otra fila es una sola celda: el patrón de un título presentado como celda.",
+      "tableFakeCaption_lean_caution": "Una primera fila de ancho completo también puede encabezar un único grupo de columnas.",
       "tdHasHeader_title": "Las celdas de datos en tablas grandes deben tener un encabezado asociado",
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
       "tdHasHeader_summary_cantTell_noHeaders": "Esta tabla no tiene celdas de encabezado. Si contiene datos, sus celdas no tienen encabezados.",
       "tdHasHeader_hint_cantTell_noHeaders": "Si la tabla contiene datos, marcar sus celdas de encabezado con <th> o dar a sus celdas un atributo headers. Si solo sirve para maquetar, darle role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "La tabla parece de datos: la mayoría de sus celdas son números, o tiene un título, una cabecera de tabla, o una primera fila o columna presentada como encabezados.",
+      "tdHasHeader_lean_caution_data": "Una tabla de maquetación también puede contener números, como precios junto a un texto.",
+      "tdHasHeader_lean_why_layout": "La tabla parece de maquetación: sus celdas contienen una tabla anidada, controles de formulario, imágenes o bloques de texto, y nada la señala como de datos.",
+      "tdHasHeader_lean_caution_layout": "Una tabla de datos puede contener imágenes o controles en sus celdas, como una lista de productos.",
       "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
@@ -37708,6 +37840,12 @@ const RUNTIME_CATALOG = {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
+      "formControlLabelQuality_lean_why_placeholder": "L’étiquette est une formule que seul un modèle laisse derrière lui, qui ne nomme la fonction d’aucun champ.",
+      "formControlLabelQuality_lean_caution_placeholder": "Une page d’outil, comme un générateur de formulaires, peut avoir un champ réellement appelé « Libellé ».",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Les champs qui partagent l’étiquette sont des copies d’un même composant, chacune dans son propre formulaire avec les mêmes nom, type et action : ils servent le même but.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Des copies d’un composant peuvent tout de même différer de but si leurs formulaires envoient des valeurs masquées différentes.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Les champs qui partagent l’étiquette sont des champs différents d’un même formulaire, avec des noms différents, et rien de visible ne les distingue.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Un texte visible que la règle ne lit pas, comme un intitulé dans un bloc mis en forme, peut distinguer les champs.",
       "formControl_programmaticLabelQuality_title": "Les champs de formulaire devraient avoir un libellé affiché à l’écran",
       "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible provient du placeholder, du title, d’aria-label ou d’aria-labelledby ne pointant que vers du texte masqué ; aucun d’eux n’est un libellé affiché à l’écran. Préférez un <label> visible, ou aria-labelledby pointant vers du texte visible.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Ce champ de formulaire n’est étiqueté que par son attribut {{method}}.",
@@ -37991,6 +38129,16 @@ const RUNTIME_CATALOG = {
       "labelInName_hint_cantTell": "Vérifiez à la main si les deux formulations correspondent ; le balisage ne permet pas de distinguer une abréviation voulue d’une différence.",
       "labelInName_summary_cantTell_symbolic": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) peut s’afficher comme une icône ou un symbole plutôt que comme du texte littéral, et n’a donc pas nécessairement besoin de figurer dans le nom accessible (source : {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Vérifiez manuellement : si le texte visible s’affiche comme une icône ou un symbole, il ne s’agit pas d’un défaut ; s’il s’affiche comme des mots littéraux, mettez à jour le nom accessible pour les inclure.",
+      "labelInName_lean_why_hyphenation": "Le nom contient les mots du libellé une fois les traits d’union ignorés : le sens du libellé est inchangé.",
+      "labelInName_lean_caution_hyphenation": "La saisie vocale peut exiger de prononcer autrement le mot à trait d’union (« e mail » contre « email »).",
+      "labelInName_lean_why_abbreviation": "Chaque mot abrégé du libellé commence le mot correspondant du nom, comme le fait une abréviation courante (« Av. » pour « Avenue »).",
+      "labelInName_lean_caution_abbreviation": "Un utilisateur de la saisie vocale peut prononcer l’abréviation telle qu’affichée plutôt que le mot entier.",
+      "labelInName_lean_why_iconFont": "Le libellé est une ligature ou un code de symbole d’une police d’icônes, dessiné comme une icône : il n’affiche aucun mot lisible.",
+      "labelInName_lean_caution_iconFont": "Si la police ne se charge pas pour un utilisateur, le mot lui-même s’affiche et devient un libellé visible.",
+      "labelInName_lean_why_symbol": "Le libellé est un symbole unique ou un « X », qui tient lieu d’icône plutôt que de mots à prononcer.",
+      "labelInName_lean_caution_symbol": "Un utilisateur peut tout de même prononcer le caractère (« X ») pour atteindre le contrôle.",
+      "labelInName_lean_why_digit": "Le libellé est un chiffre, un texte qu’un utilisateur de la saisie vocale prononcerait, et le nom ne le contient pas.",
+      "labelInName_lean_caution_digit": "Le nom écrit peut-être le nombre en toutes lettres, ce que certaines saisies vocales reconnaissent.",
       "ariaRolesValid_title": "L’attribut role doit être un rôle ARIA valide et non abstrait",
       "ariaRolesValid_description": "Vérifie qu’un attribut role=\"\" explicite correspond à un rôle WAI-ARIA réel et non abstrait.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" n’est pas un rôle ARIA reconnu.",
@@ -38107,6 +38255,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_hint_fail": "Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Aucune cellule de données de ce tableau n’est associée à cette cellule d’en-tête.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Vérifiez s’il manque au tableau les cellules que cet en-tête décrit. Si les cellules indiquent leurs en-têtes avec un attribut headers, ajoutez cet en-tête à celles qu’il concerne.",
+      "tableThHasDataCells_lean_why_unassigned": "Aucune cellule ne suit cet en-tête là où il s’applique, et aucune cellule du tableau ne nomme ses en-têtes : l’en-tête ne décrit rien.",
+      "tableThHasDataCells_lean_caution_unassigned": "Un script peut ajouter plus tard les cellules manquantes.",
       "ariaHiddenBody_title": "Le <body> du document ne doit pas être aria-hidden",
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
@@ -38190,6 +38340,10 @@ const RUNTIME_CATALOG = {
       "formControlSingleLabel_hint_cantTell_competing": "Les navigateurs joignent les étiquettes en un seul nom. Vérifiez qu’il a encore du sens, ou gardez un seul <label> par champ.",
       "formControlSingleLabel_summary_cantTell": "Cet élément <{{element}}> a un <label> avec du texte plus un autre vide ; vérifiez comment les lecteurs d’écran l’annoncent.",
       "formControlSingleLabel_hint_cantTell": "Retirez le <label> vide pour que le champ en ait exactement un.",
+      "formControlSingleLabel_lean_why_competing": "Les étiquettes se répètent ou ne font que marquer le champ comme obligatoire : le nom qu’elles forment ensemble reste clair.",
+      "formControlSingleLabel_lean_caution_competing": "Un nom répété comme « E-mail Adresse e-mail » est verbeux ; une personne juge s’il reste clair.",
+      "formControlSingleLabel_lean_why": "Les navigateurs joignent le texte des étiquettes d’un champ : l’étiquette vide n’ajoute rien et le nom est le texte de l’étiquette réelle.",
+      "formControlSingleLabel_lean_caution": "Un agent utilisateur qui ne lit que la première étiquette peut retenir la vide ; un script peut aussi la remplir.",
       "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
       "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
       "nestedInteractiveControlsAbsent_summary_fail": "Cet élément <{{element}}> contient des contrôles interactifs imbriqués : {{nestedElements}}.",
@@ -38278,6 +38432,8 @@ const RUNTIME_CATALOG = {
       "scopeAttrValid_description": "Vérifie que scope=\"...\" vaut row, col, rowgroup, ou colgroup.",
       "scopeAttrValid_summary_cantTell": "Cette valeur d’attribut scope n’est pas reconnue.",
       "scopeAttrValid_hint_cantTell": "Utilisez row, col, rowgroup ou colgroup.",
+      "scopeAttrValid_lean_why": "La valeur de scope n’est pas l’un des quatre mots-clés : elle ne déclare aucune direction d’en-tête.",
+      "scopeAttrValid_lean_caution": "Les navigateurs devinent alors la direction, ce qui est généralement juste pour un en-tête de la première ligne ou colonne.",
       "tabindex_title": "tabindex ne devrait pas être supérieur à 0",
       "tabindex_description": "Vérifie que les valeurs de tabindex sont égales à 0 ou négatives, jamais un nombre positif.",
       "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
@@ -38289,6 +38445,8 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
       "emptyTableHeader_lean_why_notVisible": "La cellule d’en-tête n’a pas de texte visible ; son seul nom vient d’ARIA, que certains lecteurs d’écran ignorent sur les cellules d’en-tête.",
+      "emptyTableHeader_lean_why_empty": "La cellule d’en-tête est vide, ne contient rien qui puisse la nommer et se trouve en tête de cellules de données avec du texte.",
+      "emptyTableHeader_lean_caution_empty": "Un en-tête affiché uniquement par CSS (image d’arrière-plan ou contenu généré) n’a pas de texte dans la page.",
       "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
       "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
@@ -38328,10 +38486,14 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_hint_fail": "Utilisez \"on\", \"off\" ou des jetons de remplissage automatique valides, comme \"shipping postal-code\" ou \"cc-number\".",
       "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
       "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
-      "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
-      "passwordPasteEnabled_hint_fail": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
       "passwordPasteEnabled_summary_cantTell": "Ce champ d'authentification comporte un gestionnaire de collage et il n'a pas été possible de déterminer s'il annule l'action.",
       "passwordPasteEnabled_hint_cantTell": "Vérifiez manuellement que le collage fonctionne toujours dans le champ, afin qu'un gestionnaire de mots de passe ou le presse-papiers puisse le remplir.",
+      "passwordPasteEnabled_lean_why_cancelled": "Le gestionnaire de collage du champ ne fait qu’annuler le collage : le collage est probablement bloqué.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Un écouteur ajouté par script, sur le champ ou autour, peut insérer le texte collé après que le gestionnaire l’a annulé.",
+      "passwordPasteEnabled_lean_why_opaque": "Le gestionnaire de collage dit ce qu’il fait : il appelle une fonction nommée pour bloquer le collage, ou affiche un message et annule le collage.",
+      "passwordPasteEnabled_lean_caution_opaque": "Le nom d’une fonction peut tromper ; ce qu’elle fait se trouve dans un script que le balisage ne contient pas.",
       "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
       "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
       "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
@@ -38477,6 +38639,14 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "Le message d’erreur lié au champ est masqué : l’erreur n’est probablement pas signalée.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "Le message d’erreur lié au champ est masqué aux technologies d’assistance : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
+      "invalidFieldErrorMessage_lean_why_empty": "Le message d’erreur lié au champ est vide et le champ n’a pas de description : l’erreur n’est probablement pas signalée.",
+      "invalidFieldErrorMessage_lean_caution_empty": "L’erreur est peut-être écrite dans l’étiquette ou dans un texte à côté du champ ; un modèle peut définir aria-invalid avant toute saisie.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "La description du champ est une région dynamique avec du texte, là où les pages annoncent généralement l’erreur.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Une région dynamique peut aussi contenir une indication plutôt que l’erreur.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "Le texte du message d’erreur est masqué aux technologies d’assistance et le champ n’a pas de description : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Une annonce dynamique distincte, que la règle ne voit pas, peut les en informer.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "Le champ est marqué comme invalide maintenant, mais le message d’erreur qu’il nomme n’est pas dans la page et il n’a pas de description.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Une analyse faite pendant une mise à jour de la page peut saisir le champ avant qu’un script n’ajoute le message.",
       "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
       "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
@@ -38519,12 +38689,18 @@ const RUNTIME_CATALOG = {
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
       "tableFakeCaption_hint_cantTell": "Si cette cellule est censée décrire le tableau, utilisez un véritable élément <caption> plutôt qu’une cellule isolée en première ligne.",
+      "tableFakeCaption_lean_why": "La cellule unique de la première ligne s’étend sur tout le tableau, et aucune autre ligne n’est une cellule unique : c’est le motif d’un titre présenté comme une cellule.",
+      "tableFakeCaption_lean_caution": "Une première ligne pleine largeur peut aussi servir d’en-tête à un groupe unique de colonnes.",
       "tdHasHeader_title": "Les cellules de données des grands tableaux doivent avoir un en-tête associé",
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
       "tdHasHeader_summary_cantTell_noHeaders": "Ce tableau n’a aucune cellule d’en-tête. S’il contient des données, ses cellules n’ont pas d’en-têtes.",
       "tdHasHeader_hint_cantTell_noHeaders": "Si le tableau contient des données, marquez ses cellules d’en-tête avec <th>, ou donnez à ses cellules un attribut headers. S’il ne sert qu’à la mise en page, donnez-lui role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "Le tableau ressemble à des données : la plupart de ses cellules sont des nombres, ou il a une légende, un en-tête de tableau, ou une première ligne ou colonne présentée comme des en-têtes.",
+      "tdHasHeader_lean_caution_data": "Un tableau de mise en page peut aussi contenir des nombres, comme des prix à côté d’un texte.",
+      "tdHasHeader_lean_why_layout": "Le tableau ressemble à une mise en page : ses cellules contiennent un tableau imbriqué, des contrôles de formulaire, des images ou des blocs de texte, et rien ne le signale comme des données.",
+      "tdHasHeader_lean_caution_layout": "Un tableau de données peut contenir des images ou des contrôles dans ses cellules, comme une liste de produits.",
       "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
@@ -38808,6 +38984,12 @@ const RUNTIME_CATALOG = {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "このフィールドのラベルは分割されています。表示されているのは「{{label}}」だけで、ラベルのほかの {{hiddenCount}} 個の部分は視覚的に隠れています。",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "表示されている部分だけでフィールドを特定できるか確認するか、ラベルの残りの部分も表示してください。",
       "formControlLabelQuality_hint_cantTell_duplicate": "フィールドごとに固有のラベルを付けるか、区別のための手がかりを画面に表示してください (各グループの上に見える見出しや fieldset の legend を置くなど)。",
+      "formControlLabelQuality_lean_why_placeholder": "ラベルはテンプレートが残しただけの語句で、どのフィールドの目的も表していません。",
+      "formControlLabelQuality_lean_caution_placeholder": "フォームビルダーのようなツールのページには、本当に「ラベル」という名前のフィールドがあることもあります。",
+      "formControlLabelQuality_lean_why_duplicateWidget": "ラベルを共有するフィールドは 1 つのウィジェットのコピーで、それぞれ名前・種類・送信先が同じ別々のフォームにあるため、同じ目的に使われます。",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "フォームが異なる非表示の値を送信する場合は、ウィジェットのコピーでも目的が異なることがあります。",
+      "formControlLabelQuality_lean_why_duplicateFields": "ラベルを共有するフィールドは同じフォーム内の名前の異なる別々のフィールドで、見た目で区別できるものがありません。",
+      "formControlLabelQuality_lean_caution_duplicateFields": "スタイル付きのブロック内の見出しなど、このルールが読まない表示テキストでフィールドが区別されている可能性があります。",
       "formControl_programmaticLabelQuality_title": "フォームコントロールには画面に表示されるラベルがあることが望ましい",
       "formControl_programmaticLabelQuality_description": "アクセシブルな名前が placeholder、title、aria-label、または非表示のテキストだけを参照する aria-labelledby から取得されているフォームコントロールを検出します。これらはいずれも画面に表示されるラベルではありません。表示される <label>、または表示されているテキストを参照する aria-labelledby の使用を推奨します。",
       "formControl_programmaticLabelQuality_summary_cantTell": "このフォーム項目のラベルは {{method}} 属性だけです。",
@@ -39091,6 +39273,16 @@ const RUNTIME_CATALOG = {
       "labelInName_hint_cantTell": "2 つの表現が一致しているか手作業で確認してください。意図した省略か食い違いかは、マークアップからは判断できません。",
       "labelInName_summary_cantTell_symbolic": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) は、文字としてではなくアイコンや記号として表示されている可能性があります。その場合、アクセシブルな名前 (取得元: {{nameMechanism}}) に含める必要はありません。",
       "labelInName_hint_cantTell_symbolic": "人の目で確認してください。表示テキストがアイコンや記号として描画されているなら問題ではありません。文字として表示されているなら、その文言を含むようにアクセシブルな名前を修正してください。",
+      "labelInName_lean_why_hyphenation": "ハイフンを無視すれば名前にラベルの語句が含まれるため、ラベルの意味は変わりません。",
+      "labelInName_lean_caution_hyphenation": "音声入力では、ハイフン付きの語を別の言い方で話す必要があるかもしれません (「e mail」と「email」など)。",
+      "labelInName_lean_why_abbreviation": "ラベル内の省略された語はそれぞれ、名前の対応する語の先頭と一致しており、一般的な略語の形です (「Ave.」と「Avenue」など)。",
+      "labelInName_lean_caution_abbreviation": "音声入力の利用者は、完全な語ではなく表示どおりの略語を話すかもしれません。",
+      "labelInName_lean_why_iconFont": "ラベルはアイコンフォントの合字または記号コードで、アイコンとして描画されるため、読める語句は表示されません。",
+      "labelInName_lean_caution_iconFont": "フォントが読み込まれなかった場合は語そのものが描画され、表示ラベルになります。",
+      "labelInName_lean_why_symbol": "ラベルは単一の記号または「X」で、話す言葉ではなくアイコンを表しています。",
+      "labelInName_lean_caution_symbol": "利用者がその文字 (「X」) を話して操作しようとすることもあります。",
+      "labelInName_lean_why_digit": "ラベルは数字で、音声入力の利用者が話す文字ですが、名前には含まれていません。",
+      "labelInName_lean_caution_digit": "名前が数字を語で書いている可能性があり、一部の音声入力はそれを照合します。",
       "ariaRolesValid_title": "role 属性は有効で抽象ロールでない ARIA ロールであること",
       "ariaRolesValid_description": "明示的な role=\"\" 属性が、実在する抽象ロールでない WAI-ARIA ロールとして解決されるかを確認します。",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" は認識されない ARIA ロールです。",
@@ -39207,6 +39399,8 @@ const RUNTIME_CATALOG = {
       "tableThHasDataCells_hint_fail": "表にデータセル (<td>) を追加するか、表にデータがない場合は見出しセルを削除してください。",
       "tableThHasDataCells_summary_cantTell_unassigned": "この表のデータセルはどれも、この見出しセルに関連付けられていません。",
       "tableThHasDataCells_hint_cantTell_unassigned": "この見出しが説明するセルが表に欠けていないか確認してください。セルが headers 属性で見出しを指定している場合は、この見出しが当てはまるセルにこの見出しを含めてください。",
+      "tableThHasDataCells_lean_why_unassigned": "この見出しが適用される方向に後続のセルがなく、表のどのセルも見出しを指定していないため、この見出しは何も説明していません。",
+      "tableThHasDataCells_lean_caution_unassigned": "スクリプトが後で不足しているセルを追加する可能性があります。",
       "ariaHiddenBody_title": "文書の <body> に aria-hidden を指定してはならない",
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
@@ -39290,6 +39484,10 @@ const RUNTIME_CATALOG = {
       "formControlSingleLabel_hint_cantTell_competing": "ブラウザーはラベルをつなげて 1 つの名前にします。その名前が意味をなすか確認するか、1 つの項目に <label> は 1 つにしてください。",
       "formControlSingleLabel_summary_cantTell": "この <{{element}}> には、テキストのある <label> のほかに空の <label> があります。スクリーンリーダーでの読み上げを確認してください。",
       "formControlSingleLabel_hint_cantTell": "空の <label> を削除し、項目のラベルを 1 つだけにしてください。",
+      "formControlSingleLabel_lean_why_competing": "ラベル同士が同じ内容を繰り返しているか、フィールドが必須であることを示すだけなので、結合された名前はわかりやすいままです。",
+      "formControlSingleLabel_lean_caution_competing": "「メール メールアドレス」のように繰り返された名前は冗長です。それでもわかりやすいかは人が判断します。",
+      "formControlSingleLabel_lean_why": "ブラウザーはフィールドのラベルのテキストを結合するため、空のラベルは何も加えず、名前は実際のラベルのテキストになります。",
+      "formControlSingleLabel_lean_caution": "最初のラベルだけを読むユーザーエージェントは空のラベルを選ぶ可能性があります。また、スクリプトが後でテキストを入れることもあります。",
       "nestedInteractiveControlsAbsent_title": "インタラクティブなコントロールを入れ子にしてはならない",
       "nestedInteractiveControlsAbsent_description": "インタラクティブなコントロール (リンク、ボタン、フォームコントロール、ARIA のウィジェットロール) が、別のインタラクティブなコントロールを含んでいないかを確認します。",
       "nestedInteractiveControlsAbsent_summary_fail": "この <{{element}}> の中に、操作可能なコントロールが入れ子になっています: {{nestedElements}}。",
@@ -39378,6 +39576,8 @@ const RUNTIME_CATALOG = {
       "scopeAttrValid_description": "scope=\"...\" の値が row、col、rowgroup、colgroup のいずれかであるかを確認します。",
       "scopeAttrValid_summary_cantTell": "この scope 属性の値は認識されません。",
       "scopeAttrValid_hint_cantTell": "row、col、rowgroup、colgroup のいずれかを使ってください。",
+      "scopeAttrValid_lean_why": "scope の値は 4 つのキーワードのどれでもないため、見出しの方向を宣言していません。",
+      "scopeAttrValid_lean_caution": "その場合ブラウザーが方向を推測し、最初の行や列の見出しであれば通常は正しく推測されます。",
       "tabindex_title": "tabindex は 0 より大きくしないことが望ましい",
       "tabindex_description": "tabindex の値が正の数ではなく、0 または負の値であるかを確認します。",
       "tabindex_summary_cantTell": "この要素には正の tabindex が指定されており、本来のタブ順序を上書きしています。",
@@ -39389,6 +39589,8 @@ const RUNTIME_CATALOG = {
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
       "emptyTableHeader_lean_why_notVisible": "見出しセルに表示テキストがありません。名前は ARIA のみで、見出しセルでは一部のスクリーンリーダーがこれを無視します。",
+      "emptyTableHeader_lean_why_empty": "この見出しセルは空で、名前になり得るものを含んでおらず、テキストのあるデータセルの見出しになっています。",
+      "emptyTableHeader_lean_caution_empty": "CSS だけで表示される見出し (背景画像や生成コンテンツ) は、ページ内にテキストを持ちません。",
       "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
       "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
       "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
@@ -39428,10 +39630,14 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_hint_fail": "\"on\"、\"off\"、または \"shipping postal-code\" や \"cc-number\" のような有効な自動入力トークンを使ってください。",
       "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
       "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
-      "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
-      "passwordPasteEnabled_hint_fail": "貼り付けが実際に機能するか、人の手で確認してください。禁止されている場合は、パスワードマネージャー (ワンタイムコードの場合はクリップボード) でフィールドに入力できるよう、ハンドラーを削除してください。",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "貼り付けが実際に機能するか、人の手で確認してください。禁止されている場合は、パスワードマネージャー (ワンタイムコードの場合はクリップボード) でフィールドに入力できるよう、ハンドラーを削除してください。",
       "passwordPasteEnabled_summary_cantTell": "この認証用フィールドには paste ハンドラーがありますが、貼り付けを取り消すかどうかは判定できませんでした。",
       "passwordPasteEnabled_hint_cantTell": "パスワードマネージャーやクリップボードで入力できるよう、このフィールドへの貼り付けが機能するか、人の手で確認してください。",
+      "passwordPasteEnabled_lean_why_cancelled": "このフィールドの paste ハンドラーは貼り付けを取り消すだけなので、貼り付けはおそらくブロックされています。",
+      "passwordPasteEnabled_lean_caution_cancelled": "スクリプトでフィールドやその祖先に追加されたリスナーが、ハンドラーの取り消し後に貼り付けたテキストを入れている可能性があります。",
+      "passwordPasteEnabled_lean_why_opaque": "paste ハンドラーは自らの動作を示しています。貼り付けをブロックする名前の関数を呼び出しているか、メッセージを表示して貼り付けを取り消しています。",
+      "passwordPasteEnabled_lean_caution_opaque": "関数名は誤解を招くことがあります。実際の動作はマークアップに含まれないスクリプトの中にあります。",
       "htmlXmlLangMismatch_title": "lang と xml:lang が食い違ってはならない",
       "htmlXmlLangMismatch_description": "<html> 要素に lang 属性と xml:lang 属性の両方がある場合に、同じ主言語を宣言しているかを確認します。",
       "htmlXmlLangMismatch_summary_fail": "lang 属性 (「{{lang}}」) と xml:lang 属性 (「{{xmlLang}}」) が異なる言語を宣言しています。",
@@ -39577,6 +39783,14 @@ const RUNTIME_CATALOG = {
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
       "invalidFieldErrorMessage_lean_why_hidden": "フィールドに結び付けられたエラーメッセージが非表示のため、エラーはおそらく伝えられていません。",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "フィールドに結び付けられたエラーメッセージが支援技術から隠されているため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
+      "invalidFieldErrorMessage_lean_why_empty": "フィールドに結び付けられたエラーメッセージが空で、フィールドに説明もないため、エラーはおそらく伝えられていません。",
+      "invalidFieldErrorMessage_lean_caution_empty": "エラーはラベルやフィールドの隣のテキストに書かれている可能性があります。また、テンプレートが入力前から aria-invalid を設定していることもあります。",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "フィールドの説明はテキストのあるライブリージョンで、ページは通常そこでエラーを通知します。",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "ライブリージョンには、エラーではなくヒントが入っていることもあります。",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "エラーメッセージのテキストが支援技術から隠されており、フィールドに説明もないため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "このルールからは見えない別のライブ通知で伝えられている可能性があります。",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "フィールドは現在無効とマークされていますが、指しているエラーメッセージがページになく、説明もありません。",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "ページの更新中に実行したスキャンでは、スクリプトがメッセージを追加する前のフィールドを捉えている可能性があります。",
       "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
       "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
@@ -39619,12 +39833,18 @@ const RUNTIME_CATALOG = {
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
       "tableFakeCaption_hint_cantTell": "このセルが表を説明するためのものであれば、1 行目の単独のセルではなく、本来の <caption> 要素を使用してください。",
+      "tableFakeCaption_lean_why": "1 行目の単一のセルが表の全幅にまたがり、ほかに単一セルの行がありません。セルとして表示されたタイトルの形です。",
+      "tableFakeCaption_lean_caution": "全幅の 1 行目が、1 つの列グループの見出しであることもあります。",
       "tdHasHeader_title": "大きな表のデータセルには、関連付けられた見出しが必要",
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
       "tdHasHeader_summary_cantTell_noHeaders": "この表には見出しセルがありません。データを含む表であれば、そのセルには見出しがありません。",
       "tdHasHeader_hint_cantTell_noHeaders": "表がデータを含む場合は、見出しセルを <th> でマークするか、セルに headers 属性を付けてください。レイアウトのためだけの表であれば、role=\"presentation\" を付けてください。",
+      "tdHasHeader_lean_why_data": "この表はデータ表のようです。ほとんどのセルが数値であるか、キャプション、表のヘッダー (thead)、または見出しのように表示された最初の行か列があります。",
+      "tdHasHeader_lean_caution_data": "レイアウト用の表にも、テキストの横の価格など、数値が入っていることがあります。",
+      "tdHasHeader_lean_why_layout": "この表はレイアウト用のようです。セルに入れ子の表、フォームコントロール、画像、またはまとまったテキストがあり、データ表であることを示すものがありません。",
+      "tdHasHeader_lean_caution_layout": "商品一覧のように、データ表のセルにも画像やコントロールが入っていることがあります。",
       "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
@@ -65798,6 +66018,64 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
   });
 
+  // Which way an empty native header cell points. Content that may name
+  // it without text (an svg, an element with an ARIA name or a title, a
+  // control) gives no direction, nor does the corner cell above a column
+  // of row headers, the usual empty top-left cell. Otherwise a header with
+  // a data cell with text below it or after it in its row heads data and
+  // says nothing about it.
+  const MAY_NAME =
+    'svg, img, canvas, object, embed, input, select, textarea, button, [role], [aria-label], [aria-labelledby], [title]';
+  function emptyHeaderLean(th) {
+    if (String(dom.localName(th) || '').toLowerCase() !== 'th') return null;
+    try {
+      if (dom.querySelector(th, MAY_NAME)) return null;
+    } catch {
+      return null;
+    }
+    const row = dom.parentElement(th);
+    const table = row ? dom.closest(row, 'table') : null;
+    if (!table || !table.rows) return null;
+    const rows = Array.from(table.rows).map((tr) => Array.from(tr.cells || []));
+    const r = rows.findIndex((cells) => cells.indexOf(th) !== -1);
+    if (r === -1) return null;
+    const c = rows[r].indexOf(th);
+    const spans = rows.some((cells) =>
+      cells.some(
+        (x) =>
+          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
+          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+      )
+    );
+    if (spans) return null;
+    const isTh = (x) => !!x && String(dom.localName(x) || '').toLowerCase() === 'th';
+    if (r === 0 && c === 0 && rows.length > 1 && rows.slice(1).every((cells) => isTh(cells[0])))
+      return null;
+    const dataWithText = (x) =>
+      !!x &&
+      String(dom.localName(x) || '').toLowerCase() === 'td' &&
+      normalizeWs(dom.textContent(x)) !== '';
+    const hasData =
+      rows[r].slice(c + 1).some(dataWithText) ||
+      rows.slice(r + 1).some((cells) => dataWithText(cells[c]));
+    if (!hasData) return null;
+    return {
+      toward: 'fail',
+      why: 'The header cell is empty, holds nothing that could name it, and heads data cells with text.',
+      signals: [
+        { signal: 'named-content', value: false },
+        { signal: 'corner-cell', value: false },
+        { signal: 'heads-data-cells', value: true }
+      ],
+      caution:
+        'A header drawn only through CSS (a background image or generated content) has no text in the page.',
+      i18n: {
+        whyKey: 'emptyTableHeader_lean_why_empty',
+        cautionKey: 'emptyTableHeader_lean_caution_empty'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -65839,8 +66117,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    let lean = null;
+    try {
+      lean = emptyHeaderLean(el);
+    } catch {}
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: 'This table header cell has no accessible name.',
         hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
@@ -66203,6 +66486,73 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       '未定',
       'テスト',
       'サンプル'
+    ])
+  };
+
+  // The part of each list that only a template leaves behind: words no
+  // field is really called. The rest ("Text", "Value", "Test") name real
+  // fields in key/value editors, messaging and test tools.
+  const TEMPLATE_ONLY_LABEL_TEXT = {
+    en: new Set([
+      'label',
+      'field',
+      'form field',
+      'input field',
+      'text field',
+      'enter text',
+      'type here',
+      'placeholder',
+      'untitled',
+      'tbd',
+      'todo',
+      'to do',
+      'n/a'
+    ]),
+    de: new Set([
+      'beschriftung',
+      'label',
+      'feld',
+      'formularfeld',
+      'eingabefeld',
+      'textfeld',
+      'text eingeben',
+      'hier eingeben',
+      'platzhalter',
+      'unbenannt'
+    ]),
+    es: new Set([
+      'etiqueta',
+      'campo',
+      'campo de formulario',
+      'campo de entrada',
+      'campo de texto',
+      'introduzca texto',
+      'escriba aquí',
+      'marcador de posición',
+      'sin título'
+    ]),
+    fr: new Set([
+      'libellé',
+      'étiquette',
+      'champ',
+      'champ de formulaire',
+      'champ de saisie',
+      'champ de texte',
+      'saisir du texte',
+      'saisissez ici',
+      'espace réservé',
+      'sans titre'
+    ]),
+    ja: new Set([
+      'ラベル',
+      'フィールド',
+      '入力欄',
+      '入力フィールド',
+      'テキストフィールド',
+      'ここに入力',
+      'プレースホルダー',
+      '無題',
+      '未定'
     ])
   };
 
@@ -66673,6 +67023,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     else byKey.set(field.key, [field]);
   }
 
+  // A native field's form owner and shape, read from attributes (a form's
+  // `action` and `name` properties can be shadowed by its own fields).
+  function attr(el, name) {
+    try {
+      return normalizeWs(dom.getAttribute(el, name));
+    } catch {
+      return '';
+    }
+  }
+  function shapeOf(el) {
+    let form = null;
+    try {
+      form = dom.get(el, 'form') || null;
+    } catch {}
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = tag === 'input' ? attr(el, 'type').toLowerCase() || 'text' : tag;
+    return { form, name: attr(el, 'name'), type, action: form ? attr(form, 'action') : '' };
+  }
+
+  // Which way a set of fields sharing a label points: copies of one widget
+  // (each in a form of its own, same name, type and action: a header and a
+  // footer search box) serve one purpose; distinct fields of one form
+  // (different names) with nothing visible apart are G131's shape. Radio
+  // buttons and checkboxes are left out: their question is often in text
+  // the rule does not read.
+  function duplicateLean(shared) {
+    const shapes = shared.map((f) => shapeOf(f.el));
+    if (shapes.some((x) => !x.form)) return null;
+    const forms = new Set(shapes.map((x) => x.form));
+    const first = shapes[0];
+    if (
+      forms.size === shapes.length &&
+      shapes.every(
+        (x) => x.name === first.name && x.type === first.type && x.action === first.action
+      )
+    ) {
+      return { toward: 'pass', sameForm: false, sameName: true };
+    }
+    const names = shapes.map((x) => x.name);
+    if (
+      forms.size === 1 &&
+      names.every(Boolean) &&
+      new Set(names).size === names.length &&
+      shapes.every((x) => x.type !== 'radio' && x.type !== 'checkbox')
+    ) {
+      return { toward: 'fail', sameForm: true, sameName: false };
+    }
+    return null;
+  }
+
   const occurrences = [];
 
   for (const field of fields) {
@@ -66692,6 +67092,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : isDuplicate
         ? 'DUPLICATE_LABEL_TEXT'
         : 'PARTIALLY_HIDDEN_LABEL';
+
+    let lean = null;
+    if (reasonCode === 'PLACEHOLDER_LABEL_TEXT') {
+      if (inPhraseList(TEMPLATE_ONLY_LABEL_TEXT, field.normalized, primaryLangOf(field.el))) {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a phrase only a template leaves behind, which names no field’s purpose.',
+          signals: [{ signal: 'template-only-phrase', value: true }],
+          caution: 'A tool page, such as a form builder, can have a field really called "Label".',
+          i18n: {
+            whyKey: 'formControlLabelQuality_lean_why_placeholder',
+            cautionKey: 'formControlLabelQuality_lean_caution_placeholder'
+          }
+        };
+      }
+    } else if (reasonCode === 'DUPLICATE_LABEL_TEXT') {
+      const d = duplicateLean(shared);
+      if (d) {
+        lean = {
+          toward: d.toward,
+          why:
+            d.toward === 'pass'
+              ? 'The fields sharing the label are copies of one widget, each in its own form with the same name, type and action, so they serve the same purpose.'
+              : 'The fields sharing the label are different fields of one form, with different names, and nothing visible tells them apart.',
+          signals: [
+            { signal: 'same-form-owner', value: d.sameForm },
+            { signal: 'same-name-attribute', value: d.sameName }
+          ],
+          caution:
+            d.toward === 'pass'
+              ? 'Copies of a widget can still differ in purpose if their forms send different hidden values.'
+              : 'Visible text the rule does not read, such as a caption in a styled block, may tell the fields apart.',
+          i18n: {
+            whyKey: `formControlLabelQuality_lean_why_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`,
+            cautionKey: `formControlLabelQuality_lean_caution_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`
+          }
+        };
+      }
+    }
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -66740,6 +67179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hiddenCount: String(field.hiddenParts)
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode,
@@ -67348,6 +67788,56 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
 
+  // The text a label gives the control's name: its own aria name, else its
+  // content without the control, else its title.
+  function labelText(lab, control) {
+    try {
+      const aria = getAriaNameInfo ? getAriaNameInfo(lab, null, {}) : null;
+      if (aria && aria.present && String(aria.value || '').trim()) return String(aria.value);
+    } catch {}
+    try {
+      const info = helpers.getContentNameInfo(lab, null, { skipNode: control });
+      if (info && info.present && String(info.value || '').trim()) return String(info.value);
+    } catch {}
+    return String(dom.getAttribute(lab, 'title') || '');
+  }
+  // Letters and digits only, lower case, single-spaced.
+  function normalize(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+  // A label that only marks the field as required or optional ("*",
+  // "(required)"), in the languages the dictionaries cover.
+  const MARKERS = new Set([
+    'required',
+    'optional',
+    'mandatory',
+    'req',
+    'obligatoire',
+    'facultatif',
+    'requis',
+    'erforderlich',
+    'pflichtfeld',
+    'obligatorio',
+    'requerido',
+    'opcional',
+    '必須',
+    '任意'
+  ]);
+  const isMarker = (norm) => norm === '' || MARKERS.has(norm);
+  // Whether the joined name only repeats itself: after leaving out marker
+  // labels, every label's words appear, as a run, in the longest one.
+  function labelsRepeat(texts) {
+    const words = texts.map(normalize).filter((t) => !isMarker(t));
+    const markers = texts.length - words.length;
+    if (!words.length) return null;
+    const longest = words.reduce((a, b) => (b.length > a.length ? b : a));
+    const repeat = words.every((w) => (' ' + longest + ' ').indexOf(' ' + w + ' ') !== -1);
+    return repeat ? { markers, distinct: new Set(words).size } : null;
+  }
+
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
@@ -67389,6 +67879,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
+      // Labels that repeat each other, or a marker such as "required",
+      // leave the joined name clear, if wordy.
+      const repeat = labelsRepeat(contributing.map((lab) => labelText(lab, el)));
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This form control is associated with more than one <label>.',
@@ -67404,6 +67897,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             needed: 'Whether the name the labels make together is clear.',
             evidence: { element: tag, labelCount: contributing.length }
           },
+          ...(repeat
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The labels repeat each other or only mark the field as required, so the joined name stays clear.',
+                  signals: [
+                    { signal: 'labels-repeat-each-other', value: true },
+                    { signal: 'marker-only-labels', value: repeat.markers }
+                  ],
+                  caution:
+                    'A repeated name such as "Email Email address" is wordy; a person judges whether it is still clear.',
+                  i18n: {
+                    whyKey: 'formControlSingleLabel_lean_why_competing',
+                    cautionKey: 'formControlSingleLabel_lean_caution_competing'
+                  }
+                }
+              }
+            : {}),
           data: {
             details: {
               reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
@@ -67432,6 +67943,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               element: tag,
               labelCount: eligibleLabels.size,
               contributingLabelCount: contributing.length
+            }
+          },
+          // Browsers join the labels' text, so an empty one adds nothing.
+          lean: {
+            toward: 'pass',
+            why: 'Browsers join the text of a field’s labels, so the empty label adds nothing and the name is the real label’s text.',
+            signals: [{ signal: 'contributing-label-count', value: contributing.length }],
+            caution:
+              'A user agent that reads only the first label may pick the empty one; a script may fill it in.',
+            i18n: {
+              whyKey: 'formControlSingleLabel_lean_why',
+              cautionKey: 'formControlSingleLabel_lean_caution'
             }
           },
           data: {
@@ -71069,6 +71592,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Whether a target of the field's aria-describedby is a live region that
+  // is shown and has text: where a page puts the error it announces.
+  const LIVE_ROLES = new Set(['alert', 'status']);
+  const LIVE_VALUES = new Set(['polite', 'assertive']);
+  function liveDescribedBy(el) {
+    let targets = [];
+    try {
+      targets = helpers.getRefElements(el, 'aria-describedby', ctx) || [];
+    } catch {}
+    return targets.some((t) => {
+      let role = '';
+      try {
+        role = helpers.aria.getExplicitRole(t) || '';
+      } catch {}
+      const live = trim(dom.getAttribute(t, 'aria-live')).toLowerCase();
+      if (!LIVE_ROLES.has(role) && !LIVE_VALUES.has(live)) return false;
+      const info = messageInfo(t);
+      return info.shown && info.hasText && !info.ariaHidden;
+    });
+  }
+
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -71092,6 +71636,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let reasonCode;
     let tier = 'cantTell';
     let hiddenBy = null;
+    let liveDescription = false;
     if (errorMessage || refs.length) {
       if (!refs.length) {
         reasonCode = 'ERROR_MESSAGE_TARGET_MISSING';
@@ -71102,6 +71647,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           reasonCode = 'ERROR_MESSAGE_ARIA_HIDDEN';
         } else if (described(el)) {
           reasonCode = 'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED';
+          liveDescription = liveDescribedBy(el);
         } else if (infos.some((i) => i.shown)) {
           // A shown message with no text: ARIA sets no MUST on its text, and
           // 3.3.1 is met by error text the markup doesn't tie to the field,
@@ -71121,6 +71667,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
     } catch {}
+
+    // Only these two codes are reached without asking for a description.
+    const hasDescription =
+      reasonCode === 'ERROR_MESSAGE_ARIA_HIDDEN' || reasonCode === 'ERROR_MESSAGE_TARGET_MISSING'
+        ? described(el)
+        : null;
 
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
@@ -71155,7 +71707,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'This field is marked invalid, but the error message aria-errormessage names has no text.',
         hint: 'Check that the user is told, in text, what is wrong, in the label or next to the field; put that text in the error message.',
         uncertainty: 'judgement-required',
-        needed: 'Whether the error is described in text elsewhere, such as the field’s label.'
+        needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
+        // Reached only when aria-describedby gives no description either.
+        lean: {
+          why: 'The error message tied to the field is empty, and the field has no description, so the error is probably not told.',
+          whyKey: 'invalidFieldErrorMessage_lean_why_empty',
+          signals: [
+            { signal: 'error-message-empty', value: true },
+            { signal: 'has-description', value: false }
+          ],
+          caution:
+            'The error may be written in the label or in text next to the field; a template may set aria-invalid before anything is entered.',
+          cautionKey: 'invalidFieldErrorMessage_lean_caution_empty'
+        }
       },
       ERROR_MESSAGE_NOT_SHOWN_DESCRIBED: {
         key: 'cantTell_notShownDescribed',
@@ -71163,7 +71727,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'This field is marked invalid, and the error message aria-errormessage names is hidden or has no text; its description may carry the error.',
         hint: 'Check that the description tells the user, in text, what is wrong; show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
-        needed: 'Whether the field’s description says what the error is.'
+        needed: 'Whether the field’s description says what the error is.',
+        // A plain description may be only a format hint; one that is a
+        // shown live region with text is where pages announce the error.
+        lean: liveDescription
+          ? {
+              toward: 'pass',
+              why: 'The field’s description is a live region with text, where pages usually announce the error.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_liveDescription',
+              signals: [{ signal: 'description-is-live-region', value: true }],
+              caution: 'A live region can also hold a hint rather than the error.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_liveDescription'
+            }
+          : null
       },
       ERROR_MESSAGE_ARIA_HIDDEN: {
         key: 'cantTell_ariaHidden',
@@ -71171,14 +71747,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           'This field is marked invalid, and the error message aria-errormessage names is shown, but aria-hidden keeps its text from assistive technology.',
         hint: 'Check that screen reader users are told about the error too; remove aria-hidden from the message, or describe the error in the field’s description.',
         uncertainty: 'judgement-required',
-        needed: 'Whether assistive technology users are told about the error some other way.'
+        needed: 'Whether assistive technology users are told about the error some other way.',
+        // With a description, the error may reach screen reader users there.
+        lean: hasDescription
+          ? null
+          : {
+              why: 'The error message’s text is hidden from assistive technology, and the field has no description, so screen reader users are probably not told the error.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_ariaHidden',
+              signals: [
+                { signal: 'message-text-aria-hidden', value: true },
+                { signal: 'has-description', value: false }
+              ],
+              caution: 'A separate live announcement the rule cannot see may tell them.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_ariaHidden'
+            }
       },
       ERROR_MESSAGE_TARGET_MISSING: {
         key: 'cantTell_targetMissing',
         summary: 'This field is marked invalid, but no element has the id aria-errormessage names.',
         hint: 'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.',
         uncertainty: 'runtime-dependent',
-        needed: 'Whether a script adds the error message the field names.'
+        needed: 'Whether a script adds the error message the field names.',
+        // aria-invalid says the field is in error now, so its message
+        // should be in the page now; a description may carry the error.
+        lean: hasDescription
+          ? null
+          : {
+              why: 'The field is marked invalid now, but the error message it names is not in the page and it has no description.',
+              whyKey: 'invalidFieldErrorMessage_lean_why_targetMissing',
+              signals: [
+                { signal: 'error-message-missing', value: true },
+                { signal: 'has-description', value: false }
+              ],
+              caution:
+                'A scan taken while the page updates may catch the field before a script adds the message.',
+              cautionKey: 'invalidFieldErrorMessage_lean_caution_targetMissing'
+            }
       },
       NO_ERROR_MESSAGE: {
         key: 'cantTell_none',
@@ -71209,10 +71813,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
       if (m.lean)
         occurrence.lean = {
-          toward: 'fail',
+          toward: m.lean.toward || 'fail',
           why: m.lean.why,
-          signals: [{ signal: m.lean.signal, value: true }],
-          i18n: { whyKey: m.lean.whyKey }
+          signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
+          ...(m.lean.caution ? { caution: m.lean.caution } : {}),
+          i18n: {
+            whyKey: m.lean.whyKey,
+            ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
+          }
         };
       questions.push(helpers.reportOccurrence(el, occurrence));
     }
@@ -71753,9 +72361,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function isIconFontElement(node) {
-    if (!node) return false;
+    return iconFontFamilyOf(node) !== '';
+  }
+
+  // The known icon font a node's font-family names, or ''.
+  function iconFontFamilyOf(node) {
+    if (!node) return '';
     const cs = computedStyleOf(node);
-    if (!cs) return false;
+    if (!cs) return '';
     let family;
     try {
       family =
@@ -71763,7 +72376,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       family = '';
     }
-    if (!family) return false;
+    if (!family) return '';
     const names = String(family)
       .split(',')
       .map((s) =>
@@ -71772,7 +72385,46 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           .replace(/^['"]|['"]$/g, '')
           .toLowerCase()
       );
-    return names.some((n) => ICON_FONT_FAMILIES.has(n));
+    return names.find((n) => ICON_FONT_FAMILIES.has(n)) || '';
+  }
+
+  // Whether the page has loaded a font face of that family: true, false
+  // when none is loaded, null when the page does not say (no font set).
+  function iconFontLoaded(family, node) {
+    try {
+      const fonts = dom.fonts(dom.ownerDocument(node));
+      if (!fonts || typeof fonts.forEach !== 'function') return null;
+      let loaded = false;
+      fonts.forEach((face) => {
+        const f = String((face && face.family) || '')
+          .trim()
+          .replace(/^['"]|['"]$/g, '')
+          .toLowerCase();
+        if (f === family && face.status === 'loaded') loaded = true;
+      });
+      return loaded;
+    } catch {
+      return null;
+    }
+  }
+
+  // Text an icon font draws as one glyph: a ligature name ("search",
+  // "arrow_back") or characters from the Private Use Area.
+  function isLigatureOrPua(text) {
+    const t = String(text || '').trim();
+    return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(t) || /^[\uE000-\uF8FF]+$/u.test(t);
+  }
+
+  // Which way a single visible character points: the letter x (a common
+  // close icon) or a symbol stands for an icon; a digit is text a user
+  // would say. Other letters give no direction. (A symbol alone has no
+  // words to compare, so it is not reported; it is read here all the same.)
+  function symbolicCharacterKind(text) {
+    const c = Array.from(norm(text))[0] || '';
+    if (c === 'x') return 'letter-x';
+    if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
+    if (/^\p{N}$/u.test(c)) return 'digit';
+    return '';
   }
 
   // ACT 2ee8b8's own passed example `<button aria-label="close">X</button>`:
@@ -71857,6 +72509,93 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
 
+    // Which way the evidence points, for the shapes where it points one way.
+    let lean = null;
+    if (uncertainReason === 'HYPHENATION_DIFFERS') {
+      lean = {
+        toward: 'pass',
+        why: 'The name holds the label’s words once hyphens are ignored, so the label’s meaning is unchanged.',
+        signals: [{ signal: 'words-equal-without-hyphens', value: true }],
+        caution:
+          'Speech input may need the hyphenated word said differently ("e mail" against "email").',
+        i18n: {
+          whyKey: 'labelInName_lean_why_hyphenation',
+          cautionKey: 'labelInName_lean_caution_hyphenation'
+        }
+      };
+    } else if (uncertainReason === 'POSSIBLE_ABBREVIATION') {
+      // A stem of one or two letters ("N.", "No.") starts too many words to
+      // stand for the one in the name; three or more ("Ave.", "Dept.") does.
+      const longStems = new Set(
+        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+      );
+      if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
+        lean = {
+          toward: 'pass',
+          why: 'Each shortened word in the label starts the matching word in the name, as a conventional abbreviation does ("Ave." for "Avenue").',
+          signals: [
+            { signal: 'abbreviation-prefix-match', value: true },
+            {
+              signal: 'shortest-abbreviation-stem',
+              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+            }
+          ],
+          caution: 'A speech user may say the abbreviation as shown rather than the full word.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_abbreviation',
+            cautionKey: 'labelInName_lean_caution_abbreviation'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH') {
+      // ACT 2ee8b8 passes a ligature drawn as an icon; only when the page
+      // has loaded the font, else the word itself is drawn.
+      const source = (labelInfo.sourceElements || []).find(isIconFontElement);
+      const family = iconFontFamilyOf(source);
+      if (isLigatureOrPua(visibleLabel) && iconFontLoaded(family, source) === true) {
+        lean = {
+          toward: 'pass',
+          why: 'The label is an icon font’s ligature or symbol code, drawn as an icon, so it shows no readable words.',
+          signals: [
+            { signal: 'icon-font-family', value: family },
+            { signal: 'ligature-or-pua-text', value: true },
+            { signal: 'icon-font-loaded', value: true }
+          ],
+          caution:
+            'If the font fails to load for a user, the word itself is drawn and becomes a visible label.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_iconFont',
+            cautionKey: 'labelInName_lean_caution_iconFont'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER') {
+      const kind = symbolicCharacterKind(visibleLabel);
+      if (kind === 'letter-x' || kind === 'symbol') {
+        lean = {
+          toward: 'pass',
+          why: 'The label is a single symbol or an "X", which stands for an icon rather than words to say.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'A user may still say the character ("X") to reach the control.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_symbol',
+            cautionKey: 'labelInName_lean_caution_symbol'
+          }
+        };
+      } else if (kind === 'digit') {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a digit, text a speech user would say, and the name does not contain it.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'The name may spell the number out in words, which some speech input matches.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_digit',
+            cautionKey: 'labelInName_lean_caution_digit'
+          }
+        };
+      }
+    }
+
     const isSymbolicUncertainty =
       uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
       uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
@@ -71893,6 +72632,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
           ...(uncertainReason
             ? {
+                ...(lean ? { lean } : null),
                 uncertainty: {
                   code: 'equivalence-unknown',
                   needed:
@@ -79004,6 +79744,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return ONLY_PUNCTUATION.test(rest) ? 'cancelOnly' : 'opaque';
   }
 
+  // A box of a split one-time-code field: maxlength 1, among three or more
+  // such boxes in its parent. Its page usually spreads a pasted code across
+  // the boxes from script the markup does not carry.
+  function inSplitCodeGroup(el) {
+    const one = (n) => normalizeWs(dom.getAttribute(n, 'maxlength')) === '1';
+    if (!one(el)) return false;
+    const parent = dom.parentElement(el);
+    if (!parent) return false;
+    let boxes = 0;
+    try {
+      for (const n of dom.querySelectorAll(parent, 'input')) if (one(n)) boxes += 1;
+    } catch {
+      return false;
+    }
+    return boxes >= 4;
+  }
+
+  // A handler whose own words say it blocks pasting: a function named so
+  // (disablePaste, no_paste, preventCopyPaste), or a message shown before
+  // the paste is cancelled.
+  // Word-initial (disablePaste, no_paste) in any case, and camelCase within
+  // a name (onDisablePaste) in its own case, so "casinoPaste" is no match.
+  const BLOCK_NAME =
+    /(?:\b|_)(?:no|disable|block|prevent|deny|forbid|stop)_?(?:copy_?(?:and_?)?)?paste|paste_?(?:block|disable|prevent|deny|forbid)/i;
+  const BLOCK_NAME_CAMEL =
+    /[a-z0-9](?:No|Disable|Block|Prevent|Deny|Forbid|Stop)(?:Copy(?:And)?)?Paste|Paste(?:Block|Disable|Prevent|Deny|Forbid)/;
+  const CANCELS =
+    /\breturn\s+false\b|\breturn\s*!1\b|\bpreventDefault\s*\(|\breturnValue\s*=\s*(?:false|!1)\b/i;
+  const ALERTS = /\balert\s*\(/;
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, textarea')
     : helpers.queryAll('input, textarea');
@@ -79032,6 +79802,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
       : { targetSet: 'acc', accEligible: null, reasons: [] };
 
+    // A split code box may have its paste put back by a listener added
+    // from script, which nothing here sees, so it has no lean.
+    const splitCode = inSplitCodeGroup(el);
+
     if (verdict === 'cancelOnly') {
       cancelling.push(
         helpers.reportOccurrence(el, {
@@ -79039,10 +79813,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             'This authentication field has a paste handler whose only effect is to cancel the paste.',
           hint: 'Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.',
           i18n: {
-            summaryKey: 'passwordPasteEnabled_summary_fail',
-            hintKey: 'passwordPasteEnabled_hint_fail',
+            summaryKey: 'passwordPasteEnabled_summary_cantTell_cancelled',
+            hintKey: 'passwordPasteEnabled_hint_cantTell_cancelled',
             params: {}
           },
+          ...(splitCode
+            ? {}
+            : {
+                lean: {
+                  toward: 'fail',
+                  why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
+                  signals: [
+                    { signal: 'handler', value: 'cancel-only' },
+                    { signal: 'split-code-box', value: false }
+                  ],
+                  caution:
+                    'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
+                  i18n: {
+                    whyKey: 'passwordPasteEnabled_lean_why_cancelled',
+                    cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+                  }
+                }
+              }),
           data: {
             visibilityFilter: eligInfo,
             details: { reasonCode: 'PASTE_CANCELLED', handler: normalizeWs(handler) }
@@ -79053,7 +79845,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     // An inline handler that delegates: whether it cancels lives in code the
-    // markup does not carry.
+    // markup does not carry, unless its own words say it blocks.
+    const namedBlock = BLOCK_NAME.test(handler) || BLOCK_NAME_CAMEL.test(handler);
+    const alertsAndCancels = ALERTS.test(handler) && CANCELS.test(handler);
     undetermined.push(
       helpers.reportOccurrence(el, {
         summary:
@@ -79064,6 +79858,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'passwordPasteEnabled_hint_cantTell',
           params: {}
         },
+        ...((namedBlock || alertsAndCancels) && !splitCode
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.',
+                signals: [
+                  { signal: 'handler-names-block', value: namedBlock },
+                  { signal: 'handler-alerts-and-cancels', value: alertsAndCancels },
+                  { signal: 'split-code-box', value: false }
+                ],
+                caution:
+                  'A function’s name can mislead; what it does is in script the markup does not carry.',
+                i18n: {
+                  whyKey: 'passwordPasteEnabled_lean_why_opaque',
+                  cautionKey: 'passwordPasteEnabled_lean_caution_opaque'
+                }
+              }
+            }
+          : {}),
         data: {
           visibilityFilter: eligInfo,
           details: { reasonCode: 'PASTE_HANDLER_OPAQUE', handler: normalizeWs(handler) }
@@ -80296,6 +81109,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           summaryKey: 'scopeAttrValid_summary_cantTell',
           hintKey: 'scopeAttrValid_hint_cantTell',
           params: { value: raw }
+        },
+        // A best practice the page states it breaks: the value is no
+        // keyword, whatever direction the auto state then guesses.
+        lean: {
+          toward: 'fail',
+          why: 'The scope value is not one of the four keywords, so it declares no header direction.',
+          signals: [{ signal: 'scope-value', value: raw }],
+          caution:
+            'Browsers then guess the direction, which is usually right for a header in the first row or column.',
+          i18n: {
+            whyKey: 'scopeAttrValid_lean_why',
+            cautionKey: 'scopeAttrValid_lean_caution'
+          }
         },
         data: {
           details: { reasonCode: 'SCOPE_ATTR_INVALID', value: raw }
@@ -82898,6 +83724,41 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
+    // A lone cell spanning the table's full width, used once at the top, is
+    // the visual-caption pattern; full-width rows further down group rows
+    // instead, and a cell narrower than the table is no title bar.
+    const colSpan = (cell) => {
+      const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
+      return Number.isFinite(n) && n > 0 ? n : 1;
+    };
+    const laterRows = rows.slice(1).map((r) => Array.from(r.cells || []).filter(isEligible));
+    const width = laterRows.reduce(
+      (m, cells) =>
+        Math.max(
+          m,
+          cells.reduce((sum, c) => sum + colSpan(c), 0)
+        ),
+      0
+    );
+    const spansWidth = colSpan(candidateCell) >= width;
+    const otherSingleRows = laterRows.filter((cells) => cells.length === 1).length;
+    const lean =
+      spansWidth && otherSingleRows === 0
+        ? {
+            toward: 'fail',
+            why: 'The lone first-row cell spans the whole table, and no other row is a single cell: the pattern of a title drawn as a cell.',
+            signals: [
+              { signal: 'first-cell-spans-width', value: true },
+              { signal: 'other-single-cell-rows', value: 0 }
+            ],
+            caution: 'A full-width first row can also head a single group of columns.',
+            i18n: {
+              whyKey: 'tableFakeCaption_lean_why',
+              cautionKey: 'tableFakeCaption_lean_caution'
+            }
+          }
+        : null;
+
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(table)
@@ -82914,6 +83775,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'tableFakeCaption_hint_cantTell',
         params: {}
       },
+      ...(lean ? { lean } : {}),
       data: {
         details: { reasonCode: 'SINGLE_CELL_FIRST_ROW_NO_CAPTION' }
       }
@@ -83158,7 +84020,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return Number.isFinite(n) ? n : 1;
   }
 
-  function askUnassigned(th, row, column) {
+  function askUnassigned(th, row, column, ragged) {
     askOccurrences.push(
       helpers.reportOccurrence(th, {
         summary: 'No data cell in this table is assigned to this header cell.',
@@ -83175,6 +84037,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             'Whether the table lacks the cells this header describes, or leaves them out on purpose.',
           evidence: { row, column }
         },
+        // A table whose cells name no headers places every cell by
+        // position, so a header with no cell at all after it, where its
+        // scope looks, is short of the cells it heads.
+        ...(ragged
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'No cell follows this header where it applies, and no cell in the table names its headers, so the header describes nothing.',
+                signals: [
+                  { signal: 'no-cells-after-header', value: true },
+                  { signal: 'table-uses-headers-attr', value: false }
+                ],
+                caution: 'A script may add the missing cells later.',
+                i18n: {
+                  whyKey: 'tableThHasDataCells_lean_why_unassigned',
+                  cautionKey: 'tableThHasDataCells_lean_caution_unassigned'
+                }
+              }
+            }
+          : {}),
         data: { details: { reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL', row, column } }
       })
     );
@@ -83204,7 +84086,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (after.length && below.length && after.concat(below).every(isHeader)) continue;
         const inRow = scope !== 'col' && after.some(free);
         const inColumn = scope !== 'row' && below.some(free);
-        if (!inRow && !inColumn) askUnassigned(th, r, c);
+        if (!inRow && !inColumn) {
+          // No cell at all where the header looks: the row ends, or the
+          // rows below are shorter, rather than cells marked up as headers.
+          const ragged =
+            named.size === 0 &&
+            (scope === 'col'
+              ? !below.length
+              : scope === 'row'
+                ? !after.length
+                : !after.length && !below.length);
+          askUnassigned(th, r, c, ragged);
+        }
       }
     }
   }
@@ -85104,6 +85997,80 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // What a table with no header cell holds, read from the page: signs of
+  // data (numbers in most of its body, a caption or a thead, a first row or
+  // column drawn bold when the rest is not) and signs of layout (a nested
+  // table, form controls, images or blocks of prose in its cells). Only
+  // one kind of sign gives a direction.
+  const NUMBER =
+    /^[-+\u2212]?[$\u20ac\u00a3\u00a5]?\s*\d[\d.,\s\u00a0\u202f]*\s*(?:%|[$\u20ac\u00a3\u00a5])?$/;
+  const LAYOUT_CONTENT =
+    'table, input:not([type="hidden" i]), select, textarea, button, img, p, ul, ol, dl, h1, h2, h3, h4, h5, h6, blockquote';
+  const PROSE_LENGTH = 150;
+
+  function weightBold(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      const w = String((cs && cs.fontWeight) || '');
+      return w === 'bold' || w === 'bolder' || Number(w) >= 600;
+    } catch {
+      return false;
+    }
+  }
+  // A cell drawn bold, itself or through the one element holding its text
+  // (<td><b>Name</b></td>).
+  function isBold(cell) {
+    if (weightBold(cell)) return true;
+    const kids = Array.from(dom.children(cell) || []);
+    return (
+      kids.length === 1 &&
+      trim(dom.textContent(kids[0])) === trim(dom.textContent(cell)) &&
+      weightBold(kids[0])
+    );
+  }
+  // Every non-empty cell of `cells` bold, and none of `others`.
+  function boldApart(cells, others) {
+    const full = cells.filter((c) => trim(dom.textContent(c)));
+    const rest = others.filter((c) => trim(dom.textContent(c)));
+    return full.length >= 2 && rest.length > 0 && full.every(isBold) && !rest.some(isBold);
+  }
+
+  function tableKind(table, rowCells) {
+    const body = [];
+    rowCells.slice(1).forEach((cells) => body.push(...cells.slice(1)));
+    const texts = body.map((c) => trim(dom.textContent(c))).filter(Boolean);
+    const numericShare = texts.length
+      ? texts.filter((t) => NUMBER.test(t)).length / texts.length
+      : 0;
+    let captionOrHead = false;
+    try {
+      captionOrHead = !!dom.querySelector(table, ':scope > caption, :scope > thead');
+    } catch {}
+    const firstColumn = rowCells.map((cells) => cells[0]).filter(Boolean);
+    const headerStyled = boldApart(rowCells[0], body) || boldApart(firstColumn.slice(1), body);
+    const data = numericShare >= 0.5 || captionOrHead || headerStyled;
+
+    let layoutContent = false;
+    for (const cells of rowCells) {
+      for (const c of cells) {
+        let hit = false;
+        try {
+          hit = !!dom.querySelector(c, LAYOUT_CONTENT);
+        } catch {}
+        if (hit || trim(dom.textContent(c)).length > PROSE_LENGTH) layoutContent = true;
+      }
+    }
+    const signals = [
+      { signal: 'numeric-cell-share', value: Math.round(numericShare * 100) / 100 },
+      { signal: 'caption-or-thead', value: captionOrHead },
+      { signal: 'header-styled-first-row-or-column', value: headerStyled },
+      { signal: 'layout-content-in-cells', value: layoutContent }
+    ];
+    if (data && !layoutContent) return { toward: 'fail', signals };
+    if (layoutContent && !data) return { toward: 'pass', signals };
+    return null;
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -85163,6 +86130,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!hasAnyHeader) {
       const hasData = rowCells.some((cells) => cells.some((c) => isEligible(c) && !isEmptyCell(c)));
       if (hasData) {
+        const kind = tableKind(table, rowCells);
         questions.push(
           helpers.reportOccurrence(table, {
             summary: 'This table has no header cells. If it holds data, its cells have no headers.',
@@ -85177,6 +86145,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               code: 'judgement-required',
               needed: 'Whether the table holds data, which needs headers, or only lays out content.'
             },
+            ...(kind
+              ? {
+                  lean: {
+                    toward: kind.toward,
+                    why:
+                      kind.toward === 'fail'
+                        ? 'The table looks like data: most of its cells are numbers, or it has a caption, a table head, or a first row or column drawn as headers.'
+                        : 'The table looks like layout: its cells hold a nested table, form controls, images or blocks of text, and nothing marks it as data.',
+                    signals: kind.signals,
+                    caution:
+                      kind.toward === 'fail'
+                        ? 'A layout table can also hold numbers, such as prices beside text.'
+                        : 'A data table can hold images or controls in its cells, such as a product list.',
+                    i18n: {
+                      whyKey: `tdHasHeader_lean_why_${kind.toward === 'fail' ? 'data' : 'layout'}`,
+                      cautionKey: `tdHasHeader_lean_caution_${kind.toward === 'fail' ? 'data' : 'layout'}`
+                    }
+                  }
+                }
+              : {}),
             data: { details: { reasonCode: 'TD_TABLE_NO_HEADERS' } }
           })
         );
@@ -87956,6 +88944,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "Die Beschriftung dieses Feldes ist geteilt: Sichtbar ist „{{label}}“, während {{hiddenCount}} weitere Teil(e) der Beschriftung optisch verborgen sind.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Prüfen Sie, ob der sichtbare Teil allein das Feld benennt, oder machen Sie den Rest der Beschriftung sichtbar.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Geben Sie jedem Feld eine eigene Beschriftung oder bringen Sie den unterscheidenden Kontext auf den Bildschirm – eine sichtbare Überschrift oder eine Fieldset-Legende über jeder Gruppe.",
+      "formControlLabelQuality_lean_why_placeholder": "Die Beschriftung ist eine Formulierung, die nur eine Vorlage hinterlässt und keinen Zweck eines Feldes nennt.",
+      "formControlLabelQuality_lean_caution_placeholder": "Eine Werkzeugseite, etwa ein Formulareditor, kann ein Feld haben, das wirklich „Beschriftung“ heißt.",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Die Felder mit derselben Beschriftung sind Kopien eines Widgets, jede in einem eigenen Formular mit gleichem Namen, Typ und gleicher Aktion; sie dienen demselben Zweck.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Kopien eines Widgets können sich dennoch im Zweck unterscheiden, wenn ihre Formulare unterschiedliche versteckte Werte senden.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Die Felder mit derselben Beschriftung sind verschiedene Felder eines Formulars mit unterschiedlichen Namen, und nichts Sichtbares unterscheidet sie.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Sichtbarer Text, den die Regel nicht liest, etwa eine Überschrift in einem gestalteten Block, kann die Felder unterscheiden.",
       "formControl_programmaticLabelQuality_title": "Formularelemente sollten eine auf dem Bildschirm sichtbare Beschriftung haben",
       "formControl_programmaticLabelQuality_description": "Markiert Formularelemente, deren zugänglicher Name von placeholder, title, aria-label oder von aria-labelledby stammt, das nur auf verborgenen Text verweist; keines davon ist eine auf dem Bildschirm sichtbare Beschriftung. Bevorzugen Sie ein sichtbares <label> oder aria-labelledby, das auf sichtbaren Text verweist.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Dieses Formularfeld ist nur durch sein {{method}}-Attribut beschriftet.",
@@ -88239,6 +89233,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelInName_hint_cantTell": "Prüfen Sie von Hand, ob die beiden Formulierungen übereinstimmen; am Markup lässt sich eine beabsichtigte Abkürzung nicht von einer Abweichung unterscheiden.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: Die sichtbare Beschriftung „{{visibleLabel}}“ (aus {{labelSource}}) wird möglicherweise als Symbol oder Icon dargestellt statt als wörtlicher Text und muss daher nicht zwingend im zugänglichen Namen (aus {{nameMechanism}}) enthalten sein.",
       "labelInName_hint_cantTell_symbolic": "Prüfen Sie manuell: Wird der sichtbare Text als Icon oder Symbol dargestellt, liegt kein Fehler vor; wird er als wörtliche Wörter dargestellt, ergänzen Sie den zugänglichen Namen entsprechend.",
+      "labelInName_lean_why_hyphenation": "Der Name enthält die Wörter der Beschriftung, sobald Bindestriche ignoriert werden; die Bedeutung der Beschriftung bleibt gleich.",
+      "labelInName_lean_caution_hyphenation": "Bei Spracheingabe muss das Wort mit Bindestrich womöglich anders gesprochen werden („E Mail“ statt „Email“).",
+      "labelInName_lean_why_abbreviation": "Jedes abgekürzte Wort der Beschriftung ist der Anfang des passenden Wortes im Namen, wie bei einer üblichen Abkürzung („Str.“ für „Straße“).",
+      "labelInName_lean_caution_abbreviation": "Menschen mit Spracheingabe sagen womöglich die Abkürzung, wie sie angezeigt wird, statt des ganzen Wortes.",
+      "labelInName_lean_why_iconFont": "Die Beschriftung ist eine Ligatur oder ein Symbolcode einer Icon-Schrift und wird als Icon gezeichnet; sie zeigt keine lesbaren Wörter.",
+      "labelInName_lean_caution_iconFont": "Lädt die Schrift für jemanden nicht, wird das Wort selbst gezeichnet und zur sichtbaren Beschriftung.",
+      "labelInName_lean_why_symbol": "Die Beschriftung ist ein einzelnes Symbol oder ein „X“, das für ein Icon steht und nicht für zu sprechende Wörter.",
+      "labelInName_lean_caution_symbol": "Manche sagen dennoch das Zeichen („X“), um das Bedienelement zu erreichen.",
+      "labelInName_lean_why_digit": "Die Beschriftung ist eine Ziffer, also Text, den Menschen mit Spracheingabe sagen würden, und der Name enthält sie nicht.",
+      "labelInName_lean_caution_digit": "Der Name schreibt die Zahl womöglich in Worten aus, was manche Spracheingabe erkennt.",
       "ariaRolesValid_title": "Das role-Attribut muss eine gültige, nicht abstrakte ARIA-Rolle sein",
       "ariaRolesValid_description": "Prüft, ob ein explizites role=\"\"-Attribut zu einer echten, nicht abstrakten WAI-ARIA-Rolle aufgelöst wird.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" ist keine erkannte ARIA-Rolle.",
@@ -88355,6 +89359,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_hint_fail": "Fügen Sie der Tabelle Datenzellen (<td>) hinzu, oder entfernen Sie die Kopfzellen, wenn die Tabelle keine Daten enthält.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Dieser Kopfzelle ist keine Datenzelle der Tabelle zugeordnet.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Prüfen Sie, ob der Tabelle die Zellen fehlen, die diese Kopfzelle beschreibt. Wenn Zellen ihre Kopfzellen mit einem headers-Attribut angeben, nehmen Sie diese Kopfzelle dort auf, wo sie zutrifft.",
+      "tableThHasDataCells_lean_why_unassigned": "Dort, wo diese Kopfzelle gilt, folgt keine Zelle, und keine Zelle der Tabelle nennt ihre Kopfzellen; die Kopfzelle beschreibt daher nichts.",
+      "tableThHasDataCells_lean_caution_unassigned": "Ein Skript kann die fehlenden Zellen später hinzufügen.",
       "ariaHiddenBody_title": "Das <body>-Element des Dokuments darf nicht aria-hidden sein",
       "ariaHiddenBody_description": "Prüft, ob <body> nicht aria-hidden=\"true\" hat, was die gesamte Seite aus dem Accessibility-Baum entfernen würde.",
       "ariaHiddenBody_summary_fail": "Der Dokumentkörper hat aria-hidden=\"true\", wodurch die gesamte Seite vor assistiven Technologien verborgen wird.",
@@ -88438,6 +89444,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlSingleLabel_hint_cantTell_competing": "Browser fügen die Beschriftungen zu einem Namen zusammen. Prüfen Sie, ob er noch verständlich ist, oder behalten Sie ein <label> pro Feld.",
       "formControlSingleLabel_summary_cantTell": "Dieses <{{element}}> hat ein <label> mit Text und ein zusätzliches leeres; prüfen Sie, wie Screenreader es ansagen.",
       "formControlSingleLabel_hint_cantTell": "Entfernen Sie das leere <label>, damit das Feld genau eines hat.",
+      "formControlSingleLabel_lean_why_competing": "Die Beschriftungen wiederholen einander oder kennzeichnen das Feld nur als Pflichtfeld; der zusammengesetzte Name bleibt daher klar.",
+      "formControlSingleLabel_lean_caution_competing": "Ein wiederholter Name wie „E-Mail E-Mail-Adresse“ ist umständlich; ein Mensch beurteilt, ob er noch klar ist.",
+      "formControlSingleLabel_lean_why": "Browser verbinden den Text der Beschriftungen eines Feldes; die leere Beschriftung fügt nichts hinzu und der Name ist der Text der eigentlichen Beschriftung.",
+      "formControlSingleLabel_lean_caution": "Ein User Agent, der nur die erste Beschriftung liest, kann die leere wählen; ein Skript kann sie auch füllen.",
       "nestedInteractiveControlsAbsent_title": "Interaktive Bedienelemente dürfen nicht verschachtelt sein",
       "nestedInteractiveControlsAbsent_description": "Prüft, ob ein interaktives Element (Link, Schaltfläche, Formularelement oder ARIA-Widget-Rolle) kein weiteres interaktives Element enthält.",
       "nestedInteractiveControlsAbsent_summary_fail": "Dieses <{{element}}> enthält verschachtelte interaktive Bedienelemente: {{nestedElements}}.",
@@ -88526,6 +89536,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scopeAttrValid_description": "Prüft, ob scope=\"…\" row, col, rowgroup oder colgroup ist.",
       "scopeAttrValid_summary_cantTell": "Dieser scope-Attributwert wird nicht erkannt.",
       "scopeAttrValid_hint_cantTell": "Verwenden Sie row, col, rowgroup oder colgroup.",
+      "scopeAttrValid_lean_why": "Der scope-Wert ist keines der vier Schlüsselwörter und gibt daher keine Richtung der Kopfzelle an.",
+      "scopeAttrValid_lean_caution": "Browser erraten dann die Richtung, was bei einer Kopfzelle in der ersten Zeile oder Spalte meist stimmt.",
       "tabindex_title": "tabindex sollte nicht größer als 0 sein",
       "tabindex_description": "Prüft, ob tabindex-Werte 0 oder negativ sind, nicht eine positive Zahl.",
       "tabindex_summary_cantTell": "Dieses Element hat einen positiven tabindex, der die natürliche Tab-Reihenfolge überschreibt.",
@@ -88537,6 +89549,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Diese Kopfzelle hat keinen sichtbaren Text. Ihr einziger Name stammt aus aria-label oder aria-labelledby, was einige Kombinationen aus Screenreader und Browser, etwa NVDA mit Firefox und VoiceOver unter iOS, bei <th> ignorieren.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Fügen Sie der Kopfzelle sichtbaren Text hinzu, zusätzlich zum ARIA-Namen oder stattdessen. Sichtbarer Text ist der einzige Name, den alle getesteten Screenreader vorlesen.",
       "emptyTableHeader_lean_why_notVisible": "Die Kopfzelle hat keinen sichtbaren Text; ihr einziger Name stammt aus ARIA, den manche Screenreader bei Kopfzellen ignorieren.",
+      "emptyTableHeader_lean_why_empty": "Die Kopfzelle ist leer, enthält nichts, das ihr einen Namen geben könnte, und steht über Datenzellen mit Text.",
+      "emptyTableHeader_lean_caution_empty": "Eine Kopfzelle, die nur per CSS dargestellt wird (Hintergrundbild oder generierter Inhalt), hat keinen Text auf der Seite.",
       "labelTitleOnly_title": "Beschriftungen nur über title (veraltet)",
       "labelTitleOnly_description": "Seit 1.10.0 veraltet und immer notApplicable: Ein Formularelement, das nur über sein title-Attribut beschriftet ist, meldet form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Der Alternativtext eines Bildes darf angrenzenden sichtbaren Text nicht duplizieren",
@@ -88576,10 +89590,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_hint_fail": "Verwenden Sie \"on\", \"off\" oder gültige Autofill-Token, etwa \"shipping postal-code\" oder \"cc-number\".",
       "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
       "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und damit den Passwortmanager oder die Zwischenablage entfernt, auf die sich WCAG 3.3.8 als unterstützenden Mechanismus stützt.",
-      "passwordPasteEnabled_summary_fail": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
-      "passwordPasteEnabled_hint_fail": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Prüfen Sie von Hand, ob sich noch einfügen lässt. Ist es blockiert, entfernen Sie den Handler, damit ein Passwortmanager oder – bei einem Einmalcode – die Zwischenablage das Feld ausfüllen kann.",
       "passwordPasteEnabled_summary_cantTell": "Dieses Authentifizierungsfeld hat einen Einfügehandler; ob er den Vorgang abbricht, ließ sich nicht ermitteln.",
       "passwordPasteEnabled_hint_cantTell": "Prüfen Sie von Hand, dass sich weiterhin in das Feld einfügen lässt, damit ein Passwortmanager oder die Zwischenablage es ausfüllen kann.",
+      "passwordPasteEnabled_lean_why_cancelled": "Der Einfügehandler des Feldes bricht das Einfügen nur ab; das Einfügen ist daher wahrscheinlich blockiert.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Ein per Skript hinzugefügter Listener am Feld oder um es herum kann den eingefügten Text einsetzen, nachdem der Handler abgebrochen hat.",
+      "passwordPasteEnabled_lean_why_opaque": "Der Einfügehandler sagt, was er tut: Er ruft eine Funktion auf, deren Name das Blockieren des Einfügens nennt, oder zeigt eine Meldung und bricht das Einfügen ab.",
+      "passwordPasteEnabled_lean_caution_opaque": "Der Name einer Funktion kann täuschen; was sie tut, steht in Skript, das das Markup nicht enthält.",
       "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
       "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
       "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -88725,6 +89743,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_none": "Prüfen Sie, ob als Text mitgeteilt wird, welches Feld fehlerhaft ist und was falsch ist; verknüpfen Sie die Meldung mit aria-errormessage oder aria-describedby mit dem Feld.",
       "invalidFieldErrorMessage_lean_why_hidden": "Die mit dem Feld verknüpfte Fehlermeldung ist ausgeblendet; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "Die mit dem Feld verknüpfte Fehlermeldung ist vor assistiven Technologien verborgen; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
+      "invalidFieldErrorMessage_lean_why_empty": "Die mit dem Feld verknüpfte Fehlermeldung ist leer und das Feld hat keine Beschreibung; der Fehler wird daher wahrscheinlich nicht mitgeteilt.",
+      "invalidFieldErrorMessage_lean_caution_empty": "Der Fehler kann in der Beschriftung oder in Text neben dem Feld stehen; eine Vorlage kann aria-invalid setzen, bevor etwas eingegeben wurde.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "Die Beschreibung des Feldes ist eine Live-Region mit Text, in der Seiten den Fehler üblicherweise ankündigen.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Eine Live-Region kann auch einen Hinweis statt des Fehlers enthalten.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "Der Text der Fehlermeldung ist vor assistiven Technologien verborgen und das Feld hat keine Beschreibung; Screenreader-Nutzende erfahren den Fehler daher wahrscheinlich nicht.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Eine separate Live-Ankündigung, die die Regel nicht sieht, kann sie informieren.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "Das Feld ist jetzt als ungültig markiert, aber die genannte Fehlermeldung ist nicht auf der Seite und das Feld hat keine Beschreibung.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Ein Scan während einer Aktualisierung der Seite kann das Feld erfassen, bevor ein Skript die Meldung hinzufügt.",
       "labelForValid_title": "Das for-Attribut einer Beschriftung sollte ein Bedienelement nennen, das sie beschriften kann",
       "labelForValid_description": "Markiert zur manuellen Prüfung eine Beschriftung, deren for-Attribut kein Element nennt oder eines, das sich nicht beschriften lässt, sodass sie nichts beschriftet.",
       "labelForValid_summary_cantTell_missing": "Das for=\"{{for}}\" dieser Beschriftung nennt kein Element, daher beschriftet sie nichts.",
@@ -88767,12 +89793,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableFakeCaption_description": "Markiert Tabellen ohne <caption>, deren erste Zeile eine einzelne nicht leere Zelle hat, während andere Zeilen mehrere Zellen haben, zur manuellen Überprüfung, ob diese Zelle als unechte Beschriftung fungiert.",
       "tableFakeCaption_summary_cantTell": "Diese Tabelle hat keine <caption>, aber ihre erste Zeile besteht aus einer einzelnen Zelle oberhalb von Zeilen mit mehreren Zellen — sie könnte als unechte Beschriftung fungieren.",
       "tableFakeCaption_hint_cantTell": "Wenn diese Zelle die Tabelle beschreiben soll, verwenden Sie ein echtes <caption>-Element anstelle einer einzelnen Zelle in der ersten Zeile.",
+      "tableFakeCaption_lean_why": "Die einzelne Zelle der ersten Zeile erstreckt sich über die ganze Tabelle, und keine andere Zeile besteht aus nur einer Zelle: das Muster eines als Zelle dargestellten Titels.",
+      "tableFakeCaption_lean_caution": "Eine erste Zeile über die volle Breite kann auch einer einzigen Spaltengruppe als Kopf dienen.",
       "tdHasHeader_title": "Datenzellen in großen Tabellen müssen eine zugeordnete Kopfzelle haben",
       "tdHasHeader_description": "Prüft, ob jedes <td> in einer großen, einfachen Tabelle (ohne colspan/rowspan) eine zugeordnete Kopfzelle hat — über ein headers-Attribut, ein implizites Spalten-<th> darüber oder ein implizites Zeilen-<th> links davon.",
       "tdHasHeader_summary_fail": "Diese Datenzelle hat keine zugeordnete Kopfzelle (kein headers-Attribut, kein Spalten-<th> darüber, kein Zeilen-<th> links davon).",
       "tdHasHeader_hint_fail": "Fügen Sie ein headers-Attribut hinzu, das auf die richtigen <th>-ids verweist, oder ordnen Sie die Tabelle so, dass ein <th> über der Spalte dieser Zelle oder am Anfang ihrer Zeile steht.",
       "tdHasHeader_summary_cantTell_noHeaders": "Diese Tabelle hat keine Kopfzellen. Wenn sie Daten enthält, haben ihre Zellen keine Überschriften.",
       "tdHasHeader_hint_cantTell_noHeaders": "Wenn die Tabelle Daten enthält, kennzeichnen Sie ihre Kopfzellen mit <th> oder geben Sie ihren Zellen ein headers-Attribut. Dient sie nur dem Layout, geben Sie ihr role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "Die Tabelle wirkt wie eine Datentabelle: Die meisten Zellen sind Zahlen, oder sie hat eine Beschriftung, einen Tabellenkopf oder eine erste Zeile oder Spalte, die wie Kopfzellen dargestellt ist.",
+      "tdHasHeader_lean_caution_data": "Auch eine Layouttabelle kann Zahlen enthalten, etwa Preise neben Text.",
+      "tdHasHeader_lean_why_layout": "Die Tabelle wirkt wie ein Layout: Ihre Zellen enthalten eine verschachtelte Tabelle, Formularelemente, Bilder oder Textblöcke, und nichts weist sie als Datentabelle aus.",
+      "tdHasHeader_lean_caution_layout": "Auch eine Datentabelle kann Bilder oder Bedienelemente in ihren Zellen enthalten, etwa eine Produktliste.",
       "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
@@ -89056,6 +90088,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "This field's label is split: \"{{label}}\" is what renders, while {{hiddenCount}} other part(s) of the label are hidden from sight.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Confirm the visible part alone identifies the field, or make the rest of the label visible.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Give each field a label of its own, or put the distinguishing context on screen: a visible heading or a fieldset legend above each group.",
+      "formControlLabelQuality_lean_why_placeholder": "The label is a phrase only a template leaves behind, which names no field’s purpose.",
+      "formControlLabelQuality_lean_caution_placeholder": "A tool page, such as a form builder, can have a field really called \"Label\".",
+      "formControlLabelQuality_lean_why_duplicateWidget": "The fields sharing the label are copies of one widget, each in its own form with the same name, type and action, so they serve the same purpose.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Copies of a widget can still differ in purpose if their forms send different hidden values.",
+      "formControlLabelQuality_lean_why_duplicateFields": "The fields sharing the label are different fields of one form, with different names, and nothing visible tells them apart.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Visible text the rule does not read, such as a caption in a styled block, may tell the fields apart.",
       "formControl_programmaticLabelQuality_title": "Form controls should have a label shown on screen",
       "formControl_programmaticLabelQuality_description": "Flags form controls whose accessible name comes from placeholder, title, aria-label, or aria-labelledby pointing only at hidden text, none of which is a label shown on screen. Prefer a visible <label>, or aria-labelledby pointing at visible text.",
       "formControl_programmaticLabelQuality_summary_cantTell": "This form field is labelled only by its {{method}} attribute.",
@@ -89339,6 +90377,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelInName_hint_cantTell": "Check by hand whether the two wordings match; the markup can't tell an intended abbreviation from a mismatch.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: visible label \"{{visibleLabel}}\" (from {{labelSource}}) may render as an icon or symbol rather than literal text, so it may not need to appear in the accessible name (from {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Check by hand: if the visible text renders as an icon or symbol, this is not a defect; if it renders as literal words, update the accessible name to include them.",
+      "labelInName_lean_why_hyphenation": "The name holds the label’s words once hyphens are ignored, so the label’s meaning is unchanged.",
+      "labelInName_lean_caution_hyphenation": "Speech input may need the hyphenated word said differently (\"e mail\" against \"email\").",
+      "labelInName_lean_why_abbreviation": "Each shortened word in the label starts the matching word in the name, as a conventional abbreviation does (\"Ave.\" for \"Avenue\").",
+      "labelInName_lean_caution_abbreviation": "A speech user may say the abbreviation as shown rather than the full word.",
+      "labelInName_lean_why_iconFont": "The label is an icon font’s ligature or symbol code, drawn as an icon, so it shows no readable words.",
+      "labelInName_lean_caution_iconFont": "If the font fails to load for a user, the word itself is drawn and becomes a visible label.",
+      "labelInName_lean_why_symbol": "The label is a single symbol or an \"X\", which stands for an icon rather than words to say.",
+      "labelInName_lean_caution_symbol": "A user may still say the character (\"X\") to reach the control.",
+      "labelInName_lean_why_digit": "The label is a digit, text a speech user would say, and the name does not contain it.",
+      "labelInName_lean_caution_digit": "The name may spell the number out in words, which some speech input matches.",
       "ariaRolesValid_title": "role attribute must be a valid, non-abstract ARIA role",
       "ariaRolesValid_description": "Checks that an explicit role=\"\" attribute resolves to a real, non-abstract WAI-ARIA role.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" is not a recognized ARIA role.",
@@ -89455,6 +90503,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_hint_fail": "Add data cells (<td>) to the table, or remove the header cells if the table has no data.",
       "tableThHasDataCells_summary_cantTell_unassigned": "No data cell in this table is assigned to this header cell.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.",
+      "tableThHasDataCells_lean_why_unassigned": "No cell follows this header where it applies, and no cell in the table names its headers, so the header describes nothing.",
+      "tableThHasDataCells_lean_caution_unassigned": "A script may add the missing cells later.",
       "ariaHiddenBody_title": "The document <body> must not be aria-hidden",
       "ariaHiddenBody_description": "Checks that <body> does not have aria-hidden=\"true\", which would remove the entire page from the accessibility tree.",
       "ariaHiddenBody_summary_fail": "The document body has aria-hidden=\"true\", which hides the entire page from assistive technologies.",
@@ -89538,6 +90588,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlSingleLabel_hint_cantTell_competing": "Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.",
       "formControlSingleLabel_summary_cantTell": "This <{{element}}> has one <label> with text plus an extra empty one; check how screen readers announce it.",
       "formControlSingleLabel_hint_cantTell": "Remove the empty <label> so the field has exactly one.",
+      "formControlSingleLabel_lean_why_competing": "The labels repeat each other or only mark the field as required, so the joined name stays clear.",
+      "formControlSingleLabel_lean_caution_competing": "A repeated name such as \"Email Email address\" is wordy; a person judges whether it is still clear.",
+      "formControlSingleLabel_lean_why": "Browsers join the text of a field’s labels, so the empty label adds nothing and the name is the real label’s text.",
+      "formControlSingleLabel_lean_caution": "A user agent that reads only the first label may pick the empty one; a script may fill it in.",
       "nestedInteractiveControlsAbsent_title": "Interactive controls must not be nested",
       "nestedInteractiveControlsAbsent_description": "Checks that an interactive control (link, button, form control, or ARIA widget role) does not contain another interactive control.",
       "nestedInteractiveControlsAbsent_summary_fail": "This <{{element}}> has interactive controls nested inside it: {{nestedElements}}.",
@@ -89626,6 +90680,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scopeAttrValid_description": "Checks that scope=\"...\" is one of row, col, rowgroup, or colgroup.",
       "scopeAttrValid_summary_cantTell": "This scope attribute value is not recognized.",
       "scopeAttrValid_hint_cantTell": "Use row, col, rowgroup or colgroup.",
+      "scopeAttrValid_lean_why": "The scope value is not one of the four keywords, so it declares no header direction.",
+      "scopeAttrValid_lean_caution": "Browsers then guess the direction, which is usually right for a header in the first row or column.",
       "tabindex_title": "tabindex should not be greater than 0",
       "tabindex_description": "Checks that tabindex values are 0 or negative, not a positive number.",
       "tabindex_summary_cantTell": "This element has a positive tabindex, overriding the natural tab order.",
@@ -89637,6 +90693,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_summary_cantTell_ariaOnly": "This table header cell has no visible text. Its only name comes from aria-label or aria-labelledby, which some screen reader and browser pairs, such as NVDA with Firefox and VoiceOver on iOS, ignore on <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Add visible text to the header cell, alongside or instead of the ARIA name. Visible text is the only name every tested screen reader reads.",
       "emptyTableHeader_lean_why_notVisible": "The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.",
+      "emptyTableHeader_lean_why_empty": "The header cell is empty, holds nothing that could name it, and heads data cells with text.",
+      "emptyTableHeader_lean_caution_empty": "A header drawn only through CSS (a background image or generated content) has no text in the page.",
       "labelTitleOnly_title": "Title-only form labels (deprecated)",
       "labelTitleOnly_description": "Deprecated since 1.10.0 and always notApplicable: a form control labelled only by its title attribute is reported by form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Image alt text must not duplicate adjacent visible text",
@@ -89676,10 +90734,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_hint_fail": "Use \"on\", \"off\", or valid autofill tokens, such as \"shipping postal-code\" or \"cc-number\".",
       "passwordPasteEnabled_title": "Authentication fields must not block pasting",
       "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.",
-      "passwordPasteEnabled_summary_fail": "This authentication field has a paste handler whose only effect is to cancel the paste.",
-      "passwordPasteEnabled_hint_fail": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "This authentication field has a paste handler whose only effect is to cancel the paste.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Confirm by hand whether pasting still works. If it is blocked, remove the handler so a password manager, or the clipboard for a one-time code, can fill the field.",
       "passwordPasteEnabled_summary_cantTell": "This authentication field has a paste handler, and whether it cancels pasting could not be determined.",
       "passwordPasteEnabled_hint_cantTell": "Check by hand that pasting into the field still works, so a password manager or the clipboard can fill it.",
+      "passwordPasteEnabled_lean_why_cancelled": "The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.",
+      "passwordPasteEnabled_lean_caution_cancelled": "A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.",
+      "passwordPasteEnabled_lean_why_opaque": "The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.",
+      "passwordPasteEnabled_lean_caution_opaque": "A function’s name can mislead; what it does is in script the markup does not carry.",
       "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
       "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
       "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -89825,6 +90887,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_none": "Check that the user is told, in text, which field is in error and what is wrong; tie the message to the field with aria-errormessage or aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "The error message tied to the field is hidden, so the error is probably not told.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "The error message tied to the field is hidden from assistive technology, so screen reader users are probably not told the error.",
+      "invalidFieldErrorMessage_lean_why_empty": "The error message tied to the field is empty, and the field has no description, so the error is probably not told.",
+      "invalidFieldErrorMessage_lean_caution_empty": "The error may be written in the label or in text next to the field; a template may set aria-invalid before anything is entered.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "The field’s description is a live region with text, where pages usually announce the error.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "A live region can also hold a hint rather than the error.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "The error message’s text is hidden from assistive technology, and the field has no description, so screen reader users are probably not told the error.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "A separate live announcement the rule cannot see may tell them.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "The field is marked invalid now, but the error message it names is not in the page and it has no description.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "A scan taken while the page updates may catch the field before a script adds the message.",
       "labelForValid_title": "A label’s for attribute should name a control it can label",
       "labelForValid_description": "Flags a label whose for attribute names no element, or an element that cannot be labelled, so the label labels nothing, for manual review.",
       "labelForValid_summary_cantTell_missing": "This label’s for=\"{{for}}\" names no element, so it labels nothing.",
@@ -89867,12 +90937,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableFakeCaption_description": "Flags tables with no <caption> whose first row has a single non-empty cell while other rows have multiple cells, for manual review of whether that cell is acting as a fake caption.",
       "tableFakeCaption_summary_cantTell": "This table has no <caption>, but its first row is a single cell sitting above multi-cell rows, so it may be acting as a fake caption.",
       "tableFakeCaption_hint_cantTell": "If this cell is meant to describe the table, use a real <caption> element instead of a lone first-row cell.",
+      "tableFakeCaption_lean_why": "The lone first-row cell spans the whole table, and no other row is a single cell: the pattern of a title drawn as a cell.",
+      "tableFakeCaption_lean_caution": "A full-width first row can also head a single group of columns.",
       "tdHasHeader_title": "Data cells in large tables must have an associated header",
       "tdHasHeader_description": "Checks that every <td> in a large, simple (no colspan/rowspan) table has an associated header, via a headers attribute, an implicit column <th> above it, or an implicit row <th> to its left.",
       "tdHasHeader_summary_fail": "This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).",
       "tdHasHeader_hint_fail": "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
       "tdHasHeader_summary_cantTell_noHeaders": "This table has no header cells. If it holds data, its cells have no headers.",
       "tdHasHeader_hint_cantTell_noHeaders": "If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "The table looks like data: most of its cells are numbers, or it has a caption, a table head, or a first row or column drawn as headers.",
+      "tdHasHeader_lean_caution_data": "A layout table can also hold numbers, such as prices beside text.",
+      "tdHasHeader_lean_why_layout": "The table looks like layout: its cells hold a nested table, form controls, images or blocks of text, and nothing marks it as data.",
+      "tdHasHeader_lean_caution_layout": "A data table can hold images or controls in its cells, such as a product list.",
       "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
@@ -90156,6 +91232,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "La etiqueta de este campo está dividida: se muestra «{{label}}», mientras que {{hiddenCount}} parte(s) más de la etiqueta quedan ocultas a la vista.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Comprobar que la parte visible por sí sola identifica el campo, o hacer visible el resto de la etiqueta.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Dar a cada campo una etiqueta propia, o llevar a la pantalla el contexto que los distingue: un encabezado visible o una leyenda de fieldset sobre cada grupo.",
+      "formControlLabelQuality_lean_why_placeholder": "La etiqueta es una frase que solo deja una plantilla, que no nombra el propósito de ningún campo.",
+      "formControlLabelQuality_lean_caution_placeholder": "Una página de herramienta, como un generador de formularios, puede tener un campo que realmente se llame «Etiqueta».",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Los campos que comparten la etiqueta son copias de un mismo widget, cada una en su propio formulario con el mismo nombre, tipo y acción, así que sirven al mismo propósito.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Las copias de un widget pueden tener aun así distinto propósito si sus formularios envían valores ocultos diferentes.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Los campos que comparten la etiqueta son campos distintos de un mismo formulario, con nombres distintos, y nada visible los distingue.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Un texto visible que la regla no lee, como un título en un bloque con estilo, puede distinguir los campos.",
       "formControl_programmaticLabelQuality_title": "Los controles de formulario deberían tener una etiqueta visible en pantalla",
       "formControl_programmaticLabelQuality_description": "Señala controles de formulario cuyo nombre accesible proviene de placeholder, title, aria-label o de aria-labelledby que apunta solo a texto oculto; ninguno de ellos es una etiqueta visible en pantalla. Se prefiere un <label> visible, o aria-labelledby que apunte a texto visible.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Este campo de formulario solo está etiquetado por su atributo {{method}}.",
@@ -90439,6 +91521,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelInName_hint_cantTell": "Comprobar a mano si las dos formulaciones coinciden; el marcado no permite distinguir una abreviatura intencionada de una discrepancia.",
       "labelInName_summary_cantTell_symbolic": "{{element}}: la etiqueta visible \"{{visibleLabel}}\" (de {{labelSource}}) puede representarse como un icono o símbolo en lugar de texto literal, por lo que puede no ser necesario que aparezca en el nombre accesible (de {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Comprobar manualmente: si el texto visible se representa como un icono o símbolo, no es un error; si se representa como palabras literales, actualizar el nombre accesible para incluirlas.",
+      "labelInName_lean_why_hyphenation": "El nombre contiene las palabras de la etiqueta si se ignoran los guiones, así que el sentido de la etiqueta no cambia.",
+      "labelInName_lean_caution_hyphenation": "La entrada por voz puede exigir decir de otro modo la palabra con guion («e mail» frente a «email»).",
+      "labelInName_lean_why_abbreviation": "Cada palabra abreviada de la etiqueta es el comienzo de la palabra correspondiente del nombre, como en una abreviatura habitual («Avda.» por «Avenida»).",
+      "labelInName_lean_caution_abbreviation": "Quien usa entrada por voz puede decir la abreviatura tal como se muestra en lugar de la palabra completa.",
+      "labelInName_lean_why_iconFont": "La etiqueta es una ligadura o un código de símbolo de una fuente de iconos, que se dibuja como un icono, así que no muestra palabras legibles.",
+      "labelInName_lean_caution_iconFont": "Si la fuente no se carga para un usuario, se dibuja la propia palabra y pasa a ser una etiqueta visible.",
+      "labelInName_lean_why_symbol": "La etiqueta es un único símbolo o una «X», que representa un icono y no palabras que decir.",
+      "labelInName_lean_caution_symbol": "Un usuario puede aun así decir el carácter («X») para llegar al control.",
+      "labelInName_lean_why_digit": "La etiqueta es un dígito, texto que diría quien usa entrada por voz, y el nombre no lo contiene.",
+      "labelInName_lean_caution_digit": "Puede que el nombre escriba el número con letras, algo que algunas entradas por voz reconocen.",
       "ariaRolesValid_title": "El atributo role debe ser un rol ARIA válido y no abstracto",
       "ariaRolesValid_description": "Comprueba que un atributo role=\"\" explícito se resuelva en un rol WAI-ARIA real y no abstracto.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" no es un rol ARIA reconocido.",
@@ -90555,6 +91647,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_hint_fail": "Agregar celdas de datos (<td>) a la tabla, o eliminar las celdas de encabezado si la tabla no tiene datos.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Ninguna celda de datos de esta tabla está asignada a esta celda de encabezado.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Comprobar si a la tabla le faltan las celdas que describe este encabezado. Si las celdas indican sus encabezados con un atributo headers, incluir este encabezado en las celdas a las que se aplica.",
+      "tableThHasDataCells_lean_why_unassigned": "Ninguna celda sigue a este encabezado donde se aplica, y ninguna celda de la tabla nombra sus encabezados, así que el encabezado no describe nada.",
+      "tableThHasDataCells_lean_caution_unassigned": "Un script puede añadir más tarde las celdas que faltan.",
       "ariaHiddenBody_title": "El <body> del documento no debe ser aria-hidden",
       "ariaHiddenBody_description": "Comprueba que <body> no tenga aria-hidden=\"true\", lo que eliminaría toda la página del árbol de accesibilidad.",
       "ariaHiddenBody_summary_fail": "El body del documento tiene aria-hidden=\"true\", lo que oculta toda la página a las tecnologías de apoyo.",
@@ -90638,6 +91732,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlSingleLabel_hint_cantTell_competing": "Los navegadores unen las etiquetas en un solo nombre. Comprobar que sigue teniendo sentido, o dejar un solo <label> por campo.",
       "formControlSingleLabel_summary_cantTell": "Este <{{element}}> tiene un <label> con texto y otro adicional vacío; comprobar cómo lo anuncian los lectores de pantalla.",
       "formControlSingleLabel_hint_cantTell": "Quitar el <label> vacío para que el campo tenga exactamente uno.",
+      "formControlSingleLabel_lean_why_competing": "Las etiquetas se repiten entre sí o solo marcan el campo como obligatorio, así que el nombre que forman juntas sigue siendo claro.",
+      "formControlSingleLabel_lean_caution_competing": "Un nombre repetido como «Correo Correo electrónico» resulta redundante; una persona decide si sigue siendo claro.",
+      "formControlSingleLabel_lean_why": "Los navegadores unen el texto de las etiquetas de un campo, así que la etiqueta vacía no añade nada y el nombre es el texto de la etiqueta real.",
+      "formControlSingleLabel_lean_caution": "Un agente de usuario que solo lee la primera etiqueta puede quedarse con la vacía; un script también puede rellenarla.",
       "nestedInteractiveControlsAbsent_title": "Los controles interactivos no deben estar anidados",
       "nestedInteractiveControlsAbsent_description": "Comprueba que un control interactivo (enlace, botón, control de formulario o rol de widget ARIA) no contenga otro control interactivo.",
       "nestedInteractiveControlsAbsent_summary_fail": "Este <{{element}}> tiene controles interactivos anidados dentro: {{nestedElements}}.",
@@ -90726,6 +91824,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scopeAttrValid_description": "Comprueba que scope=\"...\" sea uno de los valores row, col, rowgroup o colgroup.",
       "scopeAttrValid_summary_cantTell": "Este valor del atributo scope no se reconoce.",
       "scopeAttrValid_hint_cantTell": "Usar row, col, rowgroup o colgroup.",
+      "scopeAttrValid_lean_why": "El valor de scope no es una de las cuatro palabras clave, así que no declara ninguna dirección de encabezado.",
+      "scopeAttrValid_lean_caution": "Los navegadores adivinan entonces la dirección, lo que suele acertar con un encabezado de la primera fila o columna.",
       "tabindex_title": "tabindex no debería ser mayor que 0",
       "tabindex_description": "Comprueba que los valores de tabindex sean 0 o negativos, no un número positivo.",
       "tabindex_summary_cantTell": "Este elemento tiene un tabindex positivo, lo que sobrescribe el orden de tabulación natural.",
@@ -90737,6 +91837,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Esta celda de encabezado no tiene texto visible. Su único nombre viene de aria-label o aria-labelledby, que algunas combinaciones de lector de pantalla y navegador, como NVDA con Firefox y VoiceOver en iOS, ignoran en <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Agregar texto visible a la celda de encabezado, junto al nombre ARIA o en su lugar. El texto visible es el único nombre que leen todos los lectores de pantalla probados.",
       "emptyTableHeader_lean_why_notVisible": "La celda de encabezado no tiene texto visible; su único nombre viene de ARIA, que algunos lectores de pantalla ignoran en las celdas de encabezado.",
+      "emptyTableHeader_lean_why_empty": "La celda de encabezado está vacía, no contiene nada que pueda darle nombre y encabeza celdas de datos con texto.",
+      "emptyTableHeader_lean_caution_empty": "Un encabezado mostrado solo mediante CSS (una imagen de fondo o contenido generado) no tiene texto en la página.",
       "labelTitleOnly_title": "Etiquetas solo con title (obsoleta)",
       "labelTitleOnly_description": "Obsoleta desde la 1.10.0 y siempre notApplicable: un control de formulario etiquetado solo con su atributo title lo informa form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "El texto alt de la imagen no debe duplicar el texto visible adyacente",
@@ -90776,10 +91878,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_hint_fail": "Usar \"on\", \"off\" o tokens de autorrelleno válidos, como \"shipping postal-code\" o \"cc-number\".",
       "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
       "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que eliminaría el gestor de contraseñas o el portapapeles en los que WCAG 3.3.8 se apoya como mecanismo de ayuda.",
-      "passwordPasteEnabled_summary_fail": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
-      "passwordPasteEnabled_hint_fail": "Comprobar manualmente si aún se puede pegar. Si está bloqueado, eliminar el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Comprobar manualmente si aún se puede pegar. Si está bloqueado, eliminar el controlador para que un gestor de contraseñas, o el portapapeles en el caso de un código de un solo uso, pueda rellenar el campo.",
       "passwordPasteEnabled_summary_cantTell": "Este campo de autenticación tiene un controlador de pegado y no se ha podido determinar si cancela la acción.",
       "passwordPasteEnabled_hint_cantTell": "Comprobar manualmente que aún se puede pegar en el campo, de modo que un gestor de contraseñas o el portapapeles puedan rellenarlo.",
+      "passwordPasteEnabled_lean_why_cancelled": "El controlador de pegado del campo solo cancela el pegado, así que probablemente pegar está bloqueado.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Un detector añadido por script, en el campo o a su alrededor, puede insertar el texto pegado después de que el controlador lo cancele.",
+      "passwordPasteEnabled_lean_why_opaque": "El controlador de pegado dice lo que hace: llama a una función cuyo nombre indica que bloquea el pegado, o muestra un mensaje y cancela el pegado.",
+      "passwordPasteEnabled_lean_caution_opaque": "El nombre de una función puede engañar; lo que hace está en un script que el marcado no contiene.",
       "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
       "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
       "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -90925,6 +92031,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
+      "invalidFieldErrorMessage_lean_why_empty": "El mensaje de error vinculado al campo está vacío y el campo no tiene descripción, así que probablemente no se comunica el error.",
+      "invalidFieldErrorMessage_lean_caution_empty": "El error puede estar escrito en la etiqueta o en un texto junto al campo; una plantilla puede poner aria-invalid antes de que se introduzca nada.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "La descripción del campo es una región viva con texto, donde las páginas suelen anunciar el error.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Una región viva también puede contener una indicación en lugar del error.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "El texto del mensaje de error está oculto a las tecnologías de apoyo y el campo no tiene descripción, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Un anuncio vivo aparte, que la regla no ve, puede informarles.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "El campo está marcado como no válido ahora, pero el mensaje de error que nombra no está en la página y no tiene descripción.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Un análisis hecho mientras la página se actualiza puede captar el campo antes de que un script añada el mensaje.",
       "labelForValid_title": "El atributo for de una etiqueta debería nombrar un control que pueda etiquetar",
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
@@ -90967,12 +92081,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableFakeCaption_description": "Señala tablas sin <caption> cuya primera fila tiene una única celda no vacía mientras que las demás filas tienen varias celdas, para su revisión manual sobre si esa celda actúa como un título de tabla falso.",
       "tableFakeCaption_summary_cantTell": "Esta tabla no tiene <caption>, pero su primera fila es una única celda situada sobre filas con varias celdas; puede estar actuando como un título de tabla falso.",
       "tableFakeCaption_hint_cantTell": "Si esta celda está pensada para describir la tabla, usar un elemento <caption> real en lugar de una única celda en la primera fila.",
+      "tableFakeCaption_lean_why": "La única celda de la primera fila abarca toda la tabla y ninguna otra fila es una sola celda: el patrón de un título presentado como celda.",
+      "tableFakeCaption_lean_caution": "Una primera fila de ancho completo también puede encabezar un único grupo de columnas.",
       "tdHasHeader_title": "Las celdas de datos en tablas grandes deben tener un encabezado asociado",
       "tdHasHeader_description": "Comprueba que cada <td> en una tabla grande y simple (sin colspan/rowspan) tenga un encabezado asociado, ya sea mediante un atributo headers, un <th> de columna implícito por encima de ella, o un <th> de fila implícito a su izquierda.",
       "tdHasHeader_summary_fail": "Esta celda de datos no tiene ningún encabezado asociado (sin atributo headers, sin <th> de columna por encima, sin <th> de fila a la izquierda).",
       "tdHasHeader_hint_fail": "Agregar un atributo headers que apunte a los id de <th> correctos, u organizar la tabla para que haya un <th> encima de la columna de esta celda o al principio de su fila.",
       "tdHasHeader_summary_cantTell_noHeaders": "Esta tabla no tiene celdas de encabezado. Si contiene datos, sus celdas no tienen encabezados.",
       "tdHasHeader_hint_cantTell_noHeaders": "Si la tabla contiene datos, marcar sus celdas de encabezado con <th> o dar a sus celdas un atributo headers. Si solo sirve para maquetar, darle role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "La tabla parece de datos: la mayoría de sus celdas son números, o tiene un título, una cabecera de tabla, o una primera fila o columna presentada como encabezados.",
+      "tdHasHeader_lean_caution_data": "Una tabla de maquetación también puede contener números, como precios junto a un texto.",
+      "tdHasHeader_lean_why_layout": "La tabla parece de maquetación: sus celdas contienen una tabla anidada, controles de formulario, imágenes o bloques de texto, y nada la señala como de datos.",
+      "tdHasHeader_lean_caution_layout": "Una tabla de datos puede contener imágenes o controles en sus celdas, como una lista de productos.",
       "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
@@ -91256,6 +92376,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "L’étiquette de ce champ est scindée : « {{label}} » est ce qui s’affiche, tandis que {{hiddenCount}} autre(s) partie(s) de l’étiquette restent invisibles.",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "Vérifiez que la partie visible suffit à identifier le champ, ou rendez le reste de l’étiquette visible.",
       "formControlLabelQuality_hint_cantTell_duplicate": "Donnez à chaque champ sa propre étiquette, ou affichez le contexte qui les distingue : un titre visible ou une légende de fieldset au-dessus de chaque groupe.",
+      "formControlLabelQuality_lean_why_placeholder": "L’étiquette est une formule que seul un modèle laisse derrière lui, qui ne nomme la fonction d’aucun champ.",
+      "formControlLabelQuality_lean_caution_placeholder": "Une page d’outil, comme un générateur de formulaires, peut avoir un champ réellement appelé « Libellé ».",
+      "formControlLabelQuality_lean_why_duplicateWidget": "Les champs qui partagent l’étiquette sont des copies d’un même composant, chacune dans son propre formulaire avec les mêmes nom, type et action : ils servent le même but.",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "Des copies d’un composant peuvent tout de même différer de but si leurs formulaires envoient des valeurs masquées différentes.",
+      "formControlLabelQuality_lean_why_duplicateFields": "Les champs qui partagent l’étiquette sont des champs différents d’un même formulaire, avec des noms différents, et rien de visible ne les distingue.",
+      "formControlLabelQuality_lean_caution_duplicateFields": "Un texte visible que la règle ne lit pas, comme un intitulé dans un bloc mis en forme, peut distinguer les champs.",
       "formControl_programmaticLabelQuality_title": "Les champs de formulaire devraient avoir un libellé affiché à l’écran",
       "formControl_programmaticLabelQuality_description": "Signale les champs de formulaire dont le nom accessible provient du placeholder, du title, d’aria-label ou d’aria-labelledby ne pointant que vers du texte masqué ; aucun d’eux n’est un libellé affiché à l’écran. Préférez un <label> visible, ou aria-labelledby pointant vers du texte visible.",
       "formControl_programmaticLabelQuality_summary_cantTell": "Ce champ de formulaire n’est étiqueté que par son attribut {{method}}.",
@@ -91539,6 +92665,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelInName_hint_cantTell": "Vérifiez à la main si les deux formulations correspondent ; le balisage ne permet pas de distinguer une abréviation voulue d’une différence.",
       "labelInName_summary_cantTell_symbolic": "{{element}} : le libellé visible « {{visibleLabel}} » (source : {{labelSource}}) peut s’afficher comme une icône ou un symbole plutôt que comme du texte littéral, et n’a donc pas nécessairement besoin de figurer dans le nom accessible (source : {{nameMechanism}}).",
       "labelInName_hint_cantTell_symbolic": "Vérifiez manuellement : si le texte visible s’affiche comme une icône ou un symbole, il ne s’agit pas d’un défaut ; s’il s’affiche comme des mots littéraux, mettez à jour le nom accessible pour les inclure.",
+      "labelInName_lean_why_hyphenation": "Le nom contient les mots du libellé une fois les traits d’union ignorés : le sens du libellé est inchangé.",
+      "labelInName_lean_caution_hyphenation": "La saisie vocale peut exiger de prononcer autrement le mot à trait d’union (« e mail » contre « email »).",
+      "labelInName_lean_why_abbreviation": "Chaque mot abrégé du libellé commence le mot correspondant du nom, comme le fait une abréviation courante (« Av. » pour « Avenue »).",
+      "labelInName_lean_caution_abbreviation": "Un utilisateur de la saisie vocale peut prononcer l’abréviation telle qu’affichée plutôt que le mot entier.",
+      "labelInName_lean_why_iconFont": "Le libellé est une ligature ou un code de symbole d’une police d’icônes, dessiné comme une icône : il n’affiche aucun mot lisible.",
+      "labelInName_lean_caution_iconFont": "Si la police ne se charge pas pour un utilisateur, le mot lui-même s’affiche et devient un libellé visible.",
+      "labelInName_lean_why_symbol": "Le libellé est un symbole unique ou un « X », qui tient lieu d’icône plutôt que de mots à prononcer.",
+      "labelInName_lean_caution_symbol": "Un utilisateur peut tout de même prononcer le caractère (« X ») pour atteindre le contrôle.",
+      "labelInName_lean_why_digit": "Le libellé est un chiffre, un texte qu’un utilisateur de la saisie vocale prononcerait, et le nom ne le contient pas.",
+      "labelInName_lean_caution_digit": "Le nom écrit peut-être le nombre en toutes lettres, ce que certaines saisies vocales reconnaissent.",
       "ariaRolesValid_title": "L’attribut role doit être un rôle ARIA valide et non abstrait",
       "ariaRolesValid_description": "Vérifie qu’un attribut role=\"\" explicite correspond à un rôle WAI-ARIA réel et non abstrait.",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" n’est pas un rôle ARIA reconnu.",
@@ -91655,6 +92791,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_hint_fail": "Ajoutez des cellules de données (<td>) au tableau, ou retirez les cellules d’en-tête si le tableau n’a pas de données.",
       "tableThHasDataCells_summary_cantTell_unassigned": "Aucune cellule de données de ce tableau n’est associée à cette cellule d’en-tête.",
       "tableThHasDataCells_hint_cantTell_unassigned": "Vérifiez s’il manque au tableau les cellules que cet en-tête décrit. Si les cellules indiquent leurs en-têtes avec un attribut headers, ajoutez cet en-tête à celles qu’il concerne.",
+      "tableThHasDataCells_lean_why_unassigned": "Aucune cellule ne suit cet en-tête là où il s’applique, et aucune cellule du tableau ne nomme ses en-têtes : l’en-tête ne décrit rien.",
+      "tableThHasDataCells_lean_caution_unassigned": "Un script peut ajouter plus tard les cellules manquantes.",
       "ariaHiddenBody_title": "Le <body> du document ne doit pas être aria-hidden",
       "ariaHiddenBody_description": "Vérifie que <body> n’a pas aria-hidden=\"true\", ce qui retirerait toute la page de l’arbre d’accessibilité.",
       "ariaHiddenBody_summary_fail": "Le corps du document a aria-hidden=\"true\", ce qui masque toute la page aux technologies d’assistance.",
@@ -91738,6 +92876,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlSingleLabel_hint_cantTell_competing": "Les navigateurs joignent les étiquettes en un seul nom. Vérifiez qu’il a encore du sens, ou gardez un seul <label> par champ.",
       "formControlSingleLabel_summary_cantTell": "Cet élément <{{element}}> a un <label> avec du texte plus un autre vide ; vérifiez comment les lecteurs d’écran l’annoncent.",
       "formControlSingleLabel_hint_cantTell": "Retirez le <label> vide pour que le champ en ait exactement un.",
+      "formControlSingleLabel_lean_why_competing": "Les étiquettes se répètent ou ne font que marquer le champ comme obligatoire : le nom qu’elles forment ensemble reste clair.",
+      "formControlSingleLabel_lean_caution_competing": "Un nom répété comme « E-mail Adresse e-mail » est verbeux ; une personne juge s’il reste clair.",
+      "formControlSingleLabel_lean_why": "Les navigateurs joignent le texte des étiquettes d’un champ : l’étiquette vide n’ajoute rien et le nom est le texte de l’étiquette réelle.",
+      "formControlSingleLabel_lean_caution": "Un agent utilisateur qui ne lit que la première étiquette peut retenir la vide ; un script peut aussi la remplir.",
       "nestedInteractiveControlsAbsent_title": "Les contrôles interactifs ne doivent pas être imbriqués",
       "nestedInteractiveControlsAbsent_description": "Vérifie qu’un contrôle interactif (lien, bouton, contrôle de formulaire, ou rôle de widget ARIA) ne contient pas un autre contrôle interactif.",
       "nestedInteractiveControlsAbsent_summary_fail": "Cet élément <{{element}}> contient des contrôles interactifs imbriqués : {{nestedElements}}.",
@@ -91826,6 +92968,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scopeAttrValid_description": "Vérifie que scope=\"...\" vaut row, col, rowgroup, ou colgroup.",
       "scopeAttrValid_summary_cantTell": "Cette valeur d’attribut scope n’est pas reconnue.",
       "scopeAttrValid_hint_cantTell": "Utilisez row, col, rowgroup ou colgroup.",
+      "scopeAttrValid_lean_why": "La valeur de scope n’est pas l’un des quatre mots-clés : elle ne déclare aucune direction d’en-tête.",
+      "scopeAttrValid_lean_caution": "Les navigateurs devinent alors la direction, ce qui est généralement juste pour un en-tête de la première ligne ou colonne.",
       "tabindex_title": "tabindex ne devrait pas être supérieur à 0",
       "tabindex_description": "Vérifie que les valeurs de tabindex sont égales à 0 ou négatives, jamais un nombre positif.",
       "tabindex_summary_cantTell": "Cet élément a un tabindex positif, ce qui modifie l’ordre naturel de tabulation.",
@@ -91837,6 +92981,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_summary_cantTell_ariaOnly": "Cette cellule d’en-tête n’a pas de texte visible. Son seul nom vient de aria-label ou aria-labelledby, que certaines combinaisons de lecteur d’écran et de navigateur, comme NVDA avec Firefox et VoiceOver sur iOS, ignorent sur <th>.",
       "emptyTableHeader_hint_cantTell_ariaOnly": "Ajoutez un texte visible à la cellule d’en-tête, en plus ou à la place du nom ARIA. Le texte visible est le seul nom que lisent tous les lecteurs d’écran testés.",
       "emptyTableHeader_lean_why_notVisible": "La cellule d’en-tête n’a pas de texte visible ; son seul nom vient d’ARIA, que certains lecteurs d’écran ignorent sur les cellules d’en-tête.",
+      "emptyTableHeader_lean_why_empty": "La cellule d’en-tête est vide, ne contient rien qui puisse la nommer et se trouve en tête de cellules de données avec du texte.",
+      "emptyTableHeader_lean_caution_empty": "Un en-tête affiché uniquement par CSS (image d’arrière-plan ou contenu généré) n’a pas de texte dans la page.",
       "labelTitleOnly_title": "Étiquettes uniquement par title (obsolète)",
       "labelTitleOnly_description": "Obsolète depuis la 1.10.0 et toujours notApplicable : un contrôle de formulaire étiqueté uniquement par son attribut title est signalé par form-control-programmatic-label-quality.",
       "imageRedundantAlt_title": "Le texte alt d’une image ne doit pas dupliquer le texte visible adjacent",
@@ -91876,10 +93022,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_hint_fail": "Utilisez \"on\", \"off\" ou des jetons de remplissage automatique valides, comme \"shipping postal-code\" ou \"cc-number\".",
       "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
       "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui supprimerait le gestionnaire de mots de passe ou le presse-papiers sur lesquels WCAG 3.3.8 s'appuie comme mécanisme d'aide.",
-      "passwordPasteEnabled_summary_fail": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
-      "passwordPasteEnabled_hint_fail": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "Vérifiez manuellement si le collage fonctionne encore. S'il est bloqué, supprimez le gestionnaire pour qu'un gestionnaire de mots de passe, ou le presse-papiers pour un code à usage unique, puisse remplir le champ.",
       "passwordPasteEnabled_summary_cantTell": "Ce champ d'authentification comporte un gestionnaire de collage et il n'a pas été possible de déterminer s'il annule l'action.",
       "passwordPasteEnabled_hint_cantTell": "Vérifiez manuellement que le collage fonctionne toujours dans le champ, afin qu'un gestionnaire de mots de passe ou le presse-papiers puisse le remplir.",
+      "passwordPasteEnabled_lean_why_cancelled": "Le gestionnaire de collage du champ ne fait qu’annuler le collage : le collage est probablement bloqué.",
+      "passwordPasteEnabled_lean_caution_cancelled": "Un écouteur ajouté par script, sur le champ ou autour, peut insérer le texte collé après que le gestionnaire l’a annulé.",
+      "passwordPasteEnabled_lean_why_opaque": "Le gestionnaire de collage dit ce qu’il fait : il appelle une fonction nommée pour bloquer le collage, ou affiche un message et annule le collage.",
+      "passwordPasteEnabled_lean_caution_opaque": "Le nom d’une fonction peut tromper ; ce qu’elle fait se trouve dans un script que le balisage ne contient pas.",
       "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
       "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
       "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
@@ -92025,6 +93175,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_none": "Vérifiez que l’utilisateur apprend, sous forme de texte, quel champ est en erreur et ce qui ne va pas ; associez le message au champ avec aria-errormessage ou aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "Le message d’erreur lié au champ est masqué : l’erreur n’est probablement pas signalée.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "Le message d’erreur lié au champ est masqué aux technologies d’assistance : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
+      "invalidFieldErrorMessage_lean_why_empty": "Le message d’erreur lié au champ est vide et le champ n’a pas de description : l’erreur n’est probablement pas signalée.",
+      "invalidFieldErrorMessage_lean_caution_empty": "L’erreur est peut-être écrite dans l’étiquette ou dans un texte à côté du champ ; un modèle peut définir aria-invalid avant toute saisie.",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "La description du champ est une région dynamique avec du texte, là où les pages annoncent généralement l’erreur.",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "Une région dynamique peut aussi contenir une indication plutôt que l’erreur.",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "Le texte du message d’erreur est masqué aux technologies d’assistance et le champ n’a pas de description : les utilisateurs de lecteur d’écran ne sont probablement pas informés de l’erreur.",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "Une annonce dynamique distincte, que la règle ne voit pas, peut les en informer.",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "Le champ est marqué comme invalide maintenant, mais le message d’erreur qu’il nomme n’est pas dans la page et il n’a pas de description.",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "Une analyse faite pendant une mise à jour de la page peut saisir le champ avant qu’un script n’ajoute le message.",
       "labelForValid_title": "L’attribut for d’un libellé devrait nommer un contrôle qu’il peut libeller",
       "labelForValid_description": "Signale, pour revue manuelle, un libellé dont l’attribut for ne nomme aucun élément, ou un élément qui ne peut pas être libellé, de sorte qu’il ne libelle rien.",
       "labelForValid_summary_cantTell_missing": "Le for=\"{{for}}\" de ce libellé ne nomme aucun élément : il ne libelle rien.",
@@ -92067,12 +93225,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableFakeCaption_description": "Signale les tableaux sans <caption> dont la première ligne a une seule cellule non vide alors que les autres lignes ont plusieurs cellules, pour une vérification manuelle visant à déterminer si cette cellule fait office de légende factice.",
       "tableFakeCaption_summary_cantTell": "Ce tableau n’a pas de <caption>, mais sa première ligne est une cellule unique placée au-dessus de lignes à plusieurs cellules — elle fait peut-être office de légende factice.",
       "tableFakeCaption_hint_cantTell": "Si cette cellule est censée décrire le tableau, utilisez un véritable élément <caption> plutôt qu’une cellule isolée en première ligne.",
+      "tableFakeCaption_lean_why": "La cellule unique de la première ligne s’étend sur tout le tableau, et aucune autre ligne n’est une cellule unique : c’est le motif d’un titre présenté comme une cellule.",
+      "tableFakeCaption_lean_caution": "Une première ligne pleine largeur peut aussi servir d’en-tête à un groupe unique de colonnes.",
       "tdHasHeader_title": "Les cellules de données des grands tableaux doivent avoir un en-tête associé",
       "tdHasHeader_description": "Vérifie que chaque <td> d’un tableau grand et simple (sans colspan/rowspan) a un en-tête associé — via un attribut headers, un <th> de colonne implicite au-dessus, ou un <th> de ligne implicite à sa gauche.",
       "tdHasHeader_summary_fail": "Cette cellule de données n’a pas d’en-tête associé (pas d’attribut headers, pas de <th> de colonne au-dessus, pas de <th> de ligne à gauche).",
       "tdHasHeader_hint_fail": "Ajoutez un attribut headers qui pointe vers les bons id de <th>, ou organisez le tableau pour qu’un <th> se trouve en haut de la colonne de cette cellule ou au début de sa ligne.",
       "tdHasHeader_summary_cantTell_noHeaders": "Ce tableau n’a aucune cellule d’en-tête. S’il contient des données, ses cellules n’ont pas d’en-têtes.",
       "tdHasHeader_hint_cantTell_noHeaders": "Si le tableau contient des données, marquez ses cellules d’en-tête avec <th>, ou donnez à ses cellules un attribut headers. S’il ne sert qu’à la mise en page, donnez-lui role=\"presentation\".",
+      "tdHasHeader_lean_why_data": "Le tableau ressemble à des données : la plupart de ses cellules sont des nombres, ou il a une légende, un en-tête de tableau, ou une première ligne ou colonne présentée comme des en-têtes.",
+      "tdHasHeader_lean_caution_data": "Un tableau de mise en page peut aussi contenir des nombres, comme des prix à côté d’un texte.",
+      "tdHasHeader_lean_why_layout": "Le tableau ressemble à une mise en page : ses cellules contiennent un tableau imbriqué, des contrôles de formulaire, des images ou des blocs de texte, et rien ne le signale comme des données.",
+      "tdHasHeader_lean_caution_layout": "Un tableau de données peut contenir des images ou des contrôles dans ses cellules, comme une liste de produits.",
       "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
@@ -92356,6 +93520,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlLabelQuality_summary_cantTell_partiallyHidden": "このフィールドのラベルは分割されています。表示されているのは「{{label}}」だけで、ラベルのほかの {{hiddenCount}} 個の部分は視覚的に隠れています。",
       "formControlLabelQuality_hint_cantTell_partiallyHidden": "表示されている部分だけでフィールドを特定できるか確認するか、ラベルの残りの部分も表示してください。",
       "formControlLabelQuality_hint_cantTell_duplicate": "フィールドごとに固有のラベルを付けるか、区別のための手がかりを画面に表示してください (各グループの上に見える見出しや fieldset の legend を置くなど)。",
+      "formControlLabelQuality_lean_why_placeholder": "ラベルはテンプレートが残しただけの語句で、どのフィールドの目的も表していません。",
+      "formControlLabelQuality_lean_caution_placeholder": "フォームビルダーのようなツールのページには、本当に「ラベル」という名前のフィールドがあることもあります。",
+      "formControlLabelQuality_lean_why_duplicateWidget": "ラベルを共有するフィールドは 1 つのウィジェットのコピーで、それぞれ名前・種類・送信先が同じ別々のフォームにあるため、同じ目的に使われます。",
+      "formControlLabelQuality_lean_caution_duplicateWidget": "フォームが異なる非表示の値を送信する場合は、ウィジェットのコピーでも目的が異なることがあります。",
+      "formControlLabelQuality_lean_why_duplicateFields": "ラベルを共有するフィールドは同じフォーム内の名前の異なる別々のフィールドで、見た目で区別できるものがありません。",
+      "formControlLabelQuality_lean_caution_duplicateFields": "スタイル付きのブロック内の見出しなど、このルールが読まない表示テキストでフィールドが区別されている可能性があります。",
       "formControl_programmaticLabelQuality_title": "フォームコントロールには画面に表示されるラベルがあることが望ましい",
       "formControl_programmaticLabelQuality_description": "アクセシブルな名前が placeholder、title、aria-label、または非表示のテキストだけを参照する aria-labelledby から取得されているフォームコントロールを検出します。これらはいずれも画面に表示されるラベルではありません。表示される <label>、または表示されているテキストを参照する aria-labelledby の使用を推奨します。",
       "formControl_programmaticLabelQuality_summary_cantTell": "このフォーム項目のラベルは {{method}} 属性だけです。",
@@ -92639,6 +93809,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelInName_hint_cantTell": "2 つの表現が一致しているか手作業で確認してください。意図した省略か食い違いかは、マークアップからは判断できません。",
       "labelInName_summary_cantTell_symbolic": "{{element}}: 表示ラベル「{{visibleLabel}}」(取得元: {{labelSource}}) は、文字としてではなくアイコンや記号として表示されている可能性があります。その場合、アクセシブルな名前 (取得元: {{nameMechanism}}) に含める必要はありません。",
       "labelInName_hint_cantTell_symbolic": "人の目で確認してください。表示テキストがアイコンや記号として描画されているなら問題ではありません。文字として表示されているなら、その文言を含むようにアクセシブルな名前を修正してください。",
+      "labelInName_lean_why_hyphenation": "ハイフンを無視すれば名前にラベルの語句が含まれるため、ラベルの意味は変わりません。",
+      "labelInName_lean_caution_hyphenation": "音声入力では、ハイフン付きの語を別の言い方で話す必要があるかもしれません (「e mail」と「email」など)。",
+      "labelInName_lean_why_abbreviation": "ラベル内の省略された語はそれぞれ、名前の対応する語の先頭と一致しており、一般的な略語の形です (「Ave.」と「Avenue」など)。",
+      "labelInName_lean_caution_abbreviation": "音声入力の利用者は、完全な語ではなく表示どおりの略語を話すかもしれません。",
+      "labelInName_lean_why_iconFont": "ラベルはアイコンフォントの合字または記号コードで、アイコンとして描画されるため、読める語句は表示されません。",
+      "labelInName_lean_caution_iconFont": "フォントが読み込まれなかった場合は語そのものが描画され、表示ラベルになります。",
+      "labelInName_lean_why_symbol": "ラベルは単一の記号または「X」で、話す言葉ではなくアイコンを表しています。",
+      "labelInName_lean_caution_symbol": "利用者がその文字 (「X」) を話して操作しようとすることもあります。",
+      "labelInName_lean_why_digit": "ラベルは数字で、音声入力の利用者が話す文字ですが、名前には含まれていません。",
+      "labelInName_lean_caution_digit": "名前が数字を語で書いている可能性があり、一部の音声入力はそれを照合します。",
       "ariaRolesValid_title": "role 属性は有効で抽象ロールでない ARIA ロールであること",
       "ariaRolesValid_description": "明示的な role=\"\" 属性が、実在する抽象ロールでない WAI-ARIA ロールとして解決されるかを確認します。",
       "ariaRolesValid_summary_invalid": "role=\"{{role}}\" は認識されない ARIA ロールです。",
@@ -92755,6 +93935,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableThHasDataCells_hint_fail": "表にデータセル (<td>) を追加するか、表にデータがない場合は見出しセルを削除してください。",
       "tableThHasDataCells_summary_cantTell_unassigned": "この表のデータセルはどれも、この見出しセルに関連付けられていません。",
       "tableThHasDataCells_hint_cantTell_unassigned": "この見出しが説明するセルが表に欠けていないか確認してください。セルが headers 属性で見出しを指定している場合は、この見出しが当てはまるセルにこの見出しを含めてください。",
+      "tableThHasDataCells_lean_why_unassigned": "この見出しが適用される方向に後続のセルがなく、表のどのセルも見出しを指定していないため、この見出しは何も説明していません。",
+      "tableThHasDataCells_lean_caution_unassigned": "スクリプトが後で不足しているセルを追加する可能性があります。",
       "ariaHiddenBody_title": "文書の <body> に aria-hidden を指定してはならない",
       "ariaHiddenBody_description": "<body> に aria-hidden=\"true\" が指定されていないかを確認します。指定されているとページ全体がアクセシビリティツリーから取り除かれます。",
       "ariaHiddenBody_summary_fail": "文書の body に aria-hidden=\"true\" が指定されているため、ページ全体が支援技術から隠されています。",
@@ -92838,6 +94020,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "formControlSingleLabel_hint_cantTell_competing": "ブラウザーはラベルをつなげて 1 つの名前にします。その名前が意味をなすか確認するか、1 つの項目に <label> は 1 つにしてください。",
       "formControlSingleLabel_summary_cantTell": "この <{{element}}> には、テキストのある <label> のほかに空の <label> があります。スクリーンリーダーでの読み上げを確認してください。",
       "formControlSingleLabel_hint_cantTell": "空の <label> を削除し、項目のラベルを 1 つだけにしてください。",
+      "formControlSingleLabel_lean_why_competing": "ラベル同士が同じ内容を繰り返しているか、フィールドが必須であることを示すだけなので、結合された名前はわかりやすいままです。",
+      "formControlSingleLabel_lean_caution_competing": "「メール メールアドレス」のように繰り返された名前は冗長です。それでもわかりやすいかは人が判断します。",
+      "formControlSingleLabel_lean_why": "ブラウザーはフィールドのラベルのテキストを結合するため、空のラベルは何も加えず、名前は実際のラベルのテキストになります。",
+      "formControlSingleLabel_lean_caution": "最初のラベルだけを読むユーザーエージェントは空のラベルを選ぶ可能性があります。また、スクリプトが後でテキストを入れることもあります。",
       "nestedInteractiveControlsAbsent_title": "インタラクティブなコントロールを入れ子にしてはならない",
       "nestedInteractiveControlsAbsent_description": "インタラクティブなコントロール (リンク、ボタン、フォームコントロール、ARIA のウィジェットロール) が、別のインタラクティブなコントロールを含んでいないかを確認します。",
       "nestedInteractiveControlsAbsent_summary_fail": "この <{{element}}> の中に、操作可能なコントロールが入れ子になっています: {{nestedElements}}。",
@@ -92926,6 +94112,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "scopeAttrValid_description": "scope=\"...\" の値が row、col、rowgroup、colgroup のいずれかであるかを確認します。",
       "scopeAttrValid_summary_cantTell": "この scope 属性の値は認識されません。",
       "scopeAttrValid_hint_cantTell": "row、col、rowgroup、colgroup のいずれかを使ってください。",
+      "scopeAttrValid_lean_why": "scope の値は 4 つのキーワードのどれでもないため、見出しの方向を宣言していません。",
+      "scopeAttrValid_lean_caution": "その場合ブラウザーが方向を推測し、最初の行や列の見出しであれば通常は正しく推測されます。",
       "tabindex_title": "tabindex は 0 より大きくしないことが望ましい",
       "tabindex_description": "tabindex の値が正の数ではなく、0 または負の値であるかを確認します。",
       "tabindex_summary_cantTell": "この要素には正の tabindex が指定されており、本来のタブ順序を上書きしています。",
@@ -92937,6 +94125,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "emptyTableHeader_summary_cantTell_ariaOnly": "この見出しセルには表示テキストがありません。名前は aria-label または aria-labelledby だけから来ていますが、NVDA と Firefox、iOS の VoiceOver など、一部のスクリーンリーダーとブラウザーの組み合わせは <th> 上のこれらを無視します。",
       "emptyTableHeader_hint_cantTell_ariaOnly": "ARIA の名前に加えて、または代わりに、見出しセルに表示テキストを入れてください。テストしたすべてのスクリーンリーダーが読み上げる名前は、表示テキストだけです。",
       "emptyTableHeader_lean_why_notVisible": "見出しセルに表示テキストがありません。名前は ARIA のみで、見出しセルでは一部のスクリーンリーダーがこれを無視します。",
+      "emptyTableHeader_lean_why_empty": "この見出しセルは空で、名前になり得るものを含んでおらず、テキストのあるデータセルの見出しになっています。",
+      "emptyTableHeader_lean_caution_empty": "CSS だけで表示される見出し (背景画像や生成コンテンツ) は、ページ内にテキストを持ちません。",
       "labelTitleOnly_title": "title のみのフォームラベル（非推奨）",
       "labelTitleOnly_description": "バージョン 1.10.0 で非推奨となり、このルールは常に notApplicable を返します。title 属性だけでラベル付けされたフォームコントロールは、form-control-programmatic-label-quality が報告します。",
       "imageRedundantAlt_title": "画像の代替テキストは隣接する表示テキストと重複してはならない",
@@ -92976,10 +94166,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_hint_fail": "\"on\"、\"off\"、または \"shipping postal-code\" や \"cc-number\" のような有効な自動入力トークンを使ってください。",
       "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
       "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、WCAG 3.3.8 が支援の仕組みとして想定しているパスワードマネージャーやクリップボードが使えなくなります。",
-      "passwordPasteEnabled_summary_fail": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
-      "passwordPasteEnabled_hint_fail": "貼り付けが実際に機能するか、人の手で確認してください。禁止されている場合は、パスワードマネージャー (ワンタイムコードの場合はクリップボード) でフィールドに入力できるよう、ハンドラーを削除してください。",
+      "passwordPasteEnabled_summary_cantTell_cancelled": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
+      "passwordPasteEnabled_hint_cantTell_cancelled": "貼り付けが実際に機能するか、人の手で確認してください。禁止されている場合は、パスワードマネージャー (ワンタイムコードの場合はクリップボード) でフィールドに入力できるよう、ハンドラーを削除してください。",
       "passwordPasteEnabled_summary_cantTell": "この認証用フィールドには paste ハンドラーがありますが、貼り付けを取り消すかどうかは判定できませんでした。",
       "passwordPasteEnabled_hint_cantTell": "パスワードマネージャーやクリップボードで入力できるよう、このフィールドへの貼り付けが機能するか、人の手で確認してください。",
+      "passwordPasteEnabled_lean_why_cancelled": "このフィールドの paste ハンドラーは貼り付けを取り消すだけなので、貼り付けはおそらくブロックされています。",
+      "passwordPasteEnabled_lean_caution_cancelled": "スクリプトでフィールドやその祖先に追加されたリスナーが、ハンドラーの取り消し後に貼り付けたテキストを入れている可能性があります。",
+      "passwordPasteEnabled_lean_why_opaque": "paste ハンドラーは自らの動作を示しています。貼り付けをブロックする名前の関数を呼び出しているか、メッセージを表示して貼り付けを取り消しています。",
+      "passwordPasteEnabled_lean_caution_opaque": "関数名は誤解を招くことがあります。実際の動作はマークアップに含まれないスクリプトの中にあります。",
       "htmlXmlLangMismatch_title": "lang と xml:lang が食い違ってはならない",
       "htmlXmlLangMismatch_description": "<html> 要素に lang 属性と xml:lang 属性の両方がある場合に、同じ主言語を宣言しているかを確認します。",
       "htmlXmlLangMismatch_summary_fail": "lang 属性 (「{{lang}}」) と xml:lang 属性 (「{{xmlLang}}」) が異なる言語を宣言しています。",
@@ -93125,6 +94319,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "invalidFieldErrorMessage_hint_cantTell_none": "どのフィールドにエラーがあり、何が誤っているかがテキストで伝えられていることを確認してください。aria-errormessage か aria-describedby でメッセージをフィールドに関連付けてください。",
       "invalidFieldErrorMessage_lean_why_hidden": "フィールドに結び付けられたエラーメッセージが非表示のため、エラーはおそらく伝えられていません。",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "フィールドに結び付けられたエラーメッセージが支援技術から隠されているため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
+      "invalidFieldErrorMessage_lean_why_empty": "フィールドに結び付けられたエラーメッセージが空で、フィールドに説明もないため、エラーはおそらく伝えられていません。",
+      "invalidFieldErrorMessage_lean_caution_empty": "エラーはラベルやフィールドの隣のテキストに書かれている可能性があります。また、テンプレートが入力前から aria-invalid を設定していることもあります。",
+      "invalidFieldErrorMessage_lean_why_liveDescription": "フィールドの説明はテキストのあるライブリージョンで、ページは通常そこでエラーを通知します。",
+      "invalidFieldErrorMessage_lean_caution_liveDescription": "ライブリージョンには、エラーではなくヒントが入っていることもあります。",
+      "invalidFieldErrorMessage_lean_why_ariaHidden": "エラーメッセージのテキストが支援技術から隠されており、フィールドに説明もないため、スクリーンリーダー利用者にはおそらくエラーが伝わりません。",
+      "invalidFieldErrorMessage_lean_caution_ariaHidden": "このルールからは見えない別のライブ通知で伝えられている可能性があります。",
+      "invalidFieldErrorMessage_lean_why_targetMissing": "フィールドは現在無効とマークされていますが、指しているエラーメッセージがページになく、説明もありません。",
+      "invalidFieldErrorMessage_lean_caution_targetMissing": "ページの更新中に実行したスキャンでは、スクリプトがメッセージを追加する前のフィールドを捉えている可能性があります。",
       "labelForValid_title": "ラベルの for 属性は、ラベル付けできるコントロールを指すことが望ましい",
       "labelForValid_description": "for 属性がどの要素も指していない、またはラベル付けできない要素を指しているため、何もラベル付けしていないラベルを、手動確認のために報告します。",
       "labelForValid_summary_cantTell_missing": "このラベルの for=\"{{for}}\" はどの要素も指していないため、何もラベル付けしていません。",
@@ -93167,12 +94369,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tableFakeCaption_description": "<caption> がなく、1 行目が空でない単一のセルで、ほかの行が複数のセルを持つ表を検出し、そのセルが見せかけのキャプションとして使われていないかを人が確認できるようにします。",
       "tableFakeCaption_summary_cantTell": "この表には <caption> がありませんが、1 行目が複数セルの行の上にある単一のセルになっているため、見せかけのキャプションとして使われている可能性があります。",
       "tableFakeCaption_hint_cantTell": "このセルが表を説明するためのものであれば、1 行目の単独のセルではなく、本来の <caption> 要素を使用してください。",
+      "tableFakeCaption_lean_why": "1 行目の単一のセルが表の全幅にまたがり、ほかに単一セルの行がありません。セルとして表示されたタイトルの形です。",
+      "tableFakeCaption_lean_caution": "全幅の 1 行目が、1 つの列グループの見出しであることもあります。",
       "tdHasHeader_title": "大きな表のデータセルには、関連付けられた見出しが必要",
       "tdHasHeader_description": "大きく単純な (colspan/rowspan のない) 表のすべての <td> に、headers 属性、上にある暗黙的な列の <th>、または左にある暗黙的な行の <th> によって見出しが関連付けられているかを確認します。",
       "tdHasHeader_summary_fail": "このデータセルには関連付けられた見出しがありません (headers 属性も、上にある列の <th> も、左にある行の <th> もありません)。",
       "tdHasHeader_hint_fail": "正しい <th> の id を参照する headers 属性を追加するか、このセルの列の上か行の先頭に <th> が来るよう表を組み直してください。",
       "tdHasHeader_summary_cantTell_noHeaders": "この表には見出しセルがありません。データを含む表であれば、そのセルには見出しがありません。",
       "tdHasHeader_hint_cantTell_noHeaders": "表がデータを含む場合は、見出しセルを <th> でマークするか、セルに headers 属性を付けてください。レイアウトのためだけの表であれば、role=\"presentation\" を付けてください。",
+      "tdHasHeader_lean_why_data": "この表はデータ表のようです。ほとんどのセルが数値であるか、キャプション、表のヘッダー (thead)、または見出しのように表示された最初の行か列があります。",
+      "tdHasHeader_lean_caution_data": "レイアウト用の表にも、テキストの横の価格など、数値が入っていることがあります。",
+      "tdHasHeader_lean_why_layout": "この表はレイアウト用のようです。セルに入れ子の表、フォームコントロール、画像、またはまとまったテキストがあり、データ表であることを示すものがありません。",
+      "tdHasHeader_lean_caution_layout": "商品一覧のように、データ表のセルにも画像やコントロールが入っていることがあります。",
       "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
