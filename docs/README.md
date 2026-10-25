@@ -9,6 +9,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`INTEGRATION.md`](./INTEGRATION.md) | Running it with jsdom, Playwright, Puppeteer, Selenium, Cypress, other drivers, or a plain `<script>` tag. |
 | [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) | Every option: choosing rules, conformance targets and profiles, policies, languages, packs. |
 | [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) | Every field of a result. |
+| [`LEANS.md`](./LEANS.md) | Which way an undecided finding points: reading, using and trusting a lean. |
 | [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) | How rule results roll up to WCAG criteria, and what a criterion's `pass` does and doesn't claim. |
 | [`LIMITATIONS.md`](./LIMITATIONS.md) | What a scan can't establish, and what to do about it. |
 | [`LAYOUT_MEASUREMENT.md`](./LAYOUT_MEASUREMENT.md) | How the contrast and target-size rules measure a rendered page. |
