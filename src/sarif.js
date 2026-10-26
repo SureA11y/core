@@ -31,6 +31,7 @@ const crypto = require('crypto');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
 const { computeBaselineKey, getReasonCode, knownOccurrences } = require('./baseline.js');
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 const {
   framesOf,
   framePathText,
@@ -158,7 +159,10 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
   const summary = typeof occurrence.summary === 'string' ? occurrence.summary.trim() : '';
   const hint = typeof occurrence.hint === 'string' ? occurrence.hint.trim() : '';
   const lead = summary || (typeof check.title === 'string' && check.title.trim()) || check.ruleId;
-  const message = hint ? `${lead} ${hint}` : lead;
+  const how = sarifHowToCheck(occurrence.howToCheck);
+  const message = [hint ? `${lead} ${hint}` : lead, ...(how ? [howToCheckText(how)] : [])].join(
+    '\n\n'
+  );
   const where = locationText(occurrence);
   const lean = sarifLean(occurrence.lean);
 
@@ -192,7 +196,11 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       ...(framePath.length ? { frame: framePath.slice() } : {}),
       ...(outside ? { outsideTarget: outside } : {}),
       // An undecided finding's lean: which way its evidence points.
-      ...(lean ? { lean } : {})
+      ...(lean ? { lean } : {}),
+      // How a person answers an undecided finding (docs/OUTPUT_SCHEMA.md,
+      // "How to check"), also written under its message for a reader of
+      // the alert.
+      ...(how ? { howToCheck: how } : {})
     }
   };
 }
@@ -207,6 +215,24 @@ function sarifLean(lean) {
   if (typeof lean.caution === 'string' && lean.caution) out.caution = lean.caution;
   if (lean.measured && typeof lean.measured === 'object') out.measured = { ...lean.measured };
   return out;
+}
+
+// An undecided finding's steps, as a result carries them, or null.
+function sarifHowToCheck(how) {
+  if (!how || !Array.isArray(how.steps) || !how.steps.length) return null;
+  const text = (v) => (typeof v === 'string' ? v : '');
+  return { steps: how.steps.map(text), passWhen: text(how.passWhen), failWhen: text(how.failWhen) };
+}
+
+// The steps as plain text, for the result's message: code scanning shows
+// the message, not the properties.
+function howToCheckText(how) {
+  return [
+    'How to check:',
+    ...how.steps.map((step, i) => `${i + 1}. ${step}`),
+    ...(how.passWhen ? [`Passes when: ${how.passWhen}`] : []),
+    ...(how.failWhen ? [`Fails when: ${how.failWhen}`] : [])
+  ].join('\n');
 }
 
 // GitHub Code Scanning matches results between uploads on
@@ -261,7 +287,13 @@ function automationDetails(category) {
 }
 
 function renderSarifReport(result, options = {}) {
-  const frames = framesOf(result, 'renderSarifReport');
+  // A result that comes without the steps for its undecided findings (a
+  // binding's, from runa11yCoreInPage) gains them here, in Node, as the
+  // HTML report adds them; options.packs adds a pack rule's own. Before the
+  // baseline, which knows the occurrences it matched by identity.
+  const frames = framesOf(result, 'renderSarifReport').map((f) =>
+    f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
+  );
   const top = frames[0].result;
   const { toolVersion, informationUri, baselineEntries, category } = options;
   // leanFailAs: 'error' reports an undecided finding whose evidence points
