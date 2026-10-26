@@ -160,6 +160,7 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
   const lead = summary || (typeof check.title === 'string' && check.title.trim()) || check.ruleId;
   const message = hint ? `${lead} ${hint}` : lead;
   const where = locationText(occurrence);
+  const lean = sarifLean(occurrence.lean);
 
   return {
     ruleId: check.ruleId,
@@ -191,12 +192,21 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       ...(framePath.length ? { frame: framePath.slice() } : {}),
       ...(outside ? { outsideTarget: outside } : {}),
       // An undecided finding's lean: which way its evidence points.
-      ...(occurrence.lean &&
-      (occurrence.lean.toward === 'fail' || occurrence.lean.toward === 'pass')
-        ? { lean: { toward: occurrence.lean.toward, why: occurrence.lean.why } }
-        : {})
+      ...(lean ? { lean } : {})
     }
   };
+}
+
+// The lean as a SARIF result carries it: which way, why, and, where the
+// engine gives them, what could make it wrong (caution) and how often it has
+// been right (measured), so a reviewer reading an alert sees the caution the
+// HTML report shows. Its signals and i18n keys stay in the scan result.
+function sarifLean(lean) {
+  if (!lean || (lean.toward !== 'fail' && lean.toward !== 'pass')) return null;
+  const out = { toward: lean.toward, why: lean.why };
+  if (typeof lean.caution === 'string' && lean.caution) out.caution = lean.caution;
+  if (lean.measured && typeof lean.measured === 'object') out.measured = { ...lean.measured };
+  return out;
 }
 
 // GitHub Code Scanning matches results between uploads on

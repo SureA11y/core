@@ -43,7 +43,7 @@ That keeps a SARIF-only pipeline from reading silence as a clean bill of health:
 | `cantTell` | `warning` | Needs human review — surfaced, but shouldn't block a build on its own. |
 | `cantTell` leaning `fail`, with `leanFailAs: 'error'` | `error` | Undecided, but the page's evidence points to a failure (`lean`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#leans)); counted by a gate on errors. |
 
-An undecided finding with a lean carries it in `properties.lean`: `{ "toward": "fail", "why": "The heading skips a level after the one before it." }`, whichever level it is reported at.
+An undecided finding with a lean carries it in `properties.lean`: `{ "toward": "fail", "why": "The heading skips a level after the one before it." }`, whichever level it is reported at. Where the lean has them, it also carries `caution`, what could make it wrong (`"A layout table can also hold numbers."`), and `measured`, how often it has been right (`{ "agreed": 47, "cases": 50 }`), so an alert shows what the HTML report shows beside the lean. Its `signals` and `i18n` keys stay in the scan result.
 
 A rule whose every WCAG criterion is outside the scan's target (an AAA rule under `engineOptions.wcagLevel: 'AA'`, or `duplicate-id` under WCAG 2.2: the criteria the scan left out of `rulesResults`, as for the `wcag-<SC>` tags below) still ran, and its `fail` and `cantTell` findings are still results, at level `note`, so they are seen without failing a build scoped to the target. Each says why in `properties.outsideTarget`: `{ "criteria": ["1.4.6"], "target": "WCAG 2.2 AA" }`.
 

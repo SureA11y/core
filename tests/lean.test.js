@@ -156,6 +156,24 @@ test('SARIF carries the lean, and raises likely failures to error when asked', (
   assert.throws(() => renderSarifReport(result, { leanFailAs: 'fail' }), /leanFailAs must be/);
 });
 
+test("SARIF carries a lean's caution beside its reason, and no signals", () => {
+  const result = runa11yCoreOnHtml(page('<main><h1>a</h1><p id="x">1</p><p id="x">2</p></main>'), {
+    runOnly: ['duplicate-id']
+  });
+  const occurrence = result.checksResults[0].occurrences[0];
+  assert.ok(occurrence.lean.caution);
+  const [first] = JSON.parse(renderSarifReport(result)).runs[0].results;
+  assert.deepEqual(first.properties.lean, {
+    toward: occurrence.lean.toward,
+    why: occurrence.lean.why,
+    caution: occurrence.lean.caution
+  });
+  const measured = structuredClone(result);
+  measured.checksResults[0].occurrences[0].lean.measured = { agreed: 9, cases: 10 };
+  const [again] = JSON.parse(renderSarifReport(measured)).runs[0].results;
+  assert.deepEqual(again.properties.lean.measured, { agreed: 9, cases: 10 });
+});
+
 test('the HTML report groups undecided findings by their lean', () => {
   const result = runa11yCoreOnHtml(
     page(
