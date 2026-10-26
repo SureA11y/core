@@ -41,7 +41,7 @@ const esbuild = require('esbuild');
 const { waitForPageReady } = require('../src/core/page-ready');
 const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
-const { readLiveRegionHook } = require('../src/core/live-region-hook');
+const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { consoleHelpers } = require('../src/core/console-helpers');
 const { version: PACKAGE_VERSION } = require('../package.json');
 
@@ -155,9 +155,13 @@ ${inPageRunnerSource}
     getMargins: ${getMargins.toString()},
     // What the page's live regions were given, by the live-region hook
     // (src/core/live-region-hook.js), or null without one.
-    getAnnouncements: function (win) {
-      var hook = (${readLiveRegionHook.toString()})(win || global);
-      return hook ? hook.announcements : null;
+    getAnnouncements: function (win, options) {
+      return (${selectAnnouncements.toString()})(
+        ${readLiveRegionHook.toString()},
+        global,
+        win,
+        options
+      );
     },
     // Fetches the style sheets the page can't read (src/core/stylesheet-preload.js).
     preloadStyleSheets: ${preloadStyleSheets.toString()},

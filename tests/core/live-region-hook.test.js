@@ -204,6 +204,99 @@ test('a hidden region shown and filled in one task is asked about; shown first a
   assert.deepEqual(texts(d), [['Apart', 'polite']]);
 });
 
+test('a region shown because its dialog or details opened counts from its next text', async () => {
+  const d = await page(
+    '<dialog id="d"><div id="i" role="status"></div></dialog>' +
+      '<dialog id="e"><div id="j" role="status"></div></dialog>' +
+      '<details id="t"><summary>More</summary><div id="k" role="status" hidden></div></details>' +
+      '<dialog id="f"><div id="h" role="status" hidden></div></dialog>',
+    [
+      "document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('i').textContent = 'In the dialog';",
+      // Given its text while hidden, then shown by the dialog: not recorded.
+      "document.getElementById('j').textContent = 'Before'; document.getElementById('e').setAttribute('open', ''); ",
+      // Then given text: announced.
+      "document.getElementById('j').textContent = 'After';",
+      // Its own [hidden] still hides it: shown and filled at once after.
+      "document.getElementById('f').setAttribute('open', '');",
+      "const h = document.getElementById('h'); h.hidden = false; h.textContent = 'Together';"
+    ]
+  );
+  assert.deepEqual(texts(d), [
+    ['In the dialog', 'polite'],
+    ['After', 'polite']
+  ]);
+  assert.deepEqual(findings(d), [['LIVE_REGION_SHOWN_AND_FILLED', 'Together']]);
+});
+
+test('the last time each dialog was opened is recorded, in the order of the page’s changes', async () => {
+  const d = await page(
+    '<div id="s" role="status"></div><dialog id="d"></dialog><dialog id="e"></dialog>',
+    [
+      "document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('s').textContent = 'One';",
+      "document.getElementById('e').setAttribute('open', ''); document.getElementById('d').removeAttribute('open');",
+      "document.getElementById('s').textContent = 'Two'; document.getElementById('d').setAttribute('open', '');"
+    ]
+  );
+  const read = readLiveRegionHook(d.window);
+  const opened = read.dialogsOpened.map((o) => [o.element.id, o.order]);
+  assert.deepEqual(
+    opened.map(([id]) => id),
+    ['e', 'd']
+  );
+  const at = (text) => read.announcements.find((a) => a.text === text).order;
+  const [[, e], [, dAgain]] = opened;
+  assert.ok(at('One') < e, 'One came before e opened');
+  assert.ok(e < at('Two') && at('Two') < dAgain, 'Two came after e opened, before d opened again');
+  assert.equal(typeof read.dialogsOpened[0].time, 'number');
+  assert.equal(read.dropped.dialogsOpened, 0);
+});
+
+test('a text given to a region behind an open modal dialog is left out, or kept marked on request', async () => {
+  // jsdom has no top layer: an open dialog with aria-modal="true" stands in
+  // for one opened with showModal().
+  const d = await page(
+    '<div id="b" role="status"></div><dialog id="d" aria-modal="true"><div id="i" role="status"></div></dialog>',
+    [
+      "document.getElementById('b').textContent = 'Before'; document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('i').textContent = 'Inside';",
+      "document.getElementById('b').textContent = 'Behind';",
+      "document.getElementById('d').removeAttribute('open');",
+      "document.getElementById('b').textContent = 'Closed';"
+    ]
+  );
+  assert.deepEqual(
+    getAnnouncements(d.window).map((a) => a.text),
+    ['Before', 'Inside', 'Closed']
+  );
+  assert.deepEqual(
+    getAnnouncements(d.window, { includeBehindModal: true }).map((a) => [a.text, a.behindModal]),
+    [
+      ['Before', false],
+      ['Inside', false],
+      ['Behind', true],
+      ['Closed', false]
+    ]
+  );
+  assert.equal(getAnnouncements(d.window, { includeBehindModal: false }).length, 3);
+  assert.throws(() => getAnnouncements(d.window, { behindModal: true }), TypeError);
+  assert.throws(() => getAnnouncements(d.window, { includeBehindModal: 'yes' }), TypeError);
+  assert.throws(() => getAnnouncements(d.window, 'all'), TypeError);
+
+  // Serialized into the page, as a binding does, and run there on the
+  // page's own window, with or without options.
+  const inPage = d.window.eval(`(${getAnnouncements.toString()})`);
+  assert.deepEqual(
+    Array.from(inPage(), (a) => a.text),
+    ['Before', 'Inside', 'Closed']
+  );
+  assert.deepEqual(
+    Array.from(inPage({ includeBehindModal: true }), (a) => a.text),
+    ['Before', 'Inside', 'Behind', 'Closed']
+  );
+});
+
 test('a role attribute gives its first known role, in any case', async () => {
   const d = await page(
     '<div id="a" role="zzunknown status"></div><div id="b" role="STATUS"></div><div id="c" role="note status"></div>',

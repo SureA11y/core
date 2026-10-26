@@ -144,12 +144,12 @@ s.src = 'https://cdn.jsdelivr.net/npm/@surea11y/core/surea11y.browser.js';
 document.head.append(s);
 
 // Once it has loaded:
-a11ycore.version;                       // the engine's version
-const result = await a11ycore.run();     // scan the page
-a11ycore.table(result);                  // the findings, worst first
-a11ycore.highlight(result);              // box each one on the page
-await a11ycore.openReport(result);       // the HTML report, in a new tab
-await a11ycore.inspect('headings');      // what a person checks by hand
+a11ycore.version; // the engine's version
+const result = await a11ycore.run(); // scan the page
+a11ycore.table(result); // the findings, worst first
+a11ycore.highlight(result); // box each one on the page
+await a11ycore.openReport(result); // the HTML report, in a new tab
+await a11ycore.inspect('headings'); // what a person checks by hand
 ```
 
 - `run(options)` scans the page and resolves to the result. It fetches the style sheets the page can't read first, as `runa11yCoreInPageAsync` does. `options` takes the engine options (`locale`, `profile`, `excludeSelectors`…) and two of its own: `context`, a selector to scan only part of the page, and `runOnly`, the selection in any form the scan takes it ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#selecting-which-rules-run)): rule ids, or a WCAG target and the best practices. `await a11ycore.run({ context: 'main', runOnly: ['img-alt-present'] })`, `await a11ycore.run({ runOnly: { wcag: { version: '2.2', level: 'AA' } } })`. It rejects options that aren't an object, and a selection key (`wcag`, `bestPractices`, `includeRuleIds`…) outside `runOnly`: either would run every rule.
@@ -162,6 +162,7 @@ await a11ycore.inspect('headings');      // what a person checks by hand
   - `'focus-order'`: the controls Tab reaches, numbered in the order the engine works out: positive `tabindex` values first, then the document's order, with a shadow root's content right after its host, slotted content where its slot is, and one stop per radio group (the checked radio, else the first). A control hidden with `aria-hidden` that Tab still reaches is listed, drawn in amber and labelled `(aria-hidden)`, with `ariaHidden: true` in its row. Press Tab to confirm it: iframes and scripts that move focus can change it.
 
   The roles, names and levels are the ones the rules judge, worked out by the engine's own helpers; elements hidden from everyone are left out. It clears any highlights first, and `clearHighlights()` removes what it drew. `{ draw: false }` only lists. `await a11ycore.inspect('names')`.
+
 - `openReport(result, options)` opens the scan's [HTML report](./REPORT.md) in a new tab and resolves to its address. The report is in its own file, `surea11y.report.js`, which it fetches from beside the bundle the first time (so the bundle doesn't carry it for pages that never ask). A bundle loaded by a bundler has no address of its own: pass `{ reportScript: url }`, or load `surea11y.report.js` with a `<script>` tag. `{ report: { title } }` goes to the report. Where the browser blocks the new tab, the address is logged to open by hand.
 
 A page's Content Security Policy can block loading a script from a CDN, or the report file. Where it does, load the files from the page's own origin, or scan the page with a driver (Pattern 2).
@@ -219,10 +220,15 @@ fs.writeFileSync('surea11y-acme.js', buildBrowserBundle({ packs: [policy] }));
 ```html
 <script src="surea11y-acme.js"></script>
 <script>
-  const result = a11ycore.runa11yCoreInPage(location.href, null, {
-    packs: ['@acme/a11y-pack@0.1.0'],
-    profile: 'acme-policy'
-  }, null);
+  const result = a11ycore.runa11yCoreInPage(
+    location.href,
+    null,
+    {
+      packs: ['@acme/a11y-pack@0.1.0'],
+      profile: 'acme-policy'
+    },
+    null
+  );
 </script>
 ```
 
@@ -232,7 +238,8 @@ Where core's bundle is already on the page (a tool that loads it for its own sca
 
 ```html
 <script src="node_modules/@surea11y/core/surea11y.browser.js"></script>
-<script src="acme-pack.js"></script> <!-- fs.writeFileSync('acme-pack.js', packScript([policy])) -->
+<script src="acme-pack.js"></script>
+<!-- fs.writeFileSync('acme-pack.js', packScript([policy])) -->
 ```
 
 ### What the bundle leaves out
@@ -553,7 +560,7 @@ toast.hidden = false;
 toast.textContent = 'Saved';
 ```
 
-Without the hook, `live-region-announcements` judges the live regions as they are when scanned: one hidden from assistive technology with `aria-hidden` or `inert` (`LIVE_REGION_HIDDEN`), and one left with `aria-busy="true"` (`LIVE_REGION_BUSY`).
+Without the hook, `live-region-announcements` judges the live regions as they are when scanned: one hidden from assistive technology with `aria-hidden` or `inert`, or behind an open modal `<dialog>` (`LIVE_REGION_HIDDEN`), and one left with `aria-busy="true"` (`LIVE_REGION_BUSY`).
 
 ### What the hook does
 
@@ -561,9 +568,10 @@ Without the hook, `live-region-announcements` judges the live regions as they ar
 
 - each text a shown live region, reachable by assistive technology, is given: what the page made available to announce. Not what a screen reader said, which depends on the screen reader, its settings and what else it was saying.
 - a live region added to the page with its text already in it (`LIVE_REGION_INSERTED_WITH_CONTENT`). `role="alert"` is left out, with or without an `aria-live` of its own other than `off`: an alert added with its text is announced, and is recorded as an announcement.
-- a live region that was hidden (`display: none`, `visibility: hidden`, `[hidden]`) and was shown and given its text in the same task (`LIVE_REGION_SHOWN_AND_FILLED`).
+- a live region that was hidden (`display: none`, `visibility: hidden`, `[hidden]`) and was shown and given its text in the same task (`LIVE_REGION_SHOWN_AND_FILLED`). A region shown because a `<dialog>` or `<details>` around it was opened (`showModal()`, `show()`, or the `open` attribute set) or a popover around it was shown is taken as already there with the text it had: the text it is given after that is an announcement, and text given before, while it was hidden, is not recorded.
+- the last time each `<dialog>` was opened, so that a scan can tell what a region behind a modal dialog was given while the dialog was open.
 
-A live region is an element whose `aria-live` is `polite` or `assertive`, or, without an `aria-live`, whose role is `status`, `log` or `alert`, and an `<output>`; `aria-live="off"` turns any of them off. What the page loads with, or adds before the load event, is its starting state and is not recorded. The hook wraps nothing; it only observes. The record is under `Symbol.for('surea11y.liveRegions')` on the global.
+A live region is an element whose `aria-live` is `polite` or `assertive`, or, without an `aria-live`, whose role is `status`, `log` or `alert`, and an `<output>`; `aria-live="off"` turns any of them off. What the page loads with, or adds before the load event, is its starting state and is not recorded. The hook wraps nothing; it only observes, with one `MutationObserver` and a `beforetoggle` listener, as showing a popover changes no attribute. The record is under `Symbol.for('surea11y.liveRegions')` on the global.
 
 It is opt-in. Core never installs it, and a scan of a page without it gives the same result as before. It contains no `eval`.
 
@@ -597,15 +605,15 @@ window.eval(liveRegionHookScript({ early: true }));
 
 ### What the scan reports with it, and what you can read
 
-`live-region-announcements` (WCAG 4.1.3, manual) asks about each region the hook recorded with `LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED`, with the text it was given (`details.text`). A region still on the page is reported on itself, when it is in the scanned part of the page. One no longer there, such as a toast that came and went, is reported on the document element, with `details.removed: true` and a description of it (`details.region`: `tag`, `role`, `id`), and only when the whole document is scanned. The rule never fails: whether the page uses a region for status messages, and whether a screen reader announces it, is a person's call.
+`live-region-announcements` (WCAG 4.1.3, manual) asks about each region the hook recorded with `LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED`, with the text it was given (`details.text`). A region still on the page is reported on itself, when it is in the scanned part of the page. One no longer there, such as a toast that came and went, is reported on the document element, with `details.removed: true` and a description of it (`details.region`: `tag`, `role`, `id`), and only when the whole document is scanned. A region behind an open modal `<dialog>` (`LIVE_REGION_HIDDEN`, `details.hiddenBy: 'modal'`) leans fail when the hook saw it given text after the dialog in front of it was last opened, so while the dialog made it inert; a dialog the hook never saw open has been open since it started watching. A modal dialog inside a shadow root gives no lean, as the hook does not see changes there. The hook's own findings are not reported for a region behind an open modal dialog. The rule never fails: whether the page uses a region for status messages, and whether a screen reader announces it, is a person's call.
 
-`getAnnouncements(win)` returns what the page made available to announce, `[{ text, politeness, time, element }]` in the order the page did it, or `null` without the hook. Changes made in the same task as the call are included. Run it in the page, with the browser bundle as `window.a11ycore.getAnnouncements()`:
+`getAnnouncements([win], [options])` returns what the page made available to announce, `[{ text, politeness, time, order, behindModal, element }]` in the order the page did it (`order` is the change's place among all the page made), or `null` without the hook. Changes made in the same task as the call are included. Run it in the page, with the browser bundle as `window.a11ycore.getAnnouncements()`:
+
+A text given to a region behind an open modal `<dialog>` is left out: the browser made the region inert, so assistive technology did not get it, and a screen reader said nothing. To see that the page wrote it all the same, pass `{ includeBehindModal: true }` (`getAnnouncements(win, { includeBehindModal: true })`, or `getAnnouncements({ includeBehindModal: true })` in the page), and such entries are listed too, with `behindModal: true`; the others have `behindModal: false`. The hook tells from the modal dialogs open in the document, and when each was opened: the region is in none of them and contains none, and one of them was opened before the text was given. It does not see a modal dialog inside a shadow root.
 
 ```js
 await page.click('text=Save');
-const said = await page.evaluate(() =>
-  window.a11ycore.getAnnouncements().map((a) => a.text)
-);
+const said = await page.evaluate(() => window.a11ycore.getAnnouncements().map((a) => a.text));
 // ['Saved']
 ```
 
@@ -617,7 +625,10 @@ The result says whether the hook was there, in `engine.environment.liveRegionHoo
 - The page's own `MutationObserver`s see the same records as before.
 - Each change costs a little: in Chromium about 25 µs for a change to a live region, and under 10 µs for each element added elsewhere, measured with 1,000 updates to a status region and 10,000 list items added.
 - Each list keeps its first 500 entries and counts the rest. A text is kept up to 300 characters, with its whitespace collapsed.
-- The hook watches the document, not inside shadow roots: a `MutationObserver` on the document doesn't see changes there, so a live region inside a web component's shadow root isn't recorded.
+- The hook watches the document, not inside shadow roots, open or closed: a `MutationObserver` on the document doesn't see changes there, and a popover's `beforetoggle` event doesn't leave its shadow root. What it misses there, and what a reviewer sees:
+  - Text given to a live region inside a shadow root: it is not in `getAnnouncements()`, and `live-region-announcements` reports no `LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED` for that region, only what the scan sees of it as it is then.
+  - A `<dialog>` or popover opened inside a shadow root: it is not in `dialogsOpened`. A page live region slotted into it, then given its text, is reported as `LIVE_REGION_SHOWN_AND_FILLED`, as though the page had shown and filled it at once: check whether the dialog or popover was opened first.
+  - A modal dialog opened inside a shadow root: a text given to a region behind it is listed by `getAnnouncements()`, with `behindModal: false`, and `live-region-announcements` reports such a region (`LIVE_REGION_HIDDEN`, `hiddenBy: 'modal'`) with no lean, since the hook can't say when the dialog opened.
 - A region's text is its `textContent`, including text it hides with CSS. The hook doesn't record a change to a region's text while the region is hidden, nor one that only shows a region already filled.
 - Screen readers differ, and some announce a region added with its text. The findings are what is commonly not announced, and `getAnnouncements()` what the page made available.
 - A page can define `Symbol.for('surea11y.liveRegions')` itself. The engine reads it only where it has the hook's shape, and runs none of the page's getters.
