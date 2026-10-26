@@ -2,7 +2,13 @@
 
 'use strict';
 
-const { framesOf, locationText } = require('./scan-result.js');
+const {
+  framesOf,
+  locationText,
+  occurrenceOutcome,
+  reasonCodeOf,
+  leaningOccurrencesOf
+} = require('./scan-result.js');
 const BASELINE_MOVES = require('./baseline-moves.json');
 
 // docs/BASELINE.md: identity for one violation occurrence is
@@ -17,13 +23,8 @@ const BASELINE_MOVES = require('./baseline-moves.json');
 // page; its known limitation is a flagged element with dynamic content in
 // its own markup (a timestamp, a live counter) never matching itself twice
 // -- acceptable for v1, see docs/BASELINE.md.
-// Only a string is a reason code: a number, an object or an empty string a
-// rule left there reads as none, so no key holds "[object Object]" or a 0.
-function getReasonCode(occurrence) {
-  const code =
-    occurrence && occurrence.data && occurrence.data.details && occurrence.data.details.reasonCode;
-  return typeof code === 'string' && code ? code : 'DEFAULT';
-}
+// An occurrence's reason code, or 'DEFAULT' (reasonCodeOf).
+const getReasonCode = reasonCodeOf;
 
 // The markup in a finding's identity, with each start tag's attributes in
 // name order and its class names sorted: frameworks reorder both freely, and
@@ -104,47 +105,33 @@ function computeBaselineKey(ruleId, reasonCode, html, framePath) {
     : key;
 }
 
-function getOccurrenceOutcome(check, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
-}
-
 function isFailOccurrence(check, occurrence) {
   if (!check || check.outcome !== 'fail') return false;
-  return getOccurrenceOutcome(check, occurrence) === 'fail';
+  return occurrenceOutcome(check, occurrence) === 'fail';
 }
 
 // Read-only: one entry per `fail` occurrence (not pre-deduplicated), so the
 // written file is a plain reviewable list -- a new violation shows up as one
 // new array row in a PR diff, not a changed count. `selector` is kept only
 // for human readability in the committed file; matching never reads it.
-function buildBaselineEntries(result) {
-  const entries = [];
-  for (const { frame, result: frameResult } of framesOf(result, 'buildBaselineEntries')) {
-    for (const check of (frameResult && frameResult.checksResults) || []) {
-      if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
-
-      for (const occurrence of check.occurrences) {
-        if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
-        entries.push({
-          ruleId: check.ruleId,
-          reasonCode: getReasonCode(occurrence),
-          selector: locationText(occurrence),
-          html: typeof occurrence.html === 'string' ? occurrence.html : '',
-          // In a child frame of a cross-frame result: the path to it.
-          ...(frame.path.length ? { frame: frame.path.slice() } : {})
-        });
-      }
-    }
+// With `leanFail: true`, each undecided finding that leans fail, as
+// leanFailAs gates on it, gets an entry too, marked `lean: 'fail'`, after the
+// failures.
+function buildBaselineEntries(result, options) {
+  const frames = framesOf(result, 'buildBaselineEntries');
+  const entryOf = (f, extra) => ({
+    ruleId: f.ruleId,
+    reasonCode: f.reasonCode,
+    selector: locationText(f.occurrence),
+    html: f.html,
+    ...extra,
+    // In a child frame of a cross-frame result: the path to it.
+    ...(f.framePath.length ? { frame: f.framePath.slice() } : {})
+  });
+  const entries = failFindingsOf(frames).map((f) => entryOf(f, {}));
+  if (options && options.leanFail === true) {
+    for (const f of leanFindingsOf(frames)) entries.push(entryOf(f, { lean: 'fail' }));
   }
-
   return entries;
 }
 
@@ -182,11 +169,17 @@ function entryKey(entry) {
   );
 }
 
-// How many entries the baseline holds under each key.
-function entryCounts(baselineEntries) {
+// An entry for an undecided finding that leans fail, rather than a failure.
+function isLeanEntry(entry) {
+  return !!entry && entry.lean === 'fail';
+}
+
+// How many entries the baseline holds under each key: its entries for
+// failures, or with `lean`, those for findings that lean fail.
+function entryCounts(baselineEntries, lean = false) {
   const remaining = new Map();
   for (const entry of entriesOf(baselineEntries)) {
-    if (!entry) continue;
+    if (!entry || isLeanEntry(entry) !== lean) continue;
     const key = entryKey(entry);
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
@@ -218,8 +211,19 @@ function takeKnown(remaining, findings) {
   return known;
 }
 
-// The fail occurrences of frames (framesOf), in order: { frame, check,
-// occurrence, ruleId, reasonCode, html, framePath }.
+function findingOf(frame, check, occurrence) {
+  return {
+    check,
+    occurrence,
+    ruleId: check.ruleId,
+    reasonCode: getReasonCode(occurrence),
+    html: typeof occurrence.html === 'string' ? occurrence.html : '',
+    framePath: frame.path
+  };
+}
+
+// The fail occurrences of frames (framesOf), in order: { check, occurrence,
+// ruleId, reasonCode, html, framePath }.
 function failFindingsOf(frames) {
   const out = [];
   for (const { frame, result: frameResult } of frames) {
@@ -227,39 +231,45 @@ function failFindingsOf(frames) {
       if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
       for (const occurrence of check.occurrences) {
         if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
-        out.push({
-          frame,
-          check,
-          occurrence,
-          ruleId: check.ruleId,
-          reasonCode: getReasonCode(occurrence),
-          html: typeof occurrence.html === 'string' ? occurrence.html : '',
-          framePath: frame.path
-        });
+        out.push(findingOf(frame, check, occurrence));
       }
     }
   }
   return out;
 }
 
-// The fail occurrences of frames (framesOf) that the baseline knows, as a
-// set the reporters look each occurrence up in, and the entries left over.
+// The undecided occurrences of frames that lean fail, as leanFailAs gates on
+// them (leaningOccurrencesOf), in the same shape.
+function leanFindingsOf(frames) {
+  const out = [];
+  for (const { frame, result: frameResult } of frames) {
+    if (!frameResult) continue;
+    for (const { check, occurrence } of leaningOccurrencesOf(frameResult)) {
+      out.push(findingOf(frame, check, occurrence));
+    }
+  }
+  return out;
+}
+
+// The occurrences of frames (framesOf) that the baseline knows, as sets the
+// reporters look each occurrence up in: `known`, the failures its entries
+// for failures match, and `knownLeaning`, the findings that lean fail its
+// `lean: 'fail'` entries match.
 function knownOccurrences(frames, baselineEntries) {
-  const remaining = entryCounts(baselineEntries);
-  const findings = failFindingsOf(frames);
-  const known = takeKnown(remaining, findings);
+  const knownIn = (findings, lean) => {
+    const known = takeKnown(entryCounts(baselineEntries, lean), findings);
+    return new Set(findings.filter((f, i) => known[i]).map((f) => f.occurrence));
+  };
   return {
-    known: new Set(findings.filter((f, i) => known[i]).map((f) => f.occurrence)),
-    remaining
+    known: knownIn(failFindingsOf(frames), false),
+    knownLeaning: knownIn(leanFindingsOf(frames), true)
   };
 }
 
-function matchBaseline(result, baselineEntries) {
-  const frames = framesOf(result, 'matchBaseline');
-  const remaining = entryCounts(baselineEntries);
-  const findings = failFindingsOf(frames);
+// What a baseline knows of some findings: counts, the findings it does not
+// know, and its entries no finding matched.
+function compare(findings, remaining) {
   const known = takeKnown(remaining, findings);
-
   const newOccurrences = [];
   findings.forEach((f, i) => {
     if (known[i]) return;
@@ -272,19 +282,36 @@ function matchBaseline(result, baselineEntries) {
       ...(f.framePath.length ? { frame: f.framePath.slice() } : {})
     });
   });
-
   let staleCount = 0;
   for (const left of remaining.values()) {
     if (left > 0) staleCount += left;
   }
-
   return {
-    totalFail: findings.length,
+    total: findings.length,
     knownCount: findings.length - newOccurrences.length,
     newCount: newOccurrences.length,
     newOccurrences,
     staleCount
   };
+}
+
+// Which failures the baseline knows. Its entries for findings that lean
+// fail are left out, unless `leanFail: true` asks for those findings to be
+// compared with them too, in `leanFail`.
+function matchBaseline(result, baselineEntries, options) {
+  const frames = framesOf(result, 'matchBaseline');
+  const fail = compare(failFindingsOf(frames), entryCounts(baselineEntries));
+  const match = {
+    totalFail: fail.total,
+    knownCount: fail.knownCount,
+    newCount: fail.newCount,
+    newOccurrences: fail.newOccurrences,
+    staleCount: fail.staleCount
+  };
+  if (options && options.leanFail === true) {
+    match.leanFail = compare(leanFindingsOf(frames), entryCounts(baselineEntries, true));
+  }
+  return match;
 }
 
 // The entries with each one written under a reason code a release has since
@@ -309,32 +336,36 @@ function migrateBaselineEntries(baselineEntries, result) {
     return entries;
   }
   const frames = framesOf(result, 'migrateBaselineEntries');
-  // The entries under each key, so the one a finding takes can be rewritten.
-  const byKey = new Map();
-  for (const entry of entries) {
-    if (!entry || typeof entry !== 'object') continue;
-    const key = entryKey(entry);
-    if (!byKey.has(key)) byKey.set(key, []);
-    byKey.get(key).push(entry);
-  }
-  const takeEntry = (key) => {
-    const list = byKey.get(key);
-    return list && list.length ? list.shift() : null;
-  };
-  const findings = failFindingsOf(frames);
-  const exact = findings.map((f) =>
-    takeEntry(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
-  );
-  findings.forEach((f, i) => {
-    if (exact[i]) return;
-    for (const code of earlierCodesOf(f.ruleId, f.reasonCode)) {
-      const entry = takeEntry(computeBaselineKey(f.ruleId, code, f.html, f.framePath));
-      if (entry) {
-        entry.reasonCode = f.reasonCode;
-        break;
-      }
+  for (const [findings, lean] of [
+    [failFindingsOf(frames), false],
+    [leanFindingsOf(frames), true]
+  ]) {
+    // The entries under each key, so the one a finding takes can be rewritten.
+    const byKey = new Map();
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object' || isLeanEntry(entry) !== lean) continue;
+      const key = entryKey(entry);
+      if (!byKey.has(key)) byKey.set(key, []);
+      byKey.get(key).push(entry);
     }
-  });
+    const takeEntry = (key) => {
+      const list = byKey.get(key);
+      return list && list.length ? list.shift() : null;
+    };
+    const exact = findings.map((f) =>
+      takeEntry(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
+    );
+    findings.forEach((f, i) => {
+      if (exact[i]) return;
+      for (const code of earlierCodesOf(f.ruleId, f.reasonCode)) {
+        const entry = takeEntry(computeBaselineKey(f.ruleId, code, f.html, f.framePath));
+        if (entry) {
+          entry.reasonCode = f.reasonCode;
+          break;
+        }
+      }
+    });
+  }
   return entries;
 }
 

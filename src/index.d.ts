@@ -898,6 +898,39 @@ export function flattenCrossFrameResult(
   value: CrossFrameResult | BindingFramesResult | ScanResult
 ): FlatFrame[];
 
+/**
+ * An occurrence's outcome, as the reporters read it: its own tier
+ * (`occurrenceOutcome`) when it is 'fail' or 'cantTell', or else its check's
+ * outcome when that is; null otherwise.
+ */
+export function occurrenceOutcome(
+  check: Pick<CheckResult, 'outcome'> | null | undefined,
+  occurrence: Occurrence | null | undefined
+): 'fail' | 'cantTell' | null;
+
+/** An undecided finding whose lean points to fail. */
+export interface LeaningFailure {
+  ruleId: string;
+  /** Its reason code, or 'DEFAULT'. */
+  reasonCode: string;
+  occurrence: Occurrence;
+  /** For a finding inside a frame of a cross-frame result: the frame's path (FramePosition.path). */
+  frame?: string[];
+}
+
+/**
+ * The undecided findings that lean fail and gate under the reporters'
+ * `leanFailAs` (docs/LEANS.md): the findings of a rule whose every WCAG
+ * criterion is outside the scan's target are left out, as JUnit and SARIF
+ * leave them out. With `wcagOnly`, only those of rules mapped to a WCAG
+ * criterion in the target, as `leanFailWcagOnly` does. A cross-frame result
+ * covers every frame. Throws a TypeError for anything else.
+ */
+export function leaningFailures(
+  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  options?: { wcagOnly?: boolean }
+): LeaningFailure[];
+
 // ---- Scanning ----
 
 /**

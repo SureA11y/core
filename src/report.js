@@ -19,7 +19,8 @@ const {
   helpLinkOf,
   standardsInfoOf,
   standardOfEntryIn,
-  textOf
+  textOf,
+  occurrenceOutcome
 } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
@@ -204,26 +205,11 @@ function countByOutcome(checksResults) {
   return counts;
 }
 
-function getOccurrenceOutcome(ruleResult, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return (
-    ruleResult &&
-    (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null)
-  );
-}
-
 function getCardOutcome(ruleResult) {
   if (!ruleResult || !Array.isArray(ruleResult.occurrences)) return ruleResult.outcome;
   let hasCantTell = false;
   for (const occ of ruleResult.occurrences) {
-    const outcome = getOccurrenceOutcome(ruleResult, occ);
+    const outcome = occurrenceOutcome(ruleResult, occ);
     if (outcome === 'fail') return 'fail';
     if (outcome === 'cantTell') hasCantTell = true;
   }
@@ -713,7 +699,7 @@ function renderCards(checksResults, ui) {
       Array.isArray(r.occurrences) &&
       (ruleErrorOf(r) ||
         r.occurrences.some((occ) => {
-          const outcome = getOccurrenceOutcome(r, occ);
+          const outcome = occurrenceOutcome(r, occ);
           return outcome === 'fail' || outcome === 'cantTell';
         }))
   );
@@ -732,7 +718,7 @@ function renderCards(checksResults, ui) {
     }
     REVIEW_GROUPS.forEach((g, i) => {
       const occs = r.occurrences.filter(
-        (occ) => getOccurrenceOutcome(r, occ) === 'cantTell' && leanOf(occ) === g.key
+        (occ) => occurrenceOutcome(r, occ) === 'cantTell' && leanOf(occ) === g.key
       );
       if (occs.length) review[i].push({ r, occs, outcome: 'cantTell', lean: g.key });
     });
@@ -752,13 +738,13 @@ function renderCards(checksResults, ui) {
     const info = OUTCOME_INFO[cardOutcome] || OUTCOME_INFO.notApplicable;
     const occurrenceCounts = { fail: 0, cantTell: 0 };
     for (const occ of occs) {
-      const outcome = getOccurrenceOutcome(r, occ);
+      const outcome = occurrenceOutcome(r, occ);
       if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
     }
     const ruleError = ruleErrorOf(r);
     const representative = ruleError
       ? { summary: ui.tr('report_card_ruleError', { error: ruleError }) }
-      : occs.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) || occs[0];
+      : occs.find((occ) => occurrenceOutcome(r, occ) === cardOutcome) || occs[0];
     const occI18n = representative.i18n || {};
     const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
       .filter(isWcagCriterion)
@@ -835,10 +821,10 @@ function flattenOccurrences(checksResults, ui) {
   for (const r of checksResults) {
     if (!Array.isArray(r.occurrences)) continue;
     for (const occ of r.occurrences) {
-      const occurrenceOutcome = getOccurrenceOutcome(r, occ);
+      const tier = occurrenceOutcome(r, occ);
       rows.push({
         ruleId: r.ruleId,
-        outcome: occurrenceOutcome || r.outcome,
+        outcome: tier || r.outcome,
         severity: r.severity,
         severityLabel: ui.severity(r.severity),
         selector: locationText(occ),
@@ -852,7 +838,7 @@ function flattenOccurrences(checksResults, ui) {
         ),
         hint: occ.hint || '',
         lean:
-          occurrenceOutcome === 'cantTell' && leanOf(occ)
+          tier === 'cantTell' && leanOf(occ)
             ? ui.tr(leanOf(occ) === 'fail' ? 'report_card_leanFail' : 'report_card_leanPass', {
                 why: occ.lean.why
               })

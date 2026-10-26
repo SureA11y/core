@@ -14,16 +14,17 @@
  * fail -> SARIF level "error" (the CI-gating case); cantTell -> "warning"
  * (surfaced, non-blocking -- this engine's own cantTell/manual-review mental
  * model, docs/TROUBLESHOOTING.md). A cantTell whose lean points to fail is
- * "error" instead when `leanFailAs: 'error'` is given; every lean is in the
- * result's properties either way.
+ * "error" instead when `leanFailAs: 'error'` is given (with
+ * `leanFailWcagOnly`, only for a rule mapped to a WCAG criterion); every
+ * lean is in the result's properties either way.
  *
  * If `baselineEntries` is supplied (mirrors --baseline, docs/BASELINE.md),
  * fail occurrences already recorded there are omitted entirely rather than
  * downgraded -- a generic SARIF consumer has no "known, don't re-gate"
  * concept of its own, so the only faithful way to honor a baseline here is
  * to not report the occurrence at all. cantTell occurrences are never
- * baseline-filtered (the baseline mechanism only ever tracks fail
- * occurrences, matching --write-baseline).
+ * left out: one that leans fail and has an entry marked `lean: 'fail'`
+ * stays a "warning" under `leanFailAs: 'error'`, as it is without it.
  */
 
 const crypto = require('crypto');
@@ -38,7 +39,9 @@ const {
   helpUrlOf,
   standardsOf,
   standardOfEntryIn,
-  wcagScopeOf
+  wcagScopeOf,
+  occurrenceOutcome,
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -217,18 +220,6 @@ function addLineHashes(results) {
   return results;
 }
 
-function getOccurrenceOutcome(check, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
-}
-
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
 // from a 2.2 one, and an AA one from one at every level, the opt-in rules it
 // added beyond that target, and the conditions the page was rendered under,
@@ -275,8 +266,17 @@ function renderSarifReport(result, options = {}) {
       `renderSarifReport: leanFailAs must be 'warning' or 'error', not ${JSON.stringify(options.leanFailAs)}`
     );
   }
+  // leanFailWcagOnly: true raises only the leans of rules mapped to a WCAG
+  // criterion, not a best-practice rule's, whose stated facts lean fail
+  // without condition (docs/LEANS.md).
+  const { leanFailWcagOnly } = options;
+  if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
+    throw new TypeError(
+      `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
+    );
+  }
   const automation = automationDetails(category);
-  const { known } = knownOccurrences(frames, baselineEntries);
+  const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
 
   const rules = [];
   const seenRuleIds = new Set();
@@ -299,6 +299,15 @@ function renderSarifReport(result, options = {}) {
       continue;
     }
     const artifactUri = artifactUriFromResult(frameResult);
+    // The findings that lean fail and are raised under leanFailAs: 'error',
+    // less those the baseline knows (entries marked lean: 'fail').
+    const raised = new Set(
+      leanFailAs === 'error'
+        ? leaningOccurrencesOf(frameResult, { wcagOnly: leanFailWcagOnly === true })
+            .map((l) => l.occurrence)
+            .filter((o) => !knownLeaning.has(o))
+        : []
+    );
     const standards = standardsOf(frameResult);
     const inScope = wcagScopeOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
@@ -361,8 +370,8 @@ function renderSarifReport(result, options = {}) {
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
-        const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
-        if (occurrenceOutcome === 'fail') {
+        const outcome = occurrenceOutcome(check, occurrence);
+        if (outcome === 'fail') {
           // Already known via the baseline: omitted, not re-gated.
           if (known.has(occurrence)) continue;
           failResults.push(
@@ -375,13 +384,12 @@ function renderSarifReport(result, options = {}) {
               outside
             )
           );
-        } else if (occurrenceOutcome === 'cantTell') {
-          const leansFail = occurrence.lean && occurrence.lean.toward === 'fail';
+        } else if (outcome === 'cantTell') {
           cantTellResults.push(
             buildResult(
               check,
               occurrence,
-              outside ? 'note' : leansFail && leanFailAs === 'error' ? 'error' : 'warning',
+              outside ? 'note' : raised.has(occurrence) ? 'error' : 'warning',
               artifactUri,
               framePath,
               outside

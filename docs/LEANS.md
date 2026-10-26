@@ -43,12 +43,15 @@ A lean is an optional field on a `cantTell` occurrence:
 What a lean does not change:
 
 - **The outcome.** It stays `cantTell`, and the rule's outcome is computed from the tiers as before. Anything that reads outcomes (EARL, baselines, WCAG rollups) sees no difference.
-- **A finding's identity.** A lean is not part of the fingerprint: adding, changing or removing one doesn't open or close a baseline entry or a code-scanning alert.
+- **A finding's identity.** A lean is not part of the fingerprint: adding, changing or removing one doesn't open or close a baseline entry for a failure or a code-scanning alert. Only an entry marked `lean: 'fail'` (below) depends on it: it matches the finding while the finding leans fail.
 
 Ways to use it:
 
 - **Sort a review queue:** likely fails first, then likely passes, then the rest.
-- **Gate CI on likely failures only.** `renderJunitReport(result, { leanFailAs: 'failure' })` reports a rule with a finding that leans fail as `<failure type="leanFail">`. `renderSarifReport(result, { leanFailAs: 'error' })` raises such a finding to `error`. Both are off by default, so a strict pipeline is unchanged.
+- **Gate CI on likely failures only.** `renderJunitReport(result, { leanFailAs: 'failure' })` reports a rule with a finding that leans fail as `<failure type="leanFail">`. `renderSarifReport(result, { leanFailAs: 'error' })` raises such a finding to `error`. Both are off by default, so a strict pipeline is unchanged. `leaningFailures(result)` lists the findings they gate on.
+  - That includes the best-practice rules' findings, which lean fail without condition (see below): with `leanFailAs`, a skipped heading level is a failure. To gate only on the rules mapped to WCAG criteria, add `leanFailWcagOnly: true` (`leaningFailures(result, { wcagOnly: true })`).
+  - Accept the likely failures a page already has, as a baseline accepts its failures: `buildBaselineEntries(result, { leanFail: true })` records them as entries marked `lean: 'fail'`, and JUnit and SARIF then gate only on new ones ([`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)).
+  - New leans arrive in minor releases (below), so a build gated on leans can turn red after an upgrade with nothing changed on the page. Pin the version, or record the leans the upgrade brings in the baseline.
 - **Show the reason.** SARIF results carry it in `properties.lean`, and the HTML report shows it on each card and in the occurrence table.
 
 Treat a lean as advice that can come and go. New leans arrive in minor releases, rule by rule, and one that measuring shows to be wrong too often is removed.

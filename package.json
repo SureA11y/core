@@ -178,6 +178,7 @@
     "src/baseline.js",
     "src/baseline-moves.json",
     "src/scan-result.js",
+    "src/occurrence-outcome.js",
     "src/policy/contracts.js",
     "src/report.js",
     "src/i18n-coverage.js",

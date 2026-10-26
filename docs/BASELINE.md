@@ -44,6 +44,26 @@ A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA
 
 Baseline entries that don't match anything in a fresh scan are reported as **stale**: the violation may have been fixed, or the element's markup changed, or the scan didn't reach it (another viewport, scope or set of rules). This is informational only and never gates the build; look at them, then regenerate the baseline with `--write-baseline` periodically to clean them up.
 
+## Findings that lean fail
+
+A baseline records failures. An undecided finding is not one, but some lean fail (their `lean`, see [`LEANS.md`](./LEANS.md)), and a build that gates on them (`leanFailAs` in [JUnit](./JUNIT.md#options) and [SARIF](./SARIF.md#options)) needs a way to accept those a page already has, as it accepts its failures. Ask for them when building the baseline:
+
+```js
+const { buildBaselineEntries } = require('@surea11y/core/baseline');
+
+const entries = buildBaselineEntries(result, { leanFail: true });
+```
+
+Each finding that leans fail and gates under `leanFailAs` (`leaningFailures(result)` from `@surea11y/core`) gets an entry marked `"lean": "fail"`, after the failures:
+
+```json
+{ "ruleId": "heading-order", "reasonCode": "HEADING_ORDER_SKIPPED_LEVEL", "selector": "html > body > main > h3", "html": "<h3>Details</h3>", "lean": "fail" }
+```
+
+Such an entry matches only a finding that leans fail, with the same identity, and a plain entry only a failure. Under `leanFailAs`, JUnit does not gate on a finding it matches (its `<skipped>` message counts it among the known likely failures) and SARIF leaves it a `warning`. Without `leanFailAs` the entries change nothing, and `matchBaseline` leaves them out of its counts, stale ones included, unless given `{ leanFail: true }`, when it compares them in `leanFail` (`{ total, knownCount, newCount, newOccurrences, staleCount }`). `--write-baseline` writes failures only.
+
+Leans arrive in minor releases, so an upgrade can bring likely failures a baseline does not hold: rebuild it with `leanFail: true` after an upgrade, and review the diff.
+
 ## Upgrading
 
 A finding's identity includes its reason code, and a minor release may give a finding a new one: a rule that gave none (`DEFAULT`) now gives one, or one code is split in two by cause ([`API_STABILITY.md`](./API_STABILITY.md#finding-identity)). The finding is the same, and a baseline written before the upgrade still matches it: each move is listed in [`src/baseline-moves.json`](../src/baseline-moves.json) (rule, old code, new codes), and an entry under the old code matches the finding under a new one when the rest of its identity, the rule, the markup and the frame, is the same. `matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, all read it. An entry is looked up under the finding's own code first, so it never goes to a moved finding when another finding has that exact identity.
