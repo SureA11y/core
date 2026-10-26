@@ -72,7 +72,32 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.2.1': ['transcript-evidence'] } }
+  coverage: { facetsBySc: { '1.2.1': ['transcript-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    transcriptNotDetected: {
+      steps: [
+        'Find the audio or video player the report names and play it, noting whether it has sound, pictures or both.',
+        'Look next to the player and elsewhere on the page for a transcript or a link to one.',
+        'If you find one, compare the transcript with the media and check that it gives the same information: speech, important sounds and what is shown.'
+      ],
+      passWhen:
+        'A transcript or text alternative is on the page or linked next to the player and gives what the media gives, or the media is itself an alternative for text on the page and is labelled as such.',
+      failWhen:
+        'Prerecorded audio-only or video-only media has no transcript or text alternative, which fails WCAG 1.2.1.'
+    },
+    transcriptEvidenceUnverified: {
+      steps: [
+        'Find the link next to the player the report names (the report gives its href).',
+        'Follow the link and check that it leads to a transcript of this media.',
+        'Compare the transcript with the media and check that it gives the same information: speech, important sounds and what is shown.'
+      ],
+      passWhen: 'The link leads to a transcript that gives what the media gives.',
+      failWhen:
+        'The link leads elsewhere or to an incomplete text, so the media has no text alternative, which fails WCAG 1.2.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

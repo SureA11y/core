@@ -97,6 +97,51 @@ const meta = {
     facetsBySc: {
       '3.3.2': ['form-control-visible-label-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    label_from_aria_label_only: {
+      steps: [
+        'Find the field the report names on screen and read its aria-label, which the report gives.',
+        'Look for text shown next to the field (a visible label, a heading or a legend) that tells what to enter.'
+      ],
+      passWhen:
+        'Text shown next to the field, or an icon whose meaning is plain such as a magnifier on a search field, tells what to enter.',
+      failWhen: 'Nothing shown on screen tells what to enter in the field, which fails WCAG 3.3.2.'
+    },
+    label_from_hidden_labelledby: {
+      steps: [
+        'Find the field the report names and, in the developer tools, follow its aria-labelledby ids to the elements they point at.',
+        'Check whether those elements are shown on screen when the field is.',
+        'Look for other text shown next to the field that tells what to enter.'
+      ],
+      passWhen:
+        'The labelling text is shown with the field, or other text next to it tells what to enter.',
+      failWhen:
+        'The label is only in hidden elements and nothing on screen tells what to enter, which fails WCAG 3.3.2.'
+    },
+    label_from_placeholder_primary: {
+      steps: [
+        'Find the field the report names and read its placeholder.',
+        'Type something in the field.',
+        'Check whether anything still shown on screen tells what the field is for.'
+      ],
+      passWhen:
+        'A label or text shown next to the field stays on screen once it is filled in and tells what to enter.',
+      failWhen:
+        'Once the field is filled in, nothing on screen tells what it is for, which fails WCAG 3.3.2.'
+    },
+    label_from_title_primary: {
+      steps: [
+        'Look at the field the report names without hovering over it.',
+        'Look for text shown next to it that tells what to enter.',
+        'Tab to the field with the keyboard and note that its title tooltip does not appear.'
+      ],
+      passWhen: 'Text shown next to the field, without hovering, tells what to enter.',
+      failWhen:
+        'What to enter is told only by the title, shown on mouse hover, so keyboard and touch users never see it, which fails WCAG 3.3.2.'
+    }
   }
 };
 

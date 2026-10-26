@@ -34,7 +34,7 @@ test('every reason code a rule header lists as cantTell has steps in meta.review
     const src = fs.readFileSync(file, 'utf8');
     const mod = require(file);
     const review = (mod.meta && mod.meta.review) || {};
-    for (const m of src.matchAll(/^ \* {3}- `([A-Z0-9_]+)` \(([^)]*)\)/gm)) {
+    for (const m of src.matchAll(/^ \* {3}- `([A-Za-z0-9_]+)` \(([^)]*)\)/gm)) {
       if (!/cantTell/.test(m[2])) continue;
       codes += 1;
       if (!review[m[1]]) missing.push(`${mod.id} ${m[1]}`);
