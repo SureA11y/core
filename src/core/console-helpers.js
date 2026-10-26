@@ -56,6 +56,9 @@ function consoleHelpers(global, api, scriptSrc) {
   })();
   var OUTCOME_RANK = { fail: 0, cantTell: 1, pass: 2, notApplicable: 3 };
   var SEVERITY_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
+  // Among the questions, those that lean fail first, then those that lean
+  // pass, then those only a person can judge, as the HTML report groups them.
+  var LEAN_RANK = { fail: 0, pass: 1, '': 2 };
   var HIGHLIGHT_ATTR = 'data-surea11y-highlights';
   var INSPECT_RULE = 'surea11y-inspect';
   var INSPECT_KINDS = ['headings', 'landmarks', 'names', 'focus-order'];
@@ -83,8 +86,10 @@ function consoleHelpers(global, api, scriptSrc) {
   }
 
   // One row per occurrence of a fail or cantTell rule, worst first: fail
-  // before cantTell, then by severity, then by rule. With { all: true }, a
-  // row for each rule that passed or did not apply follows.
+  // before cantTell, the questions by their lean, then by severity, then by
+  // rule. A question's row says which way it leans ('fail', 'pass', or ''
+  // when only a person can judge). With { all: true }, a row for each rule
+  // that passed or did not apply follows.
   function table(result, options) {
     var all = !!(options && options.all);
     var rows = [];
@@ -96,8 +101,11 @@ function consoleHelpers(global, api, scriptSrc) {
       if (c.outcome === 'fail' || c.outcome === 'cantTell') {
         for (var j = 0; j < occurrences.length; j++) {
           var o = occurrences[j] || {};
+          var outcome = o.occurrenceOutcome || c.outcome;
+          var toward = o.lean && o.lean.toward;
           rows.push({
-            outcome: o.occurrenceOutcome || c.outcome,
+            outcome: outcome,
+            lean: outcome === 'cantTell' && (toward === 'fail' || toward === 'pass') ? toward : '',
             severity: c.severity || '',
             rule: c.ruleId,
             element: o.selector || '',
@@ -107,6 +115,7 @@ function consoleHelpers(global, api, scriptSrc) {
         if (!occurrences.length) {
           rows.push({
             outcome: c.outcome,
+            lean: '',
             severity: c.severity || '',
             rule: c.ruleId,
             element: '',
@@ -114,12 +123,20 @@ function consoleHelpers(global, api, scriptSrc) {
           });
         }
       } else if (all) {
-        rows.push({ outcome: c.outcome, severity: '', rule: c.ruleId, element: '', summary: '' });
+        rows.push({
+          outcome: c.outcome,
+          lean: '',
+          severity: '',
+          rule: c.ruleId,
+          element: '',
+          summary: ''
+        });
       }
     }
     rows.sort(function (a, b) {
       return (
         rank(OUTCOME_RANK, a.outcome) - rank(OUTCOME_RANK, b.outcome) ||
+        rank(LEAN_RANK, a.lean) - rank(LEAN_RANK, b.lean) ||
         rank(SEVERITY_RANK, a.severity) - rank(SEVERITY_RANK, b.severity) ||
         (a.rule < b.rule ? -1 : a.rule > b.rule ? 1 : 0)
       );
