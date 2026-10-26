@@ -60989,28 +60989,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
-  function editDistance(a, b) {
-    const d = [];
-    for (let i = 0; i <= a.length; i++) {
-      d.push([i]);
-      for (let j = 1; j <= b.length; j++) {
-        if (i === 0) {
-          d[0].push(j);
-          continue;
-        }
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
-          v = Math.min(v, d[i - 2][j - 2] + 1);
-        d[i].push(v);
-      }
-    }
-    return d[a.length][b.length];
+  // Whether one edit (insert, delete, replace, or swap two neighbours) turns
+  // a into b, for a !== b. Linear: a full edit-distance table for every id
+  // on the page made this rule take half a second on a page of 3,000 ids.
+  function oneEditApart(a, b) {
+    if (a.length > b.length) [a, b] = [b, a];
+    if (b.length - a.length > 1) return false;
+    let i = 0;
+    while (i < a.length && a[i] === b[i]) i++;
+    if (a.length < b.length) return a.slice(i) === b.slice(i + 1);
+    if (a.slice(i + 1) === b.slice(i + 1)) return true;
+    return a[i] === b[i + 1] && a[i + 1] === b[i] && a.slice(i + 2) === b.slice(i + 2);
   }
 
   // Every element with an id, in the document and its open shadow roots,
-  // by id; built once, on the first reference that resolves to nothing.
+  // by id, with its root node; built once, on the first reference that
+  // resolves to nothing.
   let idIndex = null;
   function elementsWithIds() {
     if (idIndex) return idIndex;
@@ -61022,7 +61016,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : dom.querySelectorAll(document, '[id]');
       for (const e of all) {
         const v = dom.getAttribute(e, 'id');
-        if (v) idIndex.push({ id: String(v), el: e });
+        if (!v) continue;
+        let root;
+        try {
+          root = dom.getRootNode(e);
+        } catch {}
+        const value = String(v);
+        idIndex.push({ id: value, lower: value.toLowerCase(), el: e, root });
       }
     } catch {}
     return idIndex;
@@ -61030,13 +61030,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // An id that differs from the wanted one only in case, or by one
   // character other than a digit (item-2 for item-3 is another item, not a
   // misspelling); short ids are left out.
-  function isNearMiss(found, wanted) {
+  function isNearMiss(entry, wanted, wantedLower) {
+    const found = entry.id;
     if (found === wanted) return false;
-    if (found.toLowerCase() === wanted.toLowerCase()) return true;
+    if (entry.lower === wantedLower) return true;
     if (Math.min(found.length, wanted.length) < 4) return false;
+    if (Math.abs(found.length - wanted.length) > 1) return false;
     if (/\d/.test(found) && found.replace(/\d+/g, '#') === wanted.replace(/\d+/g, '#'))
       return false;
-    return editDistance(found, wanted) === 1;
+    return oneEditApart(found, wanted);
   }
 
   // Which way a reference to no element points: a target that exists in
@@ -61051,14 +61053,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {}
     let otherTree = false;
     let nearMiss = '';
+    const lowers = ids.map((wanted) => wanted.toLowerCase());
     for (const entry of elementsWithIds()) {
-      let sameTree = true;
-      try {
-        sameTree = dom.getRootNode(entry.el) === root;
-      } catch {}
-      for (const wanted of ids) {
+      const sameTree = entry.root === undefined || entry.root === root;
+      for (let k = 0; k < ids.length; k++) {
+        const wanted = ids[k];
         if (!sameTree && entry.id === wanted) otherTree = true;
-        else if (sameTree && !nearMiss && isNearMiss(entry.id, wanted)) nearMiss = entry.id;
+        else if (sameTree && !nearMiss && isNearMiss(entry, wanted, lowers[k])) nearMiss = entry.id;
       }
     }
     if (otherTree) {
