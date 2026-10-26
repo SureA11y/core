@@ -60,29 +60,9 @@ function getTranslator() {
 
 // docs/LEANS.md promises a "How to check" section on every card that needs
 // review, so a result that comes without the steps (a binding's, from
-// runa11yCoreInPage) gains them here. They are read from core's review
-// dictionaries on disk (src/how-to-check.js), so, as src/index.js does, the
-// module is loaded through Node's own require, which a bundler doesn't
-// follow: surea11y.report.js, the report in a browser, shows the steps a
-// result already carries, and grows by no dictionary. options.packs, the
-// packs the scan ran, adds their rules' own steps (src/pack.js, meta.review).
-let howToCheckModule;
-function withHowToCheck(result, packs) {
-  if (howToCheckModule === undefined) {
-    howToCheckModule = null;
-    try {
-      if (typeof module === 'object' && module && typeof module.require === 'function') {
-        const id = './how-to-check.js';
-        howToCheckModule = module.require(id);
-      }
-    } catch {
-      howToCheckModule = null;
-    }
-  }
-  return howToCheckModule
-    ? howToCheckModule.addHowToCheck(result, Array.isArray(packs) ? { packs } : undefined)
-    : result;
-}
+// runa11yCoreInPage) gains them here, in Node: surea11y.report.js, the
+// report in a browser, shows the steps a result already carries.
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so

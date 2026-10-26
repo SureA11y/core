@@ -14,6 +14,11 @@ export interface JunitOptions {
   includeNotApplicable?: boolean;
   /** Failures recorded here are skipped as known, and under leanFailAs so are findings that lean fail recorded here (docs/BASELINE.md). */
   baselineEntries?: BaselineEntry[] | BaselineFile;
+  /**
+   * The packs the scan ran (engineOptions.packs): with leanFailAs: 'failure',
+   * in Node, a pack rule's likely failures give the steps of its meta.review.
+   */
+  packs?: readonly unknown[] | null;
   /** The root <testsuites> name; 'surea11y' by default. */
   name?: string;
 }
