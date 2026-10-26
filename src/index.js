@@ -7,7 +7,12 @@
 // frames, an occurrence's outcome, the findings that lean fail), and the
 // hooks' scripts.
 const core = require('./core');
-const { flattenCrossFrameResult, occurrenceOutcome, leaningFailures } = require('./scan-result');
+const {
+  flattenCrossFrameResult,
+  occurrenceOutcome,
+  reviewGroupOf,
+  leaningFailures
+} = require('./scan-result');
 // The opt-in internals hook: a script an integrator runs in a page before
 // its own scripts, so a scan can read the ElementInternals a custom element
 // keeps private (src/core/internals-hook.js).
@@ -257,6 +262,7 @@ module.exports = {
   howToCheckFor,
   flattenCrossFrameResult,
   occurrenceOutcome,
+  reviewGroupOf,
   leaningFailures,
   internalsHookScript,
   listenerHookScript,

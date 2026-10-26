@@ -908,6 +908,23 @@ export function occurrenceOutcome(
   occurrence: Occurrence | null | undefined
 ): 'fail' | 'cantTell' | null;
 
+/**
+ * Where an occurrence goes in a review: 'leanFail' or 'leanPass' for an
+ * undecided one whose lean points that way, 'open' for one only a person can
+ * judge.
+ */
+export type ReviewGroup = 'leanFail' | 'leanPass' | 'open';
+
+/**
+ * Where an occurrence goes in a review, as the HTML report groups them:
+ * 'fail' for a failure, a ReviewGroup for an undecided one (its outcome, as
+ * occurrenceOutcome reads it, is 'cantTell'), and null for neither.
+ */
+export function reviewGroupOf(
+  check: Pick<CheckResult, 'outcome'> | null | undefined,
+  occurrence: Occurrence | null | undefined
+): 'fail' | ReviewGroup | null;
+
 /** An undecided finding whose lean points to fail. */
 export interface LeaningFailure {
   ruleId: string;
