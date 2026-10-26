@@ -95,6 +95,22 @@ const {
   normalizeUncertainty
 } = require('../src/core/uncertainty');
 const { LEAN_DIRECTIONS, SIGNAL_NAME, signalValue, normalizeLean } = require('../src/core/lean');
+// How often each lean agreed with the ACT test cases (scripts/measure-leans.js),
+// embedded below as LEAN_MEASURES. Absent before a first measurement. A lean
+// carries its counts only from minCases cases up: fewer say too little.
+const LEAN_MEASURES = (() => {
+  try {
+    const { corpus, coreVersion, minCases, leans } = require('./data/lean-measures.json');
+    return {
+      corpus,
+      coreVersion,
+      minCases: Number.isInteger(minCases) && minCases > 0 ? minCases : 5,
+      leans: leans || {}
+    };
+  } catch {
+    return { corpus: null, coreVersion: null, minCases: 5, leans: {} };
+  }
+})();
 const { resolveMargin, getMargins } = require('../src/core/margin');
 const {
   FRAME_RPC_CHANNEL,
@@ -2052,6 +2068,20 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
       if (li && li.cautionKey && normalizedLean.caution)
         normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      // How often a lean of this rule, code and direction was right, where
+      // it was counted against enough ACT test cases (scripts/measure-leans.js).
+      if (!normalizedLean.measured) {
+        const details = o.data && o.data.details;
+        const code = details && typeof details.reasonCode === 'string' && details.reasonCode ? details.reasonCode : 'DEFAULT';
+        const byCode = Object.prototype.hasOwnProperty.call(LEAN_MEASURES.leans, out.ruleId) ? LEAN_MEASURES.leans[out.ruleId] : null;
+        const byToward = byCode && Object.prototype.hasOwnProperty.call(byCode, code) ? byCode[code] : null;
+        const m = byToward && Object.prototype.hasOwnProperty.call(byToward, normalizedLean.toward) ? byToward[normalizedLean.toward] : null;
+        if (m && m.cases >= LEAN_MEASURES.minCases) {
+          normalizedLean.measured = { agreed: m.agreed, cases: m.cases };
+          if (LEAN_MEASURES.corpus) normalizedLean.measured.corpus = LEAN_MEASURES.corpus;
+          if (LEAN_MEASURES.coreVersion) normalizedLean.measured.coreVersion = LEAN_MEASURES.coreVersion;
+        }
+      }
       o.lean = normalizedLean;
     } else delete o.lean;
 
@@ -2208,6 +2238,8 @@ ${inlineConstFunction('normalizeUncertainty', normalizeUncertainty)}
 
 // Inlined from src/core/lean.js -- which way a cantTell finding points.
 const LEAN_DIRECTIONS = ${jsStringify(LEAN_DIRECTIONS)};
+// From scripts/data/lean-measures.json -- how often each lean was right.
+const LEAN_MEASURES = ${jsStringify(LEAN_MEASURES)};
 const SIGNAL_NAME = ${SIGNAL_NAME.toString()};
 ${inlineConstFunction('signalValue', signalValue)}
 ${inlineConstFunction('normalizeLean', normalizeLean)}
