@@ -93,7 +93,73 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.2': ['page-title-patterns'] } }
+  coverage: { facetsBySc: { '2.4.2': ['page-title-patterns'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    genericTitle: {
+      steps: [
+        'Read the page title the report gives; the browser shows it in the tab.',
+        "Look at the page's main heading and content and note what the page is about.",
+        "Decide whether the title says that, and tells this page apart from the site's other pages."
+      ],
+      passWhen: 'The title says what the page is about, even though it is a common word.',
+      failWhen:
+        'The title is a generic word that does not say what the page is about, which fails WCAG 2.4.2 (F25).'
+    },
+    veryShortTitle: {
+      steps: [
+        'Read the page title the report gives; the browser shows it in the tab.',
+        "Look at the page's main heading and content and note what the page is about.",
+        'Decide whether so short a title says what the page is about.'
+      ],
+      passWhen:
+        'The short title says what the page is about, for example the name of the product or place the page covers.',
+      failWhen: 'The title is too short to say what the page is about, which fails WCAG 2.4.2.'
+    },
+    templateLikeTitle: {
+      steps: [
+        'Read the page title the report gives; the browser shows it in the tab.',
+        "Look at the page's main heading and content and note what the page is about.",
+        "Decide whether the title, besides the site's name, says what the page is about."
+      ],
+      passWhen:
+        "The page is the site's home page, which the title names, or the title says what the page is about.",
+      failWhen:
+        "The title only pairs the site's name with a generic word and does not say what the page is about, which fails WCAG 2.4.2 (F25)."
+    },
+    duplicateTitlesAcrossPages: {
+      steps: [
+        'Note a repeated title and the URLs the report lists for it.',
+        'Open two or more of those URLs and note what each page is about.',
+        'Decide whether the shared title says what each of them is about.'
+      ],
+      passWhen:
+        'The pages sharing the title are the same content at different URLs, or the title fits each of them.',
+      failWhen:
+        'Different pages share one title, so it does not say what each is about or tell them apart, which fails WCAG 2.4.2 (F25).'
+    },
+    templatedTitlesAcrossPages: {
+      steps: [
+        'Note the start or end the report says every title shares.',
+        "Open several of the scanned pages and read each one's title in the browser tab.",
+        'Decide whether the part of each title that is not shared says what that page is about.'
+      ],
+      passWhen: 'Each title has a part of its own that says what its page is about.',
+      failWhen:
+        'Beyond the shared part, the titles say little or nothing of what each page is about, which fails WCAG 2.4.2.'
+    },
+    titleReview: {
+      steps: [
+        'Read the page title the report gives; the browser shows it in the tab.',
+        "Look at the page's main heading and content and note what the page is about.",
+        'Decide whether the title says that topic or purpose.'
+      ],
+      passWhen: 'The title says what the page is about or what it is for.',
+      failWhen:
+        'The title does not say what the page is about or what it is for, which fails WCAG 2.4.2.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
