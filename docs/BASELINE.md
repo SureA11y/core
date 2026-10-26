@@ -44,6 +44,46 @@ A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA
 
 Baseline entries that don't match anything in a fresh scan are reported as **stale**: the violation may have been fixed, or the element's markup changed, or the scan didn't reach it (another viewport, scope or set of rules). This is informational only and never gates the build; look at them, then regenerate the baseline with `--write-baseline` periodically to clean them up.
 
+## Upgrading
+
+A finding's identity includes its reason code, and a minor release may give a finding a new one: a rule that gave none (`DEFAULT`) now gives one, or one code is split in two by cause ([`API_STABILITY.md`](./API_STABILITY.md#finding-identity)). The finding is the same, and a baseline written before the upgrade still matches it: each move is listed in [`src/baseline-moves.json`](../src/baseline-moves.json) (rule, old code, new codes), and an entry under the old code matches the finding under a new one when the rest of its identity, the rule, the markup and the frame, is the same. `matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, all read it. An entry is looked up under the finding's own code first, so it never goes to a moved finding when another finding has that exact identity.
+
+1.14 moves these, from 1.13:
+
+| Rule | Old code | New code |
+|---|---|---|
+| `img-alt-present`, `embed-text-alternative-present`, `object-text-alternative-present`, `svg-image-text-alternative-present`, `svg-text-alternative-present`, `video-poster-text-alternative-present` | `DEFAULT` | `TEXT_ALTERNATIVE_MISSING` |
+| `area-alt-present` | `DEFAULT` | `TEXT_ALTERNATIVE_MISSING`, `TEXT_ALTERNATIVE_EMPTY` |
+| `canvas-text-alternative-present` | `DEFAULT` | `TEXT_ALTERNATIVE_MISSING`, `ROLE_IMG_NAME_MISSING` |
+| `area-alt-quality`, `canvas-text-alternative-quality`, `embed-text-alternative-quality`, `input-image-alt-quality`, `object-text-alternative-quality` | `DEFAULT` | `TEXT_ALTERNATIVE_REVIEW` |
+| `img-alt-quality`, `svg-text-alternative-quality` | `DEFAULT` | `TEXT_ALTERNATIVE_REVIEW`, `IMAGE_ONLY_CONTROL_CONTENT` |
+| `img-alt-decorative` | `EXCLUDED_ELEMENT_REVIEW` | `IMAGE_ONLY_CONTROL_CONTENT` |
+| `input-image-alt-decorative` | `DEFAULT` | `NAME_FROM_ELSEWHERE_REVIEW` |
+| `manual-review` | `DEFAULT` | `KEYBOARD_REVIEW` |
+| `list-children-valid` | `LIST_INVALID_CHILD` | `LIST_ITEM_ROLE_OVERRIDDEN` |
+| `listitem-parent-valid` | `LISTITEM_INVALID_PARENT` | `LIST_ROLE_OVERRIDDEN` |
+| `aria-prohibited-children` | `ARIA_PROHIBITED_CHILD_ROLELESS` | `ARIA_PROHIBITED_CHILD` |
+| `duplicate-id` | `DUPLICATE_ID` | `DUPLICATE_ID_IN_SHADOW_TREE` |
+| `valid-lang` | `ELEMENT_LANG_INVALID` | `DEFAULT_LANG_INVALID` |
+| `p-as-heading` | `BOLD_LARGE_PARAGRAPH`, `BOLD_LARGE_DIV` | `HEADING_LIKE_NUMBER`, `HEADING_LIKE_LINK` |
+
+The table covers one minor release: a move is listed from the release it shipped in until the next minor release, which drops it when its finding identities are frozen (`npm run finding-ids:release`, as the `retired` list of `released-finding-ids.json` is emptied). So a baseline written by 1.13 keeps matching under 1.14.x, and needs regenerating before 1.15.
+
+Regenerating the baseline with `--write-baseline` (or `buildBaselineEntries`) after an upgrade writes every finding under its current code, and removes the need for the table. It also accepts any finding the upgrade newly reports, so look at its diff. To bring the codes up to date without accepting anything new, rewrite the file with `migrateBaselineEntries` from `@surea11y/core/baseline`:
+
+```js
+const { migrateBaselineEntries } = require('@surea11y/core/baseline');
+
+const file = JSON.parse(fs.readFileSync('baseline.json', 'utf8'));
+// With the scan's result, an entry for a split code takes the code its finding has now.
+file.entries = migrateBaselineEntries(file, result);
+fs.writeFileSync('baseline.json', JSON.stringify(file, null, 2) + '\n');
+```
+
+It returns a copy of the entries with each moved one under its new code, and every other entry as it was. Without a result, it rewrites only the moves it can tell without the finding: a code the rule no longer gives that moved to a single new one (`img-alt-present`'s `DEFAULT`), not a split.
+
+A finding whose outcome changed with the upgrade is another matter: a rule that now fails what it asked about, or asks about what it failed, gives a finding the baseline did not hold, or no longer gives one it held, and the changelog says why.
+
 ## Scanning at several viewport widths
 
 A baseline entry does not record the viewport, and matching does not use it (see [`API_STABILITY.md`](./API_STABILITY.md#finding-identity)): the same element with the same defect matches at any width. That suits a page whose findings do not depend on its layout. A layout-dependent rule, such as `text-spacing-content-loss` or `target-size-minimum`, can fail at one width and not at another, so for a page scanned at several widths, keep **one baseline per width**: `a11y-baseline-390.json`, `a11y-baseline-1280.json`.

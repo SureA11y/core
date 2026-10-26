@@ -47,11 +47,30 @@ export function buildBaselineEntries(
   result: ScanResult | CrossFrameResult | BindingFramesResult
 ): BaselineEntry[];
 
-/** Which of the result's failures the baseline knows. A cross-frame result covers every frame. Throws a TypeError for anything else. */
+/**
+ * Which of the result's failures the baseline knows. A cross-frame result covers every frame. Throws a TypeError for anything else.
+ * An entry written under a reason code that a release has since moved its finding to also matches the finding under the new code,
+ * with the same rule, markup and frame (docs/BASELINE.md, "Upgrading").
+ */
 export function matchBaseline(
   result: ScanResult | CrossFrameResult | BindingFramesResult,
   baselineEntries: BaselineEntry[] | BaselineFile | null | undefined
 ): BaselineMatch;
+
+/**
+ * The entries with each one written under a reason code that a release has
+ * since moved its finding to given the new code (docs/BASELINE.md,
+ * "Upgrading"), so the baseline matches without the moves table. With a
+ * result, an entry takes the code of the finding it matches there; without
+ * one, only an entry whose finding moved to a single code, from a code the
+ * rule no longer gives, is rewritten. Every other entry is kept as it is.
+ * The entries given are not changed. A result other than a scan result or a
+ * cross-frame result throws a TypeError.
+ */
+export function migrateBaselineEntries(
+  baselineEntries: BaselineEntry[] | BaselineFile | null | undefined,
+  result?: ScanResult | CrossFrameResult | BindingFramesResult
+): BaselineEntry[];
 
 /** The identity of a finding: ruleId, reasonCode and html, and the frame's path for a failure inside a frame. */
 export function computeBaselineKey(

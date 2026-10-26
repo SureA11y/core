@@ -461,7 +461,7 @@ test(
         "import { renderJunitReport } from '@surea11y/core/junit';",
         "import { renderHtmlReport } from '@surea11y/core/report';",
         "import { renderEarlReport, OUTCOME_TO_EARL } from '@surea11y/core/earl';",
-        "import { buildBaselineEntries, matchBaseline } from '@surea11y/core/baseline';",
+        "import { buildBaselineEntries, matchBaseline, migrateBaselineEntries } from '@surea11y/core/baseline';",
         "import { wcagCriteria, wcagCriterion, wcagTags, WCAG_CRITERIA } from '@surea11y/core/wcag';",
         "import { EN301549_VERSIONS, en301549ClausesForSc } from '@surea11y/core/en301549';",
         "import { runa11yCoreInPage as browserScan, run as consoleRun, table, highlight, openReport, version } from '@surea11y/core/browser';",
@@ -484,6 +484,7 @@ test(
         "const outcome: string = renderEarlReport([result], { assertor: null })['@graph'][0].assertions[0].result.outcome + OUTCOME_TO_EARL.fail;",
         'const entries = buildBaselineEntries(result);',
         'const fresh: number = matchBaseline(result, entries).newCount;',
+        'const migrated: string[] = migrateBaselineEntries({ entries }, result).concat(migrateBaselineEntries(entries)).map((e) => e.reasonCode);',
         "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",
         "const tags: string[] = wcagTags('2.1', ['A', 'AA']).concat(WCAG_CRITERIA.map((c) => c.tag));",
         "const count: number = wcagCriteria('2.2', { levels: 'AA' }).length;",
@@ -518,7 +519,7 @@ test(
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',
         "wcagCriteria('3.0');",
-        'void [sarif, junit, html, outcome, fresh, level, tags, count, clause, inPage, script, checked, lintRules];',
+        'void [sarif, junit, html, outcome, fresh, migrated, level, tags, count, clause, inPage, script, checked, lintRules];',
         ''
       ].join('\n')
     );

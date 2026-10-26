@@ -42,7 +42,7 @@
  * carries one (the engine has no clock of its own).
  */
 
-const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
+const { knownOccurrences } = require('./baseline.js');
 const {
   framesOf,
   framePathText,
@@ -113,24 +113,9 @@ function getOccurrenceOutcome(check, occurrence) {
   return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
 }
 
-function buildRemainingBaselineMap(baselineEntries) {
-  const remaining = new Map();
-  for (const entry of entriesOf(baselineEntries)) {
-    if (!entry) continue;
-    const key = computeBaselineKey(
-      entry.ruleId,
-      entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : '',
-      entry.frame
-    );
-    remaining.set(key, (remaining.get(key) || 0) + 1);
-  }
-  return remaining;
-}
-
-// What one rule contributes, decided once so that a rule appearing in two
-// suites consumes its baseline entries only once.
-function classify(check, remaining, options, framePath = []) {
+// What one rule contributes, decided once for a rule that appears in two
+// suites. `known` holds the failures the baseline knows (knownOccurrences).
+function classify(check, known, options) {
   const occurrences = Array.isArray(check.occurrences) ? check.occurrences.filter(Boolean) : [];
   const failing = [];
   const undecided = [];
@@ -140,11 +125,7 @@ function classify(check, remaining, options, framePath = []) {
     for (const occurrence of occurrences) {
       const outcome = getOccurrenceOutcome(check, occurrence);
       if (outcome === 'fail') {
-        const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-        const key = computeBaselineKey(check.ruleId, getReasonCode(occurrence), html, framePath);
-        const left = remaining.get(key) || 0;
-        if (left > 0) {
-          remaining.set(key, left - 1);
+        if (known.has(occurrence)) {
           baselined++;
           continue;
         }
@@ -308,7 +289,7 @@ function criterionOf(list) {
 // The suites of one frame's result. A child frame of a cross-frame result
 // gets suites of its own, named after it, since its criteria are met or
 // failed in its own document.
-function frameSuites(result, frame, remaining, opts, totals) {
+function frameSuites(result, frame, known, opts, totals) {
   const engine = (result && result.engine) || {};
   // The standards the result names besides WCAG, in registry order.
   const standards = standardsOf(result);
@@ -332,7 +313,7 @@ function frameSuites(result, frame, remaining, opts, totals) {
   const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
   const checks = ((result && result.checksResults) || []).filter((c) => c && c.ruleId);
   for (const check of checks) {
-    let entry = classify(check, remaining, opts, frame.path);
+    let entry = classify(check, known, opts);
     if (entry.status === 'notApplicable' && !opts.includeNotApplicable) continue;
 
     const mappings = mappingsOf(check);
@@ -468,13 +449,13 @@ function renderJunitReport(result, options = {}) {
     leanFailAs,
     includeNotApplicable: options.includeNotApplicable === true
   };
-  const remaining = buildRemainingBaselineMap(options.baselineEntries);
+  const { known } = knownOccurrences(frames, options.baselineEntries);
 
   const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
   const suiteXml = [];
   for (const { frame, result: frameResult, error } of frames) {
     if (frameResult) {
-      suiteXml.push(...frameSuites(frameResult, frame, remaining, opts, totals));
+      suiteXml.push(...frameSuites(frameResult, frame, known, opts, totals));
       continue;
     }
     // A frame that did not answer was not checked: a skip, not a failure,
