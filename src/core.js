@@ -1886,6 +1886,20 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
       if (li && li.cautionKey && normalizedLean.caution)
         normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      // How often a lean of this rule, code and direction was right, where
+      // it was counted against enough ACT test cases (scripts/measure-leans.js).
+      if (!normalizedLean.measured) {
+        const details = o.data && o.data.details;
+        const code = details && typeof details.reasonCode === 'string' && details.reasonCode ? details.reasonCode : 'DEFAULT';
+        const byCode = Object.prototype.hasOwnProperty.call(LEAN_MEASURES.leans, out.ruleId) ? LEAN_MEASURES.leans[out.ruleId] : null;
+        const byToward = byCode && Object.prototype.hasOwnProperty.call(byCode, code) ? byCode[code] : null;
+        const m = byToward && Object.prototype.hasOwnProperty.call(byToward, normalizedLean.toward) ? byToward[normalizedLean.toward] : null;
+        if (m && m.cases >= LEAN_MEASURES.minCases) {
+          normalizedLean.measured = { agreed: m.agreed, cases: m.cases };
+          if (LEAN_MEASURES.corpus) normalizedLean.measured.corpus = LEAN_MEASURES.corpus;
+          if (LEAN_MEASURES.coreVersion) normalizedLean.measured.coreVersion = LEAN_MEASURES.coreVersion;
+        }
+      }
       o.lean = normalizedLean;
     } else delete o.lean;
 
@@ -19951,6 +19965,82 @@ const LEAN_DIRECTIONS = [
   "pass",
   "fail"
 ];
+// From scripts/data/lean-measures.json -- how often each lean was right.
+const LEAN_MEASURES = {
+  "corpus": "W3C ACT Task Force test cases, 2026-10-26",
+  "coreVersion": "1.13.0",
+  "minCases": 5,
+  "leans": {
+    "aria-prohibited-attr": {
+      "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "aria-required-attr": {
+      "ARIA_ATTR_REQUIRED_MISSING_IMPLICIT": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "aria-valid-attr": {
+      "ARIA_ATTR_INVALID": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "bypass-blocks-present": {
+      "BYPASS_MECHANISM_ABSENT": {
+        "fail": {
+          "agreed": 4,
+          "cases": 4
+        },
+        "pass": {
+          "agreed": 2,
+          "cases": 3
+        }
+      }
+    },
+    "identical-links-same-purpose": {
+      "SAME_NAME_DIFFERENT_DESTINATION": {
+        "pass": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "label-in-name": {
+      "POSSIBLE_SYMBOLIC_CHARACTER": {
+        "pass": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "presentation-role-conflict": {
+      "PRESENTATION_ROLE_CONFLICT": {
+        "fail": {
+          "agreed": 2,
+          "cases": 2
+        }
+      }
+    },
+    "table-th-has-data-cells": {
+      "TABLE_TH_NO_ASSIGNED_CELL": {
+        "fail": {
+          "agreed": 2,
+          "cases": 2
+        }
+      }
+    }
+  }
+};
 const SIGNAL_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const signalValue = (function signalValue(v) {
   if (v === null || typeof v === 'string' || typeof v === 'boolean') return { ok: true, v };
@@ -105748,6 +105838,20 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
       if (li && li.cautionKey && normalizedLean.caution)
         normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      // How often a lean of this rule, code and direction was right, where
+      // it was counted against enough ACT test cases (scripts/measure-leans.js).
+      if (!normalizedLean.measured) {
+        const details = o.data && o.data.details;
+        const code = details && typeof details.reasonCode === 'string' && details.reasonCode ? details.reasonCode : 'DEFAULT';
+        const byCode = Object.prototype.hasOwnProperty.call(LEAN_MEASURES.leans, out.ruleId) ? LEAN_MEASURES.leans[out.ruleId] : null;
+        const byToward = byCode && Object.prototype.hasOwnProperty.call(byCode, code) ? byCode[code] : null;
+        const m = byToward && Object.prototype.hasOwnProperty.call(byToward, normalizedLean.toward) ? byToward[normalizedLean.toward] : null;
+        if (m && m.cases >= LEAN_MEASURES.minCases) {
+          normalizedLean.measured = { agreed: m.agreed, cases: m.cases };
+          if (LEAN_MEASURES.corpus) normalizedLean.measured.corpus = LEAN_MEASURES.corpus;
+          if (LEAN_MEASURES.coreVersion) normalizedLean.measured.coreVersion = LEAN_MEASURES.coreVersion;
+        }
+      }
       o.lean = normalizedLean;
     } else delete o.lean;
 
@@ -123813,6 +123917,82 @@ const LEAN_DIRECTIONS = [
   "pass",
   "fail"
 ];
+// From scripts/data/lean-measures.json -- how often each lean was right.
+const LEAN_MEASURES = {
+  "corpus": "W3C ACT Task Force test cases, 2026-10-26",
+  "coreVersion": "1.13.0",
+  "minCases": 5,
+  "leans": {
+    "aria-prohibited-attr": {
+      "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "aria-required-attr": {
+      "ARIA_ATTR_REQUIRED_MISSING_IMPLICIT": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "aria-valid-attr": {
+      "ARIA_ATTR_INVALID": {
+        "fail": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "bypass-blocks-present": {
+      "BYPASS_MECHANISM_ABSENT": {
+        "fail": {
+          "agreed": 4,
+          "cases": 4
+        },
+        "pass": {
+          "agreed": 2,
+          "cases": 3
+        }
+      }
+    },
+    "identical-links-same-purpose": {
+      "SAME_NAME_DIFFERENT_DESTINATION": {
+        "pass": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "label-in-name": {
+      "POSSIBLE_SYMBOLIC_CHARACTER": {
+        "pass": {
+          "agreed": 1,
+          "cases": 1
+        }
+      }
+    },
+    "presentation-role-conflict": {
+      "PRESENTATION_ROLE_CONFLICT": {
+        "fail": {
+          "agreed": 2,
+          "cases": 2
+        }
+      }
+    },
+    "table-th-has-data-cells": {
+      "TABLE_TH_NO_ASSIGNED_CELL": {
+        "fail": {
+          "agreed": 2,
+          "cases": 2
+        }
+      }
+    }
+  }
+};
 const SIGNAL_NAME = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
 const signalValue = (function signalValue(v) {
   if (v === null || typeof v === 'string' || typeof v === 'boolean') return { ok: true, v };

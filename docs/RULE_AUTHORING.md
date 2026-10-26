@@ -548,8 +548,9 @@ lean: {
   in every locale (`<rule>_lean_why`, `<rule>_lean_caution`, with a suffix
   per case).
 - The engine drops a lean on a `fail`-tier occurrence and a malformed one,
-  never the finding. Don't set `measured`: it is filled once the lean has been
-  counted against known answers.
+  never the finding. Don't set `measured`: the engine fills it from
+  `scripts/data/lean-measures.json` once `scripts/measure-leans.js` has counted
+  the lean against at least five ACT test cases.
 - Test each lean in the rule's test file: a case that leans, its `toward` and
   `whyKey`, and, for a conditional lean, a case of the same code with none.
   Where the rule's fixture already has the case, say there what it leans. Say

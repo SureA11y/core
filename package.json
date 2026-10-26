@@ -257,6 +257,7 @@
     "language-subtags:check": "node scripts/generate-language-subtags.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",
     "finding-ids:release": "node scripts/freeze-finding-ids.js",
+    "leans:measure": "node scripts/measure-leans.js",
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "fixtures:check": "node scripts/generate-fixture-index.js --check",
     "fixtures:markers": "npm run build && node scripts/generate-fixture-markers.js",

@@ -38,7 +38,7 @@ A lean is an optional field on a `cantTell` occurrence:
 - `toward` is `"pass"` or `"fail"`. There is no third value: when the engine can't tell which way, there is no lean.
 - `why` and `caution` are already in the scan's locale; `i18n` holds their keys, to render them in another.
 - `signals` are the facts the rule read, each a kebab-case name and a plain value. Show them, weigh them, or test against them.
-- `measured`, once present, says how often this lean has been right: `{ "agreed": 47, "cases": 50 }`.
+- `measured`, once present, says how often this lean has been right against the ACT test cases: `{ "agreed": 47, "cases": 50 }`, with the `corpus` and the `coreVersion` that counted them. It appears only once the lean has been counted on at least five cases.
 
 What a lean does not change:
 
@@ -64,7 +64,7 @@ A lean has to earn its place. The rules are:
 2. **No lean on a coin toss.** Where the evidence is weak or mixed, there is no lean. Its absence is information too: this one needs a person.
 3. **Nothing a person must judge.** Whether text means what it should, whether a caption is complete, whether an image needs a description: these never get a lean, however likely one answer seems.
 4. **The cautions are stated.** A lean says what could make it wrong when that isn't obvious.
-5. **Measured, then kept or removed.** Each lean is counted against cases whose answer is known: the W3C ACT rules' test cases, and the scenarios in core's own fixtures. `measured` reports how often it agreed. Until a lean has been measured, `measured` is absent; it is never estimated. A lean found to be wrong too often is removed.
+5. **Measured, then kept or removed.** Each lean is counted against cases whose answer is known: the W3C ACT rules' test cases, each of which says whether its page passes or fails. `scripts/measure-leans.js` scans them, and for each rule, reason code and direction counts the cases that show such a lean, once per case, and how many of them it agreed with (`fail` on a failed case, `pass` on a passed one; inapplicable cases are left out). The counts go to `scripts/data/lean-measures.json`, which the build embeds in the engine, so `measured` is on every lean of a rule, code and direction counted on at least five cases (`minCases` in the file): `{ "agreed": 9, "cases": 10, "corpus": "W3C ACT Task Force test cases, 2026-10-26", "coreVersion": "1.14.0" }`. A count of one or two cases says too little and would read as proven, so until a lean has been measured on enough cases, `measured` is absent; it is never estimated. One right in fewer than 80% of five or more cases is listed by the script, to be reconsidered or removed. Core's own fixtures are not counted: their markers say which tier the engine gives a case, not what a person would answer it.
 6. **No confidence number.** The engine doesn't give a lean a probability it can't back. A count of right answers out of known cases is the only measure it reports.
 
 Two kinds of finding lean without condition, and say so:
