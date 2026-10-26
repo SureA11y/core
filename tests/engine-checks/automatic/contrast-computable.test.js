@@ -476,7 +476,7 @@ test(`${RULE_ID}: filter/backdrop-filter blocker => cantTell with reasonCode BAC
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_filter');
 });
 
-test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCode BACKGROUND_NOT_OPAQUE_AT_ROOT`, () => {
+test(`${RULE_ID}: strictConformance + root not opaque => pass, measured on the page's canvas`, () => {
   const html = `
 <!doctype html>
 <html><head><style>
@@ -491,10 +491,33 @@ test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCod
     contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
   });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  // The page's canvas, which its color scheme gives it, is no assumption;
+  // the white the scan names is.
+  assert.deepStrictEqual(rule.occurrences[0].data.details.assumptionsApplied, [
+    'ROOT_CANVAS_FALLBACK'
+  ]);
+  const own = assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.deepStrictEqual(own.occurrences[0].data.details.assumptionsApplied, []);
+});
+
+test(`${RULE_ID}: the text's colour in the page's dark scheme unknown => COLOR_SCHEME_NOT_RENDERED`, () => {
+  // jsdom applies no prefers-color-scheme rule; the page is drawn only in
+  // dark, where the rule makes the text white.
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>#pick { color: #000000 } @media (prefers-color-scheme: dark) { #pick { color: #ffffff } }</style>
+    </head><body>
+    <p id="pick">Picked by the scheme</p>
+    <p id="own" style="color:#bbbbbb">Its own colour</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_rootNotOpaque');
+  assert.ok(occ.html.includes('id="pick"'));
+  assert.strictEqual(occ.data.details.reasonCode, 'COLOR_SCHEME_NOT_RENDERED');
+  assert.strictEqual(occ.data.details.blockerValue, 'dark');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_colorScheme');
+  // No lean: the colour it would lean by is the one that can't be read.
+  assert.strictEqual(occ.lean, undefined);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback applied)`, () => {
@@ -690,36 +713,14 @@ const leanOf = (rule, id) => {
   return occ.lean;
 };
 
-test(`${RULE_ID}: a page with no opaque background leans by the ratio on the white canvas`, () => {
-  const html = `<!doctype html><html><body>
-    <p id="light" style="color:#bbbbbb">Light gray</p>
-    <p id="dark" style="color:#000000">Black</p>
-    <p id="mid" style="color:#666666">Mid gray, 5.74:1 on white</p>
-  </body></html>`;
-  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
-  for (const o of rule.occurrences) {
-    assert.strictEqual(o.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+test(`${RULE_ID}: a page with no opaque background is not asked about, in either color scheme`, () => {
+  for (const head of ['', '<meta name="color-scheme" content="light dark">']) {
+    const html = `<!doctype html><html><head>${head}</head><body>
+      <p id="light" style="color:#bbbbbb">Light gray</p>
+      <p id="dark" style="color:#000000">Black</p>
+    </body></html>`;
+    assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
   }
-  assert.strictEqual(leanOf(rule, 'light').toward, 'fail');
-  assert.strictEqual(
-    leanOf(rule, 'light').i18n.whyKey,
-    'contrastComputable_lean_why_rootCanvas_fail'
-  );
-  assert.strictEqual(leanOf(rule, 'dark').toward, 'pass');
-  assert.strictEqual(
-    leanOf(rule, 'dark').i18n.whyKey,
-    'contrastComputable_lean_why_rootCanvas_pass'
-  );
-  // Between the AA and the AAA ratio: no lean, since this rule answers for both.
-  assert.strictEqual(leanOf(rule, 'mid'), undefined);
-});
-
-test(`${RULE_ID}: a page that asks for a dark color scheme gets no canvas lean`, () => {
-  const html = `<!doctype html><html><head><meta name="color-scheme" content="light dark"></head><body>
-    <p id="light" style="color:#bbbbbb">Light gray</p>
-  </body></html>`;
-  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(leanOf(rule, 'light'), undefined);
 });
 
 test(`${RULE_ID}: an option of its own colors leans by its ratio in the open list`, () => {
@@ -759,4 +760,42 @@ test(`${RULE_ID}: own opacity over a background image leans fail only where the 
   const strong = rule.occurrences.find((o) => o.html.includes('id="strong"'));
   assert.strictEqual(strong.data.details.reasonCode, 'ELEMENT_OPACITY');
   assert.strictEqual(strong.lean, undefined);
+});
+
+// Text whose colours in the page's scheme jsdom can't read is asked about,
+// over an opaque background too: a prefers-color-scheme rule jsdom doesn't
+// apply, or, on a page drawn in dark, a control the browser paints in its
+// own colours.
+test(`${RULE_ID}: colours an emulator can't read in the page's scheme are asked about (COLOR_SCHEME_NOT_RENDERED)`, () => {
+  const light = `<!doctype html><html><head><style>
+    #ruled { color: #000000 }
+    @media (prefers-color-scheme: light) { #ruled { color: #999999 } }
+    @media (prefers-color-scheme: dark) and (min-width: 1px) { #darkonly { color: #ffffff } }
+    </style></head><body style="background:#ffffff">
+    <p id="ruled">A light rule jsdom doesn't apply</p>
+    <p id="darkonly">A dark rule, which doesn't apply in light</p>
+  </body></html>`;
+  const rule = assertRule(run(light), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.match(rule.occurrences[0].html, /id="ruled"/);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'COLOR_SCHEME_NOT_RENDERED');
+  assert.strictEqual(rule.occurrences[0].data.details.blockerValue, 'light');
+
+  const dark = `<!doctype html><html><head><meta name="color-scheme" content="dark"></head><body style="background:#222222">
+    <p id="plain">The scheme's own colour</p>
+    <button id="btn">The browser's button colours</button>
+  </body></html>`;
+  const darkRule = assertRule(run(dark), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.match(darkRule.occurrences[0].html, /id="btn"/);
+  assert.strictEqual(darkRule.occurrences[0].data.details.blockerValue, 'dark');
+  // The same page in light is measured as jsdom computes it.
+  assertRule(run(dark.replace('content="dark"', 'content="light"')), RULE_ID, 'pass', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });

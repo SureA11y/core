@@ -3304,7 +3304,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
         if (Number.parseFloat(cs.fontSize) === 0) return true;
-        const color = parseCssColorToRgba(__textFillOf(cs));
+        const color = parseCssColorToRgba(__textFillOfEl(el, cs));
         if (color && color.a === 0) {
           if (!__clipTextOwner(el) && !__drawsOutlineEl(el, cs)) return true;
         }
@@ -4735,7 +4735,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        const currentColor = parseCssColorToRgba(cs.color);
+        // currentColor: el's colour, in the scheme the page is drawn in.
+        const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
         const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
@@ -5202,6 +5203,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
+  // el's text fill value, as __textFillOf, where jsdom's is not the one a
+  // browser computes: jsdom computes a fill that follows a light-dark()
+  // color as transparent, and a fill the page doesn't set follows color.
+  function __textFillOfEl(el, cs) {
+    const value = __textFillOf(cs);
+    try {
+      if (!cs || !el || !__underJsdom(dom.ownerDocument(el))) return value;
+      const drawn = parseCssColorToRgba(value);
+      const color = parseCssColorToRgba(cs.color);
+      if (drawn && drawn.a === 0 && color && color.a > 0 && __jsdomAuthorFill(el) === false)
+        return cs.color;
+    } catch {}
+    return value;
+  }
 
   // -------- Link colours under jsdom --------
   //
@@ -5352,6 +5367,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const media = rule.media;
       const n = (media && media.length) || 0;
       if (!n) return true;
+      // A browser answers the query as it draws the page; jsdom has no
+      // matchMedia, and applies only the media below.
+      if (window && typeof window.matchMedia === 'function') {
+        try {
+          return !!dom.get(window.matchMedia(String(media.mediaText || '')), 'matches');
+        } catch {
+          // read below
+        }
+      }
       for (let i = 0; i < n; i++) {
         const q = String(media[i] || '')
           .trim()
@@ -5484,6 +5508,56 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return best ? { value: best.value } : null;
   }
 
+  // Every author declaration of prop (`color` by default) that matches el,
+  // in a rule or its style attribute: { values, winner, uncertain,
+  // unknown }. winner is the one that applies where none is uncertain (see
+  // __authorColorOf); unknown where a sheet or a selector can't be read.
+  function __authorColorDeclsOf(el, prop = 'color') {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const out = { values: [], winner: null, uncertain: false, unknown: false };
+    const { rules, unreadable } = __colorRulesOf(root, prop);
+    if (unreadable) {
+      out.unknown = true;
+      return out;
+    }
+    let best = null;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          out.unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        out.values.push(rule.value);
+        if (rule.uncertain) out.uncertain = true;
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
+      if (value) {
+        out.values.push(value);
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    out.winner = best ? best.value : null;
+    return out;
+  }
+
   const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
   const __jsdomLinkColorCache = new WeakMap();
   function __jsdomLinkTextColor(el) {
@@ -5567,8 +5641,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the fill as the colour it follows; one that differs is the
   // page's own, and paints it, as does one the page sets to that colour.
   function __htmlTextFillOf(el, cs) {
-    const fillValue = __textFillOf(cs);
-    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    const fillValue = __textFillOfEl(el, cs);
+    let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    // A fill jsdom computes wrongly follows color (__textFillOfEl).
+    if (fillValue === cs.color) fill = String(cs.color || '').trim();
     if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
       return fillValue;
     const link = __jsdomLinkTextColor(el);
@@ -5593,7 +5669,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(el);
       if (!cs) return '';
       if (__isSvgTextElement(el)) return String(cs.fill || '');
-      return __htmlTextFillOf(el, cs) || '';
+      const value = __htmlTextFillOf(el, cs) || '';
+      // In the dark scheme a page an emulator draws is in (__schemeTextOverride).
+      const own = value ? __schemeTextOverride(el) : null;
+      return own ? rgbaToString(own) : value;
     } catch {
       return '';
     }
@@ -5617,7 +5696,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (__clipTextOwnerCache.has(el)) return __clipTextOwnerCache.get(el);
     let out = null;
     try {
-      const fill = parseCssColorToRgba(__textFillOf(__contrastComputedStyle(el)));
+      const fill = parseCssColorToRgba(__textFillOfEl(el, __contrastComputedStyle(el)));
       if (fill && fill.a === 0) {
         let cur = el;
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 50; depth++) {
@@ -5637,7 +5716,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  function computeEffectiveForeground(el) {
+  // The colour el's text has in a color scheme other than the one whose
+  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // where opts give one; otherwise, in an emulator, in the dark scheme a
+  // page drawn only in dark is in, wherever the text is (an emulator
+  // computes the light scheme's colours). Null where the colour computed
+  // now is the one, or it can't be told (colorSchemeUnread).
+  function __schemeTextOverride(el, opts) {
+    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const scheme = asked === 'light' || asked === 'dark' ? asked : null;
+    if (!scheme) {
+      // A browser computes the colours of the scheme it draws.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut || info.current !== 'dark') return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      const own = __schemeTextColor(el, info.current);
+      return own && own.color ? own.color : null;
+    }
+    const bg = computeEffectiveBackground(el, {
+      contrast: { mode: 'strictConformance', ...(scheme ? { colorScheme: scheme } : {}) },
+      collectStack: false
+    });
+    return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
+  }
+
+  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // page's canvas (__schemeTextColor), where it isn't the one computed now.
+  function computeEffectiveForeground(el, opts) {
+    const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
+    if (opts && opts.contrast && opts.contrast.colorScheme) {
+      const out = computeEffectiveForeground(el);
+      if (!schemeOverride || !out || !out.rgba) return out;
+      const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
+      return {
+        rgba: { r: schemeOverride.r, g: schemeOverride.g, b: schemeOverride.b, a: clamp01(op) },
+        alpha: clamp01(op),
+        opacityProduct: op
+      };
+    }
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
     // group opacity (the contrast rules' same-color filter does), and the
@@ -5675,6 +5792,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
+    // On the canvas of a page drawn only in dark, in an emulator: the dark
+    // scheme's colour where the text takes it from the scheme.
+    if (c && schemeOverride) {
+      c = {
+        r: schemeOverride.r,
+        g: schemeOverride.g,
+        b: schemeOverride.b,
+        a: schemeOverride.a == null ? 1 : schemeOverride.a
+      };
+    }
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {
@@ -5724,9 +5851,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         ? contrast.rootCanvasFallback.trim()
         : '#ffffff';
 
+    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
+    const scheme =
+      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
+        ? contrast.colorScheme
+        : '';
+
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
-    return `${mode}|${rootCanvasFallback}`;
+    return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
   // The canvas the browser paints behind the root: the Canvas system colour
@@ -5846,21 +5979,665 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return occurrences;
   }
 
-  // The canvas under el's text where it is measured rather than assumed: in
-  // a browser, for an element of the page the engine runs in, when that
-  // page isn't in a frame. A frame's canvas is transparent where the frame
-  // shares its parent's color scheme, and what shows through then is the
-  // parent page, which the frame can't see. Null otherwise, which leaves it
-  // to the contrast mode (computeEffectiveBackground).
-  function __measuredCanvasUnder(el) {
+  // -------- The page's canvas, in each color scheme it supports --------
+  //
+  // Behind a page that paints no opaque background the browser paints its
+  // canvas, in the Canvas system colour of the root's used color scheme
+  // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
+  // own statement: the root's color-scheme, or, while that is normal, its
+  // <meta name="color-scheme">. A page that states none is drawn in the
+  // light scheme whatever the user prefers; one that names light and dark
+  // is drawn in the scheme the user prefers. So the canvas follows from
+  // the page and the user's preference, as the browser defines it, not
+  // from an assumption.
+
+  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // Chromium (read in Chromium 153), for an emulator that resolves them to
+  // fixed light values and lays nothing out (jsdom). A browser's own are
+  // read from the page instead.
+  const __SCHEME_COLORS = {
+    light: { canvas: '#ffffff', text: '#000000', link: '#0000ee' },
+    dark: { canvas: '#121212', text: '#ffffff', link: '#9e9eff' }
+  };
+
+  // The schemes a color-scheme value names, in its order: light and dark;
+  // normal, `only` and names no browser knows add none.
+  function __schemesNamed(value) {
+    const out = [];
+    for (const word of String(value || '')
+      .toLowerCase()
+      .split(/\s+/)) {
+      if ((word === 'light' || word === 'dark') && !out.includes(word)) out.push(word);
+    }
+    return out;
+  }
+
+  // The page's color schemes, read once per run: { supported, declared,
+  // current, laidOut, colors }. supported lists the schemes it is drawn in
+  // (['light'] for a page that declares none: declared is false then),
+  // current the one it is drawn in now (the user's preference where the
+  // page supports it, else the first it names), and colors each scheme's
+  // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
+  // its computed colours are the current scheme's; an emulator's are the
+  // light scheme's, without its prefers-color-scheme rules. Null under
+  // forced colors, where the canvas is the user's palette, and where
+  // nothing can be read.
+  let __schemes;
+  function __pageSchemes() {
+    if (__schemes !== undefined) return __schemes;
+    __schemes = null;
     try {
-      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
-      if (window.self !== window.top) return null;
-      const rgba = parseCssColorToRgba(__pageCanvasColor());
-      return rgba ? { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 } : null;
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
+      const rootCs = window.getComputedStyle(root);
+      const rootValue = String(
+        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
+      ).trim();
+      let supported = __schemesNamed(rootValue);
+      // The meta element speaks for a root whose color-scheme is normal:
+      // the first one naming a scheme (HTML, "the page's supported color
+      // schemes").
+      if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
+        const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
+        for (const meta of Array.from(metas)) {
+          const named = __schemesNamed(dom.getAttribute(meta, 'content'));
+          if (named.length) {
+            supported = named;
+            break;
+          }
+        }
+      }
+      const declared = supported.length > 0;
+      if (!declared) supported = ['light'];
+      const prefersDark =
+        typeof window.matchMedia === 'function' &&
+        !!dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches');
+      const preferred = prefersDark ? 'dark' : 'light';
+      let current = supported.includes(preferred) ? preferred : supported[0];
+
+      const colors = {};
+      for (const scheme of ['light', 'dark']) {
+        const set = __SCHEME_COLORS[scheme];
+        colors[scheme] = {
+          canvas: parseCssColorToRgba(set.canvas),
+          text: parseCssColorToRgba(set.text),
+          link: parseCssColorToRgba(set.link)
+        };
+      }
+
+      // In a browser, each scheme's system colours are read from an
+      // element the engine adds and removes at once, and the scheme the
+      // page is drawn in from the Canvas it inherits from the root.
+      // An emulator lays nothing out: nothing to read there, and the page
+      // is left untouched.
+      let laidOut = false;
+      const probe = __hasLayout(doc) ? dom.call(doc, 'createElement', 'div') : null;
+      if (probe) {
+        probe.style.cssText =
+          'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden';
+        dom.call(root, 'appendChild', probe);
+      }
+      try {
+        laidOut = !!probe && dom.getBoundingClientRect(probe).width === 1;
+        if (laidOut) {
+          const read = (value) => {
+            const c = parseCssColorToRgba(value);
+            return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
+          };
+          const readScheme = (scheme) => {
+            probe.style.colorScheme = scheme;
+            probe.style.backgroundColor = 'Canvas';
+            probe.style.color = 'CanvasText';
+            const cs = window.getComputedStyle(probe);
+            const canvas = read(cs.backgroundColor);
+            const text = read(cs.color);
+            probe.style.color = 'LinkText';
+            const link = read(window.getComputedStyle(probe).color);
+            return canvas && text && link ? { canvas, text, link } : null;
+          };
+          probe.style.backgroundColor = 'Canvas';
+          const drawn = read(window.getComputedStyle(probe).backgroundColor);
+          for (const scheme of ['light', 'dark']) {
+            const own = readScheme(scheme);
+            if (own) colors[scheme] = own;
+          }
+          const same = (a, b) => !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b;
+          if (same(drawn, colors.dark.canvas) && !same(drawn, colors.light.canvas)) {
+            current = 'dark';
+          } else if (same(drawn, colors.light.canvas) && !same(drawn, colors.dark.canvas)) {
+            current = 'light';
+          }
+          if (!supported.includes(current)) supported = [current];
+        }
+      } finally {
+        if (probe) dom.removeChild(root, probe);
+      }
+      __schemes = { supported, declared, current, laidOut, colors };
+    } catch {
+      __schemes = null;
+    }
+    return __schemes;
+  }
+
+  // Whether the engine runs in an emulator (jsdom, by its user agent),
+  // which computes the light scheme's colours whatever the page's scheme.
+  let __emulator;
+  function __emulatorWindow() {
+    if (__emulator !== undefined) return __emulator;
+    try {
+      const ua = String((window && window.navigator && window.navigator.userAgent) || '');
+      __emulator = /\bjsdom\//.test(ua);
+    } catch {
+      __emulator = false;
+    }
+    return __emulator;
+  }
+
+  // A canvas the run names (contrast.rootCanvasFallback the caller gave,
+  // src/core/dom-runner.js): it stands for the page's own in every scheme.
+  let __runCanvas = null;
+  function useNamedCanvas(color) {
+    const rgba = typeof color === 'string' ? parseCssColorToRgba(color) : null;
+    __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
+  }
+  function __namedCanvas(contrast) {
+    if (contrast && contrast.rootCanvasFallbackSet === true) {
+      const value =
+        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+      const rgba = value ? parseCssColorToRgba(value) : null;
+      if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
+    }
+    return __runCanvas;
+  }
+
+  // The style rules of a document's or shadow root's sheets that may make
+  // a colour depend on the color scheme: those inside an @media on
+  // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
+  // unknown), and those setting a colour, a background or a custom property
+  // to light-dark() or a system colour (`keyword`). Every condition is
+  // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
+  // unreadable }, once per root.
+  const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
+  const __SCHEME_VALUE =
+    /\blight-dark\s*\(|(?:^|[^\w-])(canvas|canvastext|linktext|visitedtext|activetext|buttonface|buttontext|buttonborder|field|fieldtext|highlight|highlighttext|selecteditem|selecteditemtext|mark|marktext|graytext|accentcolor|accentcolortext|activeborder|activecaption|appworkspace|background|buttonhighlight|buttonshadow|captiontext|inactiveborder|inactivecaption|inactivecaptiontext|infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)(?![\w-])/i;
+  function __valueFollowsScheme(value) {
+    const v = String(value || '')
+      .replace(/url\([^)]*\)/gi, '')
+      .replace(/"[^"]*"|'[^']*'/g, '');
+    return __SCHEME_VALUE.test(v);
+  }
+  // Which of a declaration block's colours follow the scheme: { color }
+  // for the text's (color, -webkit-text-fill-color), { back } for a
+  // background or a custom property, which may feed either; null for none.
+  function __styleFollowsScheme(style) {
+    const out = { color: false, back: false };
+    try {
+      const n = Number(style && style.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const prop = String(style[i] || '');
+        if (__SCHEME_PROPS.test(prop) && __valueFollowsScheme(style.getPropertyValue(prop))) {
+          if (/^(color|-webkit-text-fill-color)$/i.test(prop)) out.color = true;
+          else out.back = true;
+        }
+      }
+    } catch {
+      return { color: true, back: true };
+    }
+    return out.color || out.back ? out : null;
+  }
+  function __mediaScheme(text) {
+    const t = String(text || '').toLowerCase();
+    if (!/prefers-color-scheme/.test(t)) return null;
+    // A query naming one scheme, and no other and no `not`, holds only in
+    // that scheme, whatever else it asks.
+    if (/\bnot\b|,/.test(t)) return 'unknown';
+    const named = new Set();
+    for (const m of t.matchAll(/prefers-color-scheme\s*:\s*([a-z-]+)/g)) named.add(m[1]);
+    return named.size === 1 && (named.has('light') || named.has('dark'))
+      ? [...named][0]
+      : 'unknown';
+  }
+  const __schemeRulesByRoot = new WeakMap();
+  function __schemeRulesOf(root) {
+    if (__schemeRulesByRoot.has(root)) return __schemeRulesByRoot.get(root);
+    const out = { pcs: [], keyword: [], unreadable: false };
+    const rulesOf = (sheet) => {
+      if (shared && typeof shared.cssRulesOf === 'function') return shared.cssRulesOf(sheet);
+      try {
+        return sheet.cssRules;
+      } catch {
+        return null;
+      }
+    };
+    const walk = (list, scheme, parent, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n && depth < 12; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          let parts = __splitTopLevel(rule.selectorText).filter(Boolean);
+          // A nested rule's selector is relative to its parent's.
+          if (parent) {
+            parts = parts.map((p) =>
+              p.includes('&') ? p.replace(/&/g, `:is(${parent})`) : `:is(${parent}) ${p}`
+            );
+          }
+          if (scheme && parts.length) out.pcs.push({ parts, scheme });
+          const follows = __styleFollowsScheme(rule.style);
+          if (follows) out.keyword.push({ parts, ...follows });
+          let nested;
+          try {
+            nested = rule.cssRules;
+          } catch {
+            nested = null;
+          }
+          if (nested && nested.length) walk(nested, scheme, parts.join(', '), depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          const rules = sheet ? rulesOf(sheet) : null;
+          if (!rules) {
+            out.unreadable = true;
+            continue;
+          }
+          const media = rule.media ? __mediaScheme(rule.media.mediaText) : null;
+          walk(rules, media || scheme, parent, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (!nested || !nested.length) continue;
+        const media =
+          name === 'CSSMediaRule' || rule.type === 4
+            ? __mediaScheme(rule.media && rule.media.mediaText)
+            : null;
+        walk(nested, media || scheme, parent, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        const rules = rulesOf(sheet);
+        if (!rules) {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, null, '', 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __schemeRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // How the colours behind el's text, and its own, may depend on the color
+  // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
+  // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
+  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // background or a custom property, set to light-dark() or a system
+  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // read.
+  const __schemeDependenceCache = new WeakMap();
+  const __noDependence = () => ({
+    pcs: new Set(),
+    keyword: false,
+    keywordColor: false,
+    keywordBack: false,
+    unknown: false
+  });
+  function __schemeDependence(el) {
+    if (!el || dom.nodeType(el) !== 1) return __noDependence();
+    if (__schemeDependenceCache.has(el)) return __schemeDependenceCache.get(el);
+    let parent = composedParent(el);
+    while (parent && dom.nodeType(parent) !== 1) parent = composedParent(parent);
+    const base = parent ? __schemeDependence(parent) : __noDependence();
+    const out = {
+      pcs: new Set(base.pcs),
+      keyword: base.keyword,
+      keywordColor: base.keywordColor,
+      keywordBack: base.keywordBack,
+      unknown: base.unknown
+    };
+    const note = (follows) => {
+      if (!follows) return;
+      if (follows.color) out.keywordColor = true;
+      if (follows.back) out.keywordBack = true;
+      out.keyword = true;
+    };
+    try {
+      let root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      root = root || dom.ownerDocument(el);
+      const rules = __schemeRulesOf(root);
+      if (rules.unreadable) out.unknown = true;
+      const matches = (parts) => {
+        for (const part of parts) {
+          // A pseudo-element's rule styles another box.
+          if (/::|:(before|after|first-line|first-letter|marker|placeholder)\b/i.test(part))
+            continue;
+          try {
+            if (dom.matches(el, part)) return true;
+          } catch {
+            out.unknown = true;
+          }
+        }
+        return false;
+      };
+      for (const rule of rules.pcs) if (matches(rule.parts)) out.pcs.add(rule.scheme);
+      for (const rule of rules.keyword) {
+        if (out.keywordColor && out.keywordBack) break;
+        if (matches(rule.parts)) note(rule);
+      }
+      note(__styleFollowsScheme(dom.get(el, 'style')));
+    } catch {
+      out.unknown = true;
+    }
+    __schemeDependenceCache.set(el, out);
+    return out;
+  }
+
+  // Where el's text colour comes from: 'author', a colour of the page's
+  // own, the same in every scheme ('authorFill' where it is a
+  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
+  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // { value }, a value the page gives that picks by the scheme (light-dark(),
+  // a system colour); null where it can't be told, or is another colour of
+  // the browser's (a field's, a button's, a mark's). SVG text, and text cut
+  // out of a background, are left at null.
+  const __UA_COLOURED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  const __colorOriginCache = new WeakMap();
+  function __colorOrigin(el) {
+    if (__colorOriginCache.has(el)) return __colorOriginCache.get(el);
+    let out;
+    try {
+      out = __colorOriginUncached(el);
+    } catch {
+      out = null;
+    }
+    __colorOriginCache.set(el, out);
+    return out;
+  }
+  function __colorOriginUncached(el) {
+    if (!el || __isSvgTextElement(el) || __clipTextOwner(el)) return null;
+    // A fill the page sets paints the text whatever color says.
+    const fill = __jsdomAuthorFill(el);
+    if (fill !== false) return fill === true ? 'authorFill' : null;
+    const doc = dom.ownerDocument(el);
+    const body = doc ? dom.body(doc) : null;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) !== 1) {
+        cur = composedParent(cur);
+        continue;
+      }
+      const decls = __authorColorDeclsOf(cur, 'color');
+      if (decls.unknown) return null;
+      if (decls.values.length) {
+        const fixed = (v) =>
+          !__CSS_INHERITING.has(v.toLowerCase()) &&
+          !/\bvar\(|^(initial|revert|revert-layer)$/i.test(v) &&
+          !__valueFollowsScheme(v) &&
+          !!parseCssColorToRgba(v);
+        if (decls.values.every(fixed)) return 'author';
+        if (decls.uncertain || !decls.winner) return null;
+        const v = decls.winner.toLowerCase();
+        if (!__CSS_INHERITING.has(v)) {
+          if (v === 'initial') return 'canvasText';
+          if (fixed(v)) return 'author';
+          return __valueFollowsScheme(v) && !/\bvar\(/.test(v) ? { value: decls.winner } : null;
+        }
+      } else {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (name === 'font' && dom.hasAttribute(cur, 'color')) return 'author';
+        if (__isLink(cur)) {
+          return body && dom.hasAttribute(body, 'link') ? 'author' : 'linkText';
+        }
+        if (name === 'body' && dom.hasAttribute(cur, 'text')) return 'author';
+        if (__UA_COLOURED.has(name)) return null;
+      }
+      cur = composedParent(cur);
+    }
+    return 'canvasText';
+  }
+
+  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second colour, a system colour the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  function __resolveSchemeColor(value, scheme, info) {
+    const v = String(value || '').trim();
+    const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
+    if (pick) {
+      const parts = __splitTopLevel(pick[1]).map((x) => x.trim());
+      return parts.length === 2
+        ? __resolveSchemeColor(parts[scheme === 'dark' ? 1 : 0], scheme, info)
+        : null;
+    }
+    const set = info.colors[scheme];
+    const word = v.toLowerCase();
+    if (word === 'canvastext') return { ...set.text };
+    if (word === 'linktext') return { ...set.link };
+    if (word === 'canvas') return { ...set.canvas };
+    if (/\bvar\(/i.test(v) || __valueFollowsScheme(v)) return null;
+    return parseCssColorToRgba(v);
+  }
+
+  // Whether the browser paints a background of its own, in the scheme's
+  // system colours, behind el's text: el or an ancestor is a form control,
+  // a mark, a dialog or a popover whose background the page doesn't set.
+  const __UA_PAINTED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  function __uaPaintedBehind(el) {
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) === 1) {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (__UA_PAINTED.has(name) || dom.hasAttribute(cur, 'popover')) {
+          const own = ['background-color', 'background'].some((prop) => {
+            const decls = __authorColorDeclsOf(cur, prop);
+            return (
+              !decls.unknown &&
+              decls.values.length > 0 &&
+              decls.values.every((v) => !__valueFollowsScheme(v) && !/\bvar\(/i.test(v))
+            );
+          });
+          if (!own) return true;
+        }
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // el's text colour in `scheme`: { color } with color null where it is
+  // the colour computed now, or the colour it has in that scheme (the
+  // scheme's CanvasText or LinkText where the text takes it from the
+  // scheme; a light-dark() or system colour the page gives, worked out);
+  // null where it can't be told. The colours computed now are the scheme a
+  // browser draws, or, in an emulator, the light one with no
+  // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
+  // has its text's colours worked out here: not where a
+  // prefers-color-scheme rule for dark reaches them, a background behind
+  // them picks by the scheme, or the browser paints one there. A scheme the
+  // page isn't drawn in is told only where no prefers-color-scheme rule,
+  // light-dark() or system colour reaches the text's colour or the
+  // backgrounds behind it.
+  function __schemeTextColor(el, scheme) {
+    const info = __pageSchemes();
+    if (!info || !info.supported.includes(scheme)) return null;
+    const dep = __schemeDependence(el);
+    if (dep.unknown) return null;
+    if (info.laidOut && scheme === info.current) return { color: null };
+    if (!info.laidOut && scheme === 'light') {
+      return dep.pcs.has('light') || dep.pcs.has('unknown') ? null : { color: null };
+    }
+    const drawn = !info.laidOut && scheme === info.current;
+    if (drawn ? dep.pcs.has(scheme) || dep.pcs.has('unknown') : dep.pcs.size) return null;
+    if (dep.keywordBack || (!drawn && dep.keywordColor)) return null;
+    if (__uaPaintedBehind(el)) return null;
+    const origin = __colorOrigin(el);
+    if (origin === 'author') return { color: null };
+    if (origin === 'authorFill') return dep.keywordColor ? null : { color: null };
+    if (origin === 'canvasText') return { color: info.colors[scheme].text };
+    if (origin === 'linkText') return { color: info.colors[scheme].link };
+    if (drawn && origin && typeof origin === 'object') {
+      const color = __resolveSchemeColor(origin.value, scheme, info);
+      return color ? { color } : null;
+    }
+    return null;
+  }
+
+  // The scheme an emulator can't give el's text colours in: the page is
+  // drawn in it, and they can't be worked out (__schemeTextColor). An
+  // emulator computes the light scheme's colours and applies no
+  // prefers-color-scheme rule, so on a page drawn in light only text such
+  // a rule reaches; on one drawn in dark, text whose colours there can't be
+  // told. Null in a browser, which computes the colours it draws.
+  function colorSchemeUnread(el) {
+    try {
+      if (!window || !el || dom.nodeType(el) !== 1) return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      // A browser: nothing to work out, and the page is left untouched.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut) return null;
+      if (info.current === 'light') {
+        const dep = __schemeDependence(el);
+        return dep.pcs.has('light') || dep.pcs.has('unknown') ? 'light' : null;
+      }
+      return __schemeTextColor(el, info.current) ? null : info.current;
     } catch {
       return null;
     }
+  }
+
+  // The canvas behind el's text in contrast.colorScheme (the scheme the
+  // page is drawn in when not given): { rgba, color, scheme, named,
+  // supported, current, text }, or null where it isn't known. Only for an
+  // element of the page the engine runs in, outside a frame: a frame's
+  // canvas is transparent where it shares its parent's color scheme, and
+  // what shows through then is the parent page, which the frame can't see.
+  // Not under forced colors (__pageSchemes). A canvas the run names stands
+  // for the page's (scheme null). text: __schemeTextColor.
+  function __canvasFor(el, contrast) {
+    try {
+      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
+      if (window.self !== window.top) return null;
+      const info = __pageSchemes();
+      if (!info) return null;
+      const asked = contrast && contrast.colorScheme;
+      const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
+      const named = __namedCanvas(contrast);
+      if (named && scheme !== info.current) return null;
+      const text = __schemeTextColor(el, scheme);
+      if (!text) return null;
+      return named
+        ? {
+            rgba: named.rgba,
+            color: named.color,
+            scheme: null,
+            named: true,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          }
+        : {
+            rgba: { ...info.colors[scheme].canvas, a: 1 },
+            color: rgbToHex(info.colors[scheme].canvas),
+            scheme,
+            named: false,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether el's canvas would be known (__canvasFor) but for its text.
+  function __inCanvasScope(el) {
+    try {
+      return (
+        !!window &&
+        !!el &&
+        dom.ownerDocument(el) === window.document &&
+        window.self === window.top &&
+        !!__pageSchemes()
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // The canvas under el's text in the scheme the page is drawn in, where
+  // the colours computed now are that scheme's (see __canvasFor); null
+  // otherwise, which leaves it to the contrast mode
+  // (computeEffectiveBackground).
+  function __measuredCanvasUnder(el) {
+    const canvas = __canvasFor(el, null);
+    return canvas && canvas.text.color === null ? canvas.rgba : null;
+  }
+
+  // Whether el's text can be measured on the page's canvas in `scheme`, one
+  // the page supports but isn't drawn in now: its colours and the
+  // backgrounds behind it are the same in that scheme, or its colour is
+  // the scheme's own (__schemeTextColor).
+  function colorSchemeMeasurable(el, scheme) {
+    try {
+      return !!__schemeTextColor(el, scheme);
+    } catch {
+      return false;
+    }
+  }
+
+  // The page's color schemes (__pageSchemes): { supported, current,
+  // declared }, or null where they don't decide its canvas.
+  function pageColorSchemes() {
+    const info = __pageSchemes();
+    return info
+      ? { supported: info.supported.slice(0), current: info.current, declared: info.declared }
+      : null;
   }
 
   function computeEffectiveBackground(el, opts2) {
@@ -6043,6 +6820,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
 
     let out;
+    let canvas;
     const allowAssumptions = mode === 'auditorAssist';
 
     if (unparsable) {
@@ -6056,17 +6834,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
       };
-    } else if (acc.a < 1 && __measuredCanvasUnder(el)) {
-      // Nothing behind the text up to the root is opaque, but the browser
-      // paints its canvas under the root and that colour was read, so the
-      // text is measured on it in either mode, as it is drawn.
-      acc = compositeRgba(acc, __measuredCanvasUnder(el));
+    } else if (acc.a < 1 && (canvas = __canvasFor(el, contrast))) {
+      // Nothing behind the text up to the root is opaque: the browser
+      // paints its canvas under the root, in the color scheme asked for
+      // (contrast.colorScheme) or the one the page is drawn in, and the
+      // text is measured on it in either mode, as it is drawn. A canvas the
+      // run names stands for it.
+      acc = compositeRgba(acc, canvas.rgba);
       out = {
         ok: true,
         rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
         alpha: 1,
         stack: stack || [],
-        reasonCode: null
+        reasonCode: null,
+        canvas: {
+          scheme: canvas.scheme,
+          supported: canvas.supported,
+          current: canvas.current,
+          named: canvas.named,
+          text: canvas.text.color ? { ...canvas.text.color } : null
+        },
+        ...(canvas.named
+          ? { assumptionsApplied: ['ROOT_CANVAS_FALLBACK'], assumedRootCanvasColor: canvas.color }
+          : {})
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
@@ -6094,7 +6884,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           rgba: acc,
           alpha: acc.a,
           stack: stack || [],
-          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+          // On a page whose canvas is known, the text's colour in the
+          // scheme it is drawn in could not be told (__schemeTextColor).
+          ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
       }
     } else {
@@ -6210,7 +7003,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const placeholder = field && field.placeholder ? field.style : null;
       const textCs = placeholder || elCs;
       let elColor = parseCssColorToRgba(
-        textCs && (__isSvgTextElement(el) ? textCs.fill : __textFillOf(textCs))
+        textCs &&
+          (__isSvgTextElement(el)
+            ? textCs.fill
+            : placeholder
+              ? __textFillOf(textCs)
+              : __textFillOfEl(el, textCs))
       );
       if (!elColor) return __cacheAndReturn(null);
       let phBg = null;
@@ -6906,7 +7704,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -7245,6 +8044,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    // The text's colours in the scheme the page is drawn in can't be read
+    // (an emulator: colorSchemeUnread), so whatever else is in the way, they
+    // are what is unknown.
+    const unread = colorSchemeUnread(el);
+    if (unread) {
+      const blocked = {
+        ok: false,
+        reasonCode: 'COLOR_SCHEME_NOT_RENDERED',
+        blockerSelector: '',
+        blockerProperty: 'color-scheme',
+        blockerValue: unread
+      };
+      try {
+        if (el) __computabilityBlockerCache.set(el, blocked);
+      } catch {}
+      return blocked;
+    }
     const out = __computabilityBlockerOf(el, false);
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
@@ -7352,7 +8168,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -9647,6 +10464,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     comparePaintOrder,
     colorsForced,
     noteForcedColors,
+    pageColorSchemes,
+    colorSchemeMeasurable,
+    colorSchemeUnread,
+    useNamedCanvas,
     isPinned: __isPinned
   };
 });
@@ -18823,6 +19644,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     composedParent,
     buildSimpleSelector,
     getLabelControl,
+    cssRulesOf,
     __contrastSharedCache
   };
 
@@ -21076,6 +21898,12 @@ const runCoreSettled = (function runCoreSettled(
       // A canvas the caller named, white included, which a rule may decide
       // by where it would only lean on the default; the result echoes it.
       engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
+      // The contrast rules measure text on it in place of the page's own
+      // canvas (contrast-helpers, __canvasFor).
+      try {
+        if (sharedHelpers.contrast && typeof sharedHelpers.contrast.useNamedCanvas === 'function')
+          sharedHelpers.contrast.useNamedCanvas(given);
+      } catch {}
     }
   }
 
@@ -35144,6 +35972,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
+      "contrast_hint_colorScheme_dark": "Im dunklen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
+      "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -35179,12 +36009,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Schon vor jedem Verblassen erreicht der Text gegenüber seinem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe, und wenn Text und Hintergrund gemeinsam verblassen, rücken sie nur näher zusammen.",
       "contrastComputable_lean_caution_opacity": "Browser mischen die verblassten Farben auf eine Weise, die das Verhältnis leicht verschieben kann, und ein Filter oder Mischmodus weiter außen wird nicht berücksichtigt.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
-      "contrastComputable_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
       "contrastComputable_lean_why_selectOption_pass": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
       "contrastComputable_lean_why_selectOption_fail": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
       "contrastComputable_lean_caution_selectOption": "Manche Plattformen, darunter macOS, zeichnen die geöffnete Liste in ihren eigenen Farben und ignorieren die der Option.",
+      "contrastComputable_cantTell_colorScheme": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Farben dieses Textes im Farbschema, in dem die Seite angezeigt wird ({{blockerValue}}), nicht lesen konnte: Ein DOM-Emulator berechnet die Farben des hellen Farbschemas, ohne prefers-color-scheme-Regeln.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
       "roleImg_textAlternativePresent_summary_fail": "Dieses Element mit role=\"{{role}}\" hat keine Textalternative.",
@@ -35886,8 +36714,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
       "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
       "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
-      "linkInTextBlock_lean_why_rootCanvas": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), unterscheidet sich die eigene Hintergrundfarbe des Links ({{background}}) von der um ihn herum ({{around}}); das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe, mit {{ratio}}:1, bevor die Deckkraft eines Vorfahren beide verblassen lässt, was sie näher zusammenrückt. Das genügt nur, wenn die Farben, wie sie gezeichnet werden, noch 3:1 erreichen und Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
@@ -36478,6 +37304,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
+      "contrast_hint_colorScheme_dark": "In the page's dark color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
+      "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -36513,12 +37341,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Before any fading, the text reaches only {{ratio}}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.",
       "contrastComputable_lean_caution_opacity": "Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.",
-      "contrastComputable_lean_why_rootCanvas_pass": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches {{ratio}}:1, which meets the enhanced ratio for its size and so the minimum one too.",
-      "contrastComputable_lean_why_rootCanvas_fail": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches only {{ratio}}:1, below the minimum ratio for its size.",
-      "contrastComputable_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
       "contrastComputable_lean_why_selectOption_pass": "In the option's own colors, its text reaches {{ratio}}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.",
       "contrastComputable_lean_why_selectOption_fail": "In the option's own colors, its text reaches only {{ratio}}:1 against its background in the open list, below the minimum ratio for its size.",
       "contrastComputable_lean_caution_selectOption": "Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.",
+      "contrastComputable_cantTell_colorScheme": "Contrast is not computable because this scan could not read this text's colors in the color scheme the page is drawn in ({{blockerValue}}): a DOM emulator computes the light scheme's colors, without prefers-color-scheme rules.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
       "roleImg_textAlternativePresent_summary_fail": "This element with role=\"{{role}}\" has no text alternative.",
@@ -37220,8 +38046,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
       "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
       "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
-      "linkInTextBlock_lean_why_rootCanvas": "On the canvas a browser paints behind a page with no background ({{canvas}}), the link's own background color ({{background}}) differs from the one around it ({{around}}), which marks it without relying on its text color.",
-      "linkInTextBlock_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "This link in a block of text is distinguished from the surrounding text only by its color, at {{ratio}}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
@@ -37812,6 +38636,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
+      "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
+      "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -37847,12 +38673,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Antes de cualquier atenuación, el texto solo alcanza {{ratio}}:1 frente a su fondo, por debajo de la relación mínima para su tamaño, y atenuar juntos el texto y el fondo solo puede acercarlos.",
       "contrastComputable_lean_caution_opacity": "Los navegadores mezclan los colores atenuados de un modo que puede desplazar ligeramente la relación, y no se tiene en cuenta un filtro o un modo de fusión más externo.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto alcanza {{ratio}}:1, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto solo alcanza {{ratio}}:1, por debajo de la relación mínima para su tamaño.",
-      "contrastComputable_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
       "contrastComputable_lean_why_selectOption_pass": "Con los colores propios de la opción, su texto alcanza {{ratio}}:1 frente a su fondo en la lista abierta, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
       "contrastComputable_lean_why_selectOption_fail": "Con los colores propios de la opción, su texto solo alcanza {{ratio}}:1 frente a su fondo en la lista abierta, por debajo de la relación mínima para su tamaño.",
       "contrastComputable_lean_caution_selectOption": "Algunas plataformas, entre ellas macOS, dibujan la lista abierta con sus propios colores e ignoran los de la opción.",
+      "contrastComputable_cantTell_colorScheme": "El contraste no se puede calcular porque este análisis no pudo leer los colores de este texto en el esquema de color en que se muestra la página ({{blockerValue}}): un emulador de DOM calcula los colores del esquema claro, sin las reglas prefers-color-scheme.",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Este elemento con role=\"{{role}}\" no tiene alternativa textual.",
@@ -38554,8 +39378,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
       "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
       "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
-      "linkInTextBlock_lean_why_rootCanvas": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el color de fondo propio del enlace ({{background}}) es distinto del que lo rodea ({{around}}), lo que lo señala sin depender del color de su texto.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color, a {{ratio}}:1 antes de que la opacidad de un ancestro atenúe ambos, lo que los acerca. Eso solo basta si los colores tal como se dibujan siguen alcanzando 3:1 y si al pasar el cursor y al recibir el foco el enlace también muestra una señal distinta del color, como un subrayado.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
@@ -39146,6 +39968,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
+      "contrast_hint_colorScheme_dark": "Dans le jeu de couleurs sombre de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
+      "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -39181,12 +40005,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Avant tout fondu, le texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan, en dessous du ratio minimal pour sa taille, et estomper ensemble le texte et l’arrière-plan ne peut que les rapprocher.",
       "contrastComputable_lean_caution_opacity": "Les navigateurs mélangent les couleurs estompées d’une manière qui peut modifier légèrement le ratio, et un filtre ou un mode de fusion plus éloigné n’est pas pris en compte.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte atteint {{ratio}}:1, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte n’atteint que {{ratio}}:1, en dessous du ratio minimal pour sa taille.",
-      "contrastComputable_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
       "contrastComputable_lean_why_selectOption_pass": "Dans les couleurs propres de l’option, son texte atteint {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
       "contrastComputable_lean_why_selectOption_fail": "Dans les couleurs propres de l’option, son texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, en dessous du ratio minimal pour sa taille.",
       "contrastComputable_lean_caution_selectOption": "Certaines plateformes, dont macOS, dessinent la liste ouverte dans leurs propres couleurs et ignorent celles de l’option.",
+      "contrastComputable_cantTell_colorScheme": "Le contraste n’est pas calculable, car cette analyse n’a pas pu lire les couleurs de ce texte dans le jeu de couleurs où la page est affichée ({{blockerValue}}) : un émulateur de DOM calcule les couleurs du jeu clair, sans les règles prefers-color-scheme.",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Cet élément avec role=\"{{role}}\" n’a pas d’équivalent textuel.",
@@ -39888,8 +40710,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
       "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
       "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
-      "linkInTextBlock_lean_why_rootCanvas": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), la couleur d’arrière-plan propre au lien ({{background}}) diffère de celle qui l’entoure ({{around}}), ce qui le signale sans dépendre de la couleur de son texte.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur, à {{ratio}}:1 avant que l’opacité d’un ancêtre n’estompe les deux, ce qui les rapproche. Cela ne suffit que si les couleurs telles qu’elles sont affichées atteignent encore 3:1 et que le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
@@ -40480,6 +41300,8 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
+      "contrast_hint_colorScheme_dark": "ページのダークな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
+      "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -40515,12 +41337,10 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "contrastComputable_lean_why_opacity": "薄められる前の時点で、テキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回っています。テキストと背景を一緒に薄めても、両者の差は縮まるだけです。",
       "contrastComputable_lean_caution_opacity": "ブラウザーは薄めた色を混ぜ合わせる際にコントラスト比をわずかにずらすことがあり、さらに外側にあるフィルターや合成モードは考慮していません。",
-      "contrastComputable_lean_why_rootCanvas_pass": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
-      "contrastComputable_lean_why_rootCanvas_fail": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
-      "contrastComputable_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
       "contrastComputable_lean_why_selectOption_pass": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
       "contrastComputable_lean_why_selectOption_fail": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
       "contrastComputable_lean_caution_selectOption": "macOS など一部のプラットフォームは、開いたリストを独自の色で描画し、選択肢の色を無視します。",
+      "contrastComputable_cantTell_colorScheme": "このスキャンでは、ページが表示される配色 ({{blockerValue}}) でのこのテキストの色を読み取れなかったため、コントラストを計算できません。DOM エミュレーターはライトな配色の色を、prefers-color-scheme のルールなしで計算します。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
       "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つこの要素には、テキストによる代替がありません。",
@@ -41222,8 +42042,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
       "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
       "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
-      "linkInTextBlock_lean_why_rootCanvas": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、リンク独自の背景色 ({{background}}) は周囲の背景色 ({{around}}) と異なり、テキストの色に頼らずにリンクを示しています。",
-      "linkInTextBlock_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "文中のこのリンクは、周囲のテキストと色だけで区別されています。祖先要素の不透明度で両方が薄められる前の時点で {{ratio}}:1 ですが、薄められると両者の差は縮まります。これで十分なのは、描画された色でもなお 3:1 に達し、かつホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
@@ -63547,6 +64365,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
+      else if (rc === 'COLOR_SCHEME_NOT_RENDERED')
+        summaryKey = 'contrastComputable_cantTell_colorScheme';
       if (pseudo) summaryKey = 'contrastComputable_cantTell_generatedText';
 
       // Every cantTell leaves a person to measure the contrast, so each one
@@ -63684,7 +64504,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (dom.namespaceURI(el) === SVG_NS) return null;
       if (typeof C.isPlaceholderText === 'function' && C.isPlaceholderText(el)) return null;
       const cs = computedStyleOf(el);
+      // In the color scheme the page is drawn in (helpers.contrast.textFillColor).
       const fill =
+        (typeof C.textFillColor === 'function' && C.parseCssColorToRgba(C.textFillColor(el))) ||
         (cs && C.parseCssColorToRgba(cs.webkitTextFillColor || '')) ||
         (cs && C.parseCssColorToRgba(cs.color));
       return fill && fill.a === 1 ? { r: fill.r, g: fill.g, b: fill.b, a: 1 } : null;
@@ -63729,7 +64551,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // The lean for el's cantTell, by its blocker, or null.
-  function leanFor(el, reasonCode, bg) {
+  function leanFor(el, reasonCode) {
     try {
       if (!C || !el || dom.nodeType(el) !== 1) return null;
       const cs = styleOf(el);
@@ -63758,68 +64580,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             whyKey: 'contrastComputable_lean_why_opacity',
             cautionKey: 'contrastComputable_lean_caution_opacity',
             params: { ratio: ratioParam(ratio) }
-          }
-        };
-      }
-      // A page that sets no opaque background, at the top level of a
-      // window in a light color scheme, is drawn on the canvas the browser
-      // paints behind it, white unless the run names another.
-      if (reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') {
-        if (!bg || !bg.rgba) return null;
-        const doc = dom.ownerDocument(el);
-        let inFrame = true;
-        try {
-          const view = doc ? dom.defaultView(doc) : null;
-          inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
-        } catch {
-          inFrame = true;
-        }
-        if (inFrame) return null;
-        if (typeof C.colorsForced === 'function' && C.colorsForced()) return null;
-        const root = doc ? dom.documentElement(doc) : null;
-        const rootScheme = root ? String(computedStyleOf(root).colorScheme || '') : '';
-        const schemeMeta = doc
-          ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]')
-          : null;
-        const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
-        const darkScheme = /\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme);
-        if (darkScheme) return null;
-        const canvas = C.parseCssColorToRgba(rootCanvasFallback);
-        if (!canvas || canvas.a !== 1) return null;
-        const back = { ...C.compositeRgba(bg.rgba, canvas), a: 1 };
-        // Opacity fades the text and its background as one group, which
-        // the colours here don't model.
-        const fgInfo = C.computeEffectiveForeground(el);
-        if (!fgInfo || !fgInfo.rgba || fgInfo.opacityProduct !== 1) return null;
-        const fg =
-          fgInfo.rgba.a < 1 ? { ...C.compositeRgba(fgInfo.rgba, back), a: 1 } : { ...fgInfo.rgba };
-        const large = largeTextOf(el, cs);
-        const ratio = C.contrastRatio(fg, back);
-        const toward = towardFor(ratio, large);
-        if (!toward) return null;
-        const canvasHex = C.rgbToHex(canvas);
-        return {
-          toward,
-          why:
-            toward === 'pass'
-              ? `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches ${ratioParam(ratio)}:1, which meets the enhanced ratio for its size and so the minimum one too.`
-              : `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches only ${ratioParam(ratio)}:1, below the minimum ratio for its size.`,
-          signals: [
-            { signal: 'ratio-vs-canvas', value: Number(C.round2(ratio)) },
-            { signal: 'canvas-color', value: canvasHex },
-            { signal: 'in-frame', value: false },
-            { signal: 'color-scheme-dark', value: false },
-            { signal: 'large-text', value: !!large }
-          ],
-          caution:
-            'A page shown inside another page, or in a dark color scheme, sits on another background.',
-          i18n: {
-            whyKey:
-              toward === 'pass'
-                ? 'contrastComputable_lean_why_rootCanvas_pass'
-                : 'contrastComputable_lean_why_rootCanvas_fail',
-            cautionKey: 'contrastComputable_lean_caution_rootCanvas',
-            params: { ratio: ratioParam(ratio), canvas: canvasHex }
           }
         };
       }
@@ -64002,7 +64762,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               blockerSelector: blocker.blockerSelector,
               backgroundFillType: blocker.backgroundFillType
             },
-            leanFor(el, blocker.reasonCode, null)
+            leanFor(el, blocker.reasonCode)
           );
           continue;
         }
@@ -64078,7 +64838,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   }
                 : {})
             },
-            leanFor(el, bgCode, bg)
+            leanFor(el, bgCode)
           );
           continue;
         }
@@ -64378,6 +65138,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // The color schemes text on the page's canvas was measured in, where the
+  // page supports one it wasn't (acrossSchemes), for the pass's evidence.
+  let schemesChecked = null;
 
   function pushPassOccurrence(eligibleCount, computableCount) {
     try {
@@ -64402,7 +65165,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             metrics: {
               eligibleTextCount: Number(eligibleCount) || 0,
               computableTextCount: Number(computableCount) || 0
-            }
+            },
+            ...(schemesChecked ? { colorSchemesChecked: schemesChecked.slice(0) } : {})
           }
         }
       });
@@ -64567,6 +65331,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         occBase.i18n.hintKey = 'contrast_hint_drawnSize';
       }
 
+      // Text that falls short in one of the two color schemes the page
+      // supports, on its canvas: the hint names the scheme.
+      if (
+        det.colorScheme &&
+        !placeholder &&
+        !symbol &&
+        (occBase.i18n.hintKey === 'contrastEnhanced_hint_fail' ||
+          occBase.i18n.hintKey === 'contrast_hint_drawnSize')
+      ) {
+        const scheme = det.colorScheme === 'dark' ? 'dark' : 'light';
+        occBase.hint = `In the page's ${scheme} color scheme, this text has a contrast ratio of ${params.ratio}:1 against ${params.backgroundHex}, below ${params.threshold}:1. Change its colors in that scheme so the ratio reaches it.`;
+        occBase.i18n.hintKey = `contrast_hint_colorScheme_${scheme}`;
+      }
+
       if (special && !placeholder && !symbol) {
         const t = params && params.threshold;
         if (special.kind === 'logo') {
@@ -64671,6 +65449,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : null,
       bgAssumedRootCanvasColor:
         typeof m.bg.assumedRootCanvasColor === 'string' ? m.bg.assumedRootCanvasColor : null,
+      canvas: m.bg.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -64734,6 +65513,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ratio: pick.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(pick.ratio),
       threshold: pick.threshold,
       thresholdStr: `${pick.threshold}`,
@@ -64774,6 +65554,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ratio: m.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -64892,6 +65673,148 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
+  // Text measured against its background: bg and fg as computed, in
+  // `scheme` where given (a color scheme the page supports and isn't drawn
+  // in now, on its canvas: helpers.contrast.colorSchemeMeasurable), else as
+  // the page is drawn. { computable, ratio, threshold, ..., canvas }.
+  function mainAnalysis(el, scheme) {
+    let analysis;
+    // The caches hold the scheme the page is drawn in.
+    const bgCache = scheme ? null : __elBgCache;
+    const fgCache = scheme ? null : __elFgCache;
+    let bg = bgCache ? bgCache.get(el) : null;
+    if (!bg) {
+      bg = helpers.contrast.computeEffectiveBackground(el, {
+        contrast: { mode, rootCanvasFallback, ...(scheme ? { colorScheme: scheme } : {}) },
+        collectStack: false
+      });
+      // Not computable: contrast-computable asks about this text.
+      bg = bg || { ok: false, rgba: null, alpha: 0 };
+      if (bgCache) bgCache.set(el, bg);
+    }
+
+    const bgAssumptionsApplied =
+      bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+        ? bg.assumptionsApplied.slice(0)
+        : null;
+    const bgAssumedRootCanvasColor =
+      bg && typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null;
+
+    let fg = fgCache ? fgCache.get(el) : null;
+    if (!fg) {
+      fg = scheme
+        ? helpers.contrast.computeEffectiveForeground(el, { contrast: { colorScheme: scheme } })
+        : helpers.contrast.computeEffectiveForeground(el);
+      fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+      if (fgCache) fgCache.set(el, fg);
+    }
+
+    if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
+      analysis = { computable: false };
+      // Not where the text's own colour in the page's color scheme
+      // is what can't be read (bg.textColorUnknown).
+      if ((!bg || bg.ok === false || !bg.rgba) && !(bg && bg.textColorUnknown)) {
+        analysis.unreachable = unreachableOnAnyBackground(
+          el,
+          (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
+        );
+      }
+    } else {
+      // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
+      let fgOpaque =
+        fg.rgba.a != null && fg.rgba.a < 1
+          ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
+          : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+
+      let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+      // A drop-down select in the browser's own background is drawn
+      // on the Field colour in some browsers and on its computed
+      // background in others: text that fails on either fails, so
+      // the lower ratio counts.
+      const field =
+        typeof helpers.contrast.nativeSelectField === 'function'
+          ? helpers.contrast.nativeSelectField(el)
+          : null;
+      let selectField = null;
+      if (field) {
+        const fgOnField =
+          fg.rgba.a != null && fg.rgba.a < 1
+            ? helpers.contrast.compositeRgba(fg.rgba, field)
+            : fgOpaque;
+        const onField = helpers.contrast.contrastRatio(fgOnField, field);
+        selectField = {
+          backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+          fieldHex: helpers.contrast.rgbToHex(field)
+        };
+        if (onField < ratio) {
+          fgOpaque = fgOnField;
+          bgOpaque = field;
+          ratio = onField;
+        }
+      }
+
+      const font = getFontInfo(el);
+      const threshold = helpers.contrast.requiredRatio('AAA', font.isLargeText);
+
+      analysis = {
+        computable: true,
+        ratio,
+        bgAssumptionsApplied,
+        bgAssumedRootCanvasColor,
+        ratioStr: helpers.contrast.round2(ratio),
+        threshold,
+        thresholdStr: `${threshold}`,
+        font,
+        fgOpaque,
+        bgOpaque,
+        selectField,
+        canvas: bg.canvas || null
+      };
+    }
+    return analysis;
+  }
+
+  // Text on the page's canvas (analysis.canvas), on a page that supports
+  // two color schemes: measured in the one the page is drawn in, and in the
+  // other where its colours can't change with the scheme (measureIn,
+  // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
+  // scheme measured, by its ratio there, and colorScheme names that scheme
+  // where the other passes (failing in both, it is reported in the scheme
+  // the page is drawn in, naming none); it passes where it passes in each,
+  // by the ratio closest to its threshold.
+  // colorSchemesChecked lists the schemes measured where one wasn't.
+  function acrossSchemes(el, analysis, measureIn) {
+    const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
+    if (canvas.supported.length < 2) return analysis;
+    const measured = [{ scheme: canvas.scheme, a: analysis }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !measureIn) continue;
+      if (typeof helpers.contrast.colorSchemeMeasurable !== 'function') continue;
+      if (!helpers.contrast.colorSchemeMeasurable(el, scheme)) continue;
+      const other = measureIn(scheme);
+      if (other && other.computable === true && other.canvas && other.canvas.scheme === scheme)
+        measured.push({ scheme, a: other });
+    }
+    const share = (m) => m.a.ratio / m.a.threshold;
+    const failing = measured.filter((m) => !(m.a.ratio >= m.a.threshold));
+    // Failing in every scheme measured, it is reported as the page is drawn.
+    const pick =
+      failing.length === measured.length
+        ? measured[0]
+        : (failing.length ? failing : measured).reduce((best, m) =>
+            share(m) < share(best) ? m : best
+          );
+    const out = { ...pick.a };
+    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
+    const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
+    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
+    return out;
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
@@ -64908,7 +65831,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
+        let analysis = pseudo
+          ? acrossSchemes(el, generatedAnalysis(el, pseudo), null)
+          : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -64925,101 +65850,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) ||
-              pseudoColorAnalysis(el, blocker) || { computable: false };
+            analysis = acrossSchemes(
+              el,
+              outlineOnlyAnalysis(el, blocker) ||
+                pseudoColorAnalysis(el, blocker) || { computable: false },
+              null
+            );
             if (analysis.computable !== true && BACKGROUND_ONLY_BLOCKERS.has(blocker.reasonCode)) {
               analysis.unreachable = unreachableOnAnyBackground(el, blocker.reasonCode);
             }
           } else {
-            let bg = __elBgCache ? __elBgCache.get(el) : null;
-            if (!bg) {
-              bg = helpers.contrast.computeEffectiveBackground(el, {
-                contrast: { mode, rootCanvasFallback },
-                collectStack: false
-              });
-              // Not computable: contrast-computable asks about this text.
-              bg = bg || { ok: false, rgba: null, alpha: 0 };
-              if (__elBgCache) __elBgCache.set(el, bg);
-            }
-
-            const bgAssumptionsApplied =
-              bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
-                ? bg.assumptionsApplied.slice(0)
-                : null;
-            const bgAssumedRootCanvasColor =
-              bg && typeof bg.assumedRootCanvasColor === 'string'
-                ? bg.assumedRootCanvasColor
-                : null;
-
-            let fg = __elFgCache ? __elFgCache.get(el) : null;
-            if (!fg) {
-              fg = helpers.contrast.computeEffectiveForeground(el);
-              fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
-              if (__elFgCache) __elFgCache.set(el, fg);
-            }
-
-            if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
-              analysis = { computable: false };
-              if (!bg || bg.ok === false || !bg.rgba) {
-                analysis.unreachable = unreachableOnAnyBackground(
-                  el,
-                  (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
-                );
-              }
-            } else {
-              // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              let fgOpaque =
-                fg.rgba.a != null && fg.rgba.a < 1
-                  ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
-                  : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
-
-              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
-
-              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
-
-              // A drop-down select in the browser's own background is drawn
-              // on the Field colour in some browsers and on its computed
-              // background in others: text that fails on either fails, so
-              // the lower ratio counts.
-              const field =
-                typeof helpers.contrast.nativeSelectField === 'function'
-                  ? helpers.contrast.nativeSelectField(el)
-                  : null;
-              let selectField = null;
-              if (field) {
-                const fgOnField =
-                  fg.rgba.a != null && fg.rgba.a < 1
-                    ? helpers.contrast.compositeRgba(fg.rgba, field)
-                    : fgOpaque;
-                const onField = helpers.contrast.contrastRatio(fgOnField, field);
-                selectField = {
-                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
-                  fieldHex: helpers.contrast.rgbToHex(field)
-                };
-                if (onField < ratio) {
-                  fgOpaque = fgOnField;
-                  bgOpaque = field;
-                  ratio = onField;
-                }
-              }
-
-              const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AAA', font.isLargeText);
-
-              analysis = {
-                computable: true,
-                ratio,
-                bgAssumptionsApplied,
-                bgAssumedRootCanvasColor,
-                ratioStr: helpers.contrast.round2(ratio),
-                threshold,
-                thresholdStr: `${threshold}`,
-                font,
-                fgOpaque,
-                bgOpaque,
-                selectField
-              };
-            }
+            analysis = acrossSchemes(el, mainAnalysis(el, null), (scheme) =>
+              mainAnalysis(el, scheme)
+            );
           }
           __elAnalysisCache.set(el, analysis);
         }
@@ -65033,6 +65876,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
+        // Text on the canvas measured in only some of the page's color schemes.
+        if (analysis.colorSchemesChecked && !schemesChecked)
+          schemesChecked = analysis.colorSchemesChecked;
 
         const ratio = analysis.ratio;
         const font = analysis.font;
@@ -65164,7 +66010,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
-            ...(pseudo ? { generatedBy: pseudo } : {})
+            ...(pseudo ? { generatedBy: pseudo } : {}),
+            // On the canvas of a page with two color schemes: the one it
+            // fails in, where it passes in the other, and those measured,
+            // where one wasn't (acrossSchemes).
+            ...(analysis.colorScheme ? { colorScheme: analysis.colorScheme } : {}),
+            ...(analysis.colorSchemesChecked
+              ? { colorSchemesChecked: analysis.colorSchemesChecked.slice(0) }
+              : {})
           };
 
           let special = null;
@@ -65445,6 +66298,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // The color schemes text on the page's canvas was measured in, where the
+  // page supports one it wasn't (acrossSchemes), for the pass's evidence.
+  let schemesChecked = null;
 
   function pushPassOccurrence(eligibleCount, computableCount) {
     try {
@@ -65469,7 +66325,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             metrics: {
               eligibleTextCount: Number(eligibleCount) || 0,
               computableTextCount: Number(computableCount) || 0
-            }
+            },
+            ...(schemesChecked ? { colorSchemesChecked: schemesChecked.slice(0) } : {})
           }
         }
       });
@@ -65674,6 +66531,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (params && params.sizeNote && !placeholder && !symbol) {
         occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
         occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
+
+      // Text that falls short in one of the two color schemes the page
+      // supports, on its canvas: the hint names the scheme.
+      if (
+        det.colorScheme &&
+        !placeholder &&
+        !symbol &&
+        (occBase.i18n.hintKey === 'contrastMinimum_hint_fail' ||
+          occBase.i18n.hintKey === 'contrast_hint_drawnSize')
+      ) {
+        const scheme = det.colorScheme === 'dark' ? 'dark' : 'light';
+        occBase.hint = `In the page's ${scheme} color scheme, this text has a contrast ratio of ${params.ratio}:1 against ${params.backgroundHex}, below ${params.threshold}:1. Change its colors in that scheme so the ratio reaches it.`;
+        occBase.i18n.hintKey = `contrast_hint_colorScheme_${scheme}`;
       }
       if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
@@ -65894,6 +66765,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           : null,
       bgAssumedRootCanvasColor:
         typeof m.bg.assumedRootCanvasColor === 'string' ? m.bg.assumedRootCanvasColor : null,
+      canvas: m.bg.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -65971,6 +66843,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ratio: pick.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(pick.ratio),
       threshold: pick.threshold,
       thresholdStr: `${pick.threshold}`,
@@ -66019,6 +66892,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ratio: m.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -66026,6 +66900,145 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       fgOpaque: m.fg,
       bgOpaque: m.bg
     };
+  }
+
+  // Text measured against its background: bg and fg as computed, in
+  // `scheme` where given (a color scheme the page supports and isn't drawn
+  // in now, on its canvas: helpers.contrast.colorSchemeMeasurable), else as
+  // the page is drawn. { computable, ratio, threshold, ..., canvas }.
+  function mainAnalysis(el, scheme) {
+    let analysis;
+    // The caches hold the scheme the page is drawn in.
+    const bgCache = scheme ? null : __elBgCache;
+    const fgCache = scheme ? null : __elFgCache;
+    let bg = bgCache ? bgCache.get(el) : null;
+    if (!bg) {
+      bg = helpers.contrast.computeEffectiveBackground(el, {
+        contrast: { mode, rootCanvasFallback, ...(scheme ? { colorScheme: scheme } : {}) },
+        collectStack: false
+      });
+      // Not computable: contrast-computable asks about this text.
+      bg = bg || { ok: false, rgba: null, alpha: 0 };
+      if (bgCache) bgCache.set(el, bg);
+    }
+
+    const bgAssumptionsApplied =
+      bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+        ? bg.assumptionsApplied.slice(0)
+        : null;
+    const bgAssumedRootCanvasColor =
+      bg && typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null;
+
+    let fg = fgCache ? fgCache.get(el) : null;
+    if (!fg) {
+      fg = scheme
+        ? helpers.contrast.computeEffectiveForeground(el, { contrast: { colorScheme: scheme } })
+        : helpers.contrast.computeEffectiveForeground(el);
+      fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+      if (fgCache) fgCache.set(el, fg);
+    }
+
+    if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
+      analysis = { computable: false };
+    } else {
+      // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
+      let fgOpaque =
+        fg.rgba.a != null && fg.rgba.a < 1
+          ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
+          : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+
+      let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+      // A drop-down select in the browser's own background is drawn
+      // on the Field colour in some browsers and on its computed
+      // background in others: text that fails on either fails, so
+      // the lower ratio counts.
+      const field =
+        typeof helpers.contrast.nativeSelectField === 'function'
+          ? helpers.contrast.nativeSelectField(el)
+          : null;
+      let selectField = null;
+      if (field) {
+        const fgOnField =
+          fg.rgba.a != null && fg.rgba.a < 1
+            ? helpers.contrast.compositeRgba(fg.rgba, field)
+            : fgOpaque;
+        const onField = helpers.contrast.contrastRatio(fgOnField, field);
+        selectField = {
+          backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+          fieldHex: helpers.contrast.rgbToHex(field)
+        };
+        if (onField < ratio) {
+          fgOpaque = fgOnField;
+          bgOpaque = field;
+          ratio = onField;
+        }
+      }
+
+      const font = getFontInfo(el);
+      const threshold =
+        SETTINGS_KEY === ''
+          ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+          : font.isLargeText
+            ? LARGE_TEXT_RATIO
+            : NORMAL_TEXT_RATIO;
+
+      analysis = {
+        computable: true,
+        ratio,
+        bgAssumptionsApplied,
+        bgAssumedRootCanvasColor,
+        ratioStr: helpers.contrast.round2(ratio),
+        threshold,
+        thresholdStr: `${threshold}`,
+        font,
+        fgOpaque,
+        bgOpaque,
+        selectField,
+        canvas: bg.canvas || null
+      };
+    }
+    return analysis;
+  }
+
+  // Text on the page's canvas (analysis.canvas), on a page that supports
+  // two color schemes: measured in the one the page is drawn in, and in the
+  // other where its colours can't change with the scheme (measureIn,
+  // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
+  // scheme measured, by its ratio there, and colorScheme names that scheme
+  // where the other passes (failing in both, it is reported in the scheme
+  // the page is drawn in, naming none); it passes where it passes in each,
+  // by the ratio closest to its threshold.
+  // colorSchemesChecked lists the schemes measured where one wasn't.
+  function acrossSchemes(el, analysis, measureIn) {
+    const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
+    if (canvas.supported.length < 2) return analysis;
+    const measured = [{ scheme: canvas.scheme, a: analysis }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !measureIn) continue;
+      if (typeof helpers.contrast.colorSchemeMeasurable !== 'function') continue;
+      if (!helpers.contrast.colorSchemeMeasurable(el, scheme)) continue;
+      const other = measureIn(scheme);
+      if (other && other.computable === true && other.canvas && other.canvas.scheme === scheme)
+        measured.push({ scheme, a: other });
+    }
+    const share = (m) => m.a.ratio / m.a.threshold;
+    const failing = measured.filter((m) => !(m.a.ratio >= m.a.threshold));
+    // Failing in every scheme measured, it is reported as the page is drawn.
+    const pick =
+      failing.length === measured.length
+        ? measured[0]
+        : (failing.length ? failing : measured).reduce((best, m) =>
+            share(m) < share(best) ? m : best
+          );
+    const out = { ...pick.a };
+    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
+    const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
+    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
+    return out;
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -66044,7 +67057,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
+        let analysis = pseudo
+          ? acrossSchemes(el, generatedAnalysis(el, pseudo), null)
+          : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -66061,97 +67076,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) ||
-              pseudoColorAnalysis(el, blocker) || { computable: false };
+            analysis = acrossSchemes(
+              el,
+              outlineOnlyAnalysis(el, blocker) ||
+                pseudoColorAnalysis(el, blocker) || { computable: false },
+              null
+            );
           } else {
-            let bg = __elBgCache ? __elBgCache.get(el) : null;
-            if (!bg) {
-              bg = helpers.contrast.computeEffectiveBackground(el, {
-                contrast: { mode, rootCanvasFallback },
-                collectStack: false
-              });
-              // Not computable: contrast-computable asks about this text.
-              bg = bg || { ok: false, rgba: null, alpha: 0 };
-              if (__elBgCache) __elBgCache.set(el, bg);
-            }
-
-            const bgAssumptionsApplied =
-              bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
-                ? bg.assumptionsApplied.slice(0)
-                : null;
-            const bgAssumedRootCanvasColor =
-              bg && typeof bg.assumedRootCanvasColor === 'string'
-                ? bg.assumedRootCanvasColor
-                : null;
-
-            let fg = __elFgCache ? __elFgCache.get(el) : null;
-            if (!fg) {
-              fg = helpers.contrast.computeEffectiveForeground(el);
-              fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
-              if (__elFgCache) __elFgCache.set(el, fg);
-            }
-
-            if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
-              analysis = { computable: false };
-            } else {
-              // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              let fgOpaque =
-                fg.rgba.a != null && fg.rgba.a < 1
-                  ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
-                  : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
-
-              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
-
-              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
-
-              // A drop-down select in the browser's own background is drawn
-              // on the Field colour in some browsers and on its computed
-              // background in others: text that fails on either fails, so
-              // the lower ratio counts.
-              const field =
-                typeof helpers.contrast.nativeSelectField === 'function'
-                  ? helpers.contrast.nativeSelectField(el)
-                  : null;
-              let selectField = null;
-              if (field) {
-                const fgOnField =
-                  fg.rgba.a != null && fg.rgba.a < 1
-                    ? helpers.contrast.compositeRgba(fg.rgba, field)
-                    : fgOpaque;
-                const onField = helpers.contrast.contrastRatio(fgOnField, field);
-                selectField = {
-                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
-                  fieldHex: helpers.contrast.rgbToHex(field)
-                };
-                if (onField < ratio) {
-                  fgOpaque = fgOnField;
-                  bgOpaque = field;
-                  ratio = onField;
-                }
-              }
-
-              const font = getFontInfo(el);
-              const threshold =
-                SETTINGS_KEY === ''
-                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
-                  : font.isLargeText
-                    ? LARGE_TEXT_RATIO
-                    : NORMAL_TEXT_RATIO;
-
-              analysis = {
-                computable: true,
-                ratio,
-                bgAssumptionsApplied,
-                bgAssumedRootCanvasColor,
-                ratioStr: helpers.contrast.round2(ratio),
-                threshold,
-                thresholdStr: `${threshold}`,
-                font,
-                fgOpaque,
-                bgOpaque,
-                selectField
-              };
-            }
+            analysis = acrossSchemes(el, mainAnalysis(el, null), (scheme) =>
+              mainAnalysis(el, scheme)
+            );
           }
           __elAnalysisCache.set(el, analysis);
         }
@@ -66166,6 +67100,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
+        // Text on the canvas measured in only some of the page's color schemes.
+        if (analysis.colorSchemesChecked && !schemesChecked)
+          schemesChecked = analysis.colorSchemesChecked;
 
         const ratio = analysis.ratio;
         const font = analysis.font;
@@ -66320,7 +67257,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
-            ...(pseudo ? { generatedBy: pseudo } : {})
+            ...(pseudo ? { generatedBy: pseudo } : {}),
+            // On the canvas of a page with two color schemes: the one it
+            // fails in, where it passes in the other, and those measured,
+            // where one wasn't (acrossSchemes).
+            ...(analysis.colorScheme ? { colorScheme: analysis.colorScheme } : {}),
+            ...(analysis.colorSchemesChecked
+              ? { colorSchemesChecked: analysis.colorSchemesChecked.slice(0) }
+              : {})
           };
 
           pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
@@ -79852,56 +80796,69 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // A link with a highlight of its own on a page that sets no opaque
-  // background: at the top level of a window in a light color scheme, the
-  // page is drawn on the canvas the browser paints behind it, white (a
-  // canvas the run names decides the link instead). It leans pass where the highlight differs from
-  // the background around it on that canvas.
-  function rootCanvasLean(el, highlight, around) {
-    try {
-      const doc = dom.ownerDocument(el);
-      let inFrame = true;
-      try {
-        const view = doc ? dom.defaultView(doc) : null;
-        inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
-      } catch {
-        inFrame = true;
-      }
-      if (inFrame) return null;
-      if (typeof c.colorsForced === 'function' && c.colorsForced()) return null;
-      const root = doc ? dom.documentElement(doc) : null;
-      const rootScheme = String((safeComputedStyle(root) || {}).colorScheme || '');
-      const schemeMeta = doc ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]') : null;
-      const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
-      if (/\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme)) return null;
-      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
-      if (!canvas || canvas.a !== 1) return null;
-      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
-      const ownHex = c.rgbToHex(highlight);
-      const aroundHex = c.rgbToHex(surround);
-      if (ownHex === aroundHex) return null;
-      const canvasHex = c.rgbToHex(canvas);
-      return {
-        toward: 'pass',
-        why: `On the canvas a browser paints behind a page with no background (${canvasHex}), the link's own background color (${ownHex}) differs from the one around it (${aroundHex}), which marks it without relying on its text color.`,
-        signals: [
-          { signal: 'link-own-background', value: ownHex },
-          { signal: 'background-around', value: aroundHex },
-          { signal: 'canvas-color', value: canvasHex },
-          { signal: 'in-frame', value: false },
-          { signal: 'color-scheme-dark', value: false }
-        ],
-        caution:
-          'A page shown inside another page, or in a dark color scheme, sits on another background.',
-        i18n: {
-          whyKey: 'linkInTextBlock_lean_why_rootCanvas',
-          cautionKey: 'linkInTextBlock_lean_caution_rootCanvas',
-          params: { canvas: canvasHex, background: ownHex, around: aroundHex }
-        }
+  // A link whose own highlight is compared with the page's canvas around it
+  // (parentBg.canvas), on a page that supports two color schemes: compared
+  // in the scheme the page is drawn in (`current`: { differs, ratio,
+  // fgLinkHex, fgParentHex }) and, where `others` and the colours of the
+  // link and the text around it can't change with the scheme
+  // (helpers.contrast.colorSchemeMeasurable), in the other, with the
+  // link's and the text's colours there. The highlight sets the link apart
+  // where it does in each scheme measured; where it doesn't in one, the
+  // link is judged there by its colour, failing below 3:1. detail:
+  // colorScheme, the scheme it falls short in where it doesn't in the
+  // other, and colorSchemesChecked, the schemes measured where one wasn't.
+  // { differs, ratio, fgLinkHex, fgParentHex, detail }, or null on a page
+  // with one scheme or a canvas the run names.
+  function highlightAcrossSchemes(nodes, current, others) {
+    const { el, textEl, parent, parentBg } = nodes;
+    const canvas = parentBg && parentBg.canvas;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return null;
+    if (canvas.supported.length < 2) return null;
+    const all = [{ scheme: canvas.scheme, ...current }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !others) continue;
+      if (typeof c.colorSchemeMeasurable !== 'function') continue;
+      if (![el, textEl, parent].every((n) => c.colorSchemeMeasurable(n, scheme))) continue;
+      const opts = {
+        contrast: { mode, rootCanvasFallback, colorScheme: scheme },
+        collectStack: false
       };
-    } catch {
-      return null;
+      const own = c.computeEffectiveBackground(el, opts);
+      const around = c.computeEffectiveBackground(parent, opts);
+      const textBg = c.computeEffectiveBackground(textEl, opts);
+      const fgLink = c.computeEffectiveForeground(el, opts);
+      const fgText = c.computeEffectiveForeground(textEl, opts);
+      if (!own || !own.ok || !around || !around.ok || !textBg || !textBg.ok) continue;
+      if (!around.canvas || around.canvas.scheme !== scheme) continue;
+      if (!fgLink || !fgLink.rgba || !fgText || !fgText.rgba) continue;
+      const opaque = (fg, back) =>
+        fg.rgba.a < 1 ? { ...c.compositeRgba(fg.rgba, back.rgba), a: 1 } : { ...fg.rgba, a: 1 };
+      const linkFg = opaque(fgLink, own);
+      const textFg = opaque(fgText, textBg);
+      all.push({
+        scheme,
+        differs: c.rgbToHex(own.rgba) !== c.rgbToHex(around.rgba),
+        ratio: c.contrastRatio(linkFg, textFg),
+        fgLinkHex: c.rgbToHex(linkFg),
+        fgParentHex: c.rgbToHex(textFg)
+      });
     }
+    const verdict = (r) => (r.differs ? 'pass' : r.ratio >= 3 ? 'ask' : 'fail');
+    const fails = all.filter((r) => verdict(r) === 'fail');
+    const asks = all.filter((r) => verdict(r) === 'ask');
+    const short = fails.length ? fails : asks;
+    const pick = short.length ? short[0] : all[0];
+    const detail = {};
+    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
+    const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
+    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    return {
+      differs: !short.length,
+      ratio: pick.ratio,
+      fgLinkHex: pick.fgLinkHex,
+      fgParentHex: pick.fgParentHex,
+      detail
+    };
   }
 
   // Whether the page's style sheets give the link a non-color cue on hover
@@ -80307,6 +81264,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // The colours of the link or of the text around it in the color scheme
+    // the page is drawn in can't be read (an emulator:
+    // helpers.contrast.colorSchemeUnread), so nothing they would decide is
+    // known, and no lean either.
+    if (
+      typeof c.colorSchemeUnread === 'function' &&
+      (c.colorSchemeUnread(el) || c.colorSchemeUnread(textEl))
+    ) {
+      markUndecided(el, 'COLOR_NOT_COMPUTABLE');
+      continue;
+    }
+
     let flagged = false;
     let computed = false;
     let backgroundDiffers = false;
@@ -80320,6 +81289,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // A highlight of the link's own over a page with no background of its
     // own: { highlight, around }, the background around it before the canvas.
     let rootUnknown = null;
+    // On the canvas of a page with two color schemes: the scheme in which the
+    // highlight doesn't set the link apart, and the schemes measured
+    // (highlightAcrossSchemes).
+    let schemeDetail = null;
     // Whether the ratio is that of the colors before an ancestor's opacity
     // fades them, which can only bring them closer: not the ratio drawn.
     let beforeOpacity = false;
@@ -80443,6 +81416,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
               backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+              // Around it is the page's canvas, in the scheme the page is
+              // drawn in: in the other the page supports, it is measured
+              // too, as the contrast rules measure text there.
+              const across = highlightAcrossSchemes(
+                { el, textEl, parent, parentBg },
+                { differs: backgroundDiffers, ratio, fgLinkHex, fgParentHex },
+                !pseudo && !firstLine
+              );
+              if (across) {
+                backgroundDiffers = across.differs;
+                if (!across.differs) {
+                  ratio = across.ratio;
+                  fgLinkHex = across.fgLinkHex;
+                  fgParentHex = across.fgParentHex;
+                  flagged = !(ratio >= 3);
+                }
+                if (Object.keys(across.detail).length) schemeDetail = across.detail;
+              }
             } else if (
               parentBg &&
               parentBg.reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT' &&
@@ -80502,11 +81493,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Below 3:1, a highlight of the link's own would set it apart, but
     // whether it differs from the canvas the page is drawn on is unknown.
     if (flagged && rootUnknown) {
-      markUndecided(
-        el,
-        'BACKGROUND_NOT_OPAQUE_AT_ROOT',
-        rootCanvasLean(el, rootUnknown.highlight, rootUnknown.around)
-      );
+      markUndecided(el, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
       continue;
     }
 
@@ -80514,7 +81501,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // non-color cue on hover and focus, which a static scan cannot see.
     colorCompared += 1;
     if (!flagged) {
-      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity });
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail });
       continue;
     }
 
@@ -80546,7 +81533,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             metrics: beforeOpacity
               ? { ratioBeforeOpacity: ratio, threshold: 3 }
               : { ratio, threshold: 3 },
-            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex },
+            ...(schemeDetail || {})
           }
         }
       })
@@ -80588,7 +81576,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // metrics.ratio: the fading brings them closer, so the ratio drawn may be
   // lower, and below 3:1.
   const contrastOnlyOccurrences = contrastOnly.map(
-    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity }) => {
+    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail }) => {
       const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
       const lean = contrastOnlyLean(el, ratio, beforeOpacity);
       return helpers.reportOccurrence(el, {
@@ -80621,7 +81609,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             metrics: beforeOpacity
               ? { ratioBeforeOpacity: ratio, threshold: 3 }
               : { ratio, threshold: 3 },
-            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex },
+            ...(schemeDetail || {})
           }
         }
       });
@@ -96266,6 +97255,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
+      "contrast_hint_colorScheme_dark": "Im dunklen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
+      "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
       "contrastMinimum_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 4,5:1 (normal) oder 3:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastMinimum_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -96301,12 +97292,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_notComputable": "Der Kontrast konnte für diesen Text nicht berechnet werden ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Schon vor jedem Verblassen erreicht der Text gegenüber seinem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe, und wenn Text und Hintergrund gemeinsam verblassen, rücken sie nur näher zusammen.",
       "contrastComputable_lean_caution_opacity": "Browser mischen die verblassten Farben auf eine Weise, die das Verhältnis leicht verschieben kann, und ein Filter oder Mischmodus weiter außen wird nicht berücksichtigt.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), erreicht der Text nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
-      "contrastComputable_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
       "contrastComputable_lean_why_selectOption_pass": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund {{ratio}}:1; das erfüllt das erhöhte Verhältnis für seine Größe und damit auch das Mindestverhältnis.",
       "contrastComputable_lean_why_selectOption_fail": "In den eigenen Farben der Option erreicht ihr Text in der geöffneten Liste gegenüber ihrem Hintergrund nur {{ratio}}:1, unter dem Mindestverhältnis für seine Größe.",
       "contrastComputable_lean_caution_selectOption": "Manche Plattformen, darunter macOS, zeichnen die geöffnete Liste in ihren eigenen Farben und ignorieren die der Option.",
+      "contrastComputable_cantTell_colorScheme": "Der Kontrast ist nicht berechenbar, weil diese Prüfung die Farben dieses Textes im Farbschema, in dem die Seite angezeigt wird ({{blockerValue}}), nicht lesen konnte: Ein DOM-Emulator berechnet die Farben des hellen Farbschemas, ohne prefers-color-scheme-Regeln.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] muss eine zugängliche Textalternative haben",
       "roleImg_textAlternativePresent_description": "Prüft, ob Elemente mit role=\"img\", \"graphics-symbol\" oder \"graphics-document\" eine zugängliche Textalternative über aria-label, aria-labelledby, ein title-Attribut oder (bei SVG-Elementen) ein <title>-Kindelement bereitstellen.",
       "roleImg_textAlternativePresent_summary_fail": "Dieses Element mit role=\"{{role}}\" hat keine Textalternative.",
@@ -97008,8 +97997,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
       "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
       "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
-      "linkInTextBlock_lean_why_rootCanvas": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), unterscheidet sich die eigene Hintergrundfarbe des Links ({{background}}) von der um ihn herum ({{around}}); das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe, mit {{ratio}}:1, bevor die Deckkraft eines Vorfahren beide verblassen lässt, was sie näher zusammenrückt. Das genügt nur, wenn die Farben, wie sie gezeichnet werden, noch 3:1 erreichen und Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
@@ -97600,6 +98587,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
+      "contrast_hint_colorScheme_dark": "In the page's dark color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
+      "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
       "contrastMinimum_description": "Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 (large), when contrast is computable from CSS.",
       "contrastMinimum_fail_belowThreshold": "Element has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -97635,12 +98624,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_notComputable": "Contrast could not be computed for this text ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Before any fading, the text reaches only {{ratio}}:1 against its background, below the minimum ratio for its size, and fading text and background together can only bring them closer.",
       "contrastComputable_lean_caution_opacity": "Browsers blend the faded colors in a way that can shift the ratio slightly, and a filter or blend mode further out is not accounted for.",
-      "contrastComputable_lean_why_rootCanvas_pass": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches {{ratio}}:1, which meets the enhanced ratio for its size and so the minimum one too.",
-      "contrastComputable_lean_why_rootCanvas_fail": "On the canvas a browser paints behind a page with no background ({{canvas}}), the text reaches only {{ratio}}:1, below the minimum ratio for its size.",
-      "contrastComputable_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
       "contrastComputable_lean_why_selectOption_pass": "In the option's own colors, its text reaches {{ratio}}:1 against its background in the open list, which meets the enhanced ratio for its size and so the minimum one too.",
       "contrastComputable_lean_why_selectOption_fail": "In the option's own colors, its text reaches only {{ratio}}:1 against its background in the open list, below the minimum ratio for its size.",
       "contrastComputable_lean_caution_selectOption": "Some platforms, macOS among them, draw the open list in their own colors and ignore the option’s.",
+      "contrastComputable_cantTell_colorScheme": "Contrast is not computable because this scan could not read this text's colors in the color scheme the page is drawn in ({{blockerValue}}): a DOM emulator computes the light scheme's colors, without prefers-color-scheme rules.",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] must have an accessible text alternative",
       "roleImg_textAlternativePresent_description": "Checks that elements with role=\"img\", \"graphics-symbol\" or \"graphics-document\" provide an accessible text alternative using aria-label, aria-labelledby, a title attribute, or (for SVG elements) a child <title>.",
       "roleImg_textAlternativePresent_summary_fail": "This element with role=\"{{role}}\" has no text alternative.",
@@ -98342,8 +99329,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
       "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
       "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
-      "linkInTextBlock_lean_why_rootCanvas": "On the canvas a browser paints behind a page with no background ({{canvas}}), the link's own background color ({{background}}) differs from the one around it ({{around}}), which marks it without relying on its text color.",
-      "linkInTextBlock_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "This link in a block of text is distinguished from the surrounding text only by its color, at {{ratio}}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
@@ -98934,6 +99919,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
+      "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
+      "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
       "contrastMinimum_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 4.5:1 (normal) o 3:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastMinimum_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -98969,12 +99956,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_notComputable": "No se pudo calcular el contraste para este texto ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Antes de cualquier atenuación, el texto solo alcanza {{ratio}}:1 frente a su fondo, por debajo de la relación mínima para su tamaño, y atenuar juntos el texto y el fondo solo puede acercarlos.",
       "contrastComputable_lean_caution_opacity": "Los navegadores mezclan los colores atenuados de un modo que puede desplazar ligeramente la relación, y no se tiene en cuenta un filtro o un modo de fusión más externo.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto alcanza {{ratio}}:1, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el texto solo alcanza {{ratio}}:1, por debajo de la relación mínima para su tamaño.",
-      "contrastComputable_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
       "contrastComputable_lean_why_selectOption_pass": "Con los colores propios de la opción, su texto alcanza {{ratio}}:1 frente a su fondo en la lista abierta, lo que cumple la relación mejorada para su tamaño y, por tanto, también la mínima.",
       "contrastComputable_lean_why_selectOption_fail": "Con los colores propios de la opción, su texto solo alcanza {{ratio}}:1 frente a su fondo en la lista abierta, por debajo de la relación mínima para su tamaño.",
       "contrastComputable_lean_caution_selectOption": "Algunas plataformas, entre ellas macOS, dibujan la lista abierta con sus propios colores e ignoran los de la opción.",
+      "contrastComputable_cantTell_colorScheme": "El contraste no se puede calcular porque este análisis no pudo leer los colores de este texto en el esquema de color en que se muestra la página ({{blockerValue}}): un emulador de DOM calcula los colores del esquema claro, sin las reglas prefers-color-scheme.",
       "roleImg_textAlternativePresent_title": "Los elementos con role=\"img\"/\"graphics-symbol\"/\"graphics-document\" deben tener una alternativa textual accesible",
       "roleImg_textAlternativePresent_description": "Comprueba que los elementos con role=\"img\", \"graphics-symbol\" o \"graphics-document\" proporcionen una alternativa textual accesible mediante aria-label, aria-labelledby, un atributo title o (en elementos SVG) un hijo <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Este elemento con role=\"{{role}}\" no tiene alternativa textual.",
@@ -99676,8 +100661,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
       "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
       "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
-      "linkInTextBlock_lean_why_rootCanvas": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el color de fondo propio del enlace ({{background}}) es distinto del que lo rodea ({{around}}), lo que lo señala sin depender del color de su texto.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color, a {{ratio}}:1 antes de que la opacidad de un ancestro atenúe ambos, lo que los acerca. Eso solo basta si los colores tal como se dibujan siguen alcanzando 3:1 y si al pasar el cursor y al recibir el foco el enlace también muestra una señal distinta del color, como un subrayado.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
@@ -100268,6 +101251,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
+      "contrast_hint_colorScheme_dark": "Dans le jeu de couleurs sombre de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
+      "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
       "contrastMinimum_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 4,5:1 (texte normal) ou 3:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastMinimum_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -100303,12 +101288,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_notComputable": "Le contraste ne peut pas être calculé pour ce texte ({{reasonCode}}).",
       "contrastComputable_lean_why_opacity": "Avant tout fondu, le texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan, en dessous du ratio minimal pour sa taille, et estomper ensemble le texte et l’arrière-plan ne peut que les rapprocher.",
       "contrastComputable_lean_caution_opacity": "Les navigateurs mélangent les couleurs estompées d’une manière qui peut modifier légèrement le ratio, et un filtre ou un mode de fusion plus éloigné n’est pas pris en compte.",
-      "contrastComputable_lean_why_rootCanvas_pass": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte atteint {{ratio}}:1, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
-      "contrastComputable_lean_why_rootCanvas_fail": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), le texte n’atteint que {{ratio}}:1, en dessous du ratio minimal pour sa taille.",
-      "contrastComputable_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
       "contrastComputable_lean_why_selectOption_pass": "Dans les couleurs propres de l’option, son texte atteint {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, ce qui respecte le ratio renforcé pour sa taille, et donc aussi le ratio minimal.",
       "contrastComputable_lean_why_selectOption_fail": "Dans les couleurs propres de l’option, son texte n’atteint que {{ratio}}:1 par rapport à son arrière-plan dans la liste ouverte, en dessous du ratio minimal pour sa taille.",
       "contrastComputable_lean_caution_selectOption": "Certaines plateformes, dont macOS, dessinent la liste ouverte dans leurs propres couleurs et ignorent celles de l’option.",
+      "contrastComputable_cantTell_colorScheme": "Le contraste n’est pas calculable, car cette analyse n’a pas pu lire les couleurs de ce texte dans le jeu de couleurs où la page est affichée ({{blockerValue}}) : un émulateur de DOM calcule les couleurs du jeu clair, sans les règles prefers-color-scheme.",
       "roleImg_textAlternativePresent_title": "Les éléments avec role=\"img\"/\"graphics-symbol\"/\"graphics-document\" doivent avoir un équivalent textuel accessible",
       "roleImg_textAlternativePresent_description": "Vérifie que les éléments ayant le rôle \"img\", \"graphics-symbol\" ou \"graphics-document\" fournissent un équivalent textuel accessible via aria-label, aria-labelledby, un attribut title, ou (pour les éléments SVG) un enfant <title>.",
       "roleImg_textAlternativePresent_summary_fail": "Cet élément avec role=\"{{role}}\" n’a pas d’équivalent textuel.",
@@ -101010,8 +101993,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
       "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
       "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
-      "linkInTextBlock_lean_why_rootCanvas": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), la couleur d’arrière-plan propre au lien ({{background}}) diffère de celle qui l’entoure ({{around}}), ce qui le signale sans dépendre de la couleur de son texte.",
-      "linkInTextBlock_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur, à {{ratio}}:1 avant que l’opacité d’un ancêtre n’estompe les deux, ce qui les rapproche. Cela ne suffit que si les couleurs telles qu’elles sont affichées atteignent encore 3:1 et que le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
@@ -101602,6 +102583,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
+      "contrast_hint_colorScheme_dark": "ページのダークな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
+      "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
       "contrastMinimum_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 4.5:1 以上 (通常のテキスト) または 3:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastMinimum_fail_belowThreshold": "要素の色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -101637,12 +102620,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_notComputable": "このテキストのコントラストを計算できませんでした ({{reasonCode}})。",
       "contrastComputable_lean_why_opacity": "薄められる前の時点で、テキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回っています。テキストと背景を一緒に薄めても、両者の差は縮まるだけです。",
       "contrastComputable_lean_caution_opacity": "ブラウザーは薄めた色を混ぜ合わせる際にコントラスト比をわずかにずらすことがあり、さらに外側にあるフィルターや合成モードは考慮していません。",
-      "contrastComputable_lean_why_rootCanvas_pass": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
-      "contrastComputable_lean_why_rootCanvas_fail": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、テキストは {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
-      "contrastComputable_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
       "contrastComputable_lean_why_selectOption_pass": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 に達します。これはそのサイズの強化されたコントラスト比を満たし、したがって最低限のコントラスト比も満たします。",
       "contrastComputable_lean_why_selectOption_fail": "選択肢自身の色では、開いたリストの中でそのテキストは背景に対して {{ratio}}:1 にしか達せず、そのサイズの最低限のコントラスト比を下回ります。",
       "contrastComputable_lean_caution_selectOption": "macOS など一部のプラットフォームは、開いたリストを独自の色で描画し、選択肢の色を無視します。",
+      "contrastComputable_cantTell_colorScheme": "このスキャンでは、ページが表示される配色 ({{blockerValue}}) でのこのテキストの色を読み取れなかったため、コントラストを計算できません。DOM エミュレーターはライトな配色の色を、prefers-color-scheme のルールなしで計算します。",
       "roleImg_textAlternativePresent_title": "[role=\"img\"/\"graphics-symbol\"/\"graphics-document\"] にはアクセシブルなテキストによる代替が必要",
       "roleImg_textAlternativePresent_description": "role=\"img\"、\"graphics-symbol\"、\"graphics-document\" を持つ要素に、aria-label、aria-labelledby、title 属性、または (SVG 要素の場合は) 子要素の <title> によるアクセシブルなテキストによる代替があるかを確認します。",
       "roleImg_textAlternativePresent_summary_fail": "role=\"{{role}}\" を持つこの要素には、テキストによる代替がありません。",
@@ -102344,8 +103325,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
       "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
       "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
-      "linkInTextBlock_lean_why_rootCanvas": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、リンク独自の背景色 ({{background}}) は周囲の背景色 ({{around}}) と異なり、テキストの色に頼らずにリンクを示しています。",
-      "linkInTextBlock_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
       "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "文中のこのリンクは、周囲のテキストと色だけで区別されています。祖先要素の不透明度で両方が薄められる前の時点で {{ratio}}:1 ですが、薄められると両者の差は縮まります。これで十分なのは、描画された色でもなお 3:1 に達し、かつホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
@@ -106187,7 +107166,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
         if (Number.parseFloat(cs.fontSize) === 0) return true;
-        const color = parseCssColorToRgba(__textFillOf(cs));
+        const color = parseCssColorToRgba(__textFillOfEl(el, cs));
         if (color && color.a === 0) {
           if (!__clipTextOwner(el) && !__drawsOutlineEl(el, cs)) return true;
         }
@@ -107618,7 +108597,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        const currentColor = parseCssColorToRgba(cs.color);
+        // currentColor: el's colour, in the scheme the page is drawn in.
+        const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
         const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
@@ -108085,6 +109065,20 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
+  // el's text fill value, as __textFillOf, where jsdom's is not the one a
+  // browser computes: jsdom computes a fill that follows a light-dark()
+  // color as transparent, and a fill the page doesn't set follows color.
+  function __textFillOfEl(el, cs) {
+    const value = __textFillOf(cs);
+    try {
+      if (!cs || !el || !__underJsdom(dom.ownerDocument(el))) return value;
+      const drawn = parseCssColorToRgba(value);
+      const color = parseCssColorToRgba(cs.color);
+      if (drawn && drawn.a === 0 && color && color.a > 0 && __jsdomAuthorFill(el) === false)
+        return cs.color;
+    } catch {}
+    return value;
+  }
 
   // -------- Link colours under jsdom --------
   //
@@ -108235,6 +109229,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const media = rule.media;
       const n = (media && media.length) || 0;
       if (!n) return true;
+      // A browser answers the query as it draws the page; jsdom has no
+      // matchMedia, and applies only the media below.
+      if (window && typeof window.matchMedia === 'function') {
+        try {
+          return !!dom.get(window.matchMedia(String(media.mediaText || '')), 'matches');
+        } catch {
+          // read below
+        }
+      }
       for (let i = 0; i < n; i++) {
         const q = String(media[i] || '')
           .trim()
@@ -108367,6 +109370,56 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return best ? { value: best.value } : null;
   }
 
+  // Every author declaration of prop (`color` by default) that matches el,
+  // in a rule or its style attribute: { values, winner, uncertain,
+  // unknown }. winner is the one that applies where none is uncertain (see
+  // __authorColorOf); unknown where a sheet or a selector can't be read.
+  function __authorColorDeclsOf(el, prop = 'color') {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const out = { values: [], winner: null, uncertain: false, unknown: false };
+    const { rules, unreadable } = __colorRulesOf(root, prop);
+    if (unreadable) {
+      out.unknown = true;
+      return out;
+    }
+    let best = null;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          out.unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        out.values.push(rule.value);
+        if (rule.uncertain) out.uncertain = true;
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
+      if (value) {
+        out.values.push(value);
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    out.winner = best ? best.value : null;
+    return out;
+  }
+
   const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
   const __jsdomLinkColorCache = new WeakMap();
   function __jsdomLinkTextColor(el) {
@@ -108450,8 +109503,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // computes the fill as the colour it follows; one that differs is the
   // page's own, and paints it, as does one the page sets to that colour.
   function __htmlTextFillOf(el, cs) {
-    const fillValue = __textFillOf(cs);
-    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    const fillValue = __textFillOfEl(el, cs);
+    let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    // A fill jsdom computes wrongly follows color (__textFillOfEl).
+    if (fillValue === cs.color) fill = String(cs.color || '').trim();
     if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
       return fillValue;
     const link = __jsdomLinkTextColor(el);
@@ -108476,7 +109531,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(el);
       if (!cs) return '';
       if (__isSvgTextElement(el)) return String(cs.fill || '');
-      return __htmlTextFillOf(el, cs) || '';
+      const value = __htmlTextFillOf(el, cs) || '';
+      // In the dark scheme a page an emulator draws is in (__schemeTextOverride).
+      const own = value ? __schemeTextOverride(el) : null;
+      return own ? rgbaToString(own) : value;
     } catch {
       return '';
     }
@@ -108500,7 +109558,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (__clipTextOwnerCache.has(el)) return __clipTextOwnerCache.get(el);
     let out = null;
     try {
-      const fill = parseCssColorToRgba(__textFillOf(__contrastComputedStyle(el)));
+      const fill = parseCssColorToRgba(__textFillOfEl(el, __contrastComputedStyle(el)));
       if (fill && fill.a === 0) {
         let cur = el;
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 50; depth++) {
@@ -108520,7 +109578,45 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  function computeEffectiveForeground(el) {
+  // The colour el's text has in a color scheme other than the one whose
+  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // where opts give one; otherwise, in an emulator, in the dark scheme a
+  // page drawn only in dark is in, wherever the text is (an emulator
+  // computes the light scheme's colours). Null where the colour computed
+  // now is the one, or it can't be told (colorSchemeUnread).
+  function __schemeTextOverride(el, opts) {
+    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const scheme = asked === 'light' || asked === 'dark' ? asked : null;
+    if (!scheme) {
+      // A browser computes the colours of the scheme it draws.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut || info.current !== 'dark') return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      const own = __schemeTextColor(el, info.current);
+      return own && own.color ? own.color : null;
+    }
+    const bg = computeEffectiveBackground(el, {
+      contrast: { mode: 'strictConformance', ...(scheme ? { colorScheme: scheme } : {}) },
+      collectStack: false
+    });
+    return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
+  }
+
+  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // page's canvas (__schemeTextColor), where it isn't the one computed now.
+  function computeEffectiveForeground(el, opts) {
+    const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
+    if (opts && opts.contrast && opts.contrast.colorScheme) {
+      const out = computeEffectiveForeground(el);
+      if (!schemeOverride || !out || !out.rgba) return out;
+      const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
+      return {
+        rgba: { r: schemeOverride.r, g: schemeOverride.g, b: schemeOverride.b, a: clamp01(op) },
+        alpha: clamp01(op),
+        opacityProduct: op
+      };
+    }
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
     // group opacity (the contrast rules' same-color filter does), and the
@@ -108558,6 +109654,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
+    // On the canvas of a page drawn only in dark, in an emulator: the dark
+    // scheme's colour where the text takes it from the scheme.
+    if (c && schemeOverride) {
+      c = {
+        r: schemeOverride.r,
+        g: schemeOverride.g,
+        b: schemeOverride.b,
+        a: schemeOverride.a == null ? 1 : schemeOverride.a
+      };
+    }
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {
@@ -108607,9 +109713,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         ? contrast.rootCanvasFallback.trim()
         : '#ffffff';
 
+    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
+    const scheme =
+      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
+        ? contrast.colorScheme
+        : '';
+
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
-    return `${mode}|${rootCanvasFallback}`;
+    return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
   // The canvas the browser paints behind the root: the Canvas system colour
@@ -108729,21 +109841,665 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return occurrences;
   }
 
-  // The canvas under el's text where it is measured rather than assumed: in
-  // a browser, for an element of the page the engine runs in, when that
-  // page isn't in a frame. A frame's canvas is transparent where the frame
-  // shares its parent's color scheme, and what shows through then is the
-  // parent page, which the frame can't see. Null otherwise, which leaves it
-  // to the contrast mode (computeEffectiveBackground).
-  function __measuredCanvasUnder(el) {
+  // -------- The page's canvas, in each color scheme it supports --------
+  //
+  // Behind a page that paints no opaque background the browser paints its
+  // canvas, in the Canvas system colour of the root's used color scheme
+  // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
+  // own statement: the root's color-scheme, or, while that is normal, its
+  // <meta name="color-scheme">. A page that states none is drawn in the
+  // light scheme whatever the user prefers; one that names light and dark
+  // is drawn in the scheme the user prefers. So the canvas follows from
+  // the page and the user's preference, as the browser defines it, not
+  // from an assumption.
+
+  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // Chromium (read in Chromium 153), for an emulator that resolves them to
+  // fixed light values and lays nothing out (jsdom). A browser's own are
+  // read from the page instead.
+  const __SCHEME_COLORS = {
+    light: { canvas: '#ffffff', text: '#000000', link: '#0000ee' },
+    dark: { canvas: '#121212', text: '#ffffff', link: '#9e9eff' }
+  };
+
+  // The schemes a color-scheme value names, in its order: light and dark;
+  // normal, `only` and names no browser knows add none.
+  function __schemesNamed(value) {
+    const out = [];
+    for (const word of String(value || '')
+      .toLowerCase()
+      .split(/\s+/)) {
+      if ((word === 'light' || word === 'dark') && !out.includes(word)) out.push(word);
+    }
+    return out;
+  }
+
+  // The page's color schemes, read once per run: { supported, declared,
+  // current, laidOut, colors }. supported lists the schemes it is drawn in
+  // (['light'] for a page that declares none: declared is false then),
+  // current the one it is drawn in now (the user's preference where the
+  // page supports it, else the first it names), and colors each scheme's
+  // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
+  // its computed colours are the current scheme's; an emulator's are the
+  // light scheme's, without its prefers-color-scheme rules. Null under
+  // forced colors, where the canvas is the user's palette, and where
+  // nothing can be read.
+  let __schemes;
+  function __pageSchemes() {
+    if (__schemes !== undefined) return __schemes;
+    __schemes = null;
     try {
-      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
-      if (window.self !== window.top) return null;
-      const rgba = parseCssColorToRgba(__pageCanvasColor());
-      return rgba ? { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 } : null;
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
+      const rootCs = window.getComputedStyle(root);
+      const rootValue = String(
+        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
+      ).trim();
+      let supported = __schemesNamed(rootValue);
+      // The meta element speaks for a root whose color-scheme is normal:
+      // the first one naming a scheme (HTML, "the page's supported color
+      // schemes").
+      if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
+        const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
+        for (const meta of Array.from(metas)) {
+          const named = __schemesNamed(dom.getAttribute(meta, 'content'));
+          if (named.length) {
+            supported = named;
+            break;
+          }
+        }
+      }
+      const declared = supported.length > 0;
+      if (!declared) supported = ['light'];
+      const prefersDark =
+        typeof window.matchMedia === 'function' &&
+        !!dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches');
+      const preferred = prefersDark ? 'dark' : 'light';
+      let current = supported.includes(preferred) ? preferred : supported[0];
+
+      const colors = {};
+      for (const scheme of ['light', 'dark']) {
+        const set = __SCHEME_COLORS[scheme];
+        colors[scheme] = {
+          canvas: parseCssColorToRgba(set.canvas),
+          text: parseCssColorToRgba(set.text),
+          link: parseCssColorToRgba(set.link)
+        };
+      }
+
+      // In a browser, each scheme's system colours are read from an
+      // element the engine adds and removes at once, and the scheme the
+      // page is drawn in from the Canvas it inherits from the root.
+      // An emulator lays nothing out: nothing to read there, and the page
+      // is left untouched.
+      let laidOut = false;
+      const probe = __hasLayout(doc) ? dom.call(doc, 'createElement', 'div') : null;
+      if (probe) {
+        probe.style.cssText =
+          'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden';
+        dom.call(root, 'appendChild', probe);
+      }
+      try {
+        laidOut = !!probe && dom.getBoundingClientRect(probe).width === 1;
+        if (laidOut) {
+          const read = (value) => {
+            const c = parseCssColorToRgba(value);
+            return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
+          };
+          const readScheme = (scheme) => {
+            probe.style.colorScheme = scheme;
+            probe.style.backgroundColor = 'Canvas';
+            probe.style.color = 'CanvasText';
+            const cs = window.getComputedStyle(probe);
+            const canvas = read(cs.backgroundColor);
+            const text = read(cs.color);
+            probe.style.color = 'LinkText';
+            const link = read(window.getComputedStyle(probe).color);
+            return canvas && text && link ? { canvas, text, link } : null;
+          };
+          probe.style.backgroundColor = 'Canvas';
+          const drawn = read(window.getComputedStyle(probe).backgroundColor);
+          for (const scheme of ['light', 'dark']) {
+            const own = readScheme(scheme);
+            if (own) colors[scheme] = own;
+          }
+          const same = (a, b) => !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b;
+          if (same(drawn, colors.dark.canvas) && !same(drawn, colors.light.canvas)) {
+            current = 'dark';
+          } else if (same(drawn, colors.light.canvas) && !same(drawn, colors.dark.canvas)) {
+            current = 'light';
+          }
+          if (!supported.includes(current)) supported = [current];
+        }
+      } finally {
+        if (probe) dom.removeChild(root, probe);
+      }
+      __schemes = { supported, declared, current, laidOut, colors };
+    } catch {
+      __schemes = null;
+    }
+    return __schemes;
+  }
+
+  // Whether the engine runs in an emulator (jsdom, by its user agent),
+  // which computes the light scheme's colours whatever the page's scheme.
+  let __emulator;
+  function __emulatorWindow() {
+    if (__emulator !== undefined) return __emulator;
+    try {
+      const ua = String((window && window.navigator && window.navigator.userAgent) || '');
+      __emulator = /\bjsdom\//.test(ua);
+    } catch {
+      __emulator = false;
+    }
+    return __emulator;
+  }
+
+  // A canvas the run names (contrast.rootCanvasFallback the caller gave,
+  // src/core/dom-runner.js): it stands for the page's own in every scheme.
+  let __runCanvas = null;
+  function useNamedCanvas(color) {
+    const rgba = typeof color === 'string' ? parseCssColorToRgba(color) : null;
+    __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
+  }
+  function __namedCanvas(contrast) {
+    if (contrast && contrast.rootCanvasFallbackSet === true) {
+      const value =
+        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+      const rgba = value ? parseCssColorToRgba(value) : null;
+      if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
+    }
+    return __runCanvas;
+  }
+
+  // The style rules of a document's or shadow root's sheets that may make
+  // a colour depend on the color scheme: those inside an @media on
+  // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
+  // unknown), and those setting a colour, a background or a custom property
+  // to light-dark() or a system colour (`keyword`). Every condition is
+  // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
+  // unreadable }, once per root.
+  const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
+  const __SCHEME_VALUE =
+    /\blight-dark\s*\(|(?:^|[^\w-])(canvas|canvastext|linktext|visitedtext|activetext|buttonface|buttontext|buttonborder|field|fieldtext|highlight|highlighttext|selecteditem|selecteditemtext|mark|marktext|graytext|accentcolor|accentcolortext|activeborder|activecaption|appworkspace|background|buttonhighlight|buttonshadow|captiontext|inactiveborder|inactivecaption|inactivecaptiontext|infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)(?![\w-])/i;
+  function __valueFollowsScheme(value) {
+    const v = String(value || '')
+      .replace(/url\([^)]*\)/gi, '')
+      .replace(/"[^"]*"|'[^']*'/g, '');
+    return __SCHEME_VALUE.test(v);
+  }
+  // Which of a declaration block's colours follow the scheme: { color }
+  // for the text's (color, -webkit-text-fill-color), { back } for a
+  // background or a custom property, which may feed either; null for none.
+  function __styleFollowsScheme(style) {
+    const out = { color: false, back: false };
+    try {
+      const n = Number(style && style.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const prop = String(style[i] || '');
+        if (__SCHEME_PROPS.test(prop) && __valueFollowsScheme(style.getPropertyValue(prop))) {
+          if (/^(color|-webkit-text-fill-color)$/i.test(prop)) out.color = true;
+          else out.back = true;
+        }
+      }
+    } catch {
+      return { color: true, back: true };
+    }
+    return out.color || out.back ? out : null;
+  }
+  function __mediaScheme(text) {
+    const t = String(text || '').toLowerCase();
+    if (!/prefers-color-scheme/.test(t)) return null;
+    // A query naming one scheme, and no other and no `not`, holds only in
+    // that scheme, whatever else it asks.
+    if (/\bnot\b|,/.test(t)) return 'unknown';
+    const named = new Set();
+    for (const m of t.matchAll(/prefers-color-scheme\s*:\s*([a-z-]+)/g)) named.add(m[1]);
+    return named.size === 1 && (named.has('light') || named.has('dark'))
+      ? [...named][0]
+      : 'unknown';
+  }
+  const __schemeRulesByRoot = new WeakMap();
+  function __schemeRulesOf(root) {
+    if (__schemeRulesByRoot.has(root)) return __schemeRulesByRoot.get(root);
+    const out = { pcs: [], keyword: [], unreadable: false };
+    const rulesOf = (sheet) => {
+      if (shared && typeof shared.cssRulesOf === 'function') return shared.cssRulesOf(sheet);
+      try {
+        return sheet.cssRules;
+      } catch {
+        return null;
+      }
+    };
+    const walk = (list, scheme, parent, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n && depth < 12; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          let parts = __splitTopLevel(rule.selectorText).filter(Boolean);
+          // A nested rule's selector is relative to its parent's.
+          if (parent) {
+            parts = parts.map((p) =>
+              p.includes('&') ? p.replace(/&/g, `:is(${parent})`) : `:is(${parent}) ${p}`
+            );
+          }
+          if (scheme && parts.length) out.pcs.push({ parts, scheme });
+          const follows = __styleFollowsScheme(rule.style);
+          if (follows) out.keyword.push({ parts, ...follows });
+          let nested;
+          try {
+            nested = rule.cssRules;
+          } catch {
+            nested = null;
+          }
+          if (nested && nested.length) walk(nested, scheme, parts.join(', '), depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          const rules = sheet ? rulesOf(sheet) : null;
+          if (!rules) {
+            out.unreadable = true;
+            continue;
+          }
+          const media = rule.media ? __mediaScheme(rule.media.mediaText) : null;
+          walk(rules, media || scheme, parent, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (!nested || !nested.length) continue;
+        const media =
+          name === 'CSSMediaRule' || rule.type === 4
+            ? __mediaScheme(rule.media && rule.media.mediaText)
+            : null;
+        walk(nested, media || scheme, parent, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        const rules = rulesOf(sheet);
+        if (!rules) {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, null, '', 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __schemeRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // How the colours behind el's text, and its own, may depend on the color
+  // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
+  // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
+  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // background or a custom property, set to light-dark() or a system
+  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // read.
+  const __schemeDependenceCache = new WeakMap();
+  const __noDependence = () => ({
+    pcs: new Set(),
+    keyword: false,
+    keywordColor: false,
+    keywordBack: false,
+    unknown: false
+  });
+  function __schemeDependence(el) {
+    if (!el || dom.nodeType(el) !== 1) return __noDependence();
+    if (__schemeDependenceCache.has(el)) return __schemeDependenceCache.get(el);
+    let parent = composedParent(el);
+    while (parent && dom.nodeType(parent) !== 1) parent = composedParent(parent);
+    const base = parent ? __schemeDependence(parent) : __noDependence();
+    const out = {
+      pcs: new Set(base.pcs),
+      keyword: base.keyword,
+      keywordColor: base.keywordColor,
+      keywordBack: base.keywordBack,
+      unknown: base.unknown
+    };
+    const note = (follows) => {
+      if (!follows) return;
+      if (follows.color) out.keywordColor = true;
+      if (follows.back) out.keywordBack = true;
+      out.keyword = true;
+    };
+    try {
+      let root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      root = root || dom.ownerDocument(el);
+      const rules = __schemeRulesOf(root);
+      if (rules.unreadable) out.unknown = true;
+      const matches = (parts) => {
+        for (const part of parts) {
+          // A pseudo-element's rule styles another box.
+          if (/::|:(before|after|first-line|first-letter|marker|placeholder)\b/i.test(part))
+            continue;
+          try {
+            if (dom.matches(el, part)) return true;
+          } catch {
+            out.unknown = true;
+          }
+        }
+        return false;
+      };
+      for (const rule of rules.pcs) if (matches(rule.parts)) out.pcs.add(rule.scheme);
+      for (const rule of rules.keyword) {
+        if (out.keywordColor && out.keywordBack) break;
+        if (matches(rule.parts)) note(rule);
+      }
+      note(__styleFollowsScheme(dom.get(el, 'style')));
+    } catch {
+      out.unknown = true;
+    }
+    __schemeDependenceCache.set(el, out);
+    return out;
+  }
+
+  // Where el's text colour comes from: 'author', a colour of the page's
+  // own, the same in every scheme ('authorFill' where it is a
+  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
+  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // { value }, a value the page gives that picks by the scheme (light-dark(),
+  // a system colour); null where it can't be told, or is another colour of
+  // the browser's (a field's, a button's, a mark's). SVG text, and text cut
+  // out of a background, are left at null.
+  const __UA_COLOURED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  const __colorOriginCache = new WeakMap();
+  function __colorOrigin(el) {
+    if (__colorOriginCache.has(el)) return __colorOriginCache.get(el);
+    let out;
+    try {
+      out = __colorOriginUncached(el);
+    } catch {
+      out = null;
+    }
+    __colorOriginCache.set(el, out);
+    return out;
+  }
+  function __colorOriginUncached(el) {
+    if (!el || __isSvgTextElement(el) || __clipTextOwner(el)) return null;
+    // A fill the page sets paints the text whatever color says.
+    const fill = __jsdomAuthorFill(el);
+    if (fill !== false) return fill === true ? 'authorFill' : null;
+    const doc = dom.ownerDocument(el);
+    const body = doc ? dom.body(doc) : null;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) !== 1) {
+        cur = composedParent(cur);
+        continue;
+      }
+      const decls = __authorColorDeclsOf(cur, 'color');
+      if (decls.unknown) return null;
+      if (decls.values.length) {
+        const fixed = (v) =>
+          !__CSS_INHERITING.has(v.toLowerCase()) &&
+          !/\bvar\(|^(initial|revert|revert-layer)$/i.test(v) &&
+          !__valueFollowsScheme(v) &&
+          !!parseCssColorToRgba(v);
+        if (decls.values.every(fixed)) return 'author';
+        if (decls.uncertain || !decls.winner) return null;
+        const v = decls.winner.toLowerCase();
+        if (!__CSS_INHERITING.has(v)) {
+          if (v === 'initial') return 'canvasText';
+          if (fixed(v)) return 'author';
+          return __valueFollowsScheme(v) && !/\bvar\(/.test(v) ? { value: decls.winner } : null;
+        }
+      } else {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (name === 'font' && dom.hasAttribute(cur, 'color')) return 'author';
+        if (__isLink(cur)) {
+          return body && dom.hasAttribute(body, 'link') ? 'author' : 'linkText';
+        }
+        if (name === 'body' && dom.hasAttribute(cur, 'text')) return 'author';
+        if (__UA_COLOURED.has(name)) return null;
+      }
+      cur = composedParent(cur);
+    }
+    return 'canvasText';
+  }
+
+  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second colour, a system colour the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  function __resolveSchemeColor(value, scheme, info) {
+    const v = String(value || '').trim();
+    const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
+    if (pick) {
+      const parts = __splitTopLevel(pick[1]).map((x) => x.trim());
+      return parts.length === 2
+        ? __resolveSchemeColor(parts[scheme === 'dark' ? 1 : 0], scheme, info)
+        : null;
+    }
+    const set = info.colors[scheme];
+    const word = v.toLowerCase();
+    if (word === 'canvastext') return { ...set.text };
+    if (word === 'linktext') return { ...set.link };
+    if (word === 'canvas') return { ...set.canvas };
+    if (/\bvar\(/i.test(v) || __valueFollowsScheme(v)) return null;
+    return parseCssColorToRgba(v);
+  }
+
+  // Whether the browser paints a background of its own, in the scheme's
+  // system colours, behind el's text: el or an ancestor is a form control,
+  // a mark, a dialog or a popover whose background the page doesn't set.
+  const __UA_PAINTED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  function __uaPaintedBehind(el) {
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) === 1) {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (__UA_PAINTED.has(name) || dom.hasAttribute(cur, 'popover')) {
+          const own = ['background-color', 'background'].some((prop) => {
+            const decls = __authorColorDeclsOf(cur, prop);
+            return (
+              !decls.unknown &&
+              decls.values.length > 0 &&
+              decls.values.every((v) => !__valueFollowsScheme(v) && !/\bvar\(/i.test(v))
+            );
+          });
+          if (!own) return true;
+        }
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // el's text colour in `scheme`: { color } with color null where it is
+  // the colour computed now, or the colour it has in that scheme (the
+  // scheme's CanvasText or LinkText where the text takes it from the
+  // scheme; a light-dark() or system colour the page gives, worked out);
+  // null where it can't be told. The colours computed now are the scheme a
+  // browser draws, or, in an emulator, the light one with no
+  // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
+  // has its text's colours worked out here: not where a
+  // prefers-color-scheme rule for dark reaches them, a background behind
+  // them picks by the scheme, or the browser paints one there. A scheme the
+  // page isn't drawn in is told only where no prefers-color-scheme rule,
+  // light-dark() or system colour reaches the text's colour or the
+  // backgrounds behind it.
+  function __schemeTextColor(el, scheme) {
+    const info = __pageSchemes();
+    if (!info || !info.supported.includes(scheme)) return null;
+    const dep = __schemeDependence(el);
+    if (dep.unknown) return null;
+    if (info.laidOut && scheme === info.current) return { color: null };
+    if (!info.laidOut && scheme === 'light') {
+      return dep.pcs.has('light') || dep.pcs.has('unknown') ? null : { color: null };
+    }
+    const drawn = !info.laidOut && scheme === info.current;
+    if (drawn ? dep.pcs.has(scheme) || dep.pcs.has('unknown') : dep.pcs.size) return null;
+    if (dep.keywordBack || (!drawn && dep.keywordColor)) return null;
+    if (__uaPaintedBehind(el)) return null;
+    const origin = __colorOrigin(el);
+    if (origin === 'author') return { color: null };
+    if (origin === 'authorFill') return dep.keywordColor ? null : { color: null };
+    if (origin === 'canvasText') return { color: info.colors[scheme].text };
+    if (origin === 'linkText') return { color: info.colors[scheme].link };
+    if (drawn && origin && typeof origin === 'object') {
+      const color = __resolveSchemeColor(origin.value, scheme, info);
+      return color ? { color } : null;
+    }
+    return null;
+  }
+
+  // The scheme an emulator can't give el's text colours in: the page is
+  // drawn in it, and they can't be worked out (__schemeTextColor). An
+  // emulator computes the light scheme's colours and applies no
+  // prefers-color-scheme rule, so on a page drawn in light only text such
+  // a rule reaches; on one drawn in dark, text whose colours there can't be
+  // told. Null in a browser, which computes the colours it draws.
+  function colorSchemeUnread(el) {
+    try {
+      if (!window || !el || dom.nodeType(el) !== 1) return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      // A browser: nothing to work out, and the page is left untouched.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut) return null;
+      if (info.current === 'light') {
+        const dep = __schemeDependence(el);
+        return dep.pcs.has('light') || dep.pcs.has('unknown') ? 'light' : null;
+      }
+      return __schemeTextColor(el, info.current) ? null : info.current;
     } catch {
       return null;
     }
+  }
+
+  // The canvas behind el's text in contrast.colorScheme (the scheme the
+  // page is drawn in when not given): { rgba, color, scheme, named,
+  // supported, current, text }, or null where it isn't known. Only for an
+  // element of the page the engine runs in, outside a frame: a frame's
+  // canvas is transparent where it shares its parent's color scheme, and
+  // what shows through then is the parent page, which the frame can't see.
+  // Not under forced colors (__pageSchemes). A canvas the run names stands
+  // for the page's (scheme null). text: __schemeTextColor.
+  function __canvasFor(el, contrast) {
+    try {
+      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
+      if (window.self !== window.top) return null;
+      const info = __pageSchemes();
+      if (!info) return null;
+      const asked = contrast && contrast.colorScheme;
+      const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
+      const named = __namedCanvas(contrast);
+      if (named && scheme !== info.current) return null;
+      const text = __schemeTextColor(el, scheme);
+      if (!text) return null;
+      return named
+        ? {
+            rgba: named.rgba,
+            color: named.color,
+            scheme: null,
+            named: true,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          }
+        : {
+            rgba: { ...info.colors[scheme].canvas, a: 1 },
+            color: rgbToHex(info.colors[scheme].canvas),
+            scheme,
+            named: false,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether el's canvas would be known (__canvasFor) but for its text.
+  function __inCanvasScope(el) {
+    try {
+      return (
+        !!window &&
+        !!el &&
+        dom.ownerDocument(el) === window.document &&
+        window.self === window.top &&
+        !!__pageSchemes()
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // The canvas under el's text in the scheme the page is drawn in, where
+  // the colours computed now are that scheme's (see __canvasFor); null
+  // otherwise, which leaves it to the contrast mode
+  // (computeEffectiveBackground).
+  function __measuredCanvasUnder(el) {
+    const canvas = __canvasFor(el, null);
+    return canvas && canvas.text.color === null ? canvas.rgba : null;
+  }
+
+  // Whether el's text can be measured on the page's canvas in `scheme`, one
+  // the page supports but isn't drawn in now: its colours and the
+  // backgrounds behind it are the same in that scheme, or its colour is
+  // the scheme's own (__schemeTextColor).
+  function colorSchemeMeasurable(el, scheme) {
+    try {
+      return !!__schemeTextColor(el, scheme);
+    } catch {
+      return false;
+    }
+  }
+
+  // The page's color schemes (__pageSchemes): { supported, current,
+  // declared }, or null where they don't decide its canvas.
+  function pageColorSchemes() {
+    const info = __pageSchemes();
+    return info
+      ? { supported: info.supported.slice(0), current: info.current, declared: info.declared }
+      : null;
   }
 
   function computeEffectiveBackground(el, opts2) {
@@ -108926,6 +110682,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
 
     let out;
+    let canvas;
     const allowAssumptions = mode === 'auditorAssist';
 
     if (unparsable) {
@@ -108939,17 +110696,29 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
       };
-    } else if (acc.a < 1 && __measuredCanvasUnder(el)) {
-      // Nothing behind the text up to the root is opaque, but the browser
-      // paints its canvas under the root and that colour was read, so the
-      // text is measured on it in either mode, as it is drawn.
-      acc = compositeRgba(acc, __measuredCanvasUnder(el));
+    } else if (acc.a < 1 && (canvas = __canvasFor(el, contrast))) {
+      // Nothing behind the text up to the root is opaque: the browser
+      // paints its canvas under the root, in the color scheme asked for
+      // (contrast.colorScheme) or the one the page is drawn in, and the
+      // text is measured on it in either mode, as it is drawn. A canvas the
+      // run names stands for it.
+      acc = compositeRgba(acc, canvas.rgba);
       out = {
         ok: true,
         rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
         alpha: 1,
         stack: stack || [],
-        reasonCode: null
+        reasonCode: null,
+        canvas: {
+          scheme: canvas.scheme,
+          supported: canvas.supported,
+          current: canvas.current,
+          named: canvas.named,
+          text: canvas.text.color ? { ...canvas.text.color } : null
+        },
+        ...(canvas.named
+          ? { assumptionsApplied: ['ROOT_CANVAS_FALLBACK'], assumedRootCanvasColor: canvas.color }
+          : {})
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
@@ -108977,7 +110746,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           rgba: acc,
           alpha: acc.a,
           stack: stack || [],
-          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+          // On a page whose canvas is known, the text's colour in the
+          // scheme it is drawn in could not be told (__schemeTextColor).
+          ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
       }
     } else {
@@ -109093,7 +110865,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const placeholder = field && field.placeholder ? field.style : null;
       const textCs = placeholder || elCs;
       let elColor = parseCssColorToRgba(
-        textCs && (__isSvgTextElement(el) ? textCs.fill : __textFillOf(textCs))
+        textCs &&
+          (__isSvgTextElement(el)
+            ? textCs.fill
+            : placeholder
+              ? __textFillOf(textCs)
+              : __textFillOfEl(el, textCs))
       );
       if (!elColor) return __cacheAndReturn(null);
       let phBg = null;
@@ -109789,7 +111566,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -110128,6 +111906,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    // The text's colours in the scheme the page is drawn in can't be read
+    // (an emulator: colorSchemeUnread), so whatever else is in the way, they
+    // are what is unknown.
+    const unread = colorSchemeUnread(el);
+    if (unread) {
+      const blocked = {
+        ok: false,
+        reasonCode: 'COLOR_SCHEME_NOT_RENDERED',
+        blockerSelector: '',
+        blockerProperty: 'color-scheme',
+        blockerValue: unread
+      };
+      try {
+        if (el) __computabilityBlockerCache.set(el, blocked);
+      } catch {}
+      return blocked;
+    }
     const out = __computabilityBlockerOf(el, false);
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
@@ -110235,7 +112030,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -112530,6 +114326,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     comparePaintOrder,
     colorsForced,
     noteForcedColors,
+    pageColorSchemes,
+    colorSchemeMeasurable,
+    colorSchemeUnread,
+    useNamedCanvas,
     isPinned: __isPinned
   };
 });
@@ -121706,6 +123506,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     composedParent,
     buildSimpleSelector,
     getLabelControl,
+    cssRulesOf,
     __contrastSharedCache
   };
 
@@ -123959,6 +125760,12 @@ const runCoreSettled = (function runCoreSettled(
       // A canvas the caller named, white included, which a rule may decide
       // by where it would only lean on the default; the result echoes it.
       engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
+      // The contrast rules measure text on it in place of the page's own
+      // canvas (contrast-helpers, __canvasFor).
+      try {
+        if (sharedHelpers.contrast && typeof sharedHelpers.contrast.useNamedCanvas === 'function')
+          sharedHelpers.contrast.useNamedCanvas(given);
+      } catch {}
     }
   }
 

@@ -64,6 +64,16 @@
  *   - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a
  *     link set apart by color only): the link's text color and the
  *     surrounding text's, as hex.
+ *   - `colorScheme` (a link with a background color of its own, on the
+ *     canvas of a page that supports light and dark): `'light'` or
+ *     `'dark'`, the scheme in which that background doesn't set it apart
+ *     from the canvas around it, where it does in the other; the ratio and
+ *     colors are that scheme's. Absent where it falls short in every scheme
+ *     measured.
+ *   - `colorSchemesChecked` (the same link): the schemes it was compared in,
+ *     where the page supports both and one could not be measured (its
+ *     colors or the backgrounds around it may change with the scheme).
+ *     A binding can scan again with the browser in the other scheme.
  * @reason-codes
  *   - `COLOR_ONLY_DIFFERENTIATION` (fail): a link in a block of text is told
  *     apart from the surrounding text by color alone, with less than 3:1
@@ -86,10 +96,14 @@
  *     underlined, has no background of its own, and it and the text are drawn
  *     in opaque colors, which compare without the background, it is decided
  *     from those colors instead (`COLOR_ONLY_DIFFERENTIATION` below 3:1,
- *     `LINK_COLOR_CONTRAST_ONLY` at 3:1 or more).
+ *     `LINK_COLOR_CONTRAST_ONLY` at 3:1 or more), unless what can't be worked
+ *     out is their colors in the color scheme the page is drawn in, as in an
+ *     emulator such as jsdom (`contrast-computable`'s
+ *     `COLOR_SCHEME_NOT_RENDERED`).
  *     It leans fail when such a link is drawn in the same translucent color as
  *     the surrounding text; it leans pass when it has an opaque background of
- *     its own unlike the one around it.
+ *     its own unlike the one around it; neither where its colors in the
+ *     page's color scheme are unknown.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or
  *     gradient lies behind the link, so its colors could not be compared.
@@ -104,13 +118,13 @@
  *   - `BACKGROUND_NOT_OPAQUE_AT_ROOT` (cantTell): the link has an opaque
  *     background color of its own and otherwise less than 3:1 from the
  *     surrounding text, but nothing behind that text, up to the root, has an
- *     opaque background, so whether the link's background stands out from it
- *     depends on the canvas the page is shown on. With `auditorAssist` mode,
- *     a `contrast.rootCanvasFallback` the run names, or in a browser that
- *     reads the canvas, it is decided as any highlight is, on that canvas.
- *     It leans pass when the link's background differs from the one around it
- *     on the white canvas a browser paints behind such a page; not in a
- *     frame, in a dark color scheme or under forced colors.
+ *     opaque background, and the canvas there can't be known: in a frame,
+ *     where the page around it may show through, or under forced colors. A
+ *     `contrast.rootCanvasFallback` the run names, or the `auditorAssist`
+ *     mode, decides it on that canvas. Elsewhere the link is decided on the
+ *     canvas the page's color scheme gives it, as the contrast rules measure
+ *     text there, in each scheme the page supports (`colorScheme`,
+ *     `colorSchemesChecked`).
  *     Basis: WCAG 1.4.1 (not settled); F73 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under a link
  *     or text drawn in a translucent color, so the colors could not be
@@ -321,8 +335,8 @@ const meta = {
     },
     BACKGROUND_NOT_OPAQUE_AT_ROOT: {
       steps: [
-        "Find the link the report names inside its paragraph; the page sets no background, so the browser's default (usually white) shows around it.",
-        'If the page is embedded in another page or the browser or system is in dark mode, view it in each setting where it is shown.',
+        'Find the link the report names inside its paragraph; the page sets no opaque background, so what shows around it is the canvas the browser paints, or, in a frame, the page around it.',
+        'View the page where it is shown: inside the page that embeds it, with forced colors off, and in each color scheme the page supports (light and dark).',
         "In each setting, check whether the link's background color stands out from the background around it, or an underline or another non-color mark sets the link apart."
       ],
       passWhen:
@@ -1501,56 +1515,69 @@ function runInPage(ctx) {
     }
   }
 
-  // A link with a highlight of its own on a page that sets no opaque
-  // background: at the top level of a window in a light color scheme, the
-  // page is drawn on the canvas the browser paints behind it, white (a
-  // canvas the run names decides the link instead). It leans pass where the highlight differs from
-  // the background around it on that canvas.
-  function rootCanvasLean(el, highlight, around) {
-    try {
-      const doc = dom.ownerDocument(el);
-      let inFrame = true;
-      try {
-        const view = doc ? dom.defaultView(doc) : null;
-        inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
-      } catch {
-        inFrame = true;
-      }
-      if (inFrame) return null;
-      if (typeof c.colorsForced === 'function' && c.colorsForced()) return null;
-      const root = doc ? dom.documentElement(doc) : null;
-      const rootScheme = String((safeComputedStyle(root) || {}).colorScheme || '');
-      const schemeMeta = doc ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]') : null;
-      const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
-      if (/\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme)) return null;
-      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
-      if (!canvas || canvas.a !== 1) return null;
-      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
-      const ownHex = c.rgbToHex(highlight);
-      const aroundHex = c.rgbToHex(surround);
-      if (ownHex === aroundHex) return null;
-      const canvasHex = c.rgbToHex(canvas);
-      return {
-        toward: 'pass',
-        why: `On the canvas a browser paints behind a page with no background (${canvasHex}), the link's own background color (${ownHex}) differs from the one around it (${aroundHex}), which marks it without relying on its text color.`,
-        signals: [
-          { signal: 'link-own-background', value: ownHex },
-          { signal: 'background-around', value: aroundHex },
-          { signal: 'canvas-color', value: canvasHex },
-          { signal: 'in-frame', value: false },
-          { signal: 'color-scheme-dark', value: false }
-        ],
-        caution:
-          'A page shown inside another page, or in a dark color scheme, sits on another background.',
-        i18n: {
-          whyKey: 'linkInTextBlock_lean_why_rootCanvas',
-          cautionKey: 'linkInTextBlock_lean_caution_rootCanvas',
-          params: { canvas: canvasHex, background: ownHex, around: aroundHex }
-        }
+  // A link whose own highlight is compared with the page's canvas around it
+  // (parentBg.canvas), on a page that supports two color schemes: compared
+  // in the scheme the page is drawn in (`current`: { differs, ratio,
+  // fgLinkHex, fgParentHex }) and, where `others` and the colours of the
+  // link and the text around it can't change with the scheme
+  // (helpers.contrast.colorSchemeMeasurable), in the other, with the
+  // link's and the text's colours there. The highlight sets the link apart
+  // where it does in each scheme measured; where it doesn't in one, the
+  // link is judged there by its colour, failing below 3:1. detail:
+  // colorScheme, the scheme it falls short in where it doesn't in the
+  // other, and colorSchemesChecked, the schemes measured where one wasn't.
+  // { differs, ratio, fgLinkHex, fgParentHex, detail }, or null on a page
+  // with one scheme or a canvas the run names.
+  function highlightAcrossSchemes(nodes, current, others) {
+    const { el, textEl, parent, parentBg } = nodes;
+    const canvas = parentBg && parentBg.canvas;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return null;
+    if (canvas.supported.length < 2) return null;
+    const all = [{ scheme: canvas.scheme, ...current }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !others) continue;
+      if (typeof c.colorSchemeMeasurable !== 'function') continue;
+      if (![el, textEl, parent].every((n) => c.colorSchemeMeasurable(n, scheme))) continue;
+      const opts = {
+        contrast: { mode, rootCanvasFallback, colorScheme: scheme },
+        collectStack: false
       };
-    } catch {
-      return null;
+      const own = c.computeEffectiveBackground(el, opts);
+      const around = c.computeEffectiveBackground(parent, opts);
+      const textBg = c.computeEffectiveBackground(textEl, opts);
+      const fgLink = c.computeEffectiveForeground(el, opts);
+      const fgText = c.computeEffectiveForeground(textEl, opts);
+      if (!own || !own.ok || !around || !around.ok || !textBg || !textBg.ok) continue;
+      if (!around.canvas || around.canvas.scheme !== scheme) continue;
+      if (!fgLink || !fgLink.rgba || !fgText || !fgText.rgba) continue;
+      const opaque = (fg, back) =>
+        fg.rgba.a < 1 ? { ...c.compositeRgba(fg.rgba, back.rgba), a: 1 } : { ...fg.rgba, a: 1 };
+      const linkFg = opaque(fgLink, own);
+      const textFg = opaque(fgText, textBg);
+      all.push({
+        scheme,
+        differs: c.rgbToHex(own.rgba) !== c.rgbToHex(around.rgba),
+        ratio: c.contrastRatio(linkFg, textFg),
+        fgLinkHex: c.rgbToHex(linkFg),
+        fgParentHex: c.rgbToHex(textFg)
+      });
     }
+    const verdict = (r) => (r.differs ? 'pass' : r.ratio >= 3 ? 'ask' : 'fail');
+    const fails = all.filter((r) => verdict(r) === 'fail');
+    const asks = all.filter((r) => verdict(r) === 'ask');
+    const short = fails.length ? fails : asks;
+    const pick = short.length ? short[0] : all[0];
+    const detail = {};
+    if (short.length && short.length < all.length) detail.colorScheme = short[0].scheme;
+    const checked = canvas.supported.filter((s) => all.some((r) => r.scheme === s));
+    if (checked.length < canvas.supported.length) detail.colorSchemesChecked = checked;
+    return {
+      differs: !short.length,
+      ratio: pick.ratio,
+      fgLinkHex: pick.fgLinkHex,
+      fgParentHex: pick.fgParentHex,
+      detail
+    };
   }
 
   // Whether the page's style sheets give the link a non-color cue on hover
@@ -1956,6 +1983,18 @@ function runInPage(ctx) {
       continue;
     }
 
+    // The colours of the link or of the text around it in the color scheme
+    // the page is drawn in can't be read (an emulator:
+    // helpers.contrast.colorSchemeUnread), so nothing they would decide is
+    // known, and no lean either.
+    if (
+      typeof c.colorSchemeUnread === 'function' &&
+      (c.colorSchemeUnread(el) || c.colorSchemeUnread(textEl))
+    ) {
+      markUndecided(el, 'COLOR_NOT_COMPUTABLE');
+      continue;
+    }
+
     let flagged = false;
     let computed = false;
     let backgroundDiffers = false;
@@ -1969,6 +2008,10 @@ function runInPage(ctx) {
     // A highlight of the link's own over a page with no background of its
     // own: { highlight, around }, the background around it before the canvas.
     let rootUnknown = null;
+    // On the canvas of a page with two color schemes: the scheme in which the
+    // highlight doesn't set the link apart, and the schemes measured
+    // (highlightAcrossSchemes).
+    let schemeDetail = null;
     // Whether the ratio is that of the colors before an ancestor's opacity
     // fades them, which can only bring them closer: not the ratio drawn.
     let beforeOpacity = false;
@@ -2092,6 +2135,24 @@ function runInPage(ctx) {
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
               backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+              // Around it is the page's canvas, in the scheme the page is
+              // drawn in: in the other the page supports, it is measured
+              // too, as the contrast rules measure text there.
+              const across = highlightAcrossSchemes(
+                { el, textEl, parent, parentBg },
+                { differs: backgroundDiffers, ratio, fgLinkHex, fgParentHex },
+                !pseudo && !firstLine
+              );
+              if (across) {
+                backgroundDiffers = across.differs;
+                if (!across.differs) {
+                  ratio = across.ratio;
+                  fgLinkHex = across.fgLinkHex;
+                  fgParentHex = across.fgParentHex;
+                  flagged = !(ratio >= 3);
+                }
+                if (Object.keys(across.detail).length) schemeDetail = across.detail;
+              }
             } else if (
               parentBg &&
               parentBg.reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT' &&
@@ -2151,11 +2212,7 @@ function runInPage(ctx) {
     // Below 3:1, a highlight of the link's own would set it apart, but
     // whether it differs from the canvas the page is drawn on is unknown.
     if (flagged && rootUnknown) {
-      markUndecided(
-        el,
-        'BACKGROUND_NOT_OPAQUE_AT_ROOT',
-        rootCanvasLean(el, rootUnknown.highlight, rootUnknown.around)
-      );
+      markUndecided(el, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
       continue;
     }
 
@@ -2163,7 +2220,7 @@ function runInPage(ctx) {
     // non-color cue on hover and focus, which a static scan cannot see.
     colorCompared += 1;
     if (!flagged) {
-      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity });
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail });
       continue;
     }
 
@@ -2195,7 +2252,8 @@ function runInPage(ctx) {
             metrics: beforeOpacity
               ? { ratioBeforeOpacity: ratio, threshold: 3 }
               : { ratio, threshold: 3 },
-            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex },
+            ...(schemeDetail || {})
           }
         }
       })
@@ -2237,7 +2295,7 @@ function runInPage(ctx) {
   // metrics.ratio: the fading brings them closer, so the ratio drawn may be
   // lower, and below 3:1.
   const contrastOnlyOccurrences = contrastOnly.map(
-    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity }) => {
+    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail }) => {
       const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
       const lean = contrastOnlyLean(el, ratio, beforeOpacity);
       return helpers.reportOccurrence(el, {
@@ -2270,7 +2328,8 @@ function runInPage(ctx) {
             metrics: beforeOpacity
               ? { ratioBeforeOpacity: ratio, threshold: 3 }
               : { ratio, threshold: 3 },
-            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex },
+            ...(schemeDetail || {})
           }
         }
       });

@@ -178,7 +178,7 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
-test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComputableText)`, () => {
+test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
   const html = `
 <!doctype html>
 <html><head><style>
@@ -186,13 +186,27 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
 </style></head>
 <body>
   <p style="color: #595959">Hello</p>
+  <p id="gray" style="color: #777777">Gray</p>
 </body></html>`;
 
-  const result = run(html, {
-    contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
+  const rule = assertRule(run(html, { contrast: { mode: 'strictConformance' } }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
+  const det = rule.occurrences[0].data.details;
+  assert.match(rule.occurrences[0].html, /id="gray"/);
+  assert.strictEqual(det.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(det.colors.backgroundHex, '#ffffff');
+  assert.strictEqual(det.assumptionsApplied, null);
+});
 
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+test(`${RULE_ID}: root not opaque, the text's colour in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>p { color: #595959 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
+    </head><body>
+    <p>Hello</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
@@ -200,7 +214,6 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
     rule.occurrences[0].i18n.summaryKey,
     'contrastEnhanced_notApplicable_noComputableText'
   );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
@@ -689,15 +702,20 @@ test(`${RULE_ID}: normal text in a color no background brings to 7:1 fails thoug
   assert.ok(occ.data.details.metrics.bestRatio < 7);
 });
 
-test(`${RULE_ID}: a background that never becomes opaque, under such a color, fails too`, () => {
+test(`${RULE_ID}: on the page's canvas such a color is measured, not judged on any background`, () => {
   const html = `<!doctype html><html><body>
     <p style="color:#777777">Gray text on no background</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(
-    rule.occurrences[0].data.details.backgroundNotComputable,
-    'BACKGROUND_NOT_OPAQUE_AT_ROOT'
-  );
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(rule.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
+  // Where the text's colour itself is what can't be read, it isn't judged.
+  const unknown = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>p { color: #777777 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
+    </head><body>
+    <p>Gray text on no background</p>
+  </body></html>`;
+  assertRule(run(unknown), RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: large text, a reachable color or a filter around the text is not failed on an unknown background`, () => {
@@ -716,4 +734,24 @@ test(`${RULE_ID}: large text, a reachable color or a filter around the text is n
     const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
     assert.strictEqual(rule.outcome, 'notApplicable', body);
   }
+});
+
+// A page that supports light and dark: text on its canvas is measured in
+// both schemes where its colours can't change with the scheme.
+test(`${RULE_ID}: text on the canvas of a page with two color schemes is measured in each`, () => {
+  const html = `<!doctype html><html><head><style>:root{color-scheme:light dark}</style></head><body>
+    <p id="grey" style="color:#555">Fails on the dark canvas only</p>
+    <p id="plain">The scheme's own text colour</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const det = rule.occurrences[0].data.details;
+  assert.match(rule.occurrences[0].html, /id="grey"/);
+  assert.strictEqual(det.colors.backgroundHex, '#121212');
+  assert.strictEqual(det.colorScheme, 'dark');
+  assert.strictEqual(rule.occurrences[0].i18n.hintKey, 'contrast_hint_colorScheme_dark');
+  // The same text on a page drawn in light only passes.
+  assertRule(run(html.replace('light dark', 'light')), RULE_ID, 'pass', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });

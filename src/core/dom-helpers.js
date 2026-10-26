@@ -7229,6 +7229,7 @@ function createDomHelpers(opts) {
     composedParent,
     buildSimpleSelector,
     getLabelControl,
+    cssRulesOf,
     __contrastSharedCache
   };
 

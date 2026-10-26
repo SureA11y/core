@@ -234,7 +234,7 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
-test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComputableText)`, () => {
+test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
   const html = `
 <!doctype html>
 <html><head><style>
@@ -242,13 +242,32 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
 </style></head>
 <body>
   <p style="color: #767676">Hello</p>
+  <p id="faint" style="color: #bbbbbb">Faint</p>
 </body></html>`;
 
-  const result = run(html, {
-    contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
+  const rule = assertRule(run(html, { contrast: { mode: 'strictConformance' } }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
+  const det = rule.occurrences[0].data.details;
+  assert.match(rule.occurrences[0].html, /id="faint"/);
+  assert.strictEqual(det.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(det.colors.backgroundHex, '#ffffff');
+  assert.strictEqual(Number(det.metrics.ratio.toFixed(2)), 1.92);
+  // The canvas follows from the page: no assumption, and no scheme named
+  // for a page that declares none.
+  assert.strictEqual(det.assumptionsApplied, null);
+  assert.strictEqual(det.colorScheme, undefined);
+  assert.strictEqual(det.colorSchemesChecked, undefined);
+});
 
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+test(`${RULE_ID}: root not opaque, the text's colour in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>p { color: #767676 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
+    </head><body>
+    <p>Hello</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
@@ -256,7 +275,6 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
     rule.occurrences[0].i18n.summaryKey,
     'contrastMinimum_notApplicable_noComputableText'
   );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
@@ -1015,20 +1033,71 @@ test(`${RULE_ID}: text is measured in the -webkit-text-fill-color it is painted 
   }
 });
 
-// Under auditorAssist a page asking for a dark color scheme is measured on
-// the browser's dark canvas (#170). jsdom resolves no Canvas colour, so the
-// white fallback applies there as before, and nothing is left in the page.
-test('contrast-minimum: auditorAssist keeps the canvas fallback where Canvas does not resolve', () => {
+// A page drawn in a dark color scheme is measured on the dark canvas, in
+// either contrast mode (#170). jsdom resolves no Canvas colour and lays
+// nothing out, so the engine takes Chromium's (#121212), and the text the
+// scheme colours its CanvasText (#ffffff); nothing is left in the page.
+test('contrast-minimum: a page drawn in dark is measured on the dark canvas, in jsdom', () => {
+  for (const head of [
+    '<style>html{color-scheme:dark}</style>',
+    '<meta name="color-scheme" content="dark">',
+    '<style>html{color-scheme:only dark}</style>'
+  ]) {
+    for (const mode of ['strictConformance', 'auditorAssist']) {
+      const html = `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><p id="light" style="color:#bbb">Opening hours</p><p id="dark" style="color:#333">Closed today</p><p id="own">Plain text</p></main></body></html>`;
+      const dom = createDom(html);
+      const r = runa11yCoreOnDom(dom, {
+        runOnly: ['contrast-minimum'],
+        engineOptions: { contrast: { mode }, visibilityMode: 'styleOnly' }
+      }).checksResults[0];
+      assert.strictEqual(dom.window.document.querySelectorAll('div').length, 0);
+      assert.strictEqual(r.outcome, 'fail', `${head} ${mode}`);
+      assert.deepStrictEqual(
+        r.occurrences.map((o) => [
+          /id="(\w+)"/.exec(o.html)[1],
+          o.data.details.colors.backgroundHex,
+          Number(o.data.details.metrics.ratio.toFixed(2)),
+          o.data.details.assumptionsApplied,
+          o.data.details.colorScheme
+        ]),
+        [['dark', '#121212', 1.48, null, undefined]],
+        `${head} ${mode}`
+      );
+    }
+  }
+  // A page that declares no scheme, or only light, is drawn on white.
+  for (const head of ['', '<meta name="color-scheme" content="only light">']) {
+    const r = runa11yCoreOnDom(
+      createDom(
+        `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><p id="light" style="color:#bbb">Opening hours</p></main></body></html>`
+      ),
+      { runOnly: ['contrast-minimum'], engineOptions: { visibilityMode: 'styleOnly' } }
+    ).checksResults[0];
+    assert.strictEqual(r.occurrences[0].data.details.colors.backgroundHex, '#ffffff', head);
+  }
+});
+
+// A canvas the scan names stands for the page's, in every scheme: one
+// measurement, recorded as the assumption it is.
+test('contrast-minimum: a canvas the scan names is measured in place of the page canvas', () => {
   const html =
-    '<!doctype html><html lang="en"><head><title>t</title><style>html{color-scheme:dark}</style></head><body><main><p id="light" style="color:#bbb">Opening hours</p></main></body></html>';
-  const dom = createDom(html);
-  const r = runa11yCoreOnDom(dom, {
+    '<!doctype html><html lang="en"><head><title>t</title><meta name="color-scheme" content="light dark"></head><body><main><p id="light" style="color:#bbb">Opening hours</p></main></body></html>';
+  const r = runa11yCoreOnDom(createDom(html), {
     runOnly: ['contrast-minimum'],
-    engineOptions: { contrast: { mode: 'auditorAssist' }, visibilityMode: 'styleOnly' }
+    engineOptions: { contrast: { rootCanvasFallback: '#000000' }, visibilityMode: 'styleOnly' }
   }).checksResults[0];
-  assert.strictEqual(dom.window.document.querySelectorAll('div').length, 0);
-  assert.strictEqual(r.outcome, 'fail');
-  assert.strictEqual(r.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
+  assert.strictEqual(r.outcome, 'pass');
+  const black = runa11yCoreOnDom(createDom(html.replace('#bbb', '#333')), {
+    runOnly: ['contrast-minimum'],
+    engineOptions: { contrast: { rootCanvasFallback: '#000000' }, visibilityMode: 'styleOnly' }
+  }).checksResults[0];
+  assert.strictEqual(black.outcome, 'fail');
+  const det = black.occurrences[0].data.details;
+  assert.strictEqual(det.colors.backgroundHex, '#000000');
+  assert.deepStrictEqual(det.assumptionsApplied, ['ROOT_CANVAS_FALLBACK']);
+  assert.strictEqual(det.assumedRootCanvasColor, '#000000');
+  assert.strictEqual(det.colorScheme, undefined);
+  assert.strictEqual(det.colorSchemesChecked, undefined);
 });
 
 test(`${RULE_ID}: a lone character standing in for its control's name is asked about, not failed (ACT afw4f7 Passed Example 7)`, () => {
@@ -1143,4 +1212,163 @@ test(`${RULE_ID}: at WCAG's ratios, or below a variant's, shadow-drawn text stil
   const asked = shadowScan('#000', { largeTextRatio: 2.5 });
   assert.strictEqual(asked.computable.outcome, 'cantTell');
   assert.strictEqual(asked.rule.outcome, 'notApplicable');
+});
+
+// A page that supports light and dark (#219 follow-up): text on its canvas
+// is measured in the scheme the scan sees (light, under jsdom) and in the
+// other where its colours can't change with the scheme.
+test('contrast-minimum: text on the canvas of a page with two color schemes is measured in each', () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title>
+    <style>:root{color-scheme:light dark} #themed{color:#bbb} @media (prefers-color-scheme: dark){#themed{color:#eee}}</style>
+    </head><body><main>
+    <p id="grey" style="color:#333">Fails on the dark canvas only</p>
+    <p id="faint" style="color:#bbb">Fails on white only</p>
+    <p id="mid" style="color:#777">Fails on both</p>
+    <p id="plain">The scheme's own text colour</p>
+    <p id="themed">Coloured by a prefers-color-scheme rule</p>
+    </main></body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const by = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  const row = (id) => {
+    const d = by(id).data.details;
+    return [
+      Number(d.metrics.ratio.toFixed(2)),
+      d.colors.backgroundHex,
+      d.colorScheme,
+      d.colorSchemesChecked,
+      by(id).i18n.hintKey
+    ];
+  };
+  assert.deepStrictEqual(row('grey'), [
+    1.48,
+    '#121212',
+    'dark',
+    undefined,
+    'contrast_hint_colorScheme_dark'
+  ]);
+  assert.match(by('grey').hint, /dark color scheme/);
+  assert.deepStrictEqual(row('faint'), [
+    1.92,
+    '#ffffff',
+    'light',
+    undefined,
+    'contrast_hint_colorScheme_light'
+  ]);
+  // Failing in both, it is reported as the page is drawn, naming no scheme.
+  assert.deepStrictEqual(row('mid'), [
+    4.48,
+    '#ffffff',
+    undefined,
+    undefined,
+    'contrastMinimum_hint_fail'
+  ]);
+  // Measured in light only: the dark rule's colour isn't what jsdom sees.
+  assert.deepStrictEqual(row('themed'), [
+    1.92,
+    '#ffffff',
+    undefined,
+    ['light'],
+    'contrastMinimum_hint_fail'
+  ]);
+  assert.strictEqual(by('plain'), undefined);
+
+  // Passing in every scheme measured, the pass says which were.
+  const pass = assertRule(
+    run(
+      html
+        .replace(/<p id="(grey|faint|mid)"[^]*?<\/p>/g, '')
+        .replace('#themed{color:#bbb}', '#themed{color:#111}')
+    ),
+    RULE_ID,
+    'pass',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.deepStrictEqual(pass.occurrences[0].data.details.colorSchemesChecked, ['light']);
+  // A page with one scheme names none.
+  const one = assertRule(
+    run(
+      html
+        .replace('color-scheme:light dark', 'color-scheme:light')
+        .replace(/<p id="(grey|faint|mid)"[^]*?<\/p>/g, '')
+        .replace('#themed{color:#bbb}', '#themed{color:#111}')
+    ),
+    RULE_ID,
+    'pass',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.strictEqual(one.occurrences[0].data.details.colorSchemesChecked, undefined);
+});
+
+// jsdom computes the -webkit-text-fill-color of light-dark() text as
+// transparent; the text was dropped from the scan. It is measured in the
+// colour light-dark() gives the scheme the page is drawn in.
+test('contrast-minimum: light-dark() text is measured in the scheme the page is drawn in, in jsdom', () => {
+  const page = (head, style) =>
+    `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><p id="ld" style="${style}">Opening hours</p></main></body></html>`;
+  const scan = (html) =>
+    runa11yCoreOnDom(createDom(html), {
+      runOnly: ['contrast-minimum'],
+      engineOptions: { visibilityMode: 'styleOnly' }
+    }).checksResults[0];
+  const row = (r) =>
+    r.occurrences.map((o) => [
+      o.data.details.reasonCode,
+      o.data.details.colors && o.data.details.colors.foregroundHex,
+      o.data.details.colors && o.data.details.colors.backgroundHex,
+      o.data.details.colorSchemesChecked
+    ]);
+  // Light: its first colour, on white.
+  assert.deepStrictEqual(row(scan(page('', 'color:light-dark(#bbbbbb, #000000)'))), [
+    ['BELOW_THRESHOLD', '#bbbbbb', '#ffffff', undefined]
+  ]);
+  // Dark only: its second, on the dark canvas.
+  assert.deepStrictEqual(
+    row(
+      scan(page('<meta name="color-scheme" content="dark">', 'color:light-dark(#000000, #333333)'))
+    ),
+    [['BELOW_THRESHOLD', '#333333', '#121212', undefined]]
+  );
+  // Light and dark: measured in light, which jsdom draws, and not in dark,
+  // where light-dark() picks another colour.
+  assert.deepStrictEqual(
+    row(
+      scan(
+        page('<style>:root{color-scheme:light dark}</style>', 'color:light-dark(#bbbbbb, #333333)')
+      )
+    ),
+    [['BELOW_THRESHOLD', '#bbbbbb', '#ffffff', ['light']]]
+  );
+});
+
+// A page drawn only in dark (#219 follow-up): jsdom computes the light
+// scheme's colours, so text the scheme colours read as black wherever it
+// was. It takes the dark scheme's CanvasText and LinkText (Chromium's),
+// over an opaque background too.
+test('contrast-minimum: text the dark scheme colours is measured in its colours, in jsdom', () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title><meta name="color-scheme" content="dark"></head><body><main>
+    <div style="background:#000000"><p id="onblack">Plain text on black</p><p id="link">Read <a href="/x">the guide</a> first.</p><p id="sys" style="color:CanvasText">CanvasText on black</p></div>
+    <div style="background:#eeeeee"><p id="onwhite">Plain text on light grey</p></div>
+    </main></body></html>`;
+  const r = runa11yCoreOnDom(createDom(html), {
+    runOnly: ['contrast-minimum'],
+    engineOptions: { visibilityMode: 'styleOnly' }
+  }).checksResults[0];
+  assert.strictEqual(r.outcome, 'fail');
+  assert.deepStrictEqual(
+    r.occurrences.map((o) => [
+      /id="(\w+)"/.exec(o.html)[1],
+      o.data.details.colors.foregroundHex,
+      o.data.details.colors.backgroundHex
+    ]),
+    [['onwhite', '#ffffff', '#eeeeee']]
+  );
+  // The same page in light: black text on black is drawn invisibly and
+  // left out; the light link colour fails on it.
+  const light = runa11yCoreOnDom(createDom(html.replace('content="dark"', 'content="light"')), {
+    runOnly: ['contrast-minimum'],
+    engineOptions: { visibilityMode: 'styleOnly' }
+  }).checksResults[0];
+  assert.deepStrictEqual(light.occurrences.map((o) => o.data.details.colors.foregroundHex).sort(), [
+    '#0000ee'
+  ]);
 });

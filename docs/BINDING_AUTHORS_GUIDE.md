@@ -266,6 +266,12 @@ In a real browser, before navigation, for each hook the binding offers:
 - **Listener:** a `role="button"` given a click listener and no key listener: without the hook `click-handler-keyboard-operable` reports `notApplicable`; with it, `fail` with `CLICK_HANDLER_NO_KEY_LISTENER`, and `pass` once the page adds a `keydown` listener to the button.
 - **Live region:** an empty `role="status"` that the page fills after load: `getAnnouncements()` returns its text, and a region added with its text in it is asked about with `LIVE_REGION_INSERTED_WITH_CONTENT`.
 
+## A page's other color scheme
+
+The contrast rules measure text on a page with no background of its own against the canvas of the color scheme the page is drawn in, which the page's `color-scheme` decides, and on a page that supports light and dark (`light dark`), in the other scheme too wherever the text's colors can't change with the scheme. Where they can, the scan can't see them in the scheme the browser isn't in: each `contrast-minimum` and `contrast-enhanced` finding, and their pass, carries `data.details.colorSchemesChecked` with the schemes it was measured in (`['light']` or `['dark']`). A finding that fails in one scheme and passes in the other names the one it fails in, `data.details.colorScheme`.
+
+A binding that wants every scheme can read `colorSchemesChecked` and scan again with the browser in the scheme missing from it: in Playwright `await page.emulateMedia({ colorScheme: 'dark' })`, in Puppeteer `await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }])`, then the same scan; report each scan's findings with the scheme it was taken in. A page that declares no scheme is drawn in light whatever the browser prefers, so it carries no `colorSchemesChecked` and needs no second scan. One difference to know of: Chromium driven by Playwright with a dark scheme paints such a page's canvas `#121212` in screenshots, though its `Canvas` color, which the engine follows as CSS Color Adjustment defines it, stays white ([`LIMITATIONS.md`](./LIMITATIONS.md)).
+
 ## A time limit on a scan
 
 Nothing in the page can stop a scan once it has started, and most drivers' evaluate-in-page call has no time limit of its own. A binding should put one on that call and give up on the tab when it passes; see [A time limit on a scan](./INTEGRATION.md#a-time-limit-on-a-scan) in `INTEGRATION.md`.

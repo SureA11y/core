@@ -756,7 +756,7 @@ function createContrastHelpers(opts, shared) {
         const cs = __contrastComputedStyle(el);
         if (!cs) return false;
         if (Number.parseFloat(cs.fontSize) === 0) return true;
-        const color = parseCssColorToRgba(__textFillOf(cs));
+        const color = parseCssColorToRgba(__textFillOfEl(el, cs));
         if (color && color.a === 0) {
           if (!__clipTextOwner(el) && !__drawsOutlineEl(el, cs)) return true;
         }
@@ -2187,7 +2187,8 @@ function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        const currentColor = parseCssColorToRgba(cs.color);
+        // currentColor: el's colour, in the scheme the page is drawn in.
+        const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
         const whole = (t) => t === 'auto' || t === '100%' || t === 'cover' || t === 'contain';
@@ -2654,6 +2655,20 @@ function createContrastHelpers(opts, shared) {
     const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
+  // el's text fill value, as __textFillOf, where jsdom's is not the one a
+  // browser computes: jsdom computes a fill that follows a light-dark()
+  // color as transparent, and a fill the page doesn't set follows color.
+  function __textFillOfEl(el, cs) {
+    const value = __textFillOf(cs);
+    try {
+      if (!cs || !el || !__underJsdom(dom.ownerDocument(el))) return value;
+      const drawn = parseCssColorToRgba(value);
+      const color = parseCssColorToRgba(cs.color);
+      if (drawn && drawn.a === 0 && color && color.a > 0 && __jsdomAuthorFill(el) === false)
+        return cs.color;
+    } catch {}
+    return value;
+  }
 
   // -------- Link colours under jsdom --------
   //
@@ -2804,6 +2819,15 @@ function createContrastHelpers(opts, shared) {
       const media = rule.media;
       const n = (media && media.length) || 0;
       if (!n) return true;
+      // A browser answers the query as it draws the page; jsdom has no
+      // matchMedia, and applies only the media below.
+      if (window && typeof window.matchMedia === 'function') {
+        try {
+          return !!dom.get(window.matchMedia(String(media.mediaText || '')), 'matches');
+        } catch {
+          // read below
+        }
+      }
       for (let i = 0; i < n; i++) {
         const q = String(media[i] || '')
           .trim()
@@ -2936,6 +2960,56 @@ function createContrastHelpers(opts, shared) {
     return best ? { value: best.value } : null;
   }
 
+  // Every author declaration of prop (`color` by default) that matches el,
+  // in a rule or its style attribute: { values, winner, uncertain,
+  // unknown }. winner is the one that applies where none is uncertain (see
+  // __authorColorOf); unknown where a sheet or a selector can't be read.
+  function __authorColorDeclsOf(el, prop = 'color') {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const out = { values: [], winner: null, uncertain: false, unknown: false };
+    const { rules, unreadable } = __colorRulesOf(root, prop);
+    if (unreadable) {
+      out.unknown = true;
+      return out;
+    }
+    let best = null;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          out.unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        out.values.push(rule.value);
+        if (rule.uncertain) out.uncertain = true;
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
+      if (value) {
+        out.values.push(value);
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    out.winner = best ? best.value : null;
+    return out;
+  }
+
   const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
   const __jsdomLinkColorCache = new WeakMap();
   function __jsdomLinkTextColor(el) {
@@ -3019,8 +3093,10 @@ function createContrastHelpers(opts, shared) {
   // computes the fill as the colour it follows; one that differs is the
   // page's own, and paints it, as does one the page sets to that colour.
   function __htmlTextFillOf(el, cs) {
-    const fillValue = __textFillOf(cs);
-    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    const fillValue = __textFillOfEl(el, cs);
+    let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    // A fill jsdom computes wrongly follows color (__textFillOfEl).
+    if (fillValue === cs.color) fill = String(cs.color || '').trim();
     if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
       return fillValue;
     const link = __jsdomLinkTextColor(el);
@@ -3045,7 +3121,10 @@ function createContrastHelpers(opts, shared) {
       const cs = __contrastComputedStyle(el);
       if (!cs) return '';
       if (__isSvgTextElement(el)) return String(cs.fill || '');
-      return __htmlTextFillOf(el, cs) || '';
+      const value = __htmlTextFillOf(el, cs) || '';
+      // In the dark scheme a page an emulator draws is in (__schemeTextOverride).
+      const own = value ? __schemeTextOverride(el) : null;
+      return own ? rgbaToString(own) : value;
     } catch {
       return '';
     }
@@ -3069,7 +3148,7 @@ function createContrastHelpers(opts, shared) {
     if (__clipTextOwnerCache.has(el)) return __clipTextOwnerCache.get(el);
     let out = null;
     try {
-      const fill = parseCssColorToRgba(__textFillOf(__contrastComputedStyle(el)));
+      const fill = parseCssColorToRgba(__textFillOfEl(el, __contrastComputedStyle(el)));
       if (fill && fill.a === 0) {
         let cur = el;
         for (let depth = 0; cur && dom.nodeType(cur) === 1 && depth < 50; depth++) {
@@ -3089,7 +3168,45 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  function computeEffectiveForeground(el) {
+  // The colour el's text has in a color scheme other than the one whose
+  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // where opts give one; otherwise, in an emulator, in the dark scheme a
+  // page drawn only in dark is in, wherever the text is (an emulator
+  // computes the light scheme's colours). Null where the colour computed
+  // now is the one, or it can't be told (colorSchemeUnread).
+  function __schemeTextOverride(el, opts) {
+    const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
+    const scheme = asked === 'light' || asked === 'dark' ? asked : null;
+    if (!scheme) {
+      // A browser computes the colours of the scheme it draws.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut || info.current !== 'dark') return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      const own = __schemeTextColor(el, info.current);
+      return own && own.color ? own.color : null;
+    }
+    const bg = computeEffectiveBackground(el, {
+      contrast: { mode: 'strictConformance', ...(scheme ? { colorScheme: scheme } : {}) },
+      collectStack: false
+    });
+    return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
+  }
+
+  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // page's canvas (__schemeTextColor), where it isn't the one computed now.
+  function computeEffectiveForeground(el, opts) {
+    const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
+    if (opts && opts.contrast && opts.contrast.colorScheme) {
+      const out = computeEffectiveForeground(el);
+      if (!schemeOverride || !out || !out.rgba) return out;
+      const op = Number.isFinite(out.opacityProduct) ? out.opacityProduct : 1;
+      return {
+        rgba: { r: schemeOverride.r, g: schemeOverride.g, b: schemeOverride.b, a: clamp01(op) },
+        alpha: clamp01(op),
+        opacityProduct: op
+      };
+    }
     // The override first, as computeEffectiveBackground does: a caller can
     // ask for the foreground before the computability check resolves the
     // group opacity (the contrast rules' same-color filter does), and the
@@ -3127,6 +3244,16 @@ function createContrastHelpers(opts, shared) {
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
+    // On the canvas of a page drawn only in dark, in an emulator: the dark
+    // scheme's colour where the text takes it from the scheme.
+    if (c && schemeOverride) {
+      c = {
+        r: schemeOverride.r,
+        g: schemeOverride.g,
+        b: schemeOverride.b,
+        a: schemeOverride.a == null ? 1 : schemeOverride.a
+      };
+    }
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {
@@ -3176,9 +3303,15 @@ function createContrastHelpers(opts, shared) {
         ? contrast.rootCanvasFallback.trim()
         : '#ffffff';
 
+    const named = contrast.rootCanvasFallbackSet === true ? 'named' : '';
+    const scheme =
+      contrast.colorScheme === 'light' || contrast.colorScheme === 'dark'
+        ? contrast.colorScheme
+        : '';
+
     // Cache key must include any input that can affect computed background.
     // Note: we only cache when collectStack is false.
-    return `${mode}|${rootCanvasFallback}`;
+    return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
   // The canvas the browser paints behind the root: the Canvas system colour
@@ -3298,21 +3431,665 @@ function createContrastHelpers(opts, shared) {
     return occurrences;
   }
 
-  // The canvas under el's text where it is measured rather than assumed: in
-  // a browser, for an element of the page the engine runs in, when that
-  // page isn't in a frame. A frame's canvas is transparent where the frame
-  // shares its parent's color scheme, and what shows through then is the
-  // parent page, which the frame can't see. Null otherwise, which leaves it
-  // to the contrast mode (computeEffectiveBackground).
-  function __measuredCanvasUnder(el) {
+  // -------- The page's canvas, in each color scheme it supports --------
+  //
+  // Behind a page that paints no opaque background the browser paints its
+  // canvas, in the Canvas system colour of the root's used color scheme
+  // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
+  // own statement: the root's color-scheme, or, while that is normal, its
+  // <meta name="color-scheme">. A page that states none is drawn in the
+  // light scheme whatever the user prefers; one that names light and dark
+  // is drawn in the scheme the user prefers. So the canvas follows from
+  // the page and the user's preference, as the browser defines it, not
+  // from an assumption.
+
+  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // Chromium (read in Chromium 153), for an emulator that resolves them to
+  // fixed light values and lays nothing out (jsdom). A browser's own are
+  // read from the page instead.
+  const __SCHEME_COLORS = {
+    light: { canvas: '#ffffff', text: '#000000', link: '#0000ee' },
+    dark: { canvas: '#121212', text: '#ffffff', link: '#9e9eff' }
+  };
+
+  // The schemes a color-scheme value names, in its order: light and dark;
+  // normal, `only` and names no browser knows add none.
+  function __schemesNamed(value) {
+    const out = [];
+    for (const word of String(value || '')
+      .toLowerCase()
+      .split(/\s+/)) {
+      if ((word === 'light' || word === 'dark') && !out.includes(word)) out.push(word);
+    }
+    return out;
+  }
+
+  // The page's color schemes, read once per run: { supported, declared,
+  // current, laidOut, colors }. supported lists the schemes it is drawn in
+  // (['light'] for a page that declares none: declared is false then),
+  // current the one it is drawn in now (the user's preference where the
+  // page supports it, else the first it names), and colors each scheme's
+  // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
+  // its computed colours are the current scheme's; an emulator's are the
+  // light scheme's, without its prefers-color-scheme rules. Null under
+  // forced colors, where the canvas is the user's palette, and where
+  // nothing can be read.
+  let __schemes;
+  function __pageSchemes() {
+    if (__schemes !== undefined) return __schemes;
+    __schemes = null;
     try {
-      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
-      if (window.self !== window.top) return null;
-      const rgba = parseCssColorToRgba(__pageCanvasColor());
-      return rgba ? { r: rgba.r, g: rgba.g, b: rgba.b, a: 1 } : null;
+      const doc = window && window.document;
+      const root = doc && dom.documentElement(doc);
+      if (!root || typeof window.getComputedStyle !== 'function') return null;
+      if (
+        typeof window.matchMedia === 'function' &&
+        dom.get(window.matchMedia('(forced-colors: active)'), 'matches')
+      ) {
+        return null;
+      }
+      const rootCs = window.getComputedStyle(root);
+      const rootValue = String(
+        (rootCs && (rootCs.colorScheme || rootCs.getPropertyValue('color-scheme'))) || ''
+      ).trim();
+      let supported = __schemesNamed(rootValue);
+      // The meta element speaks for a root whose color-scheme is normal:
+      // the first one naming a scheme (HTML, "the page's supported color
+      // schemes").
+      if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
+        const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
+        for (const meta of Array.from(metas)) {
+          const named = __schemesNamed(dom.getAttribute(meta, 'content'));
+          if (named.length) {
+            supported = named;
+            break;
+          }
+        }
+      }
+      const declared = supported.length > 0;
+      if (!declared) supported = ['light'];
+      const prefersDark =
+        typeof window.matchMedia === 'function' &&
+        !!dom.get(window.matchMedia('(prefers-color-scheme: dark)'), 'matches');
+      const preferred = prefersDark ? 'dark' : 'light';
+      let current = supported.includes(preferred) ? preferred : supported[0];
+
+      const colors = {};
+      for (const scheme of ['light', 'dark']) {
+        const set = __SCHEME_COLORS[scheme];
+        colors[scheme] = {
+          canvas: parseCssColorToRgba(set.canvas),
+          text: parseCssColorToRgba(set.text),
+          link: parseCssColorToRgba(set.link)
+        };
+      }
+
+      // In a browser, each scheme's system colours are read from an
+      // element the engine adds and removes at once, and the scheme the
+      // page is drawn in from the Canvas it inherits from the root.
+      // An emulator lays nothing out: nothing to read there, and the page
+      // is left untouched.
+      let laidOut = false;
+      const probe = __hasLayout(doc) ? dom.call(doc, 'createElement', 'div') : null;
+      if (probe) {
+        probe.style.cssText =
+          'position:absolute;left:0;top:0;width:1px;height:1px;overflow:hidden;visibility:hidden';
+        dom.call(root, 'appendChild', probe);
+      }
+      try {
+        laidOut = !!probe && dom.getBoundingClientRect(probe).width === 1;
+        if (laidOut) {
+          const read = (value) => {
+            const c = parseCssColorToRgba(value);
+            return c && c.a === 1 ? { r: c.r, g: c.g, b: c.b, a: 1 } : null;
+          };
+          const readScheme = (scheme) => {
+            probe.style.colorScheme = scheme;
+            probe.style.backgroundColor = 'Canvas';
+            probe.style.color = 'CanvasText';
+            const cs = window.getComputedStyle(probe);
+            const canvas = read(cs.backgroundColor);
+            const text = read(cs.color);
+            probe.style.color = 'LinkText';
+            const link = read(window.getComputedStyle(probe).color);
+            return canvas && text && link ? { canvas, text, link } : null;
+          };
+          probe.style.backgroundColor = 'Canvas';
+          const drawn = read(window.getComputedStyle(probe).backgroundColor);
+          for (const scheme of ['light', 'dark']) {
+            const own = readScheme(scheme);
+            if (own) colors[scheme] = own;
+          }
+          const same = (a, b) => !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b;
+          if (same(drawn, colors.dark.canvas) && !same(drawn, colors.light.canvas)) {
+            current = 'dark';
+          } else if (same(drawn, colors.light.canvas) && !same(drawn, colors.dark.canvas)) {
+            current = 'light';
+          }
+          if (!supported.includes(current)) supported = [current];
+        }
+      } finally {
+        if (probe) dom.removeChild(root, probe);
+      }
+      __schemes = { supported, declared, current, laidOut, colors };
+    } catch {
+      __schemes = null;
+    }
+    return __schemes;
+  }
+
+  // Whether the engine runs in an emulator (jsdom, by its user agent),
+  // which computes the light scheme's colours whatever the page's scheme.
+  let __emulator;
+  function __emulatorWindow() {
+    if (__emulator !== undefined) return __emulator;
+    try {
+      const ua = String((window && window.navigator && window.navigator.userAgent) || '');
+      __emulator = /\bjsdom\//.test(ua);
+    } catch {
+      __emulator = false;
+    }
+    return __emulator;
+  }
+
+  // A canvas the run names (contrast.rootCanvasFallback the caller gave,
+  // src/core/dom-runner.js): it stands for the page's own in every scheme.
+  let __runCanvas = null;
+  function useNamedCanvas(color) {
+    const rgba = typeof color === 'string' ? parseCssColorToRgba(color) : null;
+    __runCanvas = rgba && rgba.a === 1 ? { color: color.trim(), rgba: { ...rgba, a: 1 } } : null;
+  }
+  function __namedCanvas(contrast) {
+    if (contrast && contrast.rootCanvasFallbackSet === true) {
+      const value =
+        typeof contrast.rootCanvasFallback === 'string' ? contrast.rootCanvasFallback.trim() : '';
+      const rgba = value ? parseCssColorToRgba(value) : null;
+      if (rgba && rgba.a === 1) return { color: value, rgba: { ...rgba, a: 1 } };
+    }
+    return __runCanvas;
+  }
+
+  // The style rules of a document's or shadow root's sheets that may make
+  // a colour depend on the color scheme: those inside an @media on
+  // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
+  // unknown), and those setting a colour, a background or a custom property
+  // to light-dark() or a system colour (`keyword`). Every condition is
+  // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
+  // unreadable }, once per root.
+  const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
+  const __SCHEME_VALUE =
+    /\blight-dark\s*\(|(?:^|[^\w-])(canvas|canvastext|linktext|visitedtext|activetext|buttonface|buttontext|buttonborder|field|fieldtext|highlight|highlighttext|selecteditem|selecteditemtext|mark|marktext|graytext|accentcolor|accentcolortext|activeborder|activecaption|appworkspace|background|buttonhighlight|buttonshadow|captiontext|inactiveborder|inactivecaption|inactivecaptiontext|infobackground|infotext|menu|menutext|scrollbar|threeddarkshadow|threedface|threedhighlight|threedlightshadow|threedshadow|window|windowframe|windowtext)(?![\w-])/i;
+  function __valueFollowsScheme(value) {
+    const v = String(value || '')
+      .replace(/url\([^)]*\)/gi, '')
+      .replace(/"[^"]*"|'[^']*'/g, '');
+    return __SCHEME_VALUE.test(v);
+  }
+  // Which of a declaration block's colours follow the scheme: { color }
+  // for the text's (color, -webkit-text-fill-color), { back } for a
+  // background or a custom property, which may feed either; null for none.
+  function __styleFollowsScheme(style) {
+    const out = { color: false, back: false };
+    try {
+      const n = Number(style && style.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const prop = String(style[i] || '');
+        if (__SCHEME_PROPS.test(prop) && __valueFollowsScheme(style.getPropertyValue(prop))) {
+          if (/^(color|-webkit-text-fill-color)$/i.test(prop)) out.color = true;
+          else out.back = true;
+        }
+      }
+    } catch {
+      return { color: true, back: true };
+    }
+    return out.color || out.back ? out : null;
+  }
+  function __mediaScheme(text) {
+    const t = String(text || '').toLowerCase();
+    if (!/prefers-color-scheme/.test(t)) return null;
+    // A query naming one scheme, and no other and no `not`, holds only in
+    // that scheme, whatever else it asks.
+    if (/\bnot\b|,/.test(t)) return 'unknown';
+    const named = new Set();
+    for (const m of t.matchAll(/prefers-color-scheme\s*:\s*([a-z-]+)/g)) named.add(m[1]);
+    return named.size === 1 && (named.has('light') || named.has('dark'))
+      ? [...named][0]
+      : 'unknown';
+  }
+  const __schemeRulesByRoot = new WeakMap();
+  function __schemeRulesOf(root) {
+    if (__schemeRulesByRoot.has(root)) return __schemeRulesByRoot.get(root);
+    const out = { pcs: [], keyword: [], unreadable: false };
+    const rulesOf = (sheet) => {
+      if (shared && typeof shared.cssRulesOf === 'function') return shared.cssRulesOf(sheet);
+      try {
+        return sheet.cssRules;
+      } catch {
+        return null;
+      }
+    };
+    const walk = (list, scheme, parent, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n && depth < 12; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          let parts = __splitTopLevel(rule.selectorText).filter(Boolean);
+          // A nested rule's selector is relative to its parent's.
+          if (parent) {
+            parts = parts.map((p) =>
+              p.includes('&') ? p.replace(/&/g, `:is(${parent})`) : `:is(${parent}) ${p}`
+            );
+          }
+          if (scheme && parts.length) out.pcs.push({ parts, scheme });
+          const follows = __styleFollowsScheme(rule.style);
+          if (follows) out.keyword.push({ parts, ...follows });
+          let nested;
+          try {
+            nested = rule.cssRules;
+          } catch {
+            nested = null;
+          }
+          if (nested && nested.length) walk(nested, scheme, parts.join(', '), depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          const rules = sheet ? rulesOf(sheet) : null;
+          if (!rules) {
+            out.unreadable = true;
+            continue;
+          }
+          const media = rule.media ? __mediaScheme(rule.media.mediaText) : null;
+          walk(rules, media || scheme, parent, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (!nested || !nested.length) continue;
+        const media =
+          name === 'CSSMediaRule' || rule.type === 4
+            ? __mediaScheme(rule.media && rule.media.mediaText)
+            : null;
+        walk(nested, media || scheme, parent, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        const rules = rulesOf(sheet);
+        if (!rules) {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, null, '', 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __schemeRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // How the colours behind el's text, and its own, may depend on the color
+  // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
+  // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
+  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // background or a custom property, set to light-dark() or a system
+  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // read.
+  const __schemeDependenceCache = new WeakMap();
+  const __noDependence = () => ({
+    pcs: new Set(),
+    keyword: false,
+    keywordColor: false,
+    keywordBack: false,
+    unknown: false
+  });
+  function __schemeDependence(el) {
+    if (!el || dom.nodeType(el) !== 1) return __noDependence();
+    if (__schemeDependenceCache.has(el)) return __schemeDependenceCache.get(el);
+    let parent = composedParent(el);
+    while (parent && dom.nodeType(parent) !== 1) parent = composedParent(parent);
+    const base = parent ? __schemeDependence(parent) : __noDependence();
+    const out = {
+      pcs: new Set(base.pcs),
+      keyword: base.keyword,
+      keywordColor: base.keywordColor,
+      keywordBack: base.keywordBack,
+      unknown: base.unknown
+    };
+    const note = (follows) => {
+      if (!follows) return;
+      if (follows.color) out.keywordColor = true;
+      if (follows.back) out.keywordBack = true;
+      out.keyword = true;
+    };
+    try {
+      let root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+      root = root || dom.ownerDocument(el);
+      const rules = __schemeRulesOf(root);
+      if (rules.unreadable) out.unknown = true;
+      const matches = (parts) => {
+        for (const part of parts) {
+          // A pseudo-element's rule styles another box.
+          if (/::|:(before|after|first-line|first-letter|marker|placeholder)\b/i.test(part))
+            continue;
+          try {
+            if (dom.matches(el, part)) return true;
+          } catch {
+            out.unknown = true;
+          }
+        }
+        return false;
+      };
+      for (const rule of rules.pcs) if (matches(rule.parts)) out.pcs.add(rule.scheme);
+      for (const rule of rules.keyword) {
+        if (out.keywordColor && out.keywordBack) break;
+        if (matches(rule.parts)) note(rule);
+      }
+      note(__styleFollowsScheme(dom.get(el, 'style')));
+    } catch {
+      out.unknown = true;
+    }
+    __schemeDependenceCache.set(el, out);
+    return out;
+  }
+
+  // Where el's text colour comes from: 'author', a colour of the page's
+  // own, the same in every scheme ('authorFill' where it is a
+  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
+  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // { value }, a value the page gives that picks by the scheme (light-dark(),
+  // a system colour); null where it can't be told, or is another colour of
+  // the browser's (a field's, a button's, a mark's). SVG text, and text cut
+  // out of a background, are left at null.
+  const __UA_COLOURED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  const __colorOriginCache = new WeakMap();
+  function __colorOrigin(el) {
+    if (__colorOriginCache.has(el)) return __colorOriginCache.get(el);
+    let out;
+    try {
+      out = __colorOriginUncached(el);
+    } catch {
+      out = null;
+    }
+    __colorOriginCache.set(el, out);
+    return out;
+  }
+  function __colorOriginUncached(el) {
+    if (!el || __isSvgTextElement(el) || __clipTextOwner(el)) return null;
+    // A fill the page sets paints the text whatever color says.
+    const fill = __jsdomAuthorFill(el);
+    if (fill !== false) return fill === true ? 'authorFill' : null;
+    const doc = dom.ownerDocument(el);
+    const body = doc ? dom.body(doc) : null;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) !== 1) {
+        cur = composedParent(cur);
+        continue;
+      }
+      const decls = __authorColorDeclsOf(cur, 'color');
+      if (decls.unknown) return null;
+      if (decls.values.length) {
+        const fixed = (v) =>
+          !__CSS_INHERITING.has(v.toLowerCase()) &&
+          !/\bvar\(|^(initial|revert|revert-layer)$/i.test(v) &&
+          !__valueFollowsScheme(v) &&
+          !!parseCssColorToRgba(v);
+        if (decls.values.every(fixed)) return 'author';
+        if (decls.uncertain || !decls.winner) return null;
+        const v = decls.winner.toLowerCase();
+        if (!__CSS_INHERITING.has(v)) {
+          if (v === 'initial') return 'canvasText';
+          if (fixed(v)) return 'author';
+          return __valueFollowsScheme(v) && !/\bvar\(/.test(v) ? { value: decls.winner } : null;
+        }
+      } else {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (name === 'font' && dom.hasAttribute(cur, 'color')) return 'author';
+        if (__isLink(cur)) {
+          return body && dom.hasAttribute(body, 'link') ? 'author' : 'linkText';
+        }
+        if (name === 'body' && dom.hasAttribute(cur, 'text')) return 'author';
+        if (__UA_COLOURED.has(name)) return null;
+      }
+      cur = composedParent(cur);
+    }
+    return 'canvasText';
+  }
+
+  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second colour, a system colour the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  function __resolveSchemeColor(value, scheme, info) {
+    const v = String(value || '').trim();
+    const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
+    if (pick) {
+      const parts = __splitTopLevel(pick[1]).map((x) => x.trim());
+      return parts.length === 2
+        ? __resolveSchemeColor(parts[scheme === 'dark' ? 1 : 0], scheme, info)
+        : null;
+    }
+    const set = info.colors[scheme];
+    const word = v.toLowerCase();
+    if (word === 'canvastext') return { ...set.text };
+    if (word === 'linktext') return { ...set.link };
+    if (word === 'canvas') return { ...set.canvas };
+    if (/\bvar\(/i.test(v) || __valueFollowsScheme(v)) return null;
+    return parseCssColorToRgba(v);
+  }
+
+  // Whether the browser paints a background of its own, in the scheme's
+  // system colours, behind el's text: el or an ancestor is a form control,
+  // a mark, a dialog or a popover whose background the page doesn't set.
+  const __UA_PAINTED = new Set([
+    'input',
+    'textarea',
+    'select',
+    'button',
+    'option',
+    'optgroup',
+    'mark',
+    'selectedcontent',
+    'meter',
+    'progress',
+    'dialog'
+  ]);
+  function __uaPaintedBehind(el) {
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (dom.nodeType(cur) === 1) {
+        const name = String(dom.localName(cur) || '').toLowerCase();
+        if (__UA_PAINTED.has(name) || dom.hasAttribute(cur, 'popover')) {
+          const own = ['background-color', 'background'].some((prop) => {
+            const decls = __authorColorDeclsOf(cur, prop);
+            return (
+              !decls.unknown &&
+              decls.values.length > 0 &&
+              decls.values.every((v) => !__valueFollowsScheme(v) && !/\bvar\(/i.test(v))
+            );
+          });
+          if (!own) return true;
+        }
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // el's text colour in `scheme`: { color } with color null where it is
+  // the colour computed now, or the colour it has in that scheme (the
+  // scheme's CanvasText or LinkText where the text takes it from the
+  // scheme; a light-dark() or system colour the page gives, worked out);
+  // null where it can't be told. The colours computed now are the scheme a
+  // browser draws, or, in an emulator, the light one with no
+  // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
+  // has its text's colours worked out here: not where a
+  // prefers-color-scheme rule for dark reaches them, a background behind
+  // them picks by the scheme, or the browser paints one there. A scheme the
+  // page isn't drawn in is told only where no prefers-color-scheme rule,
+  // light-dark() or system colour reaches the text's colour or the
+  // backgrounds behind it.
+  function __schemeTextColor(el, scheme) {
+    const info = __pageSchemes();
+    if (!info || !info.supported.includes(scheme)) return null;
+    const dep = __schemeDependence(el);
+    if (dep.unknown) return null;
+    if (info.laidOut && scheme === info.current) return { color: null };
+    if (!info.laidOut && scheme === 'light') {
+      return dep.pcs.has('light') || dep.pcs.has('unknown') ? null : { color: null };
+    }
+    const drawn = !info.laidOut && scheme === info.current;
+    if (drawn ? dep.pcs.has(scheme) || dep.pcs.has('unknown') : dep.pcs.size) return null;
+    if (dep.keywordBack || (!drawn && dep.keywordColor)) return null;
+    if (__uaPaintedBehind(el)) return null;
+    const origin = __colorOrigin(el);
+    if (origin === 'author') return { color: null };
+    if (origin === 'authorFill') return dep.keywordColor ? null : { color: null };
+    if (origin === 'canvasText') return { color: info.colors[scheme].text };
+    if (origin === 'linkText') return { color: info.colors[scheme].link };
+    if (drawn && origin && typeof origin === 'object') {
+      const color = __resolveSchemeColor(origin.value, scheme, info);
+      return color ? { color } : null;
+    }
+    return null;
+  }
+
+  // The scheme an emulator can't give el's text colours in: the page is
+  // drawn in it, and they can't be worked out (__schemeTextColor). An
+  // emulator computes the light scheme's colours and applies no
+  // prefers-color-scheme rule, so on a page drawn in light only text such
+  // a rule reaches; on one drawn in dark, text whose colours there can't be
+  // told. Null in a browser, which computes the colours it draws.
+  function colorSchemeUnread(el) {
+    try {
+      if (!window || !el || dom.nodeType(el) !== 1) return null;
+      if (dom.ownerDocument(el) !== window.document || window.self !== window.top) return null;
+      // A browser: nothing to work out, and the page is left untouched.
+      if (!__emulatorWindow()) return null;
+      const info = __pageSchemes();
+      if (!info || info.laidOut) return null;
+      if (info.current === 'light') {
+        const dep = __schemeDependence(el);
+        return dep.pcs.has('light') || dep.pcs.has('unknown') ? 'light' : null;
+      }
+      return __schemeTextColor(el, info.current) ? null : info.current;
     } catch {
       return null;
     }
+  }
+
+  // The canvas behind el's text in contrast.colorScheme (the scheme the
+  // page is drawn in when not given): { rgba, color, scheme, named,
+  // supported, current, text }, or null where it isn't known. Only for an
+  // element of the page the engine runs in, outside a frame: a frame's
+  // canvas is transparent where it shares its parent's color scheme, and
+  // what shows through then is the parent page, which the frame can't see.
+  // Not under forced colors (__pageSchemes). A canvas the run names stands
+  // for the page's (scheme null). text: __schemeTextColor.
+  function __canvasFor(el, contrast) {
+    try {
+      if (!window || !el || dom.ownerDocument(el) !== window.document) return null;
+      if (window.self !== window.top) return null;
+      const info = __pageSchemes();
+      if (!info) return null;
+      const asked = contrast && contrast.colorScheme;
+      const scheme = asked === 'light' || asked === 'dark' ? asked : info.current;
+      const named = __namedCanvas(contrast);
+      if (named && scheme !== info.current) return null;
+      const text = __schemeTextColor(el, scheme);
+      if (!text) return null;
+      return named
+        ? {
+            rgba: named.rgba,
+            color: named.color,
+            scheme: null,
+            named: true,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          }
+        : {
+            rgba: { ...info.colors[scheme].canvas, a: 1 },
+            color: rgbToHex(info.colors[scheme].canvas),
+            scheme,
+            named: false,
+            supported: info.supported.slice(0),
+            current: info.current,
+            text
+          };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether el's canvas would be known (__canvasFor) but for its text.
+  function __inCanvasScope(el) {
+    try {
+      return (
+        !!window &&
+        !!el &&
+        dom.ownerDocument(el) === window.document &&
+        window.self === window.top &&
+        !!__pageSchemes()
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // The canvas under el's text in the scheme the page is drawn in, where
+  // the colours computed now are that scheme's (see __canvasFor); null
+  // otherwise, which leaves it to the contrast mode
+  // (computeEffectiveBackground).
+  function __measuredCanvasUnder(el) {
+    const canvas = __canvasFor(el, null);
+    return canvas && canvas.text.color === null ? canvas.rgba : null;
+  }
+
+  // Whether el's text can be measured on the page's canvas in `scheme`, one
+  // the page supports but isn't drawn in now: its colours and the
+  // backgrounds behind it are the same in that scheme, or its colour is
+  // the scheme's own (__schemeTextColor).
+  function colorSchemeMeasurable(el, scheme) {
+    try {
+      return !!__schemeTextColor(el, scheme);
+    } catch {
+      return false;
+    }
+  }
+
+  // The page's color schemes (__pageSchemes): { supported, current,
+  // declared }, or null where they don't decide its canvas.
+  function pageColorSchemes() {
+    const info = __pageSchemes();
+    return info
+      ? { supported: info.supported.slice(0), current: info.current, declared: info.declared }
+      : null;
   }
 
   function computeEffectiveBackground(el, opts2) {
@@ -3495,6 +4272,7 @@ function createContrastHelpers(opts, shared) {
     }
 
     let out;
+    let canvas;
     const allowAssumptions = mode === 'auditorAssist';
 
     if (unparsable) {
@@ -3508,17 +4286,29 @@ function createContrastHelpers(opts, shared) {
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
       };
-    } else if (acc.a < 1 && __measuredCanvasUnder(el)) {
-      // Nothing behind the text up to the root is opaque, but the browser
-      // paints its canvas under the root and that colour was read, so the
-      // text is measured on it in either mode, as it is drawn.
-      acc = compositeRgba(acc, __measuredCanvasUnder(el));
+    } else if (acc.a < 1 && (canvas = __canvasFor(el, contrast))) {
+      // Nothing behind the text up to the root is opaque: the browser
+      // paints its canvas under the root, in the color scheme asked for
+      // (contrast.colorScheme) or the one the page is drawn in, and the
+      // text is measured on it in either mode, as it is drawn. A canvas the
+      // run names stands for it.
+      acc = compositeRgba(acc, canvas.rgba);
       out = {
         ok: true,
         rgba: { r: acc.r, g: acc.g, b: acc.b, a: 1 },
         alpha: 1,
         stack: stack || [],
-        reasonCode: null
+        reasonCode: null,
+        canvas: {
+          scheme: canvas.scheme,
+          supported: canvas.supported,
+          current: canvas.current,
+          named: canvas.named,
+          text: canvas.text.color ? { ...canvas.text.color } : null
+        },
+        ...(canvas.named
+          ? { assumptionsApplied: ['ROOT_CANVAS_FALLBACK'], assumedRootCanvasColor: canvas.color }
+          : {})
       };
     } else if (acc.a < 1) {
       if (allowAssumptions) {
@@ -3546,7 +4336,10 @@ function createContrastHelpers(opts, shared) {
           rgba: acc,
           alpha: acc.a,
           stack: stack || [],
-          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT'
+          reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+          // On a page whose canvas is known, the text's colour in the
+          // scheme it is drawn in could not be told (__schemeTextColor).
+          ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
       }
     } else {
@@ -3662,7 +4455,12 @@ function createContrastHelpers(opts, shared) {
       const placeholder = field && field.placeholder ? field.style : null;
       const textCs = placeholder || elCs;
       let elColor = parseCssColorToRgba(
-        textCs && (__isSvgTextElement(el) ? textCs.fill : __textFillOf(textCs))
+        textCs &&
+          (__isSvgTextElement(el)
+            ? textCs.fill
+            : placeholder
+              ? __textFillOf(textCs)
+              : __textFillOfEl(el, textCs))
       );
       if (!elColor) return __cacheAndReturn(null);
       let phBg = null;
@@ -4358,7 +5156,8 @@ function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -4697,6 +5496,23 @@ function createContrastHelpers(opts, shared) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
+    // The text's colours in the scheme the page is drawn in can't be read
+    // (an emulator: colorSchemeUnread), so whatever else is in the way, they
+    // are what is unknown.
+    const unread = colorSchemeUnread(el);
+    if (unread) {
+      const blocked = {
+        ok: false,
+        reasonCode: 'COLOR_SCHEME_NOT_RENDERED',
+        blockerSelector: '',
+        blockerProperty: 'color-scheme',
+        blockerValue: unread
+      };
+      try {
+        if (el) __computabilityBlockerCache.set(el, blocked);
+      } catch {}
+      return blocked;
+    }
     const out = __computabilityBlockerOf(el, false);
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
@@ -4804,7 +5620,8 @@ function createContrastHelpers(opts, shared) {
             ? bg.assumptionsApplied.slice(0)
             : null,
         assumedRootCanvasColor:
-          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null
+          typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null,
+        canvas: bg.canvas || null
       };
     } catch {
       return null;
@@ -7099,6 +7916,10 @@ function createContrastHelpers(opts, shared) {
     comparePaintOrder,
     colorsForced,
     noteForcedColors,
+    pageColorSchemes,
+    colorSchemeMeasurable,
+    colorSchemeUnread,
+    useNamedCanvas,
     isPinned: __isPinned
   };
 }
