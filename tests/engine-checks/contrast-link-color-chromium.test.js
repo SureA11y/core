@@ -106,6 +106,31 @@ const CASES = [
     'pass',
     '#222222'
   ],
+  // A fill the page sets paints the text, even in the browser's link
+  // colour, which jsdom also computes for a fill that follows color.
+  [
+    'a fill in the link colour',
+    `${DARK} a{color:#fff;-webkit-text-fill-color:#0000ee}`,
+    LINK,
+    'fail',
+    'pass',
+    '#0000ee'
+  ],
+  [
+    'a fill in the link colour, inherited',
+    `${DARK} a{color:#fff} p{-webkit-text-fill-color:#0000ee}`,
+    '<p>Read the <a href="/x">annual report</a></p><p>More text</p>',
+    'fail',
+    'pass',
+    '#0000ee'
+  ],
+  [
+    'a fill that follows color',
+    `${DARK} a{color:#fff;-webkit-text-fill-color:currentcolor}`,
+    LINK,
+    'pass',
+    'pass'
+  ],
   // The same colour as the text around it, and no underline.
   [
     'a link told apart by nothing',

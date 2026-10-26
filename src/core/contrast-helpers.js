@@ -2782,16 +2782,22 @@ function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set `color` in a document's or shadow root's
-  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // The style rules that set a colour property (`color`, or
+  // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
+  // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
   // evaluate (@supports, @layer, @container, a nested rule) is kept as
   // `uncertain`, and a sheet that can't be read makes the whole root so.
   // { rules: [{ parts, value, important, order, uncertain }], unreadable },
-  // once per root.
+  // once per root and property.
   const __colorRulesByRoot = new WeakMap();
-  function __colorRulesOf(root) {
-    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+  function __colorRulesOf(root, prop) {
+    let byProp = __colorRulesByRoot.get(root);
+    if (!byProp) {
+      byProp = new Map();
+      __colorRulesByRoot.set(root, byProp);
+    }
+    if (byProp.has(prop)) return byProp.get(prop);
     const out = { rules: [], unreadable: false };
     let order = 0;
     const mediaApplies = (rule) => {
@@ -2813,12 +2819,12 @@ function createContrastHelpers(opts, shared) {
         if (!rule) continue;
         const name = (rule.constructor && rule.constructor.name) || '';
         if (typeof rule.selectorText === 'string' && rule.style) {
-          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          const value = String(rule.style.getPropertyValue(prop) || '').trim();
           if (value) {
             out.rules.push({
               parts: __splitTopLevel(rule.selectorText).filter(Boolean),
               value,
-              important: rule.style.getPropertyPriority('color') === 'important',
+              important: rule.style.getPropertyPriority(prop) === 'important',
               order: order++,
               uncertain
             });
@@ -2876,14 +2882,14 @@ function createContrastHelpers(opts, shared) {
     } catch {
       out.unreadable = true;
     }
-    __colorRulesByRoot.set(root, out);
+    byProp.set(prop, out);
     return out;
   }
 
-  // The author's declaration of `color` that wins for el in a browser:
-  // { value }, null where none applies, or { unknown: true } where it can't
-  // be told.
-  function __authorColorOf(el) {
+  // The author's declaration of `color` (or of prop) that wins for el in a
+  // browser: { value }, null where none applies, or { unknown: true } where
+  // it can't be told.
+  function __authorColorOf(el, prop = 'color') {
     let root;
     try {
       root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
@@ -2891,7 +2897,7 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root);
+    const { rules, unreadable } = __colorRulesOf(root, prop);
     if (unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
@@ -2920,9 +2926,9 @@ function createContrastHelpers(opts, shared) {
     // The style attribute outranks every rule of its importance.
     try {
       const style = dom.get(el, 'style');
-      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
       if (value) {
-        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
@@ -2984,6 +2990,65 @@ function createContrastHelpers(opts, shared) {
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
     return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
+  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // own, on el or an ancestor it inherits from: true, false where it
+  // follows color, null where it can't be told. jsdom computes a fill that
+  // follows color as that colour, so a fill the page sets to jsdom's own
+  // link colour reads the same as one that follows it.
+  function __jsdomAuthorFill(el) {
+    for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
+      const decl = __authorColorOf(cur, '-webkit-text-fill-color');
+      if (decl && decl.unknown) return null;
+      if (decl) {
+        const value = decl.value.toLowerCase();
+        if (value === 'currentcolor' || value === 'initial') return false;
+        if (/\bvar\(/.test(value) || /^(revert|revert-layer)$/.test(value)) return null;
+        if (value !== 'inherit' && value !== 'unset') return true;
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // The colour value el's HTML text is painted in, from its computed style
+  // cs, before any opacity: -webkit-text-fill-color, else color, with the
+  // colour of text in a link worked out from the page's rules under jsdom
+  // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
+  // computes the fill as the colour it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that colour.
+  function __htmlTextFillOf(el, cs) {
+    const fillValue = __textFillOf(cs);
+    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
+      return fillValue;
+    const link = __jsdomLinkTextColor(el);
+    if (link === undefined) return fillValue;
+    if (!link) return '';
+    if (!fill || !parseCssColorToRgba(fill)) return link;
+    const own = parseCssColorToRgba(link);
+    const read = parseCssColorToRgba(fill);
+    if (own && read && own.r === read.r && own.g === read.g && own.b === read.b && own.a === read.a)
+      return link;
+    const authored = __jsdomAuthorFill(el);
+    if (authored === null) return '';
+    return authored ? fillValue : link;
+  }
+
+  // textFillColor(el): the colour value el's text is painted in, before any
+  // opacity, as computeEffectiveForeground reads it ('' where it can't be
+  // worked out).
+  function textFillColor(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return '';
+      const cs = __contrastComputedStyle(el);
+      if (!cs) return '';
+      if (__isSvgTextElement(el)) return String(cs.fill || '');
+      return __htmlTextFillOf(el, cs) || '';
+    } catch {
+      return '';
+    }
   }
 
   function __isSvgTextElement(el) {
@@ -3057,17 +3122,10 @@ function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
     // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
-    // colour it follows; one that differs is the page's own, and paints it.
-    if (cs && !svgText && !placeholder) {
-      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
-      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
-        const link = __jsdomLinkTextColor(el);
-        if (link !== undefined) fillValue = link || '';
-      }
-    }
+    // link colour, is read from the page's rules (__htmlTextFillOf).
+    const fillValue =
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
@@ -7021,6 +7079,7 @@ function createContrastHelpers(opts, shared) {
     hasFilter,
     computeOpacityProduct,
     computeEffectiveForeground,
+    textFillColor,
     computeEffectiveBackground,
     getComputabilityBlocker,
     getOutlineColors,

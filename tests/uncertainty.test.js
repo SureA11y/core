@@ -183,8 +183,10 @@ const CODE_FIXTURES = [
   [
     'not-computable',
     'link-in-text-block',
-    // Not underlined: an underline settles the link before its colors are needed.
-    '<main><p>Some surrounding sentence text <a href="/x" style="text-decoration:none">a link</a> and more words.</p></main>'
+    // Not underlined: an underline settles the link before its colors are
+    // needed. In a translucent color, which depends on the background the
+    // page doesn't set: two opaque colors would compare without it.
+    '<main><p>Some surrounding sentence text <a href="/x" style="text-decoration:none;color:rgba(0,0,0,0.5)">a link</a> and more words.</p></main>'
   ],
   [
     'runtime-dependent',

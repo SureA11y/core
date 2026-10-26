@@ -96,7 +96,7 @@ test('strictOptions accepts every option the engine reads, in each documented fo
     fragment: false,
     excludeSelectors: '.ad, .banner',
     timestamp: '2026-10-08T00:00:00Z',
-    contrast: { mode: 'auditorAssist', rootCanvasFallback: '#fff' },
+    contrast: { mode: 'auditorAssist', rootCanvasFallback: '#fff', rootCanvasFallbackSet: true },
     visibilityMode: 'styleOnly',
     policyContract: 'a11y',
     policy: { coerceManualFailToCantTell: true },

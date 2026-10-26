@@ -24,6 +24,7 @@ const CASES = {
   contrast: { contrast: 'auditorAssist' },
   'contrast.mode': { contrast: { mode: 'auditor' } },
   'contrast.rootCanvasFallback': { contrast: { rootCanvasFallback: 5 } },
+  'contrast.rootCanvasFallbackSet': { contrast: { rootCanvasFallbackSet: 'maybe' } },
   visibilityMode: { visibilityMode: 'geometry' },
   policyContract: { policyContract: 5 },
   'policyContract.id': { policyContract: { id: 5 } },
