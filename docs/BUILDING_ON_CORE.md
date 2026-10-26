@@ -140,13 +140,14 @@ function criterionStatus(rollup) {
   const notSelected = contributors.filter((c) => c.notSelected).length;
   if (rollup.outcome === 'fail') return 'fails';
   if (notSelected) return `partly checked (${contributors.length - notSelected} of ${contributors.length} checks)`;
+  if (rollup.data.details.reasonCode === 'composite.rollup.cantTell.partialCheck') return 'checks passed, needs review';
   return { pass: 'passes its checks', cantTell: 'needs review', notApplicable: 'not applicable' }[rollup.outcome];
 }
 
 const statuses = Object.fromEntries(picked.rulesResults.map((r) => [r.ruleId, criterionStatus(r)]));
 ```
 
-**A criterion that passes is not a conformance claim.** A rollup's `pass` means every automated check of the criterion came back clean on the page as it was scanned; most criteria have parts no automated check covers. Where you show it, say what was checked, what needs review and what no check covers, and don't call a criterion, a page or a product conformant on the strength of passes ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
+**A criterion whose checks all pass is not a conformance claim, and no WCAG rollup says `pass`.** A WCAG criterion passes only when its rules check all it asks, and none does yet (`COMPLETE_CHECK` in `src/coverage/complete-applicability.js` is empty): where every check of a criterion came back clean on the page as it was scanned, its rollup is `cantTell` with `reasonCode` `composite.rollup.cantTell.partialCheck`. The parts the checks cover are met, and a person checks the rest. Show it apart from other `cantTell`s if you like ("checks passed, needs review"), never as passed. The same holds for a standard's requirement that restates WCAG criteria or is marked partial; a `pass` comes only from a standard's own requirement its rules check in full. Even then, say what was checked, what needs review and what no check covers, and don't call a criterion, a page or a product conformant on the strength of passes ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
 **Results in a tool that uses AI.** A result is structured evidence, which makes it usable input for a model that explains findings, drafts fixes or sorts `cantTell` cases for a reviewer. Keep the two apart: store and show the engine's outcome, rule and uncertainty as they are, and mark what the model adds as its suggestion. A model's reading of a `cantTell` is not the engine settling it, and a suggested fix is not a verified one until a scan or a person confirms it. Occurrences carry the page's markup and text, so treat a result as page content before sending it to an outside service.
 
