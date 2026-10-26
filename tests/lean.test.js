@@ -15,6 +15,7 @@ const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 const { renderJunitReport } = require('../src/junit.js');
 const { renderSarifReport } = require('../src/sarif.js');
 const { renderHtmlReport } = require('../src/report.js');
+const { addHowToCheck } = require('../src/index.js');
 
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
@@ -188,6 +189,29 @@ test("SARIF carries a lean's caution beside its reason, and no signals", () => {
   measured.checksResults[0].occurrences[0].lean.measured = { agreed: 9, cases: 10 };
   const [again] = JSON.parse(renderSarifReport(measured)).runs[0].results;
   assert.deepEqual(again.properties.lean.measured, { agreed: 9, cases: 10 });
+});
+
+test('SARIF gives an undecided finding the steps to answer it, in its properties and message', () => {
+  // As a binding gets it: the engine's result, without the steps.
+  const result = runa11yCoreOnHtml(page('<main><h1>a</h1><h3>b</h3><img src="x.png"></main>'), {
+    runOnly: ['heading-order', 'img-alt-present']
+  });
+  const results = JSON.parse(renderSarifReport(result)).runs[0].results;
+  const asked = results.find((r) => r.ruleId === 'heading-order');
+  assert.ok(asked.properties.howToCheck.steps.length);
+  assert.match(asked.properties.howToCheck.failWhen, /more than one level/);
+  assert.match(asked.message.text, /\n\nHow to check:\n1\. Find the heading the report names/);
+  assert.match(asked.message.text, /\nFails when: /);
+  // A failure has no steps; the message keeps its summary and hint.
+  const failed = results.find((r) => r.ruleId === 'img-alt-present');
+  assert.equal(failed.properties.howToCheck, undefined);
+  assert.doesNotMatch(failed.message.text, /How to check/);
+  // The steps are no part of the finding's identity.
+  const withSteps = JSON.parse(renderSarifReport(addHowToCheck(result))).runs[0].results;
+  assert.deepEqual(
+    withSteps.map((r) => r.partialFingerprints),
+    results.map((r) => r.partialFingerprints)
+  );
 });
 
 test('the HTML report groups undecided findings by their lean', () => {

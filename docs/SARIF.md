@@ -54,7 +54,8 @@ Every rule that ran (regardless of whether it produced a result) is listed once 
 | SARIF field | Source |
 |---|---|
 | `results[].ruleId` | `checksResults[i].ruleId` |
-| `results[].message.text` | `occurrence.summary` + `occurrence.hint`. An occurrence with no summary (a custom rule's, say) uses the rule's title, or its id, since GitHub rejects a result with empty text. |
+| `results[].message.text` | `occurrence.summary` + `occurrence.hint`. An occurrence with no summary (a custom rule's, say) uses the rule's title, or its id, since GitHub rejects a result with empty text. An undecided finding's steps follow, after a blank line: "How to check:", the numbered steps, then "Passes when:" and "Fails when:", so an alert says how to answer it. |
+| `results[].properties.howToCheck` | An undecided finding's steps, `{ steps, passWhen, failWhen }`, as `occurrence.howToCheck` gives them ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)). A result that comes without them, as a binding's does, gains them in Node; `packs` (the packs the scan ran) adds a pack rule's own. Like the lean, not part of the finding's identity. |
 | `results[].locations[].physicalLocation.artifactLocation.uri` | The scanned target — see "Locations" below. |
 | `results[].locations[].logicalLocations[].fullyQualifiedName` | The element's location, with `kind: "element"`, when `occurrence.selector` is a string that isn't empty. Outside a shadow tree it is the selector. For an element inside a shadow tree it is the shadow hosts' selectors, then the element's own, joined with ` >>> `: `html > body > main > x-card >>> button`. JUnit's `selector:` line and the HTML report show the same text. |
 | `results[].partialFingerprints["surea11y/violation/v2"]` | The SHA-256 digest, 64 hex digits, of the same `ruleId + reasonCode + html` identity key used by [`BASELINE.md`](./BASELINE.md) (`computeBaselineKey`) — a stable, content-based fingerprint rather than a position-based one, for consumers that read it: the same finding gets the same digest in every report. Before, `surea11y/violation/v1` held the key itself, with raw `\u0000` separators and up to 2 KB of markup. |
@@ -126,6 +127,7 @@ The finding's identity does not include the viewport, and does not need to: the 
 | `category` | none | `runs[0].automationDetails.id`, see [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
 | `leanFailAs` | `'warning'` | `'error'` reports a `cantTell` finding whose lean points to fail at `error`, so a build gated on errors fails on likely failures too. Read in any case; another value throws a `TypeError`. A best-practice rule's too: such a rule, mapped to no WCAG criterion, never fails, and the facts it states lean fail without condition ([`LEANS.md`](./LEANS.md#how-far-to-trust-a-lean)), so a skipped heading level (`heading-order`) is an `error`. A finding of a rule whose every criterion is outside the scan's target stays a `note`. A finding that leans fail and has an entry marked `lean: 'fail'` in `baselineEntries` stays a `warning`. |
 | `leanFailWcagOnly` | `false` | With `leanFailAs: 'error'`, `true` raises only the findings of rules mapped to a WCAG criterion in the scan's target, leaving the best-practice rules' leans at `warning`. A value other than `true` or `false` throws a `TypeError`. |
+| `packs` | none | The packs the scan ran (`engineOptions.packs`): in Node, a pack rule's undecided findings carry the steps of its own `meta.review` (`properties.howToCheck`). |
 
 ## Combining with `--baseline`
 
