@@ -17,6 +17,8 @@ const { listenerHookScript } = require('./core/listener-hook.js');
 // The opt-in live-region hook: records what a page's live regions are given
 // (src/core/live-region-hook.js).
 const { liveRegionHookScript } = require('./core/live-region-hook.js');
+// The reason codes each hook decides or changes, for a binding's docs.
+const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
 
 // engineOptions.packs (src/pack.js): the Node entry points below run a scan,
 // or answer a catalog question, on an engine prepared with the packs, with
@@ -94,11 +96,16 @@ function stampPacks(result, engine) {
   return result && typeof result.then === 'function' ? result.then(stamp) : stamp(result);
 }
 
-// The steps for undecided findings (src/how-to-check.js) read core's rule
-// files and their dictionaries from disk, so, as src/pack.js is, the module is
-// loaded through Node's own require, which a browser bundle of this entry
-// doesn't follow. There, a result has no steps, and addHowToCheck returns it
-// as it is.
+// The steps for undecided findings (src/how-to-check.js) read core's review
+// dictionaries from disk, so, as src/pack.js is, the module is loaded through
+// Node's own require, which a browser bundle of this entry doesn't follow.
+// There a result gets no steps from this entry: a binding whose code runs in
+// a browser (a Cypress spec) calls applyHowToCheck from
+// @surea11y/core/how-to-check with the dictionaries it imports. Asked for
+// steps by name there, addHowToCheck and howToCheckFor say so once, since
+// the caller expects steps and gets none; runDomRulesInPage, which adds them
+// as a matter of course, stays silent, since a scan in a bundle is a
+// legitimate use that never asked for them.
 let howToCheckModule;
 function loadHowToCheck() {
   if (howToCheckModule === undefined) {
@@ -115,26 +122,52 @@ function loadHowToCheck() {
   return howToCheckModule;
 }
 
-function addHowToCheck(result) {
+let warnedNoHowToCheck = false;
+function howToCheckOrWarn(name) {
   const m = loadHowToCheck();
-  return m ? m.addHowToCheck(result) : result;
+  if (!m && !warnedNoHowToCheck) {
+    warnedNoHowToCheck = true;
+    try {
+      console.warn(
+        `[surea11y] ${name} adds no steps here: it reads the review dictionaries from disk, in Node. ` +
+          'In a browser bundle, call applyHowToCheck(result, { en }) from @surea11y/core/how-to-check ' +
+          'with the dictionaries from @surea11y/core/review/<locale>.'
+      );
+    } catch {}
+  }
+  return m;
 }
 
-function howToCheckFor(ruleId, reasonCode, locale) {
-  const m = loadHowToCheck();
-  return m ? m.howToCheckFor(ruleId, reasonCode, locale) : null;
+function addHowToCheck(result, options) {
+  const m = howToCheckOrWarn('addHowToCheck');
+  return m ? m.addHowToCheck(result, options) : result;
 }
 
-// A result gains its undecided findings' steps here, after the scan; a
-// result that is a promise, once it settles.
-function withHowToCheck(result) {
-  return result && typeof result.then === 'function'
-    ? result.then(addHowToCheck)
-    : addHowToCheck(result);
+function howToCheckFor(ruleId, reasonCode, locale, options) {
+  const m = howToCheckOrWarn('howToCheckFor');
+  return m ? m.howToCheckFor(ruleId, reasonCode, locale, options) : null;
+}
+
+// A result gains its undecided findings' steps here, after the scan, with
+// the packs it ran; a result that is a promise, once it settles. Without
+// Node it is returned as it is, silently.
+function withHowToCheck(result, engineOptions) {
+  const packs =
+    engineOptions && typeof engineOptions === 'object' && Array.isArray(engineOptions.packs)
+      ? engineOptions.packs
+      : null;
+  const withSteps = (r) => {
+    const m = loadHowToCheck();
+    return m ? m.addHowToCheck(r, packs ? { packs } : undefined) : r;
+  };
+  return result && typeof result.then === 'function' ? result.then(withSteps) : withSteps(result);
 }
 
 function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
-  return withHowToCheck(scanInPage(pageUrl, contextSelector, engineOptions, runOnly));
+  return withHowToCheck(
+    scanInPage(pageUrl, contextSelector, engineOptions, runOnly),
+    engineOptions
+  );
 }
 
 function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
@@ -224,5 +257,6 @@ module.exports = {
   flattenCrossFrameResult,
   internalsHookScript,
   listenerHookScript,
-  liveRegionHookScript
+  liveRegionHookScript,
+  HOOK_REASON_CODES
 };

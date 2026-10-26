@@ -65,6 +65,12 @@
       "pack-docs": [
         "src/pack-docs.d.ts"
       ],
+      "how-to-check": [
+        "src/how-to-check-core.d.ts"
+      ],
+      "review/*": [
+        "src/review-dictionary.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -120,6 +126,14 @@
       "types": "./src/pack-docs.d.ts",
       "default": "./src/pack-docs.js"
     },
+    "./how-to-check": {
+      "types": "./src/how-to-check-core.d.ts",
+      "default": "./src/how-to-check-core.js"
+    },
+    "./review/*": {
+      "types": "./src/review-dictionary.d.ts",
+      "default": "./src/i18n/review/*.json"
+    },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
       "import": "./surea11y.browser.mjs",
@@ -147,6 +161,9 @@
   "files": [
     "src/index.js",
     "src/how-to-check.js",
+    "src/how-to-check-core.js",
+    "src/how-to-check-core.d.ts",
+    "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",
     "src/index.d.ts",
     "src/baseline.d.ts",
@@ -184,6 +201,7 @@
     "src/core/internals-hook.js",
     "src/core/listener-hook.js",
     "src/core/live-region-hook.js",
+    "src/hook-reason-codes.js",
     "src/core/engine-options.js",
     "src/pack-docs.js",
     "src/pack-docs.d.ts",
