@@ -21,8 +21,10 @@
  *   - an element out of the accessibility tree (`aria-hidden="true"`), or
  *     disabled (`disabled`, or `aria-disabled="true"` on it or an
  *     ancestor): it offers nothing to operate;
- *   - a widget inside a composite widget, or inside an element with
- *     `aria-activedescendant` that can take focus: the composite moves
+ *   - a widget inside a composite widget, or inside an element that can
+ *     take focus and whose `aria-activedescendant` points at an item (by
+ *     id, or set from script as `ariaActiveDescendantElement`; an empty
+ *     attribute points at nothing): the composite moves
  *     focus among its items
  *     (a roving tabindex) or keeps it and points at the active one, so the
  *     outer element is judged instead (for a submenu, its menubar);
@@ -231,6 +233,14 @@ function runInPage(ctx) {
       return { focusable: false, tabbable: false };
     }
   }
+  // Whether the element points at an active item: by id, or with an
+  // element a script set (ariaActiveDescendantElement), which leaves the
+  // attribute empty. An empty attribute with no element points at nothing.
+  function pointsAtActiveItem(el) {
+    if (!dom.hasAttribute(el, 'aria-activedescendant')) return false;
+    if (trim(dom.getAttribute(el, 'aria-activedescendant'))) return true;
+    return helpers.getRefElements(el, 'aria-activedescendant', ctx).length > 0;
+  }
   function isAriaDisabled(el) {
     return trim(dom.getAttribute(el, 'aria-disabled')).toLowerCase() === 'true';
   }
@@ -256,9 +266,7 @@ function runInPage(ctx) {
       const a = chain[i];
       up = {
         managed:
-          up.managed ||
-          COMPOSITE.has(roleOf(a)) ||
-          (dom.hasAttribute(a, 'aria-activedescendant') && focusOf(a).focusable),
+          up.managed || COMPOSITE.has(roleOf(a)) || (pointsAtActiveItem(a) && focusOf(a).focusable),
         disabled: up.disabled || isAriaDisabled(a)
       };
       contexts.set(a, up);
@@ -396,7 +404,9 @@ function runInPage(ctx) {
 
   // A bare [role] is matched far faster than a list of role values, and
   // several rules query it, so its hidden-content checks are shared; the
-  // roles are told apart below.
+  // roles are told apart below. An element a script gives an active item
+  // (ariaActiveDescendantElement) carries an empty aria-activedescendant,
+  // as HTML reflects it, so the attribute selector finds it.
   const nodes = helpers.queryAllSmart('[role], [aria-activedescendant]', { internalsRoles: true });
 
   for (const el of nodes) {
@@ -404,10 +414,7 @@ function runInPage(ctx) {
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
     const widget = composite || SINGLE.has(role);
-    // An id, or an element set from script (ariaActiveDescendantElement).
-    const activeHost =
-      !!trim(dom.getAttribute(el, 'aria-activedescendant')) ||
-      helpers.getReflectedRefs(el, 'aria-activedescendant').length > 0;
+    const activeHost = pointsAtActiveItem(el);
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     // A click listener the listener hook saw is click-handler-keyboard-operable's too.

@@ -152,7 +152,7 @@
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step2": "Lisez son équivalent textuel (la valeur donnée par le rapport, ou son contenu de repli et son nom dans le panneau Accessibilité).",
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step3": "Vérifiez que le texte transmet la même information ou la même fonction que le dessin, et qu’il suit si le dessin change.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_fail": "Appuyer sur Entrée ou Espace ne fait rien, même une fois le focus arrivé, ce qui ne respecte pas le critère WCAG 2.1.1 (F54).",
-  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Entrée (et Espace pour les contrôles de type bouton) fait la même chose qu’un clic.",
+  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Entrée (et Espace pour les contrôles de type bouton) fait la même chose qu’un clic, ou, pour un onglet, y placer le focus affiche déjà son panneau.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step1": "Cliquez sur l’élément indiqué par le rapport et notez ce qui se passe.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step2": "Rechargez la page, puis appuyez sur Tab jusqu’à ce que l’élément ait le focus.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step3": "Appuyez sur Entrée, puis sur Espace, et comparez avec ce qu’a fait le clic.",

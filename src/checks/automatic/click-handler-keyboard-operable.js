@@ -53,14 +53,16 @@
  *     only on an ancestor, a shadow root the element is in, the document or
  *     the window may handle the element's keys or only others': cantTell
  *     (`CLICK_HANDLER_KEY_LISTENER_ABOVE`).
- *   - The element is in the tab order, its role is button, link, checkbox
- *     or switch, and a hook installed before the page's scripts saw no key
- *     listener on it, a descendant, an ancestor, a shadow root it is in,
- *     the document or the window, nor is an inline key handler there: fail
+ *   - The element is in the tab order, its role is button, link, checkbox,
+ *     switch, tab, menuitem, menuitemcheckbox or menuitemradio, and a hook
+ *     installed before the page's scripts saw no key listener on it, a
+ *     descendant, an ancestor, a shadow root it is in, the document or the
+ *     window, nor is an inline key handler there: fail
  *     (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so
  *     Enter and Space do nothing. Unless a focus or focusin listener is on
  *     it, an ancestor, a shadow root it is in, the document or the window:
- *     it may add the key listener once the element has focus, so cantTell
+ *     it may add the key listener once the element has focus, or, for a
+ *     tab, show its panel on focus, so cantTell
  *     (`CLICK_HANDLER_FOCUS_LISTENER`).
  *   - Neither it nor a descendant can take focus, and its role is button,
  *     link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`).
@@ -79,9 +81,10 @@
  *   - `role`: the element's ARIA role, or '' for none.
  *   - `focusable`: whether the element itself can take focus.
  * @reason-codes
- *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox or
- *     switch with a click handler is in the tab order, but no key handler or
- *     listener is anywhere its key events go, so Enter and Space do nothing.
+ *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
+ *     switch, tab or menu item with a click handler is in the tab order, but
+ *     no key handler, key listener or focus listener is anywhere its key
+ *     events go, so Enter and Space do nothing.
  *     Basis: WCAG 2.1.1; WCAG 2.1.3.
  *   - `CLICK_HANDLER_CONTROL_NOT_FOCUSABLE` (fail): a button, link, checkbox
  *     or switch with a click handler cannot take focus, nor can anything
@@ -109,9 +112,10 @@
  *     It leans pass when the nearest ancestor with a key listener is a
  *     composite widget the element is an item of (a tab in its tablist).
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
- *   - `CLICK_HANDLER_FOCUS_LISTENER` (cantTell): a control with a click
- *     handler is in the tab order with no key listener, but a focus listener
- *     may add one once it has focus.
+ *   - `CLICK_HANDLER_FOCUS_LISTENER` (cantTell): a control (button, link,
+ *     checkbox, switch, tab or menu item) with a click handler is in the tab
+ *     order with no key listener, but a focus listener may add one once it
+ *     has focus, or, for a tab, show its panel on focus.
  *     It leans fail when the only focus listeners are on the document or the
  *     window, none on the element, an ancestor or a shadow root it is in.
  *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
@@ -199,7 +203,8 @@ const meta = {
         'Reload, then press Tab until the element has focus.',
         'Press Enter, then Space, and compare with what the click did.'
       ],
-      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
+      passWhen:
+        'Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel.',
       failWhen:
         'Pressing Enter or Space does nothing even after focus arrives, which fails WCAG 2.1.1 (F54).'
     },
@@ -255,6 +260,12 @@ function runInPage(ctx) {
 
   const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
   const FAIL_ROLES = new Set(['button', 'link', 'checkbox', 'switch']);
+  // Roles that fail with no key listener anywhere, as an early hook saw it:
+  // the controls above, and the items of a tablist or a menu, whose keys
+  // their widget handles. Only those controls fail when nothing can focus
+  // them.
+  const ITEM_FAIL_ROLES = new Set(['tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio']);
+  const NO_KEY_FAIL_ROLES = new Set([...FAIL_ROLES, ...ITEM_FAIL_ROLES]);
   const WIDGET_ROLES = new Set([
     'button',
     'link',
@@ -648,9 +659,10 @@ function runInPage(ctx) {
       // key event from it goes: Enter and Space do nothing (2.1.1).
       // A focus listener on it, an ancestor, a shadow root it is in, the
       // document or the window may add the key listener once it has focus.
+      // A tab may also show its panel on focus.
       const focusWired =
         noKeyListenerAnywhere &&
-        FAIL_ROLES.has(role) &&
+        NO_KEY_FAIL_ROLES.has(role) &&
         (pageFocusListener ||
           listenerInfo(el, FOCUS_TYPES).listens ||
           ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
@@ -706,14 +718,19 @@ function runInPage(ctx) {
         );
         continue;
       }
-      if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
+      if (noKeyListenerAnywhere && NO_KEY_FAIL_ROLES.has(role)) {
+        const item = ITEM_FAIL_ROLES.has(role);
         fails.push(
           helpers.reportOccurrence(el, {
             summary: `This element has role="${role}" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.`,
-            hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
+            hint: item
+              ? `Handle keydown so that the keys a ${role} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.`
+              : `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
             i18n: {
               summaryKey: 'clickHandlerKeyboardOperable_summary_fail_noKeyListener',
-              hintKey: 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
+              hintKey: item
+                ? 'clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem'
+                : 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
               params: { role }
             },
             data: {

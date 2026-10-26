@@ -152,7 +152,7 @@
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step2": "Lea su alternativa textual (el valor que da el informe, o su contenido alternativo y su nombre en el panel Accesibilidad).",
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step3": "Compruebe que el texto transmite la misma información o finalidad que el dibujo, y que se mantiene al día si el dibujo cambia.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_fail": "Pulsar Intro o Espacio no hace nada ni siquiera cuando el elemento ya tiene el foco, lo que incumple WCAG 2.1.1 (F54).",
-  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Intro (y Espacio en los controles que funcionan como botones) hace lo mismo que un clic.",
+  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Intro (y Espacio en los controles que funcionan como botones) hace lo mismo que un clic o, en una pestaña, llevarle el foco ya muestra su panel.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step1": "Haga clic en el elemento que indica el informe y anote lo que ocurre.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step2": "Recargue la página y pulse Tab hasta que el elemento tenga el foco.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step3": "Pulse Intro y luego Espacio, y compárelo con lo que hizo el clic.",

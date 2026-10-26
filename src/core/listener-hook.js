@@ -23,8 +23,8 @@
  * them as it would. The wrappers keep the originals' names, lengths and
  * property attributes; they do not pretend to be native code.
  *
- * Only these types are recorded (LISTENER_TYPES): clicks, keys, focus, and
- * the mouse events mouse-only-event-handlers asks about. A listener of any
+ * Only these types are recorded (LISTENER_TYPES): clicks, keys, focus, the
+ * mouse events mouse-only-event-handlers asks about, and paste. A listener of any
  * other type costs one Set lookup. Each target keeps a count per type and
  * capture phase of listeners added and not removed; a listener added with
  * `once`, or with a `signal` that later aborts, is still counted after it
@@ -55,7 +55,8 @@
  */
 
 // The event types recorded: what click-handler-keyboard-operable,
-// mouse-only-event-handlers and widget-keyboard-focusable ask about.
+// mouse-only-event-handlers, widget-keyboard-focusable and
+// password-paste-enabled ask about.
 const LISTENER_TYPES = [
   'click',
   'keydown',
@@ -72,7 +73,8 @@ const LISTENER_TYPES = [
   'mousemove',
   'mouseenter',
   'mouseleave',
-  'dblclick'
+  'dblclick',
+  'paste'
 ];
 
 // The script, as text, so a bundler or a coverage tool never rewrites it.

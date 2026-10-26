@@ -239,6 +239,23 @@ test('it records the types the rules ask about, once per listener and phase, unt
   assert.ok(LISTENER_TYPES.includes('click') && !LISTENER_TYPES.includes('scroll'));
 });
 
+test('paste listeners are recorded, added or set as a property', () => {
+  const dom = page(
+    '<input id="a"><input id="b"><input id="c" onpaste="return false">',
+    `document.getElementById('a').addEventListener('paste', function () {});
+     document.getElementById('b').onpaste = function () {};
+     document.addEventListener('paste', function () {});`
+  );
+  const hook = readListenerHook(dom.window);
+  const $ = (id) => dom.window.document.getElementById(id);
+  assert.ok(LISTENER_TYPES.includes('paste'));
+  assert.equal(hook.has($('a'), 'paste'), true);
+  assert.equal(hook.has($('b'), 'paste'), true);
+  assert.equal(hook.has($('c'), 'paste'), false, 'an inline attribute is the markup’s');
+  assert.equal(hook.has(dom.window.document, 'paste'), true);
+  assert.equal(hook.has($('a'), 'copy'), false, 'copy is not recorded');
+});
+
 test('an onclick-style property is a listener while it holds a function', () => {
   const dom = page(
     '<div id="a"></div><svg><rect id="r" /></svg>',

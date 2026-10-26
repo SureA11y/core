@@ -42,6 +42,16 @@
     <div id="srf_case_06" class="scrollY">Long text. <div hidden="until-found"><a href="#">read on</a></div></div>
   </div>
 
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: overflow-y:auto whose only focusable descendant has tabindex="-1", which Tab does not reach</div>
+    <div id="srf_case_07" class="scrollY">Long text. <span tabindex="-1">A note focused by script.</span></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — CANTTELL: overflow-y:auto whose only controls are disabled or type="hidden"</div>
+    <div id="srf_case_08" class="scrollY">Long text. <button type="button" disabled>Load more</button><input type="hidden" name="page" value="2"></div>
+  </div>
+
   <h2>B. Not flagged</h2>
 
   <div class="case" id="case_03">

@@ -19,11 +19,13 @@
  *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
  * @expectation
  *   A region whose CSS declares it may scroll (`auto`/`scroll`) should be
- *   reachable by keyboard: either it already contains a focusable
- *   descendant (a link, button, form control, or `tabindex`-bearing
- *   element a keyboard user could tab into and then use arrow keys to
- *   scroll from), or the region itself is reached by Tab: a non-negative
- *   `tabindex`, or natively, as a `<textarea>` or an editable region is.
+ *   reachable by keyboard: either it already contains a descendant in the
+ *   sequential tab order (a link, button, form control, or element with a
+ *   non-negative `tabindex` that a keyboard user could tab into and then
+ *   use arrow keys to scroll from; one with `tabindex="-1"`, a disabled or
+ *   `type="hidden"` control, or one the page hides does not count), or the
+ *   region itself is reached by Tab: a non-negative `tabindex`, or
+ *   natively, as a `<textarea>` or an editable region is.
  *   A disabled `<textarea>` is left out, as a disabled field need not be
  *   operable.
  * @reason-codes
@@ -45,10 +47,12 @@
  *   (cantTell-capped, never fail) rather than `automatic`, the same class
  *   of layout-dependent gap as `iframe-focusable-content`'s
  *   `contentDocument` limitation.
- * - "Has a focusable descendant" is a presence check (link/button/form
- *   control/`[tabindex]`/`iframe`/`[contenteditable]`), not a full
- *   focusability computation (disabled state, visibility, etc.). Kept
- *   simple on purpose, to keep this rule self-contained and fast.
+ * - "Has a focusable descendant" counts only descendants in the
+ *   sequential tab order (ACT 0ssw9k): a link, button, form control,
+ *   `[tabindex]`, `iframe`, `<summary>`, media with `controls` or editable
+ *   region that `helpers.getFocusableInfo` reports `tabbable` (so not
+ *   `tabindex="-1"`, not disabled, not `<input type="hidden">`, not inert)
+ *   and the page does not hide.
  */
 
 const id = 'scrollable-region-focusable';
@@ -158,14 +162,27 @@ function runInPage(ctx) {
   }
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
-    'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
+    'a[href], button, input, select, textarea, [tabindex], iframe, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])';
 
-  // A descendant the page does not show (display:none, a closed <details>,
-  // hidden="until-found") takes no focus.
+  // Only a descendant in the sequential tab order counts (ACT 0ssw9k): not
+  // tabindex="-1", a disabled control, <input type="hidden"> or an inert
+  // one. A descendant the page does not show (display:none, a closed
+  // <details>, hidden="until-found") takes no focus either.
+  function isTabbableDescendant(d) {
+    if (!helpers.getFocusableInfo) return true;
+    try {
+      const info = helpers.getFocusableInfo(d, ctx);
+      return !!(info && info.tabbable);
+    } catch {
+      return false;
+    }
+  }
+
   function hasFocusableDescendant(el) {
     try {
       if (!dom.get(el, 'querySelectorAll')) return false;
       for (const d of dom.querySelectorAll(el, FOCUSABLE_DESCENDANT_SELECTOR)) {
+        if (!isTabbableDescendant(d)) continue;
         if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
       }
     } catch {}
@@ -300,9 +317,11 @@ function runInPage(ctx) {
     };
   }
 
-  // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
-  // yet: the focusable-descendant check counts tabindex="-1" and disabled
-  // elements, and does not confirm the region really overflows.
+  // Every scrollable-overflow candidate is reachable by keyboard: it is in
+  // the tab order, or something inside it is. Not a pass: a manual rule that
+  // finds nothing to ask about says notApplicable (RULE_TAXONOMY.md), and a
+  // tab stop inside the region does not show that all its content can be
+  // scrolled into view from there.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }
 

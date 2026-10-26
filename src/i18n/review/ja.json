@@ -152,7 +152,7 @@
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step2": "そのテキストによる代替 (レポートに示された値、またはアクセシビリティ ペインのフォールバックコンテンツと名前) を読んでください。",
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step3": "テキストが描画内容と同じ情報または目的を伝え、描画が変わっても追従していることを確認してください。",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_fail": "フォーカスが移った後でも Enter や Space を押して何も起こらないため、WCAG 2.1.1 を満たしません (F54)。",
-  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Enter (ボタンのようなコントロールでは Space も) で、クリックと同じことが行われます。",
+  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Enter (ボタンのようなコントロールでは Space も) で、クリックと同じことが行われます。タブの場合は、フォーカスを移すだけでそのパネルが表示されます。",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step1": "レポートに示された要素をクリックし、何が起こるかを控えてください。",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step2": "ページを再読み込みし、要素にフォーカスが移るまで Tab キーを押してください。",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step3": "Enter、次に Space を押し、クリックしたときの動作と比べてください。",
