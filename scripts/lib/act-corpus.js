@@ -60,8 +60,11 @@ function contentTypeFor(url) {
 /**
  * Engine options for the ACT rules whose criteria a default run leaves out.
  * 3ea0c8 maps to 4.1.1 Parsing, which WCAG 2.2 removed, so under the default
- * 2.2 target duplicate-id names no criterion and reports cantTell. ACT's
- * rule is a WCAG 2.0/2.1 rule, so it runs under 2.1, where 4.1.1 exists.
+ * 2.2 target duplicate-id names no criterion. ACT's rule is a WCAG 2.0/2.1
+ * rule, so it runs under 2.1, where 4.1.1 exists. Its findings are cantTell
+ * there too, as W3C's 2023 errata to 2.1 count 4.1.1 as satisfied for HTML
+ * (wcagVersionScope.by: "errata"); a cantTell that flags the element agrees
+ * with a failed example.
  */
 const ENGINE_OPTIONS_BY_ACT_ID = {
   '3ea0c8': { wcagVersion: '2.1' }

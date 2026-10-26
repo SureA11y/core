@@ -12,6 +12,8 @@ The first two take the same four arguments — `(pageUrl, contextSelector, engin
 | `runa11yCoreInPage`                                        | Handing the function itself to a _different_ JS realm — most commonly Puppeteer/Playwright's `page.evaluate`                                                        | Fully self-contained: its entire body (rule catalog, implementations, shared helpers) is inlined, so `fn.toString()` + re-evaluating that source in a browser tab (which has no access to your Node module scope at all) still works. Verified by `tests/runa11yCoreInPage-serialization.test.js`, which literally does this — reconstructs the function from source in a separate VM realm and runs it. |
 | `runa11yCoreAcrossFrames` / `a11yCoreEnableFrameResponder` | Same context as `runa11yCoreInPage` (browser extension / content script / bundled widget code — no automation driver), when you also need to reach into `<iframe>`s | See "Cross-frame scanning" below — a separate, async pair of functions, not a variant of the other two.                                                                                                                                                                                                                                                                                                  |
 
+On the browser bundle, `runa11yCoreInPageAsync` takes the same four arguments and returns a Promise of the same result: it fetches the style sheets the page can't read first ([Style sheets from another origin](#style-sheets-from-another-origin)).
+
 Both of the first two need a real `document`/`window` to already exist in whatever context they run in — neither runner creates one. That's the actual fork in the two patterns below.
 
 ## Pattern 1 — jsdom in Node (no real browser)
@@ -196,7 +198,7 @@ Load as many as you need; each adds one language and they don't interfere. Order
 
 Ask for a locale whose file you haven't loaded and you get English, not an error, with `result.engine.locale.reason` set to `dictionary-not-loaded` so it's visible rather than silent. See [`I18N.md`](./I18N.md).
 
-Why the split: the bundle is fetched over the network, and every language would otherwise be paid for by every page whether used or not. Keeping English inline and the rest optional took roughly 280 KB off the download and stops it growing as languages are added. The Node package is unaffected — `require('@surea11y/core')` still has every locale built in.
+Why the split: the bundle is fetched over the network, and every language would otherwise be paid for by every page whether used or not. Keeping English inline and the rest optional keeps the other languages off the download (each side file is about 210 to 255 KB today) and stops it growing as languages are added. The Node package is unaffected — `require('@surea11y/core')` still has every locale built in.
 
 If you'd rather supply a dictionary yourself, `engineOptions.messages` takes `{ [locale]: { key: value } }` directly and wins over a loaded side file.
 
@@ -308,7 +310,7 @@ In jsdom (Pattern 1) there is nothing to wait for: jsdom loads no fonts or image
 
 ### Style sheets from another origin
 
-A page's script can't read the rules of a style sheet served from another origin (a CDN, a fonts service), so a rule that looks for something in the CSS, such as `css-orientation-lock`, can't tell whether it is there, and asks. Give the scan their text in `engineOptions.styleSheetTexts` (`[{ href, text }]`, the sheet's URL and its CSS) and the rules read it in their place.
+A page's script can't read the rules of a style sheet served from another origin (a CDN, a fonts service), so a rule that looks for something in the CSS, such as `css-orientation-lock`, can't tell whether it is there, and asks. Give the scan their text in `engineOptions.styleSheetTexts` (`[{ href, text }]`, the sheet's URL and its CSS) and the rules read it in their place (`css-orientation-lock`, `css-hidden-focus` and `css-focus-indicator-suppressed`). Each result's `engineOptions` echoes it as the sheets' hrefs, `[{ href }]`, without their text.
 
 `preloadStyleSheets()` fetches it in the page: every sheet the page can't read, linked or imported, that the server shares (CORS), each given up after `timeoutMs` (default 5000). `runa11yCoreInPageAsync`, on the bundle, does that and then scans:
 
@@ -522,7 +524,7 @@ await cdp.send('Page.addScriptToEvaluateOnNewDocument', { source: listenerHookSc
 cy.on('window:before:load', (win) => win.eval(listenerHookScript()));
 ```
 
-Both hooks can be installed together; each is its own script.
+The three hooks can be installed together; each is its own script.
 
 ### What the scan reports with it
 
@@ -739,7 +741,8 @@ if (failures.length > 0) {
 Notes for CI specifically:
 
 - `cantTell` outcomes are advisory by design (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#outcome-values)) — most teams log them without failing the build, since they require human judgment the CI run can't make.
-- For "only fail on _new_ violations," the CLI has a built-in baseline/allowlist mechanism (`--write-baseline`/`--baseline`, see [`BASELINE.md`](./BASELINE.md)). Calling the library directly, the same matching logic is available as `buildBaselineEntries(result)`/`matchBaseline(result, baselineEntries)` from `require('@surea11y/core/baseline')` — or diff `checksResults` against a saved prior run yourself if your pages don't fit that model (see `BASELINE.md`'s "known limitation").
+- To gate on the `cantTell` findings that lean fail, without gating on every question, render the result with `renderJunitReport(result, { leanFailAs: 'failure' })` or `renderSarifReport(result, { leanFailAs: 'error' })` (`leanFailWcagOnly: true` leaves out the best-practice rules), or count `leaningFailures(result)` from `@surea11y/core` yourself; see [`LEANS.md`](./LEANS.md#for-people-building-tools).
+- For "only fail on _new_ violations," the CLI has a built-in baseline/allowlist mechanism (`--write-baseline`/`--baseline`, see [`BASELINE.md`](./BASELINE.md)). Calling the library directly, the same matching logic is available as `buildBaselineEntries(result)`/`matchBaseline(result, baselineEntries)` from `require('@surea11y/core/baseline')` (`{ leanFail: true }` records and compares the findings that lean fail too, and `migrateBaselineEntries` brings a baseline's reason codes up to date after an upgrade) — or diff `checksResults` against a saved prior run yourself if your pages don't fit that model (see `BASELINE.md`'s "known limitation").
 - Prefer Pattern 1 (jsdom) in CI unless you specifically need real-browser layout — it avoids the extra weight of a Puppeteer/Playwright + browser-binary install in your pipeline.
 
 ## Browser extension context

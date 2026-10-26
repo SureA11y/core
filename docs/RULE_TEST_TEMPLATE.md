@@ -1,48 +1,16 @@
-# RULE_TEST_TEMPLATE.md — Copy/Paste (repo-faithful)
+# RULE_TEST_TEMPLATE.md — Rule test template
 
-For a core rule, in `tests/engine-checks/automatic/` or `tests/engine-checks/manual/`. A pack's
-test imports the same helpers from `@surea11y/core/testing` instead of `tests/helpers/`:
-`const { runa11yCoreOnHtml, assertRule } = require('@surea11y/core/testing');`, and passes its
-pack in `engineOptions.packs` ([`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md)).
+The test template to copy is [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js), the test of a
+rule made from [`RULE_TEMPLATE.js`](./RULE_TEMPLATE.js). Copy it to
+`tests/engine-checks/automatic/<rule-id>.test.js` (manual rules: `tests/engine-checks/manual/`)
+and replace every `<placeholder>`. It has a case for each outcome: `notApplicable`, `pass`,
+`fail` and, for a rule that can report it, `cantTell`. A manual rule drops the `fail` case.
 
-```js
-'use strict';
+Then add what the template leaves to you:
 
-const test = require('node:test');
-const assert = require('node:assert');
-const fs = require('node:fs');
-const path = require('node:path');
+- the fixture-coverage test of [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §11.3;
+- for each lean, a case that leans, with its `toward` and `whyKey`, and for a conditional lean
+  a case of the same code with none (§8.5).
 
-const { assertRule } = require('../../helpers/assertRule.js');
-const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
-
-const RULE_ID = 'your-rule-id';
-
-function hasOccurrenceForId(rule, id) {
-  return (rule.occurrences || []).some((o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`));
-}
-
-test(`${RULE_ID}: notApplicable when no matching elements`, () => {
-  const html = `<!doctype html><html><body><p>None</p></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: pass when requirement satisfied`, () => {
-  const html = `<!doctype html><html><body>
-    <!-- passing markup -->
-  </body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: fail/cantTell when triggered`, () => {
-  const html = `<!doctype html><html><body>
-    <!-- failing or manual-review markup -->
-  </body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-
-  // A manual rule asserts 'cantTell' here instead: it never fails.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-});
-```
+A pack's test imports the same helpers from `@surea11y/core/testing` and passes its pack in
+`engineOptions.packs`; see [`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md).

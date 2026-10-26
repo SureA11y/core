@@ -25,7 +25,6 @@ A lean is an optional field on a `cantTell` occurrence:
 ```json
 {
   "occurrenceOutcome": "cantTell",
-  "uncertainty": { "code": "judgement-required", "needed": "Whether the heading structure makes sense." },
   "lean": {
     "toward": "fail",
     "why": "The heading skips a level after the one before it.",
@@ -38,7 +37,7 @@ A lean is an optional field on a `cantTell` occurrence:
 - `toward` is `"pass"` or `"fail"`. There is no third value: when the engine can't tell which way, there is no lean.
 - `why` and `caution` are already in the scan's locale; `i18n` holds their keys, to render them in another.
 - `signals` are the facts the rule read, each a kebab-case name and a plain value. Show them, weigh them, or test against them.
-- `measured`, once present, says how often this lean has been right against the ACT test cases: `{ "agreed": 47, "cases": 50 }`, with the `corpus` and the `coreVersion` that counted them. It appears only once the lean has been counted on at least five cases.
+- `measured`, once present, says how often this lean has been right against the ACT test cases: `{ "agreed": 47, "cases": 50 }`, with the `corpus` and the `coreVersion` that counted them. It appears only once the lean has been counted on at least five cases. In 1.14.0 none has: nine leans were counted, none on five cases, so no lean carries it yet.
 
 What a lean does not change:
 
