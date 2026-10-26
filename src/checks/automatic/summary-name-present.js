@@ -59,7 +59,33 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['summary-name-present'] } }
+  coverage: { facetsBySc: { '4.1.2': ['summary-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_closedContent: {
+      steps: [
+        'Find the summary the report names and note the text or icon it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the summary, taken from its content, and the screen reader announces it.',
+      failWhen:
+        'The summary has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
+    },
+    name_contentTooDeep: {
+      steps: [
+        'Find the summary the report names and note the text it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the summary, taken from its nested content, and the screen reader announces it.',
+      failWhen:
+        'The summary has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {
