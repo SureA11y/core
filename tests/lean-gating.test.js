@@ -9,7 +9,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { occurrenceOutcome, leaningFailures } = require('../src/index.js');
+const { occurrenceOutcome, reviewGroupOf, leaningFailures } = require('../src/index.js');
 const { buildBaselineEntries, matchBaseline } = require('../src/baseline.js');
 const { renderJunitReport } = require('../src/junit.js');
 const { renderSarifReport } = require('../src/sarif.js');
@@ -75,6 +75,44 @@ test('occurrenceOutcome: the occurrence tier, else the check outcome when it is 
   assert.equal(occurrenceOutcome({ outcome: 'pass' }, {}), null);
   assert.equal(occurrenceOutcome({ outcome: 'notApplicable' }, null), null);
   assert.equal(occurrenceOutcome(null, null), null);
+});
+
+test('reviewGroupOf: a failure, a lean either way, or a question only a person answers', () => {
+  const asked = { outcome: 'cantTell' };
+  assert.equal(reviewGroupOf(asked, { lean: LEAN }), 'leanFail');
+  assert.equal(reviewGroupOf(asked, { lean: { ...LEAN, toward: 'pass' } }), 'leanPass');
+  assert.equal(reviewGroupOf(asked, {}), 'open');
+  // A lean on a failure changes nothing, and an unknown direction is no lean.
+  assert.equal(reviewGroupOf({ outcome: 'fail' }, { lean: LEAN }), 'fail');
+  assert.equal(reviewGroupOf(asked, { lean: { toward: 'unsure' } }), 'open');
+  // Each occurrence by its own tier, as occurrenceOutcome reads it.
+  assert.equal(
+    reviewGroupOf({ outcome: 'fail' }, { occurrenceOutcome: 'cantTell', lean: LEAN }),
+    'leanFail'
+  );
+  assert.equal(reviewGroupOf({ outcome: 'pass' }, {}), null);
+  assert.equal(reviewGroupOf(null, null), null);
+});
+
+test('reviewGroupOf sorts a scan as the HTML report groups its cards', () => {
+  const result = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<h1>A</h1><h3>B</h3><input type="checkbox" checked aria-checked="false" aria-label="A"><img src="x.png">' +
+      '</main></body></html>',
+    { runOnly: ['heading-order', 'aria-checked-state-mismatch', 'img-alt-present'] }
+  );
+  const groups = {};
+  for (const check of result.checksResults) {
+    for (const occ of check.occurrences) {
+      const group = reviewGroupOf(check, occ);
+      if (group) (groups[group] = groups[group] || []).push(check.ruleId);
+    }
+  }
+  assert.deepEqual(groups, {
+    leanFail: ['heading-order'],
+    leanPass: ['aria-checked-state-mismatch'],
+    fail: ['img-alt-present']
+  });
 });
 
 test('leaningFailures: the findings that lean fail, less those of rules outside the target', () => {

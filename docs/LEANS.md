@@ -47,7 +47,7 @@ What a lean does not change:
 
 Ways to use it:
 
-- **Sort a review queue:** likely fails first, then likely passes, then the rest.
+- **Sort a review queue:** likely fails first, then likely passes, then the rest. `reviewGroupOf(check, occurrence)` gives each occurrence its group (`'fail'`, `'leanFail'`, `'leanPass'` or `'open'`), as the HTML report sorts them; `@surea11y/core/how-to-check` exports it for code that runs in a browser.
 - **Gate CI on likely failures only.** `renderJunitReport(result, { leanFailAs: 'failure' })` reports a rule with a finding that leans fail as `<failure type="leanFail">`. `renderSarifReport(result, { leanFailAs: 'error' })` raises such a finding to `error`. Both are off by default, so a strict pipeline is unchanged. `leaningFailures(result)` lists the findings they gate on.
   - That includes the best-practice rules' findings, which lean fail without condition (see below): with `leanFailAs`, a skipped heading level is a failure. To gate only on the rules mapped to WCAG criteria, add `leanFailWcagOnly: true` (`leaningFailures(result, { wcagOnly: true })`).
   - Accept the likely failures a page already has, as a baseline accepts its failures: `buildBaselineEntries(result, { leanFail: true })` records them as entries marked `lean: 'fail'`, and JUnit and SARIF then gate only on new ones ([`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)).

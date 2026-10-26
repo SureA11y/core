@@ -20,7 +20,8 @@ const {
   standardsInfoOf,
   standardOfEntryIn,
   textOf,
-  occurrenceOutcome
+  occurrenceOutcome,
+  reviewGroupOf
 } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
@@ -684,10 +685,11 @@ function leanOf(occ) {
 // findings that likely fail, those that likely pass, and those only a person
 // can judge. A rule whose undecided findings lean different ways has a card
 // in each group they fall in.
+// `group` is the occurrence's reviewGroupOf, `key` the lean a card shows.
 const REVIEW_GROUPS = [
-  { key: 'fail', headingKey: 'report_cards_group_leanFail' },
-  { key: 'pass', headingKey: 'report_cards_group_leanPass' },
-  { key: null, headingKey: 'report_cards_group_open' }
+  { group: 'leanFail', key: 'fail', headingKey: 'report_cards_group_leanFail' },
+  { group: 'leanPass', key: 'pass', headingKey: 'report_cards_group_leanPass' },
+  { group: 'open', key: null, headingKey: 'report_cards_group_open' }
 ];
 
 function renderCards(checksResults, ui) {
@@ -717,9 +719,7 @@ function renderCards(checksResults, ui) {
       continue;
     }
     REVIEW_GROUPS.forEach((g, i) => {
-      const occs = r.occurrences.filter(
-        (occ) => occurrenceOutcome(r, occ) === 'cantTell' && leanOf(occ) === g.key
-      );
+      const occs = r.occurrences.filter((occ) => reviewGroupOf(r, occ) === g.group);
       if (occs.length) review[i].push({ r, occs, outcome: 'cantTell', lean: g.key });
     });
   }

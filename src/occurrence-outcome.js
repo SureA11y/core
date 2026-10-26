@@ -26,4 +26,18 @@ function occurrenceOutcome(check, occurrence) {
   return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
 }
 
-module.exports = { tierOf, occurrenceOutcome };
+// Where an occurrence goes in a review: 'fail' for a failure; for an
+// undecided one, 'leanFail' or 'leanPass' where its lean points one way, and
+// 'open' where only a person can judge; null for neither. The HTML report's
+// groups ("Likely fails: confirm", "Likely passes: confirm", "Needs a
+// person"), so every tool that sorts a review queue sorts it the same way.
+function reviewGroupOf(check, occurrence) {
+  const outcome = occurrenceOutcome(check, occurrence);
+  if (outcome !== 'cantTell') return outcome;
+  const toward = occurrence && occurrence.lean && occurrence.lean.toward;
+  if (toward === 'fail') return 'leanFail';
+  if (toward === 'pass') return 'leanPass';
+  return 'open';
+}
+
+module.exports = { tierOf, occurrenceOutcome, reviewGroupOf };

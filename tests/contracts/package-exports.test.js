@@ -67,8 +67,13 @@ test('a locale this build does not ship fails to resolve rather than resolving t
 // A binding whose code runs in a browser reads the steps with the
 // how-to-check entry and the review dictionary of each locale it shows.
 test('the how-to-check entry and every review dictionary are reachable by name', () => {
-  const { applyHowToCheck } = consumerRequire('@surea11y/core/how-to-check');
-  assert.equal(typeof applyHowToCheck, 'function');
+  const entry = consumerRequire('@surea11y/core/how-to-check');
+  assert.equal(typeof entry.applyHowToCheck, 'function');
+  // With the steps, the readings a browser-run tool sorts them by: the same
+  // functions as the main entry's.
+  const main = consumerRequire('@surea11y/core');
+  assert.equal(entry.occurrenceOutcome, main.occurrenceOutcome);
+  assert.equal(entry.reviewGroupOf, main.reviewGroupOf);
   const locales = fs
     .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'review'))
     .filter((f) => f.endsWith('.json'))

@@ -48,3 +48,6 @@ export function howToCheckFrom(
   locales?: string | readonly string[] | null,
   options?: HowToCheckOptions
 ): HowToCheck | null;
+
+/** The same functions as @surea11y/core's: an occurrence's outcome, and where it goes in a review. */
+export { occurrenceOutcome, reviewGroupOf, ReviewGroup } from './index';

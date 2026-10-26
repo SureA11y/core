@@ -6,7 +6,7 @@ const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-cri
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
 const { COMPLETE_APPLICABILITY, COMPLETE_CHECK } = require('./coverage/complete-applicability.js');
 const { POLICY_CONTRACTS } = require('./policy/contracts.js');
-const { tierOf, occurrenceOutcome } = require('./occurrence-outcome.js');
+const { tierOf, occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
@@ -670,6 +670,7 @@ module.exports = {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
+  reviewGroupOf,
   reasonCodeOf,
   leaningOccurrencesOf,
   leaningFailures

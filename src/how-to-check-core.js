@@ -22,7 +22,7 @@
  * fallback for every key a locale lacks, and says how many steps a code has.
  */
 
-const { occurrenceOutcome } = require('./occurrence-outcome.js');
+const { occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
@@ -281,4 +281,7 @@ function applyHowToCheck(result, dictionaries, options) {
   return addToResult(result, dicts, wanted);
 }
 
-module.exports = { applyHowToCheck, howToCheckFrom };
+// occurrenceOutcome and reviewGroupOf go with the steps, so a tool whose code
+// runs in a browser (an extension, a Cypress spec) sorts and shows the
+// undecided findings as core's own reporters do, without the main entry.
+module.exports = { applyHowToCheck, howToCheckFrom, occurrenceOutcome, reviewGroupOf };
