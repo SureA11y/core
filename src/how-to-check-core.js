@@ -22,6 +22,8 @@
  * fallback for every key a locale lacks, and says how many steps a code has.
  */
 
+const { occurrenceOutcome } = require('./occurrence-outcome.js');
+
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
 // 'fr-CA' reads fr-ca, then fr; English last.
@@ -98,11 +100,7 @@ function stepsFrom(dictionaries, prefix, code, locales) {
 }
 
 function isUndecided(check, occ) {
-  const tier =
-    occ && (occ.occurrenceOutcome === 'fail' || occ.occurrenceOutcome === 'cantTell')
-      ? occ.occurrenceOutcome
-      : check.outcome;
-  return tier === 'cantTell';
+  return occurrenceOutcome(check, occ) === 'cantTell';
 }
 
 const prefixOfKey = (key) =>

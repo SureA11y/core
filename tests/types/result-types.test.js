@@ -456,7 +456,7 @@ test(
     fs.writeFileSync(
       file,
       [
-        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult, addHowToCheck, HOOK_REASON_CODES } from '@surea11y/core';",
+        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult, addHowToCheck, HOOK_REASON_CODES, occurrenceOutcome, leaningFailures } from '@surea11y/core';",
         "import { renderSarifReport } from '@surea11y/core/sarif';",
         "import { renderJunitReport } from '@surea11y/core/junit';",
         "import { renderHtmlReport } from '@surea11y/core/report';",
@@ -484,6 +484,10 @@ test(
         "const outcome: string = renderEarlReport([result], { assertor: null })['@graph'][0].assertions[0].result.outcome + OUTCOME_TO_EARL.fail;",
         'const entries = buildBaselineEntries(result);',
         'const fresh: number = matchBaseline(result, entries).newCount;',
+        "const leanEntries = buildBaselineEntries(result, { leanFail: true }).filter((e) => e.lean === 'fail');",
+        'const freshLeans: number | undefined = matchBaseline(result, leanEntries, { leanFail: true }).leanFail?.newCount;',
+        "const leans: Array<'fail' | 'cantTell' | null> = leaningFailures(result, { wcagOnly: true }).map((l) => occurrenceOutcome(result.checksResults[0], l.occurrence));",
+        "const gated: string = renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: true }) + renderSarifReport(result, { leanFailAs: 'error', leanFailWcagOnly: true });",
         'const migrated: string[] = migrateBaselineEntries({ entries }, result).concat(migrateBaselineEntries(entries)).map((e) => e.reasonCode);',
         "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",
         "const tags: string[] = wcagTags('2.1', ['A', 'AA']).concat(WCAG_CRITERIA.map((c) => c.tag));",
@@ -519,7 +523,7 @@ test(
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',
         "wcagCriteria('3.0');",
-        'void [sarif, junit, html, outcome, fresh, migrated, level, tags, count, clause, inPage, script, checked, lintRules];',
+        'void [sarif, junit, html, outcome, fresh, migrated, freshLeans, leans, gated, level, tags, count, clause, inPage, script, checked, lintRules];',
         ''
       ].join('\n')
     );

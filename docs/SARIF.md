@@ -124,7 +124,8 @@ The finding's identity does not include the viewport, and does not need to: the 
 | `informationUri` | `'https://github.com/SureA11y/core'` | `tool.driver.informationUri`, the tool's home page. |
 | `baselineEntries` | none | The baseline file as saved (`JSON.parse` of it) or its `entries` list, see [`BASELINE.md`](./BASELINE.md#file-format). Fail occurrences recorded there are left out, as `--baseline` does (see below). |
 | `category` | none | `runs[0].automationDetails.id`, see [Scanning at several viewport widths](#scanning-at-several-viewport-widths). |
-| `leanFailAs` | `'warning'` | `'error'` reports a `cantTell` finding whose lean points to fail at `error`, so a build gated on errors fails on likely failures too. Read in any case; another value throws a `TypeError`. |
+| `leanFailAs` | `'warning'` | `'error'` reports a `cantTell` finding whose lean points to fail at `error`, so a build gated on errors fails on likely failures too. Read in any case; another value throws a `TypeError`. A best-practice rule's too: such a rule, mapped to no WCAG criterion, never fails, and the facts it states lean fail without condition ([`LEANS.md`](./LEANS.md#how-far-to-trust-a-lean)), so a skipped heading level (`heading-order`) is an `error`. A finding of a rule whose every criterion is outside the scan's target stays a `note`. A finding that leans fail and has an entry marked `lean: 'fail'` in `baselineEntries` stays a `warning`. |
+| `leanFailWcagOnly` | `false` | With `leanFailAs: 'error'`, `true` raises only the findings of rules mapped to a WCAG criterion in the scan's target, leaving the best-practice rules' leans at `warning`. A value other than `true` or `false` throws a `TypeError`. |
 
 ## Combining with `--baseline`
 
@@ -134,7 +135,7 @@ A generic SARIF consumer has no "known, don't gate on this" concept of its own â
 surea11y scan ./dist/index.html --baseline baseline.json --sarif results.sarif
 ```
 
-`cantTell` occurrences are never filtered by a baseline â€” the baseline mechanism only ever tracks `fail` occurrences (matching `--write-baseline`, see [`BASELINE.md`](./BASELINE.md)).
+`cantTell` occurrences are never left out by a baseline. A baseline written with `buildBaselineEntries(result, { leanFail: true })` also records the findings that lean fail, as entries marked `lean: 'fail'` (see [`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)); under `leanFailAs: 'error'` such a finding stays a `warning` instead of being raised to `error`, so a team can accept the likely failures it already has and still gate on new ones. `--write-baseline` records `fail` occurrences only.
 
 ## Combining with `--html`/`--json`
 

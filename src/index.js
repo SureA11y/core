@@ -2,11 +2,12 @@
 
 'use strict';
 
-// surea11y public API: the generated core surface verbatim, plus the one
-// helper for reading a cross-frame result that the reporters share, and the
-// internals hook's script.
+// surea11y public API: the generated core surface verbatim, plus the
+// helpers the reporters share for reading a result (a cross-frame result's
+// frames, an occurrence's outcome, the findings that lean fail), and the
+// hooks' scripts.
 const core = require('./core');
-const { flattenCrossFrameResult } = require('./scan-result');
+const { flattenCrossFrameResult, occurrenceOutcome, leaningFailures } = require('./scan-result');
 // The opt-in internals hook: a script an integrator runs in a page before
 // its own scripts, so a scan can read the ElementInternals a custom element
 // keeps private (src/core/internals-hook.js).
@@ -255,6 +256,8 @@ module.exports = {
   addHowToCheck,
   howToCheckFor,
   flattenCrossFrameResult,
+  occurrenceOutcome,
+  leaningFailures,
   internalsHookScript,
   listenerHookScript,
   liveRegionHookScript,

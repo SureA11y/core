@@ -72,7 +72,13 @@ test('a scan with packs still loads them in Node', () => {
 test('the how-to-check entry reaches no module outside core', () => {
   const { seen, outside } = reached(path.join(ROOT, 'src', 'how-to-check-core.js'));
   assert.deepEqual(outside, []);
-  assert.deepEqual([...seen], [path.join(ROOT, 'src', 'how-to-check-core.js')]);
+  assert.deepEqual(
+    [...seen].sort(),
+    [
+      path.join(ROOT, 'src', 'how-to-check-core.js'),
+      path.join(ROOT, 'src', 'occurrence-outcome.js')
+    ].sort()
+  );
 });
 
 // Bundled for a browser, as a Cypress spec is, the main entry builds. A scan
