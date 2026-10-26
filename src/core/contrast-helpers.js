@@ -2655,6 +2655,337 @@ function createContrastHelpers(opts, shared) {
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
 
+  // -------- Link colours under jsdom --------
+  //
+  // jsdom's cascade orders its own style sheet's rules with the page's by
+  // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
+  // beats a page's `a { color: #fff }`, which a browser applies: a white
+  // link read back as blue, and text measured in a colour no browser draws.
+  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its colour from it, is worked out here
+  // from the page's own rules, as a browser's cascade does: the author's
+  // declarations win over the browser's whatever their specificity, ordered
+  // among themselves by !important, the style attribute, specificity and
+  // order. Where no author rule sets it, the browser's link colour stands,
+  // and jsdom's value is right. Where it can't be worked out (a sheet that
+  // can't be read, a selector or value it can't follow, a rule whose
+  // condition it can't tell), the colour is unknown, and the text is not
+  // computable rather than measured in jsdom's blue.
+  //
+  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // can't be worked out, or undefined where jsdom's own value stands (a
+  // browser, text outside any link, a link no author rule colours).
+  const __jsdomByDoc = new WeakMap();
+  function __underJsdom(doc) {
+    if (!doc) return false;
+    if (__jsdomByDoc.has(doc)) return __jsdomByDoc.get(doc);
+    let out;
+    try {
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      const view = dom.defaultView(doc);
+      const ua = String((view && view.navigator && view.navigator.userAgent) || '');
+      out = !__layoutByDoc.get(doc) && /\bjsdom\//.test(ua);
+    } catch {
+      out = false;
+    }
+    __jsdomByDoc.set(doc, out);
+    return out;
+  }
+
+  function __isLink(el) {
+    try {
+      const name = String(dom.localName(el) || '').toLowerCase();
+      const ns = dom.namespaceURI(el);
+      return (
+        (name === 'a' || name === 'area') &&
+        (!ns || ns === 'http://www.w3.org/1999/xhtml') &&
+        dom.hasAttribute(el, 'href')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // A selector's specificity as one sortable number (ids, then classes,
+  // attributes and pseudo-classes, then types and pseudo-elements), with
+  // :is(), :not() and :has() counting their most specific argument and
+  // :where() nothing, as Selectors 4 says.
+  const __LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
+  function __specificityOf(selector) {
+    const s = String(selector || '');
+    let a = 0;
+    let b = 0;
+    let c = 0;
+    const ident = (i) => {
+      let j = i;
+      while (j < s.length && /[\w\u00a0-\uffff\\-]/.test(s[j])) j += s[j] === '\\' ? 2 : 1;
+      return j;
+    };
+    const maxOf = (list) => {
+      let best = 0;
+      for (const part of __splitTopLevel(list).filter(Boolean))
+        best = Math.max(best, __specificityOf(part));
+      return best;
+    };
+    for (let i = 0; i < s.length;) {
+      const ch = s[i];
+      if (ch === '#') {
+        a++;
+        i = ident(i + 1);
+      } else if (ch === '.') {
+        b++;
+        i = ident(i + 1);
+      } else if (ch === '[') {
+        b++;
+        let depth = 0;
+        for (; i < s.length; i++) {
+          if (s[i] === '[') depth++;
+          else if (s[i] === ']' && --depth === 0) break;
+        }
+        i++;
+      } else if (ch === ':') {
+        const element = s[i + 1] === ':';
+        const start = i + (element ? 2 : 1);
+        const end = ident(start);
+        const name = s.slice(start, end).toLowerCase();
+        let args = null;
+        i = end;
+        if (s[i] === '(') {
+          let depth = 0;
+          const open = i;
+          for (; i < s.length; i++) {
+            if (s[i] === '(') depth++;
+            else if (s[i] === ')' && --depth === 0) break;
+          }
+          args = s.slice(open + 1, i);
+          i++;
+        }
+        const total = (n) => {
+          a += Math.floor(n / 1e6);
+          b += Math.floor((n % 1e6) / 1e3);
+          c += n % 1e3;
+        };
+        if (element || __LEGACY_PSEUDO_ELEMENTS.has(name)) c++;
+        else if (name === 'where') continue;
+        else if (args !== null && /^(is|not|has|matches|-webkit-any|-moz-any)$/.test(name))
+          total(maxOf(args));
+        else if (args !== null && /^nth-(last-)?child$/.test(name) && /\sof\s/i.test(args)) {
+          b++;
+          total(maxOf(args.replace(/^[\s\S]*?\sof\s/i, '')));
+        } else b++;
+      } else if (/[a-zA-Z_\u00a0-\uffff-]/.test(ch) || ch === '\\') {
+        c++;
+        i = ident(i);
+        if (s[i] === '|') i = ident(i + 1);
+      } else i++;
+    }
+    return a * 1e6 + b * 1e3 + c;
+  }
+
+  // The style rules that set `color` in a document's or shadow root's
+  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // @media for all or screen. A rule under a condition jsdom doesn't
+  // evaluate (@supports, @layer, @container, a nested rule) is kept as
+  // `uncertain`, and a sheet that can't be read makes the whole root so.
+  // { rules: [{ parts, value, important, order, uncertain }], unreadable },
+  // once per root.
+  const __colorRulesByRoot = new WeakMap();
+  function __colorRulesOf(root) {
+    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+    const out = { rules: [], unreadable: false };
+    let order = 0;
+    const mediaApplies = (rule) => {
+      const media = rule.media;
+      const n = (media && media.length) || 0;
+      if (!n) return true;
+      for (let i = 0; i < n; i++) {
+        const q = String(media[i] || '')
+          .trim()
+          .toLowerCase();
+        if (q === 'all' || q === 'screen') return true;
+      }
+      return false;
+    };
+    const walk = (list, uncertain, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          if (value) {
+            out.rules.push({
+              parts: __splitTopLevel(rule.selectorText).filter(Boolean),
+              value,
+              important: rule.style.getPropertyPriority('color') === 'important',
+              order: order++,
+              uncertain
+            });
+          }
+          if (rule.cssRules && rule.cssRules.length && depth < 8)
+            walk(rule.cssRules, true, depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          if (!mediaApplies(rule)) continue;
+          if (!sheet) {
+            out.unreadable = true;
+            continue;
+          }
+          try {
+            walk(sheet.cssRules, uncertain, depth + 1);
+          } catch {
+            out.unreadable = true;
+          }
+          continue;
+        }
+        if (name === 'CSSMediaRule' || rule.type === 4) {
+          if (mediaApplies(rule) && depth < 8) walk(rule.cssRules, uncertain, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length && depth < 8) walk(nested, true, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let rules;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, false, 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __colorRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // The author's declaration of `color` that wins for el in a browser:
+  // { value }, null where none applies, or { unknown: true } where it can't
+  // be told.
+  function __authorColorOf(el) {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const { rules, unreadable } = __colorRulesOf(root);
+    if (unreadable) return { unknown: true };
+    let best = null;
+    let unknown = false;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        // A pseudo-element paints another box; :visited isn't known here,
+        // and the link is taken as not visited, as jsdom takes it.
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        if (rule.uncertain) {
+          unknown = true;
+          continue;
+        }
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    // The style attribute outranks every rule of its importance.
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      if (value) {
+        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    if (unknown) return { unknown: true };
+    return best ? { value: best.value } : null;
+  }
+
+  const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
+  const __jsdomLinkColorCache = new WeakMap();
+  function __jsdomLinkTextColor(el) {
+    if (!el || dom.nodeType(el) !== 1) return undefined;
+    if (__jsdomLinkColorCache.has(el)) return __jsdomLinkColorCache.get(el);
+    let out;
+    try {
+      out = __jsdomLinkTextColorUncached(el);
+    } catch {
+      out = null;
+    }
+    __jsdomLinkColorCache.set(el, out);
+    return out;
+  }
+  function __jsdomLinkTextColorUncached(el) {
+    if (!__underJsdom(dom.ownerDocument(el))) return undefined;
+    // Only text in a link: the browser's sheet sets the colour of nothing
+    // else that jsdom ranks differently.
+    let inLink = false;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (__isLink(cur)) {
+        inLink = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    if (!inLink) return undefined;
+    const parent = composedParent(el);
+    const inherited = () => {
+      if (!parent || dom.nodeType(parent) !== 1) return null;
+      const own = __jsdomLinkTextColor(parent);
+      if (own !== undefined) return own;
+      const pcs = __contrastComputedStyle(parent);
+      return pcs ? pcs.color : null;
+    };
+    const decl = __authorColorOf(el);
+    if (decl && decl.unknown) return null;
+    if (!decl) {
+      // A link no author rule colours is in the browser's link colour, as
+      // jsdom has it. Text inside one takes its colour from its parent,
+      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // it a value of its own.
+      if (__isLink(el)) return undefined;
+      const cs = __contrastComputedStyle(el);
+      const pcs = parent && dom.nodeType(parent) === 1 ? __contrastComputedStyle(parent) : null;
+      if (cs && pcs && String(cs.color) !== String(pcs.color)) return undefined;
+      return inherited();
+    }
+    const value = decl.value.toLowerCase();
+    if (__CSS_INHERITING.has(value)) return inherited();
+    // A custom property jsdom doesn't substitute, or a keyword taking the
+    // browser's own value.
+    if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
+    return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
   function __isSvgTextElement(el) {
     return (
       !!el &&
@@ -2726,7 +3057,18 @@ function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
+    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
+    // Text in a link, under jsdom, whose colour jsdom ranks below its own
+    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
+    // colour it follows; one that differs is the page's own, and paints it.
+    if (cs && !svgText && !placeholder) {
+      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
+        const link = __jsdomLinkTextColor(el);
+        if (link !== undefined) fillValue = link || '';
+      }
+    }
+    let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {

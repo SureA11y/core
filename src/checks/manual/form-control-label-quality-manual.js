@@ -99,6 +99,9 @@
  *   alone, (b) gives nothing. So "Yes" under "Do you smoke?" and "Yes"
  *   under "Do you drink?" are not a duplicate, while two groups under the
  *   same question still are.
+ *   Groups placed straight in one container, with no element of their
+ *   own, are still asked about: which text belongs to which group is
+ *   then a matter of layout, which a person reads and markup doesn't say.
  * - Two fields conflict only when their label text AND their context are
  *   both identical. Same label under two different visible headings is
  *   ACT's passed example 5 and is not reported.
