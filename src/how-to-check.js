@@ -96,11 +96,12 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
  * scan's locale; a variant's, its base rule's where it has none of its own.
  * With options.packs, the packs the scan ran, a pack rule's finding gets the
  * steps of its meta.review, in English. Findings that already have one, and
- * decided ones, are left as they are.
+ * decided ones, are left as they are. With options.locale, the steps are in
+ * that locale instead, those a finding already has included.
  */
 function addHowToCheck(result, options) {
-  const packs = options && typeof options === 'object' ? options.packs : null;
-  return applyHowToCheck(result, dictionary, { packs });
+  const opts = options && typeof options === 'object' ? options : {};
+  return applyHowToCheck(result, dictionary, { packs: opts.packs, locale: opts.locale });
 }
 
 module.exports = { addHowToCheck, howToCheckFor };

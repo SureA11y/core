@@ -968,6 +968,13 @@ export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingF
  */
 export interface HowToCheckOptions {
   packs?: readonly unknown[] | null;
+  /**
+   * addHowToCheck and applyHowToCheck only: the locale to give the steps in
+   * ('fr-CA'), or a list of locales, most wanted first, in place of the
+   * scan's. Steps a finding already has are given again in it; English is
+   * the fallback for every step a locale lacks.
+   */
+  locale?: string | readonly string[] | null;
 }
 
 /**

@@ -182,6 +182,33 @@ test('applyHowToCheck gives what addHowToCheck gives, from the dictionaries pass
   assert.deepEqual(applyHowToCheck(raw, {}), raw);
 });
 
+test('options.locale gives the steps in another locale, those a result already has included', () => {
+  const raw = runa11yCoreOnHtml(page(NO_HEADERS), { runOnly: ['td-has-header'] });
+  const en = addHowToCheck(raw);
+  const stepsOf = (r) => r.checksResults[0].occurrences[0].howToCheck;
+  const fr = addHowToCheck(en, { locale: 'fr' });
+  assert.deepEqual(stepsOf(fr), howToCheckFor('td-has-header', 'TD_TABLE_NO_HEADERS', 'fr'));
+  assert.notEqual(stepsOf(fr).steps[0], stepsOf(en).steps[0]);
+  // Without it, steps already there are kept; the result given is not changed.
+  assert.deepEqual(addHowToCheck(fr), fr);
+  assert.deepEqual(stepsOf(en), howToCheckFor('td-has-header', 'TD_TABLE_NO_HEADERS', 'en'));
+  // A list is read most wanted first; a locale core has no dictionary for
+  // passes to the next, and English is the last resort.
+  assert.deepEqual(
+    stepsOf(addHowToCheck(raw, { locale: ['xx', 'de'] })),
+    stepsOf(addHowToCheck(raw, { locale: 'de' }))
+  );
+  assert.deepEqual(stepsOf(addHowToCheck(fr, { locale: 'xx' })), stepsOf(en));
+  // The browser-safe entry reads it the same way, every frame included.
+  const tree = { topFrame: en, frames: [en, { url: 'x', error: 'detached' }] };
+  assert.deepEqual(
+    applyHowToCheck(tree, REVIEW, { locale: 'ja' }),
+    addHowToCheck(tree, { locale: 'ja' })
+  );
+  // An empty locale is no locale.
+  assert.deepEqual(addHowToCheck(fr, { locale: ' ' }), fr);
+});
+
 test('howToCheckFrom reads a locale chain, falls back to English, and knows no other key', () => {
   const en = howToCheckFrom(REVIEW, 'tdHasHeader', 'TD_TABLE_NO_HEADERS');
   assert.deepEqual(en, howToCheckFor('td-has-header', 'TD_TABLE_NO_HEADERS'));

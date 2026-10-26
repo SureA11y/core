@@ -199,7 +199,10 @@ function isCustom(result, check) {
   );
 }
 
-function addToResult(result, dictionaries) {
+// options.locale, when given, is the locale (or list of locales, most wanted
+// first) to give the steps in, in place of the scan's; the steps a finding
+// already has are then given again in it, where the dictionaries have them.
+function addToResult(result, dictionaries, wanted) {
   if (!result || typeof result !== 'object' || !Array.isArray(result.checksResults)) return result;
   const engineLocale = engineLocaleOf(result);
   const checksResults = result.checksResults.map((check) => {
@@ -207,10 +210,11 @@ function addToResult(result, dictionaries) {
     if (isCustom(result, check)) return check;
     const prefixes = prefixesOf(check);
     if (!prefixes.length) return check;
-    const locale = (check.engineOptions && check.engineOptions.locale) || engineLocale;
+    const locale = wanted || (check.engineOptions && check.engineOptions.locale) || engineLocale;
     let changed = false;
     const occurrences = check.occurrences.map((occ) => {
-      if (!occ || typeof occ !== 'object' || occ.howToCheck || !isUndecided(check, occ)) return occ;
+      if (!occ || typeof occ !== 'object' || !isUndecided(check, occ)) return occ;
+      if (occ.howToCheck && !wanted) return occ;
       const code = occ.data && occ.data.details && occ.data.details.reasonCode;
       let how = null;
       for (const prefix of prefixes) {
@@ -230,13 +234,29 @@ function addToResult(result, dictionaries) {
 // A binding's frames(true) lists each frame as a scan result of its own, or
 // as { url, error } where it could not scan one: a result gains its steps,
 // an error is left as it is.
-function addToTree(node, dictionaries) {
+function addToTree(node, dictionaries, wanted) {
   if (!node || typeof node !== 'object') return node;
-  if (!node.topFrame && Array.isArray(node.checksResults)) return addToResult(node, dictionaries);
+  if (!node.topFrame && Array.isArray(node.checksResults)) {
+    return addToResult(node, dictionaries, wanted);
+  }
   const out = { ...node };
-  if (node.topFrame) out.topFrame = addToResult(node.topFrame, dictionaries);
-  if (Array.isArray(node.frames)) out.frames = node.frames.map((n) => addToTree(n, dictionaries));
+  if (node.topFrame) out.topFrame = addToResult(node.topFrame, dictionaries, wanted);
+  if (Array.isArray(node.frames)) {
+    out.frames = node.frames.map((n) => addToTree(n, dictionaries, wanted));
+  }
   return out;
+}
+
+// options.locale as addToResult reads it: a tag, or a list of tags, or null
+// for the scan's own.
+function wantedLocale(options) {
+  const locale = options && typeof options === 'object' ? options.locale : null;
+  if (typeof locale === 'string') return locale.trim() || null;
+  if (Array.isArray(locale)) {
+    const tags = locale.filter((l) => typeof l === 'string' && l.trim()).map((l) => l.trim());
+    return tags.length ? tags : null;
+  }
+  return null;
 }
 
 /**
@@ -246,14 +266,19 @@ function addToTree(node, dictionaries) {
  * steps of its own gets its base rule's. With `options.packs`, the packs the
  * scan ran, their rules' and variants' meta.review give theirs, in English.
  * Findings that already have one, and decided ones, are left as they are.
+ * With `options.locale` (a tag, or a list of tags, most wanted first), the
+ * steps are in that locale instead of the scan's, and a finding that already
+ * has steps is given them again in it, as a report in another language
+ * needs; English stays the fallback for every step a locale lacks.
  */
 function applyHowToCheck(result, dictionaries, options) {
   const packs = options && typeof options === 'object' ? options.packs : null;
   const dicts = withPackReview(dictionaries, packs);
+  const wanted = wantedLocale(options);
   if (result && typeof result === 'object' && 'topFrame' in result) {
-    return addToTree(result, dicts);
+    return addToTree(result, dicts, wanted);
   }
-  return addToResult(result, dicts);
+  return addToResult(result, dicts, wanted);
 }
 
 module.exports = { applyHowToCheck, howToCheckFrom };
