@@ -75,22 +75,49 @@ test('table() lists fail and cantTell occurrences worst first, and prints them',
   assert.equal(printed.length, 1);
   assert.deepEqual(plain(printed[0]), plain(rows));
   assert.ok(rows.length >= 2);
-  const rank = { fail: 0, cantTell: 1 };
+  const rank = (r) =>
+    ({ fail: 0, cantTell: 1 })[r.outcome] * 3 + { fail: 0, pass: 1, '': 2 }[r.lean];
   const sev = { critical: 0, serious: 1, moderate: 2, minor: 3 };
   for (let i = 1; i < rows.length; i++) {
     const a = rows[i - 1];
     const b = rows[i];
     assert.ok(
-      rank[a.outcome] < rank[b.outcome] ||
-        (rank[a.outcome] === rank[b.outcome] && (sev[a.severity] ?? 9) <= (sev[b.severity] ?? 9)),
+      rank(a) < rank(b) ||
+        (rank(a) === rank(b) && (sev[a.severity] ?? 9) <= (sev[b.severity] ?? 9)),
       `${a.rule} before ${b.rule}`
     );
   }
   const img = rows.find((r) => r.rule === 'img-alt-present');
-  assert.deepEqual(plain(Object.keys(img)), ['outcome', 'severity', 'rule', 'element', 'summary']);
+  assert.deepEqual(plain(Object.keys(img)), [
+    'outcome',
+    'lean',
+    'severity',
+    'rule',
+    'element',
+    'summary'
+  ]);
+  assert.equal(img.lean, '');
   assert.equal(img.outcome, 'fail');
   assert.match(img.element, /img/);
   assert.ok(img.summary);
+  dom.window.close();
+});
+
+test('table() puts the questions that lean fail before those that lean pass and the open ones', async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<h1>A</h1><h3>B</h3><input type="checkbox" checked aria-checked="false" aria-label="A">' +
+      '</main></body></html>'
+  );
+  dom.window.console.table = () => {};
+  const result = await dom.window.a11ycore.run({
+    runOnly: ['aria-checked-state-mismatch', 'heading-order', 'p-as-heading']
+  });
+  const rows = plain(dom.window.a11ycore.table(result)).map((r) => [r.rule, r.outcome, r.lean]);
+  assert.deepEqual(rows.slice(0, 2), [
+    ['heading-order', 'cantTell', 'fail'],
+    ['aria-checked-state-mismatch', 'cantTell', 'pass']
+  ]);
   dom.window.close();
 });
 
