@@ -3003,20 +3003,36 @@ function runCoreSettled(
   // capped copy rules read (the raw object could be circular, or megabytes
   // repeated on every result), and `customRules` as their ids (the rules'
   // functions cannot be cloned, and their source repeated on every result).
+  // `styleSheetTexts` is echoed as the sheets' hrefs: their text is data the
+  // run read, as the dictionaries are, and a page's CSS repeated on every
+  // result multiplied it by the number of rules.
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
     : [];
   const echoedCustomRules = rawCustomRules
     .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
     .map((c) => ({ id: c.id.trim() }));
+  const echoedStyleSheets = Array.isArray(engineOptionsResolved.styleSheetTexts)
+    ? engineOptionsResolved.styleSheetTexts
+        .filter((s) => s && typeof s === 'object' && typeof s.href === 'string')
+        .map((s) => ({ href: s.href }))
+    : [];
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    if (
+      !('messages' in eo) &&
+      !('probes' in eo) &&
+      !('customRules' in eo) &&
+      !('styleSheetTexts' in eo)
+    ) {
+      continue;
+    }
     const echoed = { ...eo };
     delete echoed.messages;
     if ('probes' in echoed) echoed.probes = probes;
     if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
