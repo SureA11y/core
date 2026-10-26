@@ -21,6 +21,15 @@ function createContrastHelpers(opts, shared) {
     return x;
   };
 
+  // A computed opacity as a number from 0 to 1. A value that doesn't parse,
+  // such as the empty string jsdom 26 gives for an opacity no style sets,
+  // is the initial value, 1: clamp01 would make it 0, as if the element
+  // were invisible.
+  const opacityOf = (cs) => {
+    const x = Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1');
+    return Number.isFinite(x) ? clamp01(x) : 1;
+  };
+
   const clamp255 = (n) => {
     const x = Number(n);
     if (Number.isNaN(x)) return 0;
@@ -1818,6 +1827,24 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
+    // An emulator that resolves no system colour hands the keyword back as
+    // the computed value (jsdom 26 computes an unstyled text's color as
+    // "canvastext", and a button's colours as "buttontext" on "buttonface"),
+    // and the probe above gets it back the same. Such a page has no colour
+    // scheme of its own to follow, so these are the light scheme's in
+    // Chromium, as __SCHEME_COLORS gives them for jsdom. A browser always
+    // resolves them, so it never gets here.
+    const system = {
+      canvastext: __SCHEME_COLORS.light.text,
+      canvas: __SCHEME_COLORS.light.canvas,
+      linktext: __SCHEME_COLORS.light.link,
+      buttontext: '#000000',
+      buttonface: '#efefef',
+      fieldtext: '#000000',
+      field: '#ffffff'
+    }[s];
+    if (system) return __parseCssColorToRgbaUncached(system);
+
     return null;
   }
 
@@ -2611,7 +2638,7 @@ function createContrastHelpers(opts, shared) {
           continue;
         }
         const cs = __contrastComputedStyle(cur);
-        const o = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const o = opacityOf(cs);
         prod *= o;
         cur = composedParent(cur);
         if (prod <= 0) break;
@@ -2653,7 +2680,10 @@ function createContrastHelpers(opts, shared) {
   function __textFillOf(cs) {
     if (!cs) return '';
     const fill = cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '';
-    return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
+    if (String(fill).trim() && parseCssColorToRgba(fill)) return fill;
+    // jsdom 26 leaves a form field's color as its sheet's "initial", which
+    // is color's initial value, CanvasText.
+    return /^\s*initial\s*$/i.test(String(cs.color || '')) ? 'canvastext' : cs.color;
   }
   // el's text fill value, as __textFillOf, where jsdom's is not the one a
   // browser computes: jsdom computes a fill that follows a light-dark()
@@ -3049,10 +3079,19 @@ function createContrastHelpers(opts, shared) {
     if (decl && decl.unknown) return null;
     if (!decl) {
       // A link no author rule colours is in the browser's link colour, as
-      // jsdom has it. Text inside one takes its colour from its parent,
+      // jsdom 29 has it. jsdom 26 gives it none, and the link takes its
+      // parent's colour: it is then the light scheme's link colour, as
+      // jsdom 29's. Text inside one takes its colour from its parent,
       // unless the browser's sheet colours it (a <mark>): jsdom then gives
       // it a value of its own.
-      if (__isLink(el)) return undefined;
+      if (__isLink(el)) {
+        const cs = __contrastComputedStyle(el);
+        const own = cs ? parseCssColorToRgba(cs.color) : null;
+        const link = parseCssColorToRgba(__SCHEME_COLORS.light.link);
+        if (!own || !link || (own.r === link.r && own.g === link.g && own.b === link.b))
+          return undefined;
+        return __SCHEME_COLORS.light.link;
+      }
       const cs = __contrastComputedStyle(el);
       const pcs = parent && dom.nodeType(parent) === 1 ? __contrastComputedStyle(parent) : null;
       if (cs && pcs && String(cs.color) !== String(pcs.color)) return undefined;
@@ -4195,7 +4234,7 @@ function createContrastHelpers(opts, shared) {
       }
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
-        const oop = clamp01(Number.parseFloat(ocs && ocs.opacity != null ? ocs.opacity : '1'));
+        const oop = opacityOf(ocs);
         if (oop < 1) acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * oop) };
         cur = composedParent(cur);
         continue;
@@ -4203,7 +4242,7 @@ function createContrastHelpers(opts, shared) {
 
       const cs = __contrastComputedStyle(cur);
       const bg = parseCssColorToRgba(cs && cs.backgroundColor);
-      const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+      const op = opacityOf(cs);
 
       if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
         unparsable = {
@@ -4515,7 +4554,7 @@ function createContrastHelpers(opts, shared) {
           );
         }
 
-        const op = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const op = opacityOf(cs);
         if (op < 1) {
           bgAcc = { r: bgAcc.r, g: bgAcc.g, b: bgAcc.b, a: clamp01(bgAcc.a * op) };
           fgAcc = { r: fgAcc.r, g: fgAcc.g, b: fgAcc.b, a: clamp01(fgAcc.a * op) };
@@ -5698,9 +5737,7 @@ function createContrastHelpers(opts, shared) {
     const field = __fieldText(el);
     const placeholder = field && field.placeholder ? field.style : null;
     if (placeholder) {
-      const phOpacity = clamp01(
-        Number.parseFloat(placeholder.opacity != null ? placeholder.opacity : '1')
-      );
+      const phOpacity = opacityOf(placeholder);
       const phBg = parseCssColorToRgba(placeholder.backgroundColor);
       let out = null;
       if (hasBackgroundImageOrGradient(placeholder)) {
@@ -5959,7 +5996,7 @@ function createContrastHelpers(opts, shared) {
       // Without a background of its own, el's opacity only fades the text,
       // which the opacity product already gets right.
       if (cur === el) {
-        const ownOpacity = clamp01(Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1'));
+        const ownOpacity = opacityOf(cs);
         const ownBg = ownOpacity < 1 ? parseCssColorToRgba(cs && cs.backgroundColor) : null;
         if (
           ownBg &&
@@ -5997,9 +6034,7 @@ function createContrastHelpers(opts, shared) {
       // produce for the general case. (el's own opacity is handled just
       // above.)
       if (cur !== el) {
-        const ancestorOpacity = clamp01(
-          Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1')
-        );
+        const ancestorOpacity = opacityOf(cs);
         if (ancestorOpacity < 1 && resolveGroupOpacityColors(el)) {
           const out = {
             ok: true,
@@ -6112,7 +6147,7 @@ function createContrastHelpers(opts, shared) {
     const paint = __paintCandidate(node, cs);
     if (!paint) return null;
     if (cs.visibility === 'hidden' || cs.visibility === 'collapse') return null;
-    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) === 0) return null;
+    if (opacityOf(cs) === 0) return null;
     return paint;
   }
 
@@ -6763,7 +6798,7 @@ function createContrastHelpers(opts, shared) {
         if (pcs.position !== 'absolute' && pcs.position !== 'fixed') continue;
         if (pcs.display === 'none') continue;
         if (pcs.visibility === 'hidden' || pcs.visibility === 'collapse') continue;
-        const opacity = clamp01(Number.parseFloat(pcs.opacity != null ? pcs.opacity : '1'));
+        const opacity = opacityOf(pcs);
         if (opacity === 0) continue;
         const bg = parseCssColorToRgba(pcs.backgroundColor);
         const image = hasBackgroundImageOrGradient(pcs);
@@ -7166,8 +7201,7 @@ function createContrastHelpers(opts, shared) {
     ) {
       const ccs = __contrastComputedStyle(cur);
       if (grouped(cur, ccs)) return null;
-      if (clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1)
-        return null;
+      if (opacityOf(ccs) < 1) return null;
     }
     let ctm;
     try {
@@ -7245,7 +7279,7 @@ function createContrastHelpers(opts, shared) {
     const pos = cs.position;
     if (pos === 'fixed' || pos === 'sticky') return true;
     if ((pos === 'absolute' || pos === 'relative') && cs.zIndex !== 'auto') return true;
-    if (clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1) return true;
+    if (opacityOf(cs) < 1) return true;
     const set = (v) => !!v && v !== 'none';
     if (
       set(cs.transform) ||
@@ -7686,7 +7720,7 @@ function createContrastHelpers(opts, shared) {
       // when it groups both; that is left to the older checks. A drop shadow
       // under an opaque background is hidden by it.
       if (
-        clamp01(Number.parseFloat(cs.opacity != null ? cs.opacity : '1')) < 1 ||
+        opacityOf(cs) < 1 ||
         __hasBlendModeEl(a, cs) ||
         (__hasFilterEl(a, cs) && !(opaqueBelow && __hidesOwnShadow(cs)))
       )
@@ -7753,7 +7787,7 @@ function createContrastHelpers(opts, shared) {
       ) {
         const ccs = __contrastComputedStyle(cur);
         if (
-          clamp01(Number.parseFloat(ccs && ccs.opacity != null ? ccs.opacity : '1')) < 1 ||
+          opacityOf(ccs) < 1 ||
           __hasBlendModeEl(cur, ccs) ||
           (__hasFilterEl(cur, ccs) && !(color.a >= 1 && __hidesOwnShadow(ccs)))
         )

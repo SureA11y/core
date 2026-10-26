@@ -975,7 +975,9 @@ function runInPage(ctx) {
                 typeof helpers.contrast.parseCssColorToRgba === 'function'
               ) {
                 const cs = helpers.getComputedStyle(el);
-                const op = Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1');
+                const op = Number.parseFloat(
+                  cs && cs.opacity != null && cs.opacity !== '' ? cs.opacity : '1'
+                );
                 // Only treat as self-opaque if opacity is exactly 1 (string '1' or number 1)
                 // to avoid float/serialization quirks and preserve determinism.
                 if (Number.isFinite(op) && op === 1) {
