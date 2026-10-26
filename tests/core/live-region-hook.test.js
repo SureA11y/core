@@ -297,6 +297,60 @@ test('a text given to a region behind an open modal dialog is left out, or kept 
   );
 });
 
+test('getAnnouncements({ selectors: true }) names each region by a selector, so the list crosses a driver', async () => {
+  const d = await page(
+    '<div id="status" aria-live="polite"></div>' +
+      '<ul><li><div role="status"></div></li><li><div role="status"></div></li></ul>' +
+      '<section><div id="dup" role="log"></div><div id="dup" role="log"></div></section>' +
+      '<form><input name="parentElement"><input name="id"><div role="alert" aria-live="polite"></div></form>' +
+      '<div id="gone" aria-live="polite"></div>',
+    [
+      "document.getElementById('status').textContent = 'Saved';",
+      "document.querySelectorAll('li [role=status]')[1].textContent = 'Second';",
+      "document.querySelectorAll('[role=log]')[1].textContent = 'Logged';",
+      "document.querySelector('form [role=alert]').textContent = 'Sent';",
+      "document.getElementById('gone').textContent = 'Bye';",
+      "document.getElementById('gone').remove();"
+    ]
+  );
+  // As a binding runs it: serialized into the page, its answer copied out
+  // through JSON, as a driver's serialization boundary does.
+  const inPage = d.window.eval(`(${getAnnouncements.toString()})`);
+  const listed = JSON.parse(JSON.stringify(inPage({ selectors: true })));
+  assert.deepEqual(
+    listed.map((a) => [a.text, a.selector]),
+    [
+      ['Saved', '#status'],
+      [
+        'Second',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(2) > div:nth-of-type(1)'
+      ],
+      [
+        'Logged',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)'
+      ],
+      [
+        'Sent',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > form:nth-of-type(1) > div:nth-of-type(1)'
+      ],
+      ['Bye', null]
+    ]
+  );
+  // Each selector finds its region; no entry holds an element.
+  const regions = getAnnouncements(d.window);
+  listed.forEach((a, i) => {
+    assert.ok(!('element' in a));
+    if (a.selector) assert.equal(d.window.document.querySelector(a.selector), regions[i].element);
+  });
+  // The other fields are those of the plain list.
+  const without = (key) => (a) => Object.fromEntries(Object.entries(a).filter(([k]) => k !== key));
+  assert.deepEqual(
+    listed.map(without('selector')),
+    JSON.parse(JSON.stringify(regions.map(without('element'))))
+  );
+  assert.throws(() => getAnnouncements(d.window, { selectors: 'yes' }), TypeError);
+});
+
 test('a role attribute gives its first known role, in any case', async () => {
   const d = await page(
     '<div id="a" role="zzunknown status"></div><div id="b" role="STATUS"></div><div id="c" role="note status"></div>',

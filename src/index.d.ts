@@ -1212,13 +1212,36 @@ export interface Announcement {
  * made in the current task are included. null when the window has no hook.
  * `win` defaults to the global `window`. Self-contained, like
  * runa11yCoreInPage: `getAnnouncements.toString()` evaluated in a page works
- * there; drop `element` from each entry before it crosses a driver.
+ * there. With `selectors: true`, each entry names its region by a selector
+ * instead of holding it, so the list crosses a driver (page.evaluate).
  */
+export function getAnnouncements(
+  win: Window | undefined,
+  options: GetAnnouncementsOptions & { selectors: true }
+): LocatedAnnouncement[] | null;
+export function getAnnouncements(
+  options: GetAnnouncementsOptions & { selectors: true }
+): LocatedAnnouncement[] | null;
 export function getAnnouncements(
   win?: Window,
   options?: GetAnnouncementsOptions
 ): Announcement[] | null;
 export function getAnnouncements(options: GetAnnouncementsOptions): Announcement[] | null;
+
+/**
+ * An announcement as getAnnouncements({ selectors: true }) gives it: the
+ * region named by a selector, in place of the element.
+ */
+export interface LocatedAnnouncement extends Omit<Announcement, 'element'> {
+  /**
+   * The region: its id where that is unique in its tree, else its tag and
+   * place among its siblings up to the root. null for a region no longer in
+   * the page.
+   */
+  selector: string | null;
+  /** For a region inside a shadow root: the shadow hosts leading to it, outermost first. */
+  shadowHostSelectors?: string[];
+}
 
 export interface GetAnnouncementsOptions {
   /**
@@ -1227,6 +1250,12 @@ export interface GetAnnouncementsOptions {
    * Default: false.
    */
   includeBehindModal?: boolean;
+  /**
+   * Name each region by a selector (`selector`, and `shadowHostSelectors`
+   * inside a shadow root) instead of holding it in `element`, so the list
+   * can be returned through a driver's page.evaluate. Default: false.
+   */
+  selectors?: boolean;
 }
 
 /**
