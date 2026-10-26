@@ -284,6 +284,72 @@ test('openReport() loads surea11y.report.js from beside the bundle and opens the
   dom.window.close();
 });
 
+// A page whose fetch reads the package's files, as a CDN serves them beside
+// the bundle; `asked` lists what was fetched.
+function servePackage(window, asked) {
+  const fs = require('node:fs');
+  const { fileURLToPath } = require('node:url');
+  window.fetch = async (url) => {
+    asked.push(url);
+    let text = null;
+    try {
+      text = fs.readFileSync(fileURLToPath(url), 'utf8');
+    } catch {
+      text = null;
+    }
+    return { ok: text !== null, json: async () => JSON.parse(text) };
+  };
+}
+
+test("openReport() gives the questions the steps that answer them, in the scan's locale", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="fr"><head><title>T</title></head><body><main><h1>A</h1><h3>B</h3></main></body></html>'
+  );
+  const { window } = dom;
+  const blobs = [];
+  window.URL.createObjectURL = (blob) => blobs.push(blob) && 'blob:x';
+  window.open = () => ({});
+  const asked = [];
+  servePackage(window, asked);
+  const result = await window.a11ycore.run({ runOnly: ['heading-order'], locale: 'fr' });
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+  await window.a11ycore.openReport(result);
+  // English, the fallback, and the scan's locale, from beside the bundle.
+  assert.deepEqual(
+    asked.map((u) => u.slice(u.indexOf('src/i18n/review/'))),
+    ['src/i18n/review/en.json', 'src/i18n/review/fr.json']
+  );
+  const fr = require('../src/i18n/review/fr.json');
+  const firstStep = Object.keys(fr).find((k) => /^headingOrder_review_.*_step1$/.test(k));
+  const html = await blobs[0].text();
+  assert.ok(html.includes(fr[firstStep].replace(/'/g, '&#39;')) || html.includes(fr[firstStep]));
+  // The result given is not changed.
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+
+  // Dictionaries given are used as they are, and howToCheck: false fetches none.
+  asked.length = 0;
+  const en = require('../src/i18n/review/en.json');
+  await window.a11ycore.openReport(result, { reviewDictionaries: { en } });
+  await window.a11ycore.openReport(result, { howToCheck: false });
+  assert.deepEqual(asked, []);
+  assert.match(await blobs[1].text(), /Find the heading the report names/);
+  assert.doesNotMatch(await blobs[2].text(), /Find the heading the report names/);
+  dom.window.close();
+});
+
+test('openReport() shows the report without steps when the dictionaries cannot be fetched', async () => {
+  const dom = await load();
+  const { window } = dom;
+  window.URL.createObjectURL = () => 'blob:x';
+  window.open = () => ({});
+  window.fetch = async () => {
+    throw new Error('offline');
+  };
+  const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+  assert.equal(await window.a11ycore.openReport(result), 'blob:x');
+  dom.window.close();
+});
+
 test('openReport() logs the address when no tab can be opened', async () => {
   const dom = await load();
   const { window } = dom;

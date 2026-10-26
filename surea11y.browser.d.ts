@@ -121,7 +121,14 @@ declare namespace a11ycore {
    */
   function openReport(
     result: ReturnType<typeof RunInPage>,
-    options?: { reportScript?: string; report?: { title?: string } }
+    options?: {
+      reportScript?: string;
+      report?: { title?: string };
+      /** The review dictionaries to read the steps from ({ en, fr }), instead of fetching them beside the bundle. */
+      reviewDictionaries?: Record<string, Record<string, string>>;
+      /** false: no steps, and nothing fetched for them. Default true. */
+      howToCheck?: boolean;
+    }
   ): Promise<string>;
 }
 
