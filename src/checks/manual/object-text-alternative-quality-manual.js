@@ -19,7 +19,12 @@
  *   which restores its role. An object whose type, or failing that its data
  *   URL's extension, names an HTML page, a PDF or plain text is left out,
  *   as object-text-alternative-present leaves it out: it renders no
- *   non-text content (ACT 8fc3b6).
+ *   non-text content (ACT 8fc3b6). So is a Flash object
+ *   (`type="application/x-shockwave-flash"`, or with no type a `data`
+ *   URL ending in `.swf`): no current
+ *   browser runs Flash (support ended in 2021), so the object draws nothing
+ *   itself and the browser shows its fallback content, ordinary HTML the
+ *   other rules judge. Nothing non-text is left for 1.1.1 (ACT 8fc3b6).
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
@@ -110,7 +115,9 @@ function runInPage(ctx) {
     'xml',
     'json',
     'pdf',
-    'csv'
+    'csv',
+    // Flash: no current browser runs it, so only the fallback shows.
+    'swf'
   ]);
 
   function embedsNonMedia(type, data) {

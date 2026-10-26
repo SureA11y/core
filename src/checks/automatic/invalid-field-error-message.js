@@ -95,9 +95,13 @@
  *   that is in error is identified and the error is described to the user
  *   in text." `aria-invalid="true"` is the page saying it detected one.
  *   ARIA 1.2 (aria-errormessage): "authors MUST ensure the content is not
- *   hidden" when the object is invalid, so a hidden message is a stated
- *   failure, not a guess. Technique ARIA21 uses aria-invalid with a shown,
- *   associated message; ARIA19 and G83 describe the error in text.
+ *   hidden" when the object is invalid, so a hidden message leans fail; it
+ *   is not a failure on its own, as 3.3.1 is met when the error is told in
+ *   text elsewhere, such as the label. Technique ARIA21 uses aria-invalid
+ *   with a shown, associated message; ARIA19 and G83 describe the error in
+ *   text.
+ * - The rule decides pass; every finding it can't pass is asked about, so it
+ *   never reports fail.
  * - A shown, linked message passes without asking whether it is also
  *   announced on its own (a live region): WCAG doesn't require that here.
  * - A target's shown state and text are worked out once and reused by
@@ -307,7 +311,6 @@ function runInPage(ctx) {
     });
   }
 
-  const fails = [];
   const questions = [];
   let applicableCount = 0;
 
@@ -328,7 +331,6 @@ function runInPage(ctx) {
     const refs = helpers.getRefElements(el, 'aria-errormessage', ctx);
 
     let reasonCode;
-    let tier = 'cantTell';
     let hiddenBy = null;
     let liveDescription = false;
     if (errorMessage || refs.length) {
@@ -501,23 +503,19 @@ function runInPage(ctx) {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
-    if (tier === 'fail') {
-      fails.push(helpers.reportOccurrence(el, occurrence));
-    } else {
-      occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
-      if (m.lean)
-        occurrence.lean = {
-          toward: m.lean.toward || 'fail',
-          why: m.lean.why,
-          signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
-          ...(m.lean.caution ? { caution: m.lean.caution } : {}),
-          i18n: {
-            whyKey: m.lean.whyKey,
-            ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
-          }
-        };
-      questions.push(helpers.reportOccurrence(el, occurrence));
-    }
+    occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
+    if (m.lean)
+      occurrence.lean = {
+        toward: m.lean.toward || 'fail',
+        why: m.lean.why,
+        signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
+        ...(m.lean.caution ? { caution: m.lean.caution } : {}),
+        i18n: {
+          whyKey: m.lean.whyKey,
+          ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
+        }
+      };
+    questions.push(helpers.reportOccurrence(el, occurrence));
   }
 
   if (applicableCount === 0) {
@@ -525,7 +523,7 @@ function runInPage(ctx) {
   }
   return {
     ruleId: rule.ruleId,
-    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+    ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious')
   };
 }
 

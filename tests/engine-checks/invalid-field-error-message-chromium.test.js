@@ -2,8 +2,8 @@
 
 /**
  * invalid-field-error-message in Chromium: a message hidden by a style
- * sheet fails, while one collapsed by its box or visually hidden is not
- * failed, since the page doesn't state it is hidden.
+ * sheet is asked about, leaning fail, while one collapsed by its box or
+ * visually hidden passes, since the page doesn't state it is hidden.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
