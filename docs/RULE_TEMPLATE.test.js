@@ -12,6 +12,8 @@
  * - A manual rule never returns fail: drop that test and keep the cantTell one.
  * - Assert stable evidence (which elements, reason codes), not full HTML.
  * - Add the fixture-coverage test of RULE_AUTHORING.md section 11.3.
+ * - For each lean, test a case that leans, its `toward` and `whyKey`, and for
+ *   a conditional lean a case of the same code with none (section 8.5).
  */
 
 const test = require('node:test');

@@ -6,11 +6,11 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 
 | Document | What it covers |
 |---|---|
-| [`INTEGRATION.md`](./INTEGRATION.md) | Running it with jsdom, Playwright, Puppeteer, Selenium, Cypress, other drivers, or a plain `<script>` tag. |
+| [`INTEGRATION.md`](./INTEGRATION.md) | Running it with jsdom, Playwright, Puppeteer, Selenium, Cypress, other drivers, a plain `<script>` tag or the browser's console, and the opt-in hooks. |
 | [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) | Every option: choosing rules, conformance targets and profiles, policies, languages, packs. |
 | [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) | Every field of a result. |
 | [`LEANS.md`](./LEANS.md) | Which way an undecided finding points: reading, using and trusting a lean. |
-| [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) | How rule results roll up to WCAG criteria, and what a criterion's `pass` does and doesn't claim. |
+| [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) | How rule results roll up to WCAG criteria, and why a criterion whose rules all pass is still `cantTell`. |
 | [`LIMITATIONS.md`](./LIMITATIONS.md) | What a scan can't establish, and what to do about it. |
 | [`LAYOUT_MEASUREMENT.md`](./LAYOUT_MEASUREMENT.md) | How the contrast and target-size rules measure a rendered page. |
 | [`I18N.md`](./I18N.md) | Results in another language, and adding a language. |
@@ -43,7 +43,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 |---|---|
 | [`PACKS.md`](./PACKS.md) | Your own rules, profiles, checklist or standard, from `surea11y-pack new` to publishing. |
 | [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) | The rule contract, in full. |
-| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, with its test in [`RULE_TEST_TEMPLATE.md`](./RULE_TEST_TEMPLATE.md). |
+| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, with its test in [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js). |
 | [`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md) | Testing a rule. |
 | [`RULE_HELPERS.md`](./RULE_HELPERS.md) | Every `ctx.helpers` function a rule can use. |
 | [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md) | How rules are categorized and split. |

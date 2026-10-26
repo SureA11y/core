@@ -6,7 +6,7 @@
 const { renderEarlReport } = require('@surea11y/core/earl');
 
 const report = renderEarlReport(result, {
-  assertor: { name: 'surea11y', version: '1.7.0' },
+  assertor: { name: 'surea11y', version: '1.14.0' },
   mode: 'earl:automatic'
 });
 
@@ -44,7 +44,7 @@ The graph groups by subject rather than being a flat list of assertions:
           "assertedBy": {
             "@type": "Assertor",
             "name": "surea11y",
-            "release": { "@type": "Version", "revision": "1.7.0" }
+            "release": { "@type": "Version", "revision": "1.14.0" }
           },
           "mode": "earl:automatic"
         }
@@ -74,7 +74,7 @@ A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA
 
 `earl:untested` has no counterpart: a rule that did not run produces no result to assert on, so it contributes no assertion rather than an untested one.
 
-**`cantTell` does not cost conformance credit.** ACT's own consistency rules allow an automated implementation to report "cannot tell" on some — though not all — examples and still count as consistent. What a partially consistent implementation may *not* do is produce a false positive: failing an example the rule says should pass, or that is inapplicable. That is the gate worth watching, and it is a property of the rules rather than of this reporter. As of the last full run the engine produces **zero false positives** across the 942 examples W3C publishes for its 59 matched rules — see [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md), and re-run `scripts/act-testcase-check.js` for the live figure rather than trusting this one indefinitely.
+**`cantTell` does not cost conformance credit.** ACT's own consistency rules allow an automated implementation to report "cannot tell" on some — though not all — examples and still count as consistent. What a partially consistent implementation may *not* do is produce a false positive: failing an example the rule says should pass, or that is inapplicable. That is the gate worth watching, and it is a property of the rules rather than of this reporter. As of the last full run the engine produces **zero false positives** across the 957 examples W3C publishes for its 60 matched rules — see [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md), and re-run `scripts/act-testcase-check.js` for the live figure rather than trusting this one indefinitely.
 
 ## Several results, one report
 

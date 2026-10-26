@@ -25,7 +25,19 @@
  * targetSizeMinimum), <outcome> is fail or cantTell, and <case> tells apart
  * several messages for one outcome. meta.title and meta.description must
  * match the English dictionary text. A param carries a value, never prose
- * (section 5.2).
+ * (section 5.2). A lean adds <ruleName>_lean_why (and _lean_caution), with a
+ * suffix per case (section 8.5).
+ *
+ * How to check: every reason code the header lists as cantTell has an entry
+ * in meta.review (section 8.6), and each step and result has a key in
+ * src/i18n/review/en.json and in every other locale there:
+ *   <ruleName>_review_<CODE>_step<n>, <ruleName>_review_<CODE>_pass, _fail
+ * `npm run i18n:sync` doesn't cover src/i18n/review/: add each locale's keys
+ * by hand.
+ *
+ * Reason codes: list each one under @reason-codes, then run
+ * `npm run finding-ids` so scripts/data/finding-ids.json has them
+ * (section 10.1).
  *
  * Outcomes (RULE_AUTHORING.md section 8.3, RULE_TAXONOMY.md section 1.1):
  * - automatic: notApplicable, pass, fail, or cantTell where the rule cannot
@@ -52,7 +64,8 @@
  * @reason-codes
  *   - `<REASON_CODE>` (fail): <what the code means, in one sentence>.
  *     Basis: WCAG <1.1.1>; <technique, failure, ACT rule or spec section>.
- *   - `<OTHER_CODE>` (cantTell): <what is left for a person to judge>.
+ *   - `<REASON_CODE_CANTTELL>` (cantTell): <what is left for a person to
+ *     judge>.
  *     Basis: WCAG <1.1.1> (not settled).
  */
 
@@ -84,8 +97,20 @@ const meta = {
   category: 'perceivable', // perceivable | operable | understandable | robust
   type: 'automatic', // automatic | manual
   defaultConfidence: 'high',
-  // Facet ids come from src/coverage/wcag-facets.js.
-  coverage: { facetsBySc: { '1.1.1': ['<facet-id>'] } }
+  // Facet ids come from src/coverage/wcag-facets.js: one that isn't marked
+  // `macro`, which is for coverage only.
+  coverage: { facetsBySc: { '1.1.1': ['<facet-id>'] } },
+  // How a person answers each cantTell code: two to five steps, each one
+  // action, starting from the element the finding names, then what they see
+  // if it passes and if it fails (RULE_AUTHORING.md section 8.6). The English
+  // must match src/i18n/review/en.json.
+  review: {
+    '<REASON_CODE_CANTTELL>': {
+      steps: ['<Find the element the report names.>', '<What to look at or do.>'],
+      passWhen: '<What the person sees when it passes.>',
+      failWhen: '<What the person sees when it fails, which fails WCAG <1.1.1>.>'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -155,6 +180,9 @@ function runInPage(ctx) {
             code: 'not-computable',
             needed: '<What would settle the question>'
           },
+          // Only where facts on the page make one answer clearly more likely:
+          // lean: { toward: 'fail', why: '<...>', signals: [{ signal: '<name>', value: true }],
+          //         i18n: { whyKey: '<ruleName>_lean_why' } } (section 8.5).
           data: {
             details: { reasonCode: '<REASON_CODE_CANTTELL>' },
             visibilityFilter

@@ -4,12 +4,12 @@ A strict CI gate ("fail the build on any `fail` outcome") is an adoption blocker
 
 ```sh
 # Once: record every current fail occurrence, does not fail the build.
-surea11y scan ./dist/index.html --write-baseline baseline.json
+npx @surea11y/cli scan ./dist/index.html --write-baseline baseline.json
 
 # Commit baseline.json to git.
 
 # From then on, in CI: only a NEW (not-yet-baselined) fail occurrence gates the build.
-surea11y scan ./dist/index.html --baseline baseline.json
+npx @surea11y/cli scan ./dist/index.html --baseline baseline.json
 ```
 
 The baseline file is meant to be committed to git, so accepting more accessibility debt becomes an explicit, reviewable decision — a new violation shows up as a new row in the file's diff in a PR, not a silent change in a count.
@@ -117,7 +117,7 @@ A single baseline written from every width still gates correctly, since a findin
   "version": 1,
   "generatedAt": "2026-07-30T12:00:00.000Z",
   "entries": [
-    { "ruleId": "img-alt-present", "reasonCode": "DEFAULT", "selector": "html > body > img", "html": "<img src=\"logo.png\">" }
+    { "ruleId": "img-alt-present", "reasonCode": "TEXT_ALTERNATIVE_MISSING", "selector": "html > body > img", "html": "<img src=\"logo.png\">" }
   ]
 }
 ```

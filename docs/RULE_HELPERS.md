@@ -4,7 +4,7 @@ This is the full reference for `ctx.helpers`, the object every rule's `runInPage
 receives (`const { helpers } = ctx`, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §6).
 It exists because that doc's own helpers section only calls out the dozen or so most
 common ones — the underlying object (`createDomHelpers()` in `src/core/dom-helpers.js`)
-holds about 70 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
+holds about 85 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
 duplicate (often incorrectly — see the naming helpers below).
 
 Read [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) first for the rule contract itself
@@ -193,7 +193,8 @@ comment on `isIncludedInAccessibilityTree` below for why.
 Whether the default hidden-content policy leaves `el` out: the same filter
 `queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
 closed `<details>` other than its first `<summary>`, content under
-`content-visibility:hidden` or `hidden="until-found"`, an `[inert]` subtree and the
+`content-visibility:hidden` or `hidden="until-found"` (not on an inline element, which
+`until-found` doesn't hide), an `[inert]` subtree and the
 button a customizable `<select>` draws itself with, the page behind an open modal
 dialog). `isHiddenContent(el, { inert: true })` keeps inert content, as
 `queryAllSmart` does with the same option. Inert content takes no focus and no click
@@ -340,6 +341,18 @@ The document, then each open shadow root in it, nested ones included, found once
 and shared with the engine's own reads (the style sheets, the open modal dialogs). A rule
 that must search the whole page, shadow trees included, runs its `querySelectorAll` on each.
 A closed shadow root is not in it.
+
+### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
+
+The animations running on a time-based timeline when the scan started. The engine moves each to
+a fixed point while the rules run (a finite one to its end, so it no longer shows in
+`document.getAnimations()`), and restores it after; this is the list from before. `kind` is
+`css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
+property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
+`target` is the animated element (a pseudo-element's animation names its element and
+`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom). The
+runner adds it to `helpers` for the scan (`src/core/dom-runner.js`), so it is not in
+`createDomHelpers()`'s object; `moving-content-pausable` reads it.
 
 ### `hasTruncatedAncestorWalk` (internal)
 
@@ -584,16 +597,6 @@ Resolves refs, then computes **each target's own text alternative** recursively
 
 The same, for elements already in hand: a reference set from script as an element
 (`getRefElements`) may have no id to name it by.
-
-### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
-
-The animations running on a time-based timeline when the scan started. The engine moves each to
-a fixed point while the rules run (a finite one to its end, so it no longer shows in
-`document.getAnimations()`), and restores it after; this is the list from before. `kind` is
-`css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
-property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
-`target` is the animated element (a pseudo-element's animation names its element and
-`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom).
 
 ### `cssRulesOf(sheet)` → `CSSRuleList | null`
 
@@ -874,8 +877,10 @@ target (#105). Three read what a text field or a scaled element shows (`textStyl
 the `::placeholder` style while a text field shows its placeholder (its value is empty)
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
 is never read); `isPlaceholderText(el)` is `true` when the text `el` shows is its
-placeholder (the contrast rules ask about such text below its ratio, reason code
-`PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el, style)`
+placeholder (the contrast rules fail such text below its ratio when the page chose its
+colours, ask about it when that can't be told, and leave it out in the browser's own colours,
+reason code `PLACEHOLDER_BELOW_THRESHOLD`; `placeholderColourSource(el)` says whose colours
+they are); and `renderedTextScale(el, style)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
 zoom), and by `font-size-adjust` for either, and 1 where none applies or can be read,
@@ -908,7 +913,25 @@ in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the
 pseudo-element's colour and font (`{ ok: true, fg, bg, ratio, fontSizePx,
 fontWeightNum, same }`), or says what stops it (`{ ok: false, reasonCode, ... }`, the
 shape `getComputabilityBlocker` gives), and is `null` where the pseudo-element draws no
-text. That
+text. `isGeneratedNameHost(el)` says whether a style sheet gives `el`'s `::before` or `::after`
+content, and `getGeneratedNameText(el, pseudo)` is the text that pseudo-element adds to a name
+from content (`{ text, block, glyphs }`, or `null`, as under jsdom); `getContentNameInfo` reads
+them.
+The rest serve the contrast rules' own decisions. `textFillColor(el)` is the colour `el`'s text
+is painted in, before opacity (`''` where it can't be told). `paintsBackgroundLayer(cs)` says
+whether any `background-image` layer of a computed style draws something, and
+`backgroundLayerKinds(cs)` describes each layer. `placeholderColourSource(el)` is `'browser'`
+when a field's placeholder colours and background are all the browser's (G148), `'page'` when
+the page changed any of them, and `''` when that can't be told; `nativeSelectField(el)` is the
+`Field` colour Chromium paints a drop-down `<select>` whose background the page left to it, or
+`null`. `looksLikeLogo(el)` says whether text looks like part of a logo, and
+`contrastSwitchName(doc, helpers, ctx)` names a control that switches the page to higher contrast
+(G174), or is `''`: signs the `logoText` and `contrastSwitch` settings act on. The page's color
+schemes are `pageColorSchemes()` (`{ supported, current, declared }`, or `null`);
+`colorSchemeMeasurable(el, scheme)` says whether `el`'s text can be measured on the canvas of a
+scheme the page supports but isn't drawn in now, `colorSchemeUnread(el)` names the scheme an
+emulator can't give its colours in (`null` in a browser), and `useNamedCanvas(color)`, which
+the runner calls, sets the `contrast.rootCanvasFallback` a scan names as the canvas. That
 is the whole namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
@@ -925,7 +948,8 @@ WCAG's 14pt when it is left out, 18.5 for a standard that puts it there.
 
 ### `helpers.aria.*`
 
-ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,
+ARIA validity/taxonomy data and checks: `concreteRoles()` (every concrete role, as a new
+array), `isValidAriaAttrName`, `getAttrValueType`,
 `validateAttrValue`, `getExplicitRole`, `getInternalsRole`, `getAuthorRole`,
 `getAllRoleTokens`, `isAbstractRole`,
 `isDeprecatedRole`, `isAuthorDiscouragedRole`, `isAuthorProhibitedRole`,

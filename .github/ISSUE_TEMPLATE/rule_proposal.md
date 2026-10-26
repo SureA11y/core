@@ -5,7 +5,7 @@ title: ""
 labels: new-rule
 ---
 
-**Before filing:** check `docs/LIMITATIONS.md`'s "Deliberately not attempted" section — some checks are intentionally excluded because no safe automated heuristic exists at this engine's confidence bar (`fail` must stay reserved for deterministic, high-confidence violations). If your proposal falls in that category, the useful discussion is whether the limitation still holds, not just "please add this."
+**Before filing:** check `docs/LIMITATIONS.md`'s "Not attempted: judgment calls that aren't automatable safely" section — some checks are intentionally excluded because no safe automated heuristic exists at this engine's confidence bar (`fail` must stay reserved for deterministic, high-confidence violations). If your proposal falls in that category, the useful discussion is whether the limitation still holds, not just "please add this."
 
 ## What should be checked
 
@@ -19,11 +19,11 @@ labels: new-rule
 
 - **`fail` when:** <!-- the specific, objective, DOM-observable condition -->
 - **`notApplicable` when:** <!-- e.g. no matching elements, hidden content, environment can't evaluate it -->
-- **`cantTell` when (if ever):** <!-- only if some cases genuinely require human judgement -->
+- **`cantTell` when (if ever):** <!-- only if some cases genuinely require human judgement; for each, how a person would check it -->
 
 ## Can this be decided objectively from the DOM/computed styles alone?
 
-<!-- This engine's core constraint: no simulated interaction, no waiting for async state, no real layout outside a real browser (see docs/LIMITATIONS.md's "Structural" section). If the check needs any of that, say so — it may still be valuable as a `manual` rule capped at `cantTell`. -->
+<!-- This engine's core constraint: no simulated interaction, no waiting for async state, no real layout outside a real browser (see the "Outside what one scan can see" section of docs/LIMITATIONS.md). If the check needs any of that, say so — it may still be valuable as a `manual` rule capped at `cantTell`. -->
 
 ## Known false-positive risks
 

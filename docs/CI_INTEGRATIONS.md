@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci && npm run build   # produce whatever static HTML you're scanning
       - run: npx @surea11y/cli scan ./dist/index.html
 ```
@@ -62,7 +62,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci && npm run build
       - name: Scan (report, don't fail the job here)
         run: npx @surea11y/cli scan ./dist/index.html --baseline a11y-baseline.json --sarif results.sarif
@@ -89,7 +89,7 @@ pipelines:
     '**':
       - step:
           name: Accessibility scan
-          image: node:20
+          image: node:22
           script:
             - npm ci
             - npm run build
@@ -108,7 +108,7 @@ GitLab, Azure DevOps, Jenkins and CircleCI show JUnit XML in their own test view
 
 ```yaml
 a11y:
-  image: node:20
+  image: node:22
   script:
     - npm ci
     - npm run build
@@ -137,7 +137,7 @@ steps:
       testResultsFiles: a11y.junit.xml
 ```
 
-`cantTell` rules arrive as skipped tests, never failures. With `--baseline`, failures already in the baseline are skipped tests too. To show `cantTell` rules as failures, the CLI has no flag: save the scan with `--json` and render it with `renderJunitReport(result, { cantTellAs: 'failure' })` from `@surea11y/core/junit` (see [`JUNIT.md`](./JUNIT.md)), which needs `@surea11y/core` in the project's own `devDependencies`. That changes the report, not the CLI's exit code.
+`cantTell` rules arrive as skipped tests, never failures. With `--baseline`, failures already in the baseline are skipped tests too. To show `cantTell` rules as failures, the CLI has no flag: save the scan with `--json` and render it with `renderJunitReport(result, { cantTellAs: 'failure' })` from `@surea11y/core/junit` (see [`JUNIT.md`](./JUNIT.md)), which needs `@surea11y/core` in the project's own `devDependencies`. `{ leanFailAs: 'failure' }` is the narrower choice: only the `cantTell` findings that lean fail become failures, each with why and the steps to confirm it. Either changes the report, not the CLI's exit code.
 
 ## Free-tier/private-repo minute limits
 

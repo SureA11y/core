@@ -741,7 +741,7 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 
 ## duplicate-id
 
-*A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. With `engineOptions.wcagVersion: '2.0'` or `'2.1'`, the same markup is `fail`.*
+*A duplicate id maps to SC 4.1.1, which WCAG 2.2 removed and which W3C's 2023 errata to 2.0 and 2.1 count as always satisfied for HTML, so under any WCAG target the defect is `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. It fails only under a profile whose standard keeps 4.1.1, such as `en301549-v3.2.1`.*
 
 **Passed**
 ```html
@@ -2136,7 +2136,7 @@ A `<title>` inside the SVG `<image>` provides the alternative.
   <image href="logo.png"></image>
 </svg>
 ```
-The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s label doesn't transfer to it).
+The `<image>` itself has no `<title>` or ARIA name (the outer `<svg>`'s label doesn't transfer to it, and a `<desc>` would describe it, not name it).
 
 ## svg-text-alternative-present
 
@@ -2150,7 +2150,7 @@ The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s la
 ```html
 <svg role="img"></svg>
 ```
-No `<title>`, `<desc>`, or ARIA name.
+No `<title>` or ARIA name. A `<desc>` alone wouldn't do: it describes the image, it doesn't name it.
 
 ## svg-text-alternative-quality
 

@@ -76,6 +76,8 @@ const record = {
 - **Which runner.** `runDomRulesInPage` in the same Node process as core; `runa11yCoreInPage` handed to another realm, such as a browser driver's `page.evaluate`; the standalone bundle (`@surea11y/core/browser`) in a page with no driver; `runa11yCoreAcrossFrames` for frames, cross-origin ones included. See [Which runner function to use](./INTEGRATION.md#which-runner-function-to-use).
 - **When to scan.** A page still loading fonts or images gives layout rules something else to measure. `waitForPageReady` waits for it, with a time limit, and never rejects ([Waiting for the page](./INTEGRATION.md#waiting-for-the-page-before-a-scan)). Put your own time limit where you start the scan ([A time limit on a scan](./INTEGRATION.md#a-time-limit-on-a-scan)).
 - **Part of a page.** `contextSelector` scopes a scan. A selector that matches nothing scans nothing: `result.contextMatch.elementCount === 0` means "not scanned", never "clean". Show it as not scanned, and say the selector found nothing, rather than as a page with no findings ([Scoping a scan](./INTEGRATION.md#scoping-a-scan-to-part-of-the-page)).
+- **What no later script can read.** Three opt-in hooks run before the page's own scripts, as an init script, and let a scan see what it otherwise can't: `internalsHookScript()` the `ElementInternals` custom elements keep private, `listenerHookScript()` the listeners a page adds from script, and `liveRegionHookScript()` what its live regions are given. `HOOK_REASON_CODES` lists the reason codes each one decides or changes, for a tool that documents them ([`BINDING_AUTHORS_GUIDE.md`](./BINDING_AUTHORS_GUIDE.md#the-hooks)).
+- **Style sheets from another origin.** A page's script can't read them, so the rules that read CSS ask about them. Pass their text in `engineOptions.styleSheetTexts`: `preloadStyleSheets()` fetches those a server shares from inside the page, and a tool driving the browser can fetch the others from outside it ([Style sheets from another origin](./INTEGRATION.md#style-sheets-from-another-origin)).
 - **In a page or an extension.** Inject the browser bundle, and the locale side file for a language other than English ([Scanning in a language other than English](./INTEGRATION.md#scanning-in-a-language-other-than-english)). Packs reach a page through `packScript` ([Packs in a page](./INTEGRATION.md#packs-in-a-page)).
 
 ```js browser
@@ -94,7 +96,7 @@ Results from jsdom and from a browser differ for rules that need a layout (`targ
 
 [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) is the reference.
 
-**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'en301549-v4.1.1'`, or a pack's) names a standard instead ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
+**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'section508'`, or a pack's) names a standard instead ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
 
 **Letting users pick checks.** Name the checks, and say the conformance target with `wcagVersion` and `wcagLevel`: they decide which criteria are reported without changing what runs. Version and level tags beside the rule ids would also drop named checks that carry no WCAG tag, such as best-practice or custom ones ([Which criteria a scan reports](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)).
 
@@ -128,7 +130,11 @@ if (reported.join() !== willReport.join()) throw new Error('the plan and the sca
 
 - show it apart from fails and passes, as "needs review";
 - show why: an occurrence's `uncertainty.code` is a closed vocabulary to branch on, and `uncertainty.needed` says what would settle it ([Uncertainty codes](./OUTPUT_SCHEMA.md#uncertainty-codes));
+- show how to answer it: each `cantTell` occurrence of a core rule carries `howToCheck`, a few steps and what a person sees if it passes or fails ([How to check](./OUTPUT_SCHEMA.md#how-to-check));
+- show which way it points, where the page gives evidence: `lean` (`toward: 'pass'` or `'fail'`, with why and a caution). It is still a question ([`LEANS.md`](./LEANS.md));
 - keep it out of failure counts, and never count it as a pass.
+
+To sort a review queue as core's reporters do, read each occurrence with `reviewGroupOf(check, occurrence)` (`'fail'`, `'leanFail'`, `'leanPass'` or `'open'`) and `occurrenceOutcome(check, occurrence)`, rather than the check's outcome: one rule's findings can sit in different groups.
 
 A tool that drops `cantTell`, or counts it as a pass, reports more confidence than the engine has.
 
@@ -141,17 +147,18 @@ function criterionStatus(rollup) {
   if (rollup.outcome === 'fail') return 'fails';
   if (notSelected) return `partly checked (${contributors.length - notSelected} of ${contributors.length} checks)`;
   if (rollup.data.details.reasonCode === 'composite.rollup.cantTell.partialCheck') return 'checks passed, needs review';
+  if (rollup.data.details.reasonCode === 'composite.rollup.cantTell.partialCoverage') return 'nothing found to check, needs review';
   return { pass: 'passes its checks', cantTell: 'needs review', notApplicable: 'not applicable' }[rollup.outcome];
 }
 
 const statuses = Object.fromEntries(picked.rulesResults.map((r) => [r.ruleId, criterionStatus(r)]));
 ```
 
-**A criterion whose checks all pass is not a conformance claim, and no WCAG rollup says `pass`.** A WCAG criterion passes only when its rules check all it asks, and none does yet (`COMPLETE_CHECK` in `src/coverage/complete-applicability.js` is empty): where every check of a criterion came back clean on the page as it was scanned, its rollup is `cantTell` with `reasonCode` `composite.rollup.cantTell.partialCheck`. The parts the checks cover are met, and a person checks the rest. Show it apart from other `cantTell`s if you like ("checks passed, needs review"), never as passed. The same holds for a standard's requirement that restates WCAG criteria or is marked partial; a `pass` comes only from a standard's own requirement its rules check in full. Even then, say what was checked, what needs review and what no check covers, and don't call a criterion, a page or a product conformant on the strength of passes ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
+**A criterion whose checks all pass is not a conformance claim, and no WCAG rollup says `pass`.** A WCAG criterion passes only when its rules check all it asks, and none does yet (`COMPLETE_CHECK` in `src/coverage/complete-applicability.js` is empty): where every check of a criterion came back clean on the page as it was scanned, its rollup is `cantTell` with `reasonCode` `composite.rollup.cantTell.partialCheck`. The parts the checks cover are met, and a person checks the rest. Show it apart from other `cantTell`s if you like ("checks passed, needs review"), never as passed. Likewise, a criterion whose rules all found nothing to check is `notApplicable` only where they find every case it applies to (2.4.3, 2.4.4, 2.4.7, 2.4.9, 2.5.3 and 4.1.1, listed in the same file); for any other it is `cantTell` with `composite.rollup.cantTell.partialCoverage`, since content no rule looks for may still be there. The same holds for a standard's requirement that restates WCAG criteria or is marked partial; a `pass` comes only from a standard's own requirement its rules check in full. Even then, say what was checked, what needs review and what no check covers, and don't call a criterion, a page or a product conformant on the strength of passes ([What this engine cannot tell you](./WCAG_CONFORMANCE.md#what-this-engine-cannot-tell-you)).
 
 **Results in a tool that uses AI.** A result is structured evidence, which makes it usable input for a model that explains findings, drafts fixes or sorts `cantTell` cases for a reviewer. Keep the two apart: store and show the engine's outcome, rule and uncertainty as they are, and mark what the model adds as its suggestion. A model's reading of a `cantTell` is not the engine settling it, and a suggested fix is not a verified one until a scan or a person confirms it. Occurrences carry the page's markup and text, so treat a result as page content before sending it to an outside service.
 
-**Ready-made outputs.** `@surea11y/core/report` renders an HTML report, `/sarif` SARIF for code-scanning dashboards, `/junit` JUnit XML for CI test views, and `/earl` EARL for audit tooling ([`REPORT.md`](./REPORT.md), [`SARIF.md`](./SARIF.md), [`JUNIT.md`](./JUNIT.md), [`EARL.md`](./EARL.md)). Each is a pure function of a result, saved or fresh, cross-frame or not; build your own view only for what they don't show.
+**Ready-made outputs.** `@surea11y/core/report` renders an HTML report, `/sarif` SARIF for code-scanning dashboards, `/junit` JUnit XML for CI test views, and `/earl` EARL for audit tooling ([`REPORT.md`](./REPORT.md), [`SARIF.md`](./SARIF.md), [`JUNIT.md`](./JUNIT.md), [`EARL.md`](./EARL.md)). Each is a pure function of a result, saved or fresh, cross-frame or not; build your own view only for what they don't show. A build that gates on failures can also gate on the undecided findings that lean fail, without gating on every question: `renderJunitReport(result, { leanFailAs: 'failure' })` and `renderSarifReport(result, { leanFailAs: 'error' })`, with `leanFailWcagOnly: true` to leave out best-practice rules; `leaningFailures(result)` lists the findings such a gate counts ([`LEANS.md`](./LEANS.md#for-people-building-tools)).
 
 ```js
 const { renderSarifReport } = require('@surea11y/core/sarif');
@@ -161,7 +168,7 @@ const sarif = JSON.parse(renderSarifReport(result));
 const junit = renderJunitReport(result);
 ```
 
-**Large runs.** `engineOptions.output: { detail: 'findings' }` keeps whole only the results that report something (an empty page's result goes from about 236 KB to 80 KB), and the reporters read them as full results ([`output.detail`](./ENGINE_OPTIONS.md#engineoptions--the-rest)).
+**Large runs.** `engineOptions.output: { detail: 'findings' }` keeps whole only the results that report something (an empty page's result goes from about 264 KB to 91 KB), and the reporters read them as full results ([`output.detail`](./ENGINE_OPTIONS.md#engineoptions--the-rest)).
 
 **Other standards.** `engineOptions.mappings` (or a standard's profile) names each result's requirements in another standard, such as EN 301 549, and `result.standards` describes the standards a result names, so a stored result renders the same wherever it is read ([Other standards](./ENGINE_OPTIONS.md#other-standards-mappings)).
 
@@ -169,7 +176,7 @@ const junit = renderJunitReport(result);
 
 ## 5. Comparing runs and tracking findings
 
-**Finding identity.** Match findings across runs by identity, not by selector, which shifts when unrelated markup changes. A finding is `ruleId` + `reasonCode` + its element's `html` ([Finding identity](./API_STABILITY.md#finding-identity)). Reason codes don't change once shipped. `@surea11y/core/baseline` matches a scan against recorded findings, which is how "fail only on new violations" works ([`BASELINE.md`](./BASELINE.md)):
+**Finding identity.** Match findings across runs by identity, not by selector, which shifts when unrelated markup changes. A finding is `ruleId` + `reasonCode` + its element's `html` ([Finding identity](./API_STABILITY.md#finding-identity)). A reason code doesn't change once shipped, except when a minor release splits it by cause or gives one to a rule that had none: a baseline written by the release before keeps matching for one minor release, and `migrateBaselineEntries` rewrites it to the new codes ([Upgrading](./BASELINE.md#upgrading)). `@surea11y/core/baseline` matches a scan against recorded findings, which is how "fail only on new violations" works ([`BASELINE.md`](./BASELINE.md)):
 
 ```js
 const { buildBaselineEntries, matchBaseline } = require('@surea11y/core/baseline');
@@ -212,7 +219,7 @@ const skipped = checked.skippedCustomRules; // [{ id: 'shop-cart-link', reason: 
 - Store `engine.version`, `schemaVersion`, `wcagVersion`, `wcagLevel`, `profile`, `packs` and `locale.resolved` with every result ([section 1](#1-what-you-can-rely-on)).
 - Check that `engine.profile` is there when you asked for a profile.
 - Treat `contextMatch.elementCount === 0` as "not scanned".
-- Show `cantTell` as "needs review", with its uncertainty, and a partly checked criterion as such; never fold either into a pass.
+- Show `cantTell` as "needs review", with its uncertainty, its `howToCheck` steps and its lean, and a partly checked criterion as such; never fold either into a pass.
 - Don't count `occurrences.length` without looking at the outcome: a pass or `notApplicable` can carry an occurrence that describes the scan.
 - Show `skippedPacks` and `skippedCustomRules`.
 - Keep what the engine found apart from what your tool, or a model, adds to it.

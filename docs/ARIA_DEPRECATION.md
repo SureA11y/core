@@ -43,6 +43,9 @@ isAuthorProhibitedRole(role)
   annotation. No role treats any of the four as prohibited, so the flat set
   cannot downgrade a prohibited pairing to `cantTell`. These four are also the
   only attributes annotated that way anywhere in the specification.
+  An element with no role at all (`<input type="file">`, `<video>`) supports
+  them too, deprecated, so there they are `cantTell` as well
+  (`ARIA_ATTR_DEPRECATED`), as on a `<div>`.
 - `DEPRECATED_ROLES` = `directory`, the only role marked
   `[Deprecated in ARIA 1.2]`, superseded by `list`.
 - `AUTHOR_DISCOURAGED_ROLES` = `generic`, which §5.4 describes as "primarily
