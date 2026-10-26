@@ -117,6 +117,20 @@ occurrences.push(
 return { outcome: occurrences.length ? 'fail' : 'pass', occurrences };
 ```
 
+**How a person checks a `cantTell`.** A rule that can leave a finding undecided may say, per reason code, how a person answers it, as core's rules do (`howToCheck` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)): a few steps starting from the element the finding names, then what they see if it passes and if it fails.
+
+```js
+meta.review = {
+  GENERIC_LINK_NAME: {
+    steps: ['Find the link the report names.', 'Read the text around it.'],
+    passWhen: 'The text around the link says where it goes.',
+    failWhen: 'Nothing near the link says where it goes, which fails WCAG 2.4.4.'
+  }
+};
+```
+
+`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, whatever the scan's locale, and stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
+
 `reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
 **Three shortcuts to a rule:**

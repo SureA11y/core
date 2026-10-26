@@ -56,6 +56,32 @@ function getTranslator() {
   return translator;
 }
 
+// docs/LEANS.md promises a "How to check" section on every card that needs
+// review, so a result that comes without the steps (a binding's, from
+// runa11yCoreInPage) gains them here. They are read from core's review
+// dictionaries on disk (src/how-to-check.js), so, as src/index.js does, the
+// module is loaded through Node's own require, which a bundler doesn't
+// follow: surea11y.report.js, the report in a browser, shows the steps a
+// result already carries, and grows by no dictionary. options.packs, the
+// packs the scan ran, adds their rules' own steps (src/pack.js, meta.review).
+let howToCheckModule;
+function withHowToCheck(result, packs) {
+  if (howToCheckModule === undefined) {
+    howToCheckModule = null;
+    try {
+      if (typeof module === 'object' && module && typeof module.require === 'function') {
+        const id = './how-to-check.js';
+        howToCheckModule = module.require(id);
+      }
+    } catch {
+      howToCheckModule = null;
+    }
+  }
+  return howToCheckModule
+    ? howToCheckModule.addHowToCheck(result, Array.isArray(packs) ? { packs } : undefined)
+    : result;
+}
+
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so
 // such a report falls back to English labels and marks the findings with
@@ -861,7 +887,9 @@ function renderHtmlReport(input, options = {}) {
   // A cross-frame result: the page is the top frame's report, and its child
   // frames follow in a section of their own.
   const frames = framesOf(input, 'renderHtmlReport').map((f) =>
-    f.result ? { ...f, result: readableResult(f.result) } : f
+    f.result
+      ? { ...f, result: withHowToCheck(readableResult(f.result), options && options.packs) }
+      : f
   );
   const result = frames[0].result;
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];

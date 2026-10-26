@@ -649,13 +649,16 @@ export interface CheckResult {
   occurrences: Occurrence[];
   title: string;
   description: string;
-  i18n: { titleKey: string; descriptionKey: string } | null;
+  /** variantOfTitleKey: a variant's only, its base rule's titleKey. */
+  i18n: { titleKey: string; descriptionKey: string; variantOfTitleKey?: string } | null;
   meta: RuleMeta;
   /** The resolved options this rule ran under. */
   engineOptions: Record<string, unknown>;
   schemaVersion: string;
   /** The rulesResults entries that group this rule in this run. */
   rollupIds: string[];
+  /** A pack's variant only: the id of the rule it runs at other settings. */
+  variantOf?: string;
   /** Page-level data a rule reports whatever its outcome; not a stable contract. */
   data?: Record<string, unknown>;
   /** Present only on a rule that declares `meta.margin`, when an element met its threshold. */
@@ -915,17 +918,35 @@ export interface HowToCheck {
 }
 
 /**
- * A copy of a scan result (or a cross-frame result) whose undecided findings
- * carry howToCheck in the scan's locale. runDomRulesInPage does this itself; a
- * binding that runs runa11yCoreInPage in a page calls it on what comes back.
+ * A copy of a scan result, a cross-frame result or a binding's frames result
+ * whose undecided findings carry howToCheck in the scan's locale. Each frame's
+ * result in the tree gains them; a frame that could not be scanned is left as
+ * it is. runDomRulesInPage does this itself; a binding that runs
+ * runa11yCoreInPage in a page calls it on what comes back.
  */
-export function addHowToCheck<T>(result: T): T;
+export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
+  result: T,
+  options?: HowToCheckOptions
+): T;
 
-/** A core rule's steps for one reason code, in a locale (English when untranslated), or null. */
+/**
+ * The packs a result was scanned with: their rules' meta.review give steps,
+ * in English, and their variants are known for howToCheckFor.
+ */
+export interface HowToCheckOptions {
+  packs?: readonly unknown[] | null;
+}
+
+/**
+ * A rule's steps for one reason code, in a locale (English when
+ * untranslated), or null: core's, a variant's base rule's where it has none
+ * of its own, and, with options.packs, a pack rule's own.
+ */
 export function howToCheckFor(
   ruleId: string,
   reasonCode: string,
-  locale?: string
+  locale?: string,
+  options?: HowToCheckOptions
 ): HowToCheck | null;
 
 /**
@@ -1066,6 +1087,32 @@ export interface ListenerHookOptions {
  * window.eval(liveRegionHookScript({ early: true }));
  */
 export function liveRegionHookScript(options?: LiveRegionHookOptions): string;
+
+/** What a hook's record does to a reason code: see HOOK_REASON_CODES. */
+export type HookEffect = 'reports' | 'decides' | 'leans';
+
+export interface HookReasonCode {
+  readonly ruleId: string;
+  readonly reasonCode: string;
+  /**
+   * 'reports': given only where the hook ran. 'decides': the hook's record
+   * settles it (a question becomes a pass or a fail, or a fail a question).
+   * 'leans': the hook's record sets or changes its lean.
+   */
+  readonly effect: HookEffect;
+}
+
+/**
+ * The reason codes each opt-in hook decides or changes, one entry per rule
+ * and code, so a binding can say what installing a hook does without copying
+ * the codes (docs/BINDING_AUTHORS_GUIDE.md). Frozen; a minor release may add
+ * entries.
+ */
+export const HOOK_REASON_CODES: {
+  readonly internals: readonly HookReasonCode[];
+  readonly listener: readonly HookReasonCode[];
+  readonly liveRegion: readonly HookReasonCode[];
+};
 
 export interface LiveRegionHookOptions {
   /**

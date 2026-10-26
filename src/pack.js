@@ -389,6 +389,64 @@ function checkPack(pack) {
   return packProblems(pack, true);
 }
 
+// What is wrong with a rule's meta.review, the steps a person follows to
+// answer each of its undecided findings, by reason code: 1 to 6 steps, a
+// passWhen and a failWhen, as core's own rules' (scripts/validate-rule.js),
+// on a rule with a titleKey. A rule that declares its reason codes
+// (meta.reasonCodes) gives steps only for a code it declares or its
+// runInPage names; one that declares none is checked for shape alone, so
+// codes built in a helper or another module need not be written into
+// runInPage. A variant gives its base's codes, and is checked for shape.
+function reviewProblems(rule, where) {
+  const meta = isObject(rule.meta) ? rule.meta : null;
+  if (!meta || meta.review === undefined) return [];
+  const review = meta.review;
+  if (!isObject(review)) {
+    return [
+      `${where}: ${rule.id}'s meta.review must be an object of reason code -> { steps, passWhen, failWhen }`
+    ];
+  }
+  const problems = [];
+  const titleKey = isObject(meta.i18n) ? meta.i18n.titleKey : undefined;
+  if (typeof titleKey !== 'string' || !/^.+_title$/.test(titleKey)) {
+    problems.push(
+      `${where}: ${rule.id}'s meta.review needs meta.i18n.titleKey, ending in _title: its prefix keys the steps`
+    );
+  }
+  const declared = Array.isArray(meta.reasonCodes)
+    ? meta.reasonCodes.filter((c) => typeof c === 'string')
+    : null;
+  const source = typeof rule.runInPage === 'function' ? String(rule.runInPage) : '';
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [code, entry] of Object.entries(review)) {
+    const at = `${where}: ${rule.id}'s meta.review.${code}`;
+    if (!/^[A-Za-z0-9_]+$/.test(code)) {
+      problems.push(`${at}: a reason code is letters, digits and _`);
+      continue;
+    }
+    if (declared && !declared.includes(code) && !source.includes(code)) {
+      problems.push(
+        `${at}: "${code}" is not a reason code of this rule (not in its meta.reasonCodes, nor named in its runInPage)`
+      );
+    }
+    if (!isObject(entry)) {
+      problems.push(`${at} must be { steps, passWhen, failWhen }`);
+      continue;
+    }
+    if (
+      !Array.isArray(entry.steps) ||
+      entry.steps.length < 1 ||
+      entry.steps.length > 6 ||
+      !entry.steps.every(text)
+    ) {
+      problems.push(`${at}.steps must list 1 to 6 steps, each a non-empty string`);
+    }
+    if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+    if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+  }
+  return problems;
+}
+
 // What is wrong with a variant's config, against the settings of its base:
 // the pack's own rule of that id, or core's. A base that is not there or
 // declares no settings is left to preparing the pack, which says so.
@@ -504,6 +562,7 @@ function packProblems(pack, withCoreVersion) {
         problems.push(`${where}: ${rule.id} needs runInPage(ctx), or from for a variant`);
       }
       if (typeof rule.from === 'string') problems.push(...variantProblems(pack, rule, where));
+      problems.push(...reviewProblems(rule, where));
       problems.push(...pageCodeProblems(rule, where));
     });
   }

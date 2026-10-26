@@ -1662,6 +1662,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.title = def.title;
   out.description = def.description;
   out.i18n = def.i18n || null;
+  // A variant (src/core/rule-variants.js) names the rule it runs, and that
+  // rule's titleKey, whose prefix keys the base's messages and steps.
+  const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
+  // A rule's own result can't claim one.
+  delete out.variantOf;
+  if (variant && typeof variant.of === 'string' && variant.of) {
+    out.variantOf = variant.of;
+    if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
+      out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
     if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
@@ -104534,6 +104545,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.title = def.title;
   out.description = def.description;
   out.i18n = def.i18n || null;
+  // A variant (src/core/rule-variants.js) names the rule it runs, and that
+  // rule's titleKey, whose prefix keys the base's messages and steps.
+  const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
+  // A rule's own result can't claim one.
+  delete out.variantOf;
+  if (variant && typeof variant.of === 'string' && variant.of) {
+    out.variantOf = variant.of;
+    if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
+      out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
     if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
