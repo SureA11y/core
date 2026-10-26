@@ -49,5 +49,8 @@ export function howToCheckFrom(
   options?: HowToCheckOptions
 ): HowToCheck | null;
 
-/** The same functions as @surea11y/core's: an occurrence's outcome, and where it goes in a review. */
-export { occurrenceOutcome, reviewGroupOf, ReviewGroup } from './index';
+/**
+ * The same as @surea11y/core's: an occurrence's outcome, where it goes in a
+ * review, and the reason codes each opt-in hook decides or changes.
+ */
+export { occurrenceOutcome, reviewGroupOf, ReviewGroup, HOOK_REASON_CODES, HookReasonCode, HookEffect } from './index';

@@ -76,6 +76,7 @@ test('the how-to-check entry reaches no module outside core', () => {
     [...seen].sort(),
     [
       path.join(ROOT, 'src', 'how-to-check-core.js'),
+      path.join(ROOT, 'src', 'hook-reason-codes.js'),
       path.join(ROOT, 'src', 'occurrence-outcome.js')
     ].sort()
   );
