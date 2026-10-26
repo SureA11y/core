@@ -270,7 +270,9 @@ function runInPage(ctx) {
   // the "Created with" note, icon ids. None is written to describe.
   const TOOL_ARTEFACT_RES = [
     /^(?:layer|group|path|shape|artboard|vector|frame|combined shape|compound path|clip ?path|mask)(?:[ _-]*\d+)?(?:[ _-]*copy(?:[ _-]*\d+)?)?$/i,
-    /^(?:rectangle|rect|ellipse|oval|polygon|line)(?:[ _-]*\d+|[ _-]*copy(?:[ _-]*\d+)?)+$/i,
+    // Separators, digits and "copy", ending in a digit or "copy". Each step
+    // takes one character or "copy", so a run of digits matches one way only.
+    /^(?:rectangle|rect|ellipse|oval|polygon|line)(?:[ _-]|\d|copy)*(?:\d|copy)$/i,
     /^created with (?:sketch|figma|adobe illustrator|illustrator|inkscape|method draw|svg-edit)\b/i,
     /^(?:icon|ic|ico|svg)[-_][a-z0-9][a-z0-9_-]*$/i,
     /^svg$/i
