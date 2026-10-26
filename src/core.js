@@ -10896,7 +10896,7 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         // The lists as they are.
       }
     }
-    const copy = (list, fields) => {
+    const copy = (list, fields, keep = (item) => typeof item.text === 'string') => {
       const out = [];
       if (!Array.isArray(list)) return out;
       const n = own(list, 'length');
@@ -10905,7 +10905,7 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         if (!entry || typeof entry !== 'object') continue;
         const item = {};
         for (const f of fields) item[f] = own(entry, f);
-        if (typeof item.text !== 'string') continue;
+        if (!keep(item)) continue;
         out.push(item);
       }
       return out;
@@ -10921,10 +10921,31 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         'text',
         'politeness',
         'time',
+        'order',
+        'behindModal',
         'element'
       ]),
-      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
-      dropped: { announcements: count('announcements'), findings: count('findings') }
+      findings: copy(own(registry, 'findings'), [
+        'code',
+        'text',
+        'time',
+        'order',
+        'behindModal',
+        'element'
+      ]),
+      // null for a registry that has no such list.
+      dialogsOpened: Array.isArray(own(registry, 'dialogsOpened'))
+        ? copy(
+            own(registry, 'dialogsOpened'),
+            ['time', 'order', 'element'],
+            (item) => typeof item.order === 'number' && !!item.element
+          )
+        : null,
+      dropped: {
+        announcements: count('announcements'),
+        findings: count('findings'),
+        dialogsOpened: count('dialogsOpened')
+      }
     };
   } catch {
     return null;
@@ -12370,7 +12391,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // What the live-region hook (liveRegionHookScript) recorded in the scanned
-  // window while the page ran: { early, announcements, findings, dropped },
+  // window while the page ran: { early, announcements, findings,
+  // dialogsOpened, dropped },
   // read once per run; null without a hook.
   function getLiveRegionRecord() {
     const byWindow = __sharedWeakMap('liveRegionHookByWindow');
@@ -18530,6 +18552,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isDomVisibleEligible,
     isWholeDocumentScope,
     isModalDialogOpen,
+    getOpenModalDialogs,
+    getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
@@ -35119,6 +35143,10 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_caution_inserted": "Manche Kombinationen aus Screenreader und Browser kündigen eine mit Text eingefügte Region durchaus an.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "Die Region wurde gleichzeitig angezeigt und mit Text gefüllt, bevor sie im Accessibility-Baum war, was Screenreader meist nicht ankündigen.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Manche Browser aktualisieren den Accessibility-Baum rechtzeitig, sodass eine solche Region angekündigt wird.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Diese Live-Region liegt hinter einem geöffneten modalen Dialog, der sie inert macht, daher kann nichts angekündigt werden, was sie erhält, solange der Dialog geöffnet ist.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Prüfen Sie, ob die Seite Statusmeldungen hineinschreibt, während der Dialog geöffnet ist; wenn ja, geben Sie sie in einer Live-Region innerhalb des Dialogs aus.",
+      "liveRegionAnnouncements_lean_why_modal": "Der Live-Region-Hook hat gesehen, dass diese Region Text erhielt, nachdem der modale Dialog davor geöffnet worden war, während der Dialog die Region inert machte; der Text wurde daher nicht angekündigt.",
+      "liveRegionAnnouncements_lean_caution_modal": "Ob dieser Text eine Statusmeldung war, die der Nutzer brauchte, muss ein Mensch beurteilen: Die Seite kann ihre Meldungen auch an eine Live-Region im Dialog geben.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -36440,6 +36468,10 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_caution_inserted": "Some screen reader and browser pairs do announce a region added with its text.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Some browsers update the accessibility tree in time for such a region to be announced.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "This live region is behind an open modal dialog, which makes it inert, so nothing it is given while the dialog is open can be announced.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.",
+      "liveRegionAnnouncements_lean_why_modal": "The live-region hook saw this region given text after the modal dialog in front of it was opened, while the dialog made it inert, so the text was not announced.",
+      "liveRegionAnnouncements_lean_caution_modal": "Whether that text was a status message the user needed is a person’s call: the page may give its messages to a live region inside the dialog as well.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -37761,6 +37793,10 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_caution_inserted": "Algunas combinaciones de lector de pantalla y navegador sí anuncian una región añadida con su texto.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Esta región viva está detrás de un diálogo modal abierto, que la vuelve inert, así que nada de lo que reciba mientras el diálogo esté abierto puede anunciarse.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Compruebe si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, póngalos en una región viva dentro del diálogo.",
+      "liveRegionAnnouncements_lean_why_modal": "El hook de regiones vivas vio que esta región recibía texto después de que se abriera el diálogo modal que tiene delante, mientras el diálogo la volvía inert, así que el texto no se anunció.",
+      "liveRegionAnnouncements_lean_caution_modal": "Si ese texto era un mensaje de estado que el usuario necesitaba debe decidirlo una persona: la página puede dar sus mensajes también a una región viva dentro del diálogo.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -39082,6 +39118,10 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_caution_inserted": "Certaines combinaisons de lecteur d’écran et de navigateur annoncent bien une région ajoutée avec son texte.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La région a été affichée et a reçu son texte en même temps, avant d’être dans l’arbre d’accessibilité, ce que les lecteurs d’écran n’annoncent généralement pas.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Certains navigateurs mettent à jour l’arbre d’accessibilité à temps pour qu’une telle région soit annoncée.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Cette région dynamique se trouve derrière une boîte de dialogue modale ouverte, qui la rend inert : rien de ce qu’elle reçoit tant que la boîte de dialogue est ouverte ne peut être annoncé.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Vérifiez si la page y écrit des messages d’état pendant que la boîte de dialogue est ouverte ; si c’est le cas, placez-les dans une région dynamique à l’intérieur de la boîte de dialogue.",
+      "liveRegionAnnouncements_lean_why_modal": "Le hook des régions dynamiques a vu cette région recevoir du texte après l’ouverture de la boîte de dialogue modale placée devant elle, pendant que la boîte de dialogue la rendait inert : le texte n’a donc pas été annoncé.",
+      "liveRegionAnnouncements_lean_caution_modal": "Savoir si ce texte était un message d’état utile à l’utilisateur relève d’une personne : la page peut aussi transmettre ses messages à une région dynamique située dans la boîte de dialogue.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -40403,6 +40443,10 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_caution_inserted": "スクリーンリーダーとブラウザーの組み合わせによっては、テキスト付きで追加されたリージョンも通知されます。",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "このリージョンはアクセシビリティツリーに入る前に、表示とテキスト設定が同時に行われました。スクリーンリーダーは一般にこれを通知しません。",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "ブラウザーによっては、このようなリージョンが通知されるのに間に合うようアクセシビリティツリーを更新します。",
+      "liveRegionAnnouncements_summary_cantTell_modal": "このライブリージョンは開いているモーダルダイアログの背後にあり、ダイアログによって inert になっているため、ダイアログが開いている間に受け取った内容は通知されません。",
+      "liveRegionAnnouncements_hint_cantTell_modal": "ダイアログが開いている間にページがこれにステータスメッセージを書き込んでいるか確認してください。書き込んでいる場合は、ダイアログ内のライブリージョンに置いてください。",
+      "liveRegionAnnouncements_lean_why_modal": "ライブリージョンフックは、前面のモーダルダイアログが開かれた後、ダイアログがこのリージョンを inert にしている間に、このリージョンがテキストを受け取ったことを記録しました。そのため、テキストは通知されませんでした。",
+      "liveRegionAnnouncements_lean_caution_modal": "そのテキストがユーザーに必要なステータスメッセージだったかどうかは人が判断する必要があります。ページはダイアログ内のライブリージョンにもメッセージを渡している可能性があります。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -80913,12 +80957,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // counts a dialog shown without either, which may hide the page all the
   // same.
   let modalOpen = null;
+  // In the document and its open shadow roots.
   function dialogShown() {
-    for (const d of dom.querySelectorAll(
-      document,
-      'dialog[open], [role~="dialog" i], [role~="alertdialog" i]'
-    )) {
-      if (drawn(d) && !hiddenBy(d)) return true;
+    let roots;
+    try {
+      roots = helpers.getDocumentRoots();
+    } catch {
+      roots = [document];
+    }
+    for (const root of roots) {
+      for (const d of dom.querySelectorAll(
+        root,
+        'dialog[open], [role~="dialog" i], [role~="alertdialog" i]'
+      )) {
+        if (drawn(d) && !hiddenBy(d)) return true;
+      }
     }
     return false;
   }
@@ -80944,33 +80997,146 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // What the live-region hook saw while the page ran.
+  const record =
+    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
+
+  // A live region behind an open modal <dialog>: the browser makes the page
+  // behind it inert, so queryAllSmart leaves it out, as it does all content
+  // there. It is asked about all the same: what the page writes to it while
+  // the dialog is open is not announced. Only a modal <dialog> makes the page
+  // inert (`modalInert`). A region is behind the open modal dialogs when it
+  // is in none of them and contains none, by the flat tree, as the browser
+  // decides it, whatever else hides it: while the dialog is open, the dialog
+  // is the cause in effect, so such a region is reported with hiddenBy
+  // 'modal' even under inert or aria-hidden, with or without
+  // includeHiddenElements.
+  function insideOf(box, el) {
+    for (let n = el, guard = 0; n && guard < 500; n = helpers.composedParent(n), guard++) {
+      if (n === box) return true;
+    }
+    return false;
+  }
+  let openModals = null;
+  function behindModal(el) {
+    if (openModals === null) {
+      try {
+        openModals = helpers.getOpenModalDialogs() || [];
+      } catch {
+        openModals = [];
+      }
+    }
+    if (!openModals.length) return false;
+    return !openModals.some((d) => insideOf(d, el) || insideOf(el, d));
+  }
+  // The hook records the last time each <dialog> in the document was opened
+  // (record.dialogsOpened), and the order in which the page made each change
+  // (`order`). A region behind the open modal dialogs is inert since the
+  // first of those that leaves it out was opened: one with no such entry has
+  // been open since the hook started watching, as its opening would
+  // otherwise be recorded. A modal inside a shadow root, whose changes the
+  // hook does not see, says nothing. Text the region was given after that
+  // was given while it was inert.
+  function modalLean(el) {
+    if (!record || !Array.isArray(record.dialogsOpened)) return null;
+    let modals;
+    try {
+      modals = helpers.getOpenModalDialogs();
+    } catch {
+      return null;
+    }
+    const complete = !(record.dropped && record.dropped.dialogsOpened > 0);
+    let since = Infinity;
+    for (const d of modals) {
+      if (insideOf(d, el)) continue;
+      let last = null;
+      for (const e of record.dialogsOpened) {
+        if (e.element === d && (!last || e.order > last.order)) last = e;
+      }
+      if (last) since = Math.min(since, last.order);
+      else if (complete && dom.getRootNode(d) === document) since = -Infinity;
+    }
+    if (since === Infinity) return null;
+    const given = []
+      .concat(Array.isArray(record.announcements) ? record.announcements : [])
+      .concat(Array.isArray(record.findings) ? record.findings : [])
+      .some((e) => e && e.element === el && typeof e.order === 'number' && e.order > since);
+    if (!given) return null;
+    return {
+      toward: 'fail',
+      why: 'The live-region hook saw this region given text after the modal dialog in front of it was opened, while the dialog made it inert, so the text was not announced.',
+      signals: [
+        { signal: 'hidden-by', value: 'modal' },
+        { signal: 'text-given-after-dialog-opened', value: true }
+      ],
+      caution:
+        'Whether that text was a status message the user needed is a person’s call: the page may give its messages to a live region inside the dialog as well.',
+      i18n: {
+        whyKey: 'liveRegionAnnouncements_lean_why_modal',
+        cautionKey: 'liveRegionAnnouncements_lean_caution_modal'
+      }
+    };
+  }
+
+  const SUMMARY = {
+    'aria-hidden': [
+      'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_ariaHidden'
+    ],
+    inert: [
+      'This live region is inside inert content, so nothing it is given can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_inert'
+    ],
+    modal: [
+      'This live region is behind an open modal dialog, which makes it inert, so nothing it is given while the dialog is open can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_modal'
+    ]
+  };
+
   const occurrences = [];
   const inScope = new Set();
   let applicableCount = 0;
 
-  for (const el of helpers.queryAllSmart('[aria-live], [role], output', { inert: true })) {
+  const SELECTOR = '[aria-live], [role], output';
+  let candidates = helpers.queryAllSmart(SELECTOR, { inert: true });
+  const kept = new Set(candidates);
+  let dialogOpen;
+  try {
+    dialogOpen = !!helpers.isModalDialogOpen();
+  } catch {
+    dialogOpen = false;
+  }
+  if (dialogOpen) {
+    candidates = helpers
+      .queryAllSource(SELECTOR)
+      .filter((el) => kept.has(el) || (politeness(el) && behindModal(el)));
+  }
+
+  for (const el of candidates) {
     const level = politeness(el);
     if (!level) continue;
-    inScope.add(el);
+    // A region behind the modal is not in scope for the hook's findings,
+    // which leave out what the browser made inert.
+    if (kept.has(el)) inScope.add(el);
     if (!drawn(el)) continue;
     applicableCount += 1;
 
-    const by = hiddenBy(el);
+    const by = dialogOpen && behindModal(el) ? 'modal' : hiddenBy(el);
     if (by) {
-      const lean = hiddenLean();
+      const lean = by === 'modal' ? modalLean(el) : hiddenLean();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary:
-            by === 'inert'
-              ? 'This live region is inside inert content, so nothing it is given can be announced.'
-              : 'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
-          hint: 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
+          summary: SUMMARY[by][0],
+          hint:
+            by === 'modal'
+              ? 'Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.'
+              : 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
           i18n: {
-            summaryKey:
-              by === 'inert'
-                ? 'liveRegionAnnouncements_summary_cantTell_inert'
-                : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
-            hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
+            summaryKey: SUMMARY[by][1],
+            hintKey:
+              by === 'modal'
+                ? 'liveRegionAnnouncements_hint_cantTell_modal'
+                : 'liveRegionAnnouncements_hint_cantTell_hidden'
           },
           ...(lean ? { lean } : {}),
           data: {
@@ -81001,9 +81167,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  // What the live-region hook saw while the page ran.
-  const record =
-    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
   if (record && Array.isArray(record.findings)) {
     const whole = helpers.isWholeDocumentScope();
     const seen = new Map();
@@ -81036,8 +81199,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // The pattern the hook saw is one screen readers commonly skip; the
       // message still reached them when the same text was announced
       // through another region.
+      // Not through one behind an open modal dialog: that was inert.
       const elsewhere = (record.announcements || []).some(
-        (a) => a && a.element !== el && a.text === f.text
+        (a) => a && a.element !== el && a.text === f.text && a.behindModal !== true
       );
       const lean = elsewhere
         ? null
@@ -95379,6 +95543,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_caution_inserted": "Manche Kombinationen aus Screenreader und Browser kündigen eine mit Text eingefügte Region durchaus an.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "Die Region wurde gleichzeitig angezeigt und mit Text gefüllt, bevor sie im Accessibility-Baum war, was Screenreader meist nicht ankündigen.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Manche Browser aktualisieren den Accessibility-Baum rechtzeitig, sodass eine solche Region angekündigt wird.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Diese Live-Region liegt hinter einem geöffneten modalen Dialog, der sie inert macht, daher kann nichts angekündigt werden, was sie erhält, solange der Dialog geöffnet ist.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Prüfen Sie, ob die Seite Statusmeldungen hineinschreibt, während der Dialog geöffnet ist; wenn ja, geben Sie sie in einer Live-Region innerhalb des Dialogs aus.",
+      "liveRegionAnnouncements_lean_why_modal": "Der Live-Region-Hook hat gesehen, dass diese Region Text erhielt, nachdem der modale Dialog davor geöffnet worden war, während der Dialog die Region inert machte; der Text wurde daher nicht angekündigt.",
+      "liveRegionAnnouncements_lean_caution_modal": "Ob dieser Text eine Statusmeldung war, die der Nutzer brauchte, muss ein Mensch beurteilen: Die Seite kann ihre Meldungen auch an eine Live-Region im Dialog geben.",
       "definitionListChildrenValid_title": "Beschreibungslisten müssen korrekt strukturiert sein",
       "definitionListChildrenValid_description": "Prüft, ob <dl>-Elemente direkt nur <dt>/<dd>-Gruppen (optional in einem einzigen <div> verpackt), <script>, <template> oder <style> enthalten.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Diese Beschreibungsliste enthält ein direktes oder verpacktes Kind, das nicht Teil einer dt/dd-Gruppe ist: {{invalidChildren}}.",
@@ -96700,6 +96868,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_caution_inserted": "Some screen reader and browser pairs do announce a region added with its text.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Some browsers update the accessibility tree in time for such a region to be announced.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "This live region is behind an open modal dialog, which makes it inert, so nothing it is given while the dialog is open can be announced.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.",
+      "liveRegionAnnouncements_lean_why_modal": "The live-region hook saw this region given text after the modal dialog in front of it was opened, while the dialog made it inert, so the text was not announced.",
+      "liveRegionAnnouncements_lean_caution_modal": "Whether that text was a status message the user needed is a person’s call: the page may give its messages to a live region inside the dialog as well.",
       "definitionListChildrenValid_title": "Description lists must be structured correctly",
       "definitionListChildrenValid_description": "Checks that <dl> elements only directly contain <dt>/<dd> groups (optionally wrapped in one <div>), <script>, <template>, or <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "This description list contains a direct or wrapped child that is not part of a dt/dd group: {{invalidChildren}}.",
@@ -98021,6 +98193,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_caution_inserted": "Algunas combinaciones de lector de pantalla y navegador sí anuncian una región añadida con su texto.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Esta región viva está detrás de un diálogo modal abierto, que la vuelve inert, así que nada de lo que reciba mientras el diálogo esté abierto puede anunciarse.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Compruebe si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, póngalos en una región viva dentro del diálogo.",
+      "liveRegionAnnouncements_lean_why_modal": "El hook de regiones vivas vio que esta región recibía texto después de que se abriera el diálogo modal que tiene delante, mientras el diálogo la volvía inert, así que el texto no se anunció.",
+      "liveRegionAnnouncements_lean_caution_modal": "Si ese texto era un mensaje de estado que el usuario necesitaba debe decidirlo una persona: la página puede dar sus mensajes también a una región viva dentro del diálogo.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
       "definitionListChildrenValid_description": "Comprueba que los elementos <dl> solo contengan directamente grupos <dt>/<dd> (opcionalmente envueltos en un <div>), <script>, <template> o <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Esta lista de descripción contiene un hijo directo o envuelto que no forma parte de un grupo dt/dd: {{invalidChildren}}.",
@@ -99342,6 +99518,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_caution_inserted": "Certaines combinaisons de lecteur d’écran et de navigateur annoncent bien une région ajoutée avec son texte.",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La région a été affichée et a reçu son texte en même temps, avant d’être dans l’arbre d’accessibilité, ce que les lecteurs d’écran n’annoncent généralement pas.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Certains navigateurs mettent à jour l’arbre d’accessibilité à temps pour qu’une telle région soit annoncée.",
+      "liveRegionAnnouncements_summary_cantTell_modal": "Cette région dynamique se trouve derrière une boîte de dialogue modale ouverte, qui la rend inert : rien de ce qu’elle reçoit tant que la boîte de dialogue est ouverte ne peut être annoncé.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Vérifiez si la page y écrit des messages d’état pendant que la boîte de dialogue est ouverte ; si c’est le cas, placez-les dans une région dynamique à l’intérieur de la boîte de dialogue.",
+      "liveRegionAnnouncements_lean_why_modal": "Le hook des régions dynamiques a vu cette région recevoir du texte après l’ouverture de la boîte de dialogue modale placée devant elle, pendant que la boîte de dialogue la rendait inert : le texte n’a donc pas été annoncé.",
+      "liveRegionAnnouncements_lean_caution_modal": "Savoir si ce texte était un message d’état utile à l’utilisateur relève d’une personne : la page peut aussi transmettre ses messages à une région dynamique située dans la boîte de dialogue.",
       "definitionListChildrenValid_title": "Les listes de descriptions doivent être structurées correctement",
       "definitionListChildrenValid_description": "Vérifie que les éléments <dl> ne contiennent directement que des groupes <dt>/<dd> (éventuellement enveloppés dans un seul <div>), <script>, <template>, ou <style>.",
       "definitionListChildrenValid_summary_fail_invalidChild": "Cette liste de descriptions contient un enfant direct ou enveloppé qui ne fait pas partie d’un groupe dt/dd : {{invalidChildren}}.",
@@ -100663,6 +100843,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_caution_inserted": "スクリーンリーダーとブラウザーの組み合わせによっては、テキスト付きで追加されたリージョンも通知されます。",
       "liveRegionAnnouncements_lean_why_shownAndFilled": "このリージョンはアクセシビリティツリーに入る前に、表示とテキスト設定が同時に行われました。スクリーンリーダーは一般にこれを通知しません。",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "ブラウザーによっては、このようなリージョンが通知されるのに間に合うようアクセシビリティツリーを更新します。",
+      "liveRegionAnnouncements_summary_cantTell_modal": "このライブリージョンは開いているモーダルダイアログの背後にあり、ダイアログによって inert になっているため、ダイアログが開いている間に受け取った内容は通知されません。",
+      "liveRegionAnnouncements_hint_cantTell_modal": "ダイアログが開いている間にページがこれにステータスメッセージを書き込んでいるか確認してください。書き込んでいる場合は、ダイアログ内のライブリージョンに置いてください。",
+      "liveRegionAnnouncements_lean_why_modal": "ライブリージョンフックは、前面のモーダルダイアログが開かれた後、ダイアログがこのリージョンを inert にしている間に、このリージョンがテキストを受け取ったことを記録しました。そのため、テキストは通知されませんでした。",
+      "liveRegionAnnouncements_lean_caution_modal": "そのテキストがユーザーに必要なステータスメッセージだったかどうかは人が判断する必要があります。ページはダイアログ内のライブリージョンにもメッセージを渡している可能性があります。",
       "definitionListChildrenValid_title": "記述リストは正しく構造化されていること",
       "definitionListChildrenValid_description": "<dl> 要素の直接の子が、<dt>/<dd> のグループ (1 つの <div> で囲むことも可)、<script>、<template>、<style> のみであるかを確認します。",
       "definitionListChildrenValid_summary_fail_invalidChild": "この記述リストには、dt/dd のグループに属さない直接の子 (または <div> で囲まれた子) があります: {{invalidChildren}}。",
@@ -112391,7 +112575,7 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         // The lists as they are.
       }
     }
-    const copy = (list, fields) => {
+    const copy = (list, fields, keep = (item) => typeof item.text === 'string') => {
       const out = [];
       if (!Array.isArray(list)) return out;
       const n = own(list, 'length');
@@ -112400,7 +112584,7 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         if (!entry || typeof entry !== 'object') continue;
         const item = {};
         for (const f of fields) item[f] = own(entry, f);
-        if (typeof item.text !== 'string') continue;
+        if (!keep(item)) continue;
         out.push(item);
       }
       return out;
@@ -112416,10 +112600,31 @@ const readLiveRegionHook = (function readLiveRegionHook(win) {
         'text',
         'politeness',
         'time',
+        'order',
+        'behindModal',
         'element'
       ]),
-      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
-      dropped: { announcements: count('announcements'), findings: count('findings') }
+      findings: copy(own(registry, 'findings'), [
+        'code',
+        'text',
+        'time',
+        'order',
+        'behindModal',
+        'element'
+      ]),
+      // null for a registry that has no such list.
+      dialogsOpened: Array.isArray(own(registry, 'dialogsOpened'))
+        ? copy(
+            own(registry, 'dialogsOpened'),
+            ['time', 'order', 'element'],
+            (item) => typeof item.order === 'number' && !!item.element
+          )
+        : null,
+      dropped: {
+        announcements: count('announcements'),
+        findings: count('findings'),
+        dialogsOpened: count('dialogsOpened')
+      }
     };
   } catch {
     return null;
@@ -113865,7 +114070,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
   }
 
   // What the live-region hook (liveRegionHookScript) recorded in the scanned
-  // window while the page ran: { early, announcements, findings, dropped },
+  // window while the page ran: { early, announcements, findings,
+  // dialogsOpened, dropped },
   // read once per run; null without a hook.
   function getLiveRegionRecord() {
     const byWindow = __sharedWeakMap('liveRegionHookByWindow');
@@ -120025,6 +120231,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isDomVisibleEligible,
     isWholeDocumentScope,
     isModalDialogOpen,
+    getOpenModalDialogs,
+    getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
@@ -125333,8 +125541,11 @@ function getMargins(result) {
 
 // What the page's live regions were given while shown and reachable, by the
 // live-region hook (src/core/live-region-hook.js): [{ text, politeness,
-// time, element }], or null when the window has no hook.
-function getAnnouncements(win) {
+// time, order, behindModal, element }], or null when the window has no hook.
+// getAnnouncements([win], [options]) or getAnnouncements(options); options
+// { includeBehindModal: true } adds the texts given to a region behind an
+// open modal dialog. Self-contained: bindings serialize it into pages.
+function getAnnouncements(win, options) {
   const read = function readLiveRegionHook(win) {
   try {
     if (!win || (typeof win !== 'object' && typeof win !== 'function')) return null;
@@ -125353,7 +125564,7 @@ function getAnnouncements(win) {
         // The lists as they are.
       }
     }
-    const copy = (list, fields) => {
+    const copy = (list, fields, keep = (item) => typeof item.text === 'string') => {
       const out = [];
       if (!Array.isArray(list)) return out;
       const n = own(list, 'length');
@@ -125362,7 +125573,7 @@ function getAnnouncements(win) {
         if (!entry || typeof entry !== 'object') continue;
         const item = {};
         for (const f of fields) item[f] = own(entry, f);
-        if (typeof item.text !== 'string') continue;
+        if (!keep(item)) continue;
         out.push(item);
       }
       return out;
@@ -125378,17 +125589,73 @@ function getAnnouncements(win) {
         'text',
         'politeness',
         'time',
+        'order',
+        'behindModal',
         'element'
       ]),
-      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
-      dropped: { announcements: count('announcements'), findings: count('findings') }
+      findings: copy(own(registry, 'findings'), [
+        'code',
+        'text',
+        'time',
+        'order',
+        'behindModal',
+        'element'
+      ]),
+      // null for a registry that has no such list.
+      dialogsOpened: Array.isArray(own(registry, 'dialogsOpened'))
+        ? copy(
+            own(registry, 'dialogsOpened'),
+            ['time', 'order', 'element'],
+            (item) => typeof item.order === 'number' && !!item.element
+          )
+        : null,
+      dropped: {
+        announcements: count('announcements'),
+        findings: count('findings'),
+        dialogsOpened: count('dialogsOpened')
+      }
     };
   } catch {
     return null;
   }
 };
-  const hook = read(win || (typeof window !== 'undefined' ? window : null));
-  return hook ? hook.announcements : null;
+  const select = function selectAnnouncements(read, fallbackWin, first, second) {
+  let win = first;
+  let options = second;
+  if (
+    first &&
+    typeof first === 'object' &&
+    Object.prototype.toString.call(first) === '[object Object]' &&
+    !('document' in first)
+  ) {
+    win = undefined;
+    options = first;
+  }
+  if (options !== undefined && options !== null) {
+    if (typeof options !== 'object' || Array.isArray(options)) {
+      throw new TypeError('getAnnouncements(options): options must be an object.');
+    }
+    const unknown = Object.keys(options).filter((k) => k !== 'includeBehindModal');
+    if (unknown.length) {
+      throw new TypeError(
+        'getAnnouncements(options): no option named ' +
+          unknown.map((k) => '"' + k + '"').join(', ') +
+          '; use includeBehindModal.'
+      );
+    }
+    if (
+      options.includeBehindModal !== undefined &&
+      typeof options.includeBehindModal !== 'boolean'
+    ) {
+      throw new TypeError('getAnnouncements(options): includeBehindModal must be true or false.');
+    }
+  }
+  const hook = read(win || fallbackWin);
+  if (!hook) return null;
+  if (options && options.includeBehindModal === true) return hook.announcements;
+  return hook.announcements.filter((a) => a.behindModal !== true);
+};
+  return select(read, typeof window !== 'undefined' ? window : null, win, options);
 }
 
 module.exports = {

@@ -296,6 +296,8 @@ export interface RuleHelpers {
   getTextBoundaryKind: RuleHelper;
   isWholeDocumentScope: RuleHelper;
   isModalDialogOpen: RuleHelper;
+  getOpenModalDialogs: RuleHelper;
+  getDocumentRoots: RuleHelper;
   getAriaLabelInfo: RuleHelper;
   getAriaLabelledByInfo: RuleHelper;
   getAriaNameInfo: RuleHelper;
@@ -1075,6 +1077,17 @@ export interface Announcement {
   politeness: 'polite' | 'assertive';
   /** performance.now(), in milliseconds, when the hook saw it. */
   time: number;
+  /**
+   * The change's place among all the changes the page made, counted in
+   * mutation records, so changes made in one task keep their order.
+   */
+  order: number;
+  /**
+   * true when the region was behind an open modal <dialog> in the document
+   * when it was given the text: the browser made it inert, so assistive
+   * technology did not get it. Only listed with { includeBehindModal: true }.
+   */
+  behindModal: boolean;
   /** The live region, which may since have left the page. */
   element: Element;
 }
@@ -1082,11 +1095,28 @@ export interface Announcement {
 /**
  * What the page's live regions were given while shown and reachable by
  * assistive technology, as the live-region hook recorded it: what the page
- * made available to announce, not what a screen reader said. Changes made in
- * the current task are included. null when the window has no hook. `win`
- * defaults to the global `window`.
+ * made available to announce, not what a screen reader said. A text given
+ * to a region behind an open modal dialog is left out, unless
+ * `includeBehindModal: true`, which lists it with behindModal: true. Changes
+ * made in the current task are included. null when the window has no hook.
+ * `win` defaults to the global `window`. Self-contained, like
+ * runa11yCoreInPage: `getAnnouncements.toString()` evaluated in a page works
+ * there; drop `element` from each entry before it crosses a driver.
  */
-export function getAnnouncements(win?: Window): Announcement[] | null;
+export function getAnnouncements(
+  win?: Window,
+  options?: GetAnnouncementsOptions
+): Announcement[] | null;
+export function getAnnouncements(options: GetAnnouncementsOptions): Announcement[] | null;
+
+export interface GetAnnouncementsOptions {
+  /**
+   * Also list the texts given to a region behind an open modal dialog,
+   * which assistive technology did not get, marked behindModal: true.
+   * Default: false.
+   */
+  includeBehindModal?: boolean;
+}
 
 /**
  * The WCAG target a conformance profile comes to, for `runOnly.wcag`:

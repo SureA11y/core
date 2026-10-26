@@ -2559,13 +2559,13 @@ manual · WCAG 4.1.3 (AA) · confidence medium · default severity moderate
 
 Flags a live region hidden from assistive technology or left busy, and, with the live-region hook, one added with its text or shown and filled at once, for manual review.
 
-**Applies to.** Live regions the page draws: elements whose aria-live is polite or assertive, or, without an aria-live, whose role is status, log or alert, and &lt;output&gt; elements. aria-live="off" turns any of them off. A live region hidden with display: none, visibility: hidden or [hidden] is left out: a region waiting to be shown is the page at rest. With the live-region hook (liveRegionHookScript), also the live regions it saw given their text in a way that is commonly not announced, whether or not they are still on the page.
+**Applies to.** Live regions the page draws: elements whose aria-live is polite or assertive, or, without an aria-live, whose role is status, log or alert, and &lt;output&gt; elements. aria-live="off" turns any of them off. A live region hidden with display: none, visibility: hidden or [hidden] is left out: a region waiting to be shown is the page at rest. A live region behind an open modal &lt;dialog&gt;, which the browser makes inert, is included, though other rules leave that content out. With the live-region hook (liveRegionHookScript), also the live regions it saw given their text in a way that is commonly not announced, whether or not they are still on the page.
 
 **Expectation.**
 
 WCAG 4.1.3: a status message can be presented to the user by assistive technology without receiving focus, which a live region does when its content changes while assistive technology can reach it.
 
-- A drawn live region inside, or on, aria-hidden="true" or inert: cantTell (`LIVE_REGION_HIDDEN`). It is out of the accessibility tree, so nothing it is given can be announced.
+- A drawn live region inside, or on, aria-hidden="true" or inert, or behind an open modal &lt;dialog&gt;: cantTell (`LIVE_REGION_HIDDEN`). It is out of the accessibility tree, so nothing it is given can be announced (behind the dialog, while the dialog is open).
 - A live region with aria-busy="true" when the page was scanned: cantTell (`LIVE_REGION_BUSY`). Assistive technology may hold back its changes until aria-busy is cleared.
 - Recorded by the hook, a live region added to the page with its text already in it, other than role="alert": cantTell (`LIVE_REGION_INSERTED_WITH_CONTENT`). Screen readers commonly announce changes to a region they already know, not a new region's content.
 - Recorded by the hook, a live region that was hidden and was shown and given its text in the same task: cantTell (`LIVE_REGION_SHOWN_AND_FILLED`). It was not in the accessibility tree when the text arrived.
@@ -2576,7 +2576,7 @@ Check whether the page uses the region for status messages, and that it is in th
 **What a finding reports.**
 
 - `politeness`: the region's, `polite` or `assertive`.
-- `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden` or `inert`.
+- `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or `modal` for a region behind an open modal &lt;dialog&gt;. A region behind the dialog is `modal` whatever else hides it (inert or aria-hidden on it or above it, with or without includeHiddenElements): while the dialog is open, it is the cause in effect.
 - `text`: for the hook's two findings, the text the region was given (up to 300 characters).
 - `removed`: for the hook's two findings, true when the region was no longer on the page when it was scanned; the occurrence is then on the document element, and `region` describes it (`tag`, `role`, `id`).
 
@@ -2584,7 +2584,7 @@ Check whether the page uses the region for status messages, and that it is in th
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LIVE_REGION_HIDDEN` | cantTell | A live region inside or on aria-hidden="true" or inert, so nothing it is given can be announced. It leans fail when no dialog is shown, which would explain the rest of the page being hidden. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2 aria-live |
+| `LIVE_REGION_HIDDEN` | cantTell | A live region inside or on aria-hidden="true" or inert, or behind an open modal &lt;dialog&gt;, so nothing it is given (while the dialog is open) can be announced. It leans fail, for aria-hidden or inert, when no dialog is shown, which would explain the rest of the page being hidden; behind a modal dialog, when the live-region hook saw the region given text after the dialog was last opened, so while the dialog made it inert (a dialog the hook never saw open has been open since it started watching; one inside a shadow root gives no lean, as the hook does not see it). | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2 aria-live; HTML dialog element showModal method |
 | `LIVE_REGION_BUSY` | cantTell | A live region with aria-busy="true" when the page was scanned, so assistive technology may hold back its changes. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-busy |
 | `LIVE_REGION_INSERTED_WITH_CONTENT` | cantTell | A live region, other than role="alert", added to the page with its text already in it, which screen readers commonly do not announce. It leans fail unless the hook saw the same text announced through another live region. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |
 | `LIVE_REGION_SHOWN_AND_FILLED` | cantTell | A hidden live region shown and given its text in the same task, so it was not in the accessibility tree when the text arrived. It leans fail unless the hook saw the same text announced through another live region. | WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live |

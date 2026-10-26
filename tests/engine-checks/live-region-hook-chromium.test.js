@@ -56,8 +56,12 @@ async function scan(p) {
     return {
       outcome: c.outcome,
       details: c.occurrences.map((o) => o.data.details),
+      leans: c.occurrences.map((o) => (o.lean ? o.lean.toward : null)),
       environment: r.engine.environment,
-      announcements: said && said.map((a) => [a.text, a.politeness, a.element.id])
+      announcements: said && said.map((a) => [a.text, a.politeness, a.element.id]),
+      behindModal: (window.a11ycore.getAnnouncements({ includeBehindModal: true }) || [])
+        .filter((a) => a.behindModal)
+        .map((a) => a.element.id)
     };
   }, RULE_ID);
 }
@@ -135,6 +139,118 @@ test('the live-region hook in Chromium', { skip }, async (t) => {
         ['Failed', 'assertive', 'e'],
         ['Apart', 'polite', 'v']
       ]);
+      await p.close();
+    }
+  );
+
+  // A modal <dialog> makes the page behind it inert. The hook records when
+  // the dialog was opened; text given to a region behind it after that was
+  // given while the region was inert.
+  await t.test('a region behind a modal dialog leans fail on what the hook saw', async () => {
+    const html = page(
+      '<div id="b" role="status"></div><dialog id="d" aria-label="Sign in"><div id="i" role="status"></div><button>OK</button></dialog>'
+    );
+    const run = async (steps, body = html) => {
+      const p = await open(browser, body);
+      for (const step of steps) {
+        await p.evaluate(step);
+        await p.waitForTimeout(5);
+      }
+      const got = await scan(p);
+      await p.close();
+      return got;
+    };
+    const showModal = "document.getElementById('d').showModal()";
+    const close = "document.getElementById('d').close()";
+    const inside = "document.getElementById('i').textContent = 'Wrong password'";
+    const behind = "document.getElementById('b').textContent = 'Saved'";
+    const hidden = (lean) => [
+      [{ reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }, lean]
+    ];
+
+    // The region inside the dialog was shown by the dialog opening, then
+    // given its text: an announcement, not shown and filled at once.
+    const after = await run([showModal, inside, behind]);
+    assert.equal(after.outcome, 'cantTell');
+    assert.deepEqual(
+      after.details.map((d, i) => [d, after.leans[i]]),
+      hidden('fail')
+    );
+    // 'Saved' was given while the region was inert: left out, and listed,
+    // marked, only on request.
+    assert.deepEqual(after.announcements, [['Wrong password', 'polite', 'i']]);
+    assert.deepEqual(after.behindModal, ['b']);
+
+    // Given its text before the dialog opened: no lean.
+    const before = await run([behind, showModal, inside]);
+    assert.deepEqual(
+      before.details.map((d, i) => [d, before.leans[i]]),
+      hidden(null)
+    );
+
+    // In one task, the order the page did it in decides.
+    assert.deepEqual(
+      (await run([`${showModal}; ${behind}`])).leans,
+      ['fail'],
+      'opened, then given text'
+    );
+    assert.deepEqual(
+      (await run([`${behind}; ${showModal}`])).leans,
+      [null],
+      'given text, then opened'
+    );
+    assert.deepEqual((await run([`${behind}; ${showModal}`])).behindModal, []);
+
+    // Closed and opened again after the text: only the last opening counts.
+    assert.deepEqual((await run([showModal, behind, close, showModal])).leans, [null]);
+
+    // A dialog the hook never saw open has been open since it started
+    // watching (here, opened before the page loaded).
+    const opened = html.replace(
+      '</main>',
+      "</main><script>document.getElementById('d').showModal()</script>"
+    );
+    assert.deepEqual((await run([behind], opened)).leans, ['fail']);
+  });
+
+  await t.test(
+    'a region shown because its dialog, details or popover opened counts from its next text',
+    async () => {
+      const p = await open(
+        browser,
+        page(
+          '<dialog id="d"><div id="i" role="status"></div></dialog>' +
+            '<dialog id="e"><div id="j" role="status"></div></dialog>' +
+            '<details id="t"><summary>More</summary><div id="k" role="status"></div></details>' +
+            '<div id="p" popover><div id="m" role="status"></div></div>' +
+            '<div id="q" popover><div id="n" role="status"></div></div>' +
+            '<dialog id="f"><div id="h" role="status" hidden></div></dialog>'
+        )
+      );
+      await act(p, [
+        "document.getElementById('d').show()",
+        "document.getElementById('i').textContent = 'In the dialog'",
+        "document.getElementById('j').textContent = 'Before'; document.getElementById('e').setAttribute('open', '')",
+        "document.getElementById('t').open = true",
+        "document.getElementById('k').textContent = 'In the details'",
+        "document.getElementById('p').showPopover()",
+        "document.getElementById('m').textContent = 'In the popover'",
+        "document.getElementById('n').textContent = 'Early'; document.getElementById('q').showPopover(); document.getElementById('n').textContent = 'Late'",
+        // Shown by the dialog, then shown and filled by the page at once.
+        "document.getElementById('f').show()",
+        "const h = document.getElementById('h'); h.hidden = false; h.textContent = 'Together'"
+      ]);
+      const got = await scan(p);
+      assert.deepEqual(got.announcements, [
+        ['In the dialog', 'polite', 'i'],
+        ['In the details', 'polite', 'k'],
+        ['In the popover', 'polite', 'm'],
+        ['Late', 'polite', 'n']
+      ]);
+      assert.deepEqual(
+        got.details.map((d) => [d.reasonCode, d.text]),
+        [['LIVE_REGION_SHOWN_AND_FILLED', 'Together']]
+      );
       await p.close();
     }
   );

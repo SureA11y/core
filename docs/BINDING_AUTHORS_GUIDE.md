@@ -1,6 +1,6 @@
 # Binding authors' guide
 
-Written for whoever builds the *next* framework binding on top of `@surea11y/core` (Puppeteer, Cypress, Selenium, WebdriverIO, whatever comes after) — not for someone consuming a binding, and not for someone calling the engine directly. If that's you, see [`INTEGRATION.md`](./INTEGRATION.md) instead. For a tool of another kind (a CLI, an extension, a dashboard, a report generator), [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md) covers what every tool built on core should know; this guide adds what is particular to a binding.
+Written for whoever builds the _next_ framework binding on top of `@surea11y/core` (Puppeteer, Cypress, Selenium, WebdriverIO, whatever comes after) — not for someone consuming a binding, and not for someone calling the engine directly. If that's you, see [`INTEGRATION.md`](./INTEGRATION.md) instead. For a tool of another kind (a CLI, an extension, a dashboard, a report generator), [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md) covers what every tool built on core should know; this guide adds what is particular to a binding.
 
 The first real binding, `@surea11y/playwright` (a sibling project, not part of this repo), has already worked through most of the design questions a new binding hits. This doc exists so the next one doesn't have to re-derive them — it's a checklist and a map of "what the engine already gives you for free" vs. "what every binding has to build itself," backed by what that binding actually did, not theory.
 
@@ -9,13 +9,15 @@ The first real binding, `@surea11y/playwright` (a sibling project, not part of t
 Some features are **engine-level** — call the engine, get the behavior, no binding code required. Others are **binding-layer** — the engine doesn't own them, because they only make sense once you have a real automation driver (a `Page`/`Browser`/`ElementHandle`-shaped object) in front of you. Building a new binding without knowing which is which leads to either reimplementing something the engine already does, or missing something because "surely the engine handles that."
 
 **Already engine-level, works the moment you call `runa11yCoreInPage`/`runDomRulesInPage` — no binding code needed:**
+
 - All rule execution, WCAG SC mapping, composite rollups.
 - `runOnly`/`engineOptions.rules`/`.tags`/`.tests` rule selection — including [WCAG-version filtering](./ENGINE_OPTIONS.md#filtering-by-wcag-version-21-vs-22) (`wcag21a`/`wcag22aa`-style tags): if your binding has any kind of `.withTags()`/`.options()` passthrough that forwards `runOnly`/`engineOptions` generically, WCAG-version filtering already works through it with zero extra code — just document the tag vocabulary for your users, the way `@surea11y/playwright`'s README does. The same passthrough carries [`runOnly.wcag`](./ENGINE_OPTIONS.md#selecting-by-wcag-target-runonlywcag) (`{ wcag: { version: '2.2', level: 'AA' } }`, the rules for a WCAG target) and [`runOnly.bestPractices`](./ENGINE_OPTIONS.md#adding-the-best-practices-runonlybestpractices) (`true` adds the rules that name no criterion); forward `runOnly` whole rather than rebuilding it from the fields you know.
 - `structuralPath` on every `fail`/`cantTell` occurrence — if your binding passes occurrences through unreshaped (don't strip fields you don't recognize), this reaches your consumers automatically.
 - `engineOptions.customRules` — runtime rule registration. Works through a generic `engineOptions` passthrough too, **but** see the caveat below: if your binding crosses a serialization boundary (see next section), your consumers must pass `runInPage`/`applicability` as `fn.toString()` source, not a live function. Worth a dedicated `.withCustomRules([...])` convenience method for ergonomics, but not required for the feature to work.
-- Cross-frame scanning **if** your driver reaches every frame itself already (Puppeteer/Cypress/Selenium all can, via CDP or equivalent) — you don't need `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder` at all. Just call the engine once per frame your driver already gives you and merge the results yourself (see `@surea11y/playwright`'s `.frames(true)`, which does exactly this — no engine change was needed for it). The `postMessage`-based cross-frame functions exist specifically for the *no-automation-driver* case (a plain injected script) and are the wrong tool for a driver-based binding. If your binding does hand on a result from `runa11yCoreAcrossFrames`, it is a tree, not a flat list: `{ topFrame, frames }`, where each frame entry has the frame's `url`, `selector` (a CSS selector for the `<iframe>`/`<frame>` in its parent's document) and `title` (its `title` attribute, or `null`), then either `topFrame` and its own `frames` or, for a frame that did not answer, `error`. `flattenCrossFrameResult(result)` from `@surea11y/core` lists every frame, the top one first, each with its `frame` position (`path`, `title`, `url`) and its `result` or `error`. The reporters read this shape as it is (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes)).
+- Cross-frame scanning **if** your driver reaches every frame itself already (Puppeteer/Cypress/Selenium all can, via CDP or equivalent) — you don't need `runa11yCoreAcrossFrames`/`a11yCoreEnableFrameResponder` at all. Just call the engine once per frame your driver already gives you and merge the results yourself (see `@surea11y/playwright`'s `.frames(true)`, which does exactly this — no engine change was needed for it). The `postMessage`-based cross-frame functions exist specifically for the _no-automation-driver_ case (a plain injected script) and are the wrong tool for a driver-based binding. If your binding does hand on a result from `runa11yCoreAcrossFrames`, it is a tree, not a flat list: `{ topFrame, frames }`, where each frame entry has the frame's `url`, `selector` (a CSS selector for the `<iframe>`/`<frame>` in its parent's document) and `title` (its `title` attribute, or `null`), then either `topFrame` and its own `frames` or, for a frame that did not answer, `error`. `flattenCrossFrameResult(result)` from `@surea11y/core` lists every frame, the top one first, each with its `frame` position (`path`, `title`, `url`) and its `result` or `error`. The reporters read this shape as it is (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#cross-frame-result-runa11ycoreacrossframes)).
 
 **Binding-layer — your binding has to build these itself, the engine won't:**
+
 - **How to check.** Each undecided finding of a core rule can say how a person answers it (`howToCheck`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)). The steps are kept out of the in-page engine, so a result from `runa11yCoreInPage` comes back without them. Pass it through `addHowToCheck(result)` from `@surea11y/core` in your Node process before handing it on: one call, and it returns a copy, leaving the result you got untouched. A cross-frame tree works as it is.
 - **Element references.** The engine returns `selector`/`structuralPath` strings, never a live handle — it has no concept of your driver's element-reference type. Resolve `occurrences[i].selector` back to a real handle yourself (Playwright's approach: `page.evaluateHandle` instead of `page.evaluate`, then `elementHandle.$(selector)` per occurrence — see `.elementRef(true)` in `@surea11y/playwright`).
 - **Result verbosity/reporter filtering.** The engine always returns every rule's outcome, including `pass`/`notApplicable` — "not a violations-only list" is a stated engine design choice (see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)), not an oversight to work around. If your consumers want a trimmed view for CI-scale output, that's a post-filter your binding adds (`@surea11y/playwright`'s `.reportOnly(['fail','cantTell'])` is a simple array-filter over the full result — no engine change). A result trimmed by hand is no longer the scan's result to the reporters: JUnit counts one test per rule it finds, and EARL makes one assertion per rule, so the rules you dropped are missing from both. The supported compact form is `engineOptions.output.detail: 'findings'`: it keeps every rule's outcome, drops only what the catalog can give back, and every reporter reads it as the full result (see `engine.outputDetail` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#top-level-result)).
@@ -23,15 +25,17 @@ Some features are **engine-level** — call the engine, get the behavior, no bin
 
 ## The serialization-boundary caveat
 
-If your binding drives a *separate JS realm* (a browser page/tab is a different realm than your Node test process — this is Playwright/Puppeteer/Selenium's situation, not Cypress's, since Cypress test code already runs in-browser), anything you hand to `page.evaluate()`-equivalent gets structurally cloned/JSON-serialized. **Live functions do not survive that boundary.** This bit `@surea11y/playwright` in two places:
+If your binding drives a _separate JS realm_ (a browser page/tab is a different realm than your Node test process — this is Playwright/Puppeteer/Selenium's situation, not Cypress's, since Cypress test code already runs in-browser), anything you hand to `page.evaluate()`-equivalent gets structurally cloned/JSON-serialized. **Live functions do not survive that boundary.** This bit `@surea11y/playwright` in two places:
+
 1. `runa11yCoreInPage` itself is designed around this — it's fully self-contained (`.toString()`-serializable, no closure over outer scope) specifically so it can be reconstructed from source inside the page realm.
 2. `engineOptions.customRules[].runInPage`/`.applicability` accept a function-source string for exactly this reason — a binding crossing this boundary must tell its consumers to pass `fn.toString()`, not `fn`. Document this prominently; it's an easy trap (a function looks like it should just work as an argument until it silently fails to serialize).
 
-If your binding runs in the *same* realm as the page (a browser extension content script, or Cypress-style in-browser test code), this whole section doesn't apply to you — pass live functions freely.
+If your binding runs in the _same_ realm as the page (a browser extension content script, or Cypress-style in-browser test code), this whole section doesn't apply to you — pass live functions freely.
 
 ## Things to check before shipping a new binding
 
 A short list, derived from what the audit pass on `@surea11y/playwright` actually found missing on a first pass (per its own `ROADMAP.md`) — worth checking explicitly rather than assuming your binding's generic passthrough covers them:
+
 - [ ] Combinations of your own filtering methods behave sanely together (e.g. include+exclude on the same ID, tag-include + tag-exclude on the same tag) — these interact through the engine's `includeMode`/exclude-always-wins semantics ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), test them explicitly rather than assuming.
 - [ ] `structuralPath` and `customRules` still work correctly when combined with whatever binding-layer features you build (verbosity filtering, element refs, per-frame scanning) — a filter applied after the fact should never silently drop fields a consumer expects on a surviving occurrence.
 - [ ] If you support cross-frame scanning via your own driver, confirm each frame's result gets the same normalization (selector/structuralPath/severity) as a single-document scan — don't let a "per-frame" code path silently skip the shared result-shaping logic.
@@ -54,7 +58,7 @@ few hundred bytes.
 The shape below is deliberately driver-neutral — `evaluateInPage` stands for
 whatever your driver calls it (`page.evaluate` in Playwright and Puppeteer,
 `browser.execute` in WebdriverIO, `driver.executeScript` in Selenium, which
-takes a *string* of script text rather than a function):
+takes a _string_ of script text rather than a function):
 
 ```js
 const fs = require('fs');
@@ -80,7 +84,8 @@ async function scan(target, args) {
   if (await ensureEngine(target)) {
     return evaluateInPage(
       target,
-      (a) => window.a11ycore.runa11yCoreInPage(a.url, a.contextSelector, a.engineOptions, a.runOnly),
+      (a) =>
+        window.a11ycore.runa11yCoreInPage(a.url, a.contextSelector, a.engineOptions, a.runOnly),
       args
     );
   }
@@ -110,7 +115,10 @@ Four things to know before adapting it:
   way, before the scan:
 
   ```js
-  const primary = String(locale || 'en').trim().toLowerCase().split('-')[0];
+  const primary = String(locale || 'en')
+    .trim()
+    .toLowerCase()
+    .split('-')[0];
   if (primary && primary !== 'en') {
     let localePath;
     try {
@@ -136,12 +144,12 @@ about what crosses the wire.
 
 Only the first row pays the serialization cost this section is about.
 
-| Binding | Realm | What to do |
-|---|---|---|
-| Playwright, Puppeteer, Selenium, WebdriverIO | Node drives a separate browser realm | Everything above: load `@surea11y/core/browser` into the document once, scan through `window.a11ycore`, keep the serialize path as fallback. |
-| Cypress | Test code already runs in the browser, with the app under test in a same-origin frame | No serialization boundary, so nothing crosses the wire — but the engine still has to be evaluated into the app's realm rather than called from the runner's, or it reads the wrong `document`. `require` the engine and `win.eval` its source there (what `@surea11y/cypress` does), or read the bundle with `cy.readFile` and evaluate that instead; both put it in the right realm. Size is not the deciding factor here. |
-| Jest, Vitest, or anything else driving jsdom in-process | One realm, in Node | None of this applies. `require('@surea11y/core')` and call `runDomRulesInPage` against the DOM you already have — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 1. Injecting a bundle here would be strictly worse. |
-| Browser extension, bookmarklet, injected script | Already in the page | Load the bundle once and call it; that is the case it was built for. |
+| Binding                                                 | Realm                                                                                 | What to do                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Playwright, Puppeteer, Selenium, WebdriverIO            | Node drives a separate browser realm                                                  | Everything above: load `@surea11y/core/browser` into the document once, scan through `window.a11ycore`, keep the serialize path as fallback.                                                                                                                                                                                                                                                                                |
+| Cypress                                                 | Test code already runs in the browser, with the app under test in a same-origin frame | No serialization boundary, so nothing crosses the wire — but the engine still has to be evaluated into the app's realm rather than called from the runner's, or it reads the wrong `document`. `require` the engine and `win.eval` its source there (what `@surea11y/cypress` does), or read the bundle with `cy.readFile` and evaluate that instead; both put it in the right realm. Size is not the deciding factor here. |
+| Jest, Vitest, or anything else driving jsdom in-process | One realm, in Node                                                                    | None of this applies. `require('@surea11y/core')` and call `runDomRulesInPage` against the DOM you already have — see [`INTEGRATION.md`](./INTEGRATION.md) Pattern 1. Injecting a bundle here would be strictly worse.                                                                                                                                                                                                      |
+| Browser extension, bookmarklet, injected script         | Already in the page                                                                   | Load the bundle once and call it; that is the case it was built for.                                                                                                                                                                                                                                                                                                                                                        |
 
 ## Reporting by criterion
 
@@ -196,7 +204,7 @@ Puppeteer has `page.evaluateOnNewDocument(script)`, a CDP session `Page.addScrip
 
 ## The live-region hook
 
-`liveRegionHookScript()` is a third script of the same kind: it records what a page's live regions are given while the test runs, so `live-region-announcements` asks about a region added with its text, or shown and filled at once, and `getAnnouncements()` returns what the page made available to announce. See [The live-region hook in `INTEGRATION.md`](./INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook). The binding installs it as the other two, opt-in and before navigation, and `engine.environment.liveRegionHook` says whether a scan saw it. Offer a way to read the announcements (`getAnnouncements()`, say) that runs `window.a11ycore.getAnnouncements()` in the page and returns plain data, since an element can't cross the driver: the `text`, `politeness` and `time` of each. Test it with an empty `role="status"` that the page fills after load: `getAnnouncements()` returns its text, and a region added with its text in it is asked about with `LIVE_REGION_INSERTED_WITH_CONTENT`.
+`liveRegionHookScript()` is a third script of the same kind: it records what a page's live regions are given while the test runs, so `live-region-announcements` asks about a region added with its text, or shown and filled at once, and `getAnnouncements()` returns what the page made available to announce. See [The live-region hook in `INTEGRATION.md`](./INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook). The binding installs it as the other two, opt-in and before navigation, and `engine.environment.liveRegionHook` says whether a scan saw it. Offer a way to read the announcements (`getAnnouncements()`, say) that runs `window.a11ycore.getAnnouncements()` in the page, or serializes core's `getAnnouncements` (self-contained like `runa11yCoreInPage`: its `.toString()` evaluated in the page works there), and returns plain data, since an element can't cross the driver: drop `element` and return the `text`, `politeness`, `time` and `order` of each. By default it leaves out text given to a region behind an open modal dialog, which assistive technology did not get; pass `{ includeBehindModal: true }` through if your users ask for those, which come marked `behindModal: true`. Test it with an empty `role="status"` that the page fills after load: `getAnnouncements()` returns its text, and a region added with its text in it is asked about with `LIVE_REGION_INSERTED_WITH_CONTENT`.
 
 ## A time limit on a scan
 

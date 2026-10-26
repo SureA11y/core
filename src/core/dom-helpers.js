@@ -1212,7 +1212,8 @@ function createDomHelpers(opts) {
   }
 
   // What the live-region hook (liveRegionHookScript) recorded in the scanned
-  // window while the page ran: { early, announcements, findings, dropped },
+  // window while the page ran: { early, announcements, findings,
+  // dialogsOpened, dropped },
   // read once per run; null without a hook.
   function getLiveRegionRecord() {
     const byWindow = __sharedWeakMap('liveRegionHookByWindow');
@@ -7372,6 +7373,8 @@ function createDomHelpers(opts) {
     isDomVisibleEligible,
     isWholeDocumentScope,
     isModalDialogOpen,
+    getOpenModalDialogs,
+    getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors

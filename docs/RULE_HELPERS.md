@@ -334,6 +334,13 @@ The modal `<dialog>` elements open in the document and its open shadow roots (th
 `modalInert`. A script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it
 makes nothing inert. Worked out once per run.
 
+### `getDocumentRoots()` → `(Document | ShadowRoot)[]`
+
+The document, then each open shadow root in it, nested ones included, found once per run
+and shared with the engine's own reads (the style sheets, the open modal dialogs). A rule
+that must search the whole page, shadow trees included, runs its `querySelectorAll` on each.
+A closed shadow root is not in it.
+
 ### `hasTruncatedAncestorWalk` (internal)
 
 Backs confidence scoring during result normalization when a 200-step ancestor walk

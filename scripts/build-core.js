@@ -74,7 +74,7 @@ const {
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { readInternalsHook } = require('../src/core/internals-hook');
 const { readListenerHook } = require('../src/core/listener-hook');
-const { readLiveRegionHook } = require('../src/core/live-region-hook');
+const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
@@ -2531,11 +2531,14 @@ ${getMargins.toString()}
 
 // What the page's live regions were given while shown and reachable, by the
 // live-region hook (src/core/live-region-hook.js): [{ text, politeness,
-// time, element }], or null when the window has no hook.
-function getAnnouncements(win) {
+// time, order, behindModal, element }], or null when the window has no hook.
+// getAnnouncements([win], [options]) or getAnnouncements(options); options
+// { includeBehindModal: true } adds the texts given to a region behind an
+// open modal dialog. Self-contained: bindings serialize it into pages.
+function getAnnouncements(win, options) {
   const read = ${readLiveRegionHook.toString()};
-  const hook = read(win || (typeof window !== 'undefined' ? window : null));
-  return hook ? hook.announcements : null;
+  const select = ${selectAnnouncements.toString()};
+  return select(read, typeof window !== 'undefined' ? window : null, win, options);
 }
 `.trim();
 
