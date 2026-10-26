@@ -378,7 +378,8 @@ export interface LocaleResolution {
 export interface RenderingEnvironment {
   /**
    * False in jsdom and other DOM emulators, and then the only field
-   * besides `internalsHook` and `listenerHook`, where the page runs them.
+   * besides `internalsHook`, `listenerHook` and `liveRegionHook`, where the
+   * page runs them.
    */
   layout: boolean;
   /** CSS pixels. */
