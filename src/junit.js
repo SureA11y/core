@@ -47,6 +47,7 @@
  */
 
 const { knownOccurrences } = require('./baseline.js');
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 const {
   framesOf,
   framePathText,
@@ -179,6 +180,25 @@ function describeOccurrence(occurrence) {
   return lines.join('\n');
 }
 
+// A finding that leans fail and gates as one: what any finding says, then
+// why it likely fails and what could make that wrong, and how a person
+// confirms it (howToCheck), so the build log says what to look at before
+// anyone opens the HTML report.
+function describeLeaning(occurrence) {
+  const lines = [describeOccurrence(occurrence)];
+  const lean = occurrence.lean || {};
+  if (typeof lean.why === 'string' && lean.why) lines.push(`  likely fails: ${lean.why}`);
+  if (typeof lean.caution === 'string' && lean.caution) lines.push(`  caution: ${lean.caution}`);
+  const how = occurrence.howToCheck;
+  if (how && Array.isArray(how.steps) && how.steps.length) {
+    lines.push('  how to check:');
+    how.steps.forEach((step, i) => lines.push(`    ${i + 1}. ${step}`));
+    if (typeof how.failWhen === 'string' && how.failWhen)
+      lines.push(`  fails when: ${how.failWhen}`);
+  }
+  return lines.join('\n');
+}
+
 // Where to read how to fix it, when the rule says.
 function helpLine(check) {
   const url = helpUrlOf(check);
@@ -212,7 +232,7 @@ function renderTestcase(entry, classname, indent) {
   } else if (status === 'failure' && leaning.length && entry.cantTellAs !== 'failure') {
     const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
     inner.push(
-      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
+      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
@@ -438,7 +458,7 @@ function frameSuites(result, frame, baseline, opts, totals) {
 }
 
 function renderJunitReport(result, options = {}) {
-  const frames = framesOf(result, 'renderJunitReport');
+  let frames = framesOf(result, 'renderJunitReport');
   // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
   // value is a mistake that would quietly not gate, so it throws.
   const cantTellAs =
@@ -476,6 +496,14 @@ function renderJunitReport(result, options = {}) {
     leanFailWcagOnly: leanFailWcagOnly === true,
     includeNotApplicable: options.includeNotApplicable === true
   };
+  // A finding that gates as a likely failure says how to confirm it: a
+  // result that comes without the steps (a binding's) gains them, in Node.
+  // Before the baseline, which knows the occurrences it matched by identity.
+  if (leanFailAs === 'failure') {
+    frames = frames.map((f) =>
+      f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
+    );
+  }
   const baseline = knownOccurrences(frames, options.baselineEntries);
 
   const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };

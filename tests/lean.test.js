@@ -146,6 +146,22 @@ test('JUnit gates on likely failures only with leanFailAs: failure', () => {
   assert.throws(() => renderJunitReport(result, { leanFailAs: 'yes' }), /leanFailAs must be/);
 });
 
+test('a JUnit likely failure says why, and how to confirm it, also for a result without steps', () => {
+  // runa11yCoreOnHtml returns the engine's result, without howToCheck, as a
+  // binding gets it from the page.
+  const result = runa11yCoreOnHtml(page('<main><h1>a</h1><h3>b</h3></main>'), {
+    runOnly: ['heading-order']
+  });
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+  const xml = renderJunitReport(result, { leanFailAs: 'failure' });
+  assert.match(xml, /likely fails: The heading skips a level/);
+  assert.match(xml, /how to check:\n {4}1\. Find the heading the report names/);
+  assert.match(xml, /fails when: The heading jumps more than one level/);
+  // The result given is not changed, and without the gate nothing is added.
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+  assert.doesNotMatch(renderJunitReport(result), /how to check:/);
+});
+
 test('SARIF carries the lean, and raises likely failures to error when asked', () => {
   const result = runa11yCoreOnHtml(LEANING, { runOnly: RULES });
   const plain = JSON.parse(renderSarifReport(result)).runs[0].results;
