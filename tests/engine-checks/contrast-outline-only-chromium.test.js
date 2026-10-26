@@ -199,3 +199,69 @@ test('in jsdom, a shadow on a fill the colour of the background or a light fill 
   const plain = runa11yCoreOnHtml(page('color:#fff'), { runOnly: RULES });
   assert.deepEqual(summarize(plain.checksResults), SKIPPED);
 });
+
+// A variant of contrast-minimum at a lower ratio than WCAG's: an outline
+// whose best colour reaches it but not WCAG's AA ratio is left by
+// contrast-computable to the ratio rules, and the variant can't decide it,
+// so it asks (TEXT_STROKE). At WCAG's ratios it still fails.
+const { definePack, packScript } = require('../../src/pack.js');
+
+const lowRatio = definePack({
+  name: 'ratios',
+  version: '1.0.0',
+  namespace: 'ratios',
+  core: '*',
+  rules: [
+    {
+      id: 'ratios-contrast',
+      from: 'contrast-minimum',
+      config: { largeTextRatio: 2.5 },
+      meta: {
+        title: 'Contrast',
+        tags: ['ratios'],
+        i18n: { titleKey: 'ratiosContrast_title', descriptionKey: 'ratiosContrast_description' }
+      }
+    }
+  ]
+});
+
+test("an outline at a variant's own ratio, in Chromium", { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  // [stroke, contrast-minimum, variant, variant's reason code]
+  for (const [stroke, minimum, variant, code] of [
+    // 2.85:1: below 3:1, above 2.5:1.
+    ['#999', 'fail', 'cantTell', 'TEXT_STROKE'],
+    // 1.61:1: below both.
+    ['#ccc', 'fail', 'fail', 'BELOW_THRESHOLD']
+  ]) {
+    await t.test(stroke, async () => {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(page(`color:transparent;-webkit-text-stroke:1px ${stroke}`));
+        await addBundle(p);
+        await p.addScriptTag({ content: packScript([lowRatio]) });
+        const got = await p.evaluate(() =>
+          Object.fromEntries(
+            window.a11ycore
+              .runa11yCoreInPage(null, null, { packs: ['ratios@1.0.0'] }, [
+                'contrast-computable',
+                'contrast-minimum',
+                'ratios-contrast'
+              ])
+              .checksResults.map((c) => [
+                c.ruleId,
+                { outcome: c.outcome, code: c.occurrences[0].data.details.reasonCode }
+              ])
+          )
+        );
+        assert.equal(got['contrast-computable'].outcome, 'pass');
+        assert.equal(got['contrast-minimum'].outcome, minimum);
+        assert.equal(got['ratios-contrast'].outcome, variant);
+        assert.equal(got['ratios-contrast'].code, code);
+      } finally {
+        await p.close();
+      }
+    });
+  }
+});

@@ -7,6 +7,8 @@ const path = require('node:path');
 
 const { createDom, runa11yCoreOnDom } = require('../../helpers/runa11yCoreOnHtml');
 const { runDomRulesInPage } = require('../../../src/index.js');
+const { runa11yCoreOnHtml } = require('../../../src/testing.js');
+const { definePack } = require('../../../src/pack.js');
 
 const { assertRule } = require('../../helpers/assertRule');
 
@@ -1072,4 +1074,73 @@ test(`${RULE_ID}: no color rules out the AA ratio, so text on an unknown backgro
   </body></html>`;
   const rule = run(html).checksResults.find((r) => r.ruleId === RULE_ID);
   assert.strictEqual(rule.outcome, 'notApplicable');
+});
+
+// contrast-computable doesn't ask about text drawn by a shadow whose best
+// colour is below WCAG's AA ratio, since this rule fails it. A variant
+// whose ratio that colour reaches can't decide it either, so it asks.
+
+const ratioVariant = (config) =>
+  definePack({
+    name: 'ratios',
+    version: '1.0.0',
+    namespace: 'ratios',
+    core: '*',
+    rules: [
+      {
+        id: 'ratios-contrast',
+        from: 'contrast-minimum',
+        config,
+        meta: {
+          title: 'Contrast',
+          tags: ['ratios'],
+          i18n: { titleKey: 'ratiosContrast_title', descriptionKey: 'ratiosContrast_description' }
+        }
+      }
+    ]
+  });
+const shadowPage = (shadow) =>
+  '<!doctype html><html lang="en" style="background:#fff"><head><title>t</title></head>' +
+  `<body style="background:#fff"><main><h2 style="font-size:32px;color:#fff;text-shadow:1px 1px 0 ${shadow}">Shadowed heading</h2></main></body></html>`;
+const shadowScan = (shadow, config) => {
+  const result = config
+    ? runa11yCoreOnHtml(shadowPage(shadow), {
+        runOnly: ['ratios-contrast', 'contrast-computable'],
+        engineOptions: { packs: [ratioVariant(config)] }
+      })
+    : runa11yCoreOnHtml(shadowPage(shadow), { runOnly: [RULE_ID, 'contrast-computable'] });
+  const by = Object.fromEntries(result.checksResults.map((c) => [c.ruleId, c]));
+  return { rule: by[config ? 'ratios-contrast' : RULE_ID], computable: by['contrast-computable'] };
+};
+
+test(`${RULE_ID}: at a variant's lower ratio, shadow-drawn text its best colour reaches is asked about (TEXT_SHADOW)`, () => {
+  // #999 on white: 2.85:1, below WCAG's 3:1 for large text, above 2.5:1.
+  const { rule, computable } = shadowScan('#999', { largeTextRatio: 2.5 });
+  assert.strictEqual(computable.outcome, 'pass');
+  assert.strictEqual(rule.outcome, 'cantTell');
+  assert.strictEqual(rule.occurrences.length, 1);
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(occ.data.details.reasonCode, 'TEXT_SHADOW');
+  assert.strictEqual(occ.data.details.drawnBy, 'textShadow');
+  assert.strictEqual(occ.data.details.metrics.threshold, 2.5);
+  assert.strictEqual(occ.i18n.summaryKey, 'ratiosContrast_cantTell_textShadow');
+  assert.strictEqual(occ.i18n.hintKey, 'ratiosContrast_hint_cantTell_outline');
+});
+
+test(`${RULE_ID}: at WCAG's ratios, or below a variant's, shadow-drawn text still fails and is asked about by no one`, () => {
+  for (const [shadow, config] of [
+    ['#999', null],
+    ['#999', { largeTextRatio: 3 }],
+    ['#ccc', { largeTextRatio: 2.5 }]
+  ]) {
+    const { rule, computable } = shadowScan(shadow, config);
+    assert.strictEqual(computable.outcome, 'pass', shadow);
+    assert.strictEqual(rule.outcome, 'fail', shadow);
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  }
+  // Above WCAG's AA ratio contrast-computable asks, and the variant leaves it.
+  const asked = shadowScan('#000', { largeTextRatio: 2.5 });
+  assert.strictEqual(asked.computable.outcome, 'cantTell');
+  assert.strictEqual(asked.rule.outcome, 'notApplicable');
 });

@@ -224,3 +224,81 @@ test(
     }
   }
 );
+
+// A variant of contrast-minimum at a ratio of its own: where the two colours
+// disagree only at that ratio, contrast-computable, deciding at WCAG's,
+// doesn't ask, so the variant does (PSEUDO_ELEMENT_COLOR). Where they
+// disagree at WCAG's ratios too, contrast-computable asks and the variant
+// leaves it. [css, computable, variant, variant's reason codes]
+const { definePack, packScript } = require('../../src/pack.js');
+
+const ratios = definePack({
+  name: 'ratios',
+  version: '1.0.0',
+  namespace: 'ratios',
+  core: '*',
+  rules: [
+    {
+      id: 'ratios-contrast',
+      from: 'contrast-minimum',
+      config: { normalTextRatio: 5 },
+      meta: {
+        title: 'Contrast',
+        tags: ['ratios'],
+        i18n: { titleKey: 'ratiosContrast_title', descriptionKey: 'ratiosContrast_description' }
+      }
+    }
+  ]
+});
+const VARIANT_COLOURS = [
+  // 4.61:1 and 5.25:1: both reach 4.5:1 and neither 7:1, one reaches 5:1.
+  ['.f{color:#757575} .f::first-line{color:#6c6c6c}', 'pass', 'cantTell', ['PSEUDO_ELEMENT_COLOR']],
+  // 5.25:1 and 5.41:1: both reach 5:1.
+  ['.f{color:#6c6c6c} .f::first-line{color:#6a6a6a}', 'pass', 'pass', ['ALL_ABOVE_THRESHOLD']],
+  // 21:1 and 2.85:1: they disagree at WCAG's ratios, so it is asked there.
+  ['.f{color:#000} .f::first-line{color:#999}', 'cantTell', 'notApplicable', []]
+];
+
+test("::first-line colours at a variant's own ratio, in Chromium", { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [css, computable, variant, codes] of VARIANT_COLOURS) {
+    await t.test(css, async () => {
+      const page = await browser.newPage();
+      try {
+        await page.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff;color:#000} ${css}</style></head><body><main><p class="f">Short line</p></main></body></html>`
+        );
+        await addBundle(page);
+        await page.addScriptTag({ content: packScript([ratios]) });
+        const got = await page.evaluate(() =>
+          Object.fromEntries(
+            window.a11ycore
+              .runa11yCoreInPage(null, null, { packs: ['ratios@1.0.0'] }, [
+                'contrast-computable',
+                'contrast-minimum',
+                'ratios-contrast'
+              ])
+              .checksResults.map((c) => [
+                c.ruleId,
+                {
+                  outcome: c.outcome,
+                  codes: c.occurrences.map((o) => o.data && o.data.details.reasonCode)
+                }
+              ])
+          )
+        );
+        assert.equal(got['contrast-computable'].outcome, computable);
+        assert.equal(got['ratios-contrast'].outcome, variant);
+        assert.deepEqual(
+          got['ratios-contrast'].codes.filter((c) => c),
+          codes
+        );
+        // At WCAG's own ratios nothing changes.
+        assert.notEqual(got['contrast-minimum'].outcome, 'cantTell');
+      } finally {
+        await page.close();
+      }
+    });
+  }
+});

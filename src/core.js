@@ -5192,6 +5192,337 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
 
+  // -------- Link colours under jsdom --------
+  //
+  // jsdom's cascade orders its own style sheet's rules with the page's by
+  // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
+  // beats a page's `a { color: #fff }`, which a browser applies: a white
+  // link read back as blue, and text measured in a colour no browser draws.
+  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its colour from it, is worked out here
+  // from the page's own rules, as a browser's cascade does: the author's
+  // declarations win over the browser's whatever their specificity, ordered
+  // among themselves by !important, the style attribute, specificity and
+  // order. Where no author rule sets it, the browser's link colour stands,
+  // and jsdom's value is right. Where it can't be worked out (a sheet that
+  // can't be read, a selector or value it can't follow, a rule whose
+  // condition it can't tell), the colour is unknown, and the text is not
+  // computable rather than measured in jsdom's blue.
+  //
+  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // can't be worked out, or undefined where jsdom's own value stands (a
+  // browser, text outside any link, a link no author rule colours).
+  const __jsdomByDoc = new WeakMap();
+  function __underJsdom(doc) {
+    if (!doc) return false;
+    if (__jsdomByDoc.has(doc)) return __jsdomByDoc.get(doc);
+    let out;
+    try {
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      const view = dom.defaultView(doc);
+      const ua = String((view && view.navigator && view.navigator.userAgent) || '');
+      out = !__layoutByDoc.get(doc) && /\bjsdom\//.test(ua);
+    } catch {
+      out = false;
+    }
+    __jsdomByDoc.set(doc, out);
+    return out;
+  }
+
+  function __isLink(el) {
+    try {
+      const name = String(dom.localName(el) || '').toLowerCase();
+      const ns = dom.namespaceURI(el);
+      return (
+        (name === 'a' || name === 'area') &&
+        (!ns || ns === 'http://www.w3.org/1999/xhtml') &&
+        dom.hasAttribute(el, 'href')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // A selector's specificity as one sortable number (ids, then classes,
+  // attributes and pseudo-classes, then types and pseudo-elements), with
+  // :is(), :not() and :has() counting their most specific argument and
+  // :where() nothing, as Selectors 4 says.
+  const __LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
+  function __specificityOf(selector) {
+    const s = String(selector || '');
+    let a = 0;
+    let b = 0;
+    let c = 0;
+    const ident = (i) => {
+      let j = i;
+      while (j < s.length && /[\w\u00a0-\uffff\\-]/.test(s[j])) j += s[j] === '\\' ? 2 : 1;
+      return j;
+    };
+    const maxOf = (list) => {
+      let best = 0;
+      for (const part of __splitTopLevel(list).filter(Boolean))
+        best = Math.max(best, __specificityOf(part));
+      return best;
+    };
+    for (let i = 0; i < s.length;) {
+      const ch = s[i];
+      if (ch === '#') {
+        a++;
+        i = ident(i + 1);
+      } else if (ch === '.') {
+        b++;
+        i = ident(i + 1);
+      } else if (ch === '[') {
+        b++;
+        let depth = 0;
+        for (; i < s.length; i++) {
+          if (s[i] === '[') depth++;
+          else if (s[i] === ']' && --depth === 0) break;
+        }
+        i++;
+      } else if (ch === ':') {
+        const element = s[i + 1] === ':';
+        const start = i + (element ? 2 : 1);
+        const end = ident(start);
+        const name = s.slice(start, end).toLowerCase();
+        let args = null;
+        i = end;
+        if (s[i] === '(') {
+          let depth = 0;
+          const open = i;
+          for (; i < s.length; i++) {
+            if (s[i] === '(') depth++;
+            else if (s[i] === ')' && --depth === 0) break;
+          }
+          args = s.slice(open + 1, i);
+          i++;
+        }
+        const total = (n) => {
+          a += Math.floor(n / 1e6);
+          b += Math.floor((n % 1e6) / 1e3);
+          c += n % 1e3;
+        };
+        if (element || __LEGACY_PSEUDO_ELEMENTS.has(name)) c++;
+        else if (name === 'where') continue;
+        else if (args !== null && /^(is|not|has|matches|-webkit-any|-moz-any)$/.test(name))
+          total(maxOf(args));
+        else if (args !== null && /^nth-(last-)?child$/.test(name) && /\sof\s/i.test(args)) {
+          b++;
+          total(maxOf(args.replace(/^[\s\S]*?\sof\s/i, '')));
+        } else b++;
+      } else if (/[a-zA-Z_\u00a0-\uffff-]/.test(ch) || ch === '\\') {
+        c++;
+        i = ident(i);
+        if (s[i] === '|') i = ident(i + 1);
+      } else i++;
+    }
+    return a * 1e6 + b * 1e3 + c;
+  }
+
+  // The style rules that set `color` in a document's or shadow root's
+  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // @media for all or screen. A rule under a condition jsdom doesn't
+  // evaluate (@supports, @layer, @container, a nested rule) is kept as
+  // `uncertain`, and a sheet that can't be read makes the whole root so.
+  // { rules: [{ parts, value, important, order, uncertain }], unreadable },
+  // once per root.
+  const __colorRulesByRoot = new WeakMap();
+  function __colorRulesOf(root) {
+    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+    const out = { rules: [], unreadable: false };
+    let order = 0;
+    const mediaApplies = (rule) => {
+      const media = rule.media;
+      const n = (media && media.length) || 0;
+      if (!n) return true;
+      for (let i = 0; i < n; i++) {
+        const q = String(media[i] || '')
+          .trim()
+          .toLowerCase();
+        if (q === 'all' || q === 'screen') return true;
+      }
+      return false;
+    };
+    const walk = (list, uncertain, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          if (value) {
+            out.rules.push({
+              parts: __splitTopLevel(rule.selectorText).filter(Boolean),
+              value,
+              important: rule.style.getPropertyPriority('color') === 'important',
+              order: order++,
+              uncertain
+            });
+          }
+          if (rule.cssRules && rule.cssRules.length && depth < 8)
+            walk(rule.cssRules, true, depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          if (!mediaApplies(rule)) continue;
+          if (!sheet) {
+            out.unreadable = true;
+            continue;
+          }
+          try {
+            walk(sheet.cssRules, uncertain, depth + 1);
+          } catch {
+            out.unreadable = true;
+          }
+          continue;
+        }
+        if (name === 'CSSMediaRule' || rule.type === 4) {
+          if (mediaApplies(rule) && depth < 8) walk(rule.cssRules, uncertain, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length && depth < 8) walk(nested, true, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let rules;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, false, 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __colorRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // The author's declaration of `color` that wins for el in a browser:
+  // { value }, null where none applies, or { unknown: true } where it can't
+  // be told.
+  function __authorColorOf(el) {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const { rules, unreadable } = __colorRulesOf(root);
+    if (unreadable) return { unknown: true };
+    let best = null;
+    let unknown = false;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        // A pseudo-element paints another box; :visited isn't known here,
+        // and the link is taken as not visited, as jsdom takes it.
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        if (rule.uncertain) {
+          unknown = true;
+          continue;
+        }
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    // The style attribute outranks every rule of its importance.
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      if (value) {
+        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    if (unknown) return { unknown: true };
+    return best ? { value: best.value } : null;
+  }
+
+  const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
+  const __jsdomLinkColorCache = new WeakMap();
+  function __jsdomLinkTextColor(el) {
+    if (!el || dom.nodeType(el) !== 1) return undefined;
+    if (__jsdomLinkColorCache.has(el)) return __jsdomLinkColorCache.get(el);
+    let out;
+    try {
+      out = __jsdomLinkTextColorUncached(el);
+    } catch {
+      out = null;
+    }
+    __jsdomLinkColorCache.set(el, out);
+    return out;
+  }
+  function __jsdomLinkTextColorUncached(el) {
+    if (!__underJsdom(dom.ownerDocument(el))) return undefined;
+    // Only text in a link: the browser's sheet sets the colour of nothing
+    // else that jsdom ranks differently.
+    let inLink = false;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (__isLink(cur)) {
+        inLink = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    if (!inLink) return undefined;
+    const parent = composedParent(el);
+    const inherited = () => {
+      if (!parent || dom.nodeType(parent) !== 1) return null;
+      const own = __jsdomLinkTextColor(parent);
+      if (own !== undefined) return own;
+      const pcs = __contrastComputedStyle(parent);
+      return pcs ? pcs.color : null;
+    };
+    const decl = __authorColorOf(el);
+    if (decl && decl.unknown) return null;
+    if (!decl) {
+      // A link no author rule colours is in the browser's link colour, as
+      // jsdom has it. Text inside one takes its colour from its parent,
+      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // it a value of its own.
+      if (__isLink(el)) return undefined;
+      const cs = __contrastComputedStyle(el);
+      const pcs = parent && dom.nodeType(parent) === 1 ? __contrastComputedStyle(parent) : null;
+      if (cs && pcs && String(cs.color) !== String(pcs.color)) return undefined;
+      return inherited();
+    }
+    const value = decl.value.toLowerCase();
+    if (__CSS_INHERITING.has(value)) return inherited();
+    // A custom property jsdom doesn't substitute, or a keyword taking the
+    // browser's own value.
+    if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
+    return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
   function __isSvgTextElement(el) {
     return (
       !!el &&
@@ -5263,7 +5594,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
+    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
+    // Text in a link, under jsdom, whose colour jsdom ranks below its own
+    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
+    // colour it follows; one that differs is the page's own, and paints it.
+    if (cs && !svgText && !placeholder) {
+      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
+        const link = __jsdomLinkTextColor(el);
+        if (link !== undefined) fillValue = link || '';
+      }
+    }
+    let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {
@@ -34721,6 +35063,11 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
       "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Ein Teil dieses Textes wird von {{pseudoElement}} gezeichnet; welcher, hängt vom Zeilenumbruch ab. In seiner eigenen Farbe ({{ownForegroundHex}}) hat er einen Kontrast von {{ownRatio}}:1, bei erforderlichen {{ownThreshold}}:1; in der Farbe von {{pseudoElement}} ({{pseudoForegroundHex}}) {{pseudoRatio}}:1, bei {{pseudoThreshold}}:1. Die eine erreicht ihr Verhältnis, die andere nicht.",
+      "contrastMinimum_cantTell_textStroke": "Dieser Text wird mit einer Kontur gezeichnet ({{blockerProperty}}={{blockerValue}}). Seine beste Farbe, {{foregroundHex}}, hat gegenüber {{backgroundHex}} einen Kontrast von {{ratio}}:1 und erreicht damit {{threshold}}:1; ob die Buchstaben in dieser Farbe wahrgenommen werden, hängt aber davon ab, wie viel von ihnen sie zeichnet.",
+      "contrastMinimum_cantTell_textShadow": "Dieser Text wird mit einem Schatten gezeichnet ({{blockerProperty}}={{blockerValue}}). Seine beste Farbe, {{foregroundHex}}, hat gegenüber {{backgroundHex}} einen Kontrast von {{ratio}}:1 und erreicht damit {{threshold}}:1; ob die Buchstaben in dieser Farbe wahrgenommen werden, hängt aber davon ab, wie viel von ihnen sie zeichnet.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Ändern Sie die Fenstergröße, um zu sehen, welche Wörter {{pseudoElement}} zeichnet, und prüfen Sie, ob jede Farbe dort ihr Verhältnis erreicht; ändern Sie eine Farbe, die es verfehlt.",
+      "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -36048,6 +36395,11 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
       "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own colour ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} colour ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
+      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
+      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each colour reaches its ratio there; if one falls short, change it.",
+      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the colour that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -37375,6 +37727,11 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
       "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
+      "contrastMinimum_cantTell_pseudoElementColor": "{{pseudoElement}} dibuja parte de este texto, y qué parte depende de los saltos de línea. En su propio color ({{ownForegroundHex}}) tiene un contraste de {{ownRatio}}:1, frente a los {{ownThreshold}}:1 necesarios; en el color de {{pseudoElement}} ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, frente a {{pseudoThreshold}}:1. Uno alcanza su relación y el otro no.",
+      "contrastMinimum_cantTell_textStroke": "Este texto se dibuja con un contorno ({{blockerProperty}}={{blockerValue}}). Su mejor color, {{foregroundHex}}, tiene un contraste de {{ratio}}:1 frente a {{backgroundHex}}, que alcanza {{threshold}}:1, pero que las letras se vean en ese color depende de cuánto de ellas dibuja.",
+      "contrastMinimum_cantTell_textShadow": "Este texto se dibuja con una sombra ({{blockerProperty}}={{blockerValue}}). Su mejor color, {{foregroundHex}}, tiene un contraste de {{ratio}}:1 frente a {{backgroundHex}}, que alcanza {{threshold}}:1, pero que las letras se vean en ese color depende de cuánto de ellas dibuja.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
+      "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -38702,6 +39059,11 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
       "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Une partie de ce texte est peinte par {{pseudoElement}}, et laquelle dépend de la coupure des lignes. Dans sa propre couleur ({{ownForegroundHex}}), il a un contraste de {{ownRatio}}:1, pour {{ownThreshold}}:1 requis ; dans la couleur de {{pseudoElement}} ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, pour {{pseudoThreshold}}:1. L’une atteint son ratio et l’autre non.",
+      "contrastMinimum_cantTell_textStroke": "Ce texte est dessiné avec un contour ({{blockerProperty}}={{blockerValue}}). Sa meilleure couleur, {{foregroundHex}}, a un contraste de {{ratio}}:1 par rapport à {{backgroundHex}}, ce qui atteint {{threshold}}:1, mais que les lettres soient perçues dans cette couleur dépend de la part qu’elle en dessine.",
+      "contrastMinimum_cantTell_textShadow": "Ce texte est dessiné avec une ombre ({{blockerProperty}}={{blockerValue}}). Sa meilleure couleur, {{foregroundHex}}, a un contraste de {{ratio}}:1 par rapport à {{backgroundHex}}, ce qui atteint {{threshold}}:1, mais que les lettres soient perçues dans cette couleur dépend de la part qu’elle en dessine.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Redimensionnez la fenêtre pour voir quels mots {{pseudoElement}} peint, et vérifiez que chaque couleur y atteint son ratio ; si l’une n’y parvient pas, modifiez-la.",
+      "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -40029,6 +40391,11 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
       "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
+      "contrastMinimum_cantTell_pseudoElementColor": "このテキストの一部は {{pseudoElement}} によって描画され、どの部分かは行の折り返しによって変わります。テキスト自身の色 ({{ownForegroundHex}}) ではコントラスト比は {{ownRatio}}:1 で、必要な比は {{ownThreshold}}:1 です。{{pseudoElement}} の色 ({{pseudoForegroundHex}}) では {{pseudoRatio}}:1 で、必要な比は {{pseudoThreshold}}:1 です。一方は必要な比に達し、もう一方は達していません。",
+      "contrastMinimum_cantTell_textStroke": "このテキストは輪郭線で描画されています ({{blockerProperty}}={{blockerValue}})。最も良い色 {{foregroundHex}} の {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で {{threshold}}:1 に達していますが、文字がその色で見えるかどうかは、その色が文字のどれだけを描くかによります。",
+      "contrastMinimum_cantTell_textShadow": "このテキストは影で描画されています ({{blockerProperty}}={{blockerValue}})。最も良い色 {{foregroundHex}} の {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で {{threshold}}:1 に達していますが、文字がその色で見えるかどうかは、その色が文字のどれだけを描くかによります。",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "ウィンドウの大きさを変えて {{pseudoElement}} がどの単語を描画するか確認し、そこでそれぞれの色が必要な比に達しているか確かめてください。達していない色があれば変更してください。",
+      "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -64026,29 +64393,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
 
-      // The background is the only input this rule can fail to resolve; every other
-      // reason code here describes a ratio it did compute.
+      // Every reason code here describes a ratio the rule computed: text
+      // whose colours can't be worked out is left to contrast-computable.
       const uncertainty =
-        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+        placeholder === 'ask'
           ? {
-              code: 'not-computable',
-              needed: 'The effective background colour behind this text.',
-              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+              code: 'judgement-required',
+              needed:
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
             }
-          : placeholder === 'ask'
+          : symbol
             ? {
                 code: 'judgement-required',
                 needed:
-                  'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                  'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                evidence: { character: symbol }
               }
-            : symbol
-              ? {
-                  code: 'judgement-required',
-                  needed:
-                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
-                  evidence: { character: symbol }
-                }
-              : null;
+            : null;
 
       const occBase = {
         selector: '',
@@ -64471,12 +64832,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 contrast: { mode, rootCanvasFallback },
                 collectStack: false
               });
-              bg = bg || {
-                ok: false,
-                reasonCode: 'BACKGROUND_NOT_COMPUTABLE',
-                rgba: null,
-                alpha: 0
-              };
+              // Not computable: contrast-computable asks about this text.
+              bg = bg || { ok: false, rgba: null, alpha: 0 };
               if (__elBgCache) __elBgCache.set(el, bg);
             }
 
@@ -65153,29 +65510,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
 
-      // The background is the only input this rule can fail to resolve; every other
-      // reason code here describes a ratio it did compute.
+      // Every reason code here describes a ratio the rule computed: text
+      // whose colours can't be worked out is left to contrast-computable.
       const uncertainty =
-        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+        placeholder === 'ask'
           ? {
-              code: 'not-computable',
-              needed: 'The effective background colour behind this text.',
-              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+              code: 'judgement-required',
+              needed:
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
             }
-          : placeholder === 'ask'
+          : symbol
             ? {
                 code: 'judgement-required',
                 needed:
-                  'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                  'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                evidence: { character: symbol }
               }
-            : symbol
-              ? {
-                  code: 'judgement-required',
-                  needed:
-                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
-                  evidence: { character: symbol }
-                }
-              : null;
+            : null;
 
       const occBase = {
         selector: '',
@@ -65262,6 +65613,107 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // Text drawn by an outline or a shadow, or painted in part by a
+  // ::first-line or ::first-letter, that this rule can't decide at its own
+  // ratios and contrast-computable, deciding at WCAG's, leaves to it (ask:
+  // from outlineOnlyAnalysis or pseudoColorAnalysis).
+  function pushAskOccurrence(el, ask) {
+    try {
+      if (!el || seenFailEls.has(el) || occurrences.length >= MAX_OCCURRENCES) return;
+      seenFailEls.add(el);
+      const C = helpers.contrast;
+      const hex = (c) => (C.rgbToHex ? C.rgbToHex(c) : '');
+      const rc = ask.reasonCode;
+      let params;
+      let details;
+      let summary;
+      let hint;
+      let summaryKey;
+      let hintKey;
+      if (rc === 'PSEUDO_ELEMENT_COLOR') {
+        const side = (x) => ({
+          ratio: x.ratio,
+          threshold: x.threshold,
+          foregroundHex: hex(x.fg),
+          backgroundHex: hex(x.bg),
+          isLargeText: !!x.font.isLargeText
+        });
+        const own = side(ask.own);
+        const part = side(ask.pseudo);
+        params = {
+          reasonCode: rc,
+          pseudoElement: ask.pseudoElement,
+          ownRatio: C.round2(own.ratio),
+          ownThreshold: String(own.threshold),
+          ownForegroundHex: own.foregroundHex,
+          pseudoRatio: C.round2(part.ratio),
+          pseudoThreshold: String(part.threshold),
+          pseudoForegroundHex: part.foregroundHex
+        };
+        details = {
+          reasonCode: rc,
+          pseudoElementColor: ask.pseudoElement,
+          own,
+          pseudoElement: part
+        };
+        summary = `Part of this text is painted by ${params.pseudoElement}, and which part depends on how the lines break. In its own colour (${params.ownForegroundHex}) it has a contrast of ${params.ownRatio}:1, against ${params.ownThreshold}:1 needed; in the ${params.pseudoElement} colour (${params.pseudoForegroundHex}), ${params.pseudoRatio}:1, against ${params.pseudoThreshold}:1. One reaches its ratio and the other does not.`;
+        hint = `Resize the window to see which words ${params.pseudoElement} paints, and check that each colour reaches its ratio there; if one falls short, change it.`;
+        summaryKey = 'contrastMinimum_cantTell_pseudoElementColor';
+        hintKey = 'contrastMinimum_hint_cantTell_pseudoElementColor';
+      } else {
+        params = {
+          reasonCode: rc,
+          ratio: C.round2(ask.ratio),
+          threshold: String(ask.threshold),
+          foregroundHex: hex(ask.fg),
+          backgroundHex: hex(ask.bg),
+          blockerProperty: ask.blockerProperty,
+          blockerValue: ask.blockerValue
+        };
+        details = {
+          reasonCode: rc,
+          drawnBy: ask.drawnBy,
+          metrics: { ratio: ask.ratio, threshold: ask.threshold },
+          colors: { foregroundHex: params.foregroundHex, backgroundHex: params.backgroundHex },
+          blockerProperty: ask.blockerProperty,
+          blockerValue: ask.blockerValue
+        };
+        const by = rc === 'TEXT_STROKE' ? 'an outline' : 'a shadow';
+        summary = `This text is drawn with ${by} (${params.blockerProperty}=${params.blockerValue}). Its best colour, ${params.foregroundHex}, has a contrast of ${params.ratio}:1 against ${params.backgroundHex}, which reaches ${params.threshold}:1, but whether the letters are seen in that colour depends on how much of them it draws.`;
+        hint = `Zoom in and measure the colour that forms most of each letter against the background; it needs ${params.threshold}:1.`;
+        summaryKey =
+          rc === 'TEXT_STROKE'
+            ? 'contrastMinimum_cantTell_textStroke'
+            : 'contrastMinimum_cantTell_textShadow';
+        hintKey = 'contrastMinimum_hint_cantTell_outline';
+      }
+      const occBase = {
+        selector: '',
+        html: '',
+        summary,
+        hint,
+        i18n: { summaryKey, hintKey, params },
+        uncertainty: {
+          code: 'not-computable',
+          needed:
+            rc === 'PSEUDO_ELEMENT_COLOR'
+              ? 'Which words the pseudo-element paints, and whether each colour reaches its ratio there.'
+              : 'Which colour forms the letters, and whether it reaches the ratio.',
+          evidence: { reasonCode: rc }
+        },
+        occurrenceOutcome: 'cantTell',
+        data: { details }
+      };
+      const reported =
+        typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, occBase)
+          : occBase;
+      occurrences.push(reported && typeof reported === 'object' ? reported : occBase);
+    } catch {
+      // no-throw
+    }
+  }
+
   // perf: per-element analysis cache (per run)
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
@@ -65307,7 +65759,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : font.isLargeText
           ? LARGE_TEXT_RATIO
           : NORMAL_TEXT_RATIO;
-    if (!(m.ratio < threshold)) return null;
+    if (!(m.ratio < threshold)) {
+      // At ratios of its own (a variant's settings), text whose best colour
+      // reaches them but not WCAG's AA ratio is one contrast-computable
+      // leaves to this rule and this rule can't decide: it asks.
+      if (SETTINGS_KEY !== '' && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) {
+        return {
+          computable: false,
+          ask: {
+            reasonCode: blocker.reasonCode,
+            ratio: m.ratio,
+            threshold,
+            fg: m.drawn,
+            bg: m.background,
+            drawnBy: m.drawnBy,
+            blockerProperty: blocker.blockerProperty || '',
+            blockerValue: blocker.blockerValue || ''
+          }
+        };
+      }
+      return null;
+    }
     return {
       computable: true,
       ratio: m.ratio,
@@ -65367,7 +65839,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
     const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
     const ownPasses = own.ratio >= own.threshold;
-    if (ownPasses !== pseudo.ratio >= pseudo.threshold) return null;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+      // contrast-computable asks where the colours disagree at WCAG's AA or
+      // AAA ratio. Where they disagree only at ratios of this rule's own (a
+      // variant's settings), no one else asks, so this rule does.
+      if (SETTINGS_KEY === '') return null;
+      const agreeAt = (level) =>
+        m.own.ratio >= helpers.contrast.requiredRatio(level, m.own.isLargeText) ===
+        m.pseudo.ratio >= helpers.contrast.requiredRatio(level, m.pseudo.isLargeText);
+      if (!agreeAt('AA') || !agreeAt('AAA')) return null;
+      return {
+        computable: false,
+        ask: { reasonCode: 'PSEUDO_ELEMENT_COLOR', pseudoElement: m.pseudo.pseudo, own, pseudo }
+      };
+    }
     const share = (x) => x.ratio / x.threshold;
     const pick = ownPasses
       ? share(pseudo) < share(own)
@@ -65480,12 +65965,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                 contrast: { mode, rootCanvasFallback },
                 collectStack: false
               });
-              bg = bg || {
-                ok: false,
-                reasonCode: 'BACKGROUND_NOT_COMPUTABLE',
-                rgba: null,
-                alpha: 0
-              };
+              // Not computable: contrast-computable asks about this text.
+              bg = bg || { ok: false, rgba: null, alpha: 0 };
               if (__elBgCache) __elBgCache.set(el, bg);
             }
 
@@ -65570,6 +66051,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           __elAnalysisCache.set(el, analysis);
         }
 
+        // Text this rule asks about itself (outlineOnlyAnalysis,
+        // pseudoColorAnalysis): only under ratios of its own.
+        if (analysis && analysis.ask && !pseudo) {
+          deferredCount += textCount;
+          pushAskOccurrence(el, analysis.ask);
+          continue;
+        }
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
@@ -65769,8 +66257,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // If there was eligible text but nothing computable, this rule stays notApplicable
-  // because Rule 1 (computability) is responsible for cantTell.
-  if (computableTextCount === 0) {
+  // because Rule 1 (computability) is responsible for cantTell, unless this
+  // rule asked about some itself.
+  if (computableTextCount === 0 && deferredCount === 0) {
     return {
       ruleId: rule.ruleId,
       outcome: 'notApplicable',
@@ -95291,6 +95780,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_contrastSwitch": "Dieser Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, auf einer Seite mit Kontrastschalter („{{switchName}}“).",
       "contrastMinimum_cantTell_semiBold": "Dieser halbfette Text hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}): genug für großen Text, unter {{threshold}}:1 für anderen Text.",
       "contrastMinimum_cantTell_symbol": "Das Zeichen {{character}} steht für den Namen seines Bedienelements und hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob es Text ist, für den dieses Verhältnis gilt, oder ein Symbol, für das 3:1 gilt, muss eine Person entscheiden.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Ein Teil dieses Textes wird von {{pseudoElement}} gezeichnet; welcher, hängt vom Zeilenumbruch ab. In seiner eigenen Farbe ({{ownForegroundHex}}) hat er einen Kontrast von {{ownRatio}}:1, bei erforderlichen {{ownThreshold}}:1; in der Farbe von {{pseudoElement}} ({{pseudoForegroundHex}}) {{pseudoRatio}}:1, bei {{pseudoThreshold}}:1. Die eine erreicht ihr Verhältnis, die andere nicht.",
+      "contrastMinimum_cantTell_textStroke": "Dieser Text wird mit einer Kontur gezeichnet ({{blockerProperty}}={{blockerValue}}). Seine beste Farbe, {{foregroundHex}}, hat gegenüber {{backgroundHex}} einen Kontrast von {{ratio}}:1 und erreicht damit {{threshold}}:1; ob die Buchstaben in dieser Farbe wahrgenommen werden, hängt aber davon ab, wie viel von ihnen sie zeichnet.",
+      "contrastMinimum_cantTell_textShadow": "Dieser Text wird mit einem Schatten gezeichnet ({{blockerProperty}}={{blockerValue}}). Seine beste Farbe, {{foregroundHex}}, hat gegenüber {{backgroundHex}} einen Kontrast von {{ratio}}:1 und erreicht damit {{threshold}}:1; ob die Buchstaben in dieser Farbe wahrgenommen werden, hängt aber davon ab, wie viel von ihnen sie zeichnet.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Ändern Sie die Fenstergröße, um zu sehen, welche Wörter {{pseudoElement}} zeichnet, und prüfen Sie, ob jede Farbe dort ihr Verhältnis erreicht; ändern Sie eine Farbe, die es verfehlt.",
+      "contrastMinimum_hint_cantTell_outline": "Zoomen Sie hinein und messen Sie die Farbe, die den Großteil jedes Buchstabens bildet, gegen den Hintergrund; sie braucht {{threshold}}:1.",
       "contrastEnhanced_title": "Text erfüllt den erweiterten Farbkontrast (AAA)",
       "contrastEnhanced_description": "Prüft, ob sichtbarer Text ein Kontrastverhältnis von mindestens 7:1 (normal) oder 4,5:1 (groß) aufweist, sofern der Kontrast aus CSS berechenbar ist.",
       "contrastEnhanced_fail_belowThreshold": "Das Element weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
@@ -96618,6 +97112,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
       "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own colour ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} colour ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
+      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
+      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each colour reaches its ratio there; if one falls short, change it.",
+      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the colour that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -97945,6 +98444,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_contrastSwitch": "Este texto tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, en una página que ofrece un selector de contraste («{{switchName}}»).",
       "contrastMinimum_cantTell_semiBold": "Este texto seminegrita tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}): suficiente para texto grande, inferior a {{threshold}}:1 para otro texto.",
       "contrastMinimum_cantTell_symbol": "El carácter {{character}} sustituye al nombre de su control y tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Si es texto sujeto a esa proporción o un icono sujeto a 3:1 lo tiene que decidir una persona.",
+      "contrastMinimum_cantTell_pseudoElementColor": "{{pseudoElement}} dibuja parte de este texto, y qué parte depende de los saltos de línea. En su propio color ({{ownForegroundHex}}) tiene un contraste de {{ownRatio}}:1, frente a los {{ownThreshold}}:1 necesarios; en el color de {{pseudoElement}} ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, frente a {{pseudoThreshold}}:1. Uno alcanza su relación y el otro no.",
+      "contrastMinimum_cantTell_textStroke": "Este texto se dibuja con un contorno ({{blockerProperty}}={{blockerValue}}). Su mejor color, {{foregroundHex}}, tiene un contraste de {{ratio}}:1 frente a {{backgroundHex}}, que alcanza {{threshold}}:1, pero que las letras se vean en ese color depende de cuánto de ellas dibuja.",
+      "contrastMinimum_cantTell_textShadow": "Este texto se dibuja con una sombra ({{blockerProperty}}={{blockerValue}}). Su mejor color, {{foregroundHex}}, tiene un contraste de {{ratio}}:1 frente a {{backgroundHex}}, que alcanza {{threshold}}:1, pero que las letras se vean en ese color depende de cuánto de ellas dibuja.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Cambiar el tamaño de la ventana para ver qué palabras dibuja {{pseudoElement}} y comprobar que cada color alcanza allí su relación; si uno no la alcanza, cambiarlo.",
+      "contrastMinimum_hint_cantTell_outline": "Ampliar y medir frente al fondo el color que forma la mayor parte de cada letra; necesita {{threshold}}:1.",
       "contrastEnhanced_title": "El texto cumple el contraste de color mejorado (AAA)",
       "contrastEnhanced_description": "Comprueba que el texto visible tenga una relación de contraste de al menos 7:1 (normal) o 4.5:1 (grande), cuando el contraste es computable a partir de CSS.",
       "contrastEnhanced_fail_belowThreshold": "El elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
@@ -99272,6 +99776,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_contrastSwitch": "Ce texte a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, sur une page qui propose un sélecteur de contraste (« {{switchName}} »).",
       "contrastMinimum_cantTell_semiBold": "Ce texte en demi-gras a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}) : suffisant pour un grand texte, inférieur à {{threshold}}:1 pour un autre texte.",
       "contrastMinimum_cantTell_symbol": "Le caractère {{character}} tient lieu du nom de son contrôle et a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il s’agit de texte soumis à ce ratio ou d’une icône soumise à 3:1, c’est à une personne d’en décider.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Une partie de ce texte est peinte par {{pseudoElement}}, et laquelle dépend de la coupure des lignes. Dans sa propre couleur ({{ownForegroundHex}}), il a un contraste de {{ownRatio}}:1, pour {{ownThreshold}}:1 requis ; dans la couleur de {{pseudoElement}} ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, pour {{pseudoThreshold}}:1. L’une atteint son ratio et l’autre non.",
+      "contrastMinimum_cantTell_textStroke": "Ce texte est dessiné avec un contour ({{blockerProperty}}={{blockerValue}}). Sa meilleure couleur, {{foregroundHex}}, a un contraste de {{ratio}}:1 par rapport à {{backgroundHex}}, ce qui atteint {{threshold}}:1, mais que les lettres soient perçues dans cette couleur dépend de la part qu’elle en dessine.",
+      "contrastMinimum_cantTell_textShadow": "Ce texte est dessiné avec une ombre ({{blockerProperty}}={{blockerValue}}). Sa meilleure couleur, {{foregroundHex}}, a un contraste de {{ratio}}:1 par rapport à {{backgroundHex}}, ce qui atteint {{threshold}}:1, mais que les lettres soient perçues dans cette couleur dépend de la part qu’elle en dessine.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Redimensionnez la fenêtre pour voir quels mots {{pseudoElement}} peint, et vérifiez que chaque couleur y atteint son ratio ; si l’une n’y parvient pas, modifiez-la.",
+      "contrastMinimum_hint_cantTell_outline": "Zoomez et mesurez la couleur qui forme l’essentiel de chaque lettre par rapport à l’arrière-plan ; elle doit atteindre {{threshold}}:1.",
       "contrastEnhanced_title": "Le texte respecte le contraste renforcé (AAA)",
       "contrastEnhanced_description": "Vérifie que le texte visible atteint un ratio de contraste d’au moins 7:1 (texte normal) ou 4,5:1 (grand texte), lorsque le contraste est calculable à partir du CSS.",
       "contrastEnhanced_fail_belowThreshold": "L’élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
@@ -100599,6 +101108,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_cantTell_contrastSwitch": "このテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このページにはコントラスト切り替え (「{{switchName}}」) があります。",
       "contrastMinimum_cantTell_semiBold": "このセミボールドのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}}) で、大きなテキストには足りますが、それ以外のテキストの {{threshold}}:1 には届きません。",
       "contrastMinimum_cantTell_symbol": "文字 {{character}} はコントロールの名前の代わりに使われており、コントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。この比率が適用されるテキストか、3:1 が適用されるアイコンかは、人による判断が必要です。",
+      "contrastMinimum_cantTell_pseudoElementColor": "このテキストの一部は {{pseudoElement}} によって描画され、どの部分かは行の折り返しによって変わります。テキスト自身の色 ({{ownForegroundHex}}) ではコントラスト比は {{ownRatio}}:1 で、必要な比は {{ownThreshold}}:1 です。{{pseudoElement}} の色 ({{pseudoForegroundHex}}) では {{pseudoRatio}}:1 で、必要な比は {{pseudoThreshold}}:1 です。一方は必要な比に達し、もう一方は達していません。",
+      "contrastMinimum_cantTell_textStroke": "このテキストは輪郭線で描画されています ({{blockerProperty}}={{blockerValue}})。最も良い色 {{foregroundHex}} の {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で {{threshold}}:1 に達していますが、文字がその色で見えるかどうかは、その色が文字のどれだけを描くかによります。",
+      "contrastMinimum_cantTell_textShadow": "このテキストは影で描画されています ({{blockerProperty}}={{blockerValue}})。最も良い色 {{foregroundHex}} の {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で {{threshold}}:1 に達していますが、文字がその色で見えるかどうかは、その色が文字のどれだけを描くかによります。",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "ウィンドウの大きさを変えて {{pseudoElement}} がどの単語を描画するか確認し、そこでそれぞれの色が必要な比に達しているか確かめてください。達していない色があれば変更してください。",
+      "contrastMinimum_hint_cantTell_outline": "拡大して、各文字の大部分を形作っている色を背景に対して測定してください。{{threshold}}:1 が必要です。",
       "contrastEnhanced_title": "テキストが高度な色のコントラスト (AAA) を満たしていること",
       "contrastEnhanced_description": "CSS からコントラストを計算できる場合に、表示されているテキストのコントラスト比が 7:1 以上 (通常のテキスト) または 4.5:1 以上 (大きなテキスト) であるかを確認します。",
       "contrastEnhanced_fail_belowThreshold": "要素の色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
@@ -107051,6 +107565,337 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return String(fill).trim() && parseCssColorToRgba(fill) ? fill : cs.color;
   }
 
+  // -------- Link colours under jsdom --------
+  //
+  // jsdom's cascade orders its own style sheet's rules with the page's by
+  // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
+  // beats a page's `a { color: #fff }`, which a browser applies: a white
+  // link read back as blue, and text measured in a colour no browser draws.
+  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its colour from it, is worked out here
+  // from the page's own rules, as a browser's cascade does: the author's
+  // declarations win over the browser's whatever their specificity, ordered
+  // among themselves by !important, the style attribute, specificity and
+  // order. Where no author rule sets it, the browser's link colour stands,
+  // and jsdom's value is right. Where it can't be worked out (a sheet that
+  // can't be read, a selector or value it can't follow, a rule whose
+  // condition it can't tell), the colour is unknown, and the text is not
+  // computable rather than measured in jsdom's blue.
+  //
+  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // can't be worked out, or undefined where jsdom's own value stands (a
+  // browser, text outside any link, a link no author rule colours).
+  const __jsdomByDoc = new WeakMap();
+  function __underJsdom(doc) {
+    if (!doc) return false;
+    if (__jsdomByDoc.has(doc)) return __jsdomByDoc.get(doc);
+    let out;
+    try {
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, __hasLayout(doc));
+      const view = dom.defaultView(doc);
+      const ua = String((view && view.navigator && view.navigator.userAgent) || '');
+      out = !__layoutByDoc.get(doc) && /\bjsdom\//.test(ua);
+    } catch {
+      out = false;
+    }
+    __jsdomByDoc.set(doc, out);
+    return out;
+  }
+
+  function __isLink(el) {
+    try {
+      const name = String(dom.localName(el) || '').toLowerCase();
+      const ns = dom.namespaceURI(el);
+      return (
+        (name === 'a' || name === 'area') &&
+        (!ns || ns === 'http://www.w3.org/1999/xhtml') &&
+        dom.hasAttribute(el, 'href')
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // A selector's specificity as one sortable number (ids, then classes,
+  // attributes and pseudo-classes, then types and pseudo-elements), with
+  // :is(), :not() and :has() counting their most specific argument and
+  // :where() nothing, as Selectors 4 says.
+  const __LEGACY_PSEUDO_ELEMENTS = new Set(['before', 'after', 'first-line', 'first-letter']);
+  function __specificityOf(selector) {
+    const s = String(selector || '');
+    let a = 0;
+    let b = 0;
+    let c = 0;
+    const ident = (i) => {
+      let j = i;
+      while (j < s.length && /[\w\u00a0-\uffff\\-]/.test(s[j])) j += s[j] === '\\' ? 2 : 1;
+      return j;
+    };
+    const maxOf = (list) => {
+      let best = 0;
+      for (const part of __splitTopLevel(list).filter(Boolean))
+        best = Math.max(best, __specificityOf(part));
+      return best;
+    };
+    for (let i = 0; i < s.length;) {
+      const ch = s[i];
+      if (ch === '#') {
+        a++;
+        i = ident(i + 1);
+      } else if (ch === '.') {
+        b++;
+        i = ident(i + 1);
+      } else if (ch === '[') {
+        b++;
+        let depth = 0;
+        for (; i < s.length; i++) {
+          if (s[i] === '[') depth++;
+          else if (s[i] === ']' && --depth === 0) break;
+        }
+        i++;
+      } else if (ch === ':') {
+        const element = s[i + 1] === ':';
+        const start = i + (element ? 2 : 1);
+        const end = ident(start);
+        const name = s.slice(start, end).toLowerCase();
+        let args = null;
+        i = end;
+        if (s[i] === '(') {
+          let depth = 0;
+          const open = i;
+          for (; i < s.length; i++) {
+            if (s[i] === '(') depth++;
+            else if (s[i] === ')' && --depth === 0) break;
+          }
+          args = s.slice(open + 1, i);
+          i++;
+        }
+        const total = (n) => {
+          a += Math.floor(n / 1e6);
+          b += Math.floor((n % 1e6) / 1e3);
+          c += n % 1e3;
+        };
+        if (element || __LEGACY_PSEUDO_ELEMENTS.has(name)) c++;
+        else if (name === 'where') continue;
+        else if (args !== null && /^(is|not|has|matches|-webkit-any|-moz-any)$/.test(name))
+          total(maxOf(args));
+        else if (args !== null && /^nth-(last-)?child$/.test(name) && /\sof\s/i.test(args)) {
+          b++;
+          total(maxOf(args.replace(/^[\s\S]*?\sof\s/i, '')));
+        } else b++;
+      } else if (/[a-zA-Z_\u00a0-\uffff-]/.test(ch) || ch === '\\') {
+        c++;
+        i = ident(i);
+        if (s[i] === '|') i = ident(i + 1);
+      } else i++;
+    }
+    return a * 1e6 + b * 1e3 + c;
+  }
+
+  // The style rules that set `color` in a document's or shadow root's
+  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // @media for all or screen. A rule under a condition jsdom doesn't
+  // evaluate (@supports, @layer, @container, a nested rule) is kept as
+  // `uncertain`, and a sheet that can't be read makes the whole root so.
+  // { rules: [{ parts, value, important, order, uncertain }], unreadable },
+  // once per root.
+  const __colorRulesByRoot = new WeakMap();
+  function __colorRulesOf(root) {
+    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+    const out = { rules: [], unreadable: false };
+    let order = 0;
+    const mediaApplies = (rule) => {
+      const media = rule.media;
+      const n = (media && media.length) || 0;
+      if (!n) return true;
+      for (let i = 0; i < n; i++) {
+        const q = String(media[i] || '')
+          .trim()
+          .toLowerCase();
+        if (q === 'all' || q === 'screen') return true;
+      }
+      return false;
+    };
+    const walk = (list, uncertain, depth) => {
+      const n = (list && list.length) || 0;
+      for (let i = 0; i < n; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const name = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          if (value) {
+            out.rules.push({
+              parts: __splitTopLevel(rule.selectorText).filter(Boolean),
+              value,
+              important: rule.style.getPropertyPriority('color') === 'important',
+              order: order++,
+              uncertain
+            });
+          }
+          if (rule.cssRules && rule.cssRules.length && depth < 8)
+            walk(rule.cssRules, true, depth + 1);
+          continue;
+        }
+        if (name === 'CSSImportRule' || rule.type === 3) {
+          let sheet;
+          try {
+            sheet = rule.styleSheet;
+          } catch {
+            sheet = null;
+          }
+          if (!mediaApplies(rule)) continue;
+          if (!sheet) {
+            out.unreadable = true;
+            continue;
+          }
+          try {
+            walk(sheet.cssRules, uncertain, depth + 1);
+          } catch {
+            out.unreadable = true;
+          }
+          continue;
+        }
+        if (name === 'CSSMediaRule' || rule.type === 4) {
+          if (mediaApplies(rule) && depth < 8) walk(rule.cssRules, uncertain, depth + 1);
+          continue;
+        }
+        let nested;
+        try {
+          nested = rule.cssRules;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length && depth < 8) walk(nested, true, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let rules;
+        try {
+          rules = sheet.cssRules;
+        } catch {
+          out.unreadable = true;
+          continue;
+        }
+        walk(rules, false, 0);
+      }
+    } catch {
+      out.unreadable = true;
+    }
+    __colorRulesByRoot.set(root, out);
+    return out;
+  }
+
+  // The author's declaration of `color` that wins for el in a browser:
+  // { value }, null where none applies, or { unknown: true } where it can't
+  // be told.
+  function __authorColorOf(el) {
+    let root;
+    try {
+      root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
+    } catch {
+      root = null;
+    }
+    root = root || dom.ownerDocument(el);
+    const { rules, unreadable } = __colorRulesOf(root);
+    if (unreadable) return { unknown: true };
+    let best = null;
+    let unknown = false;
+    for (const rule of rules) {
+      for (const part of rule.parts) {
+        // A pseudo-element paints another box; :visited isn't known here,
+        // and the link is taken as not visited, as jsdom takes it.
+        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+        let matched;
+        try {
+          matched = dom.matches(el, part);
+        } catch {
+          unknown = true;
+          continue;
+        }
+        if (!matched) continue;
+        if (rule.uncertain) {
+          unknown = true;
+          continue;
+        }
+        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+          best = { rank, order: rule.order, value: rule.value };
+      }
+    }
+    // The style attribute outranks every rule of its importance.
+    try {
+      const style = dom.get(el, 'style');
+      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      if (value) {
+        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        if (!best || rank > best.rank) best = { rank, value };
+      }
+    } catch {}
+    if (unknown) return { unknown: true };
+    return best ? { value: best.value } : null;
+  }
+
+  const __CSS_INHERITING = new Set(['inherit', 'currentcolor', 'unset']);
+  const __jsdomLinkColorCache = new WeakMap();
+  function __jsdomLinkTextColor(el) {
+    if (!el || dom.nodeType(el) !== 1) return undefined;
+    if (__jsdomLinkColorCache.has(el)) return __jsdomLinkColorCache.get(el);
+    let out;
+    try {
+      out = __jsdomLinkTextColorUncached(el);
+    } catch {
+      out = null;
+    }
+    __jsdomLinkColorCache.set(el, out);
+    return out;
+  }
+  function __jsdomLinkTextColorUncached(el) {
+    if (!__underJsdom(dom.ownerDocument(el))) return undefined;
+    // Only text in a link: the browser's sheet sets the colour of nothing
+    // else that jsdom ranks differently.
+    let inLink = false;
+    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
+      if (__isLink(cur)) {
+        inLink = true;
+        break;
+      }
+      cur = composedParent(cur);
+    }
+    if (!inLink) return undefined;
+    const parent = composedParent(el);
+    const inherited = () => {
+      if (!parent || dom.nodeType(parent) !== 1) return null;
+      const own = __jsdomLinkTextColor(parent);
+      if (own !== undefined) return own;
+      const pcs = __contrastComputedStyle(parent);
+      return pcs ? pcs.color : null;
+    };
+    const decl = __authorColorOf(el);
+    if (decl && decl.unknown) return null;
+    if (!decl) {
+      // A link no author rule colours is in the browser's link colour, as
+      // jsdom has it. Text inside one takes its colour from its parent,
+      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // it a value of its own.
+      if (__isLink(el)) return undefined;
+      const cs = __contrastComputedStyle(el);
+      const pcs = parent && dom.nodeType(parent) === 1 ? __contrastComputedStyle(parent) : null;
+      if (cs && pcs && String(cs.color) !== String(pcs.color)) return undefined;
+      return inherited();
+    }
+    const value = decl.value.toLowerCase();
+    if (__CSS_INHERITING.has(value)) return inherited();
+    // A custom property jsdom doesn't substitute, or a keyword taking the
+    // browser's own value.
+    if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
+    return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
   function __isSvgTextElement(el) {
     return (
       !!el &&
@@ -107122,7 +107967,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let c = parseCssColorToRgba(cs && (svgText ? cs.fill : __textFillOf(cs)));
+    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
+    // Text in a link, under jsdom, whose colour jsdom ranks below its own
+    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
+    // colour it follows; one that differs is the page's own, and paints it.
+    if (cs && !svgText && !placeholder) {
+      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
+        const link = __jsdomLinkTextColor(el);
+        if (link !== undefined) fillValue = link || '';
+      }
+    }
+    let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
     if (c && c.a === 0 && !svgText && !placeholder) {

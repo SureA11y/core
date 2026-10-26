@@ -604,6 +604,9 @@
   },
   "retired": {
     "ruleIds": {},
-    "reasonCodes": {}
+    "reasonCodes": {
+      "contrast-enhanced/BACKGROUND_NOT_COMPUTABLE": "Never given: text whose background can't be worked out is left to contrast-computable before this rule measures it, so the code had no finding to name.",
+      "contrast-minimum/BACKGROUND_NOT_COMPUTABLE": "Never given: text whose background can't be worked out is left to contrast-computable before this rule measures it, so the code had no finding to name."
+    }
   }
 }

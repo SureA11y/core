@@ -117,15 +117,17 @@
  *     it less (relative luminance between 0.1 and 0.3). Large text never
  *     gives it, since every colour reaches 4.5:1 against one of them.
  *     Basis: WCAG 1.4.6; G17; ACT 09o5cg.
- *   - `BACKGROUND_NOT_COMPUTABLE` (cantTell): the background behind the text
- *     could not be worked out.
- *     Basis: WCAG 1.4.6 (not settled).
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error;
  *     the text is to be measured by hand.
  *     Basis: WCAG 1.4.6 (not settled).
  *   - `UNKNOWN` (fail): text below its ratio whose finding lost its details;
  *     a safeguard, not expected in a normal scan.
  *     Basis: WCAG 1.4.6.
+ * @implementation-notes
+ * - Text whose background can't be worked out is measured here only for
+ *   `CONTRAST_UNREACHABLE_ANY_BACKGROUND`; otherwise contrast-computable asks
+ *   about it (`BACKGROUND_NOT_COMPUTABLE` and its other blockers), so this
+ *   rule has no code of its own for it.
  */
 
 const id = 'contrast-enhanced';
@@ -159,15 +161,6 @@ const meta = {
   // How a person checks each undecided finding: shown with it as
   // howToCheck (docs/OUTPUT_SCHEMA.md).
   review: {
-    BACKGROUND_NOT_COMPUTABLE: {
-      steps: [
-        'Find the text the report names on the page.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour seen directly behind the letters, taking the worst point if it varies.",
-        'Compare the ratio with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).'
-      ],
-      passWhen: 'The ratio reaches the threshold everywhere behind the text.',
-      failWhen: 'The ratio is below the threshold anywhere behind the text, which fails WCAG 1.4.6.'
-    },
     CONTRAST_UNREACHABLE_ANY_BACKGROUND: {
       steps: [
         'Find the text the report names and note its colour, which the report gives.',
@@ -483,29 +476,23 @@ function runInPage(ctx) {
         };
       }
 
-      // The background is the only input this rule can fail to resolve; every other
-      // reason code here describes a ratio it did compute.
+      // Every reason code here describes a ratio the rule computed: text
+      // whose colours can't be worked out is left to contrast-computable.
       const uncertainty =
-        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+        placeholder === 'ask'
           ? {
-              code: 'not-computable',
-              needed: 'The effective background colour behind this text.',
-              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+              code: 'judgement-required',
+              needed:
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
             }
-          : placeholder === 'ask'
+          : symbol
             ? {
                 code: 'judgement-required',
                 needed:
-                  'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                  'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                evidence: { character: symbol }
               }
-            : symbol
-              ? {
-                  code: 'judgement-required',
-                  needed:
-                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
-                  evidence: { character: symbol }
-                }
-              : null;
+            : null;
 
       const occBase = {
         selector: '',
@@ -928,12 +915,8 @@ function runInPage(ctx) {
                 contrast: { mode, rootCanvasFallback },
                 collectStack: false
               });
-              bg = bg || {
-                ok: false,
-                reasonCode: 'BACKGROUND_NOT_COMPUTABLE',
-                rgba: null,
-                alpha: 0
-              };
+              // Not computable: contrast-computable asks about this text.
+              bg = bg || { ok: false, rgba: null, alpha: 0 };
               if (__elBgCache) __elBgCache.set(el, bg);
             }
 
