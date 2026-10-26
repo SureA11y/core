@@ -364,7 +364,10 @@ async function generateReportSideFile(i18nAll) {
     stdin: {
       contents:
         "const { renderHtmlReport } = require('./src/report.js');\n" +
-        'const api = { renderHtmlReport };\n' +
+        // openReport() gives the result the steps for its undecided findings
+        // with the review dictionaries it fetches beside the bundle.
+        "const { applyHowToCheck } = require('./src/how-to-check-core.js');\n" +
+        'const api = { renderHtmlReport, applyHowToCheck };\n' +
         "const g = typeof window !== 'undefined' ? window : globalThis;\n" +
         'g.a11ycoreReport = api;\n',
       resolveDir: ROOT_DIR,

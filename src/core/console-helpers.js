@@ -649,18 +649,96 @@ function consoleHelpers(global, api, scriptSrc) {
     return reportLoading;
   }
 
+  // The review dictionaries a result's steps are read from, beside the
+  // bundle as the package lays them out (src/i18n/review/<locale>.json):
+  // English, the fallback for every step, and the scan's locale and its
+  // base language. options.reviewDictionaries ({ en, fr }) gives them
+  // instead, for a bundle loaded by a bundler; options.howToCheck: false
+  // fetches none. A dictionary that can't be fetched is left out, so the
+  // report shows the steps it can, or none, rather than fail.
+  var REVIEW_DIR = 'src/i18n/review/';
+  var reviewCache = {};
+  // The locale the steps are given in, read as applyHowToCheck reads it: a
+  // check's engineOptions.locale, else the one the scan resolved to.
+  function reviewLocalesOf(result) {
+    var checks = checksOf(result);
+    var tag = null;
+    for (var i = 0; i < checks.length && !tag; i++) {
+      var own = checks[i] && checks[i].engineOptions && checks[i].engineOptions.locale;
+      if (typeof own === 'string') tag = own;
+    }
+    if (!tag) {
+      var locale = result && result.engine && result.engine.locale;
+      tag = typeof locale === 'string' ? locale : locale && locale.resolved;
+    }
+    var out = ['en'];
+    if (typeof tag === 'string' && /^[a-z]{2,3}(-[a-z0-9]+)*$/i.test(tag)) {
+      var lower = tag.toLowerCase();
+      var base = lower.split('-')[0];
+      if (base !== 'en') {
+        if (lower !== base) out.push(lower);
+        out.push(base);
+      }
+    }
+    return out;
+  }
+  function fetchReview(locale) {
+    if (Object.prototype.hasOwnProperty.call(reviewCache, locale)) return reviewCache[locale];
+    var url = null;
+    try {
+      url = scriptSrc ? new URL(REVIEW_DIR + locale + '.json', scriptSrc).href : null;
+    } catch {
+      url = null;
+    }
+    var fetchFn = typeof global.fetch === 'function' ? global.fetch : null;
+    reviewCache[locale] =
+      url && fetchFn
+        ? Promise.resolve()
+            .then(function () {
+              return fetchFn.call(global, url);
+            })
+            .then(function (res) {
+              return res && res.ok ? res.json() : null;
+            })
+            .catch(function () {
+              return null;
+            })
+        : Promise.resolve(null);
+    return reviewCache[locale];
+  }
+  function withSteps(report, result, options) {
+    if (typeof report.applyHowToCheck !== 'function') return Promise.resolve(result);
+    if (options && options.howToCheck === false) return Promise.resolve(result);
+    var given = options && options.reviewDictionaries;
+    if (given && typeof given === 'object') {
+      return Promise.resolve(report.applyHowToCheck(result, given));
+    }
+    var locales = reviewLocalesOf(result);
+    return Promise.all(locales.map(fetchReview)).then(function (dicts) {
+      var byLocale = {};
+      for (var i = 0; i < locales.length; i++) if (dicts[i]) byLocale[locales[i]] = dicts[i];
+      return byLocale.en ? report.applyHowToCheck(result, byLocale) : result;
+    });
+  }
+
   // Opens the scan's HTML report in a new tab, and resolves to its address.
   // Where the browser blocks the tab, the address is logged to open by hand.
+  // The undecided findings get the steps that answer them first (withSteps).
   function openReport(result, options) {
     return loadReport(options).then(function (report) {
-      var html = report.renderHtmlReport(result, (options && options.report) || {});
-      var url = global.URL.createObjectURL(new global.Blob([html], { type: 'text/html' }));
-      var opened = typeof global.open === 'function' ? global.open(url, '_blank') : null;
-      if (!opened && global.console) {
-        global.console.info('surea11y: the report is at ' + url + ' (no tab could be opened).');
-      }
-      return url;
+      return withSteps(report, result, options).then(function (stepped) {
+        return show(report, stepped, options);
+      });
     });
+  }
+  function show(report, result, options) {
+    var html = report.renderHtmlReport(result, (options && options.report) || {});
+    var url = global.URL.createObjectURL(new global.Blob([html], { type: 'text/html' }));
+    var opened = typeof global.open === 'function' ? global.open(url, '_blank') : null;
+    if (!opened && global.console) {
+      global.console.info('surea11y: the report is at ' + url + ' (no tab could be opened).');
+    }
+    return url;
   }
 
   // A scan of the page, as runa11yCoreInPageAsync runs it (the style sheets
