@@ -23,6 +23,7 @@
  */
 
 const { occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
+const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
@@ -283,5 +284,13 @@ function applyHowToCheck(result, dictionaries, options) {
 
 // occurrenceOutcome and reviewGroupOf go with the steps, so a tool whose code
 // runs in a browser (an extension, a Cypress spec) sorts and shows the
-// undecided findings as core's own reporters do, without the main entry.
-module.exports = { applyHowToCheck, howToCheckFrom, occurrenceOutcome, reviewGroupOf };
+// undecided findings as core's own reporters do, without the main entry; and
+// so does HOOK_REASON_CODES, plain data, so it can say which of them a hook
+// it didn't install would have decided.
+module.exports = {
+  applyHowToCheck,
+  howToCheckFrom,
+  occurrenceOutcome,
+  reviewGroupOf,
+  HOOK_REASON_CODES
+};

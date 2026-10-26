@@ -74,6 +74,7 @@ test('the how-to-check entry and every review dictionary are reachable by name',
   const main = consumerRequire('@surea11y/core');
   assert.equal(entry.occurrenceOutcome, main.occurrenceOutcome);
   assert.equal(entry.reviewGroupOf, main.reviewGroupOf);
+  assert.equal(entry.HOOK_REASON_CODES, main.HOOK_REASON_CODES);
   const locales = fs
     .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'review'))
     .filter((f) => f.endsWith('.json'))
