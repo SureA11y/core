@@ -149,6 +149,7 @@ test(`${RULE_ID}: leans fail on a tool leftover, a file name or a placeholder na
     `<svg role="img" ${attrs} viewBox="0 0 10 10">${inner}<rect width="10" height="10"/></svg>`;
   for (const [body, value] of [
     [svg('<title>Layer 1</title>'), 'tool-artefact'],
+    [svg('<title>Rectangle 2 copy 3</title>'), 'tool-artefact'],
     [svg('<title>Created with Sketch.</title>'), 'tool-artefact'],
     [svg('', 'aria-label="icon-search"'), 'tool-artefact'],
     [svg('<title>chart-final.svg</title>'), 'file-name'],
@@ -170,4 +171,9 @@ test(`${RULE_ID}: leans fail on a tool leftover, a file name or a placeholder na
   ]) {
     assert.strictEqual(run(body).lean, undefined, body);
   }
+  // A shape name with a long run of digits, then something else, is
+  // rejected at once: the pattern can't split the digits many ways.
+  const started = Date.now();
+  assert.strictEqual(run(svg(`<title>rect${'0'.repeat(40)}x</title>`)).lean, undefined);
+  assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`);
 });
