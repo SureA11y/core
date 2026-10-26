@@ -22,7 +22,11 @@
  *   `:focus`/`:focus-visible` rule, or a rule with no state at all
  *   (`a { outline: none }`, `* { outline: 0 }`): an author declaration
  *   outranks the user agent's focus outline whatever its specificity, so
- *   it removes the indicator in the focused state too (WCAG F78).
+ *   it removes the indicator in the focused state too (WCAG F78). A rule
+ *   that removes it only under `:not(:focus-visible)` keeps it for keyboard
+ *   focus and is not counted; nor is the focus-visible polyfill's form of
+ *   it, `:not(.focus-visible)` under `.js-focus-visible`, or
+ *   `:not([data-focus-visible-added])` under `[data-js-focus-visible]`.
  * @reports
  *   - `suppressingSelectors`: the selector of each style sheet rule that
  *     removes the element's outline, one item per selector.
@@ -63,6 +67,12 @@
  *   throws on `.cssRules` and is skipped: a page whose only focus styles
  *   live in one is reported as having no focus rules at all, so it is not
  *   flagged.
+ * - The WICG focus-visible polyfill is recognised by its exact names
+ *   only: `.focus-visible` / `.js-focus-visible` and
+ *   `[data-focus-visible-added]` / `[data-js-focus-visible]`. A
+ *   `:not(.focus-visible)` with no polyfill scope above it is read as an
+ *   ordinary class, so the rule is asked about as before (with no lean, as
+ *   it names focus-visible).
  * - Selector matching goes through `el.matches()` on the focus pseudo
  *   stripped out of the selector. A selector the engine cannot parse
  *   (vendor pseudo-elements, `:host`, unsupported `:is()` forms) throws
@@ -303,6 +313,71 @@ function runInPage(ctx) {
   const withinProviders = [];
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
 
+  // The focus-visible polyfill (WICG) marks keyboard focus with a class,
+  // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
+  // (or the attributes `data-focus-visible-added` and
+  // `data-js-focus-visible`). Under that scope, `:not(.focus-visible)` says
+  // what native `:not(:focus-visible)` says, and is read the same way when
+  // it removes the outline. Only those exact names, and only in a compound
+  // the scope's own compound contains (descendant or child), count.
+  const POLYFILL_FORMS = [
+    {
+      scope: /\.js-focus-visible(?![-\w])/,
+      not: /:not\(\s*\.focus-visible\s*\)/g
+    },
+    {
+      scope: /\[\s*data-js-focus-visible\s*\]/,
+      not: /:not\(\s*\[\s*data-focus-visible-added\s*\]\s*\)/g
+    }
+  ];
+
+  // A selector split into compounds, each with the combinator text before
+  // it, so it can be put back together unchanged.
+  function splitWithCombinators(part) {
+    const pieces = [];
+    let depth = 0;
+    let comb = '';
+    let current = '';
+    for (const ch of part) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && (ch === ' ' || ch === '>' || ch === '+' || ch === '~')) {
+        if (current) {
+          pieces.push({ comb, compound: current });
+          comb = '';
+          current = '';
+        }
+        comb += ch;
+        continue;
+      }
+      current += ch;
+    }
+    if (current) pieces.push({ comb, compound: current });
+    return pieces;
+  }
+
+  function polyfillAsNative(part) {
+    if (!/focus-visible/.test(part)) return part;
+    let pieces = null;
+    let changed = false;
+    for (const form of POLYFILL_FORMS) {
+      if (!form.scope.test(part)) continue;
+      pieces = pieces || splitWithCombinators(part);
+      const scopeAt = pieces.findIndex((p) => form.scope.test(p.compound));
+      if (scopeAt === -1 || scopeAt === pieces.length - 1) continue;
+      // Under the scope: a descendant or child of it, not a sibling.
+      if (!/^[\s>]+$/.test(pieces[scopeAt + 1].comb)) continue;
+      for (let i = scopeAt + 1; i < pieces.length; i++) {
+        form.not.lastIndex = 0;
+        if (!form.not.test(pieces[i].compound)) continue;
+        form.not.lastIndex = 0;
+        pieces[i].compound = pieces[i].compound.replace(form.not, ':not(:focus-visible)');
+        changed = true;
+      }
+    }
+    return changed ? pieces.map((p) => p.comb + p.compound).join('') : part;
+  }
+
   function collectFromStyleRule(style, selectorText) {
     if (!style || !selectorText) return;
 
@@ -311,46 +386,61 @@ function runInPage(ctx) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
-      if (provides && /:focus-within(?![-\w])/.test(part)) {
-        for (const compound of splitCompounds(part)) {
-          if (!/:focus-within(?![-\w])/.test(compound)) continue;
-          withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
-        }
+      // The polyfill's form is read as native :not(:focus-visible) for the
+      // outline it removes; what the same rule draws is read as written.
+      const asNative = suppresses ? polyfillAsNative(part) : part;
+      if (asNative !== part) {
+        collectFromPart(asNative, true, false);
+        collectFromPart(part, false, provides);
+      } else {
+        collectFromPart(part, suppresses, provides);
       }
-      if (!hasFocusPseudo(part)) {
-        // A rule with no focus state still applies while the element has
-        // focus, and an author declaration beats the user agent's focus
-        // outline. Other states (:hover, :active) never match the static
-        // element, so el.matches() leaves them out below.
-        if (suppresses && !hasPseudoElement(part)) {
-          suppressors.push({ selector: trim(part), base: trim(part) });
-        }
-        continue;
-      }
-
-      const compounds = splitCompounds(part);
-      let focusIndex = -1;
-      for (let i = 0; i < compounds.length; i++) {
-        if (hasFocusPseudo(compounds[i])) {
-          focusIndex = i;
-          break;
-        }
-      }
-      if (focusIndex === -1) continue;
-
-      const isSubject = focusIndex === compounds.length - 1;
-      const focusedBase =
-        stripFocusPseudo(compounds[focusIndex]).replace(/::?[a-z-]+$/i, '') || '*';
-
-      if (suppresses && isSubject && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: stripFocusPseudo(part) });
-      }
-
-      // A replacement is credited to the element that takes focus, wherever
-      // the rule paints it: on the element itself, its pseudo-element, a
-      // sibling, or a descendant.
-      if (provides) providers.push({ base: focusedBase, subject: isSubject });
     }
+  }
+
+  function collectFromPart(part, suppresses, provides) {
+    // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
+    // a rule removes is only the mouse's focus ring, so it is never a
+    // suppressor.
+    if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
+    if (provides && /:focus-within(?![-\w])/.test(part)) {
+      for (const compound of splitCompounds(part)) {
+        if (!/:focus-within(?![-\w])/.test(compound)) continue;
+        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+      }
+    }
+    if (!hasFocusPseudo(part)) {
+      // A rule with no focus state still applies while the element has
+      // focus, and an author declaration beats the user agent's focus
+      // outline. Other states (:hover, :active) never match the static
+      // element, so el.matches() leaves them out below.
+      if (suppresses && !hasPseudoElement(part)) {
+        suppressors.push({ selector: trim(part), base: trim(part) });
+      }
+      return;
+    }
+
+    const compounds = splitCompounds(part);
+    let focusIndex = -1;
+    for (let i = 0; i < compounds.length; i++) {
+      if (hasFocusPseudo(compounds[i])) {
+        focusIndex = i;
+        break;
+      }
+    }
+    if (focusIndex === -1) return;
+
+    const isSubject = focusIndex === compounds.length - 1;
+    const focusedBase = stripFocusPseudo(compounds[focusIndex]).replace(/::?[a-z-]+$/i, '') || '*';
+
+    if (suppresses && isSubject && !hasPseudoElement(part)) {
+      suppressors.push({ selector: trim(part), base: stripFocusPseudo(part) });
+    }
+
+    // A replacement is credited to the element that takes focus, wherever
+    // the rule paints it: on the element itself, its pseudo-element, a
+    // sibling, or a descendant.
+    if (provides) providers.push({ base: focusedBase, subject: isSubject });
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for

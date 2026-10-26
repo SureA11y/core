@@ -35,6 +35,11 @@
     .plain-reset-restored { outline: 0; }
     .plain-reset-restored:focus-visible { outline: 2px solid navy; }
 
+    /* Removed only for focus that is not focus-visible: kept for keyboard focus. */
+    .js-focus-visible .fv-class:focus:not(.focus-visible) { outline: none; }
+    [data-js-focus-visible] .fv-attr:focus:not([data-focus-visible-added]) { outline: none; }
+    .fv-unscoped:focus:not(.focus-visible) { outline: none; }
+
     /* Not a suppression of the element's own indicator. */
     .parent-focus:focus .child-link { outline: none; }
     .within-only:focus-within { outline: none; }
@@ -108,6 +113,27 @@
   <div class="case" id="case_14">
     <div class="case-title">14 — PASS: outline: 0 with no focus state, restored by a :focus-visible rule</div>
     <a class="plain-reset-restored" id="cfis_case_14" href="/events">Events</a>
+  </div>
+
+  <h2>E. Outline removed only for focus that is not focus-visible</h2>
+
+  <div class="case" id="case_15">
+    <div class="case-title">15 — PASS: the focus-visible polyfill's :not(.focus-visible), under .js-focus-visible, keeps the outline for keyboard focus</div>
+    <div class="js-focus-visible">
+      <a class="fv-class" id="cfis_case_15" href="/shop">Shop</a>
+    </div>
+  </div>
+
+  <div class="case" id="case_16">
+    <div class="case-title">16 — PASS: the polyfill's attribute form, :not([data-focus-visible-added]) under [data-js-focus-visible]</div>
+    <div data-js-focus-visible="">
+      <a class="fv-attr" id="cfis_case_16" href="/help">Help</a>
+    </div>
+  </div>
+
+  <div class="case" id="case_17">
+    <div class="case-title">17 — CANTTELL: :not(.focus-visible) with no polyfill scope above it is an ordinary class</div>
+    <a class="fv-unscoped" id="cfis_case_17" href="/contact">Contact</a>
   </div>
 
   <h2>C. Not this rule's concern</h2>

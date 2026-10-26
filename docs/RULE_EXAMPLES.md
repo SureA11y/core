@@ -1893,7 +1893,7 @@ No `<title>` element anywhere in the document.
 
 ## password-paste-enabled
 
-*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example.*
+*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example; the listener hook (`listenerHookScript()`) records such listeners when the page runs it, and an early hook that saw none takes the caution off a cancel-only handler's lean.*
 
 **Flagged (cantTell)**
 ```html

@@ -1016,8 +1016,8 @@ export interface InternalsHookOptions {
  * (onclick="…") from the markup; a listener added with addEventListener, or
  * set as a property (el.onclick = fn), is invisible to them. The hook wraps
  * EventTarget.prototype.addEventListener and removeEventListener and the
- * on* property setters, records which elements have click, key, focus and
- * mouse listeners, and otherwise gives the page exactly what it would have
+ * on* property setters, records which elements have click, key, focus,
+ * mouse and paste listeners, and otherwise gives the page exactly what it would have
  * had. `engine.environment.listenerHook` says whether a scan saw it. See
  * docs/INTEGRATION.md.
  *

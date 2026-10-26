@@ -192,6 +192,29 @@ const CASES = [
     'widget-keyboard-focusable',
     'cantTell',
     ['ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE']
+  ],
+  [
+    'an active descendant on a host with no role that cannot take focus',
+    '<div id="f" aria-label="Fruit"><div id="o">Apple</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE']
+  ],
+  [
+    'a widget under a focusable host whose active item a script set',
+    '<div id="f" tabindex="0" aria-label="Choices"><div id="o" role="checkbox" aria-checked="false">Agree</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'pass'
+  ],
+  [
+    'a widget under a focusable host with an empty aria-activedescendant',
+    '<div id="f" tabindex="0" aria-label="Choices" aria-activedescendant=""><div id="o" role="checkbox" aria-checked="false">Agree</div></div>',
+    null,
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['WIDGET_NOT_FOCUSABLE']
   ]
 ];
 

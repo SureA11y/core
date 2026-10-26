@@ -152,7 +152,7 @@
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step2": "Lesen Sie seine Textalternative (den Wert, den der Bericht angibt, oder seinen Ersatzinhalt und Namen im Bereich „Barrierefreiheit“).",
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step3": "Prüfen Sie, ob der Text dieselbe Information oder denselben Zweck vermittelt wie die Zeichnung und mithält, wenn sich die Zeichnung ändert.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_fail": "Eingabetaste oder die Leertaste bewirkt nichts, auch nachdem der Fokus angekommen ist; das verstößt gegen WCAG 2.1.1 (F54).",
-  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Eingabetaste (und bei schaltflächenartigen Bedienelementen die Leertaste) bewirkt dasselbe wie ein Klick.",
+  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Eingabetaste (und bei schaltflächenartigen Bedienelementen die Leertaste) bewirkt dasselbe wie ein Klick, oder bei einem Tab zeigt schon das Fokussieren sein Panel an.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step1": "Klicken Sie auf das im Bericht genannte Element und notieren Sie, was passiert.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step2": "Laden Sie neu und drücken Sie dann Tab, bis das Element den Fokus hat.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step3": "Drücken Sie Eingabetaste, dann die Leertaste, und vergleichen Sie mit dem, was der Klick bewirkt hat.",

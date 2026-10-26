@@ -31,7 +31,11 @@
  *     paste handler whose only effect is to cancel the paste, which may stop a
  *     password manager or the clipboard filling it.
  *     It leans fail, unless the field is a box of a split one-time code
- *     (maxlength 1, among four or more such boxes), which has no lean.
+ *     (maxlength 1, among four or more such boxes), which has no lean. Where
+ *     a listener hook installed before the page's scripts saw no paste
+ *     listener added from script on the field, an ancestor, a shadow root it
+ *     is in, the document or the window, the lean says so and carries no
+ *     caution.
  *     Basis: WCAG 3.3.8 (not settled).
  *   - `PASTE_HANDLER_OPAQUE` (cantTell): the authentication field has an
  *     inline paste handler that calls other script, so whether it blocks
@@ -55,7 +59,11 @@
  * - `autocomplete="off"` is not reported. Browsers override it for password
  *   fields so password managers keep working, and the mechanism survives.
  * - A handler attached with addEventListener leaves nothing to read, the
- *   limit every static scan shares.
+ *   limit every static scan shares, unless the page runs the listener hook
+ *   (`listenerHookScript`). An early hook that saw no paste listener on the
+ *   field or anything its paste event reaches shows that nothing puts the
+ *   pasted text back after the inline handler cancels it; the finding still
+ *   asks, as 3.3.8 also lets another login method replace this step.
  * - 3.3.8 also excuses the test where the process offers another
  *   authentication method. A sibling button proves nothing about whether it
  *   works or replaces this step, so it is not inferred; the facet is recorded
@@ -255,6 +263,40 @@ function runInPage(ctx) {
     /\breturn\s+false\b|\breturn\s*!1\b|\bpreventDefault\s*\(|\breturnValue\s*=\s*(?:false|!1)\b/i;
   const ALERTS = /\balert\s*\(/;
 
+  // Paste listeners added from script, as the opt-in listener hook records
+  // them (helpers.getEventListenerInfo): { hook: 'none' | 'early' | 'late',
+  // listens }. Only an early hook proves none exists.
+  function pasteListenerInfo(target) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, ['paste'])
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const doc = ctx.document || null;
+  const win = doc && dom.defaultView ? dom.defaultView(doc) : null;
+  const pagePasteListener =
+    (doc && pasteListenerInfo(doc).listens) || (win && pasteListenerInfo(win).listens);
+
+  // Whether an early hook saw no paste listener added from script on the
+  // field, an ancestor (in the flat tree), a shadow root the field or an
+  // ancestor is in, the document or the window: everywhere a paste event on
+  // the field goes.
+  function noScriptPasteListener(el) {
+    if (pasteListenerInfo(el).hook !== 'early') return false;
+    if (pagePasteListener) return false;
+    const parentOf = (n) =>
+      helpers.flatParentElement ? helpers.flatParentElement(n) : dom.parentElement(n);
+    for (let n = el, i = 0; n && i < 500; n = parentOf(n), i++) {
+      if (pasteListenerInfo(n).listens) return false;
+      const p = dom.parentNode(n);
+      if (p && dom.nodeType(p) === 11 && pasteListenerInfo(p).listens) return false;
+    }
+    return true;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, textarea')
     : helpers.queryAll('input, textarea');
@@ -284,7 +326,7 @@ function runInPage(ctx) {
       : { targetSet: 'acc', accEligible: null, reasons: [] };
 
     // A split code box may have its paste put back by a listener added
-    // from script, which nothing here sees, so it has no lean.
+    // from script, so it has no lean, with the listener hook or without.
     const splitCode = inSplitCodeGroup(el);
 
     if (verdict === 'cancelOnly') {
@@ -300,22 +342,36 @@ function runInPage(ctx) {
           },
           ...(splitCode
             ? {}
-            : {
-                lean: {
-                  toward: 'fail',
-                  why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
-                  signals: [
-                    { signal: 'handler', value: 'cancel-only' },
-                    { signal: 'split-code-box', value: false }
-                  ],
-                  caution:
-                    'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
-                  i18n: {
-                    whyKey: 'passwordPasteEnabled_lean_why_cancelled',
-                    cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+            : noScriptPasteListener(el)
+              ? {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The field’s paste handler does nothing but cancel the paste, and a hook installed before the page’s scripts saw no other paste listener on the field, around it, on the document or the window, so nothing puts the pasted text back.',
+                    signals: [
+                      { signal: 'handler', value: 'cancel-only' },
+                      { signal: 'split-code-box', value: false },
+                      { signal: 'hook-mode', value: 'early' },
+                      { signal: 'script-paste-listener', value: false }
+                    ],
+                    i18n: { whyKey: 'passwordPasteEnabled_lean_why_cancelledNoListener' }
                   }
                 }
-              }),
+              : {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
+                    signals: [
+                      { signal: 'handler', value: 'cancel-only' },
+                      { signal: 'split-code-box', value: false }
+                    ],
+                    caution:
+                      'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
+                    i18n: {
+                      whyKey: 'passwordPasteEnabled_lean_why_cancelled',
+                      cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+                    }
+                  }
+                }),
           data: {
             visibilityFilter: eligInfo,
             details: { reasonCode: 'PASTE_CANCELLED', handler: normalizeWs(handler) }

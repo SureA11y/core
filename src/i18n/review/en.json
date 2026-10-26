@@ -152,7 +152,7 @@
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step2": "Read its text alternative (the value the report gives, or its fallback content and name in the Accessibility pane).",
   "canvas_textAltQuality_review_TEXT_ALTERNATIVE_REVIEW_step3": "Check that the text conveys the same information or purpose as the drawing, and keeps up if the drawing changes.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_fail": "Pressing Enter or Space does nothing even after focus arrives, which fails WCAG 2.1.1 (F54).",
-  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Enter (and Space for button-like controls) does what a click does.",
+  "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_pass": "Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step1": "Click the element the report names and note what happens.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step2": "Reload, then press Tab until the element has focus.",
   "clickHandlerKeyboardOperable_review_CLICK_HANDLER_FOCUS_LISTENER_step3": "Press Enter, then Space, and compare with what the click did.",

@@ -35373,6 +35373,7 @@ const RUNTIME_CATALOG = {
       "passwordPasteEnabled_lean_caution_cancelled": "Ein per Skript hinzugefügter Listener am Feld oder um es herum kann den eingefügten Text einsetzen, nachdem der Handler abgebrochen hat.",
       "passwordPasteEnabled_lean_why_opaque": "Der Einfügehandler sagt, was er tut: Er ruft eine Funktion auf, deren Name das Blockieren des Einfügens nennt, oder zeigt eine Meldung und bricht das Einfügen ab.",
       "passwordPasteEnabled_lean_caution_opaque": "Der Name einer Funktion kann täuschen; was sie tut, steht in Skript, das das Markup nicht enthält.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "Der Einfügehandler des Feldes bricht das Einfügen nur ab, und ein vor den Skripten der Seite installierter Hook hat weder am Feld noch um es herum, am Dokument oder am Fenster einen anderen Einfüge-Listener gesehen; nichts setzt den eingefügten Text wieder ein.",
       "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
       "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
       "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -35701,6 +35702,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -36698,6 +36700,7 @@ const RUNTIME_CATALOG = {
       "passwordPasteEnabled_lean_caution_cancelled": "A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.",
       "passwordPasteEnabled_lean_why_opaque": "The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.",
       "passwordPasteEnabled_lean_caution_opaque": "A function’s name can mislead; what it does is in script the markup does not carry.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "The field’s paste handler does nothing but cancel the paste, and a hook installed before the page’s scripts saw no other paste listener on the field, around it, on the document or the window, so nothing puts the pasted text back.",
       "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
       "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
       "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -37026,6 +37029,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -38023,6 +38027,7 @@ const RUNTIME_CATALOG = {
       "passwordPasteEnabled_lean_caution_cancelled": "Un detector añadido por script, en el campo o a su alrededor, puede insertar el texto pegado después de que el controlador lo cancele.",
       "passwordPasteEnabled_lean_why_opaque": "El controlador de pegado dice lo que hace: llama a una función cuyo nombre indica que bloquea el pegado, o muestra un mensaje y cancela el pegado.",
       "passwordPasteEnabled_lean_caution_opaque": "El nombre de una función puede engañar; lo que hace está en un script que el marcado no contiene.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "El controlador de pegado del campo solo cancela el pegado, y un hook instalado antes de los scripts de la página no vio ningún otro detector de pegado en el campo, a su alrededor, en el documento ni en la ventana, así que nada vuelve a insertar el texto pegado.",
       "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
       "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
       "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -38351,6 +38356,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestione keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -39348,6 +39354,7 @@ const RUNTIME_CATALOG = {
       "passwordPasteEnabled_lean_caution_cancelled": "Un écouteur ajouté par script, sur le champ ou autour, peut insérer le texte collé après que le gestionnaire l’a annulé.",
       "passwordPasteEnabled_lean_why_opaque": "Le gestionnaire de collage dit ce qu’il fait : il appelle une fonction nommée pour bloquer le collage, ou affiche un message et annule le collage.",
       "passwordPasteEnabled_lean_caution_opaque": "Le nom d’une fonction peut tromper ; ce qu’elle fait se trouve dans un script que le balisage ne contient pas.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "Le gestionnaire de collage du champ ne fait qu’annuler le collage, et un hook installé avant les scripts de la page n’a vu aucun autre écouteur de collage sur le champ, autour, sur le document ni sur la fenêtre : rien ne remet le texte collé.",
       "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
       "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
       "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
@@ -39676,6 +39683,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -40673,6 +40681,7 @@ const RUNTIME_CATALOG = {
       "passwordPasteEnabled_lean_caution_cancelled": "スクリプトでフィールドやその祖先に追加されたリスナーが、ハンドラーの取り消し後に貼り付けたテキストを入れている可能性があります。",
       "passwordPasteEnabled_lean_why_opaque": "paste ハンドラーは自らの動作を示しています。貼り付けをブロックする名前の関数を呼び出しているか、メッセージを表示して貼り付けを取り消しています。",
       "passwordPasteEnabled_lean_caution_opaque": "関数名は誤解を招くことがあります。実際の動作はマークアップに含まれないスクリプトの中にあります。",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "このフィールドの paste ハンドラーは貼り付けを取り消すだけで、ページのスクリプトより前に組み込んだフックは、フィールド自体にもその祖先にも document にも window にもほかの paste リスナーを見つけませんでした。貼り付けたテキストを入れ直すものはありません。",
       "htmlXmlLangMismatch_title": "lang と xml:lang が食い違ってはならない",
       "htmlXmlLangMismatch_description": "<html> 要素に lang 属性と xml:lang 属性の両方がある場合に、同じ主言語を宣言しているかを確認します。",
       "htmlXmlLangMismatch_summary_fail": "lang 属性 (「{{lang}}」) と xml:lang 属性 (「{{xmlLang}}」) が異なる言語を宣言しています。",
@@ -41001,6 +41010,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",
@@ -62078,6 +62088,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
   const FAIL_ROLES = new Set(['button', 'link', 'checkbox', 'switch']);
+  // Roles that fail with no key listener anywhere, as an early hook saw it:
+  // the controls above, and the items of a tablist or a menu, whose keys
+  // their widget handles. Only those controls fail when nothing can focus
+  // them.
+  const ITEM_FAIL_ROLES = new Set(['tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio']);
+  const NO_KEY_FAIL_ROLES = new Set([...FAIL_ROLES, ...ITEM_FAIL_ROLES]);
   const WIDGET_ROLES = new Set([
     'button',
     'link',
@@ -62471,9 +62487,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // key event from it goes: Enter and Space do nothing (2.1.1).
       // A focus listener on it, an ancestor, a shadow root it is in, the
       // document or the window may add the key listener once it has focus.
+      // A tab may also show its panel on focus.
       const focusWired =
         noKeyListenerAnywhere &&
-        FAIL_ROLES.has(role) &&
+        NO_KEY_FAIL_ROLES.has(role) &&
         (pageFocusListener ||
           listenerInfo(el, FOCUS_TYPES).listens ||
           ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
@@ -62529,14 +62546,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         );
         continue;
       }
-      if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
+      if (noKeyListenerAnywhere && NO_KEY_FAIL_ROLES.has(role)) {
+        const item = ITEM_FAIL_ROLES.has(role);
         fails.push(
           helpers.reportOccurrence(el, {
             summary: `This element has role="${role}" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.`,
-            hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
+            hint: item
+              ? `Handle keydown so that the keys a ${role} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.`
+              : `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
             i18n: {
               summaryKey: 'clickHandlerKeyboardOperable_summary_fail_noKeyListener',
-              hintKey: 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
+              hintKey: item
+                ? 'clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem'
+                : 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
               params: { role }
             },
             data: {
@@ -66111,6 +66133,71 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const withinProviders = [];
   const FOCUS_WITHIN = /:focus-within(?![-\w])/g;
 
+  // The focus-visible polyfill (WICG) marks keyboard focus with a class,
+  // `.focus-visible`, and the scope it runs in with `.js-focus-visible`
+  // (or the attributes `data-focus-visible-added` and
+  // `data-js-focus-visible`). Under that scope, `:not(.focus-visible)` says
+  // what native `:not(:focus-visible)` says, and is read the same way when
+  // it removes the outline. Only those exact names, and only in a compound
+  // the scope's own compound contains (descendant or child), count.
+  const POLYFILL_FORMS = [
+    {
+      scope: /\.js-focus-visible(?![-\w])/,
+      not: /:not\(\s*\.focus-visible\s*\)/g
+    },
+    {
+      scope: /\[\s*data-js-focus-visible\s*\]/,
+      not: /:not\(\s*\[\s*data-focus-visible-added\s*\]\s*\)/g
+    }
+  ];
+
+  // A selector split into compounds, each with the combinator text before
+  // it, so it can be put back together unchanged.
+  function splitWithCombinators(part) {
+    const pieces = [];
+    let depth = 0;
+    let comb = '';
+    let current = '';
+    for (const ch of part) {
+      if (ch === '(') depth += 1;
+      if (ch === ')') depth = Math.max(0, depth - 1);
+      if (depth === 0 && (ch === ' ' || ch === '>' || ch === '+' || ch === '~')) {
+        if (current) {
+          pieces.push({ comb, compound: current });
+          comb = '';
+          current = '';
+        }
+        comb += ch;
+        continue;
+      }
+      current += ch;
+    }
+    if (current) pieces.push({ comb, compound: current });
+    return pieces;
+  }
+
+  function polyfillAsNative(part) {
+    if (!/focus-visible/.test(part)) return part;
+    let pieces = null;
+    let changed = false;
+    for (const form of POLYFILL_FORMS) {
+      if (!form.scope.test(part)) continue;
+      pieces = pieces || splitWithCombinators(part);
+      const scopeAt = pieces.findIndex((p) => form.scope.test(p.compound));
+      if (scopeAt === -1 || scopeAt === pieces.length - 1) continue;
+      // Under the scope: a descendant or child of it, not a sibling.
+      if (!/^[\s>]+$/.test(pieces[scopeAt + 1].comb)) continue;
+      for (let i = scopeAt + 1; i < pieces.length; i++) {
+        form.not.lastIndex = 0;
+        if (!form.not.test(pieces[i].compound)) continue;
+        form.not.lastIndex = 0;
+        pieces[i].compound = pieces[i].compound.replace(form.not, ':not(:focus-visible)');
+        changed = true;
+      }
+    }
+    return changed ? pieces.map((p) => p.comb + p.compound).join('') : part;
+  }
+
   function collectFromStyleRule(style, selectorText) {
     if (!style || !selectorText) return;
 
@@ -66119,46 +66206,61 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!suppresses && !provides) return;
 
     for (const part of splitSelectorList(selectorText)) {
-      if (provides && /:focus-within(?![-\w])/.test(part)) {
-        for (const compound of splitCompounds(part)) {
-          if (!/:focus-within(?![-\w])/.test(compound)) continue;
-          withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
-        }
+      // The polyfill's form is read as native :not(:focus-visible) for the
+      // outline it removes; what the same rule draws is read as written.
+      const asNative = suppresses ? polyfillAsNative(part) : part;
+      if (asNative !== part) {
+        collectFromPart(asNative, true, false);
+        collectFromPart(part, false, provides);
+      } else {
+        collectFromPart(part, suppresses, provides);
       }
-      if (!hasFocusPseudo(part)) {
-        // A rule with no focus state still applies while the element has
-        // focus, and an author declaration beats the user agent's focus
-        // outline. Other states (:hover, :active) never match the static
-        // element, so el.matches() leaves them out below.
-        if (suppresses && !hasPseudoElement(part)) {
-          suppressors.push({ selector: trim(part), base: trim(part) });
-        }
-        continue;
-      }
-
-      const compounds = splitCompounds(part);
-      let focusIndex = -1;
-      for (let i = 0; i < compounds.length; i++) {
-        if (hasFocusPseudo(compounds[i])) {
-          focusIndex = i;
-          break;
-        }
-      }
-      if (focusIndex === -1) continue;
-
-      const isSubject = focusIndex === compounds.length - 1;
-      const focusedBase =
-        stripFocusPseudo(compounds[focusIndex]).replace(/::?[a-z-]+$/i, '') || '*';
-
-      if (suppresses && isSubject && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: stripFocusPseudo(part) });
-      }
-
-      // A replacement is credited to the element that takes focus, wherever
-      // the rule paints it: on the element itself, its pseudo-element, a
-      // sibling, or a descendant.
-      if (provides) providers.push({ base: focusedBase, subject: isSubject });
     }
+  }
+
+  function collectFromPart(part, suppresses, provides) {
+    // `:not(:focus-visible)` leaves the outline on keyboard focus: what such
+    // a rule removes is only the mouse's focus ring, so it is never a
+    // suppressor.
+    if (suppresses && /:not\(\s*:focus-visible\s*\)/.test(part)) suppresses = false;
+    if (provides && /:focus-within(?![-\w])/.test(part)) {
+      for (const compound of splitCompounds(part)) {
+        if (!/:focus-within(?![-\w])/.test(compound)) continue;
+        withinProviders.push(trim(compound.replace(FOCUS_WITHIN, '')) || '*');
+      }
+    }
+    if (!hasFocusPseudo(part)) {
+      // A rule with no focus state still applies while the element has
+      // focus, and an author declaration beats the user agent's focus
+      // outline. Other states (:hover, :active) never match the static
+      // element, so el.matches() leaves them out below.
+      if (suppresses && !hasPseudoElement(part)) {
+        suppressors.push({ selector: trim(part), base: trim(part) });
+      }
+      return;
+    }
+
+    const compounds = splitCompounds(part);
+    let focusIndex = -1;
+    for (let i = 0; i < compounds.length; i++) {
+      if (hasFocusPseudo(compounds[i])) {
+        focusIndex = i;
+        break;
+      }
+    }
+    if (focusIndex === -1) return;
+
+    const isSubject = focusIndex === compounds.length - 1;
+    const focusedBase = stripFocusPseudo(compounds[focusIndex]).replace(/::?[a-z-]+$/i, '') || '*';
+
+    if (suppresses && isSubject && !hasPseudoElement(part)) {
+      suppressors.push({ selector: trim(part), base: stripFocusPseudo(part) });
+    }
+
+    // A replacement is credited to the element that takes focus, wherever
+    // the rule paints it: on the element itself, its pseudo-element, a
+    // sibling, or a descendant.
+    if (provides) providers.push({ base: focusedBase, subject: isSubject });
   }
 
   // A nested rule's selector, resolved against its parent's: `&` stands for
@@ -85333,6 +85435,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     /\breturn\s+false\b|\breturn\s*!1\b|\bpreventDefault\s*\(|\breturnValue\s*=\s*(?:false|!1)\b/i;
   const ALERTS = /\balert\s*\(/;
 
+  // Paste listeners added from script, as the opt-in listener hook records
+  // them (helpers.getEventListenerInfo): { hook: 'none' | 'early' | 'late',
+  // listens }. Only an early hook proves none exists.
+  function pasteListenerInfo(target) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, ['paste'])
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const doc = ctx.document || null;
+  const win = doc && dom.defaultView ? dom.defaultView(doc) : null;
+  const pagePasteListener =
+    (doc && pasteListenerInfo(doc).listens) || (win && pasteListenerInfo(win).listens);
+
+  // Whether an early hook saw no paste listener added from script on the
+  // field, an ancestor (in the flat tree), a shadow root the field or an
+  // ancestor is in, the document or the window: everywhere a paste event on
+  // the field goes.
+  function noScriptPasteListener(el) {
+    if (pasteListenerInfo(el).hook !== 'early') return false;
+    if (pagePasteListener) return false;
+    const parentOf = (n) =>
+      helpers.flatParentElement ? helpers.flatParentElement(n) : dom.parentElement(n);
+    for (let n = el, i = 0; n && i < 500; n = parentOf(n), i++) {
+      if (pasteListenerInfo(n).listens) return false;
+      const p = dom.parentNode(n);
+      if (p && dom.nodeType(p) === 11 && pasteListenerInfo(p).listens) return false;
+    }
+    return true;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, textarea')
     : helpers.queryAll('input, textarea');
@@ -85362,7 +85498,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : { targetSet: 'acc', accEligible: null, reasons: [] };
 
     // A split code box may have its paste put back by a listener added
-    // from script, which nothing here sees, so it has no lean.
+    // from script, so it has no lean, with the listener hook or without.
     const splitCode = inSplitCodeGroup(el);
 
     if (verdict === 'cancelOnly') {
@@ -85378,22 +85514,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
           ...(splitCode
             ? {}
-            : {
-                lean: {
-                  toward: 'fail',
-                  why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
-                  signals: [
-                    { signal: 'handler', value: 'cancel-only' },
-                    { signal: 'split-code-box', value: false }
-                  ],
-                  caution:
-                    'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
-                  i18n: {
-                    whyKey: 'passwordPasteEnabled_lean_why_cancelled',
-                    cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+            : noScriptPasteListener(el)
+              ? {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The field’s paste handler does nothing but cancel the paste, and a hook installed before the page’s scripts saw no other paste listener on the field, around it, on the document or the window, so nothing puts the pasted text back.',
+                    signals: [
+                      { signal: 'handler', value: 'cancel-only' },
+                      { signal: 'split-code-box', value: false },
+                      { signal: 'hook-mode', value: 'early' },
+                      { signal: 'script-paste-listener', value: false }
+                    ],
+                    i18n: { whyKey: 'passwordPasteEnabled_lean_why_cancelledNoListener' }
                   }
                 }
-              }),
+              : {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The field’s paste handler does nothing but cancel the paste, so pasting is probably blocked.',
+                    signals: [
+                      { signal: 'handler', value: 'cancel-only' },
+                      { signal: 'split-code-box', value: false }
+                    ],
+                    caution:
+                      'A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.',
+                    i18n: {
+                      whyKey: 'passwordPasteEnabled_lean_why_cancelled',
+                      cautionKey: 'passwordPasteEnabled_lean_caution_cancelled'
+                    }
+                  }
+                }),
           data: {
             visibilityFilter: eligInfo,
             details: { reasonCode: 'PASTE_CANCELLED', handler: normalizeWs(handler) }
@@ -86752,14 +86902,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const FOCUSABLE_DESCENDANT_SELECTOR =
-    'a[href], button, input, select, textarea, [tabindex], iframe, [contenteditable]:not([contenteditable="false"])';
+    'a[href], button, input, select, textarea, [tabindex], iframe, summary, audio[controls], video[controls], [contenteditable]:not([contenteditable="false"])';
 
-  // A descendant the page does not show (display:none, a closed <details>,
-  // hidden="until-found") takes no focus.
+  // Only a descendant in the sequential tab order counts (ACT 0ssw9k): not
+  // tabindex="-1", a disabled control, <input type="hidden"> or an inert
+  // one. A descendant the page does not show (display:none, a closed
+  // <details>, hidden="until-found") takes no focus either.
+  function isTabbableDescendant(d) {
+    if (!helpers.getFocusableInfo) return true;
+    try {
+      const info = helpers.getFocusableInfo(d, ctx);
+      return !!(info && info.tabbable);
+    } catch {
+      return false;
+    }
+  }
+
   function hasFocusableDescendant(el) {
     try {
       if (!dom.get(el, 'querySelectorAll')) return false;
       for (const d of dom.querySelectorAll(el, FOCUSABLE_DESCENDANT_SELECTOR)) {
+        if (!isTabbableDescendant(d)) continue;
         if (!(helpers.isHiddenContent && helpers.isHiddenContent(d))) return true;
       }
     } catch {}
@@ -86894,9 +87057,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Every scrollable-overflow candidate is reachable by keyboard. Not a pass
-  // yet: the focusable-descendant check counts tabindex="-1" and disabled
-  // elements, and does not confirm the region really overflows.
+  // Every scrollable-overflow candidate is reachable by keyboard: it is in
+  // the tab order, or something inside it is. Not a pass: a manual rule that
+  // finds nothing to ask about says notApplicable (RULE_TAXONOMY.md), and a
+  // tab stop inside the region does not show that all its content can be
+  // scrolled into view from there.
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: null },
     "searchbox-name-present": { run: (function runInPage(ctx) {
@@ -94542,6 +94707,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return { focusable: false, tabbable: false };
     }
   }
+  // Whether the element points at an active item: by id, or with an
+  // element a script set (ariaActiveDescendantElement), which leaves the
+  // attribute empty. An empty attribute with no element points at nothing.
+  function pointsAtActiveItem(el) {
+    if (!dom.hasAttribute(el, 'aria-activedescendant')) return false;
+    if (trim(dom.getAttribute(el, 'aria-activedescendant'))) return true;
+    return helpers.getRefElements(el, 'aria-activedescendant', ctx).length > 0;
+  }
   function isAriaDisabled(el) {
     return trim(dom.getAttribute(el, 'aria-disabled')).toLowerCase() === 'true';
   }
@@ -94567,9 +94740,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const a = chain[i];
       up = {
         managed:
-          up.managed ||
-          COMPOSITE.has(roleOf(a)) ||
-          (dom.hasAttribute(a, 'aria-activedescendant') && focusOf(a).focusable),
+          up.managed || COMPOSITE.has(roleOf(a)) || (pointsAtActiveItem(a) && focusOf(a).focusable),
         disabled: up.disabled || isAriaDisabled(a)
       };
       contexts.set(a, up);
@@ -94707,7 +94878,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A bare [role] is matched far faster than a list of role values, and
   // several rules query it, so its hidden-content checks are shared; the
-  // roles are told apart below.
+  // roles are told apart below. An element a script gives an active item
+  // (ariaActiveDescendantElement) carries an empty aria-activedescendant,
+  // as HTML reflects it, so the attribute selector finds it.
   const nodes = helpers.queryAllSmart('[role], [aria-activedescendant]', { internalsRoles: true });
 
   for (const el of nodes) {
@@ -94715,10 +94888,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const role = roleOf(el);
     const composite = COMPOSITE.has(role);
     const widget = composite || SINGLE.has(role);
-    // An id, or an element set from script (ariaActiveDescendantElement).
-    const activeHost =
-      !!trim(dom.getAttribute(el, 'aria-activedescendant')) ||
-      helpers.getReflectedRefs(el, 'aria-activedescendant').length > 0;
+    const activeHost = pointsAtActiveItem(el);
     if (!widget && !activeHost) continue;
     if (trim(dom.getAttribute(el, 'onclick'))) continue;
     // A click listener the listener hook saw is click-handler-keyboard-operable's too.
@@ -95773,6 +95943,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "passwordPasteEnabled_lean_caution_cancelled": "Ein per Skript hinzugefügter Listener am Feld oder um es herum kann den eingefügten Text einsetzen, nachdem der Handler abgebrochen hat.",
       "passwordPasteEnabled_lean_why_opaque": "Der Einfügehandler sagt, was er tut: Er ruft eine Funktion auf, deren Name das Blockieren des Einfügens nennt, oder zeigt eine Meldung und bricht das Einfügen ab.",
       "passwordPasteEnabled_lean_caution_opaque": "Der Name einer Funktion kann täuschen; was sie tut, steht in Skript, das das Markup nicht enthält.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "Der Einfügehandler des Feldes bricht das Einfügen nur ab, und ein vor den Skripten der Seite installierter Hook hat weder am Feld noch um es herum, am Dokument oder am Fenster einen anderen Einfüge-Listener gesehen; nichts setzt den eingefügten Text wieder ein.",
       "htmlXmlLangMismatch_title": "lang und xml:lang dürfen sich nicht widersprechen",
       "htmlXmlLangMismatch_description": "Prüft, ob die Attribute lang und xml:lang des <html>-Elements dieselbe Hauptsprache deklarieren, wenn beide vorhanden sind.",
       "htmlXmlLangMismatch_summary_fail": "Die Attribute lang („{{lang}}“) und xml:lang („{{xmlLang}}“) deklarieren unterschiedliche Sprachen.",
@@ -96101,6 +96272,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "Ein Vorfahre behält den Fokus für seine Elemente (aria-activedescendant oder ein fokussierbares zusammengesetztes Widget); so bedient ein solches Widget ein Element, ohne es zu fokussieren.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "Das Element zeigt einen Zeiger-Cursor und führt einen Klick-Handler aus, hat aber keine Widget-Rolle; weder es noch etwas darin noch ein Vorfahre erhält den Fokus, und kein Vorfahre verwaltet den Fokus für es.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "Dieselbe Aktion kann ein anderes Bedienelement der Seite anbieten, etwa ein Link neben einer anklickbaren Zeile.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Behandeln Sie keydown so, dass die Tasten, auf die ein {{role}} reagiert (Eingabe und Leertaste sowie die Pfeiltasten seines Widgets), dasselbe bewirken wie ein Klick.",
       "headingQuality_title": "Überschriftentext sollte beschreibend sein, kein Platzhalter",
       "headingQuality_description": "Meldet Überschriften, deren zugänglicher Name ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist: ein allgemeines Wort („Überschrift“, „Ohne Titel“), ein nummerierter Vorlagenplatz („Abschnitt 2“), ein Dateiname oder eine URL. Englische Formulierungen werden immer erkannt, deutsche, spanische, französische oder japanische zusätzlich, wenn die Überschrift in dieser Sprache ist.",
       "headingQuality_summary_cantTell_placeholder": "Der zugängliche Name dieser Überschrift („{{name}}“) ist ein Platzhalter und keine Beschreibung des eingeleiteten Inhalts.",
@@ -97098,6 +97270,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "passwordPasteEnabled_lean_caution_cancelled": "A listener added from script, on the field or around it, may put the pasted text in after the handler cancels it.",
       "passwordPasteEnabled_lean_why_opaque": "The paste handler says what it does: it calls a function named to block pasting, or shows a message and cancels the paste.",
       "passwordPasteEnabled_lean_caution_opaque": "A function’s name can mislead; what it does is in script the markup does not carry.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "The field’s paste handler does nothing but cancel the paste, and a hook installed before the page’s scripts saw no other paste listener on the field, around it, on the document or the window, so nothing puts the pasted text back.",
       "htmlXmlLangMismatch_title": "lang and xml:lang must not disagree",
       "htmlXmlLangMismatch_description": "Checks that the <html> element's lang and xml:lang attributes declare the same primary language, when both are present.",
       "htmlXmlLangMismatch_summary_fail": "The lang (\"{{lang}}\") and xml:lang (\"{{xmlLang}}\") attributes declare different languages.",
@@ -97426,6 +97599,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "The same action may be offered by another control of the page, such as a link next to a clickable row.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Handle keydown so that the keys a {{role}} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.",
       "headingQuality_title": "Heading text should be descriptive, not a placeholder",
       "headingQuality_description": "Flags headings whose accessible name is a placeholder rather than a description of the content that follows: a generic word (\"Heading\", \"Untitled\"), a numbered template slot (\"Section 2\"), a filename, or a URL. English phrases are always recognized, and German, Spanish, French or Japanese ones when the heading is in that language.",
       "headingQuality_summary_cantTell_placeholder": "This heading's accessible name (\"{{name}}\") is a placeholder rather than a description of the content it introduces.",
@@ -98423,6 +98597,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "passwordPasteEnabled_lean_caution_cancelled": "Un detector añadido por script, en el campo o a su alrededor, puede insertar el texto pegado después de que el controlador lo cancele.",
       "passwordPasteEnabled_lean_why_opaque": "El controlador de pegado dice lo que hace: llama a una función cuyo nombre indica que bloquea el pegado, o muestra un mensaje y cancela el pegado.",
       "passwordPasteEnabled_lean_caution_opaque": "El nombre de una función puede engañar; lo que hace está en un script que el marcado no contiene.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "El controlador de pegado del campo solo cancela el pegado, y un hook instalado antes de los scripts de la página no vio ningún otro detector de pegado en el campo, a su alrededor, en el documento ni en la ventana, así que nada vuelve a insertar el texto pegado.",
       "htmlXmlLangMismatch_title": "lang y xml:lang no deben estar en desacuerdo",
       "htmlXmlLangMismatch_description": "Comprueba que los atributos lang y xml:lang del elemento <html> declaren el mismo idioma principal, cuando ambos están presentes.",
       "htmlXmlLangMismatch_summary_fail": "Los atributos lang (\"{{lang}}\") y xml:lang (\"{{xmlLang}}\") declaran idiomas diferentes.",
@@ -98751,6 +98926,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestione keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -99748,6 +99924,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "passwordPasteEnabled_lean_caution_cancelled": "Un écouteur ajouté par script, sur le champ ou autour, peut insérer le texte collé après que le gestionnaire l’a annulé.",
       "passwordPasteEnabled_lean_why_opaque": "Le gestionnaire de collage dit ce qu’il fait : il appelle une fonction nommée pour bloquer le collage, ou affiche un message et annule le collage.",
       "passwordPasteEnabled_lean_caution_opaque": "Le nom d’une fonction peut tromper ; ce qu’elle fait se trouve dans un script que le balisage ne contient pas.",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "Le gestionnaire de collage du champ ne fait qu’annuler le collage, et un hook installé avant les scripts de la page n’a vu aucun autre écouteur de collage sur le champ, autour, sur le document ni sur la fenêtre : rien ne remet le texte collé.",
       "htmlXmlLangMismatch_title": "lang et xml:lang ne doivent pas se contredire",
       "htmlXmlLangMismatch_description": "Vérifie que les attributs lang et xml:lang de l’élément <html> déclarent la même langue principale, lorsque les deux sont présents.",
       "htmlXmlLangMismatch_summary_fail": "Les attributs lang (« {{lang}} ») et xml:lang (« {{xmlLang}} ») déclarent des langues différentes.",
@@ -100076,6 +100253,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un ancêtre garde le focus pour ses éléments (aria-activedescendant, ou un composant composite focalisable) : c’est ainsi qu’un tel composant actionne un élément sans lui donner le focus.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "L’élément affiche un curseur en forme de main et exécute un gestionnaire de clic, mais n’a pas de rôle de widget ; ni lui, ni rien de ce qu’il contient, ni aucun ancêtre ne reçoit le focus, et aucun ancêtre ne gère le focus pour lui.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La même action peut être offerte par une autre commande de la page, comme un lien à côté d’une ligne cliquable.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gérez keydown pour que les touches auxquelles répond un {{role}} (Entrée et Espace, et les flèches de son composant) fassent ce que fait un clic.",
       "headingQuality_title": "Le texte du titre devrait être descriptif, plutôt qu’un texte provisoire",
       "headingQuality_description": "Signale les titres dont le nom accessible est un texte de remplacement plutôt qu’une description du contenu qui suit : un mot générique (« Titre », « Sans titre »), un emplacement de gabarit numéroté (« Section 2 »), un nom de fichier ou une URL. Les formules anglaises sont toujours reconnues, et les formules allemandes, espagnoles, françaises ou japonaises lorsque le titre est dans cette langue.",
       "headingQuality_summary_cantTell_placeholder": "Le nom accessible de ce titre (« {{name}} ») est un texte de remplacement, pas une description du contenu qu’il introduit.",
@@ -101073,6 +101251,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "passwordPasteEnabled_lean_caution_cancelled": "スクリプトでフィールドやその祖先に追加されたリスナーが、ハンドラーの取り消し後に貼り付けたテキストを入れている可能性があります。",
       "passwordPasteEnabled_lean_why_opaque": "paste ハンドラーは自らの動作を示しています。貼り付けをブロックする名前の関数を呼び出しているか、メッセージを表示して貼り付けを取り消しています。",
       "passwordPasteEnabled_lean_caution_opaque": "関数名は誤解を招くことがあります。実際の動作はマークアップに含まれないスクリプトの中にあります。",
+      "passwordPasteEnabled_lean_why_cancelledNoListener": "このフィールドの paste ハンドラーは貼り付けを取り消すだけで、ページのスクリプトより前に組み込んだフックは、フィールド自体にもその祖先にも document にも window にもほかの paste リスナーを見つけませんでした。貼り付けたテキストを入れ直すものはありません。",
       "htmlXmlLangMismatch_title": "lang と xml:lang が食い違ってはならない",
       "htmlXmlLangMismatch_description": "<html> 要素に lang 属性と xml:lang 属性の両方がある場合に、同じ主言語を宣言しているかを確認します。",
       "htmlXmlLangMismatch_summary_fail": "lang 属性 (「{{lang}}」) と xml:lang 属性 (「{{xmlLang}}」) が異なる言語を宣言しています。",
@@ -101401,6 +101580,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "祖先が項目のためにフォーカスを保持しています(aria-activedescendant、またはフォーカス可能な複合ウィジェット)。このようなウィジェットは、項目にフォーカスを移さずに操作します。",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "この要素はポインター カーソルを表示してクリック ハンドラーを実行しますが、ウィジェットのロールがありません。要素自体もその中身も祖先もフォーカスを受け取らず、代わりにフォーカスを管理する祖先もありません。",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "同じ操作をページ内の別のコントロール(クリックできる行の横のリンクなど)が提供している場合があります。",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "keydown を処理して、{{role}} が応答するキー (Enter と Space、そのウィジェットの矢印キー) でクリックと同じことが起きるようにしてください。",
       "headingQuality_title": "見出しのテキストは仮の文字列ではなく、内容を説明していることが望ましい",
       "headingQuality_description": "アクセシブルな名前が後続のコンテンツの説明になっておらず、仮の文字列である見出しを検出します。汎用的な語 (「見出し」「無題」、\"Heading\" など)、番号付きのテンプレートの枠 (「セクション 2」「第 1 章」)、ファイル名、URL などが該当します。英語の語句は常に対象とし、ドイツ語、スペイン語、フランス語、日本語の語句は、見出しがその言語で書かれている場合に対象とします。",
       "headingQuality_summary_cantTell_placeholder": "この見出しのアクセシブルな名前 (「{{name}}」) は仮の文字列であり、導入するコンテンツを説明していません。",

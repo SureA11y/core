@@ -451,6 +451,97 @@ test(`${RULE_ID}: a focus listener only on the document leans fail; one on the e
   assert.equal(own.lean, undefined);
 });
 
+for (const role of ['tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio']) {
+  test(`${RULE_ID}: role="${role}" in the tab order fails when an early hook saw no key or focus listener`, () => {
+    const result = hooked(
+      `<div id="a" role="${role}" tabindex="0">A</div>`,
+      "document.getElementById('a').onclick = () => {};"
+    );
+    const rule = assertRule(result, RULE_ID, 'fail');
+    const occ = occOf(result, 'a');
+    assert.equal(rule.outcome, 'fail');
+    assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_LISTENER');
+    assert.equal(occ.data.details.role, role);
+    assert.equal(occ.i18n.hintKey, 'clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem');
+  });
+
+  test(`${RULE_ID}: role="${role}" with a focus listener is asked about, not failed`, () => {
+    // On the element, an ancestor, or the document, as for a button.
+    for (const [body, script] of [
+      [
+        `<div id="a" role="${role}" tabindex="0">A</div>`,
+        "const a = document.getElementById('a'); a.onclick = () => {}; a.addEventListener('focus', () => {});"
+      ],
+      [
+        `<div id="p"><div id="a" role="${role}" tabindex="0">A</div></div>`,
+        "document.getElementById('a').onclick = () => {}; document.getElementById('p').addEventListener('focusin', () => {});"
+      ],
+      [
+        `<div id="a" role="${role}" tabindex="0">A</div>`,
+        "document.getElementById('a').onclick = () => {}; document.addEventListener('focusin', () => {});"
+      ]
+    ]) {
+      const result = hooked(body, script);
+      const rule = result.checksResults.find((c) => c.ruleId === RULE_ID);
+      assert.equal(rule.outcome, 'cantTell', script);
+      assert.equal(occOf(result, 'a').data.details.reasonCode, 'CLICK_HANDLER_FOCUS_LISTENER');
+    }
+  });
+
+  test(`${RULE_ID}: role="${role}" is judged as before with a key handler, or without the early hook`, () => {
+    // An inline key handler, or a key listener on the element: pass.
+    assert.equal(
+      hooked(
+        `<div id="a" role="${role}" tabindex="0" onkeydown="k()">A</div>`,
+        "document.getElementById('a').onclick = () => {};"
+      ).checksResults.find((c) => c.ruleId === RULE_ID).outcome,
+      'pass'
+    );
+    // A key listener above it only: asked about.
+    const above = hooked(
+      `<div id="p"><div id="a" role="${role}" tabindex="0">A</div></div>`,
+      "document.getElementById('a').onclick = () => {}; document.getElementById('p').addEventListener('keydown', () => {});"
+    );
+    assert.equal(occOf(above, 'a').data.details.reasonCode, 'CLICK_HANDLER_KEY_LISTENER_ABOVE');
+    // Without the hook nothing says no listener exists: asked about, as before.
+    const plain = assertRule(
+      run(`<div id="a" role="${role}" tabindex="0" onclick="go()">A</div>`),
+      RULE_ID,
+      'cantTell'
+    );
+    assert.equal(plain.occurrences[0].data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_HANDLER');
+    // Nothing can focus it: not a CONTROL_NOT_FOCUSABLE fail, as before.
+    const unfocusable = assertRule(
+      run(`<div id="a" role="${role}" onclick="go()">A</div>`),
+      RULE_ID,
+      'cantTell'
+    );
+    assert.equal(unfocusable.occurrences[0].data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  });
+}
+
+test(`${RULE_ID}: a focus listener only on a descendant does not change the fail, for a button or a tab or menu item`, () => {
+  for (const role of ['button', 'tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio']) {
+    const result = hooked(
+      `<div id="a" role="${role}" tabindex="0"><span id="s">A</span></div>`,
+      "document.getElementById('a').onclick = () => {}; document.getElementById('s').addEventListener('focus', () => {});"
+    );
+    assert.equal(occOf(result, 'a').data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_LISTENER', role);
+  }
+});
+
+test(`${RULE_ID}: other widget roles still only lean fail with no key listener`, () => {
+  const occ = occOf(
+    hooked(
+      '<div id="a" role="option" tabindex="0">A</div>',
+      "document.getElementById('a').onclick = () => {};"
+    ),
+    'a'
+  );
+  assert.equal(occ.data.details.reasonCode, 'CLICK_HANDLER_NO_KEY_HANDLER');
+  assert.equal(occ.lean.toward, 'fail');
+});
+
 test(`${RULE_ID}: an unfocusable element leans pass under a focus keeper and fail with only a pointer cursor`, () => {
   const managed = assertRule(
     run(

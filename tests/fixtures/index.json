@@ -697,11 +697,11 @@
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 17,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 6,
+        "CANTTELL": 7,
         "OTHER": 3
       }
     },
@@ -2225,11 +2225,11 @@
       "testFile": "tests/engine-checks/manual/scrollable-region-focusable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/scrollable-region-focusable-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 8,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
+        "CANTTELL": 5,
         "OTHER": 3
       }
     },
@@ -2694,11 +2694,11 @@
       "testFile": "tests/engine-checks/manual/widget-keyboard-focusable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/widget-keyboard-focusable-all-scenarios.html",
-      "totalCases": 23,
+      "totalCases": 24,
       "caseCounts": {
         "PASS": 8,
         "FAIL": 0,
-        "CANTTELL": 8,
+        "CANTTELL": 9,
         "OTHER": 7
       }
     }
