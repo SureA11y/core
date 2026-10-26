@@ -222,8 +222,11 @@ function runInPage(ctx) {
 
   // A hidden live region with no dialog open: nothing explains the page
   // hiding it (the background of an open modal is the usual reason, and a
-  // script-made modal, role="dialog" with aria-modal, hides it with
-  // aria-hidden or inert itself), so what it is given is not announced.
+  // script-made modal hides it with aria-hidden or inert itself), so what it
+  // is given is not announced. isModalDialogOpen() counts a modal <dialog>
+  // and a shown role="dialog" with aria-modal="true"; dialogShown() also
+  // counts a dialog shown without either, which may hide the page all the
+  // same.
   let modalOpen = null;
   function dialogShown() {
     for (const d of dom.querySelectorAll(

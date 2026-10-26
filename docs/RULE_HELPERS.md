@@ -312,14 +312,27 @@ have.
 ### `isModalDialogOpen()` → `boolean`
 
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
-`showModal()`). Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
+`showModal()`), in the document or in an open shadow root. Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
 stands in for it; in a browser, such a dialog opened without `showModal()` is not modal. The rest of the document is
-inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). A rule
+inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). Also
+`true` while a script-made modal is shown: an element whose `role` attribute is `dialog` or
+`alertdialog`, with `aria-modal="true"`, drawn (no `display: none`, `[hidden]` or
+`visibility: hidden` on it or above it) and not inside or on `aria-hidden="true"` or
+`inert`. Only this helper counts such a dialog: `aria-modal` makes nothing inert, so the
+page behind it is not `modalInert` and every other rule keeps judging it. A rule
 about the page's own structure (a level-one heading, a main landmark, a bypass
 mechanism, content in landmarks) adds this to its `applicability(ctx)` next to
 `isWholeDocumentScope()`, since the scan saw the dialog, not the page. A rule about a
 document property a modal does not hide (`<title>`, `<html lang>`, the viewport) does
 not.
+
+### `getOpenModalDialogs()` → `Element[]`
+
+The modal `<dialog>` elements open in the document and its open shadow roots (the document's first, then each shadow root's): those that match
+`:modal` (opened with `showModal()`), or under jsdom, which has no top layer, those open with
+`aria-modal="true"`. The page outside them is what `isAccTreeEligible` leaves out with reason
+`modalInert`. A script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it
+makes nothing inert. Worked out once per run.
 
 ### `hasTruncatedAncestorWalk` (internal)
 
@@ -694,7 +707,7 @@ or `'late'`; `listens` is whether the hook saw such a listener on the target (an
 document or the window) and it was not removed. `listens: false` proves there is none only for
 an early hook, which saw every listener. Inline handler attributes are the markup's, read by
 the rule itself. The recorded types are `click`, the key, focus and blur events (`focusin` and
-`focusout` too), and the mouse events `mouse-only-event-handlers` names.
+`focusout` too), the mouse events `mouse-only-event-handlers` names, and `paste`.
 
 ### `getLiveRegionRecord()` → `{ early, announcements, findings, dropped } | null`
 

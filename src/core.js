@@ -11732,6 +11732,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return display !== 'inline' && display !== 'contents';
   };
 
+  // The document and each open shadow root in it, nested ones included,
+  // found once per run (the style sheets are read from the same list).
+  // The layer the console helpers draw in (highlight(), inspect()) is the
+  // engine's own, not the page's.
+  function documentRoots() {
+    let roots;
+    try {
+      roots = __domSharedCache.documentRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (roots) return roots;
+    roots = document ? [document] : [];
+    for (let i = 0; i < roots.length; i++) {
+      let els;
+      try {
+        els = dom.querySelectorAll(roots[i], '*');
+      } catch {
+        els = [];
+      }
+      for (const el of els) {
+        if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+        const sr = dom.shadowRoot(el);
+        if (sr) roots.push(sr);
+      }
+    }
+    try {
+      __domSharedCache.documentRoots = roots;
+    } catch {}
+    return roots;
+  }
+
+  // Whether `node` contains the modal dialog `d` in the flat tree: a light
+  // DOM ancestor of it, or the host (or an ancestor of the host) of the
+  // shadow tree it is in.
+  const containsModal = (node, d) => {
+    if (dom.get(node, 'contains') && dom.contains(node, d)) return true;
+    try {
+      if (dom.getRootNode(d) === document) return false;
+    } catch {}
+    return ancestorsIncludingSelf(d).indexOf(node) !== -1;
+  };
+
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
@@ -11762,8 +11805,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // top layer (jsdom: no showModal(), :modal never matches) falls back to
     // an open dialog with aria-modal="true", the closest it can tell.
     // The whole document is searched, not the scan's scope: a modal outside
-    // a scoped scan still blocks what is inside it. A modal <dialog> inside
-    // a shadow root is not found (known limit).
+    // a scoped scan still blocks what is inside it. Open shadow roots are
+    // searched too: a dialog opened with showModal() in a shadow tree is in
+    // the top layer and blocks the rest of the document all the same.
     let hasTopLayer;
     try {
       const view = window || dom.defaultView(document);
@@ -11774,10 +11818,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const selectors = hasTopLayer ? ['dialog:modal'] : ['dialog[open][aria-modal="true"]'];
-    for (const sel of selectors) {
+    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
+    for (const root of documentRoots()) {
       try {
-        for (const el of dom.querySelectorAll(document, sel)) {
+        for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -13307,33 +13351,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // adopted, then those of each open shadow root, each with the root it
   // applies in ({ sheet, root }). The shadow roots are found once per run.
   function getStyleSheets() {
-    let roots;
-    try {
-      roots = __domSharedCache.styleSheetRoots || null;
-    } catch {
-      roots = null;
-    }
-    if (!roots) {
-      roots = document ? [document] : [];
-      for (let i = 0; i < roots.length; i++) {
-        let els;
-        try {
-          els = dom.querySelectorAll(roots[i], '*');
-        } catch {
-          els = [];
-        }
-        for (const el of els) {
-          // The layer the console helpers draw in (highlight(), inspect())
-          // is the engine's own, not the page's.
-          if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
-          const sr = dom.shadowRoot(el);
-          if (sr) roots.push(sr);
-        }
-      }
-      try {
-        __domSharedCache.styleSheetRoots = roots;
-      } catch {}
-    }
+    const roots = documentRoots();
     const out = [];
     for (const root of roots) {
       for (const name of ['styleSheets', 'adoptedStyleSheets']) {
@@ -13393,9 +13411,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const openModals = getOpenModalDialogs();
         if (openModals.length) {
           const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some(
-            (d) => chain.indexOf(d) !== -1 || (dom.get(el, 'contains') && dom.contains(el, d))
-          );
+          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
           if (!reachable) return true;
         }
         const domVis = isDomVisibleEligible(el, null, {
@@ -14457,7 +14473,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
+          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
             reachable = true;
             break;
           }
@@ -18402,12 +18418,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // page's own structure (a level-one heading, a main landmark, a way to
   // bypass blocks, content in landmarks) cannot judge the page then: the
   // scan saw a dialog, not the page. See getOpenModalDialogs.
+  //
+  // A script-made modal counts here too: an element whose role is dialog or
+  // alertdialog, with aria-modal="true", that is shown (drawn, and not under
+  // aria-hidden="true" or inert). Only here: aria-modal makes nothing inert,
+  // Tab and clicks still reach the page behind it, so getOpenModalDialogs and
+  // the `modalInert` hiding leave that page to every other rule. The role is
+  // the role attribute's: a <dialog> with aria-modal="true" opened without
+  // showModal() is not modal (see getOpenModalDialogs). Searched in the
+  // whole document and its open shadow roots, not the scan's scope, as
+  // getOpenModalDialogs is.
+  function isShownAriaModalDialog(el) {
+    const role = aria.getExplicitRole(el);
+    if (role !== 'dialog' && role !== 'alertdialog') return false;
+    if (lower(getAttr(el, 'aria-modal')) !== 'true') return false;
+    const vis = isDomVisibleEligible(el, null, {
+      visibilityMode: 'styleOnly',
+      disableGeometry: true,
+      ignoreOpacity: true
+    });
+    const reasons = Array.isArray(vis && vis.reasons) ? vis.reasons : [];
+    if (reasons.some((r) => HARD_HIDDEN_REASONS.has(r))) return false;
+    for (const n of ancestorsIncludingSelf(el)) {
+      if (!isElement(n)) continue;
+      if (lower(getAttr(n, 'aria-hidden')) === 'true') return false;
+      if (dom.hasAttribute(n, 'inert')) return false;
+    }
+    return true;
+  }
   function isModalDialogOpen() {
     try {
-      return getOpenModalDialogs().length > 0;
+      if (getOpenModalDialogs().length > 0) return true;
     } catch {
       return false;
     }
+    for (const root of documentRoots()) {
+      try {
+        for (const el of dom.querySelectorAll(
+          root,
+          '[role~="dialog" i][aria-modal], [role~="alertdialog" i][aria-modal]'
+        )) {
+          if (isShownAriaModalDialog(el)) return true;
+        }
+      } catch {}
+    }
+    return false;
   }
 
   function isWholeDocumentScope() {
@@ -80852,8 +80907,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // A hidden live region with no dialog open: nothing explains the page
   // hiding it (the background of an open modal is the usual reason, and a
-  // script-made modal, role="dialog" with aria-modal, hides it with
-  // aria-hidden or inert itself), so what it is given is not announced.
+  // script-made modal hides it with aria-hidden or inert itself), so what it
+  // is given is not announced. isModalDialogOpen() counts a modal <dialog>
+  // and a shown role="dialog" with aria-modal="true"; dialogShown() also
+  // counts a dialog shown without either, which may hide the page all the
+  // same.
   let modalOpen = null;
   function dialogShown() {
     for (const d of dom.querySelectorAll(
@@ -113169,6 +113227,49 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return display !== 'inline' && display !== 'contents';
   };
 
+  // The document and each open shadow root in it, nested ones included,
+  // found once per run (the style sheets are read from the same list).
+  // The layer the console helpers draw in (highlight(), inspect()) is the
+  // engine's own, not the page's.
+  function documentRoots() {
+    let roots;
+    try {
+      roots = __domSharedCache.documentRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (roots) return roots;
+    roots = document ? [document] : [];
+    for (let i = 0; i < roots.length; i++) {
+      let els;
+      try {
+        els = dom.querySelectorAll(roots[i], '*');
+      } catch {
+        els = [];
+      }
+      for (const el of els) {
+        if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+        const sr = dom.shadowRoot(el);
+        if (sr) roots.push(sr);
+      }
+    }
+    try {
+      __domSharedCache.documentRoots = roots;
+    } catch {}
+    return roots;
+  }
+
+  // Whether `node` contains the modal dialog `d` in the flat tree: a light
+  // DOM ancestor of it, or the host (or an ancestor of the host) of the
+  // shadow tree it is in.
+  const containsModal = (node, d) => {
+    if (dom.get(node, 'contains') && dom.contains(node, d)) return true;
+    try {
+      if (dom.getRootNode(d) === document) return false;
+    } catch {}
+    return ancestorsIncludingSelf(d).indexOf(node) !== -1;
+  };
+
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
@@ -113199,8 +113300,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // top layer (jsdom: no showModal(), :modal never matches) falls back to
     // an open dialog with aria-modal="true", the closest it can tell.
     // The whole document is searched, not the scan's scope: a modal outside
-    // a scoped scan still blocks what is inside it. A modal <dialog> inside
-    // a shadow root is not found (known limit).
+    // a scoped scan still blocks what is inside it. Open shadow roots are
+    // searched too: a dialog opened with showModal() in a shadow tree is in
+    // the top layer and blocks the rest of the document all the same.
     let hasTopLayer;
     try {
       const view = window || dom.defaultView(document);
@@ -113211,10 +113313,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const selectors = hasTopLayer ? ['dialog:modal'] : ['dialog[open][aria-modal="true"]'];
-    for (const sel of selectors) {
+    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
+    for (const root of documentRoots()) {
       try {
-        for (const el of dom.querySelectorAll(document, sel)) {
+        for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -114744,33 +114846,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // adopted, then those of each open shadow root, each with the root it
   // applies in ({ sheet, root }). The shadow roots are found once per run.
   function getStyleSheets() {
-    let roots;
-    try {
-      roots = __domSharedCache.styleSheetRoots || null;
-    } catch {
-      roots = null;
-    }
-    if (!roots) {
-      roots = document ? [document] : [];
-      for (let i = 0; i < roots.length; i++) {
-        let els;
-        try {
-          els = dom.querySelectorAll(roots[i], '*');
-        } catch {
-          els = [];
-        }
-        for (const el of els) {
-          // The layer the console helpers draw in (highlight(), inspect())
-          // is the engine's own, not the page's.
-          if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
-          const sr = dom.shadowRoot(el);
-          if (sr) roots.push(sr);
-        }
-      }
-      try {
-        __domSharedCache.styleSheetRoots = roots;
-      } catch {}
-    }
+    const roots = documentRoots();
     const out = [];
     for (const root of roots) {
       for (const name of ['styleSheets', 'adoptedStyleSheets']) {
@@ -114830,9 +114906,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const openModals = getOpenModalDialogs();
         if (openModals.length) {
           const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some(
-            (d) => chain.indexOf(d) !== -1 || (dom.get(el, 'contains') && dom.contains(el, d))
-          );
+          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
           if (!reachable) return true;
         }
         const domVis = isDomVisibleEligible(el, null, {
@@ -115894,7 +115968,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
+          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
             reachable = true;
             break;
           }
@@ -119839,12 +119913,51 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // page's own structure (a level-one heading, a main landmark, a way to
   // bypass blocks, content in landmarks) cannot judge the page then: the
   // scan saw a dialog, not the page. See getOpenModalDialogs.
+  //
+  // A script-made modal counts here too: an element whose role is dialog or
+  // alertdialog, with aria-modal="true", that is shown (drawn, and not under
+  // aria-hidden="true" or inert). Only here: aria-modal makes nothing inert,
+  // Tab and clicks still reach the page behind it, so getOpenModalDialogs and
+  // the `modalInert` hiding leave that page to every other rule. The role is
+  // the role attribute's: a <dialog> with aria-modal="true" opened without
+  // showModal() is not modal (see getOpenModalDialogs). Searched in the
+  // whole document and its open shadow roots, not the scan's scope, as
+  // getOpenModalDialogs is.
+  function isShownAriaModalDialog(el) {
+    const role = aria.getExplicitRole(el);
+    if (role !== 'dialog' && role !== 'alertdialog') return false;
+    if (lower(getAttr(el, 'aria-modal')) !== 'true') return false;
+    const vis = isDomVisibleEligible(el, null, {
+      visibilityMode: 'styleOnly',
+      disableGeometry: true,
+      ignoreOpacity: true
+    });
+    const reasons = Array.isArray(vis && vis.reasons) ? vis.reasons : [];
+    if (reasons.some((r) => HARD_HIDDEN_REASONS.has(r))) return false;
+    for (const n of ancestorsIncludingSelf(el)) {
+      if (!isElement(n)) continue;
+      if (lower(getAttr(n, 'aria-hidden')) === 'true') return false;
+      if (dom.hasAttribute(n, 'inert')) return false;
+    }
+    return true;
+  }
   function isModalDialogOpen() {
     try {
-      return getOpenModalDialogs().length > 0;
+      if (getOpenModalDialogs().length > 0) return true;
     } catch {
       return false;
     }
+    for (const root of documentRoots()) {
+      try {
+        for (const el of dom.querySelectorAll(
+          root,
+          '[role~="dialog" i][aria-modal], [role~="alertdialog" i][aria-modal]'
+        )) {
+          if (isShownAriaModalDialog(el)) return true;
+        }
+      } catch {}
+    }
+    return false;
   }
 
   function isWholeDocumentScope() {

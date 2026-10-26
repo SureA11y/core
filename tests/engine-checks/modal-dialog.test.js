@@ -143,3 +143,80 @@ test('a full scan with a modal open reports nothing behind it, apart from page-w
   }
   assert.deepStrictEqual(leaks, []);
 });
+
+// A script-made modal: an element with role="dialog" or role="alertdialog"
+// and aria-modal="true", shown. aria-modal makes nothing inert (Tab and
+// clicks still reach the page), so element rules keep judging the page
+// behind it; but the scan saw a dialog, so rules about the page's own
+// structure are notApplicable, as with a modal <dialog>.
+const ARIA_MODAL = (attrs) =>
+  `<div ${attrs} aria-label="Sign in"><img id="inside" src="y.png"><button>Close</button></div>`;
+
+for (const ruleId of [
+  'page-has-heading-one',
+  'landmark-one-main',
+  'bypass-blocks-present',
+  'region'
+]) {
+  test(`${ruleId}: notApplicable while a shown role="dialog" with aria-modal="true" is open`, () => {
+    assert.strictEqual(
+      outcome(page(ARIA_MODAL('role="dialog" aria-modal="true"')), ruleId).outcome,
+      'notApplicable'
+    );
+    assert.strictEqual(
+      outcome(page(ARIA_MODAL('role="alertdialog" aria-modal="true"')), ruleId).outcome,
+      'notApplicable'
+    );
+  });
+
+  test(`${ruleId}: a hidden aria-modal dialog, or a role="dialog" without aria-modal, does not count`, () => {
+    const without = outcome(page(''), ruleId).outcome;
+    for (const attrs of [
+      'role="dialog" aria-modal="true" style="display:none"',
+      'role="dialog" aria-modal="true" hidden',
+      'role="dialog" aria-modal="true" style="visibility:hidden"',
+      'role="dialog" aria-modal="true" aria-hidden="true"',
+      'role="dialog"',
+      'role="dialog" aria-modal="false"'
+    ]) {
+      assert.strictEqual(outcome(page(ARIA_MODAL(attrs)), ruleId).outcome, without, attrs);
+    }
+  });
+}
+
+test('img-alt-present: an image behind a role="dialog" with aria-modal="true" is still judged', () => {
+  const rule = assertRule(
+    runa11yCoreOnHtml(page(ARIA_MODAL('role="dialog" aria-modal="true"')), {
+      runOnly: ['img-alt-present']
+    }),
+    'img-alt-present',
+    'fail',
+    { minOccurrences: 2, maxOccurrences: 2 }
+  );
+  assert.ok(rule.occurrences.some((o) => o.html.includes('id="behind"')));
+  assert.ok(rule.occurrences.some((o) => o.html.includes('id="inside"')));
+});
+
+test('skip-link: a shown aria-modal dialog explains a target hidden by aria-hidden; a hidden one does not', () => {
+  const lean = (dialog) => {
+    const html =
+      '<!doctype html><html lang="en"><body><a href="#c">Skip to content</a>' +
+      '<main id="c" aria-hidden="true">x</main>' +
+      dialog +
+      '</body></html>';
+    return assertRule(
+      runa11yCoreOnHtml(html, { runOnly: ['skip-link'] }),
+      'skip-link',
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    ).occurrences[0].lean;
+  };
+  assert.strictEqual(lean(ARIA_MODAL('role="dialog" aria-modal="true"')), undefined);
+  assert.strictEqual(
+    lean(ARIA_MODAL('role="dialog" aria-modal="true" style="display:none"')).toward,
+    'fail'
+  );
+});
