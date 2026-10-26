@@ -159,7 +159,7 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `exclude` | `{ rules: [...] }` leaves rules out; `{ criteria: ['2.5.8'] }` waives WCAG criteria: their rollups go, and so does each rule whose every criterion is waived; a rule that also checks a criterion the profile keeps still runs. |
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
-| `keepsParsing` | `true` when the standard requires 4.1.1 Parsing as written, as EN 301 549 V3.2.1 does. A failure of it then stays a failure under a 2.0 or 2.1 target; under any other, the 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as satisfied for HTML and XML, and `duplicate-id` asks instead. |
+| `keepsParsing` | `true` when the standard requires 4.1.1 Parsing as written, as EN 301 549 V3.2.1 does. A failure of it then stays a failure under a 2.0 or 2.1 target; under a profile without it, the 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as satisfied for HTML and XML, and `duplicate-id` asks instead (under 2.2, which removed 4.1.1, it asks whatever the profile says). Only the profile's own field counts: a pack's profile that takes the place of one of core's (a standard moving out of core, such as `en301549-v3.2.1`) doesn't inherit it, and core warns once when the profile it replaces kept 4.1.1 and the pack's doesn't say so. It is a profile's field only: `engineOptions.mappings` names a standard's requirements and never changes an outcome, so a scan judged by a standard that keeps 4.1.1 runs its profile. |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
 
 **A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: the run reports 2.2's criteria, such as 2.5.8, which the standard doesn't have. Give the version, and `keepsParsing: true` if the standard still requires 4.1.1 Parsing. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
@@ -255,6 +255,24 @@ Each rollup's contributors then say `byReasonCode: true`, with the rule's own ou
 An act without `requirements` names the rule's own requirements, as before. Only a standard with `ruleMapped: true` has its rollups narrowed this way: for any other, the contributor still lists `requirements`, but the rollup names all its requirements. A rollup names each rule by its outcome in that rollup: a rule whose findings all go elsewhere is a `pass` there, so a rollup another rule fails doesn't name it. `definePack` refuses contributions it can't use: a rule that isn't one of the rollup's `checksIds`, an act it doesn't know, a `when` with no field or with a value that isn't a string, number, boolean or null, and `requirements` that are empty or name one the rollup's `standardMappings` don't. `StandardRollup` in `pack.d.ts` gives the shape.
 
 A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to; it passes only where the WCAG rollup would, and is otherwise `cantTell` (`composite.rollup.cantTell.partialCheck`) ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A requirement that core's rules don't check in full, though it doesn't restate a criterion, says `partial: true` in the requirements table: its rollup is then `cantTell` (`partialCoverage`) where its rules are all `notApplicable`, since they only found none of the cases they look for, and `cantTell` (`composite.rollup.cantTell.partialCheck`) where they all pass, since they checked only part of it, as for a WCAG criterion. The rollup's `data.details.partial` is `true`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+
+**A standard that writes its own rollups** says both in each rollup's `meta`, as `ruleMappedStandard` writes them: `applicability: 'wcag'` on a rollup that restates WCAG criteria, which are then the `wcagSc` of its `meta.standardMappings` entries, judged as above (a rollup whose entries name no criterion is judged as a requirement of its own); and `partial: true` on one whose rules don't check all its requirement asks. A rollup with neither passes where all its rules pass, and `definePack` refuses any other value of either (an `applicability` that isn't `'wcag'`, a `partial` that isn't `true` or `false`), as `ruleMappedStandard` does its own. The result's `data.details` carries `restatesWcag` (the criteria) and `partial`, by which a stored result read back is judged again. With `meta.contributions` (above), these are the fields of `StandardRollup` in `pack.d.ts` that change how a rollup is judged:
+
+```js
+{
+  id: 'city-1.0-4.2',
+  checksIds: ['img-alt-present', 'img-alt-quality'],
+  meta: {
+    title: 'Images have a text alternative',
+    standard: 'City Standard',
+    version: '1.0',
+    criterion: '4.2',
+    tags: ['city'],
+    applicability: 'wcag',                   // restates 1.1.1: judged as WCAG's rollup of it
+    standardMappings: [{ standard: 'City Standard', version: '1.0', requirement: '4.2', title: 'Images have a text alternative', wcagSc: ['1.1.1'] }]
+  }
+}
+```
 
 ## 6. Messages and languages
 
