@@ -571,6 +571,22 @@ function packProblems(pack, withCoreVersion) {
         if (isObject(r) && isObject(r.meta) && r.meta.contributions !== undefined) {
           problems.push(...contributionProblems(r, `standard.composites(): ${id}`));
         }
+        // How the rollup is judged (src/core/dom-runner.js): 'wcag' when it
+        // restates WCAG criteria, and partial when its rules don't check all
+        // its requirement asks, as ruleMappedStandard writes them.
+        if (isObject(r) && isObject(r.meta)) {
+          const { applicability, partial } = r.meta;
+          if (applicability !== undefined && applicability !== 'wcag') {
+            problems.push(
+              `standard.composites(): ${id}: applicability must be 'wcag' or left out, not ${JSON.stringify(applicability)}`
+            );
+          }
+          if (partial !== undefined && typeof partial !== 'boolean') {
+            problems.push(
+              `standard.composites(): ${id}: partial must be true or false, not ${JSON.stringify(partial)}`
+            );
+          }
+        }
       }
     }
     // A standard mapped rule by rule checks its own tables against the
@@ -1130,6 +1146,34 @@ function packsError(Ctor, message, options) {
   return err;
 }
 
+// A built-in standard a pack replaces (see prepareCatalog) may have a profile
+// that keeps 4.1.1 Parsing (keepsParsing), as EN 301 549 V3.2.1 does. The
+// pack's profile of that name replaces it, and only its own keepsParsing
+// counts: without it, a duplicate id that fails with the built-in is asked
+// about with the pack, under the same profile name. Said once per pack and
+// profile in a process.
+const keepsParsingWarned = new Set();
+function warnLostKeepsParsing(packs) {
+  for (const p of packs) {
+    const st = standardOf(p);
+    if (!st || !st.key) continue;
+    const builtIn = NORMATIVE_STANDARDS.find((s) => s.deprecated && s.key === st.key);
+    if (!builtIn) continue;
+    for (const [name, profile] of Object.entries(builtIn.profiles || {})) {
+      const own = isObject(st.profiles) ? st.profiles[name] : undefined;
+      if (!profile.keepsParsing || !isObject(own) || own.keepsParsing === true) continue;
+      const seen = `${p.name}|${name}`;
+      if (keepsParsingWarned.has(seen)) continue;
+      keepsParsingWarned.add(seen);
+      try {
+        console.warn(
+          `[surea11y] ${describePack(p)}: its profile ${name} replaces core's, which keeps 4.1.1 Parsing (keepsParsing: true), and doesn't say keepsParsing itself: under it a duplicate id is asked about, not failed. Give the profile keepsParsing: true if its standard still requires 4.1.1.`
+        );
+      } catch {}
+    }
+  }
+}
+
 // The engine for a list of packs: { runtime, packs, skipped }. A pack that is
 // invalid on its own, or does not hold together with core, is skipped and
 // listed with the reason (thrown under strictOptions). Packs that do not hold
@@ -1202,6 +1246,7 @@ function preparePacks(list, { strict = false } = {}) {
       { cause: e }
     );
   }
+  warnLostKeepsParsing(valid);
   // Skipped packs in name order, as the packs that run are, so the order
   // they were passed in doesn't change the result.
   const byName = (a, b) => {

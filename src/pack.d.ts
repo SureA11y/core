@@ -48,6 +48,7 @@ export interface PackStandard {
       /**
        * True when the standard requires 4.1.1 Parsing as written: a failure of
        * it stays one under 2.0 or 2.1, which the 2023 errata would have asked.
+       * A profile that takes the place of one of core's doesn't inherit it.
        */
       keepsParsing?: boolean;
     }
@@ -101,9 +102,26 @@ export interface StandardRollup {
     tags: string[];
     /** The requirements it covers, entries as mappingsFor gives them. */
     standardMappings: object[];
-    /** The rules it judges by their findings, by rule id. */
+    /**
+     * The rules it judges by their findings, by rule id; the others it judges
+     * by their outcome.
+     */
     contributions?: Record<string, RollupContribution>;
-    /** Its rules don't check all its requirements ask. */
+    /**
+     * 'wcag' when it restates WCAG criteria, the `wcagSc` of its
+     * `standardMappings`: it is judged as WCAG's rollup of them would be
+     * (`notApplicable` and `pass` only where theirs would be), and its
+     * result's `data.details.restatesWcag` lists them. Without it, it is
+     * judged as a requirement of the standard's own; definePack refuses any
+     * other value.
+     */
+    applicability?: 'wcag';
+    /**
+     * True when its rules don't check all its requirement asks: where they all
+     * pass it is `cantTell` (`composite.rollup.cantTell.partialCheck`), where
+     * they are all notApplicable `cantTell` (`partialCoverage`), and its
+     * result's `data.details.partial` is true.
+     */
     partial?: boolean;
     [field: string]: unknown;
   };
