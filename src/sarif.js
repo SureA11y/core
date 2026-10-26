@@ -29,7 +29,7 @@
 const crypto = require('crypto');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
-const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
+const { computeBaselineKey, getReasonCode, knownOccurrences } = require('./baseline.js');
 const {
   framesOf,
   framePathText,
@@ -82,21 +82,6 @@ function artifactUriFromResult(result) {
   } catch {
     return segments(url);
   }
-}
-
-function buildRemainingBaselineMap(baselineEntries) {
-  const remaining = new Map();
-  for (const entry of entriesOf(baselineEntries)) {
-    if (!entry) continue;
-    const key = computeBaselineKey(
-      entry.ruleId,
-      entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : '',
-      entry.frame
-    );
-    remaining.set(key, (remaining.get(key) || 0) + 1);
-  }
-  return remaining;
 }
 
 // `normativeMappings` also carries other standards (EN 301 549 clauses, say) and
@@ -291,7 +276,7 @@ function renderSarifReport(result, options = {}) {
     );
   }
   const automation = automationDetails(category);
-  const remaining = buildRemainingBaselineMap(baselineEntries);
+  const { known } = knownOccurrences(frames, baselineEntries);
 
   const rules = [];
   const seenRuleIds = new Set();
@@ -378,14 +363,8 @@ function renderSarifReport(result, options = {}) {
 
         const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
         if (occurrenceOutcome === 'fail') {
-          const reasonCode = getReasonCode(occurrence);
-          const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-          const key = computeBaselineKey(check.ruleId, reasonCode, html, framePath);
-          const left = remaining.get(key) || 0;
-          if (left > 0) {
-            remaining.set(key, left - 1);
-            continue; // already known via the baseline -- omit, don't re-gate
-          }
+          // Already known via the baseline: omitted, not re-gated.
+          if (known.has(occurrence)) continue;
           failResults.push(
             buildResult(
               check,

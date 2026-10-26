@@ -15,6 +15,9 @@
  *   npm run finding-ids:release -- 1.8.0
  *
  * The retired list starts empty again: what it held was not in the release.
+ * So do the identity moves of src/baseline-moves.json from before this minor
+ * release: a move lets a baseline from the minor release before it match,
+ * and is dropped at the next one (docs/BASELINE.md, "Upgrading").
  */
 
 const fs = require('fs');
@@ -23,6 +26,21 @@ const path = require('path');
 const { ruleSources } = require('./lib/rule-dirs');
 
 const OUT_FILE = path.join(__dirname, 'data', 'released-finding-ids.json');
+const MOVES_FILE = path.join(__dirname, '..', 'src', 'baseline-moves.json');
+
+// "1.14.0" or "1.14" -> [1, 14]
+const minorOf = (version) => String(version).split('.').slice(0, 2).map(Number);
+const olderMinor = (a, b) => a[0] < b[0] || (a[0] === b[0] && a[1] < b[1]);
+
+// Drops the moves that shipped in a minor release before `version`.
+function retireMoves(version) {
+  const table = JSON.parse(fs.readFileSync(MOVES_FILE, 'utf8'));
+  const current = minorOf(version);
+  const kept = table.moves.filter((m) => !olderMinor(minorOf(m.since), current));
+  if (kept.length === table.moves.length) return 0;
+  fs.writeFileSync(MOVES_FILE, `${JSON.stringify({ ...table, moves: kept }, null, 2)}\n`, 'utf8');
+  return table.moves.length - kept.length;
+}
 
 function main() {
   const version = process.argv[2];
@@ -52,6 +70,12 @@ function main() {
     retired: { ruleIds: {}, reasonCodes: {} }
   };
   fs.writeFileSync(OUT_FILE, `${JSON.stringify(out, null, 2)}\n`, 'utf8');
+  const dropped = retireMoves(version);
+  if (dropped) {
+    console.log(
+      `[finding-ids:release] dropped ${dropped} identity moves from before ${version} in ${path.relative(process.cwd(), MOVES_FILE)}`
+    );
+  }
   console.log(
     `[finding-ids:release] froze ${ruleIds.length} rule ids for ${version} in ${path.relative(process.cwd(), OUT_FILE)}`
   );

@@ -3,6 +3,7 @@
 'use strict';
 
 const { framesOf, locationText } = require('./scan-result.js');
+const BASELINE_MOVES = require('./baseline-moves.json');
 
 // docs/BASELINE.md: identity for one violation occurrence is
 // `ruleId + reasonCode + html`, on purpose NOT `selector`/`structuralPath`
@@ -157,53 +158,120 @@ function entriesOf(baseline) {
   return [];
 }
 
-function matchBaseline(result, baselineEntries) {
-  const frames = framesOf(result, 'matchBaseline');
+// The reason codes a finding had before this release moved it to the one
+// it has now (src/baseline-moves.json): ruleId and new code -> old codes.
+const EARLIER_CODES = new Map();
+for (const move of BASELINE_MOVES.moves) {
+  for (const to of move.to) {
+    const key = `${move.ruleId}\u0000${to}`;
+    if (!EARLIER_CODES.has(key)) EARLIER_CODES.set(key, []);
+    EARLIER_CODES.get(key).push(move.from);
+  }
+}
+
+function earlierCodesOf(ruleId, reasonCode) {
+  return EARLIER_CODES.get(`${ruleId}\u0000${reasonCode}`) || [];
+}
+
+function entryKey(entry) {
+  return computeBaselineKey(
+    entry.ruleId,
+    entry.reasonCode || 'DEFAULT',
+    typeof entry.html === 'string' ? entry.html : '',
+    entry.frame
+  );
+}
+
+// How many entries the baseline holds under each key.
+function entryCounts(baselineEntries) {
   const remaining = new Map();
   for (const entry of entriesOf(baselineEntries)) {
     if (!entry) continue;
-    const key = computeBaselineKey(
-      entry.ruleId,
-      entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : '',
-      entry.frame
-    );
+    const key = entryKey(entry);
     remaining.set(key, (remaining.get(key) || 0) + 1);
   }
+  return remaining;
+}
 
-  let totalFail = 0;
-  let knownCount = 0;
-  const newOccurrences = [];
+// Which of the findings ({ ruleId, reasonCode, html, framePath }) the
+// baseline knows, taking one entry from `remaining` for each. Every finding
+// is looked up under its own code first; only then is one that a release
+// moved to a new code looked up under the code it had (src/baseline-moves.json),
+// with the same rule, markup and frame. So an entry that names a finding
+// exactly is never taken by another that only matches it through a move.
+function takeKnown(remaining, findings) {
+  const take = (key) => {
+    const left = remaining.get(key) || 0;
+    if (left <= 0) return false;
+    remaining.set(key, left - 1);
+    return true;
+  };
+  const known = findings.map((f) =>
+    take(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
+  );
+  findings.forEach((f, i) => {
+    if (known[i]) return;
+    known[i] = earlierCodesOf(f.ruleId, f.reasonCode).some((code) =>
+      take(computeBaselineKey(f.ruleId, code, f.html, f.framePath))
+    );
+  });
+  return known;
+}
 
+// The fail occurrences of frames (framesOf), in order: { frame, check,
+// occurrence, ruleId, reasonCode, html, framePath }.
+function failFindingsOf(frames) {
+  const out = [];
   for (const { frame, result: frameResult } of frames) {
     for (const check of (frameResult && frameResult.checksResults) || []) {
       if (!check || check.outcome !== 'fail' || !Array.isArray(check.occurrences)) continue;
-
       for (const occurrence of check.occurrences) {
         if (!occurrence || !isFailOccurrence(check, occurrence)) continue;
-        totalFail += 1;
-
-        const reasonCode = getReasonCode(occurrence);
-        const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-        const key = computeBaselineKey(check.ruleId, reasonCode, html, frame.path);
-        const left = remaining.get(key) || 0;
-
-        if (left > 0) {
-          remaining.set(key, left - 1);
-          knownCount += 1;
-        } else {
-          newOccurrences.push({
-            ruleId: check.ruleId,
-            reasonCode,
-            selector: occurrence.selector,
-            html: occurrence.html,
-            summary: occurrence.summary,
-            ...(frame.path.length ? { frame: frame.path.slice() } : {})
-          });
-        }
+        out.push({
+          frame,
+          check,
+          occurrence,
+          ruleId: check.ruleId,
+          reasonCode: getReasonCode(occurrence),
+          html: typeof occurrence.html === 'string' ? occurrence.html : '',
+          framePath: frame.path
+        });
       }
     }
   }
+  return out;
+}
+
+// The fail occurrences of frames (framesOf) that the baseline knows, as a
+// set the reporters look each occurrence up in, and the entries left over.
+function knownOccurrences(frames, baselineEntries) {
+  const remaining = entryCounts(baselineEntries);
+  const findings = failFindingsOf(frames);
+  const known = takeKnown(remaining, findings);
+  return {
+    known: new Set(findings.filter((f, i) => known[i]).map((f) => f.occurrence)),
+    remaining
+  };
+}
+
+function matchBaseline(result, baselineEntries) {
+  const frames = framesOf(result, 'matchBaseline');
+  const remaining = entryCounts(baselineEntries);
+  const findings = failFindingsOf(frames);
+  const known = takeKnown(remaining, findings);
+
+  const newOccurrences = [];
+  findings.forEach((f, i) => {
+    if (known[i]) return;
+    newOccurrences.push({
+      ruleId: f.ruleId,
+      reasonCode: f.reasonCode,
+      selector: f.occurrence.selector,
+      html: f.occurrence.html,
+      summary: f.occurrence.summary,
+      ...(f.framePath.length ? { frame: f.framePath.slice() } : {})
+    });
+  });
 
   let staleCount = 0;
   for (const left of remaining.values()) {
@@ -211,17 +279,70 @@ function matchBaseline(result, baselineEntries) {
   }
 
   return {
-    totalFail,
-    knownCount,
+    totalFail: findings.length,
+    knownCount: findings.length - newOccurrences.length,
     newCount: newOccurrences.length,
     newOccurrences,
     staleCount
   };
 }
 
+// The entries with each one written under a reason code a release has since
+// moved its finding to (src/baseline-moves.json) given that code, so the
+// file matches without the table. With a result, an entry takes the code of
+// the finding it matches there; without one, only an entry whose old code
+// the rule no longer gives, and that moved to a single code, is rewritten,
+// since a split code can't be told apart without the finding. Every other
+// entry is kept as it is, so nothing new is accepted.
+function migrateBaselineEntries(baselineEntries, result) {
+  const entries = entriesOf(baselineEntries).map((entry) =>
+    entry && typeof entry === 'object' ? { ...entry } : entry
+  );
+  if (result === undefined || result === null) {
+    for (const entry of entries) {
+      if (!entry || typeof entry !== 'object') continue;
+      const move = BASELINE_MOVES.moves.find(
+        (m) => m.ruleId === entry.ruleId && m.from === (entry.reasonCode || 'DEFAULT')
+      );
+      if (move && !move.stillGiven && move.to.length === 1) entry.reasonCode = move.to[0];
+    }
+    return entries;
+  }
+  const frames = framesOf(result, 'migrateBaselineEntries');
+  // The entries under each key, so the one a finding takes can be rewritten.
+  const byKey = new Map();
+  for (const entry of entries) {
+    if (!entry || typeof entry !== 'object') continue;
+    const key = entryKey(entry);
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(entry);
+  }
+  const takeEntry = (key) => {
+    const list = byKey.get(key);
+    return list && list.length ? list.shift() : null;
+  };
+  const findings = failFindingsOf(frames);
+  const exact = findings.map((f) =>
+    takeEntry(computeBaselineKey(f.ruleId, f.reasonCode, f.html, f.framePath))
+  );
+  findings.forEach((f, i) => {
+    if (exact[i]) return;
+    for (const code of earlierCodesOf(f.ruleId, f.reasonCode)) {
+      const entry = takeEntry(computeBaselineKey(f.ruleId, code, f.html, f.framePath));
+      if (entry) {
+        entry.reasonCode = f.reasonCode;
+        break;
+      }
+    }
+  });
+  return entries;
+}
+
 module.exports = {
   buildBaselineEntries,
   matchBaseline,
+  migrateBaselineEntries,
+  knownOccurrences,
   computeBaselineKey,
   getReasonCode,
   entriesOf

@@ -176,6 +176,7 @@
     "surea11y.browser.d.ts",
     "src/core.js",
     "src/baseline.js",
+    "src/baseline-moves.json",
     "src/scan-result.js",
     "src/policy/contracts.js",
     "src/report.js",
