@@ -37,6 +37,11 @@
  *   passes, where both fall short it fails (`pseudoElementColor` names the
  *   pseudo-element), and where they disagree it is left to
  *   contrast-computable.
+ *   Text with no opaque background behind it, up to the root, is measured
+ *   on the canvas the browser paints under the page, in the color scheme
+ *   the page is drawn in, and, on a page that supports light and dark, in
+ *   the other where its colours can't change with the scheme, as
+ *   contrast-minimum describes.
  *   Normal-size text whose background can't be worked out still fails when
  *   its colour can't reach 7:1 on any background
  *   (`CONTRAST_UNREACHABLE_ANY_BACKGROUND`, `metrics.bestRatio`: its ratio
@@ -79,8 +84,19 @@
  *     contract (API_STABILITY.md), unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless
  *     the page background never became opaque and was taken to sit on a
- *     canvas color. Then `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]`
- *     and `assumedRootCanvasColor` is the color assumed.
+ *     canvas color: one the scan names (`contrast.rootCanvasFallback`), or,
+ *     with the `auditorAssist` mode where the page's own canvas can't be
+ *     known (in a frame, under forced colors), the fallback. Then
+ *     `assumptionsApplied` is `["ROOT_CANVAS_FALLBACK"]` and
+ *     `assumedRootCanvasColor` is that color. Text on the canvas the page's
+ *     color scheme gives it is measured on that canvas, with neither.
+ *   - `colorScheme` (a FAIL on the canvas of a page that supports light and
+ *     dark): `'light'` or `'dark'`, the scheme in which the text falls short,
+ *     where it passes in the other; absent where it falls short in every
+ *     scheme measured.
+ *   - `colorSchemesChecked` (a FAIL, and the pass): the schemes the text on
+ *     the canvas was measured in, where the page supports both and one
+ *     could not be measured.
  *   - `generatedBy` (a FAIL on generated text): `::before`, `::after` or
  *     `::marker`, the pseudo-element whose text is measured; the selector
  *     names its element, and the colours and font are the pseudo-element's.
@@ -112,7 +128,8 @@
  *     Basis: WCAG 1.4.6 (not settled).
  *   - `CONTRAST_UNREACHABLE_ANY_BACKGROUND` (fail): normal-size text whose
  *     background could not be worked out (an image or gradient, other paint
- *     under it, or no opaque background), in a colour that cannot reach 7:1
+ *     under it, or no opaque background where the page's canvas can't be
+ *     known, as in a frame), in a colour that cannot reach 7:1
  *     against any background: even white or black, the best there are, give
  *     it less (relative luminance between 0.1 and 0.3). Large text never
  *     gives it, since every colour reaches 4.5:1 against one of them.
@@ -356,6 +373,9 @@ function runInPage(ctx) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // The color schemes text on the page's canvas was measured in, where the
+  // page supports one it wasn't (acrossSchemes), for the pass's evidence.
+  let schemesChecked = null;
 
   function pushPassOccurrence(eligibleCount, computableCount) {
     try {
@@ -380,7 +400,8 @@ function runInPage(ctx) {
             metrics: {
               eligibleTextCount: Number(eligibleCount) || 0,
               computableTextCount: Number(computableCount) || 0
-            }
+            },
+            ...(schemesChecked ? { colorSchemesChecked: schemesChecked.slice(0) } : {})
           }
         }
       });
@@ -545,6 +566,20 @@ function runInPage(ctx) {
         occBase.i18n.hintKey = 'contrast_hint_drawnSize';
       }
 
+      // Text that falls short in one of the two color schemes the page
+      // supports, on its canvas: the hint names the scheme.
+      if (
+        det.colorScheme &&
+        !placeholder &&
+        !symbol &&
+        (occBase.i18n.hintKey === 'contrastEnhanced_hint_fail' ||
+          occBase.i18n.hintKey === 'contrast_hint_drawnSize')
+      ) {
+        const scheme = det.colorScheme === 'dark' ? 'dark' : 'light';
+        occBase.hint = `In the page's ${scheme} color scheme, this text has a contrast ratio of ${params.ratio}:1 against ${params.backgroundHex}, below ${params.threshold}:1. Change its colors in that scheme so the ratio reaches it.`;
+        occBase.i18n.hintKey = `contrast_hint_colorScheme_${scheme}`;
+      }
+
       if (special && !placeholder && !symbol) {
         const t = params && params.threshold;
         if (special.kind === 'logo') {
@@ -649,6 +684,7 @@ function runInPage(ctx) {
           : null,
       bgAssumedRootCanvasColor:
         typeof m.bg.assumedRootCanvasColor === 'string' ? m.bg.assumedRootCanvasColor : null,
+      canvas: m.bg.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -712,6 +748,7 @@ function runInPage(ctx) {
       ratio: pick.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(pick.ratio),
       threshold: pick.threshold,
       thresholdStr: `${pick.threshold}`,
@@ -752,6 +789,7 @@ function runInPage(ctx) {
       ratio: m.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -870,6 +908,148 @@ function runInPage(ctx) {
     );
   }
 
+  // Text measured against its background: bg and fg as computed, in
+  // `scheme` where given (a color scheme the page supports and isn't drawn
+  // in now, on its canvas: helpers.contrast.colorSchemeMeasurable), else as
+  // the page is drawn. { computable, ratio, threshold, ..., canvas }.
+  function mainAnalysis(el, scheme) {
+    let analysis;
+    // The caches hold the scheme the page is drawn in.
+    const bgCache = scheme ? null : __elBgCache;
+    const fgCache = scheme ? null : __elFgCache;
+    let bg = bgCache ? bgCache.get(el) : null;
+    if (!bg) {
+      bg = helpers.contrast.computeEffectiveBackground(el, {
+        contrast: { mode, rootCanvasFallback, ...(scheme ? { colorScheme: scheme } : {}) },
+        collectStack: false
+      });
+      // Not computable: contrast-computable asks about this text.
+      bg = bg || { ok: false, rgba: null, alpha: 0 };
+      if (bgCache) bgCache.set(el, bg);
+    }
+
+    const bgAssumptionsApplied =
+      bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+        ? bg.assumptionsApplied.slice(0)
+        : null;
+    const bgAssumedRootCanvasColor =
+      bg && typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null;
+
+    let fg = fgCache ? fgCache.get(el) : null;
+    if (!fg) {
+      fg = scheme
+        ? helpers.contrast.computeEffectiveForeground(el, { contrast: { colorScheme: scheme } })
+        : helpers.contrast.computeEffectiveForeground(el);
+      fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+      if (fgCache) fgCache.set(el, fg);
+    }
+
+    if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
+      analysis = { computable: false };
+      // Not where the text's own colour in the page's color scheme
+      // is what can't be read (bg.textColorUnknown).
+      if ((!bg || bg.ok === false || !bg.rgba) && !(bg && bg.textColorUnknown)) {
+        analysis.unreachable = unreachableOnAnyBackground(
+          el,
+          (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
+        );
+      }
+    } else {
+      // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
+      let fgOpaque =
+        fg.rgba.a != null && fg.rgba.a < 1
+          ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
+          : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+
+      let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+      // A drop-down select in the browser's own background is drawn
+      // on the Field colour in some browsers and on its computed
+      // background in others: text that fails on either fails, so
+      // the lower ratio counts.
+      const field =
+        typeof helpers.contrast.nativeSelectField === 'function'
+          ? helpers.contrast.nativeSelectField(el)
+          : null;
+      let selectField = null;
+      if (field) {
+        const fgOnField =
+          fg.rgba.a != null && fg.rgba.a < 1
+            ? helpers.contrast.compositeRgba(fg.rgba, field)
+            : fgOpaque;
+        const onField = helpers.contrast.contrastRatio(fgOnField, field);
+        selectField = {
+          backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+          fieldHex: helpers.contrast.rgbToHex(field)
+        };
+        if (onField < ratio) {
+          fgOpaque = fgOnField;
+          bgOpaque = field;
+          ratio = onField;
+        }
+      }
+
+      const font = getFontInfo(el);
+      const threshold = helpers.contrast.requiredRatio('AAA', font.isLargeText);
+
+      analysis = {
+        computable: true,
+        ratio,
+        bgAssumptionsApplied,
+        bgAssumedRootCanvasColor,
+        ratioStr: helpers.contrast.round2(ratio),
+        threshold,
+        thresholdStr: `${threshold}`,
+        font,
+        fgOpaque,
+        bgOpaque,
+        selectField,
+        canvas: bg.canvas || null
+      };
+    }
+    return analysis;
+  }
+
+  // Text on the page's canvas (analysis.canvas), on a page that supports
+  // two color schemes: measured in the one the page is drawn in, and in the
+  // other where its colours can't change with the scheme (measureIn,
+  // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
+  // scheme measured, by its ratio there, and colorScheme names that scheme
+  // where the other passes (failing in both, it is reported in the scheme
+  // the page is drawn in, naming none); it passes where it passes in each,
+  // by the ratio closest to its threshold.
+  // colorSchemesChecked lists the schemes measured where one wasn't.
+  function acrossSchemes(el, analysis, measureIn) {
+    const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
+    if (canvas.supported.length < 2) return analysis;
+    const measured = [{ scheme: canvas.scheme, a: analysis }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !measureIn) continue;
+      if (typeof helpers.contrast.colorSchemeMeasurable !== 'function') continue;
+      if (!helpers.contrast.colorSchemeMeasurable(el, scheme)) continue;
+      const other = measureIn(scheme);
+      if (other && other.computable === true && other.canvas && other.canvas.scheme === scheme)
+        measured.push({ scheme, a: other });
+    }
+    const share = (m) => m.a.ratio / m.a.threshold;
+    const failing = measured.filter((m) => !(m.a.ratio >= m.a.threshold));
+    // Failing in every scheme measured, it is reported as the page is drawn.
+    const pick =
+      failing.length === measured.length
+        ? measured[0]
+        : (failing.length ? failing : measured).reduce((best, m) =>
+            share(m) < share(best) ? m : best
+          );
+    const out = { ...pick.a };
+    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
+    const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
+    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
+    return out;
+  }
+
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
   if (scan && scan.elements && Array.isArray(scan.elements)) {
     try {
@@ -886,7 +1066,9 @@ function runInPage(ctx) {
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
+        let analysis = pseudo
+          ? acrossSchemes(el, generatedAnalysis(el, pseudo), null)
+          : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -903,101 +1085,19 @@ function runInPage(ctx) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) ||
-              pseudoColorAnalysis(el, blocker) || { computable: false };
+            analysis = acrossSchemes(
+              el,
+              outlineOnlyAnalysis(el, blocker) ||
+                pseudoColorAnalysis(el, blocker) || { computable: false },
+              null
+            );
             if (analysis.computable !== true && BACKGROUND_ONLY_BLOCKERS.has(blocker.reasonCode)) {
               analysis.unreachable = unreachableOnAnyBackground(el, blocker.reasonCode);
             }
           } else {
-            let bg = __elBgCache ? __elBgCache.get(el) : null;
-            if (!bg) {
-              bg = helpers.contrast.computeEffectiveBackground(el, {
-                contrast: { mode, rootCanvasFallback },
-                collectStack: false
-              });
-              // Not computable: contrast-computable asks about this text.
-              bg = bg || { ok: false, rgba: null, alpha: 0 };
-              if (__elBgCache) __elBgCache.set(el, bg);
-            }
-
-            const bgAssumptionsApplied =
-              bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
-                ? bg.assumptionsApplied.slice(0)
-                : null;
-            const bgAssumedRootCanvasColor =
-              bg && typeof bg.assumedRootCanvasColor === 'string'
-                ? bg.assumedRootCanvasColor
-                : null;
-
-            let fg = __elFgCache ? __elFgCache.get(el) : null;
-            if (!fg) {
-              fg = helpers.contrast.computeEffectiveForeground(el);
-              fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
-              if (__elFgCache) __elFgCache.set(el, fg);
-            }
-
-            if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
-              analysis = { computable: false };
-              if (!bg || bg.ok === false || !bg.rgba) {
-                analysis.unreachable = unreachableOnAnyBackground(
-                  el,
-                  (bg && bg.reasonCode) || 'BACKGROUND_NOT_COMPUTABLE'
-                );
-              }
-            } else {
-              // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              let fgOpaque =
-                fg.rgba.a != null && fg.rgba.a < 1
-                  ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
-                  : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
-
-              let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
-
-              let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
-
-              // A drop-down select in the browser's own background is drawn
-              // on the Field colour in some browsers and on its computed
-              // background in others: text that fails on either fails, so
-              // the lower ratio counts.
-              const field =
-                typeof helpers.contrast.nativeSelectField === 'function'
-                  ? helpers.contrast.nativeSelectField(el)
-                  : null;
-              let selectField = null;
-              if (field) {
-                const fgOnField =
-                  fg.rgba.a != null && fg.rgba.a < 1
-                    ? helpers.contrast.compositeRgba(fg.rgba, field)
-                    : fgOpaque;
-                const onField = helpers.contrast.contrastRatio(fgOnField, field);
-                selectField = {
-                  backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
-                  fieldHex: helpers.contrast.rgbToHex(field)
-                };
-                if (onField < ratio) {
-                  fgOpaque = fgOnField;
-                  bgOpaque = field;
-                  ratio = onField;
-                }
-              }
-
-              const font = getFontInfo(el);
-              const threshold = helpers.contrast.requiredRatio('AAA', font.isLargeText);
-
-              analysis = {
-                computable: true,
-                ratio,
-                bgAssumptionsApplied,
-                bgAssumedRootCanvasColor,
-                ratioStr: helpers.contrast.round2(ratio),
-                threshold,
-                thresholdStr: `${threshold}`,
-                font,
-                fgOpaque,
-                bgOpaque,
-                selectField
-              };
-            }
+            analysis = acrossSchemes(el, mainAnalysis(el, null), (scheme) =>
+              mainAnalysis(el, scheme)
+            );
           }
           __elAnalysisCache.set(el, analysis);
         }
@@ -1011,6 +1111,9 @@ function runInPage(ctx) {
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
+        // Text on the canvas measured in only some of the page's color schemes.
+        if (analysis.colorSchemesChecked && !schemesChecked)
+          schemesChecked = analysis.colorSchemesChecked;
 
         const ratio = analysis.ratio;
         const font = analysis.font;
@@ -1142,7 +1245,14 @@ function runInPage(ctx) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
-            ...(pseudo ? { generatedBy: pseudo } : {})
+            ...(pseudo ? { generatedBy: pseudo } : {}),
+            // On the canvas of a page with two color schemes: the one it
+            // fails in, where it passes in the other, and those measured,
+            // where one wasn't (acrossSchemes).
+            ...(analysis.colorScheme ? { colorScheme: analysis.colorScheme } : {}),
+            ...(analysis.colorSchemesChecked
+              ? { colorSchemesChecked: analysis.colorSchemesChecked.slice(0) }
+              : {})
           };
 
           let special = null;

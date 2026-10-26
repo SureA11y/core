@@ -1880,6 +1880,12 @@ function runCoreSettled(
       // A canvas the caller named, white included, which a rule may decide
       // by where it would only lean on the default; the result echoes it.
       engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
+      // The contrast rules measure text on it in place of the page's own
+      // canvas (contrast-helpers, __canvasFor).
+      try {
+        if (sharedHelpers.contrast && typeof sharedHelpers.contrast.useNamedCanvas === 'function')
+          sharedHelpers.contrast.useNamedCanvas(given);
+      } catch {}
     }
   }
 

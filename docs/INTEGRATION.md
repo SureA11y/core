@@ -91,6 +91,19 @@ const result = await page.evaluate(wrapperFn, {
 
 This is the only pattern that gives every rule real computed layout, so it's the one to reach for if you need `target-size-minimum` or any other geometry-dependent check to actually run instead of reporting `notApplicable`.
 
+### A page's other color scheme
+
+A page that declares `color-scheme: light dark` (on its root, or in `<meta name="color-scheme">`) is drawn in the scheme the browser prefers, on that scheme's canvas where it paints no background of its own. A scan sees the scheme the browser is in, and measures the text on the canvas in the other scheme too where its colors can't change with the scheme. Where they can (a rule in a `prefers-color-scheme` query, `light-dark()`, a system color), each finding of `contrast-minimum` and `contrast-enhanced`, and their pass, says which schemes were measured in `data.details.colorSchemesChecked` (`['light']`, say), and a finding that fails in one scheme only names it in `data.details.colorScheme`. To check the other scheme, scan again with the browser in it:
+
+```js
+// Playwright
+await page.emulateMedia({ colorScheme: 'dark' });
+// Puppeteer
+await page.emulateMediaFeatures([{ name: 'prefers-color-scheme', value: 'dark' }]);
+```
+
+A page that declares no scheme is drawn in light whatever the browser prefers, and is measured on white either way. Under jsdom the scan sees the light scheme. See [`LIMITATIONS.md`](./LIMITATIONS.md) for what isn't measured.
+
 ## Pattern 3 — a standalone `<script>` tag (no driver, no bundler)
 
 Good for: a manual check against a page open in a real browser, a bookmarklet, or any other context where there's no automation driver and no build step to reach for.

@@ -162,8 +162,8 @@ test(`${RULE_ID}: cantTell, not pass, when contrast is not confidently computabl
 });
 
 test(`${RULE_ID}: two opaque text colors decide a link whose background can't be worked out`, () => {
-  // The link-vs-text ratio needs no background: an image behind both, an
-  // ancestor fading both, or no page background at all leave it as it is.
+  // The link-vs-text ratio needs no background: an image behind both, or
+  // an ancestor fading both over one, leave it as it is.
   const html = `<!doctype html><html><head><style>
     p { color: #000000; }
     .nodeco { text-decoration: none; }
@@ -172,8 +172,8 @@ test(`${RULE_ID}: two opaque text colors decide a link whose background can't be
   </style></head><body>
     <p class="bgimg">Read <a id="img-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p>
     <p class="bgimg">Read <a id="img-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p>
-    <div class="faded"><p>Read <a id="op-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p></div>
-    <div class="faded"><p>Read <a id="op-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p></div>
+    <div class="bgimg"><div class="faded"><p>Read <a id="op-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p></div></div>
+    <div class="bgimg"><div class="faded"><p>Read <a id="op-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p></div></div>
     <p>Read <a id="root-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p>
     <p>Read <a id="root-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p>
     <p>Read <a id="root-alpha" href="#" class="nodeco" style="color:rgba(51,51,51,0.5)">this guide</a> before you start.</p>
@@ -218,9 +218,10 @@ test(`${RULE_ID}: two opaque text colors decide a link whose background can't be
     faded.i18n.summaryKey,
     'linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity'
   );
-  // A translucent color depends on what is behind it.
-  assert.strictEqual(occFor(rule, 'root-alpha').data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
-  assert.strictEqual(occFor(rule, 'root-alpha').occurrenceOutcome, 'cantTell');
+  // A translucent color is drawn over the page's canvas, white here.
+  const alpha = occFor(rule, 'root-alpha');
+  assert.strictEqual(alpha.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  assert.strictEqual(alpha.data.details.colors.linkForegroundHex, '#999999');
 });
 
 test(`${RULE_ID}: the same text-shadow or stroke on link and text fails below 3:1, and is asked about above`, () => {
@@ -550,10 +551,13 @@ function occFor(rule, id) {
   return occ;
 }
 
-test(`${RULE_ID}: colors that could not be measured lean fail when the link is in the text's own translucent color`, () => {
-  // No page background: strict mode doesn't assume one, so translucent
-  // colors are not measured.
+test(`${RULE_ID}: colors that can't be read in the page's color scheme are asked about, with no lean`, () => {
+  // A prefers-color-scheme rule reaches the text, which jsdom doesn't apply:
+  // its colours in the scheme the page is drawn in are unknown, so even the
+  // same translucent colour on link and text leans nowhere. (A background
+  // the link and the text share leans fail on that: the gradient case below.)
   const html = `<!doctype html><html><head><style>
+    @media (prefers-color-scheme: light) { body { margin: 8px; } }
     p { color: rgba(0, 0, 0, 0.7); }
     a { text-decoration: none; }
   </style></head><body>
@@ -562,15 +566,18 @@ test(`${RULE_ID}: colors that could not be measured lean fail when the link is i
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
-  const same = occFor(rule, 'same');
-  assert.strictEqual(same.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
-  assert.strictEqual(same.lean.toward, 'fail');
-  assert.strictEqual(same.lean.i18n.whyKey, 'linkInTextBlock_lean_why_sameColor');
-  // Two different translucent colors: how far apart they are drawn depends
-  // on the background.
-  const other = occFor(rule, 'other');
-  assert.strictEqual(other.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
-  assert.strictEqual(other.lean, undefined);
+  for (const id of ['same', 'other']) {
+    const occ = occFor(rule, id);
+    assert.strictEqual(occ.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE', id);
+    assert.strictEqual(occ.lean, undefined, id);
+  }
+  // Without the rule the two are drawn on the page's canvas and measured:
+  // in the same colour the link fails.
+  const known = runa11yCoreOnHtml(html.replace(/@media[^\n]*\n/, ''), { runOnly: [RULE_ID] });
+  assert.strictEqual(
+    occFor(known.checksResults[0], 'same').data.details.reasonCode,
+    'COLOR_ONLY_DIFFERENTIATION'
+  );
 });
 
 test(`${RULE_ID}: a gradient behind link and text alike leans fail on the same color, and pass on a background of the link's own`, () => {
@@ -636,7 +643,7 @@ test(`${RULE_ID}: a link told apart by color alone leans by the hover and focus 
   assert.strictEqual(occFor(rule, 'hover').lean, undefined);
 });
 
-test(`${RULE_ID}: a highlight of its own on a page with no background is asked about, leaning by the canvas`, () => {
+test(`${RULE_ID}: a highlight of its own on a page with no background is decided on the page's canvas`, () => {
   const para =
     '<p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:#ff0">annual report</a> today.</p>';
   const page = (head, body = para) =>
@@ -647,17 +654,20 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is asked a
       ...(contrast ? { engineOptions: { contrast } } : {})
     });
 
-  // Strict mode doesn't assume the canvas behind a page with no background:
-  // the highlight may or may not stand out from it, so it is not a failure.
-  const rule = assertRule(scan(page('')), RULE_ID, 'cantTell', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+  // The canvas follows from the page's color scheme: white for a page that
+  // declares none, where the yellow highlight sets the link apart.
+  assertRule(scan(page('')), RULE_ID, 'pass', { maxOccurrences: 0 });
+  // The dark canvas for a page drawn in dark.
+  assertRule(scan(page('<meta name="color-scheme" content="dark">')), RULE_ID, 'pass', {
+    maxOccurrences: 0
   });
-  const occ = occFor(rule, 'hl');
-  assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.strictEqual(occ.lean.toward, 'pass');
-  assert.strictEqual(occ.lean.i18n.whyKey, 'linkInTextBlock_lean_why_rootCanvas');
-  assert.strictEqual(occ.lean.i18n.params.canvas, '#ffffff');
+  const onDark = assertRule(
+    scan(page('<meta name="color-scheme" content="dark">', para.replace('#ff0', '#121212'))),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.strictEqual(onDark.occurrences[0].data.details.colorScheme, undefined);
 
   // A canvas the run names decides it, in strict mode too: in the
   // highlight's color it marks nothing, and the link fails; in another
@@ -673,10 +683,10 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is asked a
   assertRule(scan(page(''), { rootCanvasFallback: '#000' }), RULE_ID, 'pass', {
     maxOccurrences: 0
   });
-  // One that isn't a usable color is the default, and only leans.
-  const unusable = occFor(scan(page(''), { rootCanvasFallback: 'banana' }).checksResults[0], 'hl');
-  assert.strictEqual(unusable.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.strictEqual(unusable.lean.toward, 'pass');
+  // One that isn't a usable color is the default: the page's own canvas.
+  assertRule(scan(page(''), { rootCanvasFallback: 'banana' }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
   // The result echoes whether the canvas was named; passed back, the echo
   // of a default white is the default again.
   const echoOf = (contrast) => scan(page(''), contrast).checksResults[0].engineOptions.contrast;
@@ -691,24 +701,24 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is asked a
     rootCanvasFallback: '#ffffff',
     rootCanvasFallbackSet: false
   });
-  const again = occFor(scan(page(''), defaultEcho).checksResults[0], 'hl');
-  assert.strictEqual(again.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assertRule(scan(page('', para.replace('#ff0', '#fff')), defaultEcho), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
   assert.strictEqual(echoOf({ rootCanvasFallback: 'banana' }).rootCanvasFallbackSet, false);
 
-  // A page that asks for a dark color scheme is drawn on another canvas.
-  const dark = occFor(
-    scan(page('<meta name="color-scheme" content="dark">')).checksResults[0],
-    'hl'
+  // Where the colours can't be read in the page's scheme (jsdom applies no
+  // prefers-color-scheme rule, and one reaches the text), it is asked
+  // about, with no lean, whatever the canvas.
+  const unknown = page(
+    '<style>@media (prefers-color-scheme: light) { p { margin: 1em; } }</style>'
   );
-  assert.strictEqual(dark.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.strictEqual(dark.lean, undefined);
-
-  // With the background known, or assumed in auditorAssist mode, it is
-  // decided as any highlight is.
-  assertRule(scan(page('<style>body{background:#fff}</style>')), RULE_ID, 'pass', {
-    maxOccurrences: 0
-  });
-  assertRule(scan(page(''), { mode: 'auditorAssist' }), RULE_ID, 'pass', { maxOccurrences: 0 });
+  for (const contrast of [null, { rootCanvasFallback: '#ffffff' }, { mode: 'auditorAssist' }]) {
+    const asked = occFor(scan(unknown, contrast).checksResults[0], 'hl');
+    assert.strictEqual(asked.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+    assert.strictEqual(asked.lean, undefined);
+  }
+  // auditorAssist on a known canvas decides it as any highlight.
   const onYellow = assertRule(
     scan(page(''), { mode: 'auditorAssist', rootCanvasFallback: '#ffff00' }),
     RULE_ID,
@@ -716,22 +726,39 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is asked a
     { minOccurrences: 1, maxOccurrences: 1 }
   );
   assert.strictEqual(onYellow.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
-  // At 3:1 or more from the text it is asked about as before.
-  const far = occFor(
-    scan(page('', para.replace('color:#000;text-decoration', 'color:#cc0000;text-decoration')))
-      .checksResults[0],
-    'hl'
-  );
-  assert.strictEqual(far.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
-  // With the canvas named, its highlight marks it, as on a known background.
-  assertRule(
-    scan(page('', para.replace('color:#000;text-decoration', 'color:#cc0000;text-decoration')), {
-      rootCanvasFallback: '#ffffff'
-    }),
+});
+
+// A page that supports light and dark: the highlight is compared with the
+// canvas in each scheme, as the contrast rules measure text there.
+test(`${RULE_ID}: a highlight is compared with the page's canvas in each color scheme it supports`, () => {
+  const page = (css, highlight) =>
+    `<!doctype html><html><head><style>:root{color-scheme:light dark} ${css}</style></head><body><p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:${highlight}">annual report</a> today.</p></body></html>`;
+  const scan = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  // The dark canvas's own colour marks nothing there; on white it does.
+  const dark = assertRule(scan(page('', '#121212')), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(dark.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(dark.occurrences[0].data.details.colorScheme, 'dark');
+  // On white, the scheme jsdom sees, it fails in that scheme.
+  const light = assertRule(scan(page('', '#ffffff')), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(light.occurrences[0].data.details.colorScheme, 'light');
+  // Yellow stands out on both canvases.
+  assertRule(scan(page('', '#ffff00')), RULE_ID, 'pass', { maxOccurrences: 0 });
+  // A prefers-color-scheme rule reaching the link: the dark scheme isn't
+  // measured, and the finding says which was.
+  const themed = assertRule(
+    scan(page('@media (prefers-color-scheme: dark) { a { color: #fff; } }', '#ffffff')),
     RULE_ID,
-    'pass',
-    { maxOccurrences: 0 }
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
   );
+  assert.strictEqual(themed.occurrences[0].data.details.colorScheme, undefined);
+  assert.deepStrictEqual(themed.occurrences[0].data.details.colorSchemesChecked, ['light']);
 });
 
 test(`${RULE_ID}: a paragraph's ::first-line is left out under a DOM emulator, which computes no pseudo-element styles`, () => {
@@ -800,7 +827,7 @@ test(`${RULE_ID}: a link faded with its text by an ancestor leans pass on no hov
       p { color: #000000; } a { text-decoration: none; color: #cc0000; }
       .faded { opacity: 0.8; } ${css}
     </style></head><body>
-      <div class="faded"><p>Read <a id="faded" href="#">this guide</a> before you start.</p></div>
+      <div style="background-image:linear-gradient(#fff, #eee)"><div class="faded"><p>Read <a id="faded" href="#">this guide</a> before you start.</p></div></div>
       <p>Read <a id="plain" href="#">this guide</a> before you start.</p>
     </body></html>`;
   const scan = (css) =>

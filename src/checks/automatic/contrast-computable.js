@@ -49,12 +49,15 @@
  *   paints depends on line breaks), opacity on an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
- *   background that never becomes opaque (in a browser, outside a frame,
- *   the canvas painted under the root is read, and text is measured on it),
- *   a color that does not parse, or an option of a drop-down <select>,
+ *   background that never becomes opaque where the page's canvas can't be
+ *   known (in a frame, under forced colors; elsewhere text is measured on
+ *   the canvas, see contrast-minimum), a color that does not parse, or an
+ *   option of a drop-down <select>,
  *   other than the shown one, with a color, background or opacity of its
  *   own (SELECT_OPTION_COLOR: it is shown only in the list the select
  *   opens, which the platform draws in those colours or in its own),
+ *   or, in an emulator such as jsdom, a text colour that can't be worked
+ *   out in the color scheme the page is drawn in (COLOR_SCHEME_NOT_RENDERED),
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at
@@ -79,8 +82,11 @@
  *   - `assumptionsCount`, `assumptionsApplied` (the pass): how many text
  *     nodes needed an assumption to get a background, and which ones were
  *     made. Each item is a code; `ROOT_CANVAS_FALLBACK` means a page
- *     background that never becomes opaque was taken to sit on the
- *     configured canvas color, white by default.
+ *     background that never becomes opaque was taken to sit on the canvas
+ *     color the scan names (`contrast.rootCanvasFallback`), or, with the
+ *     `auditorAssist` mode where the page's own canvas can't be known (in a
+ *     frame, under forced colors), on that color, white by default. Text
+ *     measured on the canvas the page's color scheme gives it needs none.
  *   - `generatedBy` (generated text that can't be measured): `::before`,
  *     `::after` or `::marker`, the pseudo-element whose text is asked
  *     about; the selector names its element. `GENERATED_TEXT_UNREADABLE`
@@ -103,12 +109,11 @@
  *     could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_NOT_OPAQUE_AT_ROOT` (cantTell): no element behind the text,
- *     up to the root, has an opaque background, so the colour it sits on
- *     depends on where the page is shown.
- *     It leans fail when, on the white canvas (or the configured one) a browser
- *     paints behind such a page, the text is below the AA ratio for its size,
- *     and pass when it reaches the AAA ratio; not in a frame, in a dark color
- *     scheme, under forced colors or through opacity.
+ *     up to the root, has an opaque background, and the canvas under it
+ *     can't be known: in a frame, where the page around it may show
+ *     through, or under forced colors, where it is the user's palette.
+ *     Elsewhere the text is measured on the canvas its color scheme gives
+ *     the page, and not asked about.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_UNPARSABLE` (cantTell): a background colour behind the text
  *     does not parse.
@@ -162,6 +167,18 @@
  *   - `GENERATED_TEXT_POSITIONED` (cantTell): a ::before or ::after with text
  *     is taken out of the flow without an opaque background of its own, so what
  *     lies behind it is unknown.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ *   - `COLOR_SCHEME_NOT_RENDERED` (cantTell): the page is drawn in a color
+ *     scheme (`blockerValue`: `light` or `dark`) whose colours for this text
+ *     the scan can't read. An emulator such as jsdom computes the light
+ *     scheme's colours and applies no prefers-color-scheme rule: on a page
+ *     drawn in light, text such a rule reaches; on a page drawn in dark
+ *     (`color-scheme: dark`), text whose colour, or a background behind it,
+ *     a prefers-color-scheme rule, a custom property or system colour, or
+ *     the browser's own form-control colours set. The dark scheme's
+ *     CanvasText and LinkText, and light-dark() and the CanvasText,
+ *     LinkText and Canvas the page gives a text colour, are worked out
+ *     (Chromium's colours). A browser computes the colours it draws.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error; the
  *     text is to be measured by hand.
@@ -230,7 +247,8 @@ const meta = {
     'PSEUDO_ELEMENT_COLOR',
     'SELECT_OPTION_COLOR',
     'GENERATED_TEXT_UNREADABLE',
-    'GENERATED_TEXT_POSITIONED'
+    'GENERATED_TEXT_POSITIONED',
+    'COLOR_SCHEME_NOT_RENDERED'
   ],
   // How a person checks each undecided finding: shown with it as
   // howToCheck (docs/OUTPUT_SCHEMA.md).
@@ -281,8 +299,8 @@ const meta = {
     },
     BACKGROUND_NOT_OPAQUE_AT_ROOT: {
       steps: [
-        "Find the text the report names; note that the page sets no background, so the browser's default (usually white) shows.",
-        'If the page is embedded in another page or the browser or system is in dark mode, view it in each setting where it is shown.',
+        'Find the text the report names; the page sets no opaque background behind it, so what shows there is the canvas the browser paints, or, in a frame, the page around it.',
+        'View the page where it is shown: inside the page that embeds it, with forced colors off, and in each color scheme the page supports (light and dark).',
         "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text against the background actually seen in each setting.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
@@ -308,6 +326,16 @@ const meta = {
       ],
       passWhen: 'The ratio reaches the threshold.',
       failWhen: 'The ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+    },
+    COLOR_SCHEME_NOT_RENDERED: {
+      steps: [
+        'Open the page in a browser set to the color scheme the report names (blockerValue: light or dark), or emulate it in the developer tools (Rendering, prefers-color-scheme).',
+        "Find the text the report names and use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against the background behind it.",
+        'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
+      ],
+      passWhen: 'In that color scheme the ratio reaches the threshold.',
+      failWhen:
+        'In that color scheme the ratio is below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
     },
     ELEMENT_OPACITY: {
       steps: [
@@ -527,6 +555,8 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_pseudoElementColor';
       else if (rc === 'SELECT_OPTION_COLOR')
         summaryKey = 'contrastComputable_cantTell_selectOption';
+      else if (rc === 'COLOR_SCHEME_NOT_RENDERED')
+        summaryKey = 'contrastComputable_cantTell_colorScheme';
       if (pseudo) summaryKey = 'contrastComputable_cantTell_generatedText';
 
       // Every cantTell leaves a person to measure the contrast, so each one
@@ -664,7 +694,9 @@ function runInPage(ctx) {
       if (dom.namespaceURI(el) === SVG_NS) return null;
       if (typeof C.isPlaceholderText === 'function' && C.isPlaceholderText(el)) return null;
       const cs = computedStyleOf(el);
+      // In the color scheme the page is drawn in (helpers.contrast.textFillColor).
       const fill =
+        (typeof C.textFillColor === 'function' && C.parseCssColorToRgba(C.textFillColor(el))) ||
         (cs && C.parseCssColorToRgba(cs.webkitTextFillColor || '')) ||
         (cs && C.parseCssColorToRgba(cs.color));
       return fill && fill.a === 1 ? { r: fill.r, g: fill.g, b: fill.b, a: 1 } : null;
@@ -709,7 +741,7 @@ function runInPage(ctx) {
   }
 
   // The lean for el's cantTell, by its blocker, or null.
-  function leanFor(el, reasonCode, bg) {
+  function leanFor(el, reasonCode) {
     try {
       if (!C || !el || dom.nodeType(el) !== 1) return null;
       const cs = styleOf(el);
@@ -738,68 +770,6 @@ function runInPage(ctx) {
             whyKey: 'contrastComputable_lean_why_opacity',
             cautionKey: 'contrastComputable_lean_caution_opacity',
             params: { ratio: ratioParam(ratio) }
-          }
-        };
-      }
-      // A page that sets no opaque background, at the top level of a
-      // window in a light color scheme, is drawn on the canvas the browser
-      // paints behind it, white unless the run names another.
-      if (reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') {
-        if (!bg || !bg.rgba) return null;
-        const doc = dom.ownerDocument(el);
-        let inFrame = true;
-        try {
-          const view = doc ? dom.defaultView(doc) : null;
-          inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
-        } catch {
-          inFrame = true;
-        }
-        if (inFrame) return null;
-        if (typeof C.colorsForced === 'function' && C.colorsForced()) return null;
-        const root = doc ? dom.documentElement(doc) : null;
-        const rootScheme = root ? String(computedStyleOf(root).colorScheme || '') : '';
-        const schemeMeta = doc
-          ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]')
-          : null;
-        const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
-        const darkScheme = /\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme);
-        if (darkScheme) return null;
-        const canvas = C.parseCssColorToRgba(rootCanvasFallback);
-        if (!canvas || canvas.a !== 1) return null;
-        const back = { ...C.compositeRgba(bg.rgba, canvas), a: 1 };
-        // Opacity fades the text and its background as one group, which
-        // the colours here don't model.
-        const fgInfo = C.computeEffectiveForeground(el);
-        if (!fgInfo || !fgInfo.rgba || fgInfo.opacityProduct !== 1) return null;
-        const fg =
-          fgInfo.rgba.a < 1 ? { ...C.compositeRgba(fgInfo.rgba, back), a: 1 } : { ...fgInfo.rgba };
-        const large = largeTextOf(el, cs);
-        const ratio = C.contrastRatio(fg, back);
-        const toward = towardFor(ratio, large);
-        if (!toward) return null;
-        const canvasHex = C.rgbToHex(canvas);
-        return {
-          toward,
-          why:
-            toward === 'pass'
-              ? `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches ${ratioParam(ratio)}:1, which meets the enhanced ratio for its size and so the minimum one too.`
-              : `On the canvas a browser paints behind a page with no background (${canvasHex}), the text reaches only ${ratioParam(ratio)}:1, below the minimum ratio for its size.`,
-          signals: [
-            { signal: 'ratio-vs-canvas', value: Number(C.round2(ratio)) },
-            { signal: 'canvas-color', value: canvasHex },
-            { signal: 'in-frame', value: false },
-            { signal: 'color-scheme-dark', value: false },
-            { signal: 'large-text', value: !!large }
-          ],
-          caution:
-            'A page shown inside another page, or in a dark color scheme, sits on another background.',
-          i18n: {
-            whyKey:
-              toward === 'pass'
-                ? 'contrastComputable_lean_why_rootCanvas_pass'
-                : 'contrastComputable_lean_why_rootCanvas_fail',
-            cautionKey: 'contrastComputable_lean_caution_rootCanvas',
-            params: { ratio: ratioParam(ratio), canvas: canvasHex }
           }
         };
       }
@@ -982,7 +952,7 @@ function runInPage(ctx) {
               blockerSelector: blocker.blockerSelector,
               backgroundFillType: blocker.backgroundFillType
             },
-            leanFor(el, blocker.reasonCode, null)
+            leanFor(el, blocker.reasonCode)
           );
           continue;
         }
@@ -1058,7 +1028,7 @@ function runInPage(ctx) {
                   }
                 : {})
             },
-            leanFor(el, bgCode, bg)
+            leanFor(el, bgCode)
           );
           continue;
         }
