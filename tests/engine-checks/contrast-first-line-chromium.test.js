@@ -173,6 +173,90 @@ const LINK_COLOURS = [
   ]
 ];
 
+// The paragraph's own ::first-line paints the text around the link on that
+// line in a colour of its own: the link is compared with both.
+// [css, markup, outcome, reason code, pseudo-element named]
+const PARA = '<p>Read <a href="/x">the guide</a> now please.</p>';
+const BLOCK_FIRST_LINE = [
+  // 3.57:1 and 3.21:1 from the text: told apart by color alone.
+  ['p::first-line{color:#111} a{color:#c00}', PARA, 'cantTell', 'LINK_COLOR_CONTRAST_ONLY'],
+  // 3.57:1 from the text, 1.52:1 from the first line's: asked about.
+  [
+    'p::first-line{color:#900} a{color:#c00}',
+    PARA,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'p::first-line'
+  ],
+  // Below 3:1 from both.
+  ['p::first-line{color:#333} a{color:#222}', PARA, 'fail', 'COLOR_ONLY_DIFFERENTIATION'],
+  // Below 3:1 from both, but the first line is also bold, which may set
+  // the link apart there.
+  [
+    'p::first-line{color:#333;font-weight:bold} a{color:#222}',
+    PARA,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'p::first-line'
+  ],
+  // Text in an inline element of a colour of its own keeps it on the first
+  // line: compared with that colour alone, 3.57:1.
+  [
+    'p{color:#333} p::first-line{color:#900} span{color:#000} a{color:#c00}',
+    '<p><span>Read</span> <a href="/x">the guide</a> <span>now please.</span></p>',
+    'cantTell',
+    'LINK_COLOR_CONTRAST_ONLY'
+  ],
+  // A first line in the paragraph's own colour changes nothing.
+  ['p::first-line{color:#000} a{color:#222}', PARA, 'fail', 'COLOR_ONLY_DIFFERENTIATION'],
+  // An ancestor's ::first-line paints the first line of the block that opens
+  // it, through blocks between, whatever their own colour, and is named.
+  [
+    'div::first-line{color:#900} a{color:#c00}',
+    `<div>${PARA}</div>`,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'div::first-line'
+  ],
+  [
+    'div.o::first-line{color:#900} p{color:#000} a{color:#c00}',
+    `<div class="o"><section>${PARA}</section></div>`,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'div.o::first-line'
+  ],
+  // A float before the paragraph is out of the flow: the paragraph still
+  // opens the div's first line.
+  [
+    'div::first-line{color:#900} a{color:#c00} .f{float:left}',
+    `<div><span class="f">x</span>${PARA}</div>`,
+    'cantTell',
+    'PSEUDO_ELEMENT_COLOR',
+    'div::first-line'
+  ],
+  // The paragraph's own ::first-line wins over the div's: 3.21:1 from it.
+  [
+    'div::first-line{color:#900} p::first-line{color:#111} a{color:#c00}',
+    `<div>${PARA}</div>`,
+    'cantTell',
+    'LINK_COLOR_CONTRAST_ONLY'
+  ],
+  // The div's first line is a heading's, or its own text's, not the
+  // paragraph's: compared with the paragraph's colour alone.
+  [
+    'div::first-line{color:#900} a{color:#c00}',
+    `<div><h2>Title</h2>${PARA}</div>`,
+    'cantTell',
+    'LINK_COLOR_CONTRAST_ONLY'
+  ],
+  [
+    'div::first-line{color:#900} a{color:#c00}',
+    `<div>Lead ${PARA}</div>`,
+    'cantTell',
+    'LINK_COLOR_CONTRAST_ONLY'
+  ]
+];
+
 test(
   '::first-line and ::first-letter colours measured both ways, in Chromium',
   { skip },
@@ -191,7 +275,12 @@ test(
             window.a11ycore.runa11yCoreInPage(null, null, {}, ids).checksResults.map((c) => ({
               ruleId: c.ruleId,
               outcome: c.outcome,
-              codes: c.occurrences.map((o) => o.data && o.data.details && o.data.details.reasonCode)
+              codes: c.occurrences.map(
+                (o) => o.data && o.data.details && o.data.details.reasonCode
+              ),
+              pseudo: c.occurrences.map(
+                (o) => (o.data && o.data.details && o.data.details.pseudoElement) || null
+              )
             })),
           rules
         );
@@ -220,6 +309,14 @@ test(
         );
         assert.equal(rule.outcome, outcome);
         assert.deepEqual(rule.codes, [code]);
+      });
+    }
+    for (const [css, body, outcome, code, named] of BLOCK_FIRST_LINE) {
+      await t.test(css, async () => {
+        const [rule] = await scan(`a{text-decoration:none} ${css}`, body, ['link-in-text-block']);
+        assert.equal(rule.outcome, outcome);
+        assert.deepEqual(rule.codes, [code]);
+        assert.deepEqual(rule.pseudo, [named || null]);
       });
     }
   }

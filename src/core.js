@@ -5319,16 +5319,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set `color` in a document's or shadow root's
-  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // The style rules that set a colour property (`color`, or
+  // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
+  // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
   // evaluate (@supports, @layer, @container, a nested rule) is kept as
   // `uncertain`, and a sheet that can't be read makes the whole root so.
   // { rules: [{ parts, value, important, order, uncertain }], unreadable },
-  // once per root.
+  // once per root and property.
   const __colorRulesByRoot = new WeakMap();
-  function __colorRulesOf(root) {
-    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+  function __colorRulesOf(root, prop) {
+    let byProp = __colorRulesByRoot.get(root);
+    if (!byProp) {
+      byProp = new Map();
+      __colorRulesByRoot.set(root, byProp);
+    }
+    if (byProp.has(prop)) return byProp.get(prop);
     const out = { rules: [], unreadable: false };
     let order = 0;
     const mediaApplies = (rule) => {
@@ -5350,12 +5356,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!rule) continue;
         const name = (rule.constructor && rule.constructor.name) || '';
         if (typeof rule.selectorText === 'string' && rule.style) {
-          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          const value = String(rule.style.getPropertyValue(prop) || '').trim();
           if (value) {
             out.rules.push({
               parts: __splitTopLevel(rule.selectorText).filter(Boolean),
               value,
-              important: rule.style.getPropertyPriority('color') === 'important',
+              important: rule.style.getPropertyPriority(prop) === 'important',
               order: order++,
               uncertain
             });
@@ -5413,14 +5419,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out.unreadable = true;
     }
-    __colorRulesByRoot.set(root, out);
+    byProp.set(prop, out);
     return out;
   }
 
-  // The author's declaration of `color` that wins for el in a browser:
-  // { value }, null where none applies, or { unknown: true } where it can't
-  // be told.
-  function __authorColorOf(el) {
+  // The author's declaration of `color` (or of prop) that wins for el in a
+  // browser: { value }, null where none applies, or { unknown: true } where
+  // it can't be told.
+  function __authorColorOf(el, prop = 'color') {
     let root;
     try {
       root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
@@ -5428,7 +5434,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root);
+    const { rules, unreadable } = __colorRulesOf(root, prop);
     if (unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
@@ -5457,9 +5463,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // The style attribute outranks every rule of its importance.
     try {
       const style = dom.get(el, 'style');
-      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
       if (value) {
-        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
@@ -5521,6 +5527,65 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
     return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
+  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // own, on el or an ancestor it inherits from: true, false where it
+  // follows color, null where it can't be told. jsdom computes a fill that
+  // follows color as that colour, so a fill the page sets to jsdom's own
+  // link colour reads the same as one that follows it.
+  function __jsdomAuthorFill(el) {
+    for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
+      const decl = __authorColorOf(cur, '-webkit-text-fill-color');
+      if (decl && decl.unknown) return null;
+      if (decl) {
+        const value = decl.value.toLowerCase();
+        if (value === 'currentcolor' || value === 'initial') return false;
+        if (/\bvar\(/.test(value) || /^(revert|revert-layer)$/.test(value)) return null;
+        if (value !== 'inherit' && value !== 'unset') return true;
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // The colour value el's HTML text is painted in, from its computed style
+  // cs, before any opacity: -webkit-text-fill-color, else color, with the
+  // colour of text in a link worked out from the page's rules under jsdom
+  // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
+  // computes the fill as the colour it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that colour.
+  function __htmlTextFillOf(el, cs) {
+    const fillValue = __textFillOf(cs);
+    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
+      return fillValue;
+    const link = __jsdomLinkTextColor(el);
+    if (link === undefined) return fillValue;
+    if (!link) return '';
+    if (!fill || !parseCssColorToRgba(fill)) return link;
+    const own = parseCssColorToRgba(link);
+    const read = parseCssColorToRgba(fill);
+    if (own && read && own.r === read.r && own.g === read.g && own.b === read.b && own.a === read.a)
+      return link;
+    const authored = __jsdomAuthorFill(el);
+    if (authored === null) return '';
+    return authored ? fillValue : link;
+  }
+
+  // textFillColor(el): the colour value el's text is painted in, before any
+  // opacity, as computeEffectiveForeground reads it ('' where it can't be
+  // worked out).
+  function textFillColor(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return '';
+      const cs = __contrastComputedStyle(el);
+      if (!cs) return '';
+      if (__isSvgTextElement(el)) return String(cs.fill || '');
+      return __htmlTextFillOf(el, cs) || '';
+    } catch {
+      return '';
+    }
   }
 
   function __isSvgTextElement(el) {
@@ -5594,17 +5659,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
     // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
-    // colour it follows; one that differs is the page's own, and paints it.
-    if (cs && !svgText && !placeholder) {
-      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
-      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
-        const link = __jsdomLinkTextColor(el);
-        if (link !== undefined) fillValue = link || '';
-      }
-    }
+    // link colour, is read from the page's rules (__htmlTextFillOf).
+    const fillValue =
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
@@ -9558,6 +9616,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     hasFilter,
     computeOpacityProduct,
     computeEffectiveForeground,
+    textFillColor,
     computeEffectiveBackground,
     getComputabilityBlocker,
     getOutlineColors,
@@ -11430,7 +11489,10 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
-        rootCanvasFallback: T.string
+        rootCanvasFallback: T.string,
+        // Echoed on each result; read back, false says rootCanvasFallback is
+        // the engine's default, not the caller's.
+        rootCanvasFallbackSet: T.boolean
       }
     },
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
@@ -20826,7 +20888,25 @@ const runCoreSettled = (function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    return { mode, rootCanvasFallback };
+    // Set below, once the colour is known to be usable.
+    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+  }
+
+  // Whether the caller gave contrast.rootCanvasFallback, rather than the
+  // engine filling in white. An echoed result's options passed back say
+  // rootCanvasFallbackSet: false for a white the engine filled in.
+  function __canvasGiven(engineOptions2) {
+    const c =
+      engineOptions2 && typeof engineOptions2 === 'object' && engineOptions2.contrast
+        ? engineOptions2.contrast
+        : null;
+    return (
+      !!c &&
+      typeof c === 'object' &&
+      typeof c.rootCanvasFallback === 'string' &&
+      !!c.rootCanvasFallback.trim() &&
+      switchOf(c.rootCanvasFallbackSet) !== false
+    );
   }
 
   const engineOptionsResolved =
@@ -20981,6 +21061,10 @@ const runCoreSettled = (function runCoreSettled(
         console.warn('[surea11y] ' + message + '; white is used.');
       } catch {}
       engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    } else if (__canvasGiven(engineOptions)) {
+      // A canvas the caller named, white included, which a rule may decide
+      // by where it would only lean on the default; the result echoes it.
+      engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
     }
   }
 
@@ -35784,7 +35868,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
       "linkInTextBlock_lean_why_sameColor": "Der Link ist in derselben Farbe wie der umgebende Text gezeichnet, ohne Unterstreichung oder eine andere Markierung, sodass ihn nichts abhebt.",
-      "linkInTextBlock_lean_why_lowRatio": "Die Farbe des Links liegt nur {{ratio}}:1 von der des umgebenden Texts entfernt, unter 3:1, und er hat keine Unterstreichung und keine andere Markierung: Nur die Farbe hebt ihn ab, und zu wenig.",
       "linkInTextBlock_lean_caution_effect": "Der Effekt, der das Messen der Farben verhindert hat, wirkt auf den Link und den Text gleich, aber wie er sie zeichnet, wird nicht nachgebildet.",
       "linkInTextBlock_lean_why_ownBackground": "Der Link hat eine eigene, deckende Hintergrundfarbe, anders als die um ihn herum; das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
       "linkInTextBlock_lean_caution_ownBackground": "Eine Hintergrundfarbe, die der umgebenden nahekommt, fällt womöglich nicht auf.",
@@ -35792,6 +35875,9 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
       "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
       "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
+      "linkInTextBlock_lean_why_rootCanvas": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), unterscheidet sich die eigene Hintergrundfarbe des Links ({{background}}) von der um ihn herum ({{around}}); das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe, mit {{ratio}}:1, bevor die Deckkraft eines Vorfahren beide verblassen lässt, was sie näher zusammenrückt. Das genügt nur, wenn die Farben, wie sie gezeichnet werden, noch 3:1 erreichen und Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne eingebaute Möglichkeit, es anzuhalten, zu stoppen oder die Lautstärke zu ändern.",
@@ -37116,7 +37202,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
       "linkInTextBlock_lean_why_sameColor": "The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.",
-      "linkInTextBlock_lean_why_lowRatio": "The link's color is only {{ratio}}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.",
       "linkInTextBlock_lean_caution_effect": "The effect that kept the colors from being measured applies to the link and the text alike, but how it draws them is not modeled.",
       "linkInTextBlock_lean_why_ownBackground": "The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.",
       "linkInTextBlock_lean_caution_ownBackground": "A background color close to the one around it may not be noticed.",
@@ -37124,6 +37209,9 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
       "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
       "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
+      "linkInTextBlock_lean_why_rootCanvas": "On the canvas a browser paints behind a page with no background ({{canvas}}), the link's own background color ({{background}}) differs from the one around it ({{around}}), which marks it without relying on its text color.",
+      "linkInTextBlock_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "This link in a block of text is distinguished from the surrounding text only by its color, at {{ratio}}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "This element plays audio automatically, with no built-in way to pause it, stop it or change its volume.",
@@ -38448,7 +38536,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
       "linkInTextBlock_lean_why_sameColor": "El enlace se dibuja del mismo color que el texto que lo rodea, sin subrayado ni otra marca, así que nada lo distingue.",
-      "linkInTextBlock_lean_why_lowRatio": "El color del enlace solo tiene una relación de {{ratio}}:1 con el del texto circundante, por debajo de 3:1, y no tiene subrayado ni otra marca: solo el color lo distingue, y demasiado poco.",
       "linkInTextBlock_lean_caution_effect": "El efecto que impidió medir los colores se aplica por igual al enlace y al texto, pero no se modela cómo los dibuja.",
       "linkInTextBlock_lean_why_ownBackground": "El enlace tiene un color de fondo opaco propio, distinto del que lo rodea, que lo señala sin depender del color de su texto.",
       "linkInTextBlock_lean_caution_ownBackground": "Un color de fondo parecido al que lo rodea puede pasar desapercibido.",
@@ -38456,6 +38543,9 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
       "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
       "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
+      "linkInTextBlock_lean_why_rootCanvas": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el color de fondo propio del enlace ({{background}}) es distinto del que lo rodea ({{around}}), lo que lo señala sin depender del color de su texto.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color, a {{ratio}}:1 antes de que la opacidad de un ancestro atenúe ambos, lo que los acerca. Eso solo basta si los colores tal como se dibujan siguen alcanzando 3:1 y si al pasar el cursor y al recibir el foco el enlace también muestra una señal distinta del color, como un subrayado.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
       "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente, sin una forma integrada de pausarlo, detenerlo o cambiar su volumen.",
@@ -39780,7 +39870,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
       "linkInTextBlock_lean_why_sameColor": "Le lien est affiché dans la même couleur que le texte qui l’entoure, sans soulignement ni autre marque : rien ne le distingue.",
-      "linkInTextBlock_lean_why_lowRatio": "La couleur du lien n’a qu’un ratio de {{ratio}}:1 avec celle du texte environnant, en dessous de 3:1, et il n’a ni soulignement ni autre marque : seule la couleur le distingue, et trop peu.",
       "linkInTextBlock_lean_caution_effect": "L’effet qui a empêché de mesurer les couleurs s’applique de la même façon au lien et au texte, mais la manière dont il les dessine n’est pas modélisée.",
       "linkInTextBlock_lean_why_ownBackground": "Le lien a sa propre couleur d’arrière-plan opaque, différente de celle qui l’entoure, ce qui le signale sans dépendre de la couleur de son texte.",
       "linkInTextBlock_lean_caution_ownBackground": "Une couleur d’arrière-plan proche de celle qui l’entoure peut passer inaperçue.",
@@ -39788,6 +39877,9 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
       "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
       "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
+      "linkInTextBlock_lean_why_rootCanvas": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), la couleur d’arrière-plan propre au lien ({{background}}) diffère de celle qui l’entoure ({{around}}), ce qui le signale sans dépendre de la couleur de son texte.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur, à {{ratio}}:1 avant que l’opacité d’un ancêtre n’estompe les deux, ce qui les rapproche. Cela ne suffit que si les couleurs telles qu’elles sont affichées atteignent encore 3:1 et que le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Cet élément lit du son automatiquement, sans moyen intégré de le mettre en pause, de l’arrêter ou d’en régler le volume.",
@@ -41112,7 +41204,6 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
       "linkInTextBlock_lean_why_sameColor": "リンクは周囲のテキストと同じ色で描画され、下線などの印もないため、何によっても区別されません。",
-      "linkInTextBlock_lean_why_lowRatio": "リンクの色と周囲のテキストの色の比は {{ratio}}:1 しかなく 3:1 を下回り、下線などの印もないため、区別は色だけに頼っており、その差も不十分です。",
       "linkInTextBlock_lean_caution_effect": "色の測定を妨げた効果はリンクにもテキストにも同じようにかかっていますが、それらがどう描画されるかはモデル化していません。",
       "linkInTextBlock_lean_why_ownBackground": "リンクには周囲とは異なる不透明な独自の背景色があり、テキストの色に頼らずにリンクを示しています。",
       "linkInTextBlock_lean_caution_ownBackground": "周囲に近い背景色は気付かれないことがあります。",
@@ -41120,6 +41211,9 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
       "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
       "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
+      "linkInTextBlock_lean_why_rootCanvas": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、リンク独自の背景色 ({{background}}) は周囲の背景色 ({{around}}) と異なり、テキストの色に頼らずにリンクを示しています。",
+      "linkInTextBlock_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "文中のこのリンクは、周囲のテキストと色だけで区別されています。祖先要素の不透明度で両方が薄められる前の時点で {{ratio}}:1 ですが、薄められると両者の差は縮まります。これで十分なのは、描画された色でもなお 3:1 に達し、かつホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
       "noAutoplayAudio_summary_cantTell": "この要素は音声を自動再生しますが、一時停止、停止、音量調整を行う組み込みの手段がありません。",
@@ -79309,6 +79403,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     typeof contrastOpts.rootCanvasFallback === 'string' && contrastOpts.rootCanvasFallback.trim()
       ? contrastOpts.rootCanvasFallback.trim()
       : '#ffffff';
+  // Whether the run names the canvas (the runner marks a given
+  // rootCanvasFallback), rather than taking the default white.
+  const rootCanvasSet = contrastOpts.rootCanvasFallbackSet === true;
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
@@ -79335,15 +79432,202 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Applicable, but not evaluable. Held separately so the outcome below can
   // tell "checked and sound" apart from "never decided".
-  function markUndecided(el, reasonCode, lean) {
-    undecided.push({ el, reasonCode, lean: lean || null });
+  function markUndecided(el, reasonCode, lean, detail) {
+    undecided.push({ el, reasonCode, lean: lean || null, detail: detail || null });
+  }
+
+  // The link's colors against the surrounding text's, every pair: where
+  // all reach 3:1 the closest pair stands ('reach'), where all fall short
+  // the best one ('short'); 'mixed' where they disagree.
+  function compareTextColors(linkFgs, textFgs) {
+    let best = null;
+    let reach = 0;
+    let total = 0;
+    for (const link of linkFgs) {
+      for (const text of textFgs) {
+        const ratio = c.contrastRatio(link, text);
+        if (!Number.isFinite(ratio)) return { verdict: 'mixed' };
+        total += 1;
+        if (ratio >= 3) reach += 1;
+        if (!best || (ratio >= 3 ? ratio < best.ratio : ratio > best.ratio)) {
+          best = { ratio, link, text };
+        }
+      }
+    }
+    if (!best || (reach && reach !== total)) return { verdict: 'mixed' };
+    return { verdict: reach ? 'reach' : 'short', ...best };
+  }
+
+  // The ::first-line of the block the surrounding text is in, where it
+  // paints that text in a color of its own: { color, selector, otherCue },
+  // otherCue where it also changes the weight, style, decoration or shadow
+  // of the first line. Only a browser computes pseudo-element styles, so
+  // under a DOM emulator this is null. Text in an inline element of a
+  // color other than the block's keeps its color on the first line.
+  const BLOCK_DISPLAY =
+    /^(block|list-item|flow-root|inline-block|table-cell|table-caption)\b|\bflow-root\b/;
+  const firstLineByBlock = new Map();
+  const firstLineByRoot = new Map();
+  function sheetsNameFirstLine(node) {
+    let root;
+    try {
+      root = dom.getRootNode(node);
+    } catch {
+      return true;
+    }
+    if (firstLineByRoot.has(root)) return firstLineByRoot.get(root);
+    let found = false;
+    const walk = (rules, depth) => {
+      if (!rules || depth > MAX_NESTED_DEPTH || found) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (typeof cssRule.selectorText === 'string' && /first-line/i.test(cssRule.selectorText)) {
+          found = true;
+          return;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length) walk(nested, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let rules;
+        try {
+          rules = sheet.cssRules || [];
+        } catch {
+          found = true; // another origin's: it may name one
+          break;
+        }
+        walk(rules, 0);
+        if (found) break;
+      }
+    } catch {
+      found = true;
+    }
+    firstLineByRoot.set(root, found);
+    return found;
+  }
+  // Whether a block's first line is its parent's first line too: it is a
+  // block-level box in the normal flow of a block container, and nothing
+  // in that flow comes before it (white space, an element not shown, a
+  // float or an absolutely positioned box aside). A block's ::first-line
+  // then paints it (CSS Pseudo-Elements, "first formatted line").
+  const FIRST_LINE_CONTAINER =
+    /^(block|list-item|flow-root|inline-block|table-cell|table-caption)\b/;
+  const outOfFlow = (cs) =>
+    String(cs.display || '') === 'none' ||
+    /^(absolute|fixed)$/.test(String(cs.position || '')) ||
+    String(cs.cssFloat || cs.float || 'none') !== 'none';
+  function opensParentFirstLine(child, childCs, parent) {
+    const parentCs = safeComputedStyle(parent);
+    if (!parentCs || !FIRST_LINE_CONTAINER.test(String(parentCs.display || ''))) return false;
+    if (!/^(block|list-item|flow-root)\b/.test(String(childCs.display || ''))) return false;
+    if (outOfFlow(childCs)) return false;
+    for (
+      let n = dom.firstChild(parent), i = 0;
+      n && n !== child && i < 200;
+      n = dom.nextSibling(n), i++
+    ) {
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (/\S/.test(dom.nodeValue(n) || '')) return false;
+        continue;
+      }
+      if (type !== 1) continue;
+      const cs = safeComputedStyle(n);
+      if (!cs || !outOfFlow(cs)) return false;
+    }
+    return true;
+  }
+  // The element whose ::first-line gives a block's first line the color
+  // read from the block's own: an ancestor's reaches the block's first line
+  // where the block opens the ancestor's (div::first-line paints the first
+  // line of the <p> that opens the div), and the browser computes the
+  // block's ::first-line with it. The nearest ancestor so reached whose
+  // ::first-line has a color of its own, where that is the color read; the
+  // block itself where it has another (the inner one wins) or there is none.
+  function firstLineSource(block, color, view) {
+    try {
+      let cur = block;
+      let curCs = safeComputedStyle(block);
+      for (let d = 0; cur && curCs && d < 50; d++) {
+        const up = dom.parentElement(cur);
+        if (!up || !opensParentFirstLine(cur, curCs, up)) break;
+        const upCs = safeComputedStyle(up);
+        if (!upCs) break;
+        const upLine = fillOf(view.getComputedStyle(up, '::first-line'));
+        if (upLine && !sameRgba(upLine, fillOf(upCs, up)))
+          return sameRgba(upLine, color) ? up : block;
+        cur = up;
+        curCs = upCs;
+      }
+    } catch {}
+    return block;
+  }
+  function blockFirstLine(textEl, textCs) {
+    try {
+      if (!textEl || !textCs || !hasLayout() || !sheetsNameFirstLine(textEl)) return null;
+      let block = textEl;
+      let blockCs = textCs;
+      for (let d = 0; block && d < 50; d++) {
+        if (BLOCK_DISPLAY.test(String(blockCs.display || ''))) break;
+        block = dom.parentElement(block);
+        blockCs = block ? safeComputedStyle(block) : null;
+        if (!blockCs) return null;
+      }
+      if (!block || !blockCs) return null;
+      if (block !== textEl && !sameRgba(fillOf(textCs, textEl), fillOf(blockCs, block)))
+        return null;
+      if (firstLineByBlock.has(block)) return firstLineByBlock.get(block);
+      let out = null;
+      const view = dom.defaultView(dom.ownerDocument(block));
+      const ps = view ? view.getComputedStyle(block, '::first-line') : null;
+      const color = ps ? fillOf(ps) : null;
+      const own = fillOf(blockCs, block);
+      if (color && own && !sameRgba(color, own)) {
+        const source = firstLineSource(block, color, view);
+        const blockId = dom.getAttribute(source, 'id');
+        const cls = String(dom.getAttribute(source, 'class') || '')
+          .trim()
+          .split(/\s+/)[0];
+        const name = String(dom.localName(source) || '').toLowerCase();
+        out = {
+          color,
+          selector: name + (blockId ? '#' + blockId : cls ? '.' + cls : '') + '::first-line',
+          otherCue:
+            c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
+            String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
+            String(ps.textDecorationLine || '') !== String(blockCs.textDecorationLine || '') ||
+            String(ps.textShadow || '') !== String(blockCs.textShadow || '')
+        };
+      }
+      firstLineByBlock.set(block, out);
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // ---- Leans (docs/LEANS.md) ----
 
   // The colour a style paints text in: -webkit-text-fill-color, else color.
-  function fillOf(cs) {
+  // For an element's own style, given el, read as the contrast helpers read
+  // it (textFillColor): under jsdom, the colour of text in a link comes
+  // from the page's rules, not jsdom's own link colour; null where it
+  // can't be worked out.
+  function fillOf(cs, el) {
     if (!cs || !c) return null;
+    if (el && typeof c.textFillColor === 'function') {
+      return c.parseCssColorToRgba(String(c.textFillColor(el) || ''));
+    }
     return (
       c.parseCssColorToRgba(String(cs.webkitTextFillColor || '')) ||
       c.parseCssColorToRgba(String(cs.color || ''))
@@ -79354,18 +79638,32 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
   }
 
-  // The effects that stopped the colours being measured, by whether they
-  // can at most keep two equal colours equal (filter, blend: the same
-  // effect on the same colour) or also keep two close colours close
-  // (a background or an opacity behind or around both).
-  const SAME_ONLY = new Set(['BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'MIX_BLEND_MODE']);
-  const LOW_RATIO = new Set([
+  // The effects that stopped the colours being measured where two equal
+  // colours stay equal under them, applied alike to the link and the text:
+  // the same blocker, or the same shadow or stroke on both.
+  const SAME_COLOR = new Set([
     'COLOR_NOT_COMPUTABLE',
     'BACKGROUND_IMAGE_OR_GRADIENT',
+    'BACKGROUND_OVERLAP',
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    'MIX_BLEND_MODE',
     'ANCESTOR_OPACITY',
     'TEXT_SHADOW',
     'TEXT_STROKE'
   ]);
+  // Those where the link's ratio to the surrounding text is known exactly
+  // when both are drawn in opaque colors: the ratio of the two text colors,
+  // which no background enters (an unknown background, an image or a
+  // gradient behind both, an ancestor fading both). Filters and blend modes
+  // change the colors themselves.
+  const KNOWN_FROM_TEXT = new Set([
+    'COLOR_NOT_COMPUTABLE',
+    'BACKGROUND_IMAGE_OR_GRADIENT',
+    'ANCESTOR_OPACITY'
+  ]);
+  // Those decided only below 3:1: the same shadow or stroke drawn on both
+  // can only make them look more alike.
+  const KNOWN_BELOW_THREE = new Set(['TEXT_SHADOW', 'TEXT_STROKE']);
   const OWN_BACKGROUND = new Set([
     'COLOR_NOT_COMPUTABLE',
     'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -79453,35 +79751,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (underlined !== false) return null;
       if (ownBg && ownBg.a > 0) return null;
-      if (
-        !SAME_ONLY.has(reasonCode) &&
-        !LOW_RATIO.has(reasonCode) &&
-        reasonCode !== 'BACKGROUND_OVERLAP'
-      )
-        return null;
-      const linkFill = fillOf(linkCs);
-      const textFill = fillOf(parentCs);
+      if (!SAME_COLOR.has(reasonCode)) return null;
+      const linkFill = fillOf(linkCs, el);
+      const textFill = fillOf(parentCs, textEl);
       if (!linkFill || !textFill) return null;
       if (c.computeOpacityProduct(el) !== c.computeOpacityProduct(textEl)) return null;
       if (!effectShared(reasonCode, blocker, linkCs, textEl, parentCs)) return null;
-      const same = sameRgba(linkFill, textFill);
-      let ratio = null;
-      if (!same) {
-        if (!LOW_RATIO.has(reasonCode) || linkFill.a !== 1 || textFill.a !== 1) return null;
-        ratio = c.contrastRatio(linkFill, textFill);
-        if (!(ratio < 3)) return null;
-      }
-      const ratioStr = ratio === null ? '' : String(c.round2(ratio));
+      // In opaque colors the link is decided (knownFromTextColors); in the
+      // same translucent one it points to a failure.
+      if (!sameRgba(linkFill, textFill)) return null;
       const effect = reasonCode !== 'COLOR_NOT_COMPUTABLE';
       return {
         toward: 'fail',
-        why: same
-          ? 'The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.'
-          : `The link's color is only ${ratioStr}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.`,
+        why: 'The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.',
         signals: [
           { signal: 'underline-absent', value: true },
-          { signal: 'link-text-same-color', value: same },
-          { signal: 'link-text-ratio', value: ratio === null ? 1 : Number(c.round2(ratio)) },
+          { signal: 'link-text-same-color', value: true },
+          { signal: 'link-text-ratio', value: 1 },
           { signal: 'blocked-by', value: reasonCode }
         ],
         ...(effect
@@ -79491,9 +79777,115 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             }
           : {}),
         i18n: {
-          whyKey: same ? 'linkInTextBlock_lean_why_sameColor' : 'linkInTextBlock_lean_why_lowRatio',
+          whyKey: 'linkInTextBlock_lean_why_sameColor',
           ...(effect ? { cautionKey: 'linkInTextBlock_lean_caution_effect' } : {}),
-          params: same ? {} : { ratio: ratioStr }
+          params: {}
+        }
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // A link whose colors could not be measured, but whose ratio to the
+  // surrounding text is known all the same: it has no underline and no
+  // background of its own, it and the text are drawn in opaque colors, and
+  // what kept them from being measured is the background, or an effect
+  // applied alike to both. The ratio of the two text colors (against the
+  // block's ::first-line color too, where it has one) is then the ratio
+  // the link is judged by. { ratio, link, text }, or null where it stays
+  // undecided: a translucent color, a filter, a blend mode, paint under
+  // the text, or the same shadow or stroke at 3:1 or more.
+  function knownFromTextColors(reasonCode, info) {
+    try {
+      if (!c || !info || !info.linkCs || !info.parentCs) return null;
+      const { el, linkCs, textEl, parentCs, blocker, underlined } = info;
+      if (!KNOWN_FROM_TEXT.has(reasonCode) && !KNOWN_BELOW_THREE.has(reasonCode)) return null;
+      if (underlined !== false) return null;
+      // The link's own ::first-line or ::first-letter gives it a second color.
+      if (blocker && blocker.reasonCode === 'PSEUDO_ELEMENT_COLOR') return null;
+      const ownBgValue = String(linkCs.backgroundColor || '').trim();
+      const ownBg = ownBgValue ? c.parseCssColorToRgba(ownBgValue) : null;
+      if (ownBgValue && !(ownBg && ownBg.a === 0)) return null;
+      const linkFill = fillOf(linkCs, el);
+      const textFill = fillOf(parentCs, textEl);
+      if (!linkFill || !textFill || linkFill.a !== 1 || textFill.a !== 1) return null;
+      if (c.computeOpacityProduct(el) !== c.computeOpacityProduct(textEl)) return null;
+      if (!effectShared(reasonCode, blocker, linkCs, textEl, parentCs)) return null;
+      const textFgs = [textFill];
+      const firstLine = blockFirstLine(textEl, parentCs);
+      if (firstLine) {
+        if (firstLine.color.a !== 1) return null;
+        textFgs.push(firstLine.color);
+      }
+      const compared = compareTextColors([linkFill], textFgs);
+      if (compared.verdict === 'mixed') return null;
+      if (compared.verdict === 'short' && firstLine && firstLine.otherCue) return null;
+      if (compared.verdict === 'reach' && KNOWN_BELOW_THREE.has(reasonCode)) return null;
+      return { ratio: compared.ratio, link: compared.link, text: compared.text };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether a highlight differs from the background around it on the
+  // canvas the run names: true or false, null where it can't be told.
+  function highlightDiffersOnCanvas(highlight, around) {
+    try {
+      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
+      if (!canvas || canvas.a !== 1) return null;
+      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
+      return c.rgbToHex(highlight) !== c.rgbToHex(surround);
+    } catch {
+      return null;
+    }
+  }
+
+  // A link with a highlight of its own on a page that sets no opaque
+  // background: at the top level of a window in a light color scheme, the
+  // page is drawn on the canvas the browser paints behind it, white (a
+  // canvas the run names decides the link instead). It leans pass where the highlight differs from
+  // the background around it on that canvas.
+  function rootCanvasLean(el, highlight, around) {
+    try {
+      const doc = dom.ownerDocument(el);
+      let inFrame = true;
+      try {
+        const view = doc ? dom.defaultView(doc) : null;
+        inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
+      } catch {
+        inFrame = true;
+      }
+      if (inFrame) return null;
+      if (typeof c.colorsForced === 'function' && c.colorsForced()) return null;
+      const root = doc ? dom.documentElement(doc) : null;
+      const rootScheme = String((safeComputedStyle(root) || {}).colorScheme || '');
+      const schemeMeta = doc ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]') : null;
+      const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
+      if (/\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme)) return null;
+      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
+      if (!canvas || canvas.a !== 1) return null;
+      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
+      const ownHex = c.rgbToHex(highlight);
+      const aroundHex = c.rgbToHex(surround);
+      if (ownHex === aroundHex) return null;
+      const canvasHex = c.rgbToHex(canvas);
+      return {
+        toward: 'pass',
+        why: `On the canvas a browser paints behind a page with no background (${canvasHex}), the link's own background color (${ownHex}) differs from the one around it (${aroundHex}), which marks it without relying on its text color.`,
+        signals: [
+          { signal: 'link-own-background', value: ownHex },
+          { signal: 'background-around', value: aroundHex },
+          { signal: 'canvas-color', value: canvasHex },
+          { signal: 'in-frame', value: false },
+          { signal: 'color-scheme-dark', value: false }
+        ],
+        caution:
+          'A page shown inside another page, or in a dark color scheme, sits on another background.',
+        i18n: {
+          whyKey: 'linkInTextBlock_lean_why_rootCanvas',
+          cautionKey: 'linkInTextBlock_lean_caution_rootCanvas',
+          params: { canvas: canvasHex, background: ownHex, around: aroundHex }
         }
       };
     } catch {
@@ -79608,7 +80000,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A link told apart by color alone at 3:1 or more: it leans pass where
   // the style sheets add a non-color cue on hover and on focus, and fail
   // where every sheet could be read and none adds one on hover.
-  function contrastOnlyLean(el, ratio) {
+  function contrastOnlyLean(el, ratio, beforeOpacity) {
     try {
       const cues = hoverFocusCues(el);
       const handlers = ['onmouseover', 'onmouseenter', 'onfocus', 'onfocusin'].some(
@@ -79618,9 +80010,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         { signal: 'hover-cue-rule', value: cues.onHover },
         { signal: 'focus-cue-rule', value: cues.onFocus },
         { signal: 'stylesheets-readable', value: cues.readable },
-        { signal: 'contrast-ratio', value: Number(c.round2(ratio)) }
+        {
+          signal: beforeOpacity ? 'ratio-before-opacity' : 'contrast-ratio',
+          value: Number(c.round2(ratio))
+        }
       ];
-      if (cues.onHover && cues.onFocus) {
+      // A ratio before an ancestor's opacity may be below 3:1 as drawn,
+      // where hover and focus cues don't make up for it: no pass lean. The
+      // fail lean stands: with no hover cue the link fails either way, by
+      // its color at rest below 3:1 or by G183's missing cue at 3:1 or more.
+      if (cues.onHover && cues.onFocus && !beforeOpacity) {
         return {
           toward: 'pass',
           why: "The page's style sheets give this link an underline or another non-color cue when it is hovered and when it is focused.",
@@ -79904,7 +80303,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let fgLinkHex = '';
     let fgParentHex = '';
     let undecidedReason = 'COLOR_NOT_COMPUTABLE';
+    // Details the undecided finding carries beyond its reason code.
+    let undecidedDetail = null;
     let lastBlocker = null;
+    // A highlight of the link's own over a page with no background of its
+    // own: { highlight, around }, the background around it before the canvas.
+    let rootUnknown = null;
+    // Whether the ratio is that of the colors before an ancestor's opacity
+    // fades them, which can only bring them closer: not the ratio drawn.
+    let beforeOpacity = false;
 
     try {
       const blocker = c.getComputabilityBlocker(el);
@@ -79965,20 +80372,51 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // both fall short, which text it paints doesn't change the
           // answer, which is taken from the closer one when both reach it
           // and from the better one when both fall short. Where they
-          // disagree it is asked about.
+          // disagree it is asked about. The link's own ::first-line or
+          // ::first-letter gives the link a second color, the block's
+          // ::first-line the surrounding text one.
+          const linkFgs = [fgLinkOpaque];
+          const textFgs = [fgParentOpaque];
           if (pseudo) {
             const m = c.measurePseudoElementText(el, {
               contrast: { mode, rootCanvasFallback },
               collectStack: false
             });
-            const pRatio = m ? c.contrastRatio(m.pseudo.fg, fgParentOpaque) : NaN;
-            if (!m || !Number.isFinite(pRatio) || pRatio >= 3 !== ratio >= 3) {
+            if (m && m.pseudo && m.pseudo.fg) linkFgs.push(m.pseudo.fg);
+            else {
               computed = false;
               undecidedReason = 'PSEUDO_ELEMENT_COLOR';
-            } else if (ratio >= 3 ? pRatio < ratio : pRatio > ratio) {
-              ratio = pRatio;
-              fgLinkHex = c.rgbToHex ? c.rgbToHex(m.pseudo.fg) : '';
             }
+          }
+          const firstLine = computed ? blockFirstLine(textEl, parentCs) : null;
+          if (firstLine) {
+            textFgs.push(
+              firstLine.color.a < 1
+                ? { ...c.compositeRgba(firstLine.color, bg.rgba), a: 1 }
+                : { ...firstLine.color, a: 1 }
+            );
+          }
+          const compared =
+            computed && linkFgs.length + textFgs.length > 2
+              ? compareTextColors(linkFgs, textFgs)
+              : null;
+          if (compared && compared.verdict === 'short' && firstLine && firstLine.otherCue) {
+            // The first line's text differs from the rest by more than its
+            // color, which may set the link apart there.
+            computed = false;
+            undecidedReason = 'PSEUDO_ELEMENT_COLOR';
+            undecidedDetail = { pseudoElement: firstLine.selector };
+          } else if (compared && compared.verdict === 'mixed') {
+            computed = false;
+            undecidedReason = 'PSEUDO_ELEMENT_COLOR';
+            // Named when the block's first line is what the two disagree on.
+            if (firstLine && compareTextColors(linkFgs, [fgParentOpaque]).verdict !== 'mixed') {
+              undecidedDetail = { pseudoElement: firstLine.selector };
+            }
+          } else if (compared) {
+            ratio = compared.ratio;
+            fgLinkHex = c.rgbToHex ? c.rgbToHex(compared.link) : '';
+            fgParentHex = c.rgbToHex ? c.rgbToHex(compared.text) : '';
           }
           if (!(ratio >= 3)) flagged = true;
 
@@ -79994,6 +80432,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
               backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+            } else if (
+              parentBg &&
+              parentBg.reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT' &&
+              parentBg.rgba
+            ) {
+              // The background around the link is the canvas, which strict
+              // mode doesn't assume: an opaque highlight of the link's own
+              // may or may not stand out from it.
+              const own = c.parseCssColorToRgba(String(linkCs.backgroundColor || ''));
+              if (own && own.a === 1) rootUnknown = { highlight: bg.rgba, around: parentBg.rgba };
             }
           }
         }
@@ -80005,19 +80453,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (!computed) {
-      markUndecided(
-        el,
-        undecidedReason,
-        undecidedLean(undecidedReason, {
-          el,
-          linkCs,
-          textEl,
-          parentCs,
-          blocker: lastBlocker,
-          underlined
-        })
-      );
-      continue;
+      const info = { el, linkCs, textEl, parentCs, blocker: lastBlocker, underlined };
+      const known = knownFromTextColors(undecidedReason, info);
+      if (!known) {
+        markUndecided(el, undecidedReason, undecidedLean(undecidedReason, info), undecidedDetail);
+        continue;
+      }
+      ratio = known.ratio;
+      beforeOpacity = undecidedReason === 'ANCESTOR_OPACITY';
+      fgLinkHex = c.rgbToHex ? c.rgbToHex(known.link) : '';
+      fgParentHex = c.rgbToHex ? c.rgbToHex(known.text) : '';
+      flagged = !(ratio >= 3);
+    }
+
+    // A canvas the run names is the background around a highlight on a page
+    // with none: the link is decided by it as by a background that is known.
+    if (rootUnknown && rootCanvasSet) {
+      const differs = highlightDiffersOnCanvas(rootUnknown.highlight, rootUnknown.around);
+      if (differs !== null) {
+        backgroundDiffers = differs;
+        rootUnknown = null;
+      }
     }
 
     if (backgroundDiffers) {
@@ -80032,11 +80488,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
+    // Below 3:1, a highlight of the link's own would set it apart, but
+    // whether it differs from the canvas the page is drawn on is unknown.
+    if (flagged && rootUnknown) {
+      markUndecided(
+        el,
+        'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+        rootCanvasLean(el, rootUnknown.highlight, rootUnknown.around)
+      );
+      continue;
+    }
+
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
     // non-color cue on hover and focus, which a static scan cannot see.
     colorCompared += 1;
     if (!flagged) {
-      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity });
       continue;
     }
 
@@ -80062,7 +80529,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
           details: {
             reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
-            metrics: { ratio, threshold: 3 },
+            // Faded with the text by an ancestor's opacity, the ratio is the
+            // one before the fading, which can only lower it: below 3:1
+            // before, it is below 3:1 as drawn, but not that ratio.
+            metrics: beforeOpacity
+              ? { ratioBeforeOpacity: ratio, threshold: 3 }
+              : { ratio, threshold: 3 },
             colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
           }
         }
@@ -80074,7 +80546,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const cantTellOccurrences = undecided.map(({ el, reasonCode, lean }) =>
+  const cantTellOccurrences = undecided.map(({ el, reasonCode, lean, detail }) =>
     helpers.reportOccurrence(el, {
       occurrenceOutcome: 'cantTell',
       ...(lean ? { lean } : {}),
@@ -80095,46 +80567,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         visibilityFilter: helpers.getEligibilityInfo
           ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
           : { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode }
+        details: { reasonCode, ...(detail || {}) }
       }
     })
   );
 
-  const contrastOnlyOccurrences = contrastOnly.map(({ el, ratio, fgLinkHex, fgParentHex }) => {
-    const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
-    const lean = contrastOnlyLean(el, ratio);
-    return helpers.reportOccurrence(el, {
-      occurrenceOutcome: 'cantTell',
-      ...(lean ? { lean } : {}),
-      summary: `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
-      hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
-      i18n: {
-        summaryKey: 'linkInTextBlock_summary_cantTell_contrastOnly',
-        hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
-        params: { ratio: String(ratioStr), threshold: '3' }
-      },
-      uncertainty: {
-        code: 'runtime-dependent',
-        needed: 'Whether hovering and focusing the link add a non-color cue.',
-        evidence: { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
-      },
-      data: {
-        visibilityFilter: helpers.getEligibilityInfo
-          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-          : { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: {
-          reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
-          metrics: { ratio, threshold: 3 },
-          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+  // A link faded with the text by an ancestor's opacity reports the ratio
+  // of the colors before the fading as metrics.ratioBeforeOpacity, with no
+  // metrics.ratio: the fading brings them closer, so the ratio drawn may be
+  // lower, and below 3:1.
+  const contrastOnlyOccurrences = contrastOnly.map(
+    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity }) => {
+      const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
+      const lean = contrastOnlyLean(el, ratio, beforeOpacity);
+      return helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'cantTell',
+        ...(lean ? { lean } : {}),
+        summary: beforeOpacity
+          ? `This link in a block of text is distinguished from the surrounding text only by its color, at ${ratioStr}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.`
+          : `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
+        hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
+        i18n: {
+          summaryKey: beforeOpacity
+            ? 'linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity'
+            : 'linkInTextBlock_summary_cantTell_contrastOnly',
+          hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
+          params: { ratio: String(ratioStr), threshold: '3' }
+        },
+        uncertainty: {
+          code: 'runtime-dependent',
+          needed: 'Whether hovering and focusing the link add a non-color cue.',
+          evidence: beforeOpacity
+            ? { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratioBeforeOpacity: ratio }
+            : { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
+        },
+        data: {
+          visibilityFilter: helpers.getEligibilityInfo
+            ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+            : { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
+            metrics: beforeOpacity
+              ? { ratioBeforeOpacity: ratio, threshold: 3 }
+              : { ratio, threshold: 3 },
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+          }
         }
-      }
-    });
-  });
+      });
+    }
+  );
 
   // Links told apart by color alone that reach 3:1 against the surrounding
   // text: the closest is the result's margin (src/core/margin.js).
   const margin = {
-    marginCandidates: contrastOnly.map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
+    // A ratio before an ancestor's opacity is not the one drawn, so no margin.
+    marginCandidates: contrastOnly
+      .filter(({ beforeOpacity }) => !beforeOpacity)
+      .map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
     measuredCount: colorCompared
   };
 
@@ -96501,7 +96990,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe (Kontrast {{ratio}}:1). Das genügt nur, wenn Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Fahren Sie mit der Maus über den Link und setzen Sie den Tastaturfokus darauf: Prüfen Sie, ob jeder Zustand ein Merkmal außer der Farbe hinzufügt (eine Unterstreichung, einen Rahmen, eine Änderung des Schriftgewichts). Andernfalls unterstreichen Sie den Link im Ruhezustand.",
       "linkInTextBlock_lean_why_sameColor": "Der Link ist in derselben Farbe wie der umgebende Text gezeichnet, ohne Unterstreichung oder eine andere Markierung, sodass ihn nichts abhebt.",
-      "linkInTextBlock_lean_why_lowRatio": "Die Farbe des Links liegt nur {{ratio}}:1 von der des umgebenden Texts entfernt, unter 3:1, und er hat keine Unterstreichung und keine andere Markierung: Nur die Farbe hebt ihn ab, und zu wenig.",
       "linkInTextBlock_lean_caution_effect": "Der Effekt, der das Messen der Farben verhindert hat, wirkt auf den Link und den Text gleich, aber wie er sie zeichnet, wird nicht nachgebildet.",
       "linkInTextBlock_lean_why_ownBackground": "Der Link hat eine eigene, deckende Hintergrundfarbe, anders als die um ihn herum; das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
       "linkInTextBlock_lean_caution_ownBackground": "Eine Hintergrundfarbe, die der umgebenden nahekommt, fällt womöglich nicht auf.",
@@ -96509,6 +96997,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Eine spätere oder spezifischere Regel kann das Merkmal aufheben; prüfen Sie, ob es erscheint.",
       "linkInTextBlock_lean_why_noHoverCue": "Keine Regel in den Stylesheets der Seite fügt diesem Link beim Überfahren mit der Maus eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu, sodass seine Farbe sein einziges Merkmal bleibt.",
       "linkInTextBlock_lean_caution_noHoverCue": "Ein Merkmal, das ein Skript hinzufügt, steht nicht in den Stylesheets.",
+      "linkInTextBlock_lean_why_rootCanvas": "Auf der Leinwand, die ein Browser hinter eine Seite ohne Hintergrund malt ({{canvas}}), unterscheidet sich die eigene Hintergrundfarbe des Links ({{background}}) von der um ihn herum ({{around}}); das hebt ihn hervor, ohne von seiner Textfarbe abzuhängen.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Eine Seite, die in einer anderen Seite oder in einem dunklen Farbschema angezeigt wird, liegt auf einem anderen Hintergrund.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text nur durch seine Farbe, mit {{ratio}}:1, bevor die Deckkraft eines Vorfahren beide verblassen lässt, was sie näher zusammenrückt. Das genügt nur, wenn die Farben, wie sie gezeichnet werden, noch 3:1 erreichen und Hover und Fokus auf dem Link auch ein Merkmal außer der Farbe zeigen, etwa eine Unterstreichung.",
       "noAutoplayAudio_title": "Automatisch abgespieltes Audio sollte einen Mechanismus zum Pausieren/Stoppen oder zur Lautstärkeregelung bieten",
       "noAutoplayAudio_description": "Markiert <audio>/<video>-Elemente, die unstummgeschaltet automatisch abspielen und kein natives controls-Attribut haben, sowie <embed>-, <object>- oder <bgsound>-Elemente, die Ton abspielen können, zur manuellen Überprüfung im Hinblick auf die 3-Sekunden-Ausnahme in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Dieses Element spielt Audio automatisch ab, ohne eingebaute Möglichkeit, es anzuhalten, zu stoppen oder die Lautstärke zu ändern.",
@@ -97833,7 +98324,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_cantTell_contrastOnly": "This link in a block of text is distinguished from the surrounding text only by its color (contrast {{ratio}}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.",
       "linkInTextBlock_lean_why_sameColor": "The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.",
-      "linkInTextBlock_lean_why_lowRatio": "The link's color is only {{ratio}}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.",
       "linkInTextBlock_lean_caution_effect": "The effect that kept the colors from being measured applies to the link and the text alike, but how it draws them is not modeled.",
       "linkInTextBlock_lean_why_ownBackground": "The link has an opaque background color of its own, unlike the one around it, which marks it without relying on its text color.",
       "linkInTextBlock_lean_caution_ownBackground": "A background color close to the one around it may not be noticed.",
@@ -97841,6 +98331,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "A later or more specific rule can undo the cue; check that it shows.",
       "linkInTextBlock_lean_why_noHoverCue": "No rule in the page's style sheets adds an underline or another non-color cue when this link is hovered, so its color stays its only cue.",
       "linkInTextBlock_lean_caution_noHoverCue": "A cue a script adds is not in the style sheets.",
+      "linkInTextBlock_lean_why_rootCanvas": "On the canvas a browser paints behind a page with no background ({{canvas}}), the link's own background color ({{background}}) differs from the one around it ({{around}}), which marks it without relying on its text color.",
+      "linkInTextBlock_lean_caution_rootCanvas": "A page shown inside another page, or in a dark color scheme, sits on another background.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "This link in a block of text is distinguished from the surrounding text only by its color, at {{ratio}}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.",
       "noAutoplayAudio_title": "Autoplaying audio should provide a pause/stop or volume-control mechanism",
       "noAutoplayAudio_description": "Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "This element plays audio automatically, with no built-in way to pause it, stop it or change its volume.",
@@ -99165,7 +99658,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color (contraste {{ratio}}:1). Eso solo basta si al pasar el cursor y al recibir el foco también muestra una señal distinta del color, como un subrayado.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Pasar el cursor sobre el enlace y mover el foco del teclado hasta él: comprobar que cada estado añade una señal distinta del color (un subrayado, un borde, un cambio de grosor). Si no, subrayar el enlace en reposo.",
       "linkInTextBlock_lean_why_sameColor": "El enlace se dibuja del mismo color que el texto que lo rodea, sin subrayado ni otra marca, así que nada lo distingue.",
-      "linkInTextBlock_lean_why_lowRatio": "El color del enlace solo tiene una relación de {{ratio}}:1 con el del texto circundante, por debajo de 3:1, y no tiene subrayado ni otra marca: solo el color lo distingue, y demasiado poco.",
       "linkInTextBlock_lean_caution_effect": "El efecto que impidió medir los colores se aplica por igual al enlace y al texto, pero no se modela cómo los dibuja.",
       "linkInTextBlock_lean_why_ownBackground": "El enlace tiene un color de fondo opaco propio, distinto del que lo rodea, que lo señala sin depender del color de su texto.",
       "linkInTextBlock_lean_caution_ownBackground": "Un color de fondo parecido al que lo rodea puede pasar desapercibido.",
@@ -99173,6 +99665,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Una regla posterior o más específica puede anular la señal; comprobar que se muestra.",
       "linkInTextBlock_lean_why_noHoverCue": "Ninguna regla de las hojas de estilo de la página añade un subrayado u otra señal distinta del color al pasar el cursor sobre este enlace, así que su color sigue siendo su única señal.",
       "linkInTextBlock_lean_caution_noHoverCue": "Una señal que añade un script no figura en las hojas de estilo.",
+      "linkInTextBlock_lean_why_rootCanvas": "Sobre el lienzo que un navegador pinta detrás de una página sin fondo ({{canvas}}), el color de fondo propio del enlace ({{background}}) es distinto del que lo rodea ({{around}}), lo que lo señala sin depender del color de su texto.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Una página mostrada dentro de otra página, o con un esquema de color oscuro, se sitúa sobre otro fondo.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Este enlace dentro de un bloque de texto solo se distingue del texto circundante por su color, a {{ratio}}:1 antes de que la opacidad de un ancestro atenúe ambos, lo que los acerca. Eso solo basta si los colores tal como se dibujan siguen alcanzando 3:1 y si al pasar el cursor y al recibir el foco el enlace también muestra una señal distinta del color, como un subrayado.",
       "noAutoplayAudio_title": "El audio en reproducción automática debería proporcionar un mecanismo de pausa/detención o control de volumen",
       "noAutoplayAudio_description": "Señala elementos <audio>/<video> que se reproducen automáticamente sin silenciar y sin un atributo controls nativo, y elementos <embed>, <object> o <bgsound> que pueden reproducir sonido, para su revisión manual frente a la excepción de 3 segundos del criterio de conformidad 1.4.2 de WCAG.",
       "noAutoplayAudio_summary_cantTell": "Este elemento reproduce audio automáticamente, sin una forma integrada de pausarlo, detenerlo o cambiar su volumen.",
@@ -100497,7 +100992,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_cantTell_contrastOnly": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur (contraste {{ratio}}:1). Cela ne suffit que si le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "linkInTextBlock_hint_cantTell_contrastOnly": "Survolez le lien et déplacez le focus clavier dessus : vérifiez que chaque état ajoute un indice autre que la couleur (un soulignement, une bordure, un changement de graisse). Sinon, soulignez le lien au repos.",
       "linkInTextBlock_lean_why_sameColor": "Le lien est affiché dans la même couleur que le texte qui l’entoure, sans soulignement ni autre marque : rien ne le distingue.",
-      "linkInTextBlock_lean_why_lowRatio": "La couleur du lien n’a qu’un ratio de {{ratio}}:1 avec celle du texte environnant, en dessous de 3:1, et il n’a ni soulignement ni autre marque : seule la couleur le distingue, et trop peu.",
       "linkInTextBlock_lean_caution_effect": "L’effet qui a empêché de mesurer les couleurs s’applique de la même façon au lien et au texte, mais la manière dont il les dessine n’est pas modélisée.",
       "linkInTextBlock_lean_why_ownBackground": "Le lien a sa propre couleur d’arrière-plan opaque, différente de celle qui l’entoure, ce qui le signale sans dépendre de la couleur de son texte.",
       "linkInTextBlock_lean_caution_ownBackground": "Une couleur d’arrière-plan proche de celle qui l’entoure peut passer inaperçue.",
@@ -100505,6 +100999,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "Une règle ultérieure ou plus spécifique peut annuler cet indice ; vérifiez qu’il s’affiche.",
       "linkInTextBlock_lean_why_noHoverCue": "Aucune règle des feuilles de style de la page n’ajoute de soulignement ni d’autre indice autre que la couleur au survol de ce lien : sa couleur reste son seul indice.",
       "linkInTextBlock_lean_caution_noHoverCue": "Un indice ajouté par un script n’apparaît pas dans les feuilles de style.",
+      "linkInTextBlock_lean_why_rootCanvas": "Sur le canevas qu’un navigateur peint derrière une page sans arrière-plan ({{canvas}}), la couleur d’arrière-plan propre au lien ({{background}}) diffère de celle qui l’entoure ({{around}}), ce qui le signale sans dépendre de la couleur de son texte.",
+      "linkInTextBlock_lean_caution_rootCanvas": "Une page affichée dans une autre page, ou avec un jeu de couleurs sombre, repose sur un autre arrière-plan.",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par sa couleur, à {{ratio}}:1 avant que l’opacité d’un ancêtre n’estompe les deux, ce qui les rapproche. Cela ne suffit que si les couleurs telles qu’elles sont affichées atteignent encore 3:1 et que le survol et le focus du lien affichent aussi un indice autre que la couleur, comme un soulignement.",
       "noAutoplayAudio_title": "Un audio en lecture automatique devrait proposer un mécanisme de pause/arrêt ou de contrôle du volume",
       "noAutoplayAudio_description": "Signale les éléments <audio>/<video> qui se lancent automatiquement sans être coupés et sans attribut controls natif, ainsi que les éléments <embed>, <object> ou <bgsound> susceptibles de jouer un son, pour une vérification manuelle par rapport à l’exemption de 3 secondes de la WCAG 1.4.2.",
       "noAutoplayAudio_summary_cantTell": "Cet élément lit du son automatiquement, sans moyen intégré de le mettre en pause, de l’arrêter ou d’en régler le volume.",
@@ -101829,7 +102326,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_cantTell_contrastOnly": "文中のこのリンクは、周囲のテキストと色だけで区別されています (コントラスト {{ratio}}:1)。これで十分なのは、ホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "linkInTextBlock_hint_cantTell_contrastOnly": "リンクにマウスを重ね、キーボードフォーカスを移して、それぞれの状態で色以外の手がかり (下線、枠線、太さの変化) が加わるか確認してください。加わらない場合は、通常の状態でリンクに下線を付けてください。",
       "linkInTextBlock_lean_why_sameColor": "リンクは周囲のテキストと同じ色で描画され、下線などの印もないため、何によっても区別されません。",
-      "linkInTextBlock_lean_why_lowRatio": "リンクの色と周囲のテキストの色の比は {{ratio}}:1 しかなく 3:1 を下回り、下線などの印もないため、区別は色だけに頼っており、その差も不十分です。",
       "linkInTextBlock_lean_caution_effect": "色の測定を妨げた効果はリンクにもテキストにも同じようにかかっていますが、それらがどう描画されるかはモデル化していません。",
       "linkInTextBlock_lean_why_ownBackground": "リンクには周囲とは異なる不透明な独自の背景色があり、テキストの色に頼らずにリンクを示しています。",
       "linkInTextBlock_lean_caution_ownBackground": "周囲に近い背景色は気付かれないことがあります。",
@@ -101837,6 +102333,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_lean_caution_hoverFocusCue": "後のルールやより詳細度の高いルールがこの手がかりを打ち消すことがあります。実際に表示されるか確認してください。",
       "linkInTextBlock_lean_why_noHoverCue": "ページのスタイルシートには、このリンクにマウスを重ねたときに下線など色以外の手がかりを加えるルールがないため、色が唯一の手がかりのままです。",
       "linkInTextBlock_lean_caution_noHoverCue": "スクリプトが加える手がかりはスタイルシートには現れません。",
+      "linkInTextBlock_lean_why_rootCanvas": "背景のないページの背後にブラウザーが描くキャンバス ({{canvas}}) の上で、リンク独自の背景色 ({{background}}) は周囲の背景色 ({{around}}) と異なり、テキストの色に頼らずにリンクを示しています。",
+      "linkInTextBlock_lean_caution_rootCanvas": "別のページの中に表示されたページや、ダークな配色で表示されたページは、別の背景の上にあります。",
+      "linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity": "文中のこのリンクは、周囲のテキストと色だけで区別されています。祖先要素の不透明度で両方が薄められる前の時点で {{ratio}}:1 ですが、薄められると両者の差は縮まります。これで十分なのは、描画された色でもなお 3:1 に達し、かつホバー時とフォーカス時にも下線などの色以外の手がかりが表示される場合に限られます。",
       "noAutoplayAudio_title": "自動再生される音声には、一時停止/停止または音量調節の仕組みがあることが望ましい",
       "noAutoplayAudio_description": "ミュートされずに自動再生され、ネイティブの controls 属性もない <audio>/<video> 要素と、音声を再生する可能性のある <embed>、<object>、<bgsound> 要素を検出し、WCAG 1.4.2 の 3 秒の例外に該当するかを人が確認できるようにします。",
       "noAutoplayAudio_summary_cantTell": "この要素は音声を自動再生しますが、一時停止、停止、音量調整を行う組み込みの手段がありません。",
@@ -107692,16 +108191,22 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set `color` in a document's or shadow root's
-  // sheets, as jsdom reads them: top-level rules, and those inside an
+  // The style rules that set a colour property (`color`, or
+  // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
+  // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
   // evaluate (@supports, @layer, @container, a nested rule) is kept as
   // `uncertain`, and a sheet that can't be read makes the whole root so.
   // { rules: [{ parts, value, important, order, uncertain }], unreadable },
-  // once per root.
+  // once per root and property.
   const __colorRulesByRoot = new WeakMap();
-  function __colorRulesOf(root) {
-    if (__colorRulesByRoot.has(root)) return __colorRulesByRoot.get(root);
+  function __colorRulesOf(root, prop) {
+    let byProp = __colorRulesByRoot.get(root);
+    if (!byProp) {
+      byProp = new Map();
+      __colorRulesByRoot.set(root, byProp);
+    }
+    if (byProp.has(prop)) return byProp.get(prop);
     const out = { rules: [], unreadable: false };
     let order = 0;
     const mediaApplies = (rule) => {
@@ -107723,12 +108228,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         if (!rule) continue;
         const name = (rule.constructor && rule.constructor.name) || '';
         if (typeof rule.selectorText === 'string' && rule.style) {
-          const value = String(rule.style.getPropertyValue('color') || '').trim();
+          const value = String(rule.style.getPropertyValue(prop) || '').trim();
           if (value) {
             out.rules.push({
               parts: __splitTopLevel(rule.selectorText).filter(Boolean),
               value,
-              important: rule.style.getPropertyPriority('color') === 'important',
+              important: rule.style.getPropertyPriority(prop) === 'important',
               order: order++,
               uncertain
             });
@@ -107786,14 +108291,14 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       out.unreadable = true;
     }
-    __colorRulesByRoot.set(root, out);
+    byProp.set(prop, out);
     return out;
   }
 
-  // The author's declaration of `color` that wins for el in a browser:
-  // { value }, null where none applies, or { unknown: true } where it can't
-  // be told.
-  function __authorColorOf(el) {
+  // The author's declaration of `color` (or of prop) that wins for el in a
+  // browser: { value }, null where none applies, or { unknown: true } where
+  // it can't be told.
+  function __authorColorOf(el, prop = 'color') {
     let root;
     try {
       root = typeof dom.get(el, 'getRootNode') === 'function' ? dom.getRootNode(el) : null;
@@ -107801,7 +108306,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root);
+    const { rules, unreadable } = __colorRulesOf(root, prop);
     if (unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
@@ -107830,9 +108335,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // The style attribute outranks every rule of its importance.
     try {
       const style = dom.get(el, 'style');
-      const value = style ? String(style.getPropertyValue('color') || '').trim() : '';
+      const value = style ? String(style.getPropertyValue(prop) || '').trim() : '';
       if (value) {
-        const rank = (style.getPropertyPriority('color') === 'important' ? 2e12 : 0) + 1e12;
+        const rank = (style.getPropertyPriority(prop) === 'important' ? 2e12 : 0) + 1e12;
         if (!best || rank > best.rank) best = { rank, value };
       }
     } catch {}
@@ -107894,6 +108399,65 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // browser's own value.
     if (/\bvar\(/.test(value) || /^(initial|revert|revert-layer)$/.test(value)) return null;
     return parseCssColorToRgba(decl.value) ? decl.value : null;
+  }
+
+  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // own, on el or an ancestor it inherits from: true, false where it
+  // follows color, null where it can't be told. jsdom computes a fill that
+  // follows color as that colour, so a fill the page sets to jsdom's own
+  // link colour reads the same as one that follows it.
+  function __jsdomAuthorFill(el) {
+    for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
+      const decl = __authorColorOf(cur, '-webkit-text-fill-color');
+      if (decl && decl.unknown) return null;
+      if (decl) {
+        const value = decl.value.toLowerCase();
+        if (value === 'currentcolor' || value === 'initial') return false;
+        if (/\bvar\(/.test(value) || /^(revert|revert-layer)$/.test(value)) return null;
+        if (value !== 'inherit' && value !== 'unset') return true;
+      }
+      cur = composedParent(cur);
+    }
+    return false;
+  }
+
+  // The colour value el's HTML text is painted in, from its computed style
+  // cs, before any opacity: -webkit-text-fill-color, else color, with the
+  // colour of text in a link worked out from the page's rules under jsdom
+  // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
+  // computes the fill as the colour it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that colour.
+  function __htmlTextFillOf(el, cs) {
+    const fillValue = __textFillOf(cs);
+    const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
+    if (fill && fill !== String(cs.color || '').trim() && parseCssColorToRgba(fill))
+      return fillValue;
+    const link = __jsdomLinkTextColor(el);
+    if (link === undefined) return fillValue;
+    if (!link) return '';
+    if (!fill || !parseCssColorToRgba(fill)) return link;
+    const own = parseCssColorToRgba(link);
+    const read = parseCssColorToRgba(fill);
+    if (own && read && own.r === read.r && own.g === read.g && own.b === read.b && own.a === read.a)
+      return link;
+    const authored = __jsdomAuthorFill(el);
+    if (authored === null) return '';
+    return authored ? fillValue : link;
+  }
+
+  // textFillColor(el): the colour value el's text is painted in, before any
+  // opacity, as computeEffectiveForeground reads it ('' where it can't be
+  // worked out).
+  function textFillColor(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return '';
+      const cs = __contrastComputedStyle(el);
+      if (!cs) return '';
+      if (__isSvgTextElement(el)) return String(cs.fill || '');
+      return __htmlTextFillOf(el, cs) || '';
+    } catch {
+      return '';
+    }
   }
 
   function __isSvgTextElement(el) {
@@ -107967,17 +108531,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    let fillValue = cs && (svgText ? cs.fill : __textFillOf(cs));
     // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour (__jsdomLinkTextColor). jsdom computes the fill as the
-    // colour it follows; one that differs is the page's own, and paints it.
-    if (cs && !svgText && !placeholder) {
-      const fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
-      if (!fill || fill === String(cs.color || '').trim() || !parseCssColorToRgba(fill)) {
-        const link = __jsdomLinkTextColor(el);
-        if (link !== undefined) fillValue = link || '';
-      }
-    }
+    // link colour, is read from the page's rules (__htmlTextFillOf).
+    const fillValue =
+      cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // Clipped text is drawn in its clipping element's background color (a
     // background image or gradient there is asked about instead).
@@ -111931,6 +112488,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     hasFilter,
     computeOpacityProduct,
     computeEffectiveForeground,
+    textFillColor,
     computeEffectiveBackground,
     getComputabilityBlocker,
     getOutlineColors,
@@ -113803,7 +114361,10 @@ const engineOptionSpec = (function engineOptionSpec() {
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
-        rootCanvasFallback: T.string
+        rootCanvasFallback: T.string,
+        // Echoed on each result; read back, false says rootCanvasFallback is
+        // the engine's default, not the caller's.
+        rootCanvasFallbackSet: T.boolean
       }
     },
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),
@@ -123199,7 +123760,25 @@ const runCoreSettled = (function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    return { mode, rootCanvasFallback };
+    // Set below, once the colour is known to be usable.
+    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+  }
+
+  // Whether the caller gave contrast.rootCanvasFallback, rather than the
+  // engine filling in white. An echoed result's options passed back say
+  // rootCanvasFallbackSet: false for a white the engine filled in.
+  function __canvasGiven(engineOptions2) {
+    const c =
+      engineOptions2 && typeof engineOptions2 === 'object' && engineOptions2.contrast
+        ? engineOptions2.contrast
+        : null;
+    return (
+      !!c &&
+      typeof c === 'object' &&
+      typeof c.rootCanvasFallback === 'string' &&
+      !!c.rootCanvasFallback.trim() &&
+      switchOf(c.rootCanvasFallbackSet) !== false
+    );
   }
 
   const engineOptionsResolved =
@@ -123354,6 +123933,10 @@ const runCoreSettled = (function runCoreSettled(
         console.warn('[surea11y] ' + message + '; white is used.');
       } catch {}
       engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    } else if (__canvasGiven(engineOptions)) {
+      // A canvas the caller named, white included, which a rule may decide
+      // by where it would only lean on the default; the result echoes it.
+      engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
     }
   }
 

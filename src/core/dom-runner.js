@@ -1703,7 +1703,25 @@ function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    return { mode, rootCanvasFallback };
+    // Set below, once the colour is known to be usable.
+    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+  }
+
+  // Whether the caller gave contrast.rootCanvasFallback, rather than the
+  // engine filling in white. An echoed result's options passed back say
+  // rootCanvasFallbackSet: false for a white the engine filled in.
+  function __canvasGiven(engineOptions2) {
+    const c =
+      engineOptions2 && typeof engineOptions2 === 'object' && engineOptions2.contrast
+        ? engineOptions2.contrast
+        : null;
+    return (
+      !!c &&
+      typeof c === 'object' &&
+      typeof c.rootCanvasFallback === 'string' &&
+      !!c.rootCanvasFallback.trim() &&
+      switchOf(c.rootCanvasFallbackSet) !== false
+    );
   }
 
   const engineOptionsResolved =
@@ -1858,6 +1876,10 @@ function runCoreSettled(
         console.warn('[surea11y] ' + message + '; white is used.');
       } catch {}
       engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    } else if (__canvasGiven(engineOptions)) {
+      // A canvas the caller named, white included, which a rule may decide
+      // by where it would only lean on the default; the result echoes it.
+      engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
     }
   }
 

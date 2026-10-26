@@ -148,16 +148,107 @@ test(`${RULE_ID}: role="link" elements are in scope and get no default underline
 
 test(`${RULE_ID}: cantTell, not pass, when contrast is not confidently computable (background-image blocker)`, () => {
   // The image is behind the whole paragraph: on the link alone it would be a
-  // mark of its own, and the link would pass.
+  // mark of its own, and the link would pass. A translucent link color is
+  // drawn over the image, so the colors can't be compared.
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
     p { color: #222222; }
-    .nodeco { text-decoration: none; color: #2a2a2a; }
+    .nodeco { text-decoration: none; color: rgba(42, 42, 42, 0.6); }
     .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
   </style></head><body><p class="bgimg">Read <a href="#" class="nodeco">this link</a> for more.</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.notStrictEqual(rule.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BACKGROUND_IMAGE_OR_GRADIENT');
+});
+
+test(`${RULE_ID}: two opaque text colors decide a link whose background can't be worked out`, () => {
+  // The link-vs-text ratio needs no background: an image behind both, an
+  // ancestor fading both, or no page background at all leave it as it is.
+  const html = `<!doctype html><html><head><style>
+    p { color: #000000; }
+    .nodeco { text-decoration: none; }
+    .bgimg { background-image: linear-gradient(90deg, #fff, #eee); }
+    .faded { opacity: 0.8; }
+  </style></head><body>
+    <p class="bgimg">Read <a id="img-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p>
+    <p class="bgimg">Read <a id="img-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p>
+    <div class="faded"><p>Read <a id="op-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p></div>
+    <div class="faded"><p>Read <a id="op-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p></div>
+    <p>Read <a id="root-close" href="#" class="nodeco" style="color:#333333">this guide</a> before you start.</p>
+    <p>Read <a id="root-far" href="#" class="nodeco" style="color:#cc0000">this guide</a> before you start.</p>
+    <p>Read <a id="root-alpha" href="#" class="nodeco" style="color:rgba(51,51,51,0.5)">this guide</a> before you start.</p>
+  </body></html>`;
+  const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find(
+    (r) => r.ruleId === RULE_ID
+  );
+  assert.strictEqual(rule.outcome, 'fail');
+  for (const id of ['img-close', 'op-close', 'root-close']) {
+    const occ = occFor(rule, id);
+    assert.strictEqual(occ.occurrenceOutcome, 'fail', id);
+    assert.strictEqual(occ.data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION', id);
+    assert.strictEqual(occ.data.details.colors.linkForegroundHex, '#333333', id);
+  }
+  // Below 3:1 before an ancestor's fading it fails, the fading only bringing
+  // the colors closer, but that ratio is not the one drawn.
+  const fadedClose = occFor(rule, 'op-close').data.details.metrics;
+  assert.strictEqual(fadedClose.ratio, undefined);
+  assert.ok(Math.abs(fadedClose.ratioBeforeOpacity - 1.66) < 0.01);
+  for (const id of ['img-close', 'root-close']) {
+    assert.ok(Math.abs(occFor(rule, id).data.details.metrics.ratio - 1.66) < 0.01, id);
+    assert.strictEqual(occFor(rule, id).data.details.metrics.ratioBeforeOpacity, undefined, id);
+  }
+  // 3.57:1: told apart by color alone, as on any page.
+  for (const id of ['img-far', 'root-far']) {
+    assert.strictEqual(occFor(rule, id).data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY', id);
+    assert.deepStrictEqual(occFor(rule, id).data.details.metrics, {
+      ratio: occFor(rule, id).data.details.metrics.ratio,
+      threshold: 3
+    });
+  }
+  // Faded by an ancestor, 3.57:1 is the ratio before the fading, which can
+  // only bring the colors closer: not given as the ratio drawn, nor as the
+  // margin.
+  const faded = occFor(rule, 'op-far');
+  assert.strictEqual(faded.occurrenceOutcome, 'cantTell');
+  assert.strictEqual(faded.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  assert.strictEqual(faded.data.details.metrics.ratio, undefined);
+  assert.strictEqual(faded.data.details.metrics.threshold, 3);
+  assert.ok(Math.abs(faded.data.details.metrics.ratioBeforeOpacity - 3.567) < 0.01);
+  assert.strictEqual(
+    faded.i18n.summaryKey,
+    'linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity'
+  );
+  // A translucent color depends on what is behind it.
+  assert.strictEqual(occFor(rule, 'root-alpha').data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+  assert.strictEqual(occFor(rule, 'root-alpha').occurrenceOutcome, 'cantTell');
+});
+
+test(`${RULE_ID}: the same text-shadow or stroke on link and text fails below 3:1, and is asked about above`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #000000; }
+    .nodeco { text-decoration: none; }
+    .sh { text-shadow: 1px 1px 2px #888888; }
+    .st { -webkit-text-stroke: 1px #888888; }
+  </style></head><body>
+    <p class="sh">Read <a id="sh-close" href="#" class="nodeco sh" style="color:#333333">this guide</a> before you start.</p>
+    <p class="sh">Read <a id="sh-far" href="#" class="nodeco sh" style="color:#cc0000">this guide</a> before you start.</p>
+    <p>Read <a id="sh-own" href="#" class="nodeco sh" style="color:#333333">this guide</a> before you start.</p>
+    <p class="st">Read <a id="st-close" href="#" class="nodeco st" style="color:#333333">this guide</a> before you start.</p>
+  </body></html>`;
+  const rule = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find(
+    (r) => r.ruleId === RULE_ID
+  );
+  assert.strictEqual(rule.outcome, 'fail');
+  for (const id of ['sh-close', 'st-close']) {
+    assert.strictEqual(occFor(rule, id).occurrenceOutcome, 'fail', id);
+    assert.strictEqual(occFor(rule, id).data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION', id);
+  }
+  assert.strictEqual(occFor(rule, 'sh-far').occurrenceOutcome, 'cantTell');
+  assert.strictEqual(occFor(rule, 'sh-far').data.details.reasonCode, 'TEXT_SHADOW');
+  // A shadow on the link alone may be what sets it apart.
+  assert.strictEqual(occFor(rule, 'sh-own').occurrenceOutcome, 'cantTell');
+  assert.strictEqual(occFor(rule, 'sh-own').data.details.reasonCode, 'TEXT_SHADOW');
 });
 
 test(`${RULE_ID}: an unevaluable link does not mask a proven failure elsewhere`, () => {
@@ -169,7 +260,7 @@ test(`${RULE_ID}: an unevaluable link does not mask a proven failure elsewhere`,
     .bgimg { background-image: linear-gradient(90deg, #fff, #000); }
   </style></head><body>
     <p>Read <a href="#" id="weakLink" class="nodeco weak">this link</a> for more.</p>
-    <p class="bgimg">Or <a href="#" id="blockedLink" class="nodeco">this one</a> instead.</p>
+    <p class="bgimg">Or <a href="#" id="blockedLink" class="nodeco" style="color:rgba(34,34,34,0.6)">this one</a> instead.</p>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
@@ -241,14 +332,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // Cases 04 and 07 are cantTell-tier occurrences reported alongside the
-  // confident fails rather than discarded by them.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  // Cases 04, 07b and 11 are cantTell-tier occurrences reported alongside
+  // the confident fails rather than discarded by them.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
 
-  // Asked about, each leaning: 04 has no hover cue in the style sheet, 07's
-  // color is 1.1:1 from the text's under the same image, 11 is underlined
-  // on hover and focus.
-  const leans = { litb_case_04: 'fail', litb_case_07: 'fail', litb_case_11: 'pass' };
+  // Asked about, each leaning: 04 has no hover cue in the style sheet, 07b
+  // is drawn in the text's own translucent color under the same image, 11
+  // is underlined on hover and focus.
+  const leans = { litb_case_04: 'fail', litb_case_07b: 'fail', litb_case_11: 'pass' };
   for (const [id, toward] of Object.entries(leans)) {
     const undecided = (rule.occurrences || []).find(
       (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
@@ -265,6 +356,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_05c',
     'litb_case_05d',
     'litb_case_05e',
+    'litb_case_07',
     'litb_case_09'
   ];
   const expectedNoOccIds = [
@@ -279,6 +371,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
+    assert.strictEqual(occFor(rule, id).occurrenceOutcome, 'fail', id);
   }
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
@@ -457,36 +550,37 @@ function occFor(rule, id) {
   return occ;
 }
 
-test(`${RULE_ID}: colors that could not be measured lean fail when the link's color is too close to the text's`, () => {
-  // No page background: strict mode doesn't assume one, so the colors are not
-  // measured, but two opaque text colors compare without it.
+test(`${RULE_ID}: colors that could not be measured lean fail when the link is in the text's own translucent color`, () => {
+  // No page background: strict mode doesn't assume one, so translucent
+  // colors are not measured.
   const html = `<!doctype html><html><head><style>
-    p { color: #000000; }
+    p { color: rgba(0, 0, 0, 0.7); }
     a { text-decoration: none; }
   </style></head><body>
-    <p>Read <a id="close" href="#" style="color:#333333">this guide</a> before you start.</p>
-    <p>Read <a id="far" href="#" style="color:#cc0000">this guide</a> before you start.</p>
+    <p>Read <a id="same" href="#" style="color:rgba(0,0,0,0.7)">this guide</a> before you start.</p>
+    <p>Read <a id="other" href="#" style="color:rgba(51,51,51,0.7)">this guide</a> before you start.</p>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
-  const close = occFor(rule, 'close');
-  assert.strictEqual(close.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
-  assert.strictEqual(close.lean.toward, 'fail');
-  assert.strictEqual(close.lean.i18n.whyKey, 'linkInTextBlock_lean_why_lowRatio');
-  // 3.57:1 from the text: color may be enough, with a hover and focus cue.
-  const far = occFor(rule, 'far');
-  assert.strictEqual(far.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
-  assert.strictEqual(far.lean, undefined);
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const same = occFor(rule, 'same');
+  assert.strictEqual(same.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+  assert.strictEqual(same.lean.toward, 'fail');
+  assert.strictEqual(same.lean.i18n.whyKey, 'linkInTextBlock_lean_why_sameColor');
+  // Two different translucent colors: how far apart they are drawn depends
+  // on the background.
+  const other = occFor(rule, 'other');
+  assert.strictEqual(other.data.details.reasonCode, 'COLOR_NOT_COMPUTABLE');
+  assert.strictEqual(other.lean, undefined);
 });
 
 test(`${RULE_ID}: a gradient behind link and text alike leans fail on the same color, and pass on a background of the link's own`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
     div { background-image: linear-gradient(#ffffff, #eeeeee); }
-    p { color: #000000; }
+    p { color: rgba(0, 0, 0, 0.8); }
     a { text-decoration: none; }
   </style></head><body><div>
-    <p>Read <a id="same" href="#" style="color:#000000">this guide</a> before you start.</p>
+    <p>Read <a id="same" href="#" style="color:rgba(0,0,0,0.8)">this guide</a> before you start.</p>
     <p style="background-color:#ffffff">Read <a id="marked" href="#" style="color:#000000; background-color:#ffff00; opacity:0.9">this guide</a> before you start.</p>
   </div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -540,4 +634,184 @@ test(`${RULE_ID}: a link told apart by color alone leans by the hover and focus 
   );
   // A hover cue without a focus one: no lean either way.
   assert.strictEqual(occFor(rule, 'hover').lean, undefined);
+});
+
+test(`${RULE_ID}: a highlight of its own on a page with no background is asked about, leaning by the canvas`, () => {
+  const para =
+    '<p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:#ff0">annual report</a> today.</p>';
+  const page = (head, body = para) =>
+    `<!doctype html><html><head>${head}</head><body>${body}</body></html>`;
+  const scan = (html, contrast) =>
+    runa11yCoreOnHtml(html, {
+      runOnly: [RULE_ID],
+      ...(contrast ? { engineOptions: { contrast } } : {})
+    });
+
+  // Strict mode doesn't assume the canvas behind a page with no background:
+  // the highlight may or may not stand out from it, so it is not a failure.
+  const rule = assertRule(scan(page('')), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = occFor(rule, 'hl');
+  assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assert.strictEqual(occ.lean.toward, 'pass');
+  assert.strictEqual(occ.lean.i18n.whyKey, 'linkInTextBlock_lean_why_rootCanvas');
+  assert.strictEqual(occ.lean.i18n.params.canvas, '#ffffff');
+
+  // A canvas the run names decides it, in strict mode too: in the
+  // highlight's color it marks nothing, and the link fails; in another
+  // color, white included, the highlight sets the link apart.
+  const same = assertRule(scan(page(''), { rootCanvasFallback: '#ffff00' }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(same.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assertRule(scan(page(''), { rootCanvasFallback: '#ffffff' }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+  assertRule(scan(page(''), { rootCanvasFallback: '#000' }), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+  // One that isn't a usable color is the default, and only leans.
+  const unusable = occFor(scan(page(''), { rootCanvasFallback: 'banana' }).checksResults[0], 'hl');
+  assert.strictEqual(unusable.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assert.strictEqual(unusable.lean.toward, 'pass');
+  // The result echoes whether the canvas was named; passed back, the echo
+  // of a default white is the default again.
+  const echoOf = (contrast) => scan(page(''), contrast).checksResults[0].engineOptions.contrast;
+  assert.deepStrictEqual(echoOf({ rootCanvasFallback: '#ffffff' }), {
+    mode: 'strictConformance',
+    rootCanvasFallback: '#ffffff',
+    rootCanvasFallbackSet: true
+  });
+  const defaultEcho = echoOf(null);
+  assert.deepStrictEqual(defaultEcho, {
+    mode: 'strictConformance',
+    rootCanvasFallback: '#ffffff',
+    rootCanvasFallbackSet: false
+  });
+  const again = occFor(scan(page(''), defaultEcho).checksResults[0], 'hl');
+  assert.strictEqual(again.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assert.strictEqual(echoOf({ rootCanvasFallback: 'banana' }).rootCanvasFallbackSet, false);
+
+  // A page that asks for a dark color scheme is drawn on another canvas.
+  const dark = occFor(
+    scan(page('<meta name="color-scheme" content="dark">')).checksResults[0],
+    'hl'
+  );
+  assert.strictEqual(dark.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assert.strictEqual(dark.lean, undefined);
+
+  // With the background known, or assumed in auditorAssist mode, it is
+  // decided as any highlight is.
+  assertRule(scan(page('<style>body{background:#fff}</style>')), RULE_ID, 'pass', {
+    maxOccurrences: 0
+  });
+  assertRule(scan(page(''), { mode: 'auditorAssist' }), RULE_ID, 'pass', { maxOccurrences: 0 });
+  const onYellow = assertRule(
+    scan(page(''), { mode: 'auditorAssist', rootCanvasFallback: '#ffff00' }),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.strictEqual(onYellow.occurrences[0].data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  // At 3:1 or more from the text it is asked about as before.
+  const far = occFor(
+    scan(page('', para.replace('color:#000;text-decoration', 'color:#cc0000;text-decoration')))
+      .checksResults[0],
+    'hl'
+  );
+  assert.strictEqual(far.data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  // With the canvas named, its highlight marks it, as on a known background.
+  assertRule(
+    scan(page('', para.replace('color:#000;text-decoration', 'color:#cc0000;text-decoration')), {
+      rootCanvasFallback: '#ffffff'
+    }),
+    RULE_ID,
+    'pass',
+    { maxOccurrences: 0 }
+  );
+});
+
+test(`${RULE_ID}: a paragraph's ::first-line is left out under a DOM emulator, which computes no pseudo-element styles`, () => {
+  // In a browser, 1.52:1 from the first line's color asks about this link
+  // (tests/engine-checks/contrast-first-line-chromium.test.js).
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; color: #000000; }
+    p::first-line { color: #990000; }
+    a { text-decoration: none; }
+  </style></head><body><p>Read <a id="fl" href="#" style="color:#cc0000">this guide</a> before you start.</p></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(occFor(rule, 'fl').data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+});
+
+test(`${RULE_ID}: under a DOM emulator, a link's color and fill are read from the page's rules`, () => {
+  const scan = (css, body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>body{background:#fff} p{color:#000} a{text-decoration:none} .bgimg{background-image:linear-gradient(90deg,#fff,#eee)} ${css}</style></head><body>${body}</body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults[0].occurrences[0].data.details;
+
+  // Decided from the two text colors over a gradient: a{color:#cc0000},
+  // which jsdom ranks below its own link blue, is 3.57:1 from the text,
+  // not 2.23:1.
+  const far = scan('a{color:#cc0000}', '<p class="bgimg">Read <a href="#">this guide</a> now.</p>');
+  assert.strictEqual(far.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  assert.strictEqual(far.colors.linkForegroundHex, '#cc0000');
+  // A rule more specific than jsdom's link color was read right before too.
+  const specific = scan(
+    'a.x{color:#cc0000}',
+    '<p class="bgimg">Read <a class="x" href="#">this guide</a> now.</p>'
+  );
+  assert.strictEqual(specific.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+
+  // A fill the page sets to the color jsdom gives links paints the link in
+  // it (2.23:1 from the text), on the link or inherited from the paragraph;
+  // one that follows color, or none, leaves it in the page's color.
+  const filled = scan(
+    'a{color:#000} .f{-webkit-text-fill-color:#0000ee}',
+    '<p>Read <a class="f" href="#">this guide</a> now.</p>'
+  );
+  assert.strictEqual(filled.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(filled.colors.linkForegroundHex, '#0000ee');
+  const inherited = scan(
+    'a{color:#000} p.f{-webkit-text-fill-color:#0000ee}',
+    '<p class="f">Read <a href="#">this guide</a> now.</p>'
+  );
+  assert.strictEqual(inherited.colors.linkForegroundHex, '#0000ee');
+  assert.strictEqual(inherited.metrics.ratio, 1);
+  for (const css of ['a{color:#000} .f{-webkit-text-fill-color:currentcolor}', 'a{color:#000}']) {
+    const own = scan(css, '<p>Read <a class="f" href="#">this guide</a> now.</p>');
+    assert.strictEqual(own.colors.linkForegroundHex, '#000000', css);
+    assert.strictEqual(own.metrics.ratio, 1, css);
+  }
+});
+
+test(`${RULE_ID}: a link faded with its text by an ancestor leans pass on no hover and focus cue`, () => {
+  // 3:1 or more before the fading may be less as drawn, which a cue on
+  // hover and focus doesn't make up for; with no cue on hover it fails
+  // either way, so that lean stands.
+  const page = (css) =>
+    `<!doctype html><html><head><style>
+      p { color: #000000; } a { text-decoration: none; color: #cc0000; }
+      .faded { opacity: 0.8; } ${css}
+    </style></head><body>
+      <div class="faded"><p>Read <a id="faded" href="#">this guide</a> before you start.</p></div>
+      <p>Read <a id="plain" href="#">this guide</a> before you start.</p>
+    </body></html>`;
+  const scan = (css) =>
+    runa11yCoreOnHtml(page(css), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    );
+  const cued = scan('a:hover, a:focus { text-decoration: underline; }');
+  assert.strictEqual(occFor(cued, 'faded').data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY');
+  assert.strictEqual(occFor(cued, 'faded').lean, undefined);
+  assert.strictEqual(occFor(cued, 'plain').lean.toward, 'pass');
+  const bare = scan('');
+  assert.strictEqual(occFor(bare, 'faded').lean.toward, 'fail');
+  assert.strictEqual(occFor(bare, 'plain').lean.toward, 'fail');
 });

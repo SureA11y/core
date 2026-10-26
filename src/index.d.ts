@@ -107,6 +107,12 @@ export interface EngineOptionFields {
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
     rootCanvasFallback?: string;
+    /**
+     * Echoed on each result: whether rootCanvasFallback is one the caller gave
+     * (true) or the default white the engine filled in (false). Passed back,
+     * false reads the colour as the default. See docs/ENGINE_OPTIONS.md.
+     */
+    rootCanvasFallbackSet?: boolean;
   };
   /** Contrast rules only. Unset: 'styleAndGeometry' where the page has a layout (a browser), else 'styleOnly'. See docs/ENGINE_OPTIONS.md. */
   visibilityMode?: Open<'styleOnly' | 'styleAndGeometry'>;

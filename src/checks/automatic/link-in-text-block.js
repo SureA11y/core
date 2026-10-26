@@ -41,7 +41,10 @@
  *   G183 is met only if hover and focus also bring a non-color cue, which
  *   a static scan cannot see, so the link is reported as cantTell. Below
  *   3:1, with contrast confidently computable, color is demonstrably the
- *   only cue and the link fails.
+ *   only cue and the link fails. The ratio between the link's color and the
+ *   text's needs no background, so where only the background, or an effect
+ *   applied alike to both, keeps it from being measured, two opaque text
+ *   colors still decide it.
  *   Margin (`contrast-ratio`): of the links told apart by color alone that
  *   reach 3:1, the one closest to it, with its ratio unrounded. Those links
  *   are also asked about (the hover and focus cue), so the margin appears on
@@ -52,6 +55,12 @@
  *   - `metrics.ratio` (a link set apart by color only): the contrast
  *     between the link's text color and the surrounding text's, as a ratio
  *     (3 for 3:1), against `metrics.threshold` (3).
+ *   - `metrics.ratioBeforeOpacity` (a link set apart by color only, under
+ *     `ANCESTOR_OPACITY`): that ratio before an ancestor's opacity fades the
+ *     link and the text alike, in place of `metrics.ratio`. The fading brings
+ *     the two colors closer, so the ratio drawn may be lower: below 3:1 the
+ *     link fails all the same, at 3:1 or more it is asked about with no lean
+ *     toward pass, and it gives no margin.
  *   - `colors.linkForegroundHex`, `colors.surroundingTextForegroundHex` (a
  *     link set apart by color only): the link's text color and the
  *     surrounding text's, as hex.
@@ -64,7 +73,8 @@
  *     told apart by color alone at 3:1 or more; whether hover and focus add
  *     a non-color cue is for a person to check.
  *     It leans pass when the style sheets give it a non-color cue on :hover and
- *     on :focus, and fail when every sheet could be read and none gives it one
+ *     on :focus (not where an ancestor's opacity fades it, whose ratio as
+ *     drawn may be below 3:1), and fail when every sheet could be read and none gives it one
  *     on :hover.
  *     Basis: WCAG 1.4.1 (not settled); G183 (not settled).
  *   - `TEXT_DECORATION_NOT_RESOLVABLE` (cantTell): whether the link is
@@ -72,21 +82,36 @@
  *     unknown.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `COLOR_NOT_COMPUTABLE` (cantTell): the colors of the link or of the
- *     surrounding text could not be worked out.
- *     It leans fail when the link is not underlined, has no background of its
- *     own, and is drawn in the surrounding text's color, or in an opaque one
- *     less than 3:1 from it (two opaque colors compare without the background);
- *     it leans pass when it has an opaque background of its own unlike the one
- *     around it.
+ *     surrounding text could not be worked out. Where the link is not
+ *     underlined, has no background of its own, and it and the text are drawn
+ *     in opaque colors, which compare without the background, it is decided
+ *     from those colors instead (`COLOR_ONLY_DIFFERENTIATION` below 3:1,
+ *     `LINK_COLOR_CONTRAST_ONLY` at 3:1 or more).
+ *     It leans fail when such a link is drawn in the same translucent color as
+ *     the surrounding text; it leans pass when it has an opaque background of
+ *     its own unlike the one around it.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or
  *     gradient lies behind the link, so its colors could not be compared.
- *     It leans fail when the link is not underlined, has no background of its
- *     own, and is drawn in the surrounding text's color, or in an opaque one
- *     less than 3:1 from it, the same image lying behind the text; it leans
- *     pass when it has an opaque background of its own unlike the one around
- *     it.
+ *     Where the same image lies behind the surrounding text, and the link is
+ *     not underlined, has no background of its own, and it and the text are
+ *     drawn in opaque colors, it is decided from those colors instead, as for
+ *     `COLOR_NOT_COMPUTABLE`.
+ *     It leans fail when such a link is drawn in the same translucent color as
+ *     the surrounding text; it leans pass when it has an opaque background of
+ *     its own unlike the one around it.
  *     Basis: WCAG 1.4.1 (not settled).
+ *   - `BACKGROUND_NOT_OPAQUE_AT_ROOT` (cantTell): the link has an opaque
+ *     background color of its own and otherwise less than 3:1 from the
+ *     surrounding text, but nothing behind that text, up to the root, has an
+ *     opaque background, so whether the link's background stands out from it
+ *     depends on the canvas the page is shown on. With `auditorAssist` mode,
+ *     a `contrast.rootCanvasFallback` the run names, or in a browser that
+ *     reads the canvas, it is decided as any highlight is, on that canvas.
+ *     It leans pass when the link's background differs from the one around it
+ *     on the white canvas a browser paints behind such a page; not in a
+ *     frame, in a dark color scheme or under forced colors.
+ *     Basis: WCAG 1.4.1 (not settled); F73 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under a link
  *     or text drawn in a translucent color, so the colors could not be
  *     compared.
@@ -112,10 +137,17 @@
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
  *     link and its background together, in a way that could not be resolved.
- *     It leans fail when the link is not underlined, has no background of its
- *     own, and is drawn in the surrounding text's color, or in an opaque one
- *     less than 3:1 from it, the same ancestor fading both; it leans pass when
- *     it has an opaque background of its own unlike the one around it.
+ *     Where the same ancestor fades the surrounding text, and the link is not
+ *     underlined, has no background of its own, and it and the text are drawn
+ *     in opaque colors, it is decided from those colors instead, as for
+ *     `COLOR_NOT_COMPUTABLE` (the fading brings two colors closer, never
+ *     further apart, so a link below 3:1 before the fading is below it as
+ *     drawn, and fails); either way that ratio is reported as
+ *     `metrics.ratioBeforeOpacity`, since the ratio drawn may be lower, and
+ *     at 3:1 or more `LINK_COLOR_CONTRAST_ONLY` does not lean pass.
+ *     It leans fail when such a link is drawn in the same translucent color as
+ *     the surrounding text; it leans pass when it has an opaque background of
+ *     its own unlike the one around it.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `ELEMENT_OPACITY` (cantTell): the link's own element has opacity below 1
  *     over a background of its own, which could not be resolved.
@@ -123,26 +155,37 @@
  *     it.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `TEXT_SHADOW` (cantTell): a text-shadow changes how the link or the text
- *     looks, so their colors alone don't tell whether they stand apart.
- *     It leans fail when the link is not underlined, has no background of its
- *     own, and is drawn in the surrounding text's color, or in an opaque one
- *     less than 3:1 from it, with the same shadow on both; it leans pass when
- *     it has an opaque background of its own unlike the one around it.
+ *     looks, so their colors alone don't tell whether they stand apart. With
+ *     the same shadow on both, where the link is not underlined, has no
+ *     background of its own, and it and the text are drawn in opaque colors
+ *     less than 3:1 apart, it fails (`COLOR_ONLY_DIFFERENTIATION`): the same
+ *     shadow makes them no less alike.
+ *     It leans fail when such a link is drawn in the same translucent color as
+ *     the surrounding text; it leans pass when it has an opaque background of
+ *     its own unlike the one around it.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `TEXT_STROKE` (cantTell): a -webkit-text-stroke draws the link or the
- *     text in a color of its own, so the colors could not be compared.
- *     It leans fail when the link is not underlined, has no background of its
- *     own, and is drawn in the surrounding text's color, or in an opaque one
- *     less than 3:1 from it, with the same stroke on both; it leans pass when
- *     it has an opaque background of its own unlike the one around it.
+ *     text in a color of its own, so the colors could not be compared. With
+ *     the same stroke on both, where the link is not underlined, has no
+ *     background of its own, and it and the text are drawn in opaque colors
+ *     less than 3:1 apart, it fails (`COLOR_ONLY_DIFFERENTIATION`).
+ *     It leans fail when such a link is drawn in the same translucent color as
+ *     the surrounding text; it leans pass when it has an opaque background of
+ *     its own unlike the one around it.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
- *     color of its own, and which text it paints depends on line breaks.
- *     Where nothing else is in the way, the pseudo-element paints no background
- *     or weight of its own, and the link in both colors is on the same side of
- *     3:1 from the surrounding text, it is decided as any link is (by the
- *     closer ratio when both reach 3:1, the better one when both fall short);
- *     it is asked about where they disagree.
+ *     color of its own, and which text it paints depends on line breaks: the
+ *     link's own, or the ::first-line of the block the surrounding text is in
+ *     or of an ancestor whose first line that block opens (div::first-line
+ *     for a <p> that is the div's first child; the inner one wins), named in
+ *     `details.pseudoElement`, which paints that text on the first line.
+ *     Where nothing else is in the way, the link's pseudo-element paints
+ *     no background or weight of its own, the block's changes only the color
+ *     of its first line, and the link is on the same side of 3:1 from the
+ *     surrounding text in every pair of colors, it is decided as any link is
+ *     (by the closest ratio when all reach 3:1, the best one when all fall
+ *     short); it is asked about where they disagree. Only a browser computes
+ *     pseudo-element styles.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `SELECT_OPTION_COLOR` (cantTell): the text is a drop-down option drawn
  *     only in the list the platform opens, with colors of its own.
@@ -161,7 +204,8 @@
  *   overwhelming majority of real markup.
  * - A candidate that cannot be evaluated reports cantTell, not pass:
  *   contrast not confidently computable (the blockers `contrast-minimum`/
- *   `contrast-computable` use), or `text-decoration` unreadable in both
+ *   `contrast-computable` use) where the two text colors don't settle it
+ *   (see `knownFromTextColors`), or `text-decoration` unreadable in both
  *   the computed style and the CSSOM (see `decorationInfo`). `fail` stays
  *   reserved for deterministic violations; this is the computability gate
  *   RULE_TAXONOMY.md §1.1 allows automatic rules, as in `contrast-minimum`
@@ -222,6 +266,7 @@ const meta = {
   reasonCodes: [
     'ANCESTOR_OPACITY',
     'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    'BACKGROUND_NOT_OPAQUE_AT_ROOT',
     'BACKGROUND_OVERLAP',
     'COLOR_NOT_COMPUTABLE',
     'CONTRAST_HELPERS_UNAVAILABLE',
@@ -273,6 +318,17 @@ const meta = {
         'The link has a non-color cue such as an underline, bold or a border, or its color contrasts with the text by at least 3:1 and hover and focus add a non-color cue.',
       failWhen:
         'The link has no non-color cue and it is told apart from the text by color alone, at less than 3:1 or with no non-color cue on hover and focus, which fails WCAG 1.4.1 (F73).'
+    },
+    BACKGROUND_NOT_OPAQUE_AT_ROOT: {
+      steps: [
+        "Find the link the report names inside its paragraph; the page sets no background, so the browser's default (usually white) shows around it.",
+        'If the page is embedded in another page or the browser or system is in dark mode, view it in each setting where it is shown.',
+        "In each setting, check whether the link's background color stands out from the background around it, or an underline or another non-color mark sets the link apart."
+      ],
+      passWhen:
+        "In every setting where the page is shown, the link's background stands out from the one around it, or another non-color mark sets the link apart.",
+      failWhen:
+        "In some setting the link's background matches the one around it and only a color difference of less than 3:1 sets the link apart, which fails WCAG 1.4.1 (F73)."
     },
     BACKGROUND_OVERLAP: {
       steps: [
@@ -1007,6 +1063,9 @@ function runInPage(ctx) {
     typeof contrastOpts.rootCanvasFallback === 'string' && contrastOpts.rootCanvasFallback.trim()
       ? contrastOpts.rootCanvasFallback.trim()
       : '#ffffff';
+  // Whether the run names the canvas (the runner marks a given
+  // rootCanvasFallback), rather than taking the default white.
+  const rootCanvasSet = contrastOpts.rootCanvasFallbackSet === true;
 
   const c = helpers && helpers.contrast ? helpers.contrast : null;
 
@@ -1033,15 +1092,202 @@ function runInPage(ctx) {
 
   // Applicable, but not evaluable. Held separately so the outcome below can
   // tell "checked and sound" apart from "never decided".
-  function markUndecided(el, reasonCode, lean) {
-    undecided.push({ el, reasonCode, lean: lean || null });
+  function markUndecided(el, reasonCode, lean, detail) {
+    undecided.push({ el, reasonCode, lean: lean || null, detail: detail || null });
+  }
+
+  // The link's colors against the surrounding text's, every pair: where
+  // all reach 3:1 the closest pair stands ('reach'), where all fall short
+  // the best one ('short'); 'mixed' where they disagree.
+  function compareTextColors(linkFgs, textFgs) {
+    let best = null;
+    let reach = 0;
+    let total = 0;
+    for (const link of linkFgs) {
+      for (const text of textFgs) {
+        const ratio = c.contrastRatio(link, text);
+        if (!Number.isFinite(ratio)) return { verdict: 'mixed' };
+        total += 1;
+        if (ratio >= 3) reach += 1;
+        if (!best || (ratio >= 3 ? ratio < best.ratio : ratio > best.ratio)) {
+          best = { ratio, link, text };
+        }
+      }
+    }
+    if (!best || (reach && reach !== total)) return { verdict: 'mixed' };
+    return { verdict: reach ? 'reach' : 'short', ...best };
+  }
+
+  // The ::first-line of the block the surrounding text is in, where it
+  // paints that text in a color of its own: { color, selector, otherCue },
+  // otherCue where it also changes the weight, style, decoration or shadow
+  // of the first line. Only a browser computes pseudo-element styles, so
+  // under a DOM emulator this is null. Text in an inline element of a
+  // color other than the block's keeps its color on the first line.
+  const BLOCK_DISPLAY =
+    /^(block|list-item|flow-root|inline-block|table-cell|table-caption)\b|\bflow-root\b/;
+  const firstLineByBlock = new Map();
+  const firstLineByRoot = new Map();
+  function sheetsNameFirstLine(node) {
+    let root;
+    try {
+      root = dom.getRootNode(node);
+    } catch {
+      return true;
+    }
+    if (firstLineByRoot.has(root)) return firstLineByRoot.get(root);
+    let found = false;
+    const walk = (rules, depth) => {
+      if (!rules || depth > MAX_NESTED_DEPTH || found) return;
+      for (const cssRule of rules) {
+        if (!cssRule) continue;
+        if (typeof cssRule.selectorText === 'string' && /first-line/i.test(cssRule.selectorText)) {
+          found = true;
+          return;
+        }
+        let nested;
+        try {
+          nested = cssRule.cssRules || null;
+        } catch {
+          nested = null;
+        }
+        if (nested && nested.length) walk(nested, depth + 1);
+      }
+    };
+    try {
+      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
+        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
+      );
+      for (const sheet of sheets) {
+        let rules;
+        try {
+          rules = sheet.cssRules || [];
+        } catch {
+          found = true; // another origin's: it may name one
+          break;
+        }
+        walk(rules, 0);
+        if (found) break;
+      }
+    } catch {
+      found = true;
+    }
+    firstLineByRoot.set(root, found);
+    return found;
+  }
+  // Whether a block's first line is its parent's first line too: it is a
+  // block-level box in the normal flow of a block container, and nothing
+  // in that flow comes before it (white space, an element not shown, a
+  // float or an absolutely positioned box aside). A block's ::first-line
+  // then paints it (CSS Pseudo-Elements, "first formatted line").
+  const FIRST_LINE_CONTAINER =
+    /^(block|list-item|flow-root|inline-block|table-cell|table-caption)\b/;
+  const outOfFlow = (cs) =>
+    String(cs.display || '') === 'none' ||
+    /^(absolute|fixed)$/.test(String(cs.position || '')) ||
+    String(cs.cssFloat || cs.float || 'none') !== 'none';
+  function opensParentFirstLine(child, childCs, parent) {
+    const parentCs = safeComputedStyle(parent);
+    if (!parentCs || !FIRST_LINE_CONTAINER.test(String(parentCs.display || ''))) return false;
+    if (!/^(block|list-item|flow-root)\b/.test(String(childCs.display || ''))) return false;
+    if (outOfFlow(childCs)) return false;
+    for (
+      let n = dom.firstChild(parent), i = 0;
+      n && n !== child && i < 200;
+      n = dom.nextSibling(n), i++
+    ) {
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (/\S/.test(dom.nodeValue(n) || '')) return false;
+        continue;
+      }
+      if (type !== 1) continue;
+      const cs = safeComputedStyle(n);
+      if (!cs || !outOfFlow(cs)) return false;
+    }
+    return true;
+  }
+  // The element whose ::first-line gives a block's first line the color
+  // read from the block's own: an ancestor's reaches the block's first line
+  // where the block opens the ancestor's (div::first-line paints the first
+  // line of the <p> that opens the div), and the browser computes the
+  // block's ::first-line with it. The nearest ancestor so reached whose
+  // ::first-line has a color of its own, where that is the color read; the
+  // block itself where it has another (the inner one wins) or there is none.
+  function firstLineSource(block, color, view) {
+    try {
+      let cur = block;
+      let curCs = safeComputedStyle(block);
+      for (let d = 0; cur && curCs && d < 50; d++) {
+        const up = dom.parentElement(cur);
+        if (!up || !opensParentFirstLine(cur, curCs, up)) break;
+        const upCs = safeComputedStyle(up);
+        if (!upCs) break;
+        const upLine = fillOf(view.getComputedStyle(up, '::first-line'));
+        if (upLine && !sameRgba(upLine, fillOf(upCs, up)))
+          return sameRgba(upLine, color) ? up : block;
+        cur = up;
+        curCs = upCs;
+      }
+    } catch {}
+    return block;
+  }
+  function blockFirstLine(textEl, textCs) {
+    try {
+      if (!textEl || !textCs || !hasLayout() || !sheetsNameFirstLine(textEl)) return null;
+      let block = textEl;
+      let blockCs = textCs;
+      for (let d = 0; block && d < 50; d++) {
+        if (BLOCK_DISPLAY.test(String(blockCs.display || ''))) break;
+        block = dom.parentElement(block);
+        blockCs = block ? safeComputedStyle(block) : null;
+        if (!blockCs) return null;
+      }
+      if (!block || !blockCs) return null;
+      if (block !== textEl && !sameRgba(fillOf(textCs, textEl), fillOf(blockCs, block)))
+        return null;
+      if (firstLineByBlock.has(block)) return firstLineByBlock.get(block);
+      let out = null;
+      const view = dom.defaultView(dom.ownerDocument(block));
+      const ps = view ? view.getComputedStyle(block, '::first-line') : null;
+      const color = ps ? fillOf(ps) : null;
+      const own = fillOf(blockCs, block);
+      if (color && own && !sameRgba(color, own)) {
+        const source = firstLineSource(block, color, view);
+        const blockId = dom.getAttribute(source, 'id');
+        const cls = String(dom.getAttribute(source, 'class') || '')
+          .trim()
+          .split(/\s+/)[0];
+        const name = String(dom.localName(source) || '').toLowerCase();
+        out = {
+          color,
+          selector: name + (blockId ? '#' + blockId : cls ? '.' + cls : '') + '::first-line',
+          otherCue:
+            c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
+            String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
+            String(ps.textDecorationLine || '') !== String(blockCs.textDecorationLine || '') ||
+            String(ps.textShadow || '') !== String(blockCs.textShadow || '')
+        };
+      }
+      firstLineByBlock.set(block, out);
+      return out;
+    } catch {
+      return null;
+    }
   }
 
   // ---- Leans (docs/LEANS.md) ----
 
   // The colour a style paints text in: -webkit-text-fill-color, else color.
-  function fillOf(cs) {
+  // For an element's own style, given el, read as the contrast helpers read
+  // it (textFillColor): under jsdom, the colour of text in a link comes
+  // from the page's rules, not jsdom's own link colour; null where it
+  // can't be worked out.
+  function fillOf(cs, el) {
     if (!cs || !c) return null;
+    if (el && typeof c.textFillColor === 'function') {
+      return c.parseCssColorToRgba(String(c.textFillColor(el) || ''));
+    }
     return (
       c.parseCssColorToRgba(String(cs.webkitTextFillColor || '')) ||
       c.parseCssColorToRgba(String(cs.color || ''))
@@ -1052,18 +1298,32 @@ function runInPage(ctx) {
     return !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
   }
 
-  // The effects that stopped the colours being measured, by whether they
-  // can at most keep two equal colours equal (filter, blend: the same
-  // effect on the same colour) or also keep two close colours close
-  // (a background or an opacity behind or around both).
-  const SAME_ONLY = new Set(['BACKGROUND_FILTER_OR_BACKDROP_FILTER', 'MIX_BLEND_MODE']);
-  const LOW_RATIO = new Set([
+  // The effects that stopped the colours being measured where two equal
+  // colours stay equal under them, applied alike to the link and the text:
+  // the same blocker, or the same shadow or stroke on both.
+  const SAME_COLOR = new Set([
     'COLOR_NOT_COMPUTABLE',
     'BACKGROUND_IMAGE_OR_GRADIENT',
+    'BACKGROUND_OVERLAP',
+    'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    'MIX_BLEND_MODE',
     'ANCESTOR_OPACITY',
     'TEXT_SHADOW',
     'TEXT_STROKE'
   ]);
+  // Those where the link's ratio to the surrounding text is known exactly
+  // when both are drawn in opaque colors: the ratio of the two text colors,
+  // which no background enters (an unknown background, an image or a
+  // gradient behind both, an ancestor fading both). Filters and blend modes
+  // change the colors themselves.
+  const KNOWN_FROM_TEXT = new Set([
+    'COLOR_NOT_COMPUTABLE',
+    'BACKGROUND_IMAGE_OR_GRADIENT',
+    'ANCESTOR_OPACITY'
+  ]);
+  // Those decided only below 3:1: the same shadow or stroke drawn on both
+  // can only make them look more alike.
+  const KNOWN_BELOW_THREE = new Set(['TEXT_SHADOW', 'TEXT_STROKE']);
   const OWN_BACKGROUND = new Set([
     'COLOR_NOT_COMPUTABLE',
     'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -1151,35 +1411,23 @@ function runInPage(ctx) {
       }
       if (underlined !== false) return null;
       if (ownBg && ownBg.a > 0) return null;
-      if (
-        !SAME_ONLY.has(reasonCode) &&
-        !LOW_RATIO.has(reasonCode) &&
-        reasonCode !== 'BACKGROUND_OVERLAP'
-      )
-        return null;
-      const linkFill = fillOf(linkCs);
-      const textFill = fillOf(parentCs);
+      if (!SAME_COLOR.has(reasonCode)) return null;
+      const linkFill = fillOf(linkCs, el);
+      const textFill = fillOf(parentCs, textEl);
       if (!linkFill || !textFill) return null;
       if (c.computeOpacityProduct(el) !== c.computeOpacityProduct(textEl)) return null;
       if (!effectShared(reasonCode, blocker, linkCs, textEl, parentCs)) return null;
-      const same = sameRgba(linkFill, textFill);
-      let ratio = null;
-      if (!same) {
-        if (!LOW_RATIO.has(reasonCode) || linkFill.a !== 1 || textFill.a !== 1) return null;
-        ratio = c.contrastRatio(linkFill, textFill);
-        if (!(ratio < 3)) return null;
-      }
-      const ratioStr = ratio === null ? '' : String(c.round2(ratio));
+      // In opaque colors the link is decided (knownFromTextColors); in the
+      // same translucent one it points to a failure.
+      if (!sameRgba(linkFill, textFill)) return null;
       const effect = reasonCode !== 'COLOR_NOT_COMPUTABLE';
       return {
         toward: 'fail',
-        why: same
-          ? 'The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.'
-          : `The link's color is only ${ratioStr}:1 from the surrounding text's, below 3:1, and it has no underline or other mark, so color alone sets it apart, and too little.`,
+        why: 'The link is drawn in the same color as the text around it, with no underline or other mark, so nothing sets it apart.',
         signals: [
           { signal: 'underline-absent', value: true },
-          { signal: 'link-text-same-color', value: same },
-          { signal: 'link-text-ratio', value: ratio === null ? 1 : Number(c.round2(ratio)) },
+          { signal: 'link-text-same-color', value: true },
+          { signal: 'link-text-ratio', value: 1 },
           { signal: 'blocked-by', value: reasonCode }
         ],
         ...(effect
@@ -1189,9 +1437,115 @@ function runInPage(ctx) {
             }
           : {}),
         i18n: {
-          whyKey: same ? 'linkInTextBlock_lean_why_sameColor' : 'linkInTextBlock_lean_why_lowRatio',
+          whyKey: 'linkInTextBlock_lean_why_sameColor',
           ...(effect ? { cautionKey: 'linkInTextBlock_lean_caution_effect' } : {}),
-          params: same ? {} : { ratio: ratioStr }
+          params: {}
+        }
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  // A link whose colors could not be measured, but whose ratio to the
+  // surrounding text is known all the same: it has no underline and no
+  // background of its own, it and the text are drawn in opaque colors, and
+  // what kept them from being measured is the background, or an effect
+  // applied alike to both. The ratio of the two text colors (against the
+  // block's ::first-line color too, where it has one) is then the ratio
+  // the link is judged by. { ratio, link, text }, or null where it stays
+  // undecided: a translucent color, a filter, a blend mode, paint under
+  // the text, or the same shadow or stroke at 3:1 or more.
+  function knownFromTextColors(reasonCode, info) {
+    try {
+      if (!c || !info || !info.linkCs || !info.parentCs) return null;
+      const { el, linkCs, textEl, parentCs, blocker, underlined } = info;
+      if (!KNOWN_FROM_TEXT.has(reasonCode) && !KNOWN_BELOW_THREE.has(reasonCode)) return null;
+      if (underlined !== false) return null;
+      // The link's own ::first-line or ::first-letter gives it a second color.
+      if (blocker && blocker.reasonCode === 'PSEUDO_ELEMENT_COLOR') return null;
+      const ownBgValue = String(linkCs.backgroundColor || '').trim();
+      const ownBg = ownBgValue ? c.parseCssColorToRgba(ownBgValue) : null;
+      if (ownBgValue && !(ownBg && ownBg.a === 0)) return null;
+      const linkFill = fillOf(linkCs, el);
+      const textFill = fillOf(parentCs, textEl);
+      if (!linkFill || !textFill || linkFill.a !== 1 || textFill.a !== 1) return null;
+      if (c.computeOpacityProduct(el) !== c.computeOpacityProduct(textEl)) return null;
+      if (!effectShared(reasonCode, blocker, linkCs, textEl, parentCs)) return null;
+      const textFgs = [textFill];
+      const firstLine = blockFirstLine(textEl, parentCs);
+      if (firstLine) {
+        if (firstLine.color.a !== 1) return null;
+        textFgs.push(firstLine.color);
+      }
+      const compared = compareTextColors([linkFill], textFgs);
+      if (compared.verdict === 'mixed') return null;
+      if (compared.verdict === 'short' && firstLine && firstLine.otherCue) return null;
+      if (compared.verdict === 'reach' && KNOWN_BELOW_THREE.has(reasonCode)) return null;
+      return { ratio: compared.ratio, link: compared.link, text: compared.text };
+    } catch {
+      return null;
+    }
+  }
+
+  // Whether a highlight differs from the background around it on the
+  // canvas the run names: true or false, null where it can't be told.
+  function highlightDiffersOnCanvas(highlight, around) {
+    try {
+      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
+      if (!canvas || canvas.a !== 1) return null;
+      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
+      return c.rgbToHex(highlight) !== c.rgbToHex(surround);
+    } catch {
+      return null;
+    }
+  }
+
+  // A link with a highlight of its own on a page that sets no opaque
+  // background: at the top level of a window in a light color scheme, the
+  // page is drawn on the canvas the browser paints behind it, white (a
+  // canvas the run names decides the link instead). It leans pass where the highlight differs from
+  // the background around it on that canvas.
+  function rootCanvasLean(el, highlight, around) {
+    try {
+      const doc = dom.ownerDocument(el);
+      let inFrame = true;
+      try {
+        const view = doc ? dom.defaultView(doc) : null;
+        inFrame = !view || dom.get(view, 'self') !== dom.get(view, 'top');
+      } catch {
+        inFrame = true;
+      }
+      if (inFrame) return null;
+      if (typeof c.colorsForced === 'function' && c.colorsForced()) return null;
+      const root = doc ? dom.documentElement(doc) : null;
+      const rootScheme = String((safeComputedStyle(root) || {}).colorScheme || '');
+      const schemeMeta = doc ? dom.call(doc, 'querySelector', 'meta[name="color-scheme" i]') : null;
+      const metaScheme = schemeMeta ? String(dom.getAttribute(schemeMeta, 'content') || '') : '';
+      if (/\bdark\b/i.test(rootScheme) || /\bdark\b/i.test(metaScheme)) return null;
+      const canvas = c.parseCssColorToRgba(rootCanvasFallback);
+      if (!canvas || canvas.a !== 1) return null;
+      const surround = { ...c.compositeRgba(around, canvas), a: 1 };
+      const ownHex = c.rgbToHex(highlight);
+      const aroundHex = c.rgbToHex(surround);
+      if (ownHex === aroundHex) return null;
+      const canvasHex = c.rgbToHex(canvas);
+      return {
+        toward: 'pass',
+        why: `On the canvas a browser paints behind a page with no background (${canvasHex}), the link's own background color (${ownHex}) differs from the one around it (${aroundHex}), which marks it without relying on its text color.`,
+        signals: [
+          { signal: 'link-own-background', value: ownHex },
+          { signal: 'background-around', value: aroundHex },
+          { signal: 'canvas-color', value: canvasHex },
+          { signal: 'in-frame', value: false },
+          { signal: 'color-scheme-dark', value: false }
+        ],
+        caution:
+          'A page shown inside another page, or in a dark color scheme, sits on another background.',
+        i18n: {
+          whyKey: 'linkInTextBlock_lean_why_rootCanvas',
+          cautionKey: 'linkInTextBlock_lean_caution_rootCanvas',
+          params: { canvas: canvasHex, background: ownHex, around: aroundHex }
         }
       };
     } catch {
@@ -1306,7 +1660,7 @@ function runInPage(ctx) {
   // A link told apart by color alone at 3:1 or more: it leans pass where
   // the style sheets add a non-color cue on hover and on focus, and fail
   // where every sheet could be read and none adds one on hover.
-  function contrastOnlyLean(el, ratio) {
+  function contrastOnlyLean(el, ratio, beforeOpacity) {
     try {
       const cues = hoverFocusCues(el);
       const handlers = ['onmouseover', 'onmouseenter', 'onfocus', 'onfocusin'].some(
@@ -1316,9 +1670,16 @@ function runInPage(ctx) {
         { signal: 'hover-cue-rule', value: cues.onHover },
         { signal: 'focus-cue-rule', value: cues.onFocus },
         { signal: 'stylesheets-readable', value: cues.readable },
-        { signal: 'contrast-ratio', value: Number(c.round2(ratio)) }
+        {
+          signal: beforeOpacity ? 'ratio-before-opacity' : 'contrast-ratio',
+          value: Number(c.round2(ratio))
+        }
       ];
-      if (cues.onHover && cues.onFocus) {
+      // A ratio before an ancestor's opacity may be below 3:1 as drawn,
+      // where hover and focus cues don't make up for it: no pass lean. The
+      // fail lean stands: with no hover cue the link fails either way, by
+      // its color at rest below 3:1 or by G183's missing cue at 3:1 or more.
+      if (cues.onHover && cues.onFocus && !beforeOpacity) {
         return {
           toward: 'pass',
           why: "The page's style sheets give this link an underline or another non-color cue when it is hovered and when it is focused.",
@@ -1602,7 +1963,15 @@ function runInPage(ctx) {
     let fgLinkHex = '';
     let fgParentHex = '';
     let undecidedReason = 'COLOR_NOT_COMPUTABLE';
+    // Details the undecided finding carries beyond its reason code.
+    let undecidedDetail = null;
     let lastBlocker = null;
+    // A highlight of the link's own over a page with no background of its
+    // own: { highlight, around }, the background around it before the canvas.
+    let rootUnknown = null;
+    // Whether the ratio is that of the colors before an ancestor's opacity
+    // fades them, which can only bring them closer: not the ratio drawn.
+    let beforeOpacity = false;
 
     try {
       const blocker = c.getComputabilityBlocker(el);
@@ -1663,20 +2032,51 @@ function runInPage(ctx) {
           // both fall short, which text it paints doesn't change the
           // answer, which is taken from the closer one when both reach it
           // and from the better one when both fall short. Where they
-          // disagree it is asked about.
+          // disagree it is asked about. The link's own ::first-line or
+          // ::first-letter gives the link a second color, the block's
+          // ::first-line the surrounding text one.
+          const linkFgs = [fgLinkOpaque];
+          const textFgs = [fgParentOpaque];
           if (pseudo) {
             const m = c.measurePseudoElementText(el, {
               contrast: { mode, rootCanvasFallback },
               collectStack: false
             });
-            const pRatio = m ? c.contrastRatio(m.pseudo.fg, fgParentOpaque) : NaN;
-            if (!m || !Number.isFinite(pRatio) || pRatio >= 3 !== ratio >= 3) {
+            if (m && m.pseudo && m.pseudo.fg) linkFgs.push(m.pseudo.fg);
+            else {
               computed = false;
               undecidedReason = 'PSEUDO_ELEMENT_COLOR';
-            } else if (ratio >= 3 ? pRatio < ratio : pRatio > ratio) {
-              ratio = pRatio;
-              fgLinkHex = c.rgbToHex ? c.rgbToHex(m.pseudo.fg) : '';
             }
+          }
+          const firstLine = computed ? blockFirstLine(textEl, parentCs) : null;
+          if (firstLine) {
+            textFgs.push(
+              firstLine.color.a < 1
+                ? { ...c.compositeRgba(firstLine.color, bg.rgba), a: 1 }
+                : { ...firstLine.color, a: 1 }
+            );
+          }
+          const compared =
+            computed && linkFgs.length + textFgs.length > 2
+              ? compareTextColors(linkFgs, textFgs)
+              : null;
+          if (compared && compared.verdict === 'short' && firstLine && firstLine.otherCue) {
+            // The first line's text differs from the rest by more than its
+            // color, which may set the link apart there.
+            computed = false;
+            undecidedReason = 'PSEUDO_ELEMENT_COLOR';
+            undecidedDetail = { pseudoElement: firstLine.selector };
+          } else if (compared && compared.verdict === 'mixed') {
+            computed = false;
+            undecidedReason = 'PSEUDO_ELEMENT_COLOR';
+            // Named when the block's first line is what the two disagree on.
+            if (firstLine && compareTextColors(linkFgs, [fgParentOpaque]).verdict !== 'mixed') {
+              undecidedDetail = { pseudoElement: firstLine.selector };
+            }
+          } else if (compared) {
+            ratio = compared.ratio;
+            fgLinkHex = c.rgbToHex ? c.rgbToHex(compared.link) : '';
+            fgParentHex = c.rgbToHex ? c.rgbToHex(compared.text) : '';
           }
           if (!(ratio >= 3)) flagged = true;
 
@@ -1692,6 +2092,16 @@ function runInPage(ctx) {
             });
             if (parentBg && parentBg.ok && parentBg.rgba) {
               backgroundDiffers = c.rgbToHex(parentBg.rgba) !== c.rgbToHex(bg.rgba);
+            } else if (
+              parentBg &&
+              parentBg.reasonCode === 'BACKGROUND_NOT_OPAQUE_AT_ROOT' &&
+              parentBg.rgba
+            ) {
+              // The background around the link is the canvas, which strict
+              // mode doesn't assume: an opaque highlight of the link's own
+              // may or may not stand out from it.
+              const own = c.parseCssColorToRgba(String(linkCs.backgroundColor || ''));
+              if (own && own.a === 1) rootUnknown = { highlight: bg.rgba, around: parentBg.rgba };
             }
           }
         }
@@ -1703,19 +2113,27 @@ function runInPage(ctx) {
     }
 
     if (!computed) {
-      markUndecided(
-        el,
-        undecidedReason,
-        undecidedLean(undecidedReason, {
-          el,
-          linkCs,
-          textEl,
-          parentCs,
-          blocker: lastBlocker,
-          underlined
-        })
-      );
-      continue;
+      const info = { el, linkCs, textEl, parentCs, blocker: lastBlocker, underlined };
+      const known = knownFromTextColors(undecidedReason, info);
+      if (!known) {
+        markUndecided(el, undecidedReason, undecidedLean(undecidedReason, info), undecidedDetail);
+        continue;
+      }
+      ratio = known.ratio;
+      beforeOpacity = undecidedReason === 'ANCESTOR_OPACITY';
+      fgLinkHex = c.rgbToHex ? c.rgbToHex(known.link) : '';
+      fgParentHex = c.rgbToHex ? c.rgbToHex(known.text) : '';
+      flagged = !(ratio >= 3);
+    }
+
+    // A canvas the run names is the background around a highlight on a page
+    // with none: the link is decided by it as by a background that is known.
+    if (rootUnknown && rootCanvasSet) {
+      const differs = highlightDiffersOnCanvas(rootUnknown.highlight, rootUnknown.around);
+      if (differs !== null) {
+        backgroundDiffers = differs;
+        rootUnknown = null;
+      }
     }
 
     if (backgroundDiffers) {
@@ -1730,11 +2148,22 @@ function runInPage(ctx) {
       continue;
     }
 
+    // Below 3:1, a highlight of the link's own would set it apart, but
+    // whether it differs from the canvas the page is drawn on is unknown.
+    if (flagged && rootUnknown) {
+      markUndecided(
+        el,
+        'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+        rootCanvasLean(el, rootUnknown.highlight, rootUnknown.around)
+      );
+      continue;
+    }
+
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
     // non-color cue on hover and focus, which a static scan cannot see.
     colorCompared += 1;
     if (!flagged) {
-      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex });
+      contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity });
       continue;
     }
 
@@ -1760,7 +2189,12 @@ function runInPage(ctx) {
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
           details: {
             reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
-            metrics: { ratio, threshold: 3 },
+            // Faded with the text by an ancestor's opacity, the ratio is the
+            // one before the fading, which can only lower it: below 3:1
+            // before, it is below 3:1 as drawn, but not that ratio.
+            metrics: beforeOpacity
+              ? { ratioBeforeOpacity: ratio, threshold: 3 }
+              : { ratio, threshold: 3 },
             colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
           }
         }
@@ -1772,7 +2206,7 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  const cantTellOccurrences = undecided.map(({ el, reasonCode, lean }) =>
+  const cantTellOccurrences = undecided.map(({ el, reasonCode, lean, detail }) =>
     helpers.reportOccurrence(el, {
       occurrenceOutcome: 'cantTell',
       ...(lean ? { lean } : {}),
@@ -1793,46 +2227,63 @@ function runInPage(ctx) {
         visibilityFilter: helpers.getEligibilityInfo
           ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
           : { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode }
+        details: { reasonCode, ...(detail || {}) }
       }
     })
   );
 
-  const contrastOnlyOccurrences = contrastOnly.map(({ el, ratio, fgLinkHex, fgParentHex }) => {
-    const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
-    const lean = contrastOnlyLean(el, ratio);
-    return helpers.reportOccurrence(el, {
-      occurrenceOutcome: 'cantTell',
-      ...(lean ? { lean } : {}),
-      summary: `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
-      hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
-      i18n: {
-        summaryKey: 'linkInTextBlock_summary_cantTell_contrastOnly',
-        hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
-        params: { ratio: String(ratioStr), threshold: '3' }
-      },
-      uncertainty: {
-        code: 'runtime-dependent',
-        needed: 'Whether hovering and focusing the link add a non-color cue.',
-        evidence: { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
-      },
-      data: {
-        visibilityFilter: helpers.getEligibilityInfo
-          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-          : { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: {
-          reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
-          metrics: { ratio, threshold: 3 },
-          colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+  // A link faded with the text by an ancestor's opacity reports the ratio
+  // of the colors before the fading as metrics.ratioBeforeOpacity, with no
+  // metrics.ratio: the fading brings them closer, so the ratio drawn may be
+  // lower, and below 3:1.
+  const contrastOnlyOccurrences = contrastOnly.map(
+    ({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity }) => {
+      const ratioStr = c && c.round2 ? c.round2(ratio) : String(ratio);
+      const lean = contrastOnlyLean(el, ratio, beforeOpacity);
+      return helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'cantTell',
+        ...(lean ? { lean } : {}),
+        summary: beforeOpacity
+          ? `This link in a block of text is distinguished from the surrounding text only by its color, at ${ratioStr}:1 before an ancestor's opacity fades both, which brings them closer. That is enough only if the colors as drawn still reach 3:1 and hovering and focusing the link also show a non-color cue, such as an underline.`
+          : `This link in a block of text is distinguished from the surrounding text only by its color (contrast ${ratioStr}:1). That is enough only if hovering and focusing it also show a non-color cue, such as an underline.`,
+        hint: 'Hover over the link and move keyboard focus to it: confirm that each state adds a non-color cue (an underline, a border, a weight change). Otherwise underline the link at rest.',
+        i18n: {
+          summaryKey: beforeOpacity
+            ? 'linkInTextBlock_summary_cantTell_contrastOnlyBeforeOpacity'
+            : 'linkInTextBlock_summary_cantTell_contrastOnly',
+          hintKey: 'linkInTextBlock_hint_cantTell_contrastOnly',
+          params: { ratio: String(ratioStr), threshold: '3' }
+        },
+        uncertainty: {
+          code: 'runtime-dependent',
+          needed: 'Whether hovering and focusing the link add a non-color cue.',
+          evidence: beforeOpacity
+            ? { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratioBeforeOpacity: ratio }
+            : { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
+        },
+        data: {
+          visibilityFilter: helpers.getEligibilityInfo
+            ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
+            : { targetSet: 'acc', accEligible: null, reasons: [] },
+          details: {
+            reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
+            metrics: beforeOpacity
+              ? { ratioBeforeOpacity: ratio, threshold: 3 }
+              : { ratio, threshold: 3 },
+            colors: { linkForegroundHex: fgLinkHex, surroundingTextForegroundHex: fgParentHex }
+          }
         }
-      }
-    });
-  });
+      });
+    }
+  );
 
   // Links told apart by color alone that reach 3:1 against the surrounding
   // text: the closest is the result's margin (src/core/margin.js).
   const margin = {
-    marginCandidates: contrastOnly.map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
+    // A ratio before an ancestor's opacity is not the one drawn, so no margin.
+    marginCandidates: contrastOnly
+      .filter(({ beforeOpacity }) => !beforeOpacity)
+      .map(({ el, ratio }) => ({ el, value: ratio, threshold: 3 })),
     measuredCount: colorCompared
   };
 
