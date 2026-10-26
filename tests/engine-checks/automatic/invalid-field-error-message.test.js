@@ -345,3 +345,19 @@ test(`${RULE_ID}: aria-hidden message text and a missing message lean fail only 
     [['ERROR_MESSAGE_TARGET_MISSING', null, null]]
   );
 });
+
+test(`${RULE_ID}: never fails; every finding it can't pass is asked about`, () => {
+  const fixtureHtml = fs.readFileSync(
+    path.join(__dirname, '../..', 'fixtures', 'invalid-field-error-message-all-scenarios.html'),
+    'utf8'
+  );
+  const rule = assertRule(
+    runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'cantTell'
+  );
+  for (const o of rule.occurrences) {
+    assert.equal(o.occurrenceOutcome, 'cantTell', o.data.details.reasonCode);
+    assert.ok(o.uncertainty && o.uncertainty.code, o.data.details.reasonCode);
+  }
+});

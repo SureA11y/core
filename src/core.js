@@ -70791,9 +70791,147 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return normalizeWs(text.split(labelText).join(' '));
   }
 
+  // A radio button's or checkbox's options ("Yes", "No") are told apart by
+  // the question their group answers, often a plain paragraph above them
+  // rather than a legend or a heading. That question is read from two
+  // places: the name of an enclosing role=radiogroup or role=group, and
+  // the visible text of the smallest element holding every field of the
+  // group (same name, same form) and no other field, less the options'
+  // own labels.
+  const CHOICE_ROLES = ['radio', 'checkbox'];
+  const CHOICE_GROUP_ROLES = ['radiogroup', 'group'];
+  const SKIPPED_TEXT_TAGS = ['script', 'style', 'template', 'noscript'];
+
+  function isChoiceField(el) {
+    if (String(dom.localName(el) || '').toLowerCase() === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '')
+        .trim()
+        .toLowerCase();
+      return type === 'radio' || type === 'checkbox';
+    }
+    return hasResolvedRole(el, CHOICE_ROLES);
+  }
+
+  function choiceGroupName(el) {
+    let cur = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      if (hasResolvedRole(cur, CHOICE_GROUP_ROLES)) {
+        try {
+          const info = helpers.getAccessibleNameInfo(cur, ctx);
+          return normalizeWs(info && info.value);
+        } catch {
+          return '';
+        }
+      }
+      cur = dom.parentElement(cur);
+    }
+    return '';
+  }
+
+  // The radio buttons and checkboxes of each tree, by form owner and name.
+  const choiceGroupsByTree = new Map();
+  function choiceGroupMembers(el) {
+    const name = normalizeWs(dom.getAttribute(el, 'name'));
+    if (!name || String(dom.localName(el) || '').toLowerCase() !== 'input') return null;
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return null;
+    }
+    let byForm = choiceGroupsByTree.get(tree);
+    if (!byForm) {
+      byForm = new Map();
+      choiceGroupsByTree.set(tree, byForm);
+      try {
+        for (const input of dom.querySelectorAll(tree, 'input[name]')) {
+          if (!isChoiceField(input)) continue;
+          const inputName = normalizeWs(dom.getAttribute(input, 'name'));
+          if (!inputName) continue;
+          const form = dom.get(input, 'form') || null;
+          let byName = byForm.get(form);
+          if (!byName) byForm.set(form, (byName = new Map()));
+          const members = byName.get(inputName);
+          if (members) members.push(input);
+          else byName.set(inputName, [input]);
+        }
+      } catch {
+        // no groups in this tree
+      }
+    }
+    const byName = byForm.get(dom.get(el, 'form') || null);
+    return (byName && byName.get(name)) || null;
+  }
+
+  // Visible text under `root`, leaving out the subtrees in `skip`.
+  function visibleTextUnder(root, skip) {
+    const parts = [];
+    const stack = [root];
+    for (let budget = 20000; stack.length && budget > 0; budget--) {
+      const node = stack.pop();
+      const type = dom.nodeType(node);
+      if (type === 3) {
+        parts.push(String(dom.nodeValue(node) || ''));
+        continue;
+      }
+      if (type !== 1) continue;
+      if (node !== root) {
+        if (skip.has(node)) continue;
+        if (SKIPPED_TEXT_TAGS.includes(String(dom.localName(node) || '').toLowerCase())) continue;
+        if (!isVisible(node)) continue;
+      }
+      const children = [];
+      for (let c = dom.firstChild(node); c; c = dom.nextSibling(c)) children.push(c);
+      for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  const groupQuestionCache = new Map();
+  function choiceGroupContainerText(members) {
+    if (groupQuestionCache.has(members)) return groupQuestionCache.get(members);
+    let text = '';
+    try {
+      const memberSet = new Set(members);
+      const skip = new Set(members);
+      for (const m of members) {
+        for (const label of getReferencedElements(m, 'aria-labelledby')) skip.add(label);
+        for (const label of getNativeLabels(m)) skip.add(label);
+      }
+      let cur = dom.parentElement(members[0]);
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let steps = 0; cur && steps < 100000; steps++) {
+        if (members.every((m) => dom.contains(cur, m))) {
+          const others = Array.prototype.some.call(
+            dom.querySelectorAll(cur, FIELD_SELECTOR),
+            (f) => !memberSet.has(f) && isField(f)
+          );
+          if (others) break;
+          // An element holding nothing but the options says nothing more:
+          // the question is in the next one up.
+          text = visibleTextUnder(cur, skip);
+          if (text) break;
+        }
+        cur = dom.parentElement(cur);
+      }
+    } catch {
+      text = '';
+    }
+    groupQuestionCache.set(members, text);
+    return text;
+  }
+
+  function choiceQuestionText(el) {
+    if (!isChoiceField(el)) return '';
+    const members = choiceGroupMembers(el);
+    const own = members && members.indexOf(el) !== -1 ? choiceGroupContainerText(members) : '';
+    return normalizeWs(`${choiceGroupName(el)} ${own}`);
+  }
+
   function contextKey(el, labelText) {
     const group = fieldsetLegendText(el) || nearestVisibleHeadingText(el);
-    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}`;
+    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}##${normalize(choiceQuestionText(el))}`;
   }
 
   const nodes = helpers.queryAllSmart
@@ -70923,8 +71061,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (each in a form of its own, same name, type and action: a header and a
   // footer search box) serve one purpose; distinct fields of one form
   // (different names) with nothing visible apart are G131's shape. Radio
-  // buttons and checkboxes are left out: their question is often in text
-  // the rule does not read.
+  // buttons and checkboxes are left out: their question may be in text the
+  // context doesn't reach, such as a group with no element of its own.
   function duplicateLean(shared) {
     const shapes = shared.map((f) => shapeOf(f.el));
     if (shapes.some((x) => !x.form)) return null;
@@ -75895,7 +76033,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     });
   }
 
-  const fails = [];
   const questions = [];
   let applicableCount = 0;
 
@@ -75916,7 +76053,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const refs = helpers.getRefElements(el, 'aria-errormessage', ctx);
 
     let reasonCode;
-    let tier = 'cantTell';
     let hiddenBy = null;
     let liveDescription = false;
     if (errorMessage || refs.length) {
@@ -76089,23 +76225,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
-    if (tier === 'fail') {
-      fails.push(helpers.reportOccurrence(el, occurrence));
-    } else {
-      occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
-      if (m.lean)
-        occurrence.lean = {
-          toward: m.lean.toward || 'fail',
-          why: m.lean.why,
-          signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
-          ...(m.lean.caution ? { caution: m.lean.caution } : {}),
-          i18n: {
-            whyKey: m.lean.whyKey,
-            ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
-          }
-        };
-      questions.push(helpers.reportOccurrence(el, occurrence));
-    }
+    occurrence.uncertainty = { code: m.uncertainty, needed: m.needed };
+    if (m.lean)
+      occurrence.lean = {
+        toward: m.lean.toward || 'fail',
+        why: m.lean.why,
+        signals: m.lean.signals || [{ signal: m.lean.signal, value: true }],
+        ...(m.lean.caution ? { caution: m.lean.caution } : {}),
+        i18n: {
+          whyKey: m.lean.whyKey,
+          ...(m.lean.cautionKey ? { cautionKey: m.lean.cautionKey } : {})
+        }
+      };
+    questions.push(helpers.reportOccurrence(el, occurrence));
   }
 
   if (applicableCount === 0) {
@@ -76113,7 +76245,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return {
     ruleId: rule.ruleId,
-    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
+    ...helpers.resolveTieredOutcome([], questions, rule.defaultSeverity || 'serious')
   };
 }), applicability: null },
     "label-for-valid": { run: (function runInPage(ctx) {
@@ -83033,7 +83165,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'xml',
     'json',
     'pdf',
-    'csv'
+    'csv',
+    // Flash: no current browser runs it, so only the fallback shows.
+    'swf'
   ]);
 
   function embedsNonMedia(type, data) {
@@ -83273,7 +83407,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     'xml',
     'json',
     'pdf',
-    'csv'
+    'csv',
+    // Flash: no current browser runs it, so only the fallback shows.
+    'swf'
   ]);
 
   function embedsNonMedia(type, data) {

@@ -977,11 +977,11 @@
       "testFile": "tests/engine-checks/manual/form-control-label-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-label-quality-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 14,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 5,
+        "CANTTELL": 6,
         "OTHER": 1
       }
     },

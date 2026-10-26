@@ -153,6 +153,19 @@ test(`${RULE_ID}: an object that embeds a page, a PDF or text is not asked about
   });
 });
 
+// No current browser runs Flash, so a Flash object shows its fallback
+// content, ordinary HTML other rules judge: nothing non-text is left to ask
+// about.
+test(`${RULE_ID}: a Flash object is not asked about`, () => {
+  const html = `<!doctype html><html><body>
+    <object type="application/x-shockwave-flash" data="movie.swf" aria-label="Product tour"></object>
+    <object type="application/x-shockwave-flash" data="intro.swf"><p>Watch the intro.</p></object>
+    <object data="banner.swf?v=2" aria-label="Spring sale"></object>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 // Text that is the data file's name, a generic word, or only a note that a
 // plugin is missing says nothing of the content: it leans fail. A note
 // beside a real description, or any other text, needs a person.
