@@ -631,6 +631,15 @@ const said = await page.evaluate(() => window.a11ycore.getAnnouncements().map((a
 // ['Saved']
 ```
 
+An entry holds the region itself, which can't cross a driver: `page.evaluate()` returns no DOM node. To say which region was given a text from outside the page, pass `{ selectors: true }`: each entry then names its region by `selector` (its id where that is unique, else its tag and place among its siblings up to the root, `null` for a region no longer in the page) and, inside a shadow root, `shadowHostSelectors`, outermost first, as a finding does, and has no `element`. The function is self-contained, as `runa11yCoreInPage` is, so a binding sends it into the page without the bundle:
+
+```js
+const { getAnnouncements } = require('@surea11y/core');
+await page.click('text=Save');
+const said = await page.evaluate(getAnnouncements, { selectors: true });
+// [{ text: 'Saved', politeness: 'polite', time: 1234.5, order: 7, behindModal: false, selector: '#status' }]
+```
+
 The result says whether the hook was there, in `engine.environment.liveRegionHook`: `'early'` when it was installed before the document finished loading, so it saw every change since, `'late'` otherwise, and absent without one.
 
 ### What a page can notice, and the limits

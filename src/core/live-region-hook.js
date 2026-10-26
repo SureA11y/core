@@ -745,8 +745,10 @@ function readLiveRegionHook(win) {
 // `read` (readLiveRegionHook): the texts given while shown and reachable, or
 // null without a hook. Takes (win, options) or (options); options:
 // { includeBehindModal } adds the texts given to a region behind an open
-// modal dialog, marked behindModal: true. Self-contained, as it is inlined
-// into getAnnouncements, which bindings serialize into pages.
+// modal dialog, marked behindModal: true; { selectors: true } names each
+// region by a selector instead of its element, so the list crosses a
+// driver (page.evaluate). Self-contained, as it is inlined into
+// getAnnouncements, which bindings serialize into pages.
 function selectAnnouncements(read, fallbackWin, first, second) {
   let win = first;
   let options = second;
@@ -763,25 +765,124 @@ function selectAnnouncements(read, fallbackWin, first, second) {
     if (typeof options !== 'object' || Array.isArray(options)) {
       throw new TypeError('getAnnouncements(options): options must be an object.');
     }
-    const unknown = Object.keys(options).filter((k) => k !== 'includeBehindModal');
+    const unknown = Object.keys(options).filter(
+      (k) => k !== 'includeBehindModal' && k !== 'selectors'
+    );
     if (unknown.length) {
       throw new TypeError(
         'getAnnouncements(options): no option named ' +
           unknown.map((k) => '"' + k + '"').join(', ') +
-          '; use includeBehindModal.'
+          '; use includeBehindModal or selectors.'
       );
     }
-    if (
-      options.includeBehindModal !== undefined &&
-      typeof options.includeBehindModal !== 'boolean'
-    ) {
-      throw new TypeError('getAnnouncements(options): includeBehindModal must be true or false.');
+    for (const name of ['includeBehindModal', 'selectors']) {
+      if (options[name] !== undefined && typeof options[name] !== 'boolean') {
+        throw new TypeError('getAnnouncements(options): ' + name + ' must be true or false.');
+      }
     }
   }
   const hook = read(win || fallbackWin);
   if (!hook) return null;
-  if (options && options.includeBehindModal === true) return hook.announcements;
-  return hook.announcements.filter((a) => a.behindModal !== true);
+  const listed =
+    options && options.includeBehindModal === true
+      ? hook.announcements
+      : hook.announcements.filter((a) => a.behindModal !== true);
+  if (!options || options.selectors !== true) return listed;
+
+  // A selector for an element in its own tree (the document or a shadow
+  // root): its id where that is unique there, else its tag and place among
+  // its siblings of that tag, up to the root. The shadow hosts that lead to
+  // it, outermost first, as a finding's shadowHostSelectors do. null for an
+  // element no longer in the page. The DOM is read through the window's own
+  // prototypes, as the page's form controls can shadow a property by name
+  // (<input name="parentElement">), and nothing here may throw.
+  const realm = win || fallbackWin;
+  const proto = (name) => {
+    const ctor = realm && Object.getOwnPropertyDescriptor(realm, name);
+    const value = ctor && ctor.value;
+    return value && value.prototype ? value.prototype : null;
+  };
+  const accessor = (p, key, kind) => {
+    const d = p && Object.getOwnPropertyDescriptor(p, key);
+    return d ? d[kind] : undefined;
+  };
+  const NODE = proto('Node');
+  const ELEMENT = proto('Element');
+  const via = {
+    nodeType: accessor(NODE, 'nodeType', 'get'),
+    parentElement: accessor(NODE, 'parentElement', 'get'),
+    isConnected: accessor(NODE, 'isConnected', 'get'),
+    getRootNode: accessor(NODE, 'getRootNode', 'value'),
+    localName: accessor(ELEMENT, 'localName', 'get'),
+    previousElementSibling: accessor(ELEMENT, 'previousElementSibling', 'get'),
+    getAttribute: accessor(ELEMENT, 'getAttribute', 'value'),
+    host: accessor(proto('ShadowRoot'), 'host', 'get'),
+    queryInDocument: accessor(proto('Document'), 'querySelectorAll', 'value'),
+    queryInFragment: accessor(proto('DocumentFragment'), 'querySelectorAll', 'value')
+  };
+  const call = (fn, self, args) => {
+    try {
+      return typeof fn === 'function' ? Reflect.apply(fn, self, args || []) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const cssEscape = (() => {
+    const css = realm && Object.getOwnPropertyDescriptor(realm, 'CSS');
+    const escape = css && css.value && css.value.escape;
+    return typeof escape === 'function' ? escape : null;
+  })();
+  const escapeId = (id) =>
+    cssEscape
+      ? call(cssEscape, undefined, [id])
+      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) => '\\' + c);
+  const uniqueIn = (root, selector) => {
+    const query = call(via.nodeType, root) === 9 ? via.queryInDocument : via.queryInFragment;
+    const found = call(query, root, [selector]);
+    return !!found && found.length === 1;
+  };
+  const inTree = (el) => {
+    const root = call(via.getRootNode, el);
+    const steps = [];
+    for (let node = el; node && call(via.nodeType, node) === 1;) {
+      const parent = call(via.parentElement, node);
+      const id = call(via.getAttribute, node, ['id']);
+      if (typeof id === 'string' && id) {
+        const byId = '#' + escapeId(id);
+        if (uniqueIn(root, byId)) {
+          steps.unshift(byId);
+          break;
+        }
+      }
+      const tag = call(via.localName, node);
+      let n = 1;
+      for (let sib = call(via.previousElementSibling, node); sib;) {
+        if (call(via.localName, sib) === tag) n += 1;
+        sib = call(via.previousElementSibling, sib);
+      }
+      steps.unshift(parent ? tag + ':nth-of-type(' + n + ')' : tag);
+      node = parent;
+    }
+    return { selector: steps.join(' > '), root };
+  };
+  const locate = (el) => {
+    if (!el || call(via.nodeType, el) !== 1 || call(via.isConnected, el) !== true) {
+      return { selector: null };
+    }
+    const hosts = [];
+    let { selector, root } = inTree(el);
+    for (let host = call(via.host, root); host; host = call(via.host, root)) {
+      const outer = inTree(host);
+      hosts.unshift(outer.selector);
+      root = outer.root;
+    }
+    return hosts.length ? { selector, shadowHostSelectors: hosts } : { selector };
+  };
+  return listed.map((a) => {
+    const out = {};
+    for (const key of Object.keys(a)) if (key !== 'element') out[key] = a[key];
+    return Object.assign(out, locate(a.element));
+  });
 }
 
 module.exports = {

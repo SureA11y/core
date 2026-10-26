@@ -456,7 +456,7 @@ test(
     fs.writeFileSync(
       file,
       [
-        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult, addHowToCheck, HOOK_REASON_CODES, occurrenceOutcome, reviewGroupOf, leaningFailures } from '@surea11y/core';",
+        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult, addHowToCheck, HOOK_REASON_CODES, occurrenceOutcome, reviewGroupOf, leaningFailures, getAnnouncements } from '@surea11y/core';",
         "import { renderSarifReport } from '@surea11y/core/sarif';",
         "import { renderJunitReport } from '@surea11y/core/junit';",
         "import { renderHtmlReport } from '@surea11y/core/report';",
@@ -528,6 +528,11 @@ test(
         'void hookCodes;',
         "const entryCodes: readonly { ruleId: string; reasonCode: string; effect: 'reports' | 'decides' | 'leans' }[] = entryHookCodes.liveRegion;",
         'void entryCodes;',
+        'const regions: Array<string | null> = (getAnnouncements({ selectors: true }) ?? []).map((a) => a.selector);',
+        'const elements: Element[] = (getAnnouncements() ?? []).map((a) => a.element);',
+        'void [regions, elements];',
+        '// @ts-expect-error no element once named by selectors',
+        'void getAnnouncements(undefined, { selectors: true })?.[0]?.element;',
         '// @ts-expect-error frozen',
         'HOOK_REASON_CODES.internals = [];',
         '// @ts-expect-error cantTellAs is skipped or failure',
