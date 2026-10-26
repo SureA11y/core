@@ -97,6 +97,21 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['role-img-text-alternative-present']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the image the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the image, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The image has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 1.1.1.'
+    }
   }
 };
 
