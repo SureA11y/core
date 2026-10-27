@@ -597,6 +597,11 @@ review: {
 - Write for someone who can use a browser and its developer tools but has
   no accessibility training: plain words, and no term the step leaves
   unexplained.
+- Where WCAG sets a value, give it, so the reader doesn't need the
+  criterion at hand: the text spacing (line-height 1.5, letter-spacing
+  0.12em, word-spacing 0.16em, 2em after paragraphs), contrast ratios with
+  what counts as large text, 200% text size, a 320 CSS pixel wide window,
+  a 24 by 24 pixel target, 3 seconds of sound, 5 seconds of motion.
 - Before the steps lead to a fail, ask whether another way on the page could
   make it a pass, and where the criterion allows one, add a step for it:
   another way to do the same with the keyboard, a pause or mute control

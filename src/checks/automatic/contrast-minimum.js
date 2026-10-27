@@ -299,7 +299,7 @@ const meta = {
         'Find the text the report names and note the ::first-line or ::first-letter color in the Styles pane.',
         "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure both the element's text color and the first-line or first-letter color against the background.",
         'Resize the window to see which words the first-line color paints at different widths.',
-        'Compare each ratio with the one the report gives as needed for that color.'
+        'Compare each ratio with the one the report gives as needed for that color: 4.5:1 for most text, or 3:1 for large text (at least 24px, or 18.66px and bold).'
       ],
       passWhen: 'Both colors reach the ratio they need.',
       failWhen: 'Either color gives a ratio below the one it needs, so the text fails the check.'
@@ -332,7 +332,7 @@ const meta = {
         'Find the text the report names and note its text-shadow.',
         'Zoom in and check whether the shadow forms a solid outline or halo around every letter.',
         "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the color that forms the letters against the background.",
-        'Compare the ratio with the one the report gives as needed.'
+        'Compare the ratio with the one the report gives as needed: 4.5:1 for most text, or 3:1 for large text (at least 24px, or 18.66px and bold).'
       ],
       passWhen: 'The color that forms the letters reaches the ratio needed.',
       failWhen:
@@ -343,7 +343,7 @@ const meta = {
         'Find the text the report names and note its -webkit-text-stroke width and color.',
         'Zoom in to see which color forms most of each letter (a thin stroke counts less than the fill).',
         "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure that color against the background.",
-        'Compare the ratio with the one the report gives as needed.'
+        'Compare the ratio with the one the report gives as needed: 4.5:1 for most text, or 3:1 for large text (at least 24px, or 18.66px and bold).'
       ],
       passWhen: 'The color that forms the letters reaches the ratio needed.',
       failWhen:
