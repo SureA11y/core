@@ -201,22 +201,25 @@ const meta = {
       steps: [
         'Click the element the report names and note what happens.',
         'Reload, then press Tab until the element has focus.',
-        'Press Enter, then Space, and compare with what the click did.'
+        'Press Enter, then Space, and compare with what the click did.',
+        "If the keyboard can't do it here, check whether what the click does can be done another way with the keyboard alone, for example with a button or menu item elsewhere on the page. It only counts if it does everything the click does."
       ],
       passWhen:
-        'Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel.',
+        'Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel, or what the click does can be done another way with the keyboard alone.',
       failWhen:
-        'Pressing Enter or Space does nothing even after focus arrives, which fails WCAG 2.1.1 (F54).'
+        'Pressing Enter or Space does nothing even after focus arrives, and what the click does cannot be done another way with the keyboard, which fails WCAG 2.1.1 (F54).'
     },
     CLICK_HANDLER_KEY_LISTENER_ABOVE: {
       steps: [
         'Click the element the report names and note what happens.',
         'Press Tab until the element has focus.',
-        'Press Enter, then Space (and the arrow keys if it sits in a group), and compare with the click.'
+        'Press Enter, then Space (and the arrow keys if it sits in a group), and compare with the click.',
+        "If the keyboard can't do it here, check whether what the click does can be done another way with the keyboard alone, for example with a button or menu item elsewhere on the page. It only counts if it does everything the click does."
       ],
-      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
+      passWhen:
+        'Enter (and Space for button-like controls) does what a click does, or what the click does can be done another way with the keyboard alone.',
       failWhen:
-        'Pressing Enter or Space does nothing on the element, so the listener above does not handle it, which fails WCAG 2.1.1.'
+        'Pressing Enter or Space does nothing on the element, so the listener above does not handle it, and what the click does cannot be done another way with the keyboard, which fails WCAG 2.1.1.'
     },
     CLICK_HANDLER_NOT_FOCUSABLE: {
       steps: [
@@ -234,22 +237,25 @@ const meta = {
         'Click the element the report names and note what happens.',
         'Press Tab through the page and check whether focus ever lands on it.',
         'If it is part of a group (tabs, menu, toolbar, list), Tab into the group and use the arrow keys to see whether they move focus to it.',
-        'Once it has focus, press Enter or Space and compare with the click.'
+        'Once it has focus, press Enter or Space and compare with the click.',
+        "If the keyboard can't do it here, check whether what the click does can be done another way with the keyboard alone, for example with a button or menu item elsewhere on the page. It only counts if it does everything the click does."
       ],
       passWhen:
-        'The element can be reached by keyboard (Tab or arrow keys within its group) and Enter or Space does what a click does.',
+        'The element can be reached by keyboard (Tab or arrow keys within its group) and Enter or Space does what a click does, or what the click does can be done another way with the keyboard alone.',
       failWhen:
-        'No key moves focus to the element, so its action is mouse-only, which fails WCAG 2.1.1.'
+        'No key moves focus to the element and what the click does cannot be done another way with the keyboard, so its action is mouse-only, which fails WCAG 2.1.1.'
     },
     CLICK_HANDLER_NO_KEY_HANDLER: {
       steps: [
         'Click the element the report names and note what happens.',
         'Reload, then press Tab until the element has focus.',
-        'Press Enter, then Space, and compare with what the click did.'
+        'Press Enter, then Space, and compare with what the click did.',
+        "If the keyboard can't do it here, check whether what the click does can be done another way with the keyboard alone, for example with a button or menu item elsewhere on the page. It only counts if it does everything the click does."
       ],
-      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
+      passWhen:
+        'Enter (and Space for button-like controls) does what a click does, or what the click does can be done another way with the keyboard alone.',
       failWhen:
-        'Pressing Enter or Space does nothing, or less than a click, which fails WCAG 2.1.1 (F54).'
+        'Pressing Enter or Space does nothing, or less than a click, and what the click does cannot be done another way with the keyboard, which fails WCAG 2.1.1 (F54).'
     }
   }
 };

@@ -89,26 +89,26 @@ const meta = {
     MOVING_CONTENT_LOOPS: {
       steps: [
         'Load the page and watch the element the report names; its animation starts by itself and never stops.',
-        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
+        'Look for a way to pause, stop or hide it. It is often next to the content, such as a pause button on a slideshow, but it can be anywhere on the page, such as a setting that stops animations. Try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
         'Check whether the motion actually stops or the content is hidden, and stays that way.',
         'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
       ],
       passWhen:
-        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
+        'A control that works with the keyboard pauses, stops or hides the motion, wherever it is on the page, or the motion is essential.',
       failWhen:
-        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
+        'The content keeps moving and nothing on the page that works with the keyboard pauses, stops or hides it, which fails WCAG 2.2.2.'
     },
     MOVING_CONTENT_OVER_5S: {
       steps: [
         'Load the page and watch the element the report names; its animation starts by itself and runs for more than five seconds.',
-        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
+        'Look for a way to pause, stop or hide it. It is often next to the content, such as a pause button on a slideshow, but it can be anywhere on the page, such as a setting that stops animations. Try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
         'Check whether the motion actually stops or the content is hidden, and stays that way.',
         'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
       ],
       passWhen:
-        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
+        'A control that works with the keyboard pauses, stops or hides the motion, wherever it is on the page, or the motion is essential.',
       failWhen:
-        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
+        'The content keeps moving and nothing on the page that works with the keyboard pauses, stops or hides it, which fails WCAG 2.2.2.'
     }
   }
 };

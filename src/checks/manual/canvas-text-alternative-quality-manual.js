@@ -77,12 +77,13 @@ const meta = {
       steps: [
         'Look at what the canvas the report names shows on screen, including any changes as you use it.',
         'Read its text alternative (the value the report gives, or its fallback content and name in the Accessibility pane).',
-        'Check that the text conveys the same information or purpose as the drawing, and keeps up if the drawing changes.'
+        'If the text alternative only names the canvas, as is common for charts and diagrams, the details may be given elsewhere: in a caption, text or a table next to it, or a link beside it. That counts only if a screen reader user can find it from the canvas and it gives everything the canvas shows.',
+        'Check that the text, with any such description, conveys the same information or purpose as the drawing, and keeps up if the drawing changes.'
       ],
       passWhen:
-        'The text alternative gives the same information or purpose as what the canvas shows.',
+        'The text alternative, alone or with a description a screen reader user can reach from it, gives the same information or purpose as what the canvas shows.',
       failWhen:
-        'The text alternative is missing the information the canvas shows, or is vague or wrong, which fails WCAG 1.1.1.'
+        'Neither the text alternative nor a description reachable from it gives the information the canvas shows, or the text is vague or wrong, which fails WCAG 1.1.1.'
     }
   }
 };

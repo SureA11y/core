@@ -102,12 +102,13 @@ const meta = {
         'Find the element the report names and check, at the sizes the page is used at, whether its content overflows (a scrollbar appears or content is cut off).',
         'If it does not overflow, it passes.',
         'If it does, click just before it and press Tab until focus reaches it.',
-        'With focus on it, press the arrow keys, Page Down and Space, and check that the content scrolls.'
+        'With focus on it, press the arrow keys, Page Down and Space, and check that the content scrolls.',
+        "If the region itself can't be scrolled with the keyboard, the page may offer another way to see what is hidden, such as previous and next buttons on a carousel. It only counts if you can use it with the keyboard alone and it brings every hidden item into view."
       ],
       passWhen:
-        'The element does not overflow, or it can be reached with Tab and scrolled with the keyboard.',
+        'The element does not overflow, or everything hidden in it can be brought into view with the keyboard alone, by scrolling it or by another way the page offers.',
       failWhen:
-        'Hidden content inside the element can only be scrolled with a mouse or touch, which fails WCAG 2.1.1.'
+        'Some hidden content can only be brought into view with a mouse or touch, which fails WCAG 2.1.1.'
     }
   }
 };

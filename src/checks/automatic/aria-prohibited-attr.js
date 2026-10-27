@@ -139,12 +139,13 @@ const meta = {
       steps: [
         'Inspect the element the report names and note its aria-label or aria-labelledby text and its visible text.',
         'Compare the two: check whether the label says anything the visible text does not.',
+        'If it does, check whether that information is given another way that a screen reader also reads, such as a table header above the cell or text next to the element.',
         'With a screen reader, read the element in browse mode and note whether the label is announced or ignored.'
       ],
       passWhen:
-        'The visible text already says everything the label says, so nothing is lost if the label is ignored.',
+        'The visible text, or text a screen reader reads with it such as its table header, already says everything the label says, so nothing is lost if the label is ignored.',
       failWhen:
-        'The label carries information missing from the text (such as "Price in euros" on "12"), which is lost because naming is not supported on an element with no role (WCAG 4.1.2, ACT kb1m8s).'
+        'The label carries information given nowhere else (such as "Price in euros" on "12" with no header saying so), which is lost because naming is not supported on an element with no role (WCAG 4.1.2, ACT kb1m8s).'
     }
   }
 };

@@ -93,12 +93,12 @@ const meta = {
       steps: [
         'Play the video the report names with the sound on and note whether it has speech or sounds that carry information.',
         'If it is silent or only background music with no meaning, it needs no captions.',
-        "Otherwise look for captions: the player's CC control, captions burned into the picture, or an equivalent text version labelled as such next to it."
+        "Otherwise look for captions: the player's CC button, captions burned into the picture, or a link next to the video to a captioned version of the same video. A transcript on its own does not replace captions."
       ],
       passWhen:
-        'The video has no meaningful audio, the captions shown cover the dialogue and sounds, or it is a labelled media alternative for text on the page.',
+        'The video has no meaningful audio, captions (in this video or in a captioned version linked next to it) cover the dialogue and sounds, or it is a labelled media alternative for text on the page.',
       failWhen:
-        'The video has dialogue or important sounds and no captions, which fails WCAG 1.2.2.'
+        'The video has dialogue or important sounds and no captions, here or in a linked captioned version, even if a transcript is offered, which fails WCAG 1.2.2.'
     },
     SUBTITLES_TRACK_ONLY: {
       steps: [

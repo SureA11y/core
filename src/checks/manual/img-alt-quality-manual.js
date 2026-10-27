@@ -126,12 +126,13 @@ const meta = {
       steps: [
         'Find the image the report names and read its alt text (the report gives the reason it looked suspect, if any).',
         'Look at the image and its context, and ask what it shows that matters to the page.',
-        'Decide whether the alt says that; a file name, web address or generic word such as "image" does not.'
+        'If the text alternative only names the image, as is common for charts and diagrams, the details may be given elsewhere: in a caption, text or a table next to it, or a link beside it. That counts only if a screen reader user can find it from the image and it gives everything the image shows.',
+        'Decide whether the alt says what matters, or names the image while that description gives the rest; a file name, web address or generic word such as "image" does neither.'
       ],
       passWhen:
-        'The alt text conveys what the image shows that a user needs, in words that fit the context.',
+        'The alt text conveys what the image shows that a user needs, or it names the image and a description a screen reader user can reach from it gives the rest.',
       failWhen:
-        "The alt text does not convey the image's content, for example a file name, address or generic word, which fails WCAG 1.1.1 (F30)."
+        "Neither the alt text nor a description reachable from the image conveys the image's content (for example the alt is a file name, address or generic word), which fails WCAG 1.1.1 (F30)."
     }
   }
 };

@@ -120,11 +120,11 @@ const meta = {
     AUTOPLAY_NO_CONTROLS_MECHANISM: {
       steps: [
         'Load the page with sound on and listen whether the audio or video the report names starts by itself.',
-        'If it plays sound for more than 3 seconds, look near the top of the page for a control to pause, stop or mute it, or to set its volume.',
+        'If it plays sound for more than 3 seconds, look for a way to pause, stop or mute it, or to set its volume. Look near the top of the page first, where people expect it, but it counts wherever it is on the page.',
         'Try that control with the keyboard (Tab to it, press Enter or Space) and with a screen reader running, and check the sound stops or drops.'
       ],
       passWhen:
-        'No sound plays for more than 3 seconds, or a reachable control near the start of the page pauses, stops or mutes it.',
+        'No sound plays for more than 3 seconds, or a control on the page that works with the keyboard and a screen reader pauses, stops or mutes it.',
       failWhen:
         'Sound plays by itself for more than 3 seconds with no way to pause, stop or turn it down independently of the system volume, which fails WCAG 1.4.2 (F23).'
     },
