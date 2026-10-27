@@ -7,34 +7,53 @@
 
 | | |
 |---|---|
-| **Verified against** | `main` at `cfefc02` (1.10.0 plus six commits), 2026-10-06 |
-| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)) and [second round](./2026-10-stress-test-2.md) (at `cfefc02`) |
+| **Verified against** | `main` at `92e54df6` (1.14.0 plus five commits), 2026-10-27, for what is open and for the fifth round; earlier rounds as each section says |
+| **Audits included** | [First round](./2026-10-stress-test.md) (findings at `63af298`, with its [outcomes log](./2026-10-stress-test-outcomes.md)), [second](./2026-10-stress-test-2.md) (`cfefc02`), [third](./2026-10-stress-test-3.md) (`eaa5d3f1`, with its [outcomes log](./2026-10-stress-test-3-outcomes.md)), [fourth](./2026-10-stress-test-4.md) (`3af2008`) and [fifth](./2026-10-stress-test-5.md) (`c528af08`) |
 | **How it is kept** | See [`README.md`](./README.md): before each audit, merge `main`; after it, re-run every open item, move fixed ones to §3, and add new ones |
 
 **How it was built.** Every first-round item was re-run on `cfefc02`, including those the outcomes log marks as fixed, by the re-check probes in [`2026-10-probes-2/recheck-round-1/`](./2026-10-probes-2/recheck-round-1/). Every second-round item was re-run independently while writing that round's report, except those marked *(not re-run)*. Where two audits found the same problem, the entry keeps the **oldest id** and lists the others.
 
-**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
+Rounds 3 to 5 were kept on branches of their own until 2026-10-27, when they were gathered here. The third round's follow-up is recorded item by item in its outcomes log; the fourth round's findings were re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md)); every fifth-round finding, and every round-4 lead still open, was re-run on `92e54df6` with the round's own probes, in Chromium 153 and jsdom.
+
+**Reading an entry.** The id says where it came from: `C-`, `S-`, `O-` and `R-` are first-round ids (custom rules, options, outputs, rules); `NM-`, `VS-`, `ST-`, `OP-`, `RP-` and `RB-` are second-round ids (names, visual, structure, options, reporters, robustness). From the third round on, an id is written with its round (`R3:`, `R4:`, `R5:`), since those rounds reused prefixes of the second (`RB-`, `OP-`, `RP-`); the round's report and probes use the short id. Ids never change and are never reused. Verdicts and severities are defined in the [README](./README.md#running-an-audit). The **Details** link leads to the full evidence: repro, spec quotes, browser evidence, cause.
 
 ---
 
 ## 1. Open — to fix
 
-Sorted by severity, then by how many pages it touches. Every Medium finding is fixed, and the feature requests of section 2 that were taken are in `main` (#146). The Low findings are fixed, in #161 and [#175](https://github.com/SureA11y/core/pull/175), and VS-14 and VS-15, two regressions, in [#178](https://github.com/SureA11y/core/pull/178). No finding is open. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
+Sorted by severity. Re-run on `main` at `92e54df6`, 2026-10-27. Every finding of rounds 1 to 4 is fixed or closed, and every fifth-round finding is fixed or decided (§3); what is left are three parts of fifth-round findings and the fourth round's leads, all Low, and the decisions below. **What is in flight, what is decided and how the work is done: [`STATUS.md`](./STATUS.md).**
 
 | # | Finding | Verdict | Severity | Found in |
 |---|---|---|---|---|
-| — | None open | | | |
+| R5:VI-12 (rest) | Generated text moved off the page by `text-indent` still fails contrast: a `::before` with `display: inline-block; text-indent: -9999px` and `#eee` text fails `BELOW_THRESHOLD` at 1.16:1, though nothing is painted. An element's own text is left out since `a5789731` | Bug | Low | [Round 5](./2026-10-probes-5/visual/FINDINGS.md) |
+| R5:KH-5 (rest) | A key listener added through another realm's `addEventListener` (an iframe's) is not seen by the listener hook, so a working control fails `CLICK_HANDLER_NO_KEY_LISTENER` | Bug | Low | [Round 5](./2026-10-probes-5/hooks/FINDINGS.md) |
+| R5:AP-4 (rest) | `a11ycore.run()` with an unknown top-level key (`{ foo: 1 }`, `{ engineOptions: 'x' }`) runs every rule with no warning; the selection given at the top level is refused since `25a93414` | Inconsistency | Low | [Round 5](./2026-10-probes-5/api/FINDINGS.md) |
+| R4:OP-P1 | `describePacks([proxy])` with a throwing Proxy throws `PACK_OWNKEYS` | Bug | Low | [Round 4](./2026-10-probes-4/options/FINDINGS.md), re-run in [round 5](./2026-10-probes-5/robust/RECHECK.md) |
+| R4:OP-P3 | An `applicability` returning `undefined`, `0`, `NaN`, `null` or `'false'` runs the rule everywhere, with no warning; only `false` gives `notApplicable` | Inconsistency | Low | Round 4, re-run in round 5 |
+| R4:OP-P4 | `rootCanvasFallback` takes `inherit`, `currentColor`, `rgb(1,2,3,4,5)` and `rgb(1,2,3,)` silently; only `notacolor` is warned | Bug | Low | Round 4, re-run in round 5 |
+| R4:OP-P5 | `packScript` accepts rule code containing `<!--<script` | Bug | Low | Round 4, re-run in round 5 |
+| R4:OP-P6 | `rules: [ , ]` (a hole) is accepted where `[null]` is refused; holes in `excludeSelectors` pass under strict | Inconsistency | Low | Round 4, re-run in round 5 |
+| R4:SE (whitespace) | Under strict, `wcagLevel: ' aA '` is accepted and `wcagVersion: '2.1 '` throws | Inconsistency | Low | [Round 4](./2026-10-probes-4/selection/FINDINGS.md), re-run in round 5 |
+| R4:SE (Kelvin) | `linK-name-present` with the Kelvin sign (U+212A) selects `link-name-present`: case-insensitive matching folds it to `k` | Debatable | Low | Round 4, re-run in round 5 |
 
-### High
+### Waiting on a decision
 
-### Medium
+Checked on `92e54df6`; each still behaves as when it was raised. From the [fifth round's §2](./2026-10-stress-test-5.md#2-decisions-needed) and the fourth round's leads.
+
+| # | Question | Now |
+|---|---|---|
+| R4:OP-P2 | Should `strictOptions` throw for an unknown profile, unknown `mappings` or `optInRules` tags, and invalid `excludeSelectors` CSS? A profile typo runs every rule. Profiles are an open set | They only warn; the catalog functions don't warn about an unknown profile or `optInRules` tag, the scan does |
+| R5 (NR lead 2) | `listitem-parent-valid` on `<li>` in `<ul role=group>` or `<ul role=navigation>`, where ARIA in HTML makes the `li` generic | `fail` `LIST_ROLE_OVERRIDDEN` |
+| R5 (NR lead 4) | An input whose `list` names no datalist: textbox (HTML-AAM) or combobox (ARIA in HTML)? | Textbox: `aria-expanded` on it fails `aria-allowed-attr` |
+| R5 (AP lead) | `focus-not-removed-by-script` maps 2.1.1 and 2.4.7; F55 also names 3.2.1. Add it? | 2.1.1 and 2.4.7 only |
+
+### Notes from earlier rounds
 
 The other rules were reviewed for the same kind of measurement, 2026-10-08:
 - The contrast rules measure text out of view as scrolled into any box clipping its overflow, `hidden` included, since VS-14. One gap, which can only miss failures, never invent them: text scrolled wholly out of a box with `overflow: hidden` is taken as not drawn (the check meant for visually hidden text in a 0 or 1px box), and isn't measured. Decided to keep it and document it (LIMITATIONS.md, in #182): from its styles, such a box can't be told from one hiding the text for good (a teaser cut at a fixed height). On a scrolled menu, a carousel and a cut teaser, the hidden text is left out in all three.
 - text-spacing-content-loss compares the same text before and after the spacing, so the scroll position doesn't decide its outcome; text not wholly visible before the spacing is left out, which can only miss failures.
 - The shared visibility helper (`styleAndGeometry`) reads whether an element has a size, never where it is. css-orientation-lock reads sizes only; link-in-text-block reads layout only to know there is one, and its contrast goes through the contrast rules.
 
-### Low
 
 ---
 
@@ -45,10 +64,156 @@ Missing capabilities nobody promised. Listed so they aren't reported again as bu
 | # | Feature | From |
 |---|---|---|
 | C-20 | Profiles without forking core (`profile-kit` export or a runtime option), paused; the README contradiction is fixed (§3). Includes, from C-13: custom composites (rollups a caller defines, such as one per requirement of a standard core doesn't ship) and custom rules counting toward a standard's own rollups, which only a standard registered from outside core needs; profiles inside core already define their own rollups | Round 1 |
+| R3 (speed) | target-size-minimum about 3× 1.10.0, contrast-computable 33% slower than 1.10.0 (the paint-backdrop check), label-in-name 276–448 ms over the saved pages: speed work left after 1.11.0 ([outcomes §3](./2026-10-stress-test-3-outcomes.md#3-what-is-left)) | Round 3 |
+| R3 (time budget) | `timeBudgetMs`, off by default: stop starting rules once spent and list the rest as not run (a time limit outside the engine is documented in INTEGRATION.md) | Round 3 |
+| R3 (suggestions) | Reporters naming packs and their versions; a cap on occurrences per rule; a smaller pack script | Round 3 |
+| R5:RB5-8 (rest) | Scans with thousands of running animations: the engine's loop is linear since `31c2aa8a`, but Chromium's own `getAnimations()` still costs about 6.6 s at 10,000; calling it less often or more narrowly is the only further cut | Round 5 |
+| R5:AP-7 (rest) | `checkPack` could refuse a standard's `reasonCodes` row naming a code no rule emits (now that every rule's occurrences carry one) | Round 5 |
+| R5 (§3) | The fifth round's other suggestions: a shared event-path helper for the listener rules, a lint rule or fuzz invariant for tables indexed by page values, pixel checks of the native controls the engine models, the shadow-root selector invariant in the fuzz harness ([§3](./2026-10-stress-test-5.md#3-improvements-and-features)) | Round 5 |
 
 ---
 
 ## 3. Fixed — history
+
+### Fifth round's findings (in `main`)
+
+Pull requests [#289](https://github.com/SureA11y/core/pull/289) (priority 1), [#290](https://github.com/SureA11y/core/pull/290) (speed), [#291](https://github.com/SureA11y/core/pull/291) (console helpers), [#292](https://github.com/SureA11y/core/pull/292) (the smaller findings), [#293](https://github.com/SureA11y/core/pull/293) to [#295](https://github.com/SureA11y/core/pull/295) and [#299](https://github.com/SureA11y/core/pull/299), merged 2026-10-23 to 2026-10-24; released in 1.14.0. Every finding of the [fifth round](./2026-10-stress-test-5.md) (at `c528af08`) was re-run on `92e54df6` on 2026-10-27, with its own probes from `2026-10-probes-5/`, in Chromium 153 and jsdom: all 58 are fixed or decided; three left a part, in §1 (R5:KH-5, R5:VI-12, R5:AP-4). The hashes are `main`'s.
+
+<a id="r5"></a>
+<a id="r5-rb5-1"></a>
+<a id="r5-rb5-2"></a>
+<a id="r5-rb5-3"></a>
+<a id="r5-rb5-4"></a>
+<a id="r5-rb5-6"></a>
+<a id="r5-rb5-9"></a>
+| # | Finding | Commit | PR | What it gives now |
+|---|---|---|---|---|
+| R5:NR-1 (High) | A control named by `aria-labelledby` pointing at `aria-hidden` text failed when the text was in a child element | `d23c348d` | #289 | No fail in the button, link, form-field and checkbox name rules |
+| R5:NR-2 | A presentational SVG's `<title>` named a link in Chromium; jsdom failed a correctly named SVG `<a>` | `d2a290dc` | #289 | Same in both: the presentational cases fail `name_missing`, the SVG `<a>` passes |
+| R5:NR-3 | Native min and max ignored for a redundant range role | `e79b0ad2` | #289 | No `ARIA_VALUENOW_OUT_OF_RANGE` |
+| R5:NR-4 | A deprecated global attribute failed on an element with no role | `3eb184d3` | #289 | `cantTell` `ARIA_ATTR_DEPRECATED`, as on a `<div>` |
+| R5:NR-5 | A `<td>` of a table whose presentational role is overridden stayed roleless | `48e3125b` | #292 | No `ARIA_ATTR_NOT_ALLOWED_ROLELESS` |
+| R5:NR-6 | ARIA 1.3's `image` failed `aria-roles-valid` | `340089d4` | #289 | Read as `img` |
+| R5:NR-7 | A nested `aria-labelledby` followed inside a labelledby traversal | `1979a55d` | #292 | The `label-in-name` fail is gone |
+| R5:NR-8 | Text directly inside a closed `<details>` went into names | `c216eff7` | #292 | Names match Chromium |
+| R5:NR-9 | `page-has-heading-one` ignored `aria-level` on h1–h6 | `f2e22e8b` | #292 | `<h1 aria-level=2>` alone gives `HEADING_ONE_MISSING` |
+| R5:NR-10, R5:AP-2 | `inspect()` named `<input type=button>` "(no name)", called `<select multiple>` a combobox and a grid's `<td>` a cell | `a4d834d0` | #291 | Matches Chromium |
+| R5:NR-11 = R5:RB5-5 | `aria-allowed-attr` skipped an `<input>` with an unknown type | `4cf3483f` | #292 | Judged as a text field |
+| R5:NR-12 | `<input aria-placeholder>` alone failed where `<div role=textbox aria-placeholder>` asked | `a5d937dc`, message `26bd768c` | #292, #295 | Decided the other way: both fail, since accname doesn't use `aria-placeholder` (Chromium names both); the message says why |
+| R5:NR-13 | Under jsdom a button named only by generated content fails, undocumented | `0262bc59` (docs) | #292 | Unchanged; LIMITATIONS.md says so |
+| R5:NR-14 | `aria-prohibited-children` said a `<button>` "has no role" | `57631ebc` | #292 | `childRole: "button"` |
+| R5:NR-15 | `aria-valuenow="0x10"` accepted as 16 | `464ce03e` | #292 | `ARIA_ATTR_VALUE_INVALID` |
+| R5:RB5-1 | A focusable element inside a customizable select's button reported by no rule | `8918aba0` | #292 | `nested-interactive-controls-absent` fails it |
+| R5:RB5-2 | Element references set from script read for names only | `80e76955` | #292 | Same results as the attributes in the four rules |
+| R5:RB5-3 | Chromium's reflection of the misspelled `aria-labeledby` named elements jsdom failed | `be0296a5` | #292 | Ignored in both; `aria-valid-attr` asks |
+| R5:RB5-4 | `<input type="constructor">` made `aria-allowed-attr` error out | `4cf3483f` | #292 | Judged as a text field |
+| R5:RB5-6 | `link-name-quality`'s trailing-punctuation pattern took 9.4 s at 80k | `26513a92` | #290 | 2 ms |
+| R5:RB5-7 | `aria-required-parent` O(items × owners) under `aria-owns` | `1451fdaf` | #290 | 4,000 owned items: 106 ms for the rule in Chromium (was 8.9 s for the scan), 395 ms in jsdom (was 92 s) |
+| R5:RB5-8 | Browser scans quadratic in running animations | `31c2aa8a` | #290 | 4,000: 12.0 → 3.3 s; 10,000: 114 → 11.5 s. What is left is Chromium's own `getAnimations()` (§2) |
+| R5:RB5-9 | A finding at the top of a shadow root pointed at a deeper element with the same tag | `d716966c` | #289 | The first step carries `:not(* > *)`; resolves to its element in both |
+| R5:KH-1 | A key listener on a shadow root not seen | `6e0b5eda` | #289 | `cantTell` `CLICK_HANDLER_KEY_LISTENER_ABOVE` |
+| R5:KH-2 | `role="alert"` with an explicit `aria-live` not an alert to the hook | `4bff30fe` | #289 | Announced, at the politeness it states |
+| R5:KH-3 | Every `<textarea>` asked about in `scrollable-region-focusable` in Chromium | `b89582d6`, `be71043c` | #292, #304 | `notApplicable` in both |
+| R5:KH-4 | Key handling attached on first focus counted as none | `607c7e2a` | #292 | Decided: `cantTell` `CLICK_HANDLER_FOCUS_LISTENER` |
+| R5:KH-5 (part) | `new String('keydown')` type dropped by the listener hook | `a9e5ce6f` | #292 | Counted. Its other half, another realm's listener, is in §1 |
+| R5:KH-6 | A listener with an already-aborted signal counted | `a9e5ce6f` | #292 | Not counted |
+| R5:KH-7 | The hook read `options.capture` twice | `a9e5ce6f` | #292 | Read once |
+| R5:KH-8 | A visible message in a `visibility: hidden` box failed; aria-hidden text treated unevenly | `fef0ed64`, `21112090` | #292, #294 | The visible child passes; an aria-hidden span or message is `cantTell` (`ERROR_MESSAGE_ARIA_HIDDEN`, `ERROR_MESSAGE_HIDDEN`) |
+| R5:KH-9 | `onclick="javascript:void(0)"` and other no-ops not recognised | `230d0754` | #292 | `notApplicable` |
+| R5:KH-10 | The F55 rule missed handlers moving focus elsewhere, and filed F55's Example 3 under the wrong code | `888baf7c` | #292 | `FOCUS_HANDLER_MOVES_FOCUS`; Example 3 fails `FOCUS_HANDLER_BLURS_SELF` |
+| R5:KH-11 | `aria-expanded-state-mismatch` counted a `content-visibility: hidden` panel as shown | `cab94f7c` | #292 | `EXPANDED_TRUE_CONTROLLED_HIDDEN` |
+| R5:VI-1 | An unstyled drop-down `<select>` measured on `#efefef`, where Chromium paints white | `1cf063b5` | #289 | Decided: measured against both colours, the lower ratio counts, both given in `selectField` (§4) |
+| R5:VI-2 | A customizable select with no author `<button>`: closed text never measured | `a2746aa1` | #292 | Measured |
+| R5:VI-3 | `background-clip: text` over a solid colour failed at 1:1 | `04cd7924` | #289 | Measured in the clipped colour: passes at 21:1 |
+| R5:VI-4 | `text-spacing-content-loss` mixed zoomed and unzoomed units | `9adcfd25` | #289 | Clipping found under zoom; no question where nothing is cut |
+| R5:VI-5 (part) | Under forced colors the page's forced-colors CSS still applies | `a223454b` | #292 | Flagged (`engine.environment.forcedColorsCss`) and documented; outcomes still differ (§4) |
+| R5:VI-6 | The logo heuristic took `btn-brand`, a "Home" link and more for logos | `ea98b07a` | #289 | Only real logo and site-brand tokens count |
+| R5:VI-7 | Buttons in a sentence failed 2.5.8 | `cd49cb9c` | #289 | The inline exception covers any target |
+| R5:VI-8 | A lock in a sheet `@import`ed by a cross-origin sheet passed | `ed70b5ef` | #289 | Fails `ORIENTATION_MEDIA_ROTATE_TRANSFORM` |
+| R5:VI-9 | Adopted and shadow-root sheets not read by two CSS rules | `b88a893f` | #292 | Read |
+| R5:VI-10, R5:VI-11 | `css-hidden-focus` missed `scale(0)`, `overflow-x: clip`, `!important`; asked about `&:focus`, `:has(:focus)` | `04f5a5e0` | #292 | The first three asked about; the last two `notApplicable` |
+| R5:VI-12 (part) | Text moved off the page by `text-indent` failed contrast | `a5789731` | #299 | An element's own text left out. The `::before` case is in §1 |
+| R5:VI-13 | Large text judged by `font-size` despite `font-size-adjust` | `a39c0655` | #299 | Decided: judged at the size drawn |
+| R5:VI-14 | LAYOUT_MEASUREMENT.md said a placeholder below its ratio is always `cantTell` | `04fe1ac3` | #292 | Corrected |
+| R5:AP-1 | Rollups for 1.3.5, 3.3.2 and 2.5.8 `notApplicable` on pages they apply to | `97c0ed74`, `662bfb5a` | #289, #300 | `cantTell` `partialCoverage` when nothing is found |
+| R5:AP-3 | `inspect('focus-order')` was not the Tab order | `b6949009` | #291 | Matches Tab |
+| R5:AP-4 (most) | `run()` ran every rule for a selection given at the top level, as a string or a list | `25a93414` | #291 | Refused with a `TypeError` naming `runOnly`. An unknown key is in §1 |
+| R5:AP-5, R5:AP-6 | Overlays broken under a CSP, misplaced under a transformed, zoomed or margined `<html>` | `491203b6` | #291 | Right in every case |
+| R5:AP-7 | 17 rules reported findings with no `reasonCode` | `245f6554` | #292 | Every occurrence carries one |
+| R5:AP-8 | `checkPack()` and `definePack` approved standards every scan skips | `680ecb08` | #292 | Refused, naming the field |
+| R5:AP-9 | The catalog functions didn't warn about a self-cancelling selection | `f7686d6f` | #292 | Warn, and throw under strict |
+| R5:AP-10 | `openReport()` couldn't be retried after a failure | `91fbb52f` | #291 | Retries; Trusted Types explained |
+| R4:OP-5 (rest) | `surea11y-pack new --name=a --name=b` took the last | `6320fa0e` | #292 | Refused |
+
+The round's decisions (its §2), as taken: the two-label field is asked about (`FORM_FIELD_MULTIPLE_LABELS`, #293); a light fill with a light outline fails (#293); an error message hidden while the error shows elsewhere is asked about (`ERROR_MESSAGE_HIDDEN`); key handling attached on first focus is asked about (R5:KH-4); large text by the size drawn (R5:VI-13). Still to decide: §1.
+
+### Fourth round's findings (in `main`)
+
+Pull requests [#212](https://github.com/SureA11y/core/pull/212) to [#241](https://github.com/SureA11y/core/pull/241), merged 2026-10-15. Every confirmed finding of the [fourth round](./2026-10-stress-test-4.md) (at `3af2008`) was re-run on `c528af08` by the fifth round ([`RECHECK.md`](./2026-10-probes-5/robust/RECHECK.md), its scripts under `2026-10-probes-5/robust/r4/`): 29 are fixed, 2 partly. What a fix left is a fifth-round finding, named in the last column.
+
+<a id="r4"></a>
+| # | Finding | Commit | Left |
+|---|---|---|---|
+| R4:CH-1 | A customizable `<select>` failed `nested-interactive-controls-absent` | `5768f5bd`, `2972b8aa` (decision) | [R5:RB5-1](#r5-rb5-1) |
+| R4:CH-2 | `ElementInternals` names and states ignored | `f0bb37d1`, `be17bbc0`, `1104ef35`, `a17a8255`, `638be0ed` | — |
+| R4:CH-3 (partly) | ARIA element references set from script ignored: names read them now, four other rules don't | `88404330` | [R5:RB5-2](#r5-rb5-2), [R5:RB5-3](#r5-rb5-3) |
+| R4:CH-4 | Outline-only or shadow-only text passed contrast | `de96f3de`, `d25a9e9b` | a light fill with a light outline, decided in #293 |
+| R4:CH-5 | `link-in-text-block` failed a link that draws nothing | `59718efa` | — |
+| R4:OP-1 | 18 options of the wrong type dropped without a warning | `8ba80a48` | — |
+| R4:OP-2 | A checklist pack rule with `wcagSc` silently skipped | `8da258aa` | — |
+| R4:OP-3 | `packScript` wrote code that wasn't the rule | `25950101` | — |
+| R4:OP-4 | A variant's ratio took NaN, ±Infinity, 0 or negatives | `52acc5e4` | — |
+| R4:OP-5 (partly) | `surea11y-pack new` wrote invalid packs; two `--name` values still let the last win | `ec7b3efa` | the rest fixed in `6320fa0e` (#292), with the fifth round |
+| R4:OP-6 | Strict pack errors had no `code` | `62ab448e` | — |
+| R4:OP-7 | The `strictOptions` warning was wrong for a Symbol, missing for a BigInt | `37a0836a` | — |
+| R4:RP-1 | A policy without `fail` still gave `fail` | `d9a2024b` | — |
+| R4:RP-2 | The HTML report failed its own self-scan when no row was shown | `0fb78aa4` | — |
+| R4:RP-3 | No reporter showed `shadowHostSelectors` | `f181176e` | [R5:RB5-9](#r5-rb5-9) |
+| R4:RP-4 | The HTML report threw on `null` entries | `8756854d` | — |
+| R4:RP-5 | The French JUnit suite name had a trailing space | `591f7247` | — |
+| R4:RP-6 | SARIF notes for passing rules | `d7d32b74` | — |
+| R4:RP-7 | SARIF `uri` invalid for spaces; a non-string url threw | `86b02cd6` | — |
+| R4:SE-1 | The lowercase `a11ycore-` prefix on a standard's rollup selected nothing | `08741439` | — |
+| R4:SE-2 | A custom tag starting with `wcag` added no criteria | `99298bdf` | — |
+| R4:SE-3 | An excluded custom rule was reported as "not selected" | `37bed2cf` | — |
+| R4:SE-4 | A standard's tag carried only by its rollups was "unknown" | `7926e74d` | — |
+| R4:SE-5 | `runOnly.optInTags` silently dropped | `40720631` | — |
+| R4:FZ-1 | `lang="constructor"` or `"__proto__"` broke the word-list rules | `1e6114b8` | [R5:RB5-4](#r5-rb5-4) |
+| R4:FZ-2 | Rule order changed verdicts with aria-hidden idref cycles | `d135406a` | — |
+| R4:FZ-3 | p-as-heading super-linear in nesting depth | `dca409f5` | — |
+| R4:FZ-4 | A closed `[popover]` not hidden; order-dependent under jsdom | `513cbd15` | — |
+| R4:FZ-5 | A fallback selector named the wrong element (light DOM) | `d1f70182` | [R5:RB5-9](#r5-rb5-9) |
+| R4:FZ-6 | Quadratic regexes on long values | `c1ee1ab8` | [R5:RB5-6](#r5-rb5-6) |
+| R4:FZ-7 | The testing helper reported a false entry-point disagreement | `d0499363` | — |
+
+The round's leads that were acted on (the reporters following `wcagLevel`, a drop-down select measured by what it shows, generated text measured, a plain page measured against the white canvas, `img-alt-decorative` and `[inert]`, the catalog functions validating options, stored results before the tier fix, hostile field types in the reporters, EARL frames sharing a URL, the idref exception in structure rules) are fixed too, with their commits in `RECHECK.md`. The leads still open are in §1.
+
+### Third round's findings (in `main`)
+
+Pull requests [#191](https://github.com/SureA11y/core/pull/191) (the fixes), [#192](https://github.com/SureA11y/core/pull/192) (contrast speed), [#193](https://github.com/SureA11y/core/pull/193) (the decisions) and [#194](https://github.com/SureA11y/core/pull/194) (the leftovers and a review of every doc), merged 2026-10-10. The [third round](./2026-10-stress-test-3.md) (at `eaa5d3f1`) found 109 findings, about 85 distinct once merged across areas. Every one is done; the item-by-item record, with each fix's commits and how it was checked, is its [outcomes file](./2026-10-stress-test-3-outcomes.md) §1–§2, and is not copied here. In summary:
+
+<a id="r3"></a>
+| Item | Finding | Ids | Outcomes |
+|---|---|---|---|
+| 1 | Scans slower than 1.10.0 | R3:CO-7, R3:RB-4 | §2.1, §2.2, §2.29; the rest is in §1 as speed work |
+| 2 | A pack namespace equal to a core tag switched core rules off | R3:PN-1, R3:PT-2, R3:PT-9 | §2.3 |
+| 3 | The pack cache skipped validation; key collisions; a stale engine | R3:PN-2, R3:PN-3, R3:PN-4, R3:RB-13 | §2.5 |
+| 4, 5, 8 | Pack text pasted unescaped, run as code in a page, or written so it doesn't parse | R3:PT-3, R3:PB-5, R3:PB-6, R3:PN-10, R3:PB-4, R3:PT-16, R3:RB-6 | §2.4, §2.6 |
+| 6, 37 | TypeScript code written for 1.10.0 no longer compiled; types and docs vs reality | R3:PT-14, R3:PT-4, R3:PT-10, R3:PT-11, R3:OO-7, R3:OO-18, R3:PT-19 | §2.7, §2.28 |
+| 7 | A rule reading outside its function passed its tests and lint, then failed in a browser | R3:PT-1, R3:PB-7 | §2.8 |
+| 9 | An occurrence's selector could resolve to another element | R3:OO-1, R3:RB-2, R3:RB-8 | §2.9, §2.31 |
+| 10, 27 | text-spacing under a CSP that blocks inline styles; its stylesheet left behind | R3:RB-1, R3:RB-9 | §2.10 |
+| 11 | A control named only from a closed shadow root was a confident fail | R3:RB-3 | §2.11, §2.30 |
+| 12 | A self-referencing ID reference on an aria-hidden element overflowed the stack | R3:CO-1 | §2.12 |
+| 13–17 | A self-cancelling selection silent; reporters disagreeing on tiers; `strictOptions: 'true'`; stored and compact pack results; checklists in SARIF and JUnit | R3:OO-2, R3:OO-4, R3:OO-5, R3:PB-12, R3:PB-13, R3:OO-3, R3:PB-14 | §2.13–§2.17 |
+| 18 | link-in-text-block missed links whose sentence is split into elements | R3:CO-4 | §2.18 |
+| 19–21 | Packs in a page; pack and custom rules changing core's results or aborting the scan | R3:PB-1, R3:PB-3, R3:PB-17, R3:PB-9, R3:RB-7, R3:RB-5, R3:PB-8 | §2.19–§2.21 |
+| 22–26 | Namespace and id rules; core ranges; shapes taken without a word; PACKS.md slips; the `surea11y-pack` CLI | R3:PN-11, R3:PN-15, R3:PB-15, R3:PB-16, R3:PN-20, R3:PN-8, R3:PN-21, R3:PN-5, R3:PN-7, R3:PN-23, R3:OO-16, R3:PN-9, R3:PN-24, R3:PN-6, R3:PT-5–8, R3:PT-17, R3:PT-22 | §2.4, §2.22–§2.25, §2.28 |
+| 28–36, 38, 40 | `<math>` under jsdom; reason codes; font-size keywords; null-prototype options; policy coercion; name cycles and depth; page built-ins; wrong-typed options; lint plugin; text-spacing quoting `<style>` | R3:CO-3, R3:OO-8, R3:OO-9, R3:OO-10, R3:OO-6, R3:CO-2, R3:RB-12, R3:RB-10, R3:OO-11–13, R3:OO-15, R3:PT-12, R3:PT-13, R3:CO-6 | §2.26–§2.28 |
+| 39 | Small items | R3:PB-18, R3:PB-19, R3:PB-22, R3:PB-23, R3:OO-17, R3:OO-19, R3:PN-13, R3:PN-14, R3:PN-16–19, R3:PN-22, R3:PT-15, R3:PT-18, R3:PT-20 | §2.28 |
+
+The round's decisions were all taken on 2026-10-10 (outcomes §2.30); those that keep a behaviour are in §4.
+
 
 ### C-13, first part: custom rules in the WCAG rollups (in `main`)
 
@@ -624,7 +789,7 @@ Checked and decided. Don't reopen without new evidence.
 | — | `getChecksCatalog({ profile: 'bogus' })` returns the full catalog | Not a bug | A profile changes mappings, not which rules are listed. (It doesn't warn about the unknown name, as a scan does: minor.) |
 | — | `runOnly: []`, `''`, `{}` run every rule | Kept by decision | Pinned by a test, as documented. |
 | — | `valid-lang` on `lang="en-"` passes | Not a bug | ACT de46e4 judges the primary subtag only. |
-| — | `valid-lang` on `lang="qaa"` (private use) fails | Kept by decision (maintainer, 2026-10-05) | Documented behaviour; revisit if users report it. Its wording is ST-9. |
+| — | `valid-lang` on `lang="qaa"` (private use) fails | Reversed, 2026-10-25 | Kept by decision on 2026-10-05; since `39521a41` (#303) `valid-lang` accepts the private-use range `qaa` to `qtz`, as ACT de46e4 does. |
 | — | label-in-name: "Download (PDF, 2 MB)" against visible "Download PDF" fails | Not a bug | ACT 2ee8b8 removes text in parentheses. |
 | — | img-alt-decorative asks about an icon in an already named link | Not a bug | Intended review (ACT e88epe). |
 | — | `aria-valid-attr` slow on 5,000 siblings | Not a bug | Linear; the time is the style cache (R-17). |
@@ -634,3 +799,14 @@ Checked and decided. Don't reopen without new evidence.
 | — | About 40 KB kept per repeated browser scan | Not a bug | Re-checked: it levels off at about 1.3 MB after 45 scans; a bounded cache, not a leak. |
 | — | A native `<marquee>` gives text-spacing-content-loss different answers | Not reproduced | 30 of 30 independent scans gave `pass`. Reopen with a repro. |
 | — | §3 note: contrast on an unstyled page differed between jsdom and Chromium | Fixed by other changes | Both now give the same result. |
+| R5:VI-1 | An unstyled drop-down `<select>` fails at a ratio Chromium doesn't paint (`#767676` is 4.54:1 on the white field Chromium draws, 3.95:1 on its computed `#efefef`) | Kept by decision (`1cf063b5`, #289) | Browsers paint the field differently, so the text is measured against both colours and the lower ratio counts; the finding gives both in `selectField`. Checked on `92e54df6`. |
+| R5:VI-5 | Under forced colors, results differ from forced colors off when the page's own CSS reacts to forced colors | Documented (`a223454b`, #292) | The scan flags it (`engine.environment.forcedColorsCss: true`) and LAYOUT_MEASUREMENT.md says results are the same "unless its own CSS reacts to them". |
+| R5:NR-12 | A field named only by `aria-placeholder` fails, though Chromium names it | Decided (`a5d937dc`, #292; message #295) | accname doesn't use `aria-placeholder`; the native and the ARIA field now fail alike, and the message says why. |
+| R5:NR-13 | Under jsdom, a button named only by generated content fails; Chromium names it | Documented (`0262bc59`, #292) | jsdom doesn't compute generated content; LIMITATIONS.md says so. |
+| R4:CH-P3 | A paused animation at opacity 0 gives no finding | Not a bug | The text is not visible. |
+| R4 (lead) | A rollup id in `includeTestIds` runs no rule and reports the rollup as `cantTell` | Kept | It warns. |
+| R3:CO-5 | A placeholder below the ratio in the browser's own colour | Decided (outcomes §2.30) | `cantTell` `PLACEHOLDER_BROWSER_DEFAULT` where no selector of the page names a placeholder; one the page styles is judged as any text. |
+| R3 (item 11) | A closed shadow root on a built-in element (a `<span>`) that names a control | Kept by decision (outcomes §2.30) | Stays a documented `fail`, the common unnamed icon button; custom elements are `cantTell`. |
+| R3:CO-4 (rest) | A bold or italic wrapper around a link (`<strong><a>`) in `link-in-text-block` | Kept (outcomes §1) | Stays `notApplicable`, as it would pass. |
+| R3:OO-9 (rest) | `larger` and `smaller` font sizes under jsdom | Documented (LIMITATIONS.md) | jsdom leaves them unresolved. |
+| R3 (item 39) | The English `css-hidden-focus` message ("Focusable a…") | Kept | Changing it changes every default result. |

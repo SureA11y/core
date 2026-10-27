@@ -2,25 +2,30 @@
 
 Where the work on the audit's findings stands, written so that another person or session can pick it up without the history of this one. The findings themselves, open and fixed, are in [`FINDINGS.md`](./FINDINGS.md); this page says what is in flight, what is decided, and how the work is done.
 
-Last updated 2026-10-08.
+Last updated 2026-10-27, on `main` at `92e54df6` (1.14.0 plus five commits).
 
 ## 1. Open now
 
-VS-16 is fixed in [#182](https://github.com/SureA11y/core/pull/182) (merged 2026-10-08, closing #181). Decided with it: rules avoid measuring what is visible at the scan's scroll position. [#186](https://github.com/SureA11y/core/pull/186) is merged too (closing #183, #184 and #185): the pattern set (`tests/patterns/`), the authoring rule (RULE_AUTHORING.md §8.4, §12), VS-17 and VS-18, and the pre-release check of the unreleased layout changes. Nothing else is open. C-13's first part, custom rules counting toward the WCAG rollups of the criteria they map to, is in [#180](https://github.com/SureA11y/core/pull/180) (merged 2026-10-08, closing #179). VS-14, the contrast regression reported in use, and VS-15, the same mistake in target-size-minimum, found while fixing it, are fixed in [#178](https://github.com/SureA11y/core/pull/178) (merged 2026-10-08, closing #176 and #177); see [`FINDINGS.md`](./FINDINGS.md#vs-14). Paused: C-20's packages and C-13 (section 2).
+Nothing is in flight: no pull request from the audit work is open. Five rounds have run; their findings are fixed or decided, as recorded in [`FINDINGS.md`](./FINDINGS.md) §3:
+- **Rounds 1 and 2:** fixed in #77 to #186 (the sections of §3 below the third round).
+- **Round 3:** fixed in #191 to #194, merged 2026-10-10.
+- **Round 4:** fixed in #212 to #241, merged 2026-10-15; re-checked by round 5.
+- **Round 5:** fixed in #289 to #295 and #299, merged 2026-10-23 to 2026-10-24, released in 1.14.0; re-checked on `92e54df6` on 2026-10-27.
 
-### The follow-up, #175: merged
+What is left (`FINDINGS.md` §1), all Low:
+- three parts of fifth-round findings: generated text moved off the page by `text-indent` (R5:VI-12), a key listener added from another realm (R5:KH-5), an unknown key given to the console's `run()` (R5:AP-4);
+- the fourth round's option and selection leads (R4:OP-P1, P3 to P6, the strict-mode whitespace and the Kelvin sign).
 
-The follow-up, pull request [#175](https://github.com/SureA11y/core/pull/175), is merged (2026-10-08, by rebase) and closed #162 to #174; its thirteen items are in `FINDINGS.md` §3, with `main`'s hashes and how each was checked. Every Low finding of the audit is fixed.
+**Next step:** take the decisions of `FINDINGS.md` §1 ("Waiting on a decision"), then fix the Low items on branches from `main`, one issue each. Before the next round, merge `main` into this branch (README, "Before running an audit").
 
 ## 2. Decisions taken
 
-- Done in #161 (merged): 36 of the 42 Low findings, and halves of ST-6 and R-10.
-- Done in #175 (merged): the rest of the Low findings, as decided: VS-13, ST-6's `x-foo` half, RB-8, R-10's `line-clamp` half, R-12, R-15, O-6, O-14 (removed), O-5b (catalog links), and the features `strictOptions` (#162) and O-12 (#163).
-- Done in #178 (merged): VS-14, and VS-15 as decided: a box a reader scrolls (`overflow: auto` or `scroll`) no longer cuts a target, which is measured as scrolled into it, no larger than the box; `hidden`, `clip` and `contain: paint` still cut. For contrast, text out of view is measured as scrolled into any box clipping its overflow, `hidden` included, since carousels scroll it from script.
-- Custom rule ids: one that differs from a built-in's only in case overrides it, under the built-in's id, with a warning naming both spellings; one that differs from an earlier custom rule's only in case is skipped. Selection by id (`runOnly`) stays exact.
-- `role="LIST"` in capitals: no change. Chromium resolves roles in any case, as the engine does.
-- C-13 split (2026-10-08): its first part, custom rules counting toward the WCAG rollups of the criteria they map to, is done (#179, merged in #180): a custom rule that ran counts as a built-in does, an override counts where its own mapping says, and the rollup names its custom rules. Its second part, custom composites, and custom rules in a standard's own rollups, moved to C-20.
-- Paused, for later: C-20 (profiles as packages of their own, outside core; it needs run-time registration of a standard, its rules, variants and rollups, and, from C-13, custom composites). The RGAA profile is being built inside core meanwhile; the profile boundary rules keep it movable to a package later.
+- Rounds 1 and 2: as recorded in `FINDINGS.md` §3 and §4. C-20 (profiles as packages outside core) is paused; packs (#189) now cover much of it.
+- Round 3: all its decisions taken on 2026-10-10 ([outcomes §2.30](./2026-10-stress-test-3-outcomes.md)).
+- Round 4: its five decisions acted on in #214.
+- Round 5: the two-label field asked about; a light fill with a light outline fails; a hidden error message shown elsewhere asked about; key handling attached on first focus asked about; large text by the size drawn; a drop-down select measured against both the colour Chromium paints and its computed one; a field named only by `aria-placeholder` fails.
+- `valid-lang` and the private-use range `qaa`–`qtz`: kept as a `fail` on 2026-10-05, reversed on 2026-10-25 (#303) to follow ACT.
+- Still open: four questions, in `FINDINGS.md` §1.
 
 ## 3. How the work is done
 
