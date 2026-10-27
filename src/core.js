@@ -36815,6 +36815,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Mit den Textabständen nach WCAG 1.4.12 rückt der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px aus dem Viewport heraus, den dieses Element nicht scrollen lässt, obwohl schon Inhalt darüber hinaus lag, wie bei einer Scroll-Sperre hinter einem Cookie-Banner oder einem Menü.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text erreichbar ist, sobald die Seite wieder scrollt; scrollt sie in diesem Zustand nie, lassen Sie sie scrollen (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus), doch das Skript der Seite hat es passend zu diesem Text bemessen, wie er war, und bemisst es vielleicht neu, sobald der Text wächst.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Prüfen Sie mit den angewendeten Abständen, nachdem die Seite einen Moment reagieren konnte, ob dieser Text ganz zu sehen ist; bleibt er abgeschnitten, lassen Sie den Container mit seinem Text wachsen (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -36825,6 +36827,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Ein Benutzer-Stylesheet setzt sich weiterhin gegen die Seite durch; nur Werkzeuge, die den Abstand als Stil der Seite selbst hinzufügen, unterliegen ihr.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Eine Überlagerung ist geöffnet, etwa ein Dialog oder ein Einwilligungsbanner, die das Scrollen gewöhnlich sperrt; sobald sie geschlossen ist, scrollt die Seite und der Text ist erreichbar.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Manche Seiten sperren das Scrollen dauerhaft und scrollen stattdessen einen inneren Bereich.",
+      "textSpacingContentLoss_lean_why_scriptSized": "Der Text ist die schwebende Beschriftung eines umrandeten Formularfelds von Angular Material, dessen Skript die Umrandung erneut an die Beschriftung anpasst, wenn diese wächst.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Ältere Versionen der Bibliothek legen die Breite der Umrandung nur einmal fest; prüfen Sie, ob die Beschriftung mit den angewendeten Abständen ganz zu sehen ist.",
       "textSpacingContentLoss_lean_why_clippedFurther": "Der Auszug zeigte ohne die Abstände ganze Zeilen und zeigt mit ihnen keine einzige mehr vollständig.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "Der vollständige Text kann anderswo angeboten werden, etwa über einen Link „Weiterlesen“.",
       "textSpacingContentLoss_lean_why_overlaps": "Mit den Abständen wird der Text über mehr als die halbe Höhe des anderen Texts gezeichnet, auf mehr als einem em Länge.",
@@ -38147,6 +38151,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" moves {{overflowPx}}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Check with the text spacing applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -38157,6 +38163,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
       "textSpacingContentLoss_lean_why_scrollLocked": "An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Some pages lock scrolling for good and scroll an inner pane instead.",
+      "textSpacingContentLoss_lean_why_scriptSized": "The text is the floating label of an Angular Material outlined form field, whose script fits the outline to the label again when the label grows.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Older versions of the library set the outline width only once; check that the label shows in full with the spacing applied.",
       "textSpacingContentLoss_lean_why_clippedFurther": "The excerpt showed whole lines before the spacing and shows none in full with it.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "The full text may be offered elsewhere, such as through a \"read more\" link.",
       "textSpacingContentLoss_lean_why_overlaps": "With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.",
@@ -39479,6 +39487,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Comprobar con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sale {{overflowPx}} px de la ventana, que este elemento no deja desplazar aunque ya había contenido más allá, como hace un bloqueo del desplazamiento tras un aviso de cookies o un menú.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Comprobar con el espaciado aplicado que se puede llegar a este texto cuando la página vuelve a desplazarse; si en este estado nunca se desplaza, permitir que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento corta el texto «{{text}}» ({{overflowPx}} px más allá de su borde), pero el script de la página lo dimensionó para que cupiera ese texto tal como era, y puede volver a dimensionarlo cuando el texto crece.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Comprobar con el espaciado aplicado, después de dar a la página un momento para reaccionar, que este texto se muestra completo; si sigue cortado, permitir que el contenedor crezca con su texto (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Comprobar con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -39489,6 +39499,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Una hoja de estilos de usuario sigue imponiéndose a la página; solo pierden frente a ella las herramientas que añaden el espaciado como estilo propio de la página.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Hay una superposición abierta, como un cuadro de diálogo o un aviso de consentimiento, que suele bloquear el desplazamiento; al cerrarla, la página se desplaza y se puede llegar al texto.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Algunas páginas bloquean el desplazamiento de forma permanente y desplazan en su lugar un panel interior.",
+      "textSpacingContentLoss_lean_why_scriptSized": "El texto es la etiqueta flotante de un campo de formulario con contorno de Angular Material, cuyo script vuelve a ajustar el contorno a la etiqueta cuando esta crece.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Las versiones antiguas de la biblioteca fijan el ancho del contorno una sola vez; comprobar que la etiqueta se muestra completa con el espaciado aplicado.",
       "textSpacingContentLoss_lean_why_clippedFurther": "El extracto mostraba líneas completas sin el espaciado y con él no muestra ninguna completa.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "El texto completo puede ofrecerse en otro lugar, por ejemplo con un enlace «leer más».",
       "textSpacingContentLoss_lean_why_overlaps": "Con el espaciado aplicado, el texto se dibuja sobre más de la mitad de la altura del otro texto, a lo largo de más de un em.",
@@ -40811,6 +40823,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » sort de {{overflowPx}} px de la zone d’affichage, que cet élément empêche de défiler alors que du contenu se trouvait déjà au-delà, comme le fait un blocage du défilement derrière un bandeau de cookies ou un menu.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Vérifiez avec l’espacement du texte appliqué que ce texte peut être atteint une fois que la page défile de nouveau ; si la page ne défile jamais dans cet état, laissez-la défiler (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément coupe le texte « {{text}} » ({{overflowPx}} px au-delà de son bord), mais le script de la page l’a dimensionné pour ce texte tel qu’il était, et peut le redimensionner quand le texte s’agrandit.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Vérifiez avec l’espacement du texte appliqué, après avoir laissé un instant à la page pour réagir, que ce texte s’affiche en entier ; s’il reste coupé, laissez le conteneur s’agrandir avec son texte (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -40821,6 +40835,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Une feuille de style utilisateur l’emporte toujours sur la page ; seuls les outils qui ajoutent l’espacement comme style de la page perdent face à elle.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Une surcouche est ouverte, comme une boîte de dialogue ou un bandeau de consentement, ce qui bloque d’habitude le défilement ; une fois fermée, la page défile et le texte peut être atteint.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Certaines pages bloquent le défilement en permanence et font défiler un panneau intérieur à la place.",
+      "textSpacingContentLoss_lean_why_scriptSized": "Le texte est l’étiquette flottante d’un champ de formulaire à contour d’Angular Material, dont le script ajuste de nouveau le contour à l’étiquette quand celle-ci s’agrandit.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Les anciennes versions de la bibliothèque ne fixent la largeur du contour qu’une fois ; vérifiez que l’étiquette s’affiche en entier avec l’espacement appliqué.",
       "textSpacingContentLoss_lean_why_clippedFurther": "L’extrait montrait des lignes entières sans l’espacement et n’en montre plus aucune en entier avec lui.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "Le texte complet peut être proposé ailleurs, par exemple par un lien « lire la suite ».",
       "textSpacingContentLoss_lean_why_overlaps": "Avec l’espacement appliqué, le texte se dessine sur plus de la moitié de la hauteur de l’autre texte, sur plus d’un em de long.",
@@ -42143,6 +42159,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がビューポートの外へ {{overflowPx}}px 移動します。この要素は、すでにその先にコンテンツがあるのにビューポートをスクロールさせません（Cookie バナーやメニューの背後のスクロールロックと同様）。",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "テキスト間隔を適用した状態で、ページが再びスクロールできるようになったときにこのテキストに到達できるか確認してください。この状態でページが一切スクロールしない場合は、スクロールできるようにしてください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。ただし、ページのスクリプトがこの要素を元のテキストに合わせた大きさにしており、テキストが大きくなると大きさを合わせ直す可能性があります。",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "テキスト間隔を適用し、ページが反応するまで少し待ってから、このテキストがすべて表示されるか確認してください。切れたままの場合は、コンテナーがテキストに合わせて大きくなるようにしてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -42153,6 +42171,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "ユーザースタイルシートはページより優先されます。間隔をページ自身のスタイルとして追加するツールだけが、このルールに負けます。",
       "textSpacingContentLoss_lean_why_scrollLocked": "ダイアログや同意バナーなどのオーバーレイが開いており、通常はこれがスクロールを固定しています。閉じればページはスクロールでき、テキストに到達できます。",
       "textSpacingContentLoss_lean_caution_scrollLocked": "スクロールを常に固定し、代わりに内側のパネルをスクロールさせるページもあります。",
+      "textSpacingContentLoss_lean_why_scriptSized": "このテキストは Angular Material のアウトライン付きフォームフィールドのフローティングラベルで、ラベルが大きくなるとスクリプトが輪郭をラベルに合わせ直します。",
+      "textSpacingContentLoss_lean_caution_scriptSized": "このライブラリの古いバージョンは輪郭の幅を一度しか設定しません。テキスト間隔を適用した状態でラベルがすべて表示されるか確認してください。",
       "textSpacingContentLoss_lean_why_clippedFurther": "この抜粋は、間隔の適用前は行全体を表示していましたが、適用後は 1 行も完全には表示しません。",
       "textSpacingContentLoss_lean_caution_clippedFurther": "全文が「続きを読む」リンクなど、別の場所で提供されている場合があります。",
       "textSpacingContentLoss_lean_why_overlaps": "間隔を適用すると、テキストが別のテキストの高さの半分以上にわたって、1 em を超える長さで重なって描画されます。",
@@ -94477,6 +94497,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const partly = [];
   const moving = [];
   const locked = [];
+  const scriptSized = [];
   const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
@@ -94888,6 +94909,48 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const scroll = [sx(), sy()];
     const before = measure();
+
+    // A box the page's script fitted to its text as it was: an inline width
+    // or height, on the box or on the one its percentage size is taken from,
+    // that gives the text's own size before the spacing, as Angular
+    // Material's outlined field sets its notch to the floating label's
+    // width. The script may fit it again once the text grows, which a scan
+    // taken in one moment can't see. Inline styles are read before the
+    // page's scripts can run; sizes are compared in layout pixels.
+    function scriptSizing(el, n) {
+      const lines = before.lines.get(n) || [];
+      if (!lines.length) return null;
+      const r = dom.getBoundingClientRect(el);
+      const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r && r.height > 0 ? r.height / oh : 1;
+      const text = {
+        width:
+          (Math.max(...lines.map((l) => l.right)) - Math.min(...lines.map((l) => l.left))) / kx,
+        height:
+          (Math.max(...lines.map((l) => l.bottom)) - Math.min(...lines.map((l) => l.top))) / ky
+      };
+      const cb = helpers.containingBlockOf(el) || dom.parentElement(el);
+      for (const [by, box] of [
+        ['self', el],
+        ['containing-block', cb]
+      ]) {
+        if (!box || dom.nodeType(box) !== 1) continue;
+        const style = String(dom.getAttribute(box, 'style') || '');
+        const re = /(?:^|;)\s*((?:min-|max-)?(width|height))\s*:\s*([^;]*)/gi;
+        let m;
+        while ((m = re.exec(style))) {
+          const size = text[m[2].toLowerCase()];
+          for (const v of m[3].match(/\d*\.?\d+px/g) || []) {
+            if (Math.abs(parseFloat(v) - size) <= 1.5) {
+              return { box, by, property: m[1].toLowerCase(), value: m[3].trim() };
+            }
+          }
+        }
+      }
+      return null;
+    }
     const fontSizes = new Map();
     for (const n of nodes) {
       const cs = styleOf(dom.parentElement(n));
@@ -95141,9 +95204,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = moved ? moving : c.locked ? locked : worst.lost ? clipped : partly;
+          const sizing =
+            worst.lost && !moved && !c.locked && !c.viewport ? scriptSizing(c.el, n) : null;
+          const list = moved
+            ? moving
+            : c.locked
+              ? locked
+              : sizing
+                ? scriptSized
+                : worst.lost
+                  ? clipped
+                  : partly;
           list.push({
             el: c.el,
+            ...(sizing ? { sizing } : {}),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -95339,6 +95413,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
+    TEXT_CLIPPED_SCRIPT_SIZED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.`,
+      hint: 'Check with the text spacing applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text (WCAG 1.4.12).',
+      key: 'cantTell_clippedScriptSized',
+      needed:
+        "Whether the page's script resizes the element to fit the text once the spacing is applied."
+    },
     TEXT_CLIPPED_FURTHER: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
@@ -95468,6 +95550,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // Angular Material's outlined form field sizes its notch to the floating
+  // label, calc(<width>px * var(--mat-mdc-form-field-floating-label-scale,
+  // 0.75) + 9px), and sizes it again when the label's size changes.
+  function scriptSizedLean(sizing) {
+    const cls = String(dom.getAttribute(sizing.box, 'class') || '');
+    if (
+      !/(^|\s)mdc-notched-outline__notch(\s|$)/.test(cls) ||
+      !/var\(\s*--mat-mdc-form-field-floating-label-scale/.test(sizing.value)
+    ) {
+      return null;
+    }
+    return {
+      toward: 'pass',
+      why: 'The text is the floating label of an Angular Material outlined form field, whose script fits the outline to the label again when the label grows.',
+      signals: [{ signal: 'self-resizing-component', value: 'angular-material-notched-outline' }],
+      caution:
+        'Older versions of the library set the outline width only once; check that the label shows in full with the spacing applied.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scriptSized',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scriptSized'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
@@ -95500,17 +95606,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ['TEXT_CLIPPED', clipped],
     ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
     ['TEXT_CLIPPED_MOVING', moving, 'judgement-required'],
-    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent']
+    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent'],
+    ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container } = f;
+      const { text, metrics, container, sizing } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      const lean =
+        reasonCode === 'VIEWPORT_SCROLL_LOCKED'
+          ? scrollLockedLean()
+          : sizing
+            ? scriptSizedLean(sizing)
+            : null;
+      // Which inline size the script set, and on which box.
+      const sizedBy = sizing
+        ? { box: sizing.by, property: sizing.property, value: sizing.value }
+        : null;
       report(
         reasonCode,
         f.el,
         params,
-        { text, metrics, container, viewport },
+        { text, metrics, container, viewport, ...(sizedBy ? { sizedBy } : {}) },
         uncertaintyCode,
         lean
       );
@@ -98124,6 +98240,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Prüfen Sie mit den angewendeten Abständen, dass dieser bewegte Text beim Vorbeilaufen vollständig lesbar ist (WCAG 1.4.12). Bewegte Inhalte brauchen außerdem eine Möglichkeit zum Anhalten (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Mit den Textabständen nach WCAG 1.4.12 rückt der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px aus dem Viewport heraus, den dieses Element nicht scrollen lässt, obwohl schon Inhalt darüber hinaus lag, wie bei einer Scroll-Sperre hinter einem Cookie-Banner oder einem Menü.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Prüfen Sie mit den angewendeten Abständen, dass dieser Text erreichbar ist, sobald die Seite wieder scrollt; scrollt sie in diesem Zustand nie, lassen Sie sie scrollen (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus), doch das Skript der Seite hat es passend zu diesem Text bemessen, wie er war, und bemisst es vielleicht neu, sobald der Text wächst.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Prüfen Sie mit den angewendeten Abständen, nachdem die Seite einen Moment reagieren konnte, ob dieser Text ganz zu sehen ist; bleibt er abgeschnitten, lassen Sie den Container mit seinem Text wachsen (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Mit den Textabständen nach WCAG 1.4.12 überlagert der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport den Text „{{other}}“.",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Prüfen Sie mit den angewendeten Abständen, dass beide Texte noch lesbar sind (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Eine Stylesheet-Regel ({{selector}}) setzt {{property}}: {{value}} mit !important auf diesen Text, unter den Abständen, die WCAG 1.4.12 Nutzenden erlaubt.",
@@ -98134,6 +98252,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Ein Benutzer-Stylesheet setzt sich weiterhin gegen die Seite durch; nur Werkzeuge, die den Abstand als Stil der Seite selbst hinzufügen, unterliegen ihr.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Eine Überlagerung ist geöffnet, etwa ein Dialog oder ein Einwilligungsbanner, die das Scrollen gewöhnlich sperrt; sobald sie geschlossen ist, scrollt die Seite und der Text ist erreichbar.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Manche Seiten sperren das Scrollen dauerhaft und scrollen stattdessen einen inneren Bereich.",
+      "textSpacingContentLoss_lean_why_scriptSized": "Der Text ist die schwebende Beschriftung eines umrandeten Formularfelds von Angular Material, dessen Skript die Umrandung erneut an die Beschriftung anpasst, wenn diese wächst.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Ältere Versionen der Bibliothek legen die Breite der Umrandung nur einmal fest; prüfen Sie, ob die Beschriftung mit den angewendeten Abständen ganz zu sehen ist.",
       "textSpacingContentLoss_lean_why_clippedFurther": "Der Auszug zeigte ohne die Abstände ganze Zeilen und zeigt mit ihnen keine einzige mehr vollständig.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "Der vollständige Text kann anderswo angeboten werden, etwa über einen Link „Weiterlesen“.",
       "textSpacingContentLoss_lean_why_overlaps": "Mit den Abständen wird der Text über mehr als die halbe Höhe des anderen Texts gezeichnet, auf mehr als einem em Länge.",
@@ -99456,6 +99576,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Check with the text spacing applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" moves {{overflowPx}}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Check with the text spacing applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Check with the text spacing applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" comes to overlap the text \"{{other}}\".",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Check with the text spacing applied that both texts can still be read (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "A style sheet rule ({{selector}}) sets {{property}}: {{value}} with !important on this text, below the spacing WCAG 1.4.12 lets users apply.",
@@ -99466,6 +99588,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
       "textSpacingContentLoss_lean_why_scrollLocked": "An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Some pages lock scrolling for good and scroll an inner pane instead.",
+      "textSpacingContentLoss_lean_why_scriptSized": "The text is the floating label of an Angular Material outlined form field, whose script fits the outline to the label again when the label grows.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Older versions of the library set the outline width only once; check that the label shows in full with the spacing applied.",
       "textSpacingContentLoss_lean_why_clippedFurther": "The excerpt showed whole lines before the spacing and shows none in full with it.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "The full text may be offered elsewhere, such as through a \"read more\" link.",
       "textSpacingContentLoss_lean_why_overlaps": "With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.",
@@ -100788,6 +100912,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Comprobar con el espaciado aplicado que este texto en movimiento se puede leer completo al pasar (WCAG 1.4.12). El contenido en movimiento también necesita una forma de pausarlo (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sale {{overflowPx}} px de la ventana, que este elemento no deja desplazar aunque ya había contenido más allá, como hace un bloqueo del desplazamiento tras un aviso de cookies o un menú.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Comprobar con el espaciado aplicado que se puede llegar a este texto cuando la página vuelve a desplazarse; si en este estado nunca se desplaza, permitir que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento corta el texto «{{text}}» ({{overflowPx}} px más allá de su borde), pero el script de la página lo dimensionó para que cupiera ese texto tal como era, y puede volver a dimensionarlo cuando el texto crece.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Comprobar con el espaciado aplicado, después de dar a la página un momento para reaccionar, que este texto se muestra completo; si sigue cortado, permitir que el contenedor crezca con su texto (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» se superpone al texto «{{other}}».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Comprobar con el espaciado aplicado que ambos textos aún se pueden leer (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Una regla de hoja de estilo ({{selector}}) fija {{property}}: {{value}} con !important en este texto, por debajo del espaciado que WCAG 1.4.12 permite aplicar al usuario.",
@@ -100798,6 +100924,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Una hoja de estilos de usuario sigue imponiéndose a la página; solo pierden frente a ella las herramientas que añaden el espaciado como estilo propio de la página.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Hay una superposición abierta, como un cuadro de diálogo o un aviso de consentimiento, que suele bloquear el desplazamiento; al cerrarla, la página se desplaza y se puede llegar al texto.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Algunas páginas bloquean el desplazamiento de forma permanente y desplazan en su lugar un panel interior.",
+      "textSpacingContentLoss_lean_why_scriptSized": "El texto es la etiqueta flotante de un campo de formulario con contorno de Angular Material, cuyo script vuelve a ajustar el contorno a la etiqueta cuando esta crece.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Las versiones antiguas de la biblioteca fijan el ancho del contorno una sola vez; comprobar que la etiqueta se muestra completa con el espaciado aplicado.",
       "textSpacingContentLoss_lean_why_clippedFurther": "El extracto mostraba líneas completas sin el espaciado y con él no muestra ninguna completa.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "El texto completo puede ofrecerse en otro lugar, por ejemplo con un enlace «leer más».",
       "textSpacingContentLoss_lean_why_overlaps": "Con el espaciado aplicado, el texto se dibuja sobre más de la mitad de la altura del otro texto, a lo largo de más de un em.",
@@ -102120,6 +102248,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "Vérifiez avec l’espacement du texte appliqué que ce texte en mouvement reste lisible en entier lorsqu’il défile (WCAG 1.4.12). Un contenu en mouvement doit aussi pouvoir être mis en pause (WCAG 2.2.2).",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » sort de {{overflowPx}} px de la zone d’affichage, que cet élément empêche de défiler alors que du contenu se trouvait déjà au-delà, comme le fait un blocage du défilement derrière un bandeau de cookies ou un menu.",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "Vérifiez avec l’espacement du texte appliqué que ce texte peut être atteint une fois que la page défile de nouveau ; si la page ne défile jamais dans cet état, laissez-la défiler (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément coupe le texte « {{text}} » ({{overflowPx}} px au-delà de son bord), mais le script de la page l’a dimensionné pour ce texte tel qu’il était, et peut le redimensionner quand le texte s’agrandit.",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "Vérifiez avec l’espacement du texte appliqué, après avoir laissé un instant à la page pour réagir, que ce texte s’affiche en entier ; s’il reste coupé, laissez le conteneur s’agrandir avec son texte (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_overlaps": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » se superpose au texte « {{other}} ».",
       "textSpacingContentLoss_hint_cantTell_overlaps": "Vérifiez avec l’espacement appliqué que les deux textes peuvent encore être lus (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "Une règle de feuille de style ({{selector}}) impose {{property}}: {{value}} avec !important sur ce texte, en dessous de l’espacement que WCAG 1.4.12 permet à l’utilisateur d’appliquer.",
@@ -102130,6 +102260,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "Une feuille de style utilisateur l’emporte toujours sur la page ; seuls les outils qui ajoutent l’espacement comme style de la page perdent face à elle.",
       "textSpacingContentLoss_lean_why_scrollLocked": "Une surcouche est ouverte, comme une boîte de dialogue ou un bandeau de consentement, ce qui bloque d’habitude le défilement ; une fois fermée, la page défile et le texte peut être atteint.",
       "textSpacingContentLoss_lean_caution_scrollLocked": "Certaines pages bloquent le défilement en permanence et font défiler un panneau intérieur à la place.",
+      "textSpacingContentLoss_lean_why_scriptSized": "Le texte est l’étiquette flottante d’un champ de formulaire à contour d’Angular Material, dont le script ajuste de nouveau le contour à l’étiquette quand celle-ci s’agrandit.",
+      "textSpacingContentLoss_lean_caution_scriptSized": "Les anciennes versions de la bibliothèque ne fixent la largeur du contour qu’une fois ; vérifiez que l’étiquette s’affiche en entier avec l’espacement appliqué.",
       "textSpacingContentLoss_lean_why_clippedFurther": "L’extrait montrait des lignes entières sans l’espacement et n’en montre plus aucune en entier avec lui.",
       "textSpacingContentLoss_lean_caution_clippedFurther": "Le texte complet peut être proposé ailleurs, par exemple par un lien « lire la suite ».",
       "textSpacingContentLoss_lean_why_overlaps": "Avec l’espacement appliqué, le texte se dessine sur plus de la moitié de la hauteur de l’autre texte, sur plus d’un em de long.",
@@ -103452,6 +103584,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_hint_cantTell_clippedMoving": "テキスト間隔を適用した状態で、この動くテキストが通過するときに全体を読めるか確認してください（WCAG 1.4.12）。動くコンテンツには一時停止する手段も必要です（WCAG 2.2.2）。",
       "textSpacingContentLoss_summary_cantTell_viewportScrollLocked": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がビューポートの外へ {{overflowPx}}px 移動します。この要素は、すでにその先にコンテンツがあるのにビューポートをスクロールさせません（Cookie バナーやメニューの背後のスクロールロックと同様）。",
       "textSpacingContentLoss_hint_cantTell_viewportScrollLocked": "テキスト間隔を適用した状態で、ページが再びスクロールできるようになったときにこのテキストに到達できるか確認してください。この状態でページが一切スクロールしない場合は、スクロールできるようにしてください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_cantTell_clippedScriptSized": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。ただし、ページのスクリプトがこの要素を元のテキストに合わせた大きさにしており、テキストが大きくなると大きさを合わせ直す可能性があります。",
+      "textSpacingContentLoss_hint_cantTell_clippedScriptSized": "テキスト間隔を適用し、ページが反応するまで少し待ってから、このテキストがすべて表示されるか確認してください。切れたままの場合は、コンテナーがテキストに合わせて大きくなるようにしてください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_overlaps": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がテキスト「{{other}}」と重なります。",
       "textSpacingContentLoss_hint_cantTell_overlaps": "間隔を適用した状態で、両方のテキストがまだ読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_stylesheetImportant": "スタイルシートの規則（{{selector}}）が、このテキストに {{property}}: {{value}} を !important で設定しており、WCAG 1.4.12 で利用者が適用できる間隔を下回っています。",
@@ -103462,6 +103596,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_lean_caution_stylesheetImportant": "ユーザースタイルシートはページより優先されます。間隔をページ自身のスタイルとして追加するツールだけが、このルールに負けます。",
       "textSpacingContentLoss_lean_why_scrollLocked": "ダイアログや同意バナーなどのオーバーレイが開いており、通常はこれがスクロールを固定しています。閉じればページはスクロールでき、テキストに到達できます。",
       "textSpacingContentLoss_lean_caution_scrollLocked": "スクロールを常に固定し、代わりに内側のパネルをスクロールさせるページもあります。",
+      "textSpacingContentLoss_lean_why_scriptSized": "このテキストは Angular Material のアウトライン付きフォームフィールドのフローティングラベルで、ラベルが大きくなるとスクリプトが輪郭をラベルに合わせ直します。",
+      "textSpacingContentLoss_lean_caution_scriptSized": "このライブラリの古いバージョンは輪郭の幅を一度しか設定しません。テキスト間隔を適用した状態でラベルがすべて表示されるか確認してください。",
       "textSpacingContentLoss_lean_why_clippedFurther": "この抜粋は、間隔の適用前は行全体を表示していましたが、適用後は 1 行も完全には表示しません。",
       "textSpacingContentLoss_lean_caution_clippedFurther": "全文が「続きを読む」リンクなど、別の場所で提供されている場合があります。",
       "textSpacingContentLoss_lean_why_overlaps": "間隔を適用すると、テキストが別のテキストの高さの半分以上にわたって、1 em を超える長さで重なって描画されます。",

@@ -110,6 +110,15 @@
  *     repeats for ever reaches past the edge of its clipping box with the
  *     spacing applied; whether any of it is lost is for a person to judge.
  *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_CLIPPED_SCRIPT_SIZED` (cantTell): text cut off as TEXT_CLIPPED
+ *     is, by a box the page's script sized to fit that text before the
+ *     spacing (an inline width or height on the box, or on the box its
+ *     percentage size is taken from, equal to the text's own size). The
+ *     script may size it again once the text grows, after the moment the
+ *     scan measures in.
+ *     It leans pass for the floating label of an Angular Material outlined
+ *     form field, whose script fits the outline to the label again.
+ *     Basis: WCAG 1.4.12 (not settled).
  *   - `TEXT_CLIPPED_FURTHER` (cantTell): text its box already cut off shows
  *     fewer lines in full once the spacing is applied; whether the excerpt
  *     still serves its purpose is for a person to judge.
@@ -204,6 +213,7 @@ const meta = {
     'TEXT_CLIPPED_FURTHER',
     'TEXT_OVERLAPS',
     'VIEWPORT_SCROLL_LOCKED',
+    'TEXT_CLIPPED_SCRIPT_SIZED',
     'SPACING_NOT_APPLIED'
   ],
   margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } },
@@ -252,6 +262,18 @@ const meta = {
       passWhen: 'Every part of the moving text can still be read during its cycle.',
       failWhen:
         'Some of the text never appears in full with the spacing applied, which fails WCAG 1.4.12.'
+    },
+    TEXT_CLIPPED_SCRIPT_SIZED: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        "Find the text the report names and wait a moment: the page's own script may resize the box around it to fit the longer text.",
+        'If it still looks cut off, make the browser window a little narrower or wider, or click somewhere empty on the page, which makes many pages size their boxes again.',
+        'Read the text and check that all of it is shown.'
+      ],
+      passWhen:
+        'Once the page has reacted, the box fits the text and all of it can be read with the spacing applied.',
+      failWhen:
+        'The text stays cut off with the spacing applied, even after the page has had time to react, which fails WCAG 1.4.12.'
     },
     TEXT_CLIPPED_PARTLY: {
       steps: [
@@ -464,6 +486,7 @@ function runInPage(ctx) {
   const partly = [];
   const moving = [];
   const locked = [];
+  const scriptSized = [];
   const clippedFurther = [];
   const overlaps = [];
   let textCount = 0;
@@ -875,6 +898,48 @@ function runInPage(ctx) {
 
     const scroll = [sx(), sy()];
     const before = measure();
+
+    // A box the page's script fitted to its text as it was: an inline width
+    // or height, on the box or on the one its percentage size is taken from,
+    // that gives the text's own size before the spacing, as Angular
+    // Material's outlined field sets its notch to the floating label's
+    // width. The script may fit it again once the text grows, which a scan
+    // taken in one moment can't see. Inline styles are read before the
+    // page's scripts can run; sizes are compared in layout pixels.
+    function scriptSizing(el, n) {
+      const lines = before.lines.get(n) || [];
+      if (!lines.length) return null;
+      const r = dom.getBoundingClientRect(el);
+      const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r && r.height > 0 ? r.height / oh : 1;
+      const text = {
+        width:
+          (Math.max(...lines.map((l) => l.right)) - Math.min(...lines.map((l) => l.left))) / kx,
+        height:
+          (Math.max(...lines.map((l) => l.bottom)) - Math.min(...lines.map((l) => l.top))) / ky
+      };
+      const cb = helpers.containingBlockOf(el) || dom.parentElement(el);
+      for (const [by, box] of [
+        ['self', el],
+        ['containing-block', cb]
+      ]) {
+        if (!box || dom.nodeType(box) !== 1) continue;
+        const style = String(dom.getAttribute(box, 'style') || '');
+        const re = /(?:^|;)\s*((?:min-|max-)?(width|height))\s*:\s*([^;]*)/gi;
+        let m;
+        while ((m = re.exec(style))) {
+          const size = text[m[2].toLowerCase()];
+          for (const v of m[3].match(/\d*\.?\d+px/g) || []) {
+            if (Math.abs(parseFloat(v) - size) <= 1.5) {
+              return { box, by, property: m[1].toLowerCase(), value: m[3].trim() };
+            }
+          }
+        }
+      }
+      return null;
+    }
     const fontSizes = new Map();
     for (const n of nodes) {
       const cs = styleOf(dom.parentElement(n));
@@ -1128,9 +1193,20 @@ function runInPage(ctx) {
         const moved = isMovedForEver(dom.parentElement(n), c.el);
         if (worst) {
           reportedClip.add(c.el);
-          const list = moved ? moving : c.locked ? locked : worst.lost ? clipped : partly;
+          const sizing =
+            worst.lost && !moved && !c.locked && !c.viewport ? scriptSizing(c.el, n) : null;
+          const list = moved
+            ? moving
+            : c.locked
+              ? locked
+              : sizing
+                ? scriptSized
+                : worst.lost
+                  ? clipped
+                  : partly;
           list.push({
             el: c.el,
+            ...(sizing ? { sizing } : {}),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -1326,6 +1402,14 @@ function runInPage(ctx) {
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
+    TEXT_CLIPPED_SCRIPT_SIZED: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.`,
+      hint: 'Check with the text spacing applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text (WCAG 1.4.12).',
+      key: 'cantTell_clippedScriptSized',
+      needed:
+        "Whether the page's script resizes the element to fit the text once the spacing is applied."
+    },
     TEXT_CLIPPED_FURTHER: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
@@ -1455,6 +1539,30 @@ function runInPage(ctx) {
     };
   }
 
+  // Angular Material's outlined form field sizes its notch to the floating
+  // label, calc(<width>px * var(--mat-mdc-form-field-floating-label-scale,
+  // 0.75) + 9px), and sizes it again when the label's size changes.
+  function scriptSizedLean(sizing) {
+    const cls = String(dom.getAttribute(sizing.box, 'class') || '');
+    if (
+      !/(^|\s)mdc-notched-outline__notch(\s|$)/.test(cls) ||
+      !/var\(\s*--mat-mdc-form-field-floating-label-scale/.test(sizing.value)
+    ) {
+      return null;
+    }
+    return {
+      toward: 'pass',
+      why: 'The text is the floating label of an Angular Material outlined form field, whose script fits the outline to the label again when the label grows.',
+      signals: [{ signal: 'self-resizing-component', value: 'angular-material-notched-outline' }],
+      caution:
+        'Older versions of the library set the outline width only once; check that the label shows in full with the spacing applied.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scriptSized',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scriptSized'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
@@ -1487,17 +1595,27 @@ function runInPage(ctx) {
     ['TEXT_CLIPPED', clipped],
     ['TEXT_CLIPPED_PARTLY', partly, 'judgement-required'],
     ['TEXT_CLIPPED_MOVING', moving, 'judgement-required'],
-    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent']
+    ['VIEWPORT_SCROLL_LOCKED', locked, 'runtime-dependent'],
+    ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container } = f;
+      const { text, metrics, container, sizing } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      const lean =
+        reasonCode === 'VIEWPORT_SCROLL_LOCKED'
+          ? scrollLockedLean()
+          : sizing
+            ? scriptSizedLean(sizing)
+            : null;
+      // Which inline size the script set, and on which box.
+      const sizedBy = sizing
+        ? { box: sizing.by, property: sizing.property, value: sizing.value }
+        : null;
       report(
         reasonCode,
         f.el,
         params,
-        { text, metrics, container, viewport },
+        { text, metrics, container, viewport, ...(sizedBy ? { sizedBy } : {}) },
         uncertaintyCode,
         lean
       );
