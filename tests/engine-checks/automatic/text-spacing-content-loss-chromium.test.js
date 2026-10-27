@@ -302,6 +302,50 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.deepEqual(findings(result), [['box', 'cantTell', 'TEXT_OVERLAPS']]);
   });
 
+  // A floating label drawn at scale(0.75) and cut off by its own max-width,
+  // a share of its parent's width. Set from the label's measured width, as
+  // Angular Material sets its notch, the page's script may set it again once
+  // the label grows, so it is asked about; set otherwise, it fails.
+  const notchPage = page(
+    '.notch{position:relative;height:56px;margin-top:40px} .notch label{display:inline-block;white-space:nowrap;overflow:hidden;transform-origin:left top;transform:scale(.75);max-width:calc(133.333% + 1px)}',
+    '<div class="notch" id="notch"><label id="label">Outline form field</label></div>'
+  );
+  // `target` is the element given the inline width: the label or its notch.
+  // W is the label's width, X a width it was not measured from.
+  const sizeNotch = (target, cls, width) => (p) =>
+    p.evaluate(
+      ([target, cls, width]) => {
+        const w = document.getElementById('label').scrollWidth;
+        const el = document.getElementById(target);
+        if (cls) el.classList.add(cls);
+        el.style.width = width.replace('W', String(w)).replace('X', String(w * 0.75 + 12));
+      },
+      [target, cls, width]
+    );
+  await t.test('a box sized by script to the text it cuts off is asked about', async () => {
+    for (const [target, cls, width, expected] of [
+      ['notch', '', 'Xpx', [['label', 'fail', 'TEXT_CLIPPED']]],
+      ['label', '', 'Wpx', [['label', 'cantTell', 'TEXT_CLIPPED_SCRIPT_SIZED']]],
+      [
+        'notch',
+        'mdc-notched-outline__notch',
+        'calc(Wpx * var(--mat-mdc-form-field-floating-label-scale, 0.75) + 9px)',
+        [['label', 'cantTell', 'TEXT_CLIPPED_SCRIPT_SIZED']]
+      ]
+    ]) {
+      const result = await scan(notchPage, undefined, {}, sizeNotch(target, cls, width));
+      assert.deepEqual(findings(result), expected, width);
+      const [occ] = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+      if (cls) {
+        assert.equal(occ.lean.toward, 'pass');
+        assert.equal(occ.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_scriptSized');
+        assert.equal(occ.data.details.sizedBy.box, 'containing-block');
+      } else {
+        assert.equal(occ.lean, undefined, width);
+      }
+    }
+  });
+
   // A fixed or sticky box lies over whatever scrolls under it: text it
   // comes to meet isn't an overlap the spacing made.
   await t.test('text that comes under a fixed bar is not asked about', async () => {
