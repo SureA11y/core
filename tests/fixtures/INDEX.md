@@ -12,7 +12,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 |---|---|---|---|---|
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
-| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
+| moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
 ## Rules WITH a fixture (142)
 

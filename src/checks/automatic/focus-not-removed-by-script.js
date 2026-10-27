@@ -79,7 +79,7 @@
 const id = 'focus-not-removed-by-script';
 
 const meta = {
-  title: 'A script does not remove focus from an element as it receives it',
+  title: 'A script must not remove focus from an element as it receives it',
   description:
     'Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
   i18n: {

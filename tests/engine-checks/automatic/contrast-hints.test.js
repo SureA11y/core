@@ -37,7 +37,7 @@ test('contrast findings exercise both fail and cantTell hints', () => {
   const keys = new Set(findings('en').map(({ occ }) => occ.i18n.hintKey));
   assert.ok(keys.has('contrastMinimum_hint_fail'), [...keys].join(', '));
   assert.ok(keys.has('contrastComputable_hint_cantTell_background'), [...keys].join(', '));
-  // Text whose colours jsdom can't read in the page's scheme is measured
+  // Text whose colors jsdom can't read in the page's scheme is measured
   // by hand (contrast_hint_cantTell_manual). The hint for a page with no
   // background is given where its canvas can't be known: in a frame or
   // under forced colors (tests/engine-checks/contrast-light-canvas-chromium.test.js).

@@ -1,11 +1,11 @@
 'use strict';
 
 /**
- * ::first-line and ::first-letter paint part of the text in a colour of
+ * ::first-line and ::first-letter paint part of the text in a color of
  * their own. Which text that is depends on line breaks, so a pseudo-element
- * whose colour or background differs from the element's makes the contrast
+ * whose color or background differs from the element's makes the contrast
  * not computable (cantTell, PSEUDO_ELEMENT_COLOR) instead of measuring the
- * wrong colour: #bbb text whose one line Chromium draws in black failed at
+ * wrong color: #bbb text whose one line Chromium draws in black failed at
  * 1.92:1, and a light drop cap was never looked at. A page without such
  * rules is measured as before.
  *
@@ -74,7 +74,7 @@ const CASES = [
   ['.f{color:#000} .f::first-line{font-weight:bold}', '<p class="f">Short line</p>', 'pass', 'pass']
 ];
 
-test('::first-line and ::first-letter colours, in Chromium', { skip }, async (t) => {
+test('::first-line and ::first-letter colors, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   for (const [css, body, computable, minimum] of CASES) {
@@ -101,7 +101,7 @@ test('::first-line and ::first-letter colours, in Chromium', { skip }, async (t)
   }
 });
 
-// Where nothing else is in the way, the text is measured in its own colours
+// Where nothing else is in the way, the text is measured in its own colors
 // and in the pseudo-element's: where both meet a rule's ratio it passes,
 // where both fall short it fails, and only where they disagree is it asked
 // about (contrast-computable asks where they disagree at the AA ratio or at
@@ -139,7 +139,7 @@ const BOTH_COLOURS = [
     'pass',
     'pass'
   ],
-  // Both pseudo-elements in colours of their own: which one paints the
+  // Both pseudo-elements in colors of their own: which one paints the
   // first letter is not modelled, so it is asked about.
   [
     '.f{color:#000} .f::first-line{color:#111} .f::first-letter{color:#222}',
@@ -151,7 +151,7 @@ const BOTH_COLOURS = [
 ];
 
 // link-in-text-block compares the link with the text around it in both
-// colours. [css, markup, outcome, reason code]
+// colors. [css, markup, outcome, reason code]
 const LINK_COLOURS = [
   // 3.57:1 and 4.07:1 from the text: told apart by color alone.
   [
@@ -159,7 +159,7 @@ const LINK_COLOURS = [
     'cantTell',
     'LINK_COLOR_CONTRAST_ONLY'
   ],
-  // 3.57:1 in its own colour, 1.66:1 in the first line's: asked about.
+  // 3.57:1 in its own color, 1.66:1 in the first line's: asked about.
   [
     'a{display:inline-block;color:#c00} a::first-line{color:#333}',
     'cantTell',
@@ -174,7 +174,7 @@ const LINK_COLOURS = [
 ];
 
 // The paragraph's own ::first-line paints the text around the link on that
-// line in a colour of its own: the link is compared with both.
+// line in a color of its own: the link is compared with both.
 // [css, markup, outcome, reason code, pseudo-element named]
 const PARA = '<p>Read <a href="/x">the guide</a> now please.</p>';
 const BLOCK_FIRST_LINE = [
@@ -199,18 +199,18 @@ const BLOCK_FIRST_LINE = [
     'PSEUDO_ELEMENT_COLOR',
     'p::first-line'
   ],
-  // Text in an inline element of a colour of its own keeps it on the first
-  // line: compared with that colour alone, 3.57:1.
+  // Text in an inline element of a color of its own keeps it on the first
+  // line: compared with that color alone, 3.57:1.
   [
     'p{color:#333} p::first-line{color:#900} span{color:#000} a{color:#c00}',
     '<p><span>Read</span> <a href="/x">the guide</a> <span>now please.</span></p>',
     'cantTell',
     'LINK_COLOR_CONTRAST_ONLY'
   ],
-  // A first line in the paragraph's own colour changes nothing.
+  // A first line in the paragraph's own color changes nothing.
   ['p::first-line{color:#000} a{color:#222}', PARA, 'fail', 'COLOR_ONLY_DIFFERENTIATION'],
   // An ancestor's ::first-line paints the first line of the block that opens
-  // it, through blocks between, whatever their own colour, and is named.
+  // it, through blocks between, whatever their own color, and is named.
   [
     'div::first-line{color:#900} a{color:#c00}',
     `<div>${PARA}</div>`,
@@ -242,7 +242,7 @@ const BLOCK_FIRST_LINE = [
     'LINK_COLOR_CONTRAST_ONLY'
   ],
   // The div's first line is a heading's, or its own text's, not the
-  // paragraph's: compared with the paragraph's colour alone.
+  // paragraph's: compared with the paragraph's color alone.
   [
     'div::first-line{color:#900} a{color:#c00}',
     `<div><h2>Title</h2>${PARA}</div>`,
@@ -258,7 +258,7 @@ const BLOCK_FIRST_LINE = [
 ];
 
 test(
-  '::first-line and ::first-letter colours measured both ways, in Chromium',
+  '::first-line and ::first-letter colors measured both ways, in Chromium',
   { skip },
   async (t) => {
     const browser = await chromium.launch({ executablePath });
@@ -322,7 +322,7 @@ test(
   }
 );
 
-// A variant of contrast-minimum at a ratio of its own: where the two colours
+// A variant of contrast-minimum at a ratio of its own: where the two colors
 // disagree only at that ratio, contrast-computable, deciding at WCAG's,
 // doesn't ask, so the variant does (PSEUDO_ELEMENT_COLOR). Where they
 // disagree at WCAG's ratios too, contrast-computable asks and the variant
@@ -356,7 +356,7 @@ const VARIANT_COLOURS = [
   ['.f{color:#000} .f::first-line{color:#999}', 'cantTell', 'notApplicable', []]
 ];
 
-test("::first-line colours at a variant's own ratio, in Chromium", { skip }, async (t) => {
+test("::first-line colors at a variant's own ratio, in Chromium", { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   for (const [css, computable, variant, codes] of VARIANT_COLOURS) {

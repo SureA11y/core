@@ -36,9 +36,9 @@ Encoded by: `meta.type`
           spaced (`text-spacing-content-loss`), an orientation media block that
           turns an element other than the page's content, or hides the
           content (`css-orientation-lock`), a placeholder below its ratio
-          whose colours can't be told to be the page's or the browser's
+          whose colors can't be told to be the page's or the browser's
           (`contrast-minimum`),
-          or a colour or size that cannot be computed (the contrast rules,
+          or a color or size that cannot be computed (the contrast rules,
           `target-size-minimum`)
         - an internal-failure safety net: a rule that throws is reported as
           `cantTell`

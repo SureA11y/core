@@ -62,9 +62,9 @@ const CASES = [
   ],
   [
     'a listbox select',
-    'Colour <select id="t" size="3"><option>Red</option><option>Green</option><option>Blue</option></select>',
-    'Colour',
-    'Colour',
+    'Color <select id="t" size="3"><option>Red</option><option>Green</option><option>Blue</option></select>',
+    'Color',
+    'Color',
     null
   ],
   [

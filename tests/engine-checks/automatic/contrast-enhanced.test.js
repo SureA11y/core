@@ -200,7 +200,7 @@ test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's 
   assert.strictEqual(det.assumptionsApplied, null);
 });
 
-test(`${RULE_ID}: root not opaque, the text's colour in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
+test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
   const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
     <style>p { color: #595959 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
     </head><body>
@@ -709,7 +709,7 @@ test(`${RULE_ID}: on the page's canvas such a color is measured, not judged on a
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
   assert.strictEqual(rule.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
-  // Where the text's colour itself is what can't be read, it isn't judged.
+  // Where the text's color itself is what can't be read, it isn't judged.
   const unknown = `<!doctype html><html><head><meta name="color-scheme" content="dark">
     <style>p { color: #777777 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
     </head><body>
@@ -737,11 +737,11 @@ test(`${RULE_ID}: large text, a reachable color or a filter around the text is n
 });
 
 // A page that supports light and dark: text on its canvas is measured in
-// both schemes where its colours can't change with the scheme.
+// both schemes where its colors can't change with the scheme.
 test(`${RULE_ID}: text on the canvas of a page with two color schemes is measured in each`, () => {
   const html = `<!doctype html><html><head><style>:root{color-scheme:light dark}</style></head><body>
     <p id="grey" style="color:#555">Fails on the dark canvas only</p>
-    <p id="plain">The scheme's own text colour</p>
+    <p id="plain">The scheme's own text color</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   const det = rule.occurrences[0].data.details;

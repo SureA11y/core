@@ -2,7 +2,7 @@
 
 // A page with no background on html or body (#219): the browser paints its
 // canvas behind it, white unless the page asks for dark, and the contrast
-// rules measure text on the canvas colour they read, in either contrast
+// rules measure text on the canvas color they read, in either contrast
 // mode, rather than asking about every text (BACKGROUND_NOT_OPAQUE_AT_ROOT).
 
 const test = require('node:test');

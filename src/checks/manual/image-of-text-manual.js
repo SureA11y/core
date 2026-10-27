@@ -21,7 +21,7 @@
  *   <text> is real text, and is out of scope (ACT 0va7u6).
  *   Finding nothing to ask about, it reports notApplicable, not pass: it
  *   applies only to what its check flags, and finding nothing there
- *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
+ *   doesn't show that all is well.
  * @expectation
  *   Text that can be real text is real text, styled with CSS, rather than
  *   an image of text, unless the image can be customized to the user's

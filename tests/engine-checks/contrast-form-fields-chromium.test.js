@@ -106,7 +106,7 @@ const CASES = [
     'notApplicable',
     null
   ],
-  // The browser's own colours (#757575 on white, 4.61:1) meet the ratio
+  // The browser's own colors (#757575 on white, 4.61:1) meet the ratio
   // (G148), so AAA reports nothing on the field either.
   [
     'the default placeholder color (#757575)',
@@ -243,7 +243,7 @@ test('the text a form field shows, in Chromium', { skip }, async (t) => {
 });
 
 // A placeholder below its ratio fails (PLACEHOLDER_BELOW_THRESHOLD) when the
-// page chose its colours, and meets the ratio in the browser's own (WCAG
+// page chose its colors, and meets the ratio in the browser's own (WCAG
 // G148): the browser's are read in a blank frame with the field's
 // color-scheme. Other text below the ratio still fails the rule.
 // [description, markup, contrast-minimum, contrast-enhanced, enhanced's code on #f]
@@ -270,7 +270,7 @@ const PLACEHOLDER_CASES = [
     null
   ],
   [
-    'a colour the page sets',
+    'a color the page sets',
     `${ph('color:#97a0af')}<input id="f" aria-label="f" placeholder="Search">`,
     'fail',
     'fail',
@@ -300,7 +300,7 @@ const PLACEHOLDER_CASES = [
 ];
 
 test(
-  'a placeholder below its ratio fails in colours the page chose, in Chromium',
+  'a placeholder below its ratio fails in colors the page chose, in Chromium',
   { skip },
   async (t) => {
     const browser = await chromium.launch({ executablePath });

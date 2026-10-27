@@ -168,8 +168,8 @@ test(
       ),
       'fail'
     );
-    // A background layer in the colour already behind the link shows nothing;
-    // a 1px layer in the link's colour is an underline.
+    // A background layer in the color already behind the link shows nothing;
+    // a 1px layer in the link's color is an underline.
     assert.equal(
       await outcome(`<a ${A.slice(0, -1)};background-image:linear-gradient(#fff,#fff)">guide</a>`),
       'fail'

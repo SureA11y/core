@@ -5,7 +5,7 @@
 /**
  * @check form-control-single-label
  * @atomic true
- * @summary A form control must not be associated with more than one <label>
+ * @summary A form control should not be associated with more than one <label>
  * @standard WCAG 2.2
  * @sc 3.3.2
  * @applicability
@@ -63,7 +63,7 @@
 const id = 'form-control-single-label';
 
 const meta = {
-  title: 'Form controls must not have multiple labels',
+  title: 'Form controls should not have multiple labels',
   description:
     'Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).',
   i18n: {

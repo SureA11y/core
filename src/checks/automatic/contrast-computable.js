@@ -20,12 +20,12 @@
  *   (only where the browser computes that style; jsdom does not). The text
  *   of a drop-down <select> (no `multiple`, a size of 1 or none, not
  *   `appearance: base-select`) counts as the select's, drawn by the closed
- *   control in its colours, font and background: its shown option, and any
- *   other option with the select's colours. In a browser, so is the text a
+ *   control in its colors, font and background: its shown option, and any
+ *   other option with the select's colors. In a browser, so is the text a
  *   ::before or ::after `content` generates (strings, attr() as the browser
  *   resolves it, counters), and a list item's ::marker text (a number or a
  *   letter, or a string; a bullet or an image isn't text), each judged in
- *   the pseudo-element's colour and font, on its element; jsdom computes no
+ *   the pseudo-element's color and font, on its element; jsdom computes no
  *   pseudo-element styles, so there it is left out. Text counts
  *   only when its element is DOM-visible under the run's visibility mode, is
  *   not clipped out of sight by the sr-only technique (clip or clip-path),
@@ -39,13 +39,13 @@
  *   opaque color, and a parsable foreground color. Where either cannot be,
  *   a background image or gradient (a gradient of one color is that color,
  *   and a layer that paints nothing under the text, such as a 1px underline,
- *   is left out: docs/LAYOUT_MEASUREMENT.md), mix-blend-mode, a filter
+ *   is left out), mix-blend-mode, a filter
  *   (other than drop-shadow() alone over an opaque background under all of
  *   the text, which hides the shadow) or backdrop-filter, a text-shadow (which may add contrast
  *   this engine has no glyph-rendering model to account for), a
  *   -webkit-text-stroke
- *   outline (drawn in its own colour, often most of the glyph), a
- *   ::first-line or ::first-letter in a colour of its own (which text it
+ *   outline (drawn in its own color, often most of the glyph), a
+ *   ::first-line or ::first-letter in a color of its own (which text it
  *   paints depends on line breaks), opacity on an ancestor, or
  *   on the text's own element over a background of its own, that can't be
  *   resolved against what lies behind it, a root
@@ -55,14 +55,14 @@
  *   option of a drop-down <select>,
  *   other than the shown one, with a color, background or opacity of its
  *   own (SELECT_OPTION_COLOR: it is shown only in the list the select
- *   opens, which the platform draws in those colours or in its own),
- *   or, in an emulator such as jsdom, a text colour that can't be worked
+ *   opens, which the platform draws in those colors or in its own),
+ *   or, in an emulator such as jsdom, a text color that can't be worked
  *   out in the color scheme the page is drawn in (COLOR_SCHEME_NOT_RENDERED),
  *   the result is cantTell naming the blocker. This rule is the one that
  *   reports that uncertainty, which is what lets contrast-minimum and
  *   contrast-enhanced stay silent on the same text instead of guessing at
  *   a ratio. One exception: text drawn by a stroke or a shadow, every
- *   colour of which, its fill included when seen, is below the AA ratio
+ *   color of which, its fill included when seen, is below the AA ratio
  *   against a flat background, fails contrast-minimum and
  *   contrast-enhanced, and is not asked about here.
  * @reports
@@ -97,10 +97,10 @@
  *     forced): `true`, and the hint says to check the page again with
  *     forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
- *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ *     them.
  * @reason-codes
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
- *     lies behind the text, so the colour it sits on could not be worked out.
+ *     lies behind the text, so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_OVERLAP` (cantTell): another element paints under the text,
  *     so the background it sits on could not be worked out.
@@ -115,48 +115,48 @@
  *     Elsewhere the text is measured on the canvas its color scheme gives
  *     the page, and not asked about.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
- *   - `BACKGROUND_UNPARSABLE` (cantTell): a background colour behind the text
+ *   - `BACKGROUND_UNPARSABLE` (cantTell): a background color behind the text
  *     does not parse.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
- *   - `FOREGROUND_UNPARSABLE` (cantTell): the text colour does not parse.
+ *   - `FOREGROUND_UNPARSABLE` (cantTell): the text color does not parse.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_FILTER_OR_BACKDROP_FILTER` (cantTell): a filter or backdrop-
- *     filter changes the colours drawn, so the declared colours are not what is
+ *     filter changes the colors drawn, so the declared colors are not what is
  *     on screen.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `MIX_BLEND_MODE` (cantTell): a mix-blend-mode blends the text or its
- *     background with what is behind it, so the colours on screen could not be
+ *     background with what is behind it, so the colors on screen could not be
  *     worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `ANCESTOR_OPACITY` (cantTell): an ancestor with opacity below 1 fades the
  *     text and its background together, in a way that could not be resolved
  *     against what lies behind it.
- *     It leans fail when, before any fading, its opaque text colour is below
+ *     It leans fail when, before any fading, its opaque text color is below
  *     the AA ratio against the first opaque background behind it.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `ELEMENT_OPACITY` (cantTell): the text's own element has opacity below 1
  *     over a background of its own, which could not be resolved against what
  *     lies behind it.
- *     It leans fail when, before any fading, its opaque text colour is below
+ *     It leans fail when, before any fading, its opaque text color is below
  *     the AA ratio against that background.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
- *   - `TEXT_SHADOW` (cantTell): a text-shadow may add contrast the colours
+ *   - `TEXT_SHADOW` (cantTell): a text-shadow may add contrast the colors
  *     alone do not show, so the ratio is for a person to measure.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `TEXT_STROKE` (cantTell): a -webkit-text-stroke draws the text in a
- *     colour of its own, so the ratio is for a person to measure.
+ *     color of its own, so the ratio is for a person to measure.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `PSEUDO_ELEMENT_COLOR` (cantTell): a ::first-line or ::first-letter has a
- *     colour of its own, and which text it paints depends on line breaks.
- *     Where nothing else is in the way and the text's own colours and the
+ *     color of its own, and which text it paints depends on line breaks.
+ *     Where nothing else is in the way and the text's own colors and the
  *     pseudo-element's agree, both reaching or both missing the AA ratio and
  *     the AAA ratio, contrast-minimum and contrast-enhanced decide it and it is
  *     not asked about here.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `SELECT_OPTION_COLOR` (cantTell): an option of a drop-down select, other
- *     than the shown one, has colours of its own and is drawn only in the list
+ *     than the shown one, has colors of its own and is drawn only in the list
  *     the platform opens.
- *     It leans fail when the option's opaque colour is below the AA ratio
+ *     It leans fail when the option's opaque color is below the AA ratio
  *     against its opaque background (or the select's), and pass when it reaches
  *     the AAA ratio.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
@@ -169,16 +169,16 @@
  *     lies behind it is unknown.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `COLOR_SCHEME_NOT_RENDERED` (cantTell): the page is drawn in a color
- *     scheme (`blockerValue`: `light` or `dark`) whose colours for this text
+ *     scheme (`blockerValue`: `light` or `dark`) whose colors for this text
  *     the scan can't read. An emulator such as jsdom computes the light
- *     scheme's colours and applies no prefers-color-scheme rule: on a page
+ *     scheme's colors and applies no prefers-color-scheme rule: on a page
  *     drawn in light, text such a rule reaches; on a page drawn in dark
- *     (`color-scheme: dark`), text whose colour, or a background behind it,
- *     a prefers-color-scheme rule, a custom property or system colour, or
- *     the browser's own form-control colours set. The dark scheme's
+ *     (`color-scheme: dark`), text whose color, or a background behind it,
+ *     a prefers-color-scheme rule, a custom property or system color, or
+ *     the browser's own form-control colors set. The dark scheme's
  *     CanvasText and LinkText, and light-dark() and the CanvasText,
- *     LinkText and Canvas the page gives a text colour, are worked out
- *     (Chromium's colours). A browser computes the colours it draws.
+ *     LinkText and Canvas the page gives a text color, are worked out
+ *     (Chromium's colors). A browser computes the colors it draws.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error; the
  *     text is to be measured by hand.
@@ -256,18 +256,18 @@ const meta = {
     ANCESTOR_OPACITY: {
       steps: [
         'Find the text the report names and note the ancestor with opacity below 1.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen:
-        'The faded colours on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
+        'The faded colors on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
       failWhen:
-        'The faded colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
+        'The faded colors on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
     },
     BACKGROUND_FILTER_OR_BACKDROP_FILTER: {
       steps: [
         'Find the text the report names and note the filter or backdrop-filter on it or an ancestor (in the developer tools Styles pane).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background colours as they appear on screen with the filter applied, using an eyedropper on the rendered page rather than the declared values.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text and background colors as they appear on screen with the filter applied, using an eyedropper on the rendered page rather than the declared values.",
         'For a blur or backdrop-filter over changing content, scroll or wait so different content passes behind, and check the worst case.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
@@ -278,7 +278,7 @@ const meta = {
     BACKGROUND_IMAGE_OR_GRADIENT: {
       steps: [
         'Find the text the report names and look at the image or gradient behind it.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the lightest and darkest parts of the background directly behind the letters.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the lightest and darkest parts of the background directly behind the letters.",
         'If the image changes (slides, video, responsive images), check each version and at a few window widths.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
@@ -290,7 +290,7 @@ const meta = {
     BACKGROUND_NOT_COMPUTABLE: {
       steps: [
         'Find the text the report names on the page.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour seen directly behind the letters, taking the darkest and lightest points if it varies.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the color seen directly behind the letters, taking the darkest and lightest points if it varies.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'The ratio reaches the threshold everywhere behind the text.',
@@ -301,7 +301,7 @@ const meta = {
       steps: [
         'Find the text the report names; the page sets no opaque background behind it, so what shows there is the canvas the browser paints, or, in a frame, the page around it.',
         'View the page where it is shown: inside the page that embeds it, with forced colors off, and in each color scheme the page supports (light and dark).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text against the background actually seen in each setting.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text against the background actually seen in each setting.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'The ratio reaches the threshold in every setting where the page is shown.',
@@ -311,17 +311,17 @@ const meta = {
     BACKGROUND_OVERLAP: {
       steps: [
         'Find the text the report names and check which element actually paints behind it (inspect it and toggle the overlapping element off and on).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the colour actually seen behind the letters.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the color actually seen behind the letters.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
-      passWhen: 'The colour actually behind the text gives at least the threshold ratio.',
+      passWhen: 'The color actually behind the text gives at least the threshold ratio.',
       failWhen:
-        'The colour actually behind the text gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+        'The color actually behind the text gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
     },
     BACKGROUND_UNPARSABLE: {
       steps: [
-        'Find the text the report names and inspect the background colour value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background as rendered on screen.",
+        'Find the text the report names and inspect the background color value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background as rendered on screen.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'The ratio reaches the threshold.',
@@ -330,7 +330,7 @@ const meta = {
     COLOR_SCHEME_NOT_RENDERED: {
       steps: [
         'Open the page in a browser set to the color scheme the report names (blockerValue: light or dark), or emulate it in the developer tools (Rendering, prefers-color-scheme).',
-        "Find the text the report names and use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against the background behind it.",
+        "Find the text the report names and use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against the background behind it.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'In that color scheme the ratio reaches the threshold.',
@@ -340,18 +340,18 @@ const meta = {
     ELEMENT_OPACITY: {
       steps: [
         'Find the text the report names and note the opacity below 1 on its element.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text and background as they appear on screen (faded), with an eyedropper on the rendered page.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen:
-        'The faded colours on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
+        'The faded colors on screen reach the threshold, or the faded text is an inactive (disabled) control, which is exempt.',
       failWhen:
-        'The faded colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
+        'The faded colors on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6), unless the text is part of an inactive control.'
     },
     ENGINE_EXCEPTION: {
       steps: [
         'Find the text the report names (the check stopped early, so nothing was measured).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background directly behind the letters.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background directly behind the letters.",
         'Note the text size and weight to tell whether it counts as large (at least 24px, or 18.66px and bold).',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
@@ -360,8 +360,8 @@ const meta = {
     },
     FOREGROUND_UNPARSABLE: {
       steps: [
-        'Find the text the report names and inspect its colour value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour as rendered against its background.",
+        'Find the text the report names and inspect its color value in the developer tools (often a newer syntax such as oklch(), lab() or color()).',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color as rendered against its background.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'The ratio reaches the threshold.',
@@ -370,7 +370,7 @@ const meta = {
     GENERATED_TEXT_POSITIONED: {
       steps: [
         'Find the element the report names and locate the text its ::before or ::after draws on screen (it is positioned away from its element).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure that text's colour against whatever shows behind it at its actual position.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure that text's color against whatever shows behind it at its actual position.",
         'Resize the window and scroll to check other positions where it may land on another background.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
@@ -382,7 +382,7 @@ const meta = {
       steps: [
         'Find the element the report names and look at the text its ::before, ::after or list marker draws (a number, bullet or label).',
         'Decide whether it is text people need to read (a number, word or label) or a purely decorative shape.',
-        "If it is text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure its colour against the background behind it.",
+        "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure its color against the background behind it.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'The generated text reaches the threshold, or it is purely decorative.',
@@ -392,29 +392,28 @@ const meta = {
     MIX_BLEND_MODE: {
       steps: [
         'Find the text the report names and note the mix-blend-mode on it or its container.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the blended text and background colours as they appear on screen, with an eyedropper on the rendered page.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the blended text and background colors as they appear on screen, with an eyedropper on the rendered page.",
         'If different content can sit behind it (scrolling, sliders), check the worst case.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
-      passWhen: 'The blended colours on screen reach the threshold.',
+      passWhen: 'The blended colors on screen reach the threshold.',
       failWhen:
-        'The blended colours on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+        'The blended colors on screen give a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
     },
     PSEUDO_ELEMENT_COLOR: {
       steps: [
-        'Find the text the report names and note the ::first-line or ::first-letter colour in the Styles pane.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure both the element's text colour and the first-line or first-letter colour against the background.",
-        'Resize the window to see that the first-line colour applies to different words at different widths.',
+        'Find the text the report names and note the ::first-line or ::first-letter color in the Styles pane.',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure both the element's text color and the first-line or first-letter color against the background.",
+        'Resize the window to see that the first-line color applies to different words at different widths.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
-      passWhen: 'Both colours reach the threshold.',
-      failWhen:
-        'Either colour gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+      passWhen: 'Both colors reach the threshold.',
+      failWhen: 'Either color gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
     },
     SELECT_OPTION_COLOR: {
       steps: [
         'Find the drop-down the report names and open it with the mouse and with Alt+Down Arrow.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure each option's text against its background in the open list, including the highlighted option, in each browser the page supports.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure each option's text against its background in the open list, including the highlighted option, in each browser the page supports.",
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen: 'Every option in the open list reaches the threshold.',
@@ -424,8 +423,8 @@ const meta = {
     TEXT_SHADOW: {
       steps: [
         'Find the text the report names and note its text-shadow.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text fill colour against the background.",
-        'If the fill fails, zoom in and check whether the shadow forms a solid outline or halo around every letter; if so, measure the shadow colour against the background and the fill against the shadow.',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text fill color against the background.",
+        'If the fill fails, zoom in and check whether the shadow forms a solid outline or halo around every letter; if so, measure the shadow color against the background and the fill against the shadow.',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen:
@@ -435,15 +434,15 @@ const meta = {
     },
     TEXT_STROKE: {
       steps: [
-        'Find the text the report names and note its -webkit-text-stroke width and colour.',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the fill colour against the background, and the stroke colour against the background.",
-        'Zoom in to see which colour forms most of each letter (a thin stroke counts less than the fill).',
+        'Find the text the report names and note its -webkit-text-stroke width and color.',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the fill color against the background, and the stroke color against the background.",
+        'Zoom in to see which color forms most of each letter (a thin stroke counts less than the fill).',
         'Compare the ratio with 4.5:1 (3:1 for large text) for WCAG 1.4.3, and 7:1 (4.5:1 for large text) for 1.4.6.'
       ],
       passWhen:
-        'The fill and stroke both reach the threshold, or the colour that clearly forms the letters does.',
+        'The fill and stroke both reach the threshold, or the color that clearly forms the letters does.',
       failWhen:
-        'The colour that forms the letters gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
+        'The color that forms the letters gives a ratio below the threshold, which fails WCAG 1.4.3 (or 1.4.6).'
     }
   }
 };
@@ -508,7 +507,7 @@ function runInPage(ctx) {
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
   // lean: which way the evidence points, for the few blockers where the
-  // colours that are known bound the answer (leanFor, below), or null.
+  // colors that are known bound the answer (leanFor, below), or null.
   function pushCantTellOccurrence(el, reasonCode, extraDetails, lean) {
     try {
       const pseudo =
@@ -686,9 +685,9 @@ function runInPage(ctx) {
     return '';
   }
 
-  // The colour el's text is painted in, as declared, when it is opaque:
+  // The color el's text is painted in, as declared, when it is opaque:
   // its -webkit-text-fill-color, or its color. Null for SVG text (painted
-  // with fill), a placeholder, or a colour that is not opaque.
+  // with fill), a placeholder, or a color that is not opaque.
   function opaqueTextColor(el) {
     try {
       if (dom.namespaceURI(el) === SVG_NS) return null;
@@ -718,7 +717,7 @@ function runInPage(ctx) {
 
   // The background el's text sits on before any opacity fades it: the
   // first opaque background-color from el up, with nothing translucent and
-  // no background image on the way. Null where that isn't one colour.
+  // no background image on the way. Null where that isn't one color.
   function unfadedBackground(el) {
     try {
       for (let cur = el, depth = 0; cur && depth < 200; cur = parentOf(cur), depth += 1) {
@@ -746,7 +745,7 @@ function runInPage(ctx) {
       if (!C || !el || dom.nodeType(el) !== 1) return null;
       const cs = styleOf(el);
       // Opacity fades the text and its background together toward what
-      // lies behind them, which brings two colours closer, never further
+      // lies behind them, which brings two colors closer, never further
       // apart: below the AA ratio before the fading, the text is below it
       // after. Above it, how far the fading lowers the ratio depends on
       // what is behind, so there is no lean.
@@ -774,7 +773,7 @@ function runInPage(ctx) {
         };
       }
       // An option shown only in the list the select opens: where the
-      // platform draws that list in the option's colours, they are what is
+      // platform draws that list in the option's colors, they are what is
       // on screen.
       if (reasonCode === 'SELECT_OPTION_COLOR') {
         const fg = opaqueTextColor(el);
@@ -840,9 +839,9 @@ function runInPage(ctx) {
     return null;
   }
 
-  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // Text part of which a ::first-line or ::first-letter paints in a color
   // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
-  // contrast-enhanced where its own colours and the pseudo-element's agree,
+  // contrast-enhanced where its own colors and the pseudo-element's agree,
   // at the AA ratio and at the AAA ratio, both reaching it or both falling
   // short (helpers.contrast.measurePseudoElementText). It is asked about
   // here only where they disagree at one of them.

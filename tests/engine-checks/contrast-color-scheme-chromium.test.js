@@ -95,7 +95,7 @@ test(
       }
     );
 
-    // A prefers-color-scheme rule colours the text: its light colour is not
+    // A prefers-color-scheme rule colors the text: its light color is not
     // what this scan sees, so only the dark scheme is measured.
     assert.deepEqual(
       await scan(

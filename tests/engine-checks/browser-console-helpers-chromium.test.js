@@ -173,7 +173,7 @@ test('console helpers in Chromium', { skip }, async (t) => {
         const drawn = !!document.querySelector('[data-surea11y-highlights]');
         let error = '';
         try {
-          await api.inspect('colours');
+          await api.inspect('colors');
         } catch (e) {
           error = e.name + ': ' + e.message;
         }

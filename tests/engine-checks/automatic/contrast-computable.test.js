@@ -182,7 +182,7 @@ test(`${RULE_ID}: background gradient blocker => cantTell with reasonCode BACKGR
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgGradient');
 });
 
-test(`${RULE_ID}: text matching the page colour over an ancestor gradient => cantTell, not invisible`, () => {
+test(`${RULE_ID}: text matching the page color over an ancestor gradient => cantTell, not invisible`, () => {
   const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255)">
@@ -501,14 +501,14 @@ test(`${RULE_ID}: strictConformance + root not opaque => pass, measured on the p
   assert.deepStrictEqual(own.occurrences[0].data.details.assumptionsApplied, []);
 });
 
-test(`${RULE_ID}: the text's colour in the page's dark scheme unknown => COLOR_SCHEME_NOT_RENDERED`, () => {
+test(`${RULE_ID}: the text's color in the page's dark scheme unknown => COLOR_SCHEME_NOT_RENDERED`, () => {
   // jsdom applies no prefers-color-scheme rule; the page is drawn only in
   // dark, where the rule makes the text white.
   const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
     <style>#pick { color: #000000 } @media (prefers-color-scheme: dark) { #pick { color: #ffffff } }</style>
     </head><body>
     <p id="pick">Picked by the scheme</p>
-    <p id="own" style="color:#bbbbbb">Its own colour</p>
+    <p id="own" style="color:#bbbbbb">Its own color</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];
@@ -516,7 +516,7 @@ test(`${RULE_ID}: the text's colour in the page's dark scheme unknown => COLOR_S
   assert.strictEqual(occ.data.details.reasonCode, 'COLOR_SCHEME_NOT_RENDERED');
   assert.strictEqual(occ.data.details.blockerValue, 'dark');
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_colorScheme');
-  // No lean: the colour it would lean by is the one that can't be read.
+  // No lean: the color it would lean by is the one that can't be read.
   assert.strictEqual(occ.lean, undefined);
 });
 
@@ -762,11 +762,11 @@ test(`${RULE_ID}: own opacity over a background image leans fail only where the 
   assert.strictEqual(strong.lean, undefined);
 });
 
-// Text whose colours in the page's scheme jsdom can't read is asked about,
+// Text whose colors in the page's scheme jsdom can't read is asked about,
 // over an opaque background too: a prefers-color-scheme rule jsdom doesn't
 // apply, or, on a page drawn in dark, a control the browser paints in its
-// own colours.
-test(`${RULE_ID}: colours an emulator can't read in the page's scheme are asked about (COLOR_SCHEME_NOT_RENDERED)`, () => {
+// own colors.
+test(`${RULE_ID}: colors an emulator can't read in the page's scheme are asked about (COLOR_SCHEME_NOT_RENDERED)`, () => {
   const light = `<!doctype html><html><head><style>
     #ruled { color: #000000 }
     @media (prefers-color-scheme: light) { #ruled { color: #999999 } }
@@ -784,8 +784,8 @@ test(`${RULE_ID}: colours an emulator can't read in the page's scheme are asked 
   assert.strictEqual(rule.occurrences[0].data.details.blockerValue, 'light');
 
   const dark = `<!doctype html><html><head><meta name="color-scheme" content="dark"></head><body style="background:#222222">
-    <p id="plain">The scheme's own colour</p>
-    <button id="btn">The browser's button colours</button>
+    <p id="plain">The scheme's own color</p>
+    <button id="btn">The browser's button colors</button>
   </body></html>`;
   const darkRule = assertRule(run(dark), RULE_ID, 'cantTell', {
     minOccurrences: 1,

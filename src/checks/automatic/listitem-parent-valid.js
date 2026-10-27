@@ -24,7 +24,7 @@
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
- *   - `parentElement` is a stable contract (API_STABILITY.md), unlike the
+ *   - `parentElement` is a stable contract, unlike the
  *     rest of `data.details`.
  * @reason-codes
  *   - `LISTITEM_INVALID_PARENT` (fail): an li is not inside a ul, ol, menu or

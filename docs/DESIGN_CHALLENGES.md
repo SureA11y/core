@@ -27,21 +27,21 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 ## Decided
 
-### Placeholder contrast: when to fail it, decided: fail the colours the page chose
+### Placeholder contrast: when to fail it, decided: fail the colors the page chose
 
-**Decision as it stood (1.11.0):** `contrast-minimum` and `contrast-enhanced` measure a field's placeholder while its value is empty, and report one below the ratio as `cantTell` (`PLACEHOLDER_BELOW_THRESHOLD`), never `fail`, whoever chose its colours.
+**Decision as it stood (1.11.0):** `contrast-minimum` and `contrast-enhanced` measure a field's placeholder while its value is empty, and report one below the ratio as `cantTell` (`PLACEHOLDER_BELOW_THRESHOLD`), never `fail`, whoever chose its colors.
 
-**Why it's being questioned:** WCAG holds placeholder text to the ratio (Understanding 1.4.3, "including placeholder text"). It also counts colours the page left entirely to the browser as meeting it (technique G148, sufficient for 1.4.3 and 1.4.6), and setting one colour of the pair without the other as failing it (F24). Chromium's own placeholder grey, #757575, is 4.61:1 on white: enough for AA, not for AAA.
+**Why it's being questioned:** WCAG holds placeholder text to the ratio (Understanding 1.4.3, "including placeholder text"). It also counts colors the page left entirely to the browser as meeting it (technique G148, sufficient for 1.4.3 and 1.4.6), and setting one color of the pair without the other as failing it (F24). Chromium's own placeholder grey, #757575, is 4.61:1 on white: enough for AA, not for AAA.
 
 **Options:**
-1. Fail what the page chose (the placeholder's colour, or the field's own background), pass the browser's own pair (G148).
+1. Fail what the page chose (the placeholder's color, or the field's own background), pass the browser's own pair (G148).
 2. As 1, but ask (`cantTell`) at AAA.
 3. Ask about every placeholder below the ratio (1.11.0).
 4. Don't measure placeholders; field values are still measured.
 
-**What option 1 needs:** telling the browser's colours from the page's on real pages, whose style sheets often come from another origin and can't be read. A version compares the placeholder's colours and the field's background with those of a field of the same kind and colour scheme in a closed shadow root that no page style reaches, plus the readable rules that set this field's placeholder colour. On 118 saved sites it fails 11 fields on 6 sites, each a colour the page chose (Trello's #97a0af at 2.64:1; most of the others only at AAA). The code and its tests are on the branch `placeholder-contrast-options`.
+**What option 1 needs:** telling the browser's colors from the page's on real pages, whose style sheets often come from another origin and can't be read. A version compares the placeholder's colors and the field's background with those of a field of the same kind and color scheme in a closed shadow root that no page style reaches, plus the readable rules that set this field's placeholder color. On 118 saved sites it fails 11 fields on 6 sites, each a color the page chose (Trello's #97a0af at 2.64:1; most of the others only at AAA). The code and its tests are on the branch `placeholder-contrast-options`.
 
-**Decision (2026-10-18):** option 1, in both rules. A placeholder below its ratio fails when the page chose its colours: the `::placeholder` color, opacity or background, or the field's background, differ from the browser's own, which a scan reads from the same kind of field in a blank frame with the field's `color-scheme`. In the browser's own colours it is not reported (G148). Where whose colours they are can't be told, it is asked about (`cantTell`). Option 2 was not taken: `contrast-enhanced` fails at AAA what the page chose, as `contrast-minimum` does at AA.
+**Decision (2026-10-18):** option 1, in both rules. A placeholder below its ratio fails when the page chose its colors: the `::placeholder` color, opacity or background, or the field's background, differ from the browser's own, which a scan reads from the same kind of field in a blank frame with the field's `color-scheme`. In the browser's own colors it is not reported (G148). Where whose colors they are can't be told, it is asked about (`cantTell`). Option 2 was not taken: `contrast-enhanced` fails at AAA what the page chose, as `contrast-minimum` does at AA.
 
 **Status:** resolved 2026-10-18 (unreleased; `CHANGELOG.md`).
 

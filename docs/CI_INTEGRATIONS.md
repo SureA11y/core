@@ -47,6 +47,8 @@ A baseline keeps known violations from failing the build; it doesn't make them a
 
 `upload-sarif` needs `security-events: write` permission and does not fail the job itself — pair it with a separate gating step (or `continue-on-error` + your own check) if you also want the build to fail on new violations.
 
+Findings that lean fail are `warning` alerts by default. Rendered with `renderSarifReport(result, { leanFailAs: 'error' })` from `@surea11y/core/sarif`, they are `error`s, so a gate on errors stops on likely failures too ([`SARIF.md`](./SARIF.md#options)); a baseline written with `buildBaselineEntries(result, { leanFail: true })` accepts the ones a page already has ([`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)).
+
 ```yaml
 name: Accessibility scan
 on: [pull_request]

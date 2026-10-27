@@ -25,7 +25,7 @@
  *   counts as a native element with that role does.
  *   Finding nothing to ask about, it reports notApplicable, not pass: it
  *   applies only to what its check flags, and finding nothing there
- *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
+ *   doesn't show that all is well.
  * @expectation
  *   The visible label text (a) is not a placeholder left in the markup
  *   ("label", "field", "enter text", ...), (b) is not shared with another

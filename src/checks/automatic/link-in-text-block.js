@@ -757,7 +757,7 @@ function runInPage(ctx) {
 
   // Whether a background-image layer draws something seen behind el's text:
   // `none`, a layer sized to nothing, a transparent gradient and a solid one
-  // in the colour already behind it draw nothing.
+  // in the color already behind it draw nothing.
   function hasBackgroundImage(cs, el) {
     const contrast = helpers.contrast;
     if (contrast && typeof contrast.backgroundLayerKinds === 'function') {
@@ -1292,10 +1292,10 @@ function runInPage(ctx) {
 
   // ---- Leans (docs/LEANS.md) ----
 
-  // The colour a style paints text in: -webkit-text-fill-color, else color.
+  // The color a style paints text in: -webkit-text-fill-color, else color.
   // For an element's own style, given el, read as the contrast helpers read
-  // it (textFillColor): under jsdom, the colour of text in a link comes
-  // from the page's rules, not jsdom's own link colour; null where it
+  // it (textFillColor): under jsdom, the color of text in a link comes
+  // from the page's rules, not jsdom's own link color; null where it
   // can't be worked out.
   function fillOf(cs, el) {
     if (!cs || !c) return null;
@@ -1312,8 +1312,8 @@ function runInPage(ctx) {
     return !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
   }
 
-  // The effects that stopped the colours being measured where two equal
-  // colours stay equal under them, applied alike to the link and the text:
+  // The effects that stopped the colors being measured where two equal
+  // colors stay equal under them, applied alike to the link and the text:
   // the same blocker, or the same shadow or stroke on both.
   const SAME_COLOR = new Set([
     'COLOR_NOT_COMPUTABLE',
@@ -1359,7 +1359,7 @@ function runInPage(ctx) {
     );
   }
 
-  // Whether what stopped the link's colours being measured is the same for
+  // Whether what stopped the link's colors being measured is the same for
   // the text around it: the same blocker, on the same element, or the same
   // shadow or outline on both.
   function effectShared(reasonCode, blocker, linkCs, textEl, parentCs) {
@@ -1393,7 +1393,7 @@ function runInPage(ctx) {
     return null;
   }
 
-  // Which way a link left undecided because its colours could not be
+  // Which way a link left undecided because its colors could not be
   // measured points. A link with no underline and no other mark, drawn in
   // the same color as the text around it, or one less than 3:1 from it
   // where the effect in the way applies to both alike, has color as its
@@ -1518,12 +1518,12 @@ function runInPage(ctx) {
   // A link whose own highlight is compared with the page's canvas around it
   // (parentBg.canvas), on a page that supports two color schemes: compared
   // in the scheme the page is drawn in (`current`: { differs, ratio,
-  // fgLinkHex, fgParentHex }) and, where `others` and the colours of the
+  // fgLinkHex, fgParentHex }) and, where `others` and the colors of the
   // link and the text around it can't change with the scheme
   // (helpers.contrast.colorSchemeMeasurable), in the other, with the
-  // link's and the text's colours there. The highlight sets the link apart
+  // link's and the text's colors there. The highlight sets the link apart
   // where it does in each scheme measured; where it doesn't in one, the
-  // link is judged there by its colour, failing below 3:1. detail:
+  // link is judged there by its color, failing below 3:1. detail:
   // colorScheme, the scheme it falls short in where it doesn't in the
   // other, and colorSchemesChecked, the schemes measured where one wasn't.
   // { differs, ratio, fgLinkHex, fgParentHex, detail }, or null on a page
@@ -1983,7 +1983,7 @@ function runInPage(ctx) {
       continue;
     }
 
-    // The colours of the link or of the text around it in the color scheme
+    // The colors of the link or of the text around it in the color scheme
     // the page is drawn in can't be read (an emulator:
     // helpers.contrast.colorSchemeUnread), so nothing they would decide is
     // known, and no lean either.

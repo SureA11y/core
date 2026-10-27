@@ -4,6 +4,17 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed
+
+- Rule titles say what the rule does: `form-control-single-label`, `invalid-field-error-message` and `moving-content-pausable`, which never fail, say *should*; `focus-not-removed-by-script`, which fails, says *must not*; and `video-caption` asks for complete captions, as it asks about a captions track that is there too. Every locale follows.
+- Spanish instructions use the infinitive throughout, as `docs/I18N.md` says: the "How to check" steps in `src/i18n/review/es.json` and the hints 1.14.0 added ("Localizar el widget…", "Poner en aria-valuemin…").
+- Rule text says "color" throughout, where it mixed "colour" in, and the contrast rules', list rules' and manual rules' descriptions no longer point readers at repository files (`API_STABILITY.md`, `LAYOUT_MEASUREMENT.md`, `BINDING_AUTHORS_GUIDE.md`, `RULE_TAXONOMY.md`) or an issue number.
+- `contrast-minimum` and `contrast-enhanced` say plainly that a placeholder left in the browser's own colors is taken to meet the ratio (G148), and `contrast-minimum`'s canvas sentences read whole. `click-handler-keyboard-operable`'s description says a key handler on an ancestor or descendant counts too, as its expectation does.
+
+### Fixed
+
+- Docs: `ENGINE_OPTIONS.md` credits `en301549-v3.2.1`'s failing duplicate ids to the profile's `keepsParsing`, not to its tags; `TROUBLESHOOTING.md` no longer gives a maintainer command; `OUTPUT_SCHEMA.md` no longer says a bare `runOnly` array doesn't work; `CI_INTEGRATIONS.md` covers SARIF's `leanFailAs: 'error'` and a baseline's `leanFail`.
+
 ## [1.14.0] - 2026-10-26
 
 ### Added

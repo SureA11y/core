@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * -webkit-text-stroke outlines each glyph in its own colour; a 2px black
+ * -webkit-text-stroke outlines each glyph in its own color; a 2px black
  * stroke on 30px #ddd text is most of what Chromium draws, so the fill
- * colour alone is not the text's colour. The contrast is then not
+ * color alone is not the text's color. The contrast is then not
  * computable (cantTell, TEXT_STROKE), as for a text-shadow, instead of a
  * confident fail at the fill's 1.36:1. A transparent or absent stroke
  * changes nothing.
