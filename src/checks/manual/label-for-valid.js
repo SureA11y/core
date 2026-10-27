@@ -27,6 +27,15 @@
  *   - `for`: the id the label names.
  *   - `targetElement`: for `LABEL_FOR_NOT_LABELABLE`, the tag of the
  *     element named.
+ * @reason-codes
+ *   - `LABEL_FOR_NOT_LABELABLE` (cantTell): the label's for attribute names an
+ *     element that cannot be labelled, so the label labels nothing.
+ *     It leans fail: the page states it.
+ *     Basis: HTML labeled control (best practice).
+ *   - `LABEL_FOR_TARGET_MISSING` (cantTell): the label's for attribute names
+ *     no element in its tree, so the label labels nothing.
+ *     It leans fail: the page states it.
+ *     Basis: HTML labeled control (best practice).
  * @implementation-notes
  * - Best practice, with no WCAG mapping: the harm, a control without its
  *   label, is the name rules' and 3.3.2's to report, on the control.
@@ -52,7 +61,32 @@ const meta = {
   category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LABEL_FOR_NOT_LABELABLE: {
+      steps: [
+        'Find the label the report names and the element its for attribute points to (the report gives its tag).',
+        'Work out which form control the label was meant for.',
+        "Read that control's computed name in the Accessibility pane, and click the label to see whether it focuses the control."
+      ],
+      passWhen:
+        'The label is fixed to point at the control it describes, or that control already has the same name another way and the label is only visible text.',
+      failWhen:
+        "The label points at an element that cannot be labelled, so the control it was meant for gets no name or focus from it, a best-practice miss under HTML's labelled-control rules."
+    },
+    LABEL_FOR_TARGET_MISSING: {
+      steps: [
+        'Find the label the report names and the id in its for attribute.',
+        "Search the page's elements for that id; check whether the control appears later, for example after a script runs.",
+        'Work out which control the label was meant for, read its computed name in the Accessibility pane, and click the label to see whether it focuses that control.'
+      ],
+      passWhen: 'The id exists once the page is ready and the label names and focuses its control.',
+      failWhen:
+        "No element has that id, so the label labels nothing and its control is left without that name, a best-practice miss under HTML's labelled-control rules."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -104,6 +138,19 @@ function runInPage(ctx) {
           hintKey: 'labelForValid_hint_cantTell',
           params: missing ? { for: forId } : { for: forId, element: targetElement }
         },
+        lean: missing
+          ? {
+              toward: 'fail',
+              why: "The label's for attribute names no element, so the label labels nothing.",
+              signals: [{ signal: 'for-target-missing', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_targetMissing' }
+            }
+          : {
+              toward: 'fail',
+              why: "The label's for attribute names an element that can't be labelled, so the label labels nothing.",
+              signals: [{ signal: 'for-target-not-labelable', value: true }],
+              i18n: { whyKey: 'labelForValid_lean_why_notLabelable' }
+            },
         data: {
           details: missing
             ? { reasonCode: 'LABEL_FOR_TARGET_MISSING', for: forId }

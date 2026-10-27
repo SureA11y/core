@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>image-of-text — scenario fixture</title>
+  <style>
+    .case { border: 1px solid #ccc; margin: 8px 0; padding: 8px; }
+    .case-title { font-weight: bold; margin-bottom: 4px; }
+  </style>
+</head>
+<body>
+  <h1>image-of-text</h1>
+  <p class="note">Whether an image holds text is in its pixels, which no case here can show: the rule asks only where markup gives a sign.</p>
+
+  <h2>A. Asked about (cantTell)</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — CANTTELL: an input type="image", a button drawn as an image</div>
+    <input type="image" id="iot_case_01" src="button.png" alt="Press me" />
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — CANTTELL: an img showing an SVG data URL whose markup holds text</div>
+    <img id="iot_case_02" alt="WCAG Rocks" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' height='20' width='80'%3E%3Ctext x='0' y='15'%3EWCAG Rocks%3C/text%3E%3C/svg%3E" />
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — CANTTELL: the same SVG, base64-encoded, with alt=""</div>
+    <img id="iot_case_03" alt="" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnPjx0ZXh0IHg9JzAnIHk9JzE1Jz5XZWxjb21lPC90ZXh0Pjwvc3ZnPg==" />
+  </div>
+
+  <h2>B. Not asked about</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — NEUTRAL: a photo, whose pixels markup can't show</div>
+    <img id="iot_case_04" src="fireworks.jpg" alt="Fireworks behind the Eiffel tower at night" />
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — NEUTRAL: an SVG data URL with shapes and no text</div>
+    <img id="iot_case_05" alt="A red dot" src="data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle r='5' fill='red'/%3E%3C/svg%3E" />
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — NEUTRAL: an inline svg with text, which is real text</div>
+    <svg id="iot_case_06" xmlns="http://www.w3.org/2000/svg" width="80" height="20"><text x="0" y="15">My cat</text></svg>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: an input type="image" inside display:none</div>
+    <div style="display:none"><input type="image" id="iot_case_07" src="button.png" alt="Hidden" /></div>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: an input type="submit", a button of real text</div>
+    <input type="submit" id="iot_case_08" value="Send" />
+  </div>
+</body>
+</html>

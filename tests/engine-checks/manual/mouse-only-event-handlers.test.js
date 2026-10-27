@@ -85,6 +85,71 @@ test(`${RULE_ID}: a key handler counts when a descendant can take focus, a focus
   });
 });
 
+test(`${RULE_ID}: keyboard handlers that cannot run lean fail, unless something inside takes focus`, () => {
+  const occOf = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const bare = occOf('<div onmouseover="show()" onfocus="show()">Menu</div>');
+  assert.equal(
+    bare.data.details.reasonCode,
+    'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE'
+  );
+  assert.equal(bare.lean.toward, 'fail');
+  assert.equal(bare.lean.i18n.whyKey, 'mouseOnlyEventHandlers_lean_why_notFocusable');
+  const withLink = occOf('<div onmouseover="show()" onfocus="show()"><a href="/x">Menu</a></div>');
+  assert.equal(
+    withLink.data.details.reasonCode,
+    'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE'
+  );
+  assert.equal(withLink.lean, undefined);
+});
+
+test(`${RULE_ID}: with an early hook, a mousedown action on an unfocusable element leans fail; hover does not`, () => {
+  const { JSDOM } = require('jsdom');
+  const { listenerHookScript } = require('../../../src/index.js');
+  const { runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  // jsdom's selector engine adds key listeners to the window the first time
+  // a selector runs, so one runs before the hook.
+  const hooked = (body) => {
+    const dom = new JSDOM(`<!doctype html><html><body>${body}</body></html>`, {
+      runScripts: 'outside-only'
+    });
+    dom.window.document.querySelector('*');
+    dom.window.eval(listenerHookScript({ early: true }));
+    return assertRule(
+      runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    ).occurrences[0];
+  };
+  const drag = hooked('<div onmousedown="startDrag(event)">Card</div>');
+  assert.equal(drag.data.details.reasonCode, 'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT');
+  assert.equal(drag.lean.toward, 'fail');
+  assert.equal(drag.lean.i18n.whyKey, 'mouseOnlyEventHandlers_lean_why_noKeyboard');
+  assert.equal(hooked('<div onmouseover="highlight(this)">Card</div>').lean, undefined);
+  assert.equal(hooked('<div onmousedown="return false">Card</div>').lean, undefined);
+  // Without the hook, a key listener added from script is invisible: no lean.
+  const plain = assertRule(
+    runa11yCoreOnHtml(
+      '<!doctype html><html><body><div onmousedown="startDrag(event)">Card</div></body></html>',
+      {
+        runOnly: [RULE_ID]
+      }
+    ),
+    RULE_ID,
+    'cantTell'
+  ).occurrences[0];
+  assert.equal(plain.lean, undefined);
+});
+
 test(`${RULE_ID}: notApplicable when the pointer-only handler is on a hidden element`, () => {
   const html = `<!doctype html><html><body><div onmouseover="show()" hidden>hover</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

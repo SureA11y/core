@@ -20,6 +20,7 @@
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
  *   - `ariaLabel`, `title`: the element's `aria-label` and `title`, or null
  *     when it has none.
  *   - `ariaLabelledBy`: the ids in the element's `aria-labelledby`, or null
@@ -27,6 +28,13 @@
  *   - `ariaLabelledByText`: the text those ids point at, or null. Only
  *     looked up when the element has no `aria-label`, since `aria-label`
  *     then gives the name.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <embed> has a text
+ *     alternative, and a person checks that it describes the embedded
+ *     content.
+ *     It leans fail when its name is the embedded file's name (or looks
+ *     like a file name) or a placeholder word.
+ *     Basis: WCAG 1.1.1 (not settled).
  */
 
 const id = 'embed-text-alternative-quality';
@@ -57,6 +65,20 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at what the embedded content the report names shows or does.',
+        'Read its text alternative (aria-label, aria-labelledby text or title, as the report gives it).',
+        'Check that the text says what the embedded content is or describes it.'
+      ],
+      passWhen: 'The text alternative identifies or describes the embedded content accurately.',
+      failWhen:
+        'The text alternative is generic, wrong or does not describe the embedded content, which fails WCAG 1.1.1.'
     }
   }
 };
@@ -196,6 +218,7 @@ function runInPage(ctx) {
     if (!hasNameMechanism) continue;
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,
       ariaLabelledByText: labelledByText || null,
@@ -206,7 +229,34 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // The name users get: aria-label, else aria-labelledby, else title. A
+    // file name or a generic word says nothing of what is embedded (F30).
+    const name = ariaLabel || labelledByText || title;
+    const signal = (() => {
+      try {
+        return typeof helpers.getTextAlternativeSignal === 'function'
+          ? helpers.getTextAlternativeSignal(el, name)
+          : null;
+      } catch {
+        return null;
+      }
+    })();
+    const lean =
+      signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')
+        ? {
+            toward: 'fail',
+            why: 'A file name or a generic word does not say what is embedded.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            caution: "A document's file name can be its real title.",
+            i18n: {
+              whyKey: 'embed_textAltQuality_lean_why',
+              cautionKey: 'embed_textAltQuality_lean_caution'
+            }
+          }
+        : null;
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <embed> is accurate.',
       hint: 'The ARIA name or title should say what is embedded.',
       i18n: {

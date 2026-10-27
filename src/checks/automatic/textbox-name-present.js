@@ -27,9 +27,18 @@
  *   On a text-like <input> or a <textarea>, the placeholder counts last
  *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
  *   question, not a missing name.
- *   An element named by nothing but a non-empty aria-placeholder is a
- *   question (cantTell): accname gives it no name, but Chromium exposes
- *   aria-placeholder as the name.
+ *   An element named by nothing but aria-placeholder fails: accname gives
+ *   it no name, and only some browsers name it from aria-placeholder.
+ * @reason-codes
+ *   - `name_missing` (fail): the text box has no accessible name from
+ *     aria-label, aria-labelledby, title, an associated label or a
+ *     placeholder; aria-placeholder alone does not count.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1;
+ *     WAI-ARIA 1.2 textbox role; ACT e086e5.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'textbox-name-present';
@@ -57,7 +66,22 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['textbox-name-present'] } }
+  coverage: { facetsBySc: { '4.1.2': ['textbox-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the text box the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the text box, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The text box has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -201,33 +225,6 @@ function runInPage(ctx) {
     if (internalsName && internalsName.status === 'named') continue;
     if (internalsName && internalsName.status === 'unknown') {
       questions.push(helpers.reportOccurrence(el, helpers.internalsQuestion(el, 'name')));
-      continue;
-    }
-
-    // aria-placeholder is no name source in accname, but Chromium names a
-    // textbox from it, so assistive technology there hears it as the name. The
-    // engine can't tell which browser a page meets, so a textbox named only
-    // this way is a question, not a missing name.
-    const ariaPlaceholder = getAttr(el, 'aria-placeholder');
-    if (ariaPlaceholder) {
-      questions.push(
-        helpers.reportOccurrence(el, {
-          summary:
-            'This textbox is named only by aria-placeholder, which some browsers expose as its name and others do not.',
-          hint: 'Name it with aria-label, aria-labelledby or a visible label; keep aria-placeholder as a hint.',
-          i18n: {
-            summaryKey: 'textboxNamePresent_summary_ariaPlaceholder',
-            hintKey: 'textboxNamePresent_hint_ariaPlaceholder'
-          },
-          data: {
-            details: {
-              reasonCode: 'name_from_aria_placeholder_only',
-              controlType: 'textbox',
-              ariaPlaceholder
-            }
-          }
-        })
-      );
       continue;
     }
 

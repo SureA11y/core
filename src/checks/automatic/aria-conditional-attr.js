@@ -25,6 +25,13 @@
  * @reports
  *   - `ariaInvalid`: the element's `aria-invalid` value, lowercased; an
  *     empty string when the attribute is absent.
+ * @reason-codes
+ *   - `ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID` (cantTell): an element with
+ *     aria-errormessage whose aria-invalid is absent or false, so the error
+ *     message is not exposed.
+ *     It leans fail when the message it names is shown with text and is not
+ *     also in aria-describedby, and pass when it is in aria-describedby.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - This is narrow: the broader space is a table of many
  *   attribute/condition pairs. This rule implements only the one pairing
@@ -64,7 +71,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-conditional-attr'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID: {
+      steps: [
+        'Inspect the field the report names and note the id in its aria-errormessage.',
+        'Enter an invalid value (or leave a required field empty) and submit or leave the field, so any error appears.',
+        'Look whether the element with that id now shows error text, and inspect the field again for aria-invalid="true".',
+        'With a screen reader, move back to the field and listen for the error message.'
+      ],
+      passWhen:
+        'When the error is shown, the field gets aria-invalid="true" (or the message is in aria-describedby) and the screen reader announces it; when no error is shown, nothing needs exposing.',
+      failWhen:
+        'Error text is visible but aria-invalid stays absent or false and the message is not announced, which fails WCAG 3.3.1 / 4.1.2 (see ARIA21).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -76,6 +99,69 @@ function runInPage(ctx) {
   }
 
   const TRUTHY_INVALID_VALUES = new Set(['true', 'grammar', 'spelling']);
+
+  // Reasons the engine gives for content that is not drawn, or kept from
+  // assistive technology.
+  const UNSEEN = new Set([
+    'displayNone',
+    'hiddenAttr',
+    'visibilityHidden',
+    'detailsClosed',
+    'contentVisibilityHidden',
+    'templateContent',
+    'nonRenderedElement',
+    'ariaHidden'
+  ]);
+
+  // Whether a message element is drawn, seen and holds text.
+  function shownWithText(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      if (reasons.some((r) => UNSEEN.has(r))) return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      return trim(dom.textContent(ref)) !== '';
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way the finding points: a message also named by aria-describedby
+  // reaches assistive technology anyway; one shown with text and not so
+  // named is an error on screen that assistive technology is not given.
+  function leanFor(el, errorMessageRef) {
+    const described = trim(dom.getAttribute(el, 'aria-describedby')).split(/\s+/);
+    const ids = errorMessageRef.split(/\s+/).filter(Boolean);
+    if (ids.some((i) => described.includes(i))) {
+      return {
+        toward: 'pass',
+        why: 'The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.',
+        signals: [{ signal: 'target-in-describedby', value: true }],
+        i18n: { whyKey: 'ariaConditionalAttr_lean_why_described' }
+      };
+    }
+    let refs = [];
+    try {
+      refs = helpers.getRefElements(el, 'aria-errormessage', ctx) || [];
+    } catch {}
+    if (refs.some(shownWithText)) {
+      return {
+        toward: 'fail',
+        why: 'The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.',
+        signals: [
+          { signal: 'errormessage-target-visible-with-text', value: true },
+          { signal: 'target-in-describedby', value: false }
+        ],
+        caution: 'The text shown may be a standing hint rather than an error.',
+        i18n: {
+          whyKey: 'ariaConditionalAttr_lean_why_shown',
+          cautionKey: 'ariaConditionalAttr_lean_caution_shown'
+        }
+      };
+    }
+    return null;
+  }
 
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[aria-errormessage]')
@@ -96,6 +182,7 @@ function runInPage(ctx) {
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
+    const lean = leanFor(el, errorMessageRef);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -112,6 +199,7 @@ function runInPage(ctx) {
           needed: 'Whether the field is ever in an invalid state that should expose this message.',
           evidence: { element: tag, ariaInvalid: invalidValue || null }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode: 'ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID',

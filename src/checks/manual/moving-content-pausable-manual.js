@@ -5,7 +5,7 @@
 /**
  * @check moving-content-pausable
  * @atomic true
- * @summary Content that moves by itself for more than five seconds can be paused, stopped or hidden
+ * @summary Content that moves by itself for more than five seconds should be possible to pause, stop or hide
  * @standard WCAG 2.2
  * @sc 2.2.2
  * @type manual
@@ -29,8 +29,18 @@
  *     seconds.
  *   - `animations`: the element's animations, up to five, each with its
  *     `kind` (`css-animation`, `css-transition` or `script`), `name` (the
- *     animation name or transitioned property, '' when it has none) and
+ *     animation name or transitioned property, `''` when it has none) and
  *     `endTime`, in milliseconds from its start, `null` when it never ends.
+ * @reason-codes
+ *   - `MOVING_CONTENT_LOOPS` (cantTell): the element runs an animation that
+ *     started by itself and never ends; whether it can be paused, stopped or
+ *     hidden, or is essential, is for a person to check.
+ *     Basis: WCAG 2.2.2 (not settled).
+ *   - `MOVING_CONTENT_OVER_5S` (cantTell): the element runs an animation
+ *     that started by itself and lasts more than five seconds; whether it
+ *     can be paused, stopped or hidden, or is essential, is for a person to
+ *     check.
+ *     Basis: WCAG 2.2.2 (not settled).
  * @implementation-notes
  * - The engine moves every animation to a fixed point while the rules run
  *   (settleAnimations, src/core/dom-runner.js), and a finite one then no
@@ -45,7 +55,7 @@
 const id = 'moving-content-pausable';
 
 const meta = {
-  title: 'Content that moves by itself can be paused, stopped or hidden',
+  title: 'Content that moves by itself should be possible to pause, stop or hide',
   description:
     'Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.',
   i18n: {
@@ -71,6 +81,34 @@ const meta = {
   coverage: {
     facetsBySc: {
       '2.2.2': ['auto-moving-content-pausable']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    MOVING_CONTENT_LOOPS: {
+      steps: [
+        'Load the page and watch the element the report names; its animation starts by itself and never stops.',
+        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
+        'Check whether the motion actually stops or the content is hidden, and stays that way.',
+        'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
+      ],
+      passWhen:
+        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
+      failWhen:
+        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
+    },
+    MOVING_CONTENT_OVER_5S: {
+      steps: [
+        'Load the page and watch the element the report names; its animation starts by itself and runs for more than five seconds.',
+        'Look near it for a pause, stop or hide control, and try it with the mouse and with the keyboard (Tab to it, press Enter or Space).',
+        'Check whether the motion actually stops or the content is hidden, and stays that way.',
+        'If there is no control, decide whether the motion is essential (removing it would change the meaning), or is a loading indicator shown alone.'
+      ],
+      passWhen:
+        'A reachable control pauses, stops or hides the motion, or the motion is essential.',
+      failWhen:
+        'The content keeps moving and there is no way to pause, stop or hide it, which fails WCAG 2.2.2.'
     }
   }
 };

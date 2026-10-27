@@ -17,10 +17,16 @@
  * @expectation
  *   Each applicable SVG <image> element has a text alternative via:
  *   - a non-empty direct <title> child, OR
- *   - a non-empty direct <desc> child, OR
  *   - an accessible name (aria-label / aria-labelledby / title attribute).
- *   The first <title> and the first <desc> child count, wherever they are
- *   among the children, as SVG-AAM reads them.
+ *   The first <title> child counts, wherever it is among the children, as
+ *   SVG-AAM reads it. A <desc> child does not: SVG-AAM maps it to the
+ *   accessible description, never the name, as svg-text-alternative-present
+ *   has it.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an SVG <image> has no <title>
+ *     child with text and no name from aria-label, aria-labelledby or
+ *     title; a <desc> describes it but doesn't name it.
+ *     Basis: WCAG 1.1.1; SVG-AAM; accname 1.2.
  */
 
 const id = 'svg-image-text-alternative-present';
@@ -28,7 +34,7 @@ const id = 'svg-image-text-alternative-present';
 const meta = {
   title: 'SVG <image> must have a text alternative',
   description:
-    'Checks that SVG <image> elements provide a text alternative via <title>/<desc> or an ARIA accessible name.',
+    'Checks that SVG <image> elements provide a text alternative via a <title> element or an ARIA accessible name (a <desc> element alone does not count).',
   i18n: {
     titleKey: 'svgImage_textAltPresent_title',
     descriptionKey: 'svgImage_textAltPresent_description'
@@ -94,9 +100,8 @@ function runInPage(ctx) {
     return (v == null ? '' : String(v)).trim();
   }
 
-  // An SVG element's first direct child <title> or <desc>, wherever it is
-  // among the children (SVG-AAM: "a direct child title element", "a direct
-  // child desc element"; helpers.getSvgChildText).
+  // An SVG element's first direct child <title>, wherever it is among the
+  // children (SVG-AAM: "a direct child title element"; helpers.getSvgChildText).
   function svgChildText(el, tag) {
     try {
       return helpers && typeof helpers.getSvgChildText === 'function'
@@ -109,10 +114,6 @@ function runInPage(ctx) {
 
   function titleText(el) {
     return svgChildText(el, 'title');
-  }
-
-  function descText(el) {
-    return svgChildText(el, 'desc');
   }
 
   const rawImages = (() => {
@@ -190,9 +191,6 @@ function runInPage(ctx) {
     const titleChildText = titleText(el);
     if (titleChildText) continue;
 
-    const desc = descText(el);
-    if (desc) continue;
-
     // Only now check “accessible name” (but scoped to allowed mechanisms)
     const ariaLabelRaw = (() => {
       try {
@@ -265,6 +263,7 @@ function runInPage(ctx) {
         params: { element: 'image' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

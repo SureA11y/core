@@ -37,7 +37,19 @@
  *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the
  *     only content of a link or button (no text and no other image in it),
  *     so its alt is the control's name (H30), with `controlContent` naming
- *     the control's role (`link` or `button`). Absent otherwise.
+ *     the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW`
+ *     otherwise.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <img> has non-empty alt
+ *     text, and a person checks that it conveys what the image shows.
+ *     It leans fail when the alt is a file name, a web address or a
+ *     placeholder word (`altSignal`).
+ *     Basis: WCAG 1.1.1 (not settled); H37; ACT qt1vmo.
+ *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): the image is the only
+ *     content of a link or button, so its alt text is the control's name
+ *     and should say what the control does.
+ *     It leans fail when the alt is a file name or a placeholder word.
+ *     Basis: WCAG 1.1.1 (not settled); H30; ACT qt1vmo.
  * @implementation-notes
  * - A page reports at most 50 images with ordinary alt text and, on top,
  *   at most 50 whose alt has a signal, each in document order, so ordinary
@@ -47,7 +59,8 @@
  * - The signals are not reason codes: they change the message and
  *   `data.details` only, and a finding keeps its identity
  *   (`ruleId + reasonCode + html`) when its alt changes from ordinary to
- *   suspicious. The only reason code is IMAGE_ONLY_CONTROL_CONTENT.
+ *   suspicious. The reason codes are IMAGE_ONLY_CONTROL_CONTENT and
+ *   TEXT_ALTERNATIVE_REVIEW.
  * - The detection is helpers.getTextAlternativeSignal (dom-helpers.js),
  *   shared with area-alt-quality and input-image-alt-quality, and the
  *   message helpers.describeTextAlternativeSignal; both are in
@@ -94,6 +107,31 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ONLY_CONTROL_CONTENT: {
+      steps: [
+        "Find the link or button the report names; the image is its only content, so its alt is the control's name.",
+        'Read the alt text, then activate the control or check its destination to learn what it does.',
+        'Decide whether the alt says what the control does ("Search", "Home"), not what the image looks like.'
+      ],
+      passWhen: "The alt text states the control's purpose or destination.",
+      failWhen:
+        'The alt text does not say what the control does, for example a file name, address, generic word or symbols, which fails WCAG 1.1.1 (H30, F30).'
+    },
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Find the image the report names and read its alt text (the report gives the reason it looked suspect, if any).',
+        'Look at the image and its context, and ask what it shows that matters to the page.',
+        'Decide whether the alt says that; a file name, web address or generic word such as "image" does not.'
+      ],
+      passWhen:
+        'The alt text conveys what the image shows that a user needs, in words that fit the context.',
+      failWhen:
+        "The alt text does not convey the image's content, for example a file name, address or generic word, which fails WCAG 1.1.1 (F30)."
     }
   }
 };
@@ -177,6 +215,10 @@ function runInPage(ctx) {
     helpers && typeof helpers.describeTextAlternativeSignal === 'function'
       ? helpers.describeTextAlternativeSignal
       : () => null;
+
+  // The signals a lean fail rests on: text that is not a description.
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
+  const LEAN_SIGNALS_CONTROL = new Set(['file-name', 'placeholder']);
 
   const selector = 'img[alt]:not([alt=""])';
   const els = (() => {
@@ -318,7 +360,32 @@ function runInPage(ctx) {
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
     const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
+    // A file name, an address or a generic word is the page's own text, and
+    // none of them says what an image shows (F30). On a link or button an
+    // address does say where it leads, so it gets no lean there.
+    const leanSignals = controlContent ? LEAN_SIGNALS_CONTROL : LEAN_SIGNALS;
+    const lean =
+      signal && leanSignals.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: controlContent
+              ? "The alt text is the control's name, and a file name or a generic word does not say what the control does."
+              : 'A file name, a web address or a generic word does not say what the image shows.',
+            signals: [
+              { signal: 'alt-signal', value: signal.altSignal },
+              ...(controlContent ? [{ signal: 'control-content-only-image', value: true }] : [])
+            ],
+            caution: 'The word may be all the image shows, such as an image of that word.',
+            i18n: {
+              whyKey: controlContent
+                ? 'img_altQuality_lean_why_control'
+                : 'img_altQuality_lean_why',
+              cautionKey: 'img_altQuality_lean_caution'
+            }
+          }
+        : null;
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : "Check that this image's alt text is accurate and fits its context.",
@@ -336,7 +403,7 @@ function runInPage(ctx) {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: controlContent
           ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
-          : signal
+          : { ...(signal || {}), reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }
       }
     };
 

@@ -124,6 +124,60 @@ test('a pack named "EN 301 549" under another key is still refused', () => {
   assert.deepEqual(preparePacks([standIn]).skipped, []);
 });
 
+// The stand-in with a V3.2.1 profile, keeping 4.1.1 Parsing or not, under a
+// name of its own: a pack and profile are warned about once per process.
+const withV321 = (name, extra) =>
+  definePack({
+    ...standIn,
+    name,
+    standard: {
+      ...standIn.standard,
+      profiles: {
+        ...standIn.standard.profiles,
+        'en301549-v3.2.1': { version: 'V3.2.1', tags: wcagTags('2.1'), ...extra }
+      }
+    }
+  });
+
+function parsingRun(pack) {
+  const original = console.warn;
+  const warnings = [];
+  console.warn = (msg) => warnings.push(String(msg));
+  try {
+    const result = runa11yCoreOnHtml('<main><p id="a">One</p><p id="a">Two</p></main>', {
+      engineOptions: { packs: [pack], profile: 'en301549-v3.2.1' }
+    });
+    return {
+      outcome: result.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome,
+      warnings: warnings.filter((w) => /keepsParsing/.test(w))
+    };
+  } finally {
+    console.warn = original;
+  }
+}
+
+test("a pack's profile that replaces one keeping 4.1.1 without saying so is warned about", () => {
+  // Core's own profile keeps it: a duplicate id fails.
+  const builtIn = deprecationWarnings(() =>
+    runa11yCoreOnHtml('<main><p id="a">One</p><p id="a">Two</p></main>', {
+      engineOptions: { profile: 'en301549-v3.2.1' }
+    })
+  ).value;
+  assert.equal(builtIn.checksResults.find((c) => c.ruleId === 'duplicate-id').outcome, 'fail');
+
+  const lost = parsingRun(withV321('en301549-stand-in-lost', {}));
+  assert.equal(lost.outcome, 'cantTell');
+  assert.equal(lost.warnings.length, 1, lost.warnings.join('\n'));
+  assert.match(lost.warnings[0], /en301549-stand-in-lost@1\.0\.0: its profile en301549-v3\.2\.1/);
+  // Once per pack and profile in a process.
+  assert.deepEqual(parsingRun(withV321('en301549-stand-in-lost', {})).warnings, []);
+
+  const kept = parsingRun(withV321('en301549-stand-in-kept', { keepsParsing: true }));
+  assert.deepEqual(kept, { outcome: 'fail', warnings: [] });
+  // A profile core's doesn't keep 4.1.1 in says nothing.
+  assert.deepEqual(parsingRun(standIn).warnings, []);
+});
+
 test('loading @surea11y/core/en301549 warns once per process', () => {
   const entry = path.join(__dirname, '..', 'src', 'en301549.js');
   const script = `

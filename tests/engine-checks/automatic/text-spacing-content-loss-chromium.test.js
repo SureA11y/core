@@ -736,3 +736,74 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(rollup('wcag-1.4.12-text-spacing'), 'fail');
   });
 });
+
+// Leans on the measured findings.
+test(`${RULE_ID} in Chromium: which way the measured findings lean`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  async function scan(html, pageOptions = {}) {
+    const p = await browser.newPage(pageOptions);
+    try {
+      await p.setContent(html);
+      await addBundle(p);
+      const result = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+        RULE_ID
+      );
+      return result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+    } finally {
+      await p.close();
+    }
+  }
+  const LONG =
+    'Opening hours today are from nine in the morning until five in the afternoon, and on Saturdays from ten until two, closed on Sundays.';
+  const excerpt = (height) =>
+    page(
+      `#box{width:320px;font:16px/1.25 sans-serif;height:${height};overflow:hidden}`,
+      `<div id="box">${LONG}</div>`
+    );
+
+  await t.test('an excerpt that shows no line in full leans fail', async () => {
+    const [none] = await scan(excerpt('18px'));
+    assert.equal(none.data.details.reasonCode, 'TEXT_CLIPPED_FURTHER');
+    assert.deepEqual(none.data.details.lines, { shownBefore: 1, shownAfter: 0 });
+    assert.equal(none.lean.toward, 'fail');
+    assert.equal(none.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_clippedFurther');
+
+    const [fewer] = await scan(excerpt('2.5em'));
+    assert.equal(fewer.data.details.reasonCode, 'TEXT_CLIPPED_FURTHER');
+    assert.equal(fewer.lean, undefined);
+  });
+
+  await t.test('text drawn over most of another line leans fail', async () => {
+    const [overlap] = await scan(
+      page(
+        '#box{height:20px;width:160px}',
+        `<div id="box">${TEXT}</div><div>Closed on Sundays</div>`
+      )
+    );
+    assert.equal(overlap.data.details.reasonCode, 'TEXT_OVERLAPS');
+    assert.equal(overlap.lean.toward, 'fail');
+    assert.equal(overlap.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_overlaps');
+  });
+
+  await t.test('a scroll lock behind a banner at the bottom leans pass', async () => {
+    const lines = Array.from({ length: 40 }, (_, i) => `<p style="margin:0">Line ${i}</p>`).join(
+      ''
+    );
+    const locked = (extra) =>
+      `<!doctype html><html lang="en"><head><title>t</title><style>body{font:16px/20px sans-serif;margin:0;overflow:hidden} #c{position:fixed;bottom:0;left:0;right:0;background:#fff}</style></head><body id="b">${lines}${extra}</body></html>`;
+    const small = { viewport: { width: 400, height: 300 } };
+    const [banner] = await scan(
+      locked('<div id="c">We use cookies. <button>Accept</button></div>'),
+      small
+    );
+    assert.equal(banner.data.details.reasonCode, 'VIEWPORT_SCROLL_LOCKED');
+    assert.equal(banner.lean.toward, 'pass');
+    assert.equal(banner.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_scrollLocked');
+
+    const [bare] = await scan(locked(''), small);
+    assert.equal(bare.data.details.reasonCode, 'VIEWPORT_SCROLL_LOCKED');
+    assert.equal(bare.lean, undefined);
+  });
+});

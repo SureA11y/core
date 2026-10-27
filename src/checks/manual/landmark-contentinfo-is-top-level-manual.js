@@ -19,6 +19,12 @@
  *   region. A contentinfo nested inside another landmark is not a
  *   top-level, whole-page footer region and confuses landmark-based
  *   navigation for assistive technology users.
+ * @reason-codes
+ *   - `LANDMARK_CONTENTINFO_NOT_TOP_LEVEL` (cantTell): a contentinfo landmark
+ *     sits inside another landmark instead of at the top level of the page.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 contentinfo role (best practice); HTML-AAM footer
+ *     element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -47,7 +53,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_CONTENTINFO_NOT_TOP_LEVEL: {
+      steps: [
+        'Find the contentinfo (a footer or role="contentinfo") the report names and the landmark it sits inside.',
+        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where it appears.",
+        'Decide whether this is the page-wide footer; if it is the footer of an article or section, it should not be a contentinfo.'
+      ],
+      passWhen: 'The contentinfo sits at the top level of the page, outside any other landmark.',
+      failWhen:
+        'A contentinfo sits inside another landmark, which confuses landmark navigation, a best-practice miss under the WAI-ARIA contentinfo role.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -129,6 +149,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkContentinfoIsTopLevel_summary_cantTell',
           hintKey: 'landmarkContentinfoIsTopLevel_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The contentinfo landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkContentinfoIsTopLevel_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_CONTENTINFO_NOT_TOP_LEVEL' }

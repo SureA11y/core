@@ -1,0 +1,219 @@
+{
+  "$comment": "The findings whose reason code changed in a minor release while the finding stayed the same (a rule that gave none now gives one, or a code split by cause): a baseline entry written under the old code still matches the finding under the new one, with the same rule, markup and frame (src/baseline.js, docs/BASELINE.md \"Upgrading\"). `since` is the minor release the finding moved in; `stillGiven` marks a split, whose old code the rule still gives for other findings. scripts/freeze-finding-ids.js drops a move at the release after the one it shipped in, so a move applies to baselines from the one minor release before it.",
+  "moves": [
+    {
+      "ruleId": "area-alt-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING",
+        "TEXT_ALTERNATIVE_EMPTY"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "area-alt-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "aria-prohibited-children",
+      "from": "ARIA_PROHIBITED_CHILD_ROLELESS",
+      "to": [
+        "ARIA_PROHIBITED_CHILD"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "canvas-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING",
+        "ROLE_IMG_NAME_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "canvas-text-alternative-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "duplicate-id",
+      "from": "DUPLICATE_ID",
+      "to": [
+        "DUPLICATE_ID_IN_SHADOW_TREE"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "embed-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "embed-text-alternative-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "img-alt-decorative",
+      "from": "EXCLUDED_ELEMENT_REVIEW",
+      "to": [
+        "IMAGE_ONLY_CONTROL_CONTENT"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "img-alt-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "img-alt-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW",
+        "IMAGE_ONLY_CONTROL_CONTENT"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "input-image-alt-decorative",
+      "from": "DEFAULT",
+      "to": [
+        "NAME_FROM_ELSEWHERE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "input-image-alt-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "list-children-valid",
+      "from": "LIST_INVALID_CHILD",
+      "to": [
+        "LIST_ITEM_ROLE_OVERRIDDEN"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "listitem-parent-valid",
+      "from": "LISTITEM_INVALID_PARENT",
+      "to": [
+        "LIST_ROLE_OVERRIDDEN"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "manual-review",
+      "from": "DEFAULT",
+      "to": [
+        "KEYBOARD_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "object-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "object-text-alternative-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "p-as-heading",
+      "from": "BOLD_LARGE_DIV",
+      "to": [
+        "HEADING_LIKE_NUMBER",
+        "HEADING_LIKE_LINK"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "p-as-heading",
+      "from": "BOLD_LARGE_PARAGRAPH",
+      "to": [
+        "HEADING_LIKE_NUMBER",
+        "HEADING_LIKE_LINK"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "svg-image-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "svg-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "svg-text-alternative-quality",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_REVIEW",
+        "IMAGE_ONLY_CONTROL_CONTENT"
+      ],
+      "since": "1.14"
+    },
+    {
+      "ruleId": "valid-lang",
+      "from": "ELEMENT_LANG_INVALID",
+      "to": [
+        "DEFAULT_LANG_INVALID"
+      ],
+      "stillGiven": true,
+      "since": "1.14"
+    },
+    {
+      "ruleId": "video-poster-text-alternative-present",
+      "from": "DEFAULT",
+      "to": [
+        "TEXT_ALTERNATIVE_MISSING"
+      ],
+      "since": "1.14"
+    }
+  ]
+}

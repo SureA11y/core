@@ -252,3 +252,77 @@ test(`${RULE_ID}: the one-line estimate follows the font size and counts wide ch
   const ja = `<!doctype html><html lang="ja"><body><p style="line-height:1 !important">図書館の開館時間は曜日によって異なりますのでご注意ください</p></body></html>`;
   assertRule(runa11yCoreOnHtml(ja, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
 });
+
+// Leans. Text that cannot wrap leans pass, whichever shape shows it.
+test(`${RULE_ID}: text that cannot wrap leans pass, naming the shape`, () => {
+  for (const [body, shape] of [
+    [`<p id="t" style="white-space: nowrap; line-height: 1 !important">${LONG}</p>`, 'white-space'],
+    [
+      '<p id="t" style="line-height: 1 !important">Supercalifragilisticexpialidocious</p>',
+      'unbreakable-word'
+    ]
+  ]) {
+    const html = `<!doctype html><html lang="en"><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const occ = rule.occurrences[0];
+    assert.strictEqual(occ.data.details.reasonCode, 'INLINE_SPACING_NO_SOFT_WRAP');
+    assert.strictEqual(occ.lean.toward, 'pass');
+    assert.strictEqual(occ.lean.i18n.whyKey, 'avoidInlineSpacing_lean_why_noSoftWrap');
+    assert.deepStrictEqual(occ.lean.signals[0], { signal: 'no-wrap-shape', value: shape });
+  }
+});
+
+// Short text leans only on the lines a browser draws: none without layout.
+test(`${RULE_ID}: short text has no lean without layout`, () => {
+  const html = `<!doctype html><html lang="en"><body><p style="line-height: 1 !important">Buy now</p></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'INLINE_SPACING_SHORT_TEXT');
+  assert.strictEqual(rule.occurrences[0].lean, undefined);
+});
+
+test(`${RULE_ID}: short text in Chromium leans on the lines it is drawn on`, async (t) => {
+  const { chromium, executablePath, skip } = require('../../helpers/chromium.js');
+  if (skip) return t.skip(skip);
+  const { addBundle } = require('../../helpers/browserBundle');
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  async function scan(body) {
+    const p = await browser.newPage({ viewport: { width: 1024, height: 700 } });
+    try {
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`
+      );
+      await addBundle(p);
+      const result = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+        RULE_ID
+      );
+      return result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+    } finally {
+      await p.close();
+    }
+  }
+  const wraps = await scan(
+    '<div style="width: 60px; line-height: 1 !important">Short text here</div>'
+  );
+  assert.strictEqual(wraps.data.details.reasonCode, 'INLINE_SPACING_SHORT_TEXT');
+  assert.strictEqual(wraps.lean.toward, 'fail');
+  assert.strictEqual(wraps.lean.i18n.whyKey, 'avoidInlineSpacing_lean_why_shortTextWraps');
+
+  const oneLine = await scan('<span style="line-height: 1 !important">Buy now</span>');
+  assert.strictEqual(oneLine.lean.toward, 'pass');
+  assert.strictEqual(oneLine.lean.i18n.whyKey, 'avoidInlineSpacing_lean_why_shortTextOneLine');
+
+  // On one line, but needing more than half of 320 pixels: no lean.
+  const longer = await scan(
+    '<span style="line-height: 1 !important">Opening hours today and tomorrow</span>'
+  );
+  assert.strictEqual(longer.data.details.reasonCode, 'INLINE_SPACING_SHORT_TEXT');
+  assert.strictEqual(longer.lean, undefined);
+});

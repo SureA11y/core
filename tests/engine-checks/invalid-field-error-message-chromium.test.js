@@ -2,8 +2,8 @@
 
 /**
  * invalid-field-error-message in Chromium: a message hidden by a style
- * sheet fails, while one collapsed by its box or visually hidden is not
- * failed, since the page doesn't state it is hidden.
+ * sheet is asked about, leaning fail, while one collapsed by its box or
+ * visually hidden passes, since the page doesn't state it is hidden.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -23,12 +23,12 @@ const STYLE =
 // [the message element, the outcome, its reason code]
 const CASES = [
   ['<p id="e">Enter an email address.</p>', 'pass', null],
-  ['<p id="e" class="error">Enter an email address.</p>', 'fail', 'ERROR_MESSAGE_HIDDEN'],
-  ['<p id="e" class="invisible">Enter an email address.</p>', 'fail', 'ERROR_MESSAGE_HIDDEN'],
+  ['<p id="e" class="error">Enter an email address.</p>', 'cantTell', 'ERROR_MESSAGE_HIDDEN'],
+  ['<p id="e" class="invisible">Enter an email address.</p>', 'cantTell', 'ERROR_MESSAGE_HIDDEN'],
   ['<p id="e" class="sr-only">Enter an email address.</p>', 'pass', null],
   [
     '<p id="e"><span class="error">Enter an email address.</span></p>',
-    'fail',
+    'cantTell',
     'ERROR_MESSAGE_EMPTY'
   ]
 ];

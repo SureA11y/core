@@ -55,7 +55,7 @@ function resolveMargin(declaration, candidates, measuredCount, helpers, options)
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
-  // the loop was quadratic: on a page where most text shares a colour every
+  // the loop was quadratic: on a page where most text shares a color every
   // candidate ties, and in Blink each compareDocumentPosition walks the
   // siblings between the two elements.
   let ties = [];

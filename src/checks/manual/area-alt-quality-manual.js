@@ -36,6 +36,7 @@
  *   is an image, or more than 150 characters. Such a name gets its own summary and hint;
  *   the finding stays `cantTell`.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
  *   - `name`: the text alternative the area ends up with, taken from the
  *     first source in `sources`.
  *   - `sources`: each source of text the area has, in the order they are
@@ -44,6 +45,11 @@
  *     name look like something other than a description, as for
  *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (an area with an alt attribute): the alt text.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <area> link has a text
+ *     alternative, and a person checks that it says where the link leads.
+ *     It leans fail when the name is a file name or a placeholder word.
+ *     Basis: WCAG 1.1.1 (not settled); H24.
  * @implementation-notes
  * - A page reports at most 50 elements with an ordinary text alternative
  *   and, on top, at most 50 whose text alternative has a signal, each in
@@ -81,6 +87,21 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Find the image map area the report names and look at the part of the image it covers.',
+        'Click it, or follow its link, and note where it leads.',
+        "Read the area's text alternative (and every other source the report lists) and check that it says where the link leads or what the region is."
+      ],
+      passWhen:
+        'The text alternative tells the user where the link goes, in words that match the region.',
+      failWhen:
+        "The text alternative is wrong, generic, a file name or doesn't say where the link leads, which fails WCAG 1.1.1 (H24)."
     }
   }
 };
@@ -326,8 +347,24 @@ function runInPage(ctx) {
         ? helpers.describeTextAlternativeSignal(signal, 'area')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
+
+    // A file name or a generic word says nothing of where the link leads
+    // (F30). An address does, so it gets no lean.
+    const lean =
+      signal && (signal.altSignal === 'file-name' || signal.altSignal === 'placeholder')
+        ? {
+            toward: 'fail',
+            why: 'A file name or a generic word does not say where the link leads.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            caution: 'The word may be all the area of the image shows.',
+            i18n: { whyKey: 'area_altQuality_lean_why', cautionKey: 'area_altQuality_lean_caution' }
+          }
+        : null;
 
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : `Check that the text alternative of this <area> (${sourcesText}) is accurate.`,

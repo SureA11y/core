@@ -23,6 +23,11 @@
  *   3.2.5 (Change on Request) require that a *timed* automatic context
  *   change happen only at the user's request, regardless of how long the
  *   timer is.
+ * @reason-codes
+ *   - `META_REFRESH_PRESENT` (fail): the page's meta refresh reloads or
+ *     redirects it after a positive delay, a timed change the user did not
+ *     ask for.
+ *     Basis: WCAG 2.2.4; WCAG 3.2.5; ACT bisz58; F40; F41; HTML meta refresh.
  * @implementation-notes
  * - Distinct, atomic decision from meta-refresh-timing-absent: that
  *   rule's >20-hour exemption for a positive delay is this rule's fail

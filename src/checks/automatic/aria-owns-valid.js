@@ -26,6 +26,14 @@
  *   - `ownerCount`: for `ARIA_OWNS_DUPLICATE`, how many elements name the
  *     owned element in `aria-owns`.
  *   - `ownedId`: the id named.
+ * @reason-codes
+ *   - `ARIA_OWNS_DUPLICATE` (fail): an element named in the aria-owns of two or
+ *     more elements, so the browser gives it to one owner and the structure the
+ *     others state is lost.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns (MUST).
+ *   - `ARIA_OWNS_ANCESTOR` (fail): an aria-owns that names the element itself
+ *     or one of its ancestors, an ownership the browser ignores.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns.
  * @implementation-notes
  * - Chromium, checked: an element named by two owners is a child of one of
  *   them only, and an owner naming its ancestor gets no such child.

@@ -25,6 +25,15 @@
  *   accepted: text sitting inside a custom listbox widget is not reliably
  *   exposed as its name. On a labelable element (<select multiple
  *   role="listbox">) an associated <label> counts as well.
+ * @reason-codes
+ *   - `name_missing` (fail): an element with the listbox role has no
+ *     accessible name from aria-label, aria-labelledby, title or a label.
+ *     Basis: WCAG 4.1.2; ACT e086e5; ARIA16; WAI-ARIA 1.2 listbox role
+ *     (MUST); accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'listbox-name-present';
@@ -52,7 +61,22 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['listbox-name-present'] } }
+  coverage: { facetsBySc: { '4.1.2': ['listbox-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the listbox the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the listbox, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The listbox has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {

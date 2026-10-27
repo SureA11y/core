@@ -25,6 +25,20 @@
  *     known role, or the known ones are all abstract.
  *   - `nativeRole` (the CANTTELL case): the element's native role, which
  *     assistive technology keeps using.
+ * @reason-codes
+ *   - `ARIA_ROLE_INVALID` (fail, cantTell): no token of the role attribute is a
+ *     known ARIA role; it fails on an element left with no role, and is asked
+ *     about where the element keeps its native role.
+ *     Where asked about, it leans pass when the value is a near misspelling of
+ *     the native role and fail when it is one of another role.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute.
+ *   - `ARIA_ROLE_ABSTRACT` (fail, cantTell): the role attribute names only
+ *     abstract roles, which authors must not use; it fails on an element left
+ *     with no role, and is asked about where the element keeps its native role.
+ *     Where asked about, it leans pass when the native role is a kind of the
+ *     abstract role named, and fail when it is not.
+ *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles
+ *     (MUST).
  */
 
 const id = 'aria-roles-valid';
@@ -60,7 +74,34 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['aria-role-valid'], '4.1.2': ['aria-role-valid'] } }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-valid'], '4.1.2': ['aria-role-valid'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ROLE_ABSTRACT: {
+      steps: [
+        'Inspect the element the report names and note the abstract role (such as landmark, widget, command) and its tag.',
+        "Open the Accessibility pane in the browser's developer tools and check the role exposed instead (the native role).",
+        'Decide whether the native role is a concrete kind of the abstract role named (a nav for landmark, a button for widget).'
+      ],
+      passWhen:
+        'The native role is a concrete form of what the author named, so the element is still exposed correctly (still remove the abstract role).',
+      failWhen:
+        'The native role does not match the intent (such as a button marked landmark), so the meant role is never exposed, which fails WCAG 4.1.2 (ACT 674b10).'
+    },
+    ARIA_ROLE_INVALID: {
+      steps: [
+        'Inspect the element the report names and note the unknown role value and its tag.',
+        'Work out which role was probably meant (for example "buton" for button).',
+        "Open the Accessibility pane in the browser's developer tools and check the role that is exposed instead (the element's native role).",
+        'Compare the exposed role with the intended one and with how the element behaves.'
+      ],
+      passWhen:
+        'The exposed native role is the one that was meant, so users get the right role (still correct the typo).',
+      failWhen:
+        'The intended role differs from the exposed one, so users get the wrong role, which fails WCAG 4.1.2 (ACT 674b10).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -110,6 +151,165 @@ function runInPage(ctx) {
     return false;
   }
 
+  // The native roles that are a kind of each abstract role (WAI-ARIA 1.2
+  // superclass chains), for the native roles getNativeRoleForElement gives.
+  const NATIVE_BY_ABSTRACT = {
+    command: ['link', 'button'],
+    composite: ['listbox'],
+    input: ['checkbox', 'radio', 'textbox', 'searchbox', 'combobox'],
+    landmark: ['complementary', 'form', 'banner', 'navigation', 'main'],
+    range: [],
+    roletype: null, // every role
+    section: [
+      'complementary',
+      'form',
+      'banner',
+      'img',
+      'listitem',
+      'navigation',
+      'list',
+      'listbox',
+      'main',
+      'table',
+      'cell',
+      'columnheader',
+      'row'
+    ],
+    sectionhead: ['heading', 'columnheader'],
+    select: ['listbox'],
+    structure: [
+      'article',
+      'complementary',
+      'form',
+      'banner',
+      'heading',
+      'separator',
+      'img',
+      'listitem',
+      'navigation',
+      'list',
+      'listbox',
+      'main',
+      'table',
+      'cell',
+      'columnheader',
+      'row'
+    ],
+    widget: [
+      'link',
+      'button',
+      'checkbox',
+      'radio',
+      'textbox',
+      'searchbox',
+      'combobox',
+      'listbox',
+      'columnheader',
+      'row'
+    ],
+    window: []
+  };
+
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // The one concrete role a token is a near misspelling of: one edit away
+  // for a token of up to five letters, two for a longer one, and no other
+  // role as near. Shorter tokens resemble too many words to tell.
+  function nearestRole(token) {
+    if (token.length < 4 || typeof ariaHelpers.concreteRoles !== 'function') return '';
+    const limit = token.length <= 5 ? 1 : 2;
+    let best = '';
+    let bestDistance = Infinity;
+    let tie = false;
+    for (const r of ariaHelpers.concreteRoles()) {
+      const d = editDistance(token, r);
+      if (d < bestDistance) {
+        best = r;
+        bestDistance = d;
+        tie = false;
+      } else if (d === bestDistance) tie = true;
+    }
+    return bestDistance <= limit && !tie ? best : '';
+  }
+
+  // Which way an unusable role on an element that keeps its native role
+  // points: whether the native role is what the author named.
+  function leanFor(reasonCode, tokens, nativeRole) {
+    if (reasonCode === 'ARIA_ROLE_INVALID') {
+      if (tokens.length !== 1) return null;
+      const nearest = nearestRole(tokens[0]);
+      if (!nearest) return null;
+      const signals = [
+        { signal: 'nearest-known-role', value: nearest },
+        { signal: 'native-role', value: nativeRole }
+      ];
+      if (nearest === nativeRole) {
+        return {
+          toward: 'pass',
+          why: 'The role value looks like a misspelling of the element’s native role, which the element keeps.',
+          signals,
+          i18n: { whyKey: 'ariaRolesValid_lean_why_typoOfNative' }
+        };
+      }
+      return {
+        toward: 'fail',
+        why: 'The role value looks like a misspelling of another role, which the element does not get: it keeps its native role instead.',
+        signals,
+        caution: 'A short value can resemble a role it was never meant to be.',
+        i18n: {
+          whyKey: 'ariaRolesValid_lean_why_typoOfOther',
+          cautionKey: 'ariaRolesValid_lean_caution_typoOfOther'
+        }
+      };
+    }
+    const named = tokens.filter((t) => ariaHelpers.isAbstractRole(t));
+    if (!named.length) return null;
+    const isKind = named.some((t) => {
+      const kinds = NATIVE_BY_ABSTRACT[t];
+      return kinds === null || (Array.isArray(kinds) && kinds.includes(nativeRole));
+    });
+    const signals = [
+      { signal: 'native-role', value: nativeRole },
+      { signal: 'native-is-subclass', value: isKind }
+    ];
+    if (isKind) {
+      return {
+        toward: 'pass',
+        why: 'The element’s native role is a kind of the abstract role named, so it already exposes a concrete form of it.',
+        signals,
+        caution: 'Being a kind of the abstract role does not show it is the role meant.',
+        i18n: {
+          whyKey: 'ariaRolesValid_lean_why_abstractKind',
+          cautionKey: 'ariaRolesValid_lean_caution_abstractKind'
+        }
+      };
+    }
+    return {
+      toward: 'fail',
+      why: 'The element’s native role is not a kind of the abstract role named, so what the author named is not exposed.',
+      signals,
+      i18n: { whyKey: 'ariaRolesValid_lean_why_abstractOther' }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -144,6 +344,7 @@ function runInPage(ctx) {
         : '';
 
     if (nativeRole) {
+      const lean = leanFor(reasonCode, tokens, nativeRole);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
@@ -159,6 +360,7 @@ function runInPage(ctx) {
             needed: 'Whether the native role this element falls back to is the one intended.',
             evidence: { role, nativeRole, fallbackExposed: true }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode, role, nativeRole }
           }

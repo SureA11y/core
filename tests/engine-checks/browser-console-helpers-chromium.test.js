@@ -32,8 +32,9 @@ const PAGE = `<!doctype html><html lang="en"><head><title>Console</title></head>
 </body></html>`;
 
 // For inspect(): a heading level from aria-level, an unnamed button, a
-// positive tabindex that Tab reaches first, a hidden link left out, and a
-// <header> that is a banner only outside <main>.
+// positive tabindex that Tab reaches first, a hidden link left out, a link
+// hidden only with aria-hidden that Tab still reaches, and a <header> that
+// is a banner only outside <main>.
 const INSPECT_PAGE = `<!doctype html><html lang="en"><head><title>Inspect</title></head><body>
 <header><a id="home" href="/">Home</a></header>
 <nav aria-label="Main"><a id="about" href="/about">About</a></nav>
@@ -43,6 +44,7 @@ const INSPECT_PAGE = `<!doctype html><html lang="en"><head><title>Inspect</title
 <button id="unnamed" style="width:40px;height:20px"></button>
 <input id="q" aria-label="Search" tabindex="2">
 <a id="hidden" href="/x" hidden>Hidden</a>
+<div aria-hidden="true"><a id="ah" href="/y">Skip</a></div>
 <section><header>Not a banner</header></section>
 </main>
 <footer>Footer</footer>
@@ -58,6 +60,13 @@ test('console helpers in Chromium', { skip }, async (t) => {
     if (pathname === '/') return route.fulfill({ contentType: 'text/html', body: PAGE });
     if (pathname === '/inspect') {
       return route.fulfill({ contentType: 'text/html', body: INSPECT_PAGE });
+    }
+    if (pathname === '/csp') {
+      return route.fulfill({
+        contentType: 'text/html',
+        headers: { 'content-security-policy': "script-src 'self'; style-src 'self'" },
+        body: PAGE
+      });
     }
     const file = path.join(ROOT, path.basename(pathname));
     if (pathname.startsWith('/dist/') && fs.existsSync(file)) {
@@ -164,7 +173,7 @@ test('console helpers in Chromium', { skip }, async (t) => {
         const drawn = !!document.querySelector('[data-surea11y-highlights]');
         let error = '';
         try {
-          await api.inspect('colours');
+          await api.inspect('colors');
         } catch (e) {
           error = e.name + ': ' + e.message;
         }
@@ -223,13 +232,18 @@ test('console helpers in Chromium', { skip }, async (t) => {
           [1, '#q', 2],
           [2, '#home', undefined],
           [3, '#about', undefined],
-          [4, '#unnamed', undefined]
+          [4, '#unnamed', undefined],
+          [5, '#ah', undefined]
         ]
       );
-      assert.deepEqual(
-        got.orderMarks.map(([label]) => label),
-        ['1', '2', '3', '4']
-      );
+      assert.equal(got.order[4].ariaHidden, true);
+      assert.deepEqual(got.orderMarks, [
+        ['1', false],
+        ['2', false],
+        ['3', false],
+        ['4', false],
+        ['5 (aria-hidden)', true]
+      ]);
       assert.equal(got.listed.length, 3);
       assert.equal(got.drawn, false, 'draw: false lists without drawing');
       assert.match(
@@ -238,6 +252,39 @@ test('console helpers in Chromium', { skip }, async (t) => {
       );
       await other.evaluate(() => window.a11ycore.clearHighlights());
       assert.equal(await other.evaluate(() => document.body.outerHTML), before);
+      await other.close();
+    }
+  );
+
+  await t.test(
+    'highlight() draws under a CSP without inline styles, and over a transformed <html>',
+    async () => {
+      const other = await context.newPage();
+      await other.goto(`${ORIGIN}csp`);
+      const got = await other.evaluate(async () => {
+        const html = document.documentElement.style;
+        html.transform = 'translate(30px, 10px) scale(0.8)';
+        html.transformOrigin = '0 0';
+        html.zoom = '1.25';
+        html.margin = '15px';
+        html.border = '5px solid';
+        window.scrollTo(0, 100);
+        const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+        window.a11ycore.highlight(result);
+        const box = document
+          .querySelector('[data-surea11y-highlights]')
+          .shadowRoot.querySelector('.box');
+        const a = box.getBoundingClientRect();
+        const e = document.getElementById('logo').getBoundingClientRect();
+        return {
+          border: getComputedStyle(box).borderTopStyle,
+          off: [a.left - e.left, a.top - e.top, a.width - e.width, a.height - e.height].map(
+            (v) => Math.round(v) || 0
+          )
+        };
+      });
+      assert.equal(got.border, 'solid', 'the layer is styled');
+      assert.deepEqual(got.off, [0, 0, 0, 0]);
       await other.close();
     }
   );

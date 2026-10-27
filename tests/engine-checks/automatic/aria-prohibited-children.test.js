@@ -147,7 +147,7 @@ test(`${RULE_ID}: fail when a roleless-but-focusable (tabindex) child is owned b
   assert.equal(rule.occurrences[0].data.details.attr, 'tabindex');
 });
 
-test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no tabindex attribute) child is owned by a container, must not be misreported as "carries tabindex"`, () => {
+test(`${RULE_ID}: fail when a natively focusable child (e.g. <a href>, no tabindex attribute) is owned by a container, reported by its own role, not as "carries tabindex"`, () => {
   const html = `<!doctype html><html><body>
     <ul role="list">
       <li role="listitem">Item</li>
@@ -157,10 +157,12 @@ test(`${RULE_ID}: fail when a roleless-but-natively-focusable (e.g. <a href>, no
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
-  assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_PROHIBITED_CHILD_ROLELESS');
-  assert.equal(rule.occurrences[0].data.details.attr, 'nativeFocusable');
+  const { details } = rule.occurrences[0].data;
+  assert.equal(details.reasonCode, 'ARIA_PROHIBITED_CHILD');
+  assert.equal(details.childRole, 'link');
+  assert.equal(details.attr, 'nativeFocusable');
   assert.ok(!/carries tabindex/.test(rule.occurrences[0].summary));
-  assert.ok(/can take focus/.test(rule.occurrences[0].summary));
+  assert.match(rule.occurrences[0].summary, /^This element is a link,/);
 });
 
 test(`${RULE_ID}: pass when a natively-focusable descendant sits several DOM levels inside a bare <li> (no role="" attribute) under role="list": the <li>'s implicit listitem role is the real owned child and stops the walk there, matching aria-required-children's own native-tag fallback`, () => {

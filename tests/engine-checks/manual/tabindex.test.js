@@ -34,6 +34,36 @@ test(`${RULE_ID}: pass when tabindex is negative`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: leans fail when the positive tabindex moves focus out of document order, pass when it does not`, () => {
+  const leanOf = (body, id) => {
+    const rule = assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell'
+    );
+    const occ = rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+    assert.equal(occ.data.details.reasonCode, 'TABINDEX_POSITIVE');
+    return occ.lean;
+  };
+  const jumps = leanOf('<a href="/a">A</a><button id="p" tabindex="1">B</button>', 'p');
+  assert.equal(jumps.toward, 'fail');
+  assert.equal(jumps.i18n.whyKey, 'tabindex_lean_why_reordered');
+  const inOrder = leanOf(
+    '<button id="p" tabindex="1">B</button><button tabindex="2">C</button><a href="/a">A</a>',
+    'p'
+  );
+  assert.equal(inOrder.toward, 'pass');
+  assert.equal(inOrder.i18n.whyKey, 'tabindex_lean_why_inOrder');
+  // First in both orders, while another positive tabindex jumps: no lean.
+  assert.equal(
+    leanOf(
+      '<button id="p" tabindex="1">B</button><a href="/a">A</a><button tabindex="2">C</button>',
+      'p'
+    ),
+    undefined
+  );
+});
+
 test(`${RULE_ID}: cantTell when tabindex is positive`, () => {
   const html = `<!doctype html><html><body><div id="a" tabindex="3">x</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });

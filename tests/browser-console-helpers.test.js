@@ -75,22 +75,49 @@ test('table() lists fail and cantTell occurrences worst first, and prints them',
   assert.equal(printed.length, 1);
   assert.deepEqual(plain(printed[0]), plain(rows));
   assert.ok(rows.length >= 2);
-  const rank = { fail: 0, cantTell: 1 };
+  const rank = (r) =>
+    ({ fail: 0, cantTell: 1 })[r.outcome] * 3 + { fail: 0, pass: 1, '': 2 }[r.lean];
   const sev = { critical: 0, serious: 1, moderate: 2, minor: 3 };
   for (let i = 1; i < rows.length; i++) {
     const a = rows[i - 1];
     const b = rows[i];
     assert.ok(
-      rank[a.outcome] < rank[b.outcome] ||
-        (rank[a.outcome] === rank[b.outcome] && (sev[a.severity] ?? 9) <= (sev[b.severity] ?? 9)),
+      rank(a) < rank(b) ||
+        (rank(a) === rank(b) && (sev[a.severity] ?? 9) <= (sev[b.severity] ?? 9)),
       `${a.rule} before ${b.rule}`
     );
   }
   const img = rows.find((r) => r.rule === 'img-alt-present');
-  assert.deepEqual(plain(Object.keys(img)), ['outcome', 'severity', 'rule', 'element', 'summary']);
+  assert.deepEqual(plain(Object.keys(img)), [
+    'outcome',
+    'lean',
+    'severity',
+    'rule',
+    'element',
+    'summary'
+  ]);
+  assert.equal(img.lean, '');
   assert.equal(img.outcome, 'fail');
   assert.match(img.element, /img/);
   assert.ok(img.summary);
+  dom.window.close();
+});
+
+test('table() puts the questions that lean fail before those that lean pass and the open ones', async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<h1>A</h1><h3>B</h3><input type="checkbox" checked aria-checked="false" aria-label="A">' +
+      '</main></body></html>'
+  );
+  dom.window.console.table = () => {};
+  const result = await dom.window.a11ycore.run({
+    runOnly: ['aria-checked-state-mismatch', 'heading-order', 'p-as-heading']
+  });
+  const rows = plain(dom.window.a11ycore.table(result)).map((r) => [r.rule, r.outcome, r.lean]);
+  assert.deepEqual(rows.slice(0, 2), [
+    ['heading-order', 'cantTell', 'fail'],
+    ['aria-checked-state-mismatch', 'cantTell', 'pass']
+  ]);
   dom.window.close();
 });
 
@@ -124,6 +151,26 @@ test('run() takes runOnly in any form the scan takes, and the engine checks it',
   dom.window.close();
 });
 
+test('run() refuses options that would quietly run every rule', async () => {
+  const dom = await load();
+  const { a11ycore } = dom.window;
+  await assert.rejects(
+    a11ycore.run(['img-alt-present']),
+    /^TypeError: run: options must be an object, not a list\. .*runOnly/
+  );
+  await assert.rejects(a11ycore.run('img-alt-present'), /not string\./);
+  for (const key of ['wcag', 'bestPractices', 'includeRuleIds']) {
+    await assert.rejects(
+      a11ycore.run({ [key]: ['x'] }),
+      new RegExp(`^TypeError: run: ${key} is part of the selection, which goes under runOnly`)
+    );
+  }
+  // tags and profile are engine options as well.
+  const tagged = await a11ycore.run({ tags: ['wcag111'], profile: 'wcag22-aa' });
+  assert.ok(tagged.checksResults.length);
+  dom.window.close();
+});
+
 test('inspect() lists headings and the focus order, leaves hidden elements out, and refuses an unknown kind', async () => {
   const dom = await load(
     '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
@@ -143,8 +190,58 @@ test('inspect() lists headings and the focus order, leaves hidden elements out, 
     [2, '#a', 'One']
   ]);
   await assert.rejects(
-    a11ycore.inspect('colours'),
+    a11ycore.inspect('colors'),
     /inspect: kind must be one of headings, landmarks, names, focus-order/
+  );
+  dom.window.close();
+});
+
+test("inspect('names') gives the roles and names the rules use", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<input type="button" value="Add"><input type="submit"><input type="reset"><input type="button">' +
+      '<select multiple aria-label="A"><option>a</option></select>' +
+      '<select size="3" aria-label="B"><option>b</option></select>' +
+      '<select aria-label="C"><option>c</option></select>' +
+      '<table role="grid"><tr><td tabindex="0">Cell</td></tr></table>' +
+      '</main></body></html>'
+  );
+  const rows = await dom.window.a11ycore.inspect('names', { draw: false });
+  assert.deepEqual(plain(rows.map((r) => [r.role, r.name])), [
+    ['button', 'Add'],
+    ['button', 'Submit'],
+    ['button', 'Reset'],
+    ['button', ''],
+    ['listbox', 'A'],
+    ['listbox', 'B'],
+    ['combobox', 'C'],
+    ['gridcell', 'Cell']
+  ]);
+  dom.window.close();
+});
+
+test("inspect('focus-order') follows Tab through radio groups, aria-hidden and shadow roots", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
+      '<button id="a">A</button><div id="host"></div><button id="c">C</button>' +
+      '<input type="radio" name="g" id="r1"><input type="radio" name="g" id="r2" checked><input type="radio" name="g" id="r3">' +
+      '<input type="radio" name="h" id="h1"><input type="radio" name="h" id="h2">' +
+      '<div aria-hidden="true"><a href="/x" id="ah">Hidden</a></div>' +
+      '<div id="host2"><button id="slotted" slot="s">Slotted</button></div>' +
+      '<div id="host3" tabindex="-1"></div>' +
+      '</main></body></html>'
+  );
+  const { document, a11ycore } = dom.window;
+  document.getElementById('host').attachShadow({ mode: 'open' }).innerHTML =
+    '<button id="b2">B2</button><button id="b1" tabindex="1">B1</button>';
+  document.getElementById('host2').attachShadow({ mode: 'open' }).innerHTML =
+    '<button id="s1">S1</button><slot name="s"></slot><button id="s2">S2</button>';
+  document.getElementById('host3').attachShadow({ mode: 'open' }).innerHTML =
+    '<button>Skipped</button>';
+  const rows = await a11ycore.inspect('focus-order', { draw: false });
+  assert.deepEqual(
+    plain(rows.map((r) => r.element.split(' ').pop() + (r.ariaHidden ? ' aria-hidden' : ''))),
+    ['#a', '#b1', '#b2', '#c', '#r2', '#h1', '#ah aria-hidden', '#s1', '#slotted', '#s2']
   );
   dom.window.close();
 });
@@ -187,6 +284,72 @@ test('openReport() loads surea11y.report.js from beside the bundle and opens the
   dom.window.close();
 });
 
+// A page whose fetch reads the package's files, as a CDN serves them beside
+// the bundle; `asked` lists what was fetched.
+function servePackage(window, asked) {
+  const fs = require('node:fs');
+  const { fileURLToPath } = require('node:url');
+  window.fetch = async (url) => {
+    asked.push(url);
+    let text = null;
+    try {
+      text = fs.readFileSync(fileURLToPath(url), 'utf8');
+    } catch {
+      text = null;
+    }
+    return { ok: text !== null, json: async () => JSON.parse(text) };
+  };
+}
+
+test("openReport() gives the questions the steps that answer them, in the scan's locale", async () => {
+  const dom = await load(
+    '<!doctype html><html lang="fr"><head><title>T</title></head><body><main><h1>A</h1><h3>B</h3></main></body></html>'
+  );
+  const { window } = dom;
+  const blobs = [];
+  window.URL.createObjectURL = (blob) => blobs.push(blob) && 'blob:x';
+  window.open = () => ({});
+  const asked = [];
+  servePackage(window, asked);
+  const result = await window.a11ycore.run({ runOnly: ['heading-order'], locale: 'fr' });
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+  await window.a11ycore.openReport(result);
+  // English, the fallback, and the scan's locale, from beside the bundle.
+  assert.deepEqual(
+    asked.map((u) => u.slice(u.indexOf('src/i18n/review/'))),
+    ['src/i18n/review/en.json', 'src/i18n/review/fr.json']
+  );
+  const fr = require('../src/i18n/review/fr.json');
+  const firstStep = Object.keys(fr).find((k) => /^headingOrder_review_.*_step1$/.test(k));
+  const html = await blobs[0].text();
+  assert.ok(html.includes(fr[firstStep].replace(/'/g, '&#39;')) || html.includes(fr[firstStep]));
+  // The result given is not changed.
+  assert.equal(result.checksResults[0].occurrences[0].howToCheck, undefined);
+
+  // Dictionaries given are used as they are, and howToCheck: false fetches none.
+  asked.length = 0;
+  const en = require('../src/i18n/review/en.json');
+  await window.a11ycore.openReport(result, { reviewDictionaries: { en } });
+  await window.a11ycore.openReport(result, { howToCheck: false });
+  assert.deepEqual(asked, []);
+  assert.match(await blobs[1].text(), /Find the heading the report names/);
+  assert.doesNotMatch(await blobs[2].text(), /Find the heading the report names/);
+  dom.window.close();
+});
+
+test('openReport() shows the report without steps when the dictionaries cannot be fetched', async () => {
+  const dom = await load();
+  const { window } = dom;
+  window.URL.createObjectURL = () => 'blob:x';
+  window.open = () => ({});
+  window.fetch = async () => {
+    throw new Error('offline');
+  };
+  const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+  assert.equal(await window.a11ycore.openReport(result), 'blob:x');
+  dom.window.close();
+});
+
 test('openReport() logs the address when no tab can be opened', async () => {
   const dom = await load();
   const { window } = dom;
@@ -207,5 +370,19 @@ test('openReport() says what to do when the report file cannot be found', async 
     window.a11ycore.openReport(result, { reportScript: 'https://example.test/missing.js' }),
     /could not load https:\/\/example\.test\/missing\.js/
   );
+  dom.window.close();
+});
+
+test('openReport() tries again after a load that failed', async () => {
+  const dom = await load();
+  const { window } = dom;
+  window.URL.createObjectURL = () => 'blob:x';
+  window.open = () => ({});
+  const result = await window.a11ycore.run({ runOnly: ['img-alt-present'] });
+  await assert.rejects(
+    window.a11ycore.openReport(result, { reportScript: 'data:text/javascript,' }),
+    /loaded, but defined no report/
+  );
+  assert.equal(await window.a11ycore.openReport(result), 'blob:x');
   dom.window.close();
 });

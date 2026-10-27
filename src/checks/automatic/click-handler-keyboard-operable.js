@@ -50,15 +50,20 @@
  *     move focus there, as a roving tabindex does.
  *   - With the listener hook, a key listener added from script on the
  *     element or a descendant counts as an inline key handler does. One
- *     only on an ancestor, the document or the window may handle the
- *     element's keys or only others': cantTell
+ *     only on an ancestor, a shadow root the element is in, the document or
+ *     the window may handle the element's keys or only others': cantTell
  *     (`CLICK_HANDLER_KEY_LISTENER_ABOVE`).
- *   - The element is in the tab order, its role is button, link, checkbox
- *     or switch, and a hook installed before the page's scripts saw no key
- *     listener on it, a descendant, an ancestor, the document or the
+ *   - The element is in the tab order, its role is button, link, checkbox,
+ *     switch, tab, menuitem, menuitemcheckbox or menuitemradio, and a hook
+ *     installed before the page's scripts saw no key listener on it, a
+ *     descendant, an ancestor, a shadow root it is in, the document or the
  *     window, nor is an inline key handler there: fail
  *     (`CLICK_HANDLER_NO_KEY_LISTENER`). No key event reaches a handler, so
- *     Enter and Space do nothing.
+ *     Enter and Space do nothing. Unless a focus or focusin listener is on
+ *     it, an ancestor, a shadow root it is in, the document or the window:
+ *     it may add the key listener once the element has focus, or, for a
+ *     tab, show its panel on focus, so cantTell
+ *     (`CLICK_HANDLER_FOCUS_LISTENER`).
  *   - Neither it nor a descendant can take focus, and its role is button,
  *     link, checkbox or switch: fail (`CLICK_HANDLER_CONTROL_NOT_FOCUSABLE`).
  *     The element says it is a control, and Tab never reaches it, as in
@@ -73,8 +78,56 @@
  *     the element that keeps focus, and the action may be offered by another
  *     control of the page.
  * @reports
- *   - `role`: the element's ARIA role, or '' for none.
+ *   - `role`: the element's ARIA role, or `''` for none.
  *   - `focusable`: whether the element itself can take focus.
+ * @reason-codes
+ *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
+ *     switch, tab or menu item with a click handler is in the tab order, but
+ *     no key handler, key listener or focus listener is anywhere its key
+ *     events go, so Enter and Space do nothing.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3.
+ *   - `CLICK_HANDLER_CONTROL_NOT_FOCUSABLE` (fail): a button, link, checkbox
+ *     or switch with a click handler cannot take focus, nor can anything
+ *     inside it, and nothing above it operates it.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; F42.
+ *   - `CLICK_HANDLER_NO_KEY_HANDLER` (cantTell): an element with a click
+ *     handler is in the tab order, but no key handler is seen; whether Enter
+ *     and Space do what a click does is for a person to check.
+ *     It leans fail when a hook installed before the page's scripts saw no
+ *     key or focus listener on the element, anything around it, the
+ *     document or the window, and nothing inside it takes focus.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_NOT_IN_TAB_ORDER` (cantTell): an element with a click
+ *     handler takes focus only from script (tabindex="-1"), so Tab never
+ *     reaches it.
+ *     It leans fail when, as above, an early hook saw no key or focus
+ *     listener anywhere its key events go; it leans pass when another item
+ *     of the same role in the composite widget around it is in the tab
+ *     order (a roving tabindex) and the hook did not show that no key
+ *     listener exists.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_KEY_LISTENER_ABOVE` (cantTell): an element with a click
+ *     handler is in the tab order, and the only key listener is above it,
+ *     which may or may not handle its keys.
+ *     It leans pass when the nearest ancestor with a key listener is a
+ *     composite widget the element is an item of (a tab in its tablist).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_FOCUS_LISTENER` (cantTell): a control (button, link,
+ *     checkbox, switch, tab or menu item) with a click handler is in the tab
+ *     order with no key listener, but a focus listener may add one once it
+ *     has focus, or, for a tab, show its panel on focus.
+ *     It leans fail when the only focus listeners are on the document or the
+ *     window, none on the element, an ancestor or a shadow root it is in.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
+ *   - `CLICK_HANDLER_NOT_FOCUSABLE` (cantTell): an element with a click
+ *     handler that cannot take focus, with a widget role or a pointer
+ *     cursor; whether the action is offered by keyboard elsewhere is for a
+ *     person to check.
+ *     It leans pass when an ancestor keeps focus for it (aria-activedescendant,
+ *     or a focusable composite widget), and fail when it has no widget role,
+ *     shows a pointer cursor, and nothing above it takes focus or handles
+ *     keys.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  * @implementation-notes
  * - No ACT rule tests click handlers. WCAG 2.1.1 asks that all
  *   functionality work from a keyboard; F42 fails a scripted link that is not
@@ -107,7 +160,7 @@ const id = 'click-handler-keyboard-operable';
 const meta = {
   title: 'Click handlers on elements that are not native controls must work by keyboard',
   description:
-    'Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.',
+    'Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.',
   i18n: {
     titleKey: 'clickHandlerKeyboardOperable_title',
     descriptionKey: 'clickHandlerKeyboardOperable_description'
@@ -140,6 +193,64 @@ const meta = {
       '2.1.1': ['click-handler-keyboard-operable'],
       '2.1.3': ['click-handler-keyboard-operable']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    CLICK_HANDLER_FOCUS_LISTENER: {
+      steps: [
+        'Click the element the report names and note what happens.',
+        'Reload, then press Tab until the element has focus.',
+        'Press Enter, then Space, and compare with what the click did.'
+      ],
+      passWhen:
+        'Enter (and Space for button-like controls) does what a click does, or, for a tab, moving focus to it already shows its panel.',
+      failWhen:
+        'Pressing Enter or Space does nothing even after focus arrives, which fails WCAG 2.1.1 (F54).'
+    },
+    CLICK_HANDLER_KEY_LISTENER_ABOVE: {
+      steps: [
+        'Click the element the report names and note what happens.',
+        'Press Tab until the element has focus.',
+        'Press Enter, then Space (and the arrow keys if it sits in a group), and compare with the click.'
+      ],
+      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
+      failWhen:
+        'Pressing Enter or Space does nothing on the element, so the listener above does not handle it, which fails WCAG 2.1.1.'
+    },
+    CLICK_HANDLER_NOT_FOCUSABLE: {
+      steps: [
+        'Click the element the report names and note what its click does.',
+        'Press Tab through the page and check that the element never takes focus.',
+        'If it is an item in a list, grid or combobox, focus that widget and use the arrow keys to see whether the item becomes active and Enter performs the action.',
+        'Otherwise look for another keyboard-operable control on the page that does the same thing.'
+      ],
+      passWhen:
+        'The same action can be done by keyboard, through the managing widget or another control.',
+      failWhen: 'The action can only be done with a mouse, which fails WCAG 2.1.1 (F54, F42).'
+    },
+    CLICK_HANDLER_NOT_IN_TAB_ORDER: {
+      steps: [
+        'Click the element the report names and note what happens.',
+        'Press Tab through the page and check whether focus ever lands on it.',
+        'If it is part of a group (tabs, menu, toolbar, list), Tab into the group and use the arrow keys to see whether they move focus to it.',
+        'Once it has focus, press Enter or Space and compare with the click.'
+      ],
+      passWhen:
+        'The element can be reached by keyboard (Tab or arrow keys within its group) and Enter or Space does what a click does.',
+      failWhen:
+        'No key moves focus to the element, so its action is mouse-only, which fails WCAG 2.1.1.'
+    },
+    CLICK_HANDLER_NO_KEY_HANDLER: {
+      steps: [
+        'Click the element the report names and note what happens.',
+        'Reload, then press Tab until the element has focus.',
+        'Press Enter, then Space, and compare with what the click did.'
+      ],
+      passWhen: 'Enter (and Space for button-like controls) does what a click does.',
+      failWhen:
+        'Pressing Enter or Space does nothing, or less than a click, which fails WCAG 2.1.1 (F54).'
+    }
   }
 };
 
@@ -149,6 +260,12 @@ function runInPage(ctx) {
 
   const KEY_ATTRS = ['onkeydown', 'onkeyup', 'onkeypress'];
   const FAIL_ROLES = new Set(['button', 'link', 'checkbox', 'switch']);
+  // Roles that fail with no key listener anywhere, as an early hook saw it:
+  // the controls above, and the items of a tablist or a menu, whose keys
+  // their widget handles. Only those controls fail when nothing can focus
+  // them.
+  const ITEM_FAIL_ROLES = new Set(['tab', 'menuitem', 'menuitemcheckbox', 'menuitemradio']);
+  const NO_KEY_FAIL_ROLES = new Set([...FAIL_ROLES, ...ITEM_FAIL_ROLES]);
   const WIDGET_ROLES = new Set([
     'button',
     'link',
@@ -183,7 +300,17 @@ function runInPage(ctx) {
   ]);
   const ACTIVABLE_SELECTOR = 'a[href], area[href], button, input, summary';
   const CLICKING_INPUT_TYPES = new Set(['button', 'submit', 'reset', 'image', 'checkbox', 'radio']);
-  const NO_OP_STATEMENTS = new Set(['return false', 'void(0)', 'void 0', 'event.preventDefault()']);
+  // Statements that do nothing, written without spaces.
+  const NO_OP_STATEMENTS = new Set([
+    'return',
+    'returnfalse',
+    'return(false)',
+    'void0',
+    'void(0)',
+    'returnvoid0',
+    'returnvoid(0)',
+    'event.preventDefault()'
+  ]);
   const MAX_SUBTREE = 20000;
 
   function trim(v) {
@@ -216,11 +343,13 @@ function runInPage(ctx) {
   }
 
   // A handler made only of statements that do nothing, such as
-  // onclick="return false", offers no function to operate.
+  // onclick="return false", offers no function to operate. Spaces don't
+  // matter, and a label before a statement does nothing: in
+  // onclick="javascript:void(0)", "javascript:" is one.
   function isNoOp(code) {
     const parts = code
       .split(';')
-      .map((p) => p.trim())
+      .map((p) => p.replace(/^\s*(?:[A-Za-z_$][\w$]*\s*:(?!:)\s*)+/, '').replace(/\s+/g, ''))
       .filter(Boolean);
     return parts.length > 0 && parts.every((p) => NO_OP_STATEMENTS.has(p));
   }
@@ -333,6 +462,18 @@ function runInPage(ctx) {
     return out;
   }
 
+  // The shadow roots a key event from el passes through: the one holding
+  // el or any of its flat-tree ancestors. A component that listens on its
+  // own shadow root (as Lit's renderRoot does) handles its keys there.
+  function shadowRootsAbove(el, ancestorList) {
+    const out = [];
+    for (const n of [el, ...ancestorList]) {
+      const p = dom.parentNode(n);
+      if (p && dom.nodeType(p) === 11 && dom.host(p)) out.push(p);
+    }
+    return out;
+  }
+
   function hasPointerCursor(el) {
     try {
       const cs = helpers.computedStyle(el);
@@ -340,6 +481,41 @@ function runInPage(ctx) {
     } catch {
       return false;
     }
+  }
+
+  // The item roles each composite widget handles the keys of, for a lean:
+  // a key listener on the widget that owns the element is where such a
+  // widget usually handles its items' keys.
+  const ITEM_ROLES = {
+    tablist: ['tab'],
+    menu: ['menuitem', 'menuitemcheckbox', 'menuitemradio'],
+    menubar: ['menuitem', 'menuitemcheckbox', 'menuitemradio'],
+    listbox: ['option'],
+    tree: ['treeitem'],
+    grid: ['row', 'gridcell', 'columnheader', 'rowheader'],
+    treegrid: ['row', 'gridcell', 'columnheader', 'rowheader'],
+    radiogroup: ['radio']
+  };
+  function roleOf(el) {
+    try {
+      return helpers.aria.getAuthorRole(el) || '';
+    } catch {
+      return '';
+    }
+  }
+  // Another item of the same role, in the nearest composite widget around
+  // the element, that is in the tab order: the roving tabindex pattern.
+  function rovingSibling(el, role, ancestorList) {
+    if (!role) return false;
+    const composite = ancestorList.find((a) => ITEM_ROLES[roleOf(a)]);
+    if (!composite || ITEM_ROLES[roleOf(composite)].indexOf(role) === -1) return false;
+    try {
+      for (const d of dom.querySelectorAll(composite, '[tabindex]')) {
+        if (d === el || dom.contains(d, el) || dom.contains(el, d)) continue;
+        if (roleOf(d) === role && focusOf(d).tabbable && shown(d)) return true;
+      }
+    } catch {}
+    return false;
   }
 
   // Elements with an inline onclick, and with the listener hook, those
@@ -352,6 +528,12 @@ function runInPage(ctx) {
   // (or on its root element), for every element of the page.
   const pageKeyListener =
     (doc && listenerInfo(doc, KEY_TYPES).listens) || (win && listenerInfo(win, KEY_TYPES).listens);
+  // Focus listeners, which may add the key listener when the element gets
+  // focus: one on the document or the window reaches every element.
+  const FOCUS_TYPES = ['focus', 'focusin'];
+  const pageFocusListener =
+    (doc && listenerInfo(doc, FOCUS_TYPES).listens) ||
+    (win && listenerInfo(win, FOCUS_TYPES).listens);
   const fails = [];
   const questions = [];
   let applicableCount = 0;
@@ -383,18 +565,67 @@ function runInPage(ctx) {
     // this element's keys, or only its own. Never enough to pass or fail.
     const hookKeyAbove =
       clickInfo.hook !== 'none' &&
-      (pageKeyListener || ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens));
+      (pageKeyListener ||
+        ancestorList.some((a) => listenerInfo(a, KEY_TYPES).listens) ||
+        shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, KEY_TYPES).listens));
     const keyListenerAbove = !keyHandled && hookKeyAbove;
     // An early hook saw every listener: none of the above means no key
     // event reaches a handler at all.
     const noKeyListenerAnywhere = clickInfo.hook === 'early' && !keyHandled && !keyListenerAbove;
+    // A focus or focusin listener on the element, an ancestor or a shadow
+    // root it is in, which may add a key listener once it has focus.
+    const localFocusListener =
+      clickInfo.hook !== 'none' &&
+      (listenerInfo(el, FOCUS_TYPES).listens ||
+        ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
+        shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
+    // Nothing, as an early hook saw it, can handle a key from the element
+    // or add a key listener when it gets focus.
+    const noKeyPath = noKeyListenerAnywhere && !pageFocusListener && !localFocusListener;
+    const hookSignals = [
+      { signal: 'hook-mode', value: clickInfo.hook },
+      { signal: 'no-key-listener-anywhere', value: noKeyListenerAnywhere },
+      { signal: 'focus-listener', value: !!(pageFocusListener || localFocusListener) }
+    ];
+    const CLICK_ONLY_CAUTION =
+      'The click may only track clicks, or repeat what another control of the page does.';
+    const WIDGET_KEYS_CAUTION =
+      'The widget may move between its items with the arrow keys without making Enter or Space run the click.';
 
     // Only a script can move focus to a tabindex="-1" element, as a roving
     // tabindex does from a key handler on an ancestor.
     if (reachable && !inTabOrder && !keyAbove) {
       applicableCount += 1;
+      let lean;
+      if (noKeyPath && selfFocusable && !sub.focusable) {
+        lean = {
+          toward: 'fail',
+          why: 'Even if a script moves focus here, no key or focus listener is on the element, its ancestors, the document or the window, so Enter and Space would do nothing.',
+          signals: hookSignals,
+          caution: CLICK_ONLY_CAUTION,
+          i18n: {
+            whyKey: 'clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder',
+            cautionKey: 'clickHandlerKeyboardOperable_lean_caution_clickOnly'
+          }
+        };
+      } else if (!noKeyListenerAnywhere && rovingSibling(el, role, ancestorList)) {
+        lean = {
+          toward: 'pass',
+          why: 'Another item of the same role in the widget around it is in the tab order: a roving tabindex, where the arrow keys move focus between items.',
+          signals: [
+            { signal: 'roving-sibling-tabbable', value: true },
+            { signal: 'hook-mode', value: clickInfo.hook }
+          ],
+          caution: WIDGET_KEYS_CAUTION,
+          i18n: {
+            whyKey: 'clickHandlerKeyboardOperable_lean_why_roving',
+            cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+          }
+        };
+      }
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(lean ? { lean } : {}),
           summary: `This <${tag}> runs a click handler, but neither it nor anything in it is in the tab order (tabindex="-1"), so a keyboard user reaches it only if a script moves focus there.`,
           hint: 'Check that a keyboard user can move focus to it, such as with the arrow keys of the widget it belongs to, and that Enter and Space then do what a click does. If not, use tabindex="0" or a native <button> or <a href>.',
           i18n: {
@@ -426,14 +657,80 @@ function runInPage(ctx) {
       // The element says it is a control, Tab reaches it, and the hook,
       // installed before the page's scripts, saw no key listener anywhere a
       // key event from it goes: Enter and Space do nothing (2.1.1).
-      if (noKeyListenerAnywhere && FAIL_ROLES.has(role)) {
+      // A focus listener on it, an ancestor, a shadow root it is in, the
+      // document or the window may add the key listener once it has focus.
+      // A tab may also show its panel on focus.
+      const focusWired =
+        noKeyListenerAnywhere &&
+        NO_KEY_FAIL_ROLES.has(role) &&
+        (pageFocusListener ||
+          listenerInfo(el, FOCUS_TYPES).listens ||
+          ancestorList.some((a) => listenerInfo(a, FOCUS_TYPES).listens) ||
+          shadowRootsAbove(el, ancestorList).some((r) => listenerInfo(r, FOCUS_TYPES).listens));
+      if (focusWired) {
+        const pageOnly = pageFocusListener && !localFocusListener;
+        questions.push(
+          helpers.reportOccurrence(el, {
+            ...(pageOnly
+              ? {
+                  lean: {
+                    toward: 'fail',
+                    why: 'The only focus listeners are on the document or the window, which usually serve the whole page (focus styles, analytics), not this element’s keys.',
+                    signals: [
+                      { signal: 'page-focus-listener', value: true },
+                      { signal: 'local-focus-listener', value: false }
+                    ],
+                    caution:
+                      'Some frameworks add an element’s listeners from a page-wide focus listener.',
+                    i18n: {
+                      whyKey: 'clickHandlerKeyboardOperable_lean_why_pageFocusListener',
+                      cautionKey: 'clickHandlerKeyboardOperable_lean_caution_pageFocusListener'
+                    }
+                  }
+                }
+              : {}),
+            summary: `This <${tag}> runs a click handler and takes keyboard focus. No key listener is on it yet, but a focus listener on it, an ancestor, the document or the window may add one when it gets focus.`,
+            hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
+            i18n: {
+              summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_focusListener',
+              hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler',
+              params: { element: tag }
+            },
+            uncertainty: {
+              code: 'runtime-dependent',
+              needed:
+                'Whether a focus listener adds a key listener that runs the click action on Enter or Space.',
+              evidence: {
+                role,
+                focusable: selfFocusable,
+                keyHandler: false,
+                focusListener: true
+              }
+            },
+            data: {
+              details: {
+                reasonCode: 'CLICK_HANDLER_FOCUS_LISTENER',
+                role,
+                focusable: selfFocusable
+              }
+            }
+          })
+        );
+        continue;
+      }
+      if (noKeyListenerAnywhere && NO_KEY_FAIL_ROLES.has(role)) {
+        const item = ITEM_FAIL_ROLES.has(role);
         fails.push(
           helpers.reportOccurrence(el, {
             summary: `This element has role="${role}" and a click handler, and takes keyboard focus, but no key listener is on it, an ancestor, the document or the window, so Enter and Space do nothing.`,
-            hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
+            hint: item
+              ? `Handle keydown so that the keys a ${role} answers to (Enter and Space, and the arrow keys of its widget) do what a click does.`
+              : `Use the native element (<button>, <a href> or <input type="checkbox">), or handle keydown so that the keys a ${role} answers to do what a click does.`,
             i18n: {
               summaryKey: 'clickHandlerKeyboardOperable_summary_fail_noKeyListener',
-              hintKey: 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
+              hintKey: item
+                ? 'clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem'
+                : 'clickHandlerKeyboardOperable_hint_fail_noKeyListener',
               params: { role }
             },
             data: {
@@ -448,8 +745,33 @@ function runInPage(ctx) {
         continue;
       }
       if (keyListenerAbove) {
+        // The nearest ancestor with a key listener the hook saw: when it is
+        // the composite widget that owns the element, it handles its items'
+        // keys. One only on a shadow root, the document or the window (a
+        // framework's root) says nothing.
+        const listening = ancestorList.find((a) => listenerInfo(a, KEY_TYPES).listens);
+        const listeningRole = listening ? roleOf(listening) : '';
+        const ownsItem =
+          !!ITEM_ROLES[listeningRole] && ITEM_ROLES[listeningRole].indexOf(role) !== -1;
         questions.push(
           helpers.reportOccurrence(el, {
+            ...(ownsItem
+              ? {
+                  lean: {
+                    toward: 'pass',
+                    why: 'The nearest key listener above the element is on the widget it is an item of, which is where such a widget handles its items’ keys.',
+                    signals: [
+                      { signal: 'listening-ancestor-role', value: listeningRole },
+                      { signal: 'element-item-role', value: role }
+                    ],
+                    caution: WIDGET_KEYS_CAUTION,
+                    i18n: {
+                      whyKey: 'clickHandlerKeyboardOperable_lean_why_compositeListener',
+                      cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+                    }
+                  }
+                }
+              : {}),
             summary: `This <${tag}> runs a click handler and takes keyboard focus. The only key listeners are on an ancestor, the document or the window, which may or may not handle its keys.`,
             hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
             i18n: {
@@ -479,8 +801,23 @@ function runInPage(ctx) {
         );
         continue;
       }
+      const noKeyLean = noKeyPath && selfTabbable && !sub.focusable;
       questions.push(
         helpers.reportOccurrence(el, {
+          ...(noKeyLean
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'A hook installed before the page’s scripts saw no key or focus listener on the element, its ancestors, the document or the window, so Enter and Space probably do nothing.',
+                  signals: hookSignals,
+                  caution: CLICK_ONLY_CAUTION,
+                  i18n: {
+                    whyKey: 'clickHandlerKeyboardOperable_lean_why_noKeyListener',
+                    cautionKey: 'clickHandlerKeyboardOperable_lean_caution_clickOnly'
+                  }
+                }
+              }
+            : {}),
           summary: `This <${tag}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.`,
           hint: 'Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.',
           i18n: {
@@ -508,14 +845,12 @@ function runInPage(ctx) {
 
     // A focusable composite widget may operate its items from the keyboard
     // with a listener added from script, focus staying on the widget.
-    const managedFromAbove =
-      keyAbove ||
-      hookKeyAbove ||
-      ancestorList.some(
-        (a) =>
-          trim(dom.getAttribute(a, 'aria-activedescendant')) ||
-          (COMPOSITE_ROLES.has(helpers.aria.getAuthorRole(a) || '') && focusOf(a).focusable)
-      );
+    const focusKeeper = ancestorList.some(
+      (a) =>
+        trim(dom.getAttribute(a, 'aria-activedescendant')) ||
+        (COMPOSITE_ROLES.has(helpers.aria.getAuthorRole(a) || '') && focusOf(a).focusable)
+    );
+    const managedFromAbove = keyAbove || hookKeyAbove || focusKeeper;
 
     if (FAIL_ROLES.has(role) && !managedFromAbove) {
       fails.push(
@@ -535,8 +870,44 @@ function runInPage(ctx) {
       continue;
     }
 
+    let notFocusableLean;
+    if (focusKeeper) {
+      notFocusableLean = {
+        toward: 'pass',
+        why: 'An ancestor keeps focus for its items (aria-activedescendant, or a focusable composite widget), which is how such a widget operates an item without focusing it.',
+        signals: [{ signal: 'managed-from-above', value: true }],
+        caution: WIDGET_KEYS_CAUTION,
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_managed',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_widgetKeys'
+        }
+      };
+    } else if (
+      !managedFromAbove &&
+      !isWidget &&
+      hasPointerCursor(el) &&
+      !ancestorList.some((a) => focusOf(a).focusable)
+    ) {
+      notFocusableLean = {
+        toward: 'fail',
+        why: 'The element shows a pointer cursor and runs a click handler, but has no widget role; neither it, anything in it nor any ancestor takes focus, and no ancestor manages focus for it.',
+        signals: [
+          { signal: 'managed-from-above', value: false },
+          { signal: 'pointer-cursor', value: true },
+          { signal: 'widget-role', value: false },
+          { signal: 'focusable-ancestor', value: false }
+        ],
+        caution:
+          'The same action may be offered by another control of the page, such as a link next to a clickable row.',
+        i18n: {
+          whyKey: 'clickHandlerKeyboardOperable_lean_why_pointerOnly',
+          cautionKey: 'clickHandlerKeyboardOperable_lean_caution_elsewhere'
+        }
+      };
+    }
     questions.push(
       helpers.reportOccurrence(el, {
+        ...(notFocusableLean ? { lean: notFocusableLean } : {}),
         summary: `This <${tag}> runs a click handler, but neither it nor anything in it can take keyboard focus.`,
         hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
         i18n: {

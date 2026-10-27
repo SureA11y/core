@@ -19,6 +19,12 @@
  *   region. Complementary content supports the main content of the page and
  *   sits beside it; nested inside another landmark it is a section of that
  *   landmark instead, which is not what landmark navigation announces.
+ * @reason-codes
+ *   - `LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL` (cantTell): a complementary
+ *     landmark sits inside another landmark instead of at the top level of
+ *     the page.
+ *     Basis: WAI-ARIA 1.2 complementary role (best practice); HTML-AAM aside
+ *     element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching its three siblings
@@ -53,7 +59,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL: {
+      steps: [
+        'Find the complementary landmark (an aside or role="complementary") the report names and the landmark it sits inside.',
+        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where it appears.",
+        'If it sits inside main and has a name, it is the common related-content box; if it sits inside a header, footer, navigation, form or another complementary, note the odd placement.'
+      ],
+      passWhen:
+        'The complementary landmark sits at the top level, or is a named related-content box inside main.',
+      failWhen:
+        'The complementary landmark is nested in an unrelated landmark such as a footer or navigation, which confuses landmark navigation, a best-practice miss under the WAI-ARIA complementary role.'
+    }
+  }
 };
 
 function runInPage(ctx) {

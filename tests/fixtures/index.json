@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 144,
-    "withFixture": 141,
+    "total": 145,
+    "withFixture": 142,
     "withoutFixture": 3
   },
   "rows": [
@@ -71,11 +71,11 @@
       "testFile": "tests/engine-checks/automatic/aria-allowed-attr.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-allowed-attr-all-scenarios.html",
-      "totalCases": 33,
+      "totalCases": 36,
       "caseCounts": {
-        "PASS": 13,
-        "FAIL": 15,
-        "CANTTELL": 1,
+        "PASS": 14,
+        "FAIL": 16,
+        "CANTTELL": 2,
         "OTHER": 4
       }
     },
@@ -302,9 +302,9 @@
       "totalCases": 18,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 4,
+        "FAIL": 5,
         "CANTTELL": 2,
-        "OTHER": 7
+        "OTHER": 6
       }
     },
     {
@@ -318,11 +318,11 @@
       "testFile": "tests/engine-checks/automatic/aria-required-children.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-required-children-all-scenarios.html",
-      "totalCases": 9,
+      "totalCases": 10,
       "caseCounts": {
         "PASS": 3,
-        "FAIL": 0,
-        "CANTTELL": 2,
+        "FAIL": 2,
+        "CANTTELL": 1,
         "OTHER": 4
       }
     },
@@ -376,9 +376,9 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
-        "PASS": 6,
+        "PASS": 7,
         "FAIL": 2,
         "CANTTELL": 1,
         "OTHER": 1
@@ -431,9 +431,9 @@
       "testFile": "tests/engine-checks/automatic/aria-valid-attr-value.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-valid-attr-value-all-scenarios.html",
-      "totalCases": 31,
+      "totalCases": 33,
       "caseCounts": {
-        "PASS": 15,
+        "PASS": 17,
         "FAIL": 11,
         "CANTTELL": 4,
         "OTHER": 1
@@ -507,9 +507,9 @@
       "testFile": "tests/engine-checks/automatic/button-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/button-name-present-all-scenarios.html",
-      "totalCases": 29,
+      "totalCases": 30,
       "caseCounts": {
-        "PASS": 11,
+        "PASS": 12,
         "FAIL": 12,
         "CANTTELL": 0,
         "OTHER": 6
@@ -623,12 +623,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-computable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -642,12 +642,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-enhanced.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -661,12 +661,12 @@
       "testFile": "tests/engine-checks/automatic/contrast-minimum.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/contrast-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 45,
       "caseCounts": {
         "PASS": 4,
         "FAIL": 5,
         "CANTTELL": 0,
-        "OTHER": 33
+        "OTHER": 36
       }
     },
     {
@@ -697,11 +697,11 @@
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html",
-      "totalCases": 14,
+      "totalCases": 17,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 6,
+        "CANTTELL": 7,
         "OTHER": 3
       }
     },
@@ -931,21 +931,21 @@
     },
     {
       "ruleId": "focus-not-removed-by-script",
-      "title": "A script does not remove focus from an element as it receives it",
-      "type": "manual",
+      "title": "A script must not remove focus from an element as it receives it",
+      "type": "automatic",
       "wcagSc": [
         "2.1.1",
         "2.4.7"
       ],
-      "ruleFile": "src/checks/manual/focus-not-removed-by-script-manual.js",
-      "testFile": "tests/engine-checks/manual/focus-not-removed-by-script.test.js",
+      "ruleFile": "src/checks/automatic/focus-not-removed-by-script.js",
+      "testFile": "tests/engine-checks/automatic/focus-not-removed-by-script.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/focus-not-removed-by-script-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 7,
       "caseCounts": {
         "PASS": 0,
-        "FAIL": 0,
-        "CANTTELL": 3,
+        "FAIL": 2,
+        "CANTTELL": 2,
         "OTHER": 3
       }
     },
@@ -977,11 +977,11 @@
       "testFile": "tests/engine-checks/manual/form-control-label-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-label-quality-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 14,
       "caseCounts": {
-        "PASS": 5,
+        "PASS": 7,
         "FAIL": 0,
-        "CANTTELL": 5,
+        "CANTTELL": 6,
         "OTHER": 1
       }
     },
@@ -998,10 +998,10 @@
       "testFile": "tests/engine-checks/automatic/form-control-programmatic-label-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/form-control-programmatic-label-all-scenarios.html",
-      "totalCases": 42,
+      "totalCases": 43,
       "caseCounts": {
         "PASS": 13,
-        "FAIL": 11,
+        "FAIL": 12,
         "CANTTELL": 0,
         "OTHER": 18
       }
@@ -1027,7 +1027,7 @@
     },
     {
       "ruleId": "form-control-single-label",
-      "title": "Form controls must not have multiple labels",
+      "title": "Form controls should not have multiple labels",
       "type": "automatic",
       "wcagSc": [
         "3.3.2"
@@ -1039,8 +1039,8 @@
       "totalCases": 9,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 2,
-        "CANTTELL": 1,
+        "FAIL": 0,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -1209,6 +1209,25 @@
       "caseCounts": null
     },
     {
+      "ruleId": "image-of-text",
+      "title": "Text should be real text, not an image of text",
+      "type": "manual",
+      "wcagSc": [
+        "1.4.5"
+      ],
+      "ruleFile": "src/checks/manual/image-of-text-manual.js",
+      "testFile": "tests/engine-checks/manual/image-of-text.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/image-of-text-all-scenarios.html",
+      "totalCases": 8,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 5
+      }
+    },
+    {
       "ruleId": "image-redundant-alt",
       "title": "Image alt text must not duplicate adjacent visible text",
       "type": "manual",
@@ -1342,7 +1361,7 @@
     },
     {
       "ruleId": "invalid-field-error-message",
-      "title": "Fields marked invalid must have a shown error message",
+      "title": "Fields marked invalid should have a shown error message",
       "type": "automatic",
       "wcagSc": [
         "3.3.1"
@@ -1351,11 +1370,11 @@
       "testFile": "tests/engine-checks/automatic/invalid-field-error-message.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/invalid-field-error-message-all-scenarios.html",
-      "totalCases": 13,
+      "totalCases": 16,
       "caseCounts": {
-        "PASS": 3,
-        "FAIL": 3,
-        "CANTTELL": 3,
+        "PASS": 4,
+        "FAIL": 0,
+        "CANTTELL": 8,
         "OTHER": 4
       }
     },
@@ -1588,10 +1607,10 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 10,
+      "totalCases": 11,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 2,
+        "FAIL": 3,
         "CANTTELL": 2,
         "OTHER": 2
       }
@@ -1609,10 +1628,10 @@
       "testFile": "tests/engine-checks/automatic/link-name-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-present-all-scenarios.html",
-      "totalCases": 19,
+      "totalCases": 21,
       "caseCounts": {
-        "PASS": 11,
-        "FAIL": 4,
+        "PASS": 12,
+        "FAIL": 5,
         "CANTTELL": 0,
         "OTHER": 4
       }
@@ -1629,12 +1648,12 @@
       "testFile": "tests/engine-checks/manual/link-name-quality.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-name-quality-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 14,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 6,
-        "OTHER": 5
+        "CANTTELL": 8,
+        "OTHER": 6
       }
     },
     {
@@ -1886,7 +1905,7 @@
     },
     {
       "ruleId": "moving-content-pausable",
-      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "title": "Content that moves by itself should be possible to pause, stop or hide",
       "type": "manual",
       "wcagSc": [
         "2.2.2"
@@ -2169,10 +2188,10 @@
       "testFile": "tests/engine-checks/automatic/role-img-text-alternative-present.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/role-img-text-alternative-present-all-scenarios.html",
-      "totalCases": 26,
+      "totalCases": 28,
       "caseCounts": {
-        "PASS": 5,
-        "FAIL": 10,
+        "PASS": 6,
+        "FAIL": 11,
         "CANTTELL": 0,
         "OTHER": 11
       }
@@ -2206,11 +2225,11 @@
       "testFile": "tests/engine-checks/manual/scrollable-region-focusable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/scrollable-region-focusable-all-scenarios.html",
-      "totalCases": 6,
+      "totalCases": 8,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 3,
+        "CANTTELL": 5,
         "OTHER": 3
       }
     },
@@ -2228,8 +2247,8 @@
       "totalCases": 28,
       "caseCounts": {
         "PASS": 7,
-        "FAIL": 9,
-        "CANTTELL": 1,
+        "FAIL": 10,
+        "CANTTELL": 0,
         "OTHER": 11
       }
     },
@@ -2339,8 +2358,8 @@
       "fixtureFile": "tests/fixtures/svg-image-text-alternative-present-all-scenarios.html",
       "totalCases": 20,
       "caseCounts": {
-        "PASS": 8,
-        "FAIL": 6,
+        "PASS": 5,
+        "FAIL": 9,
         "CANTTELL": 0,
         "OTHER": 6
       }
@@ -2523,11 +2542,11 @@
       "testFile": "tests/engine-checks/automatic/td-has-header.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/td-has-header-all-scenarios.html",
-      "totalCases": 8,
+      "totalCases": 9,
       "caseCounts": {
         "PASS": 0,
         "FAIL": 1,
-        "CANTTELL": 0,
+        "CANTTELL": 1,
         "OTHER": 7
       }
     },
@@ -2564,8 +2583,8 @@
       "totalCases": 28,
       "caseCounts": {
         "PASS": 7,
-        "FAIL": 9,
-        "CANTTELL": 1,
+        "FAIL": 10,
+        "CANTTELL": 0,
         "OTHER": 11
       }
     },
@@ -2628,7 +2647,7 @@
     },
     {
       "ruleId": "video-caption",
-      "title": "Prerecorded video should provide a captions track",
+      "title": "Prerecorded video should provide complete captions",
       "type": "manual",
       "wcagSc": [
         "1.2.2"
@@ -2641,8 +2660,8 @@
       "caseCounts": {
         "PASS": 0,
         "FAIL": 0,
-        "CANTTELL": 4,
-        "OTHER": 1
+        "CANTTELL": 5,
+        "OTHER": 0
       }
     },
     {
@@ -2675,11 +2694,11 @@
       "testFile": "tests/engine-checks/manual/widget-keyboard-focusable.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/widget-keyboard-focusable-all-scenarios.html",
-      "totalCases": 23,
+      "totalCases": 24,
       "caseCounts": {
         "PASS": 8,
         "FAIL": 0,
-        "CANTTELL": 8,
+        "CANTTELL": 9,
         "OTHER": 7
       }
     }

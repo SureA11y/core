@@ -21,7 +21,7 @@ type LevelA = 'A' | 'a';
 export type WcagLevelInput = LevelA | `${LevelA}${LevelA}` | `${LevelA}${LevelA}${LevelA}`;
 
 /**
- * The 4th scan argument. A bare array or string is shorthand, as in axe-core:
+ * The 4th scan argument. A bare array or string is shorthand:
  * rule ids select those rules, tags select by tag; mixing the two, or naming
  * neither a rule nor a tag, throws. See docs/ENGINE_OPTIONS.md.
  */
@@ -107,6 +107,12 @@ export interface EngineOptionFields {
   contrast?: {
     mode?: 'strictConformance' | 'auditorAssist';
     rootCanvasFallback?: string;
+    /**
+     * Echoed on each result: whether rootCanvasFallback is one the caller gave
+     * (true) or the default white the engine filled in (false). Passed back,
+     * false reads the color as the default. See docs/ENGINE_OPTIONS.md.
+     */
+    rootCanvasFallbackSet?: boolean;
   };
   /** Contrast rules only. Unset: 'styleAndGeometry' where the page has a layout (a browser), else 'styleOnly'. See docs/ENGINE_OPTIONS.md. */
   visibilityMode?: Open<'styleOnly' | 'styleAndGeometry'>;
@@ -263,7 +269,7 @@ export interface SafeDom {
 /** `ctx.helpers`: the helpers docs/RULE_HELPERS.md documents, and no others. */
 export interface RuleHelpers {
   dom: SafeDom;
-  /** Colour and contrast helpers (docs/RULE_HELPERS.md section 7). */
+  /** Color and contrast helpers (docs/RULE_HELPERS.md section 7). */
   contrast: { [name: string]: any };
   /** ARIA helpers (docs/RULE_HELPERS.md section 7). */
   aria: { [name: string]: any };
@@ -296,6 +302,8 @@ export interface RuleHelpers {
   getTextBoundaryKind: RuleHelper;
   isWholeDocumentScope: RuleHelper;
   isModalDialogOpen: RuleHelper;
+  getOpenModalDialogs: RuleHelper;
+  getDocumentRoots: RuleHelper;
   getAriaLabelInfo: RuleHelper;
   getAriaLabelledByInfo: RuleHelper;
   getAriaNameInfo: RuleHelper;
@@ -319,9 +327,12 @@ export interface RuleHelpers {
   getElementByIdInTree: RuleHelper;
   resolveIdRefs: RuleHelper;
   getTextFromIdRefs: RuleHelper;
+  getTextFromElements: RuleHelper;
   getReflectedRefs: RuleHelper;
+  getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;
   cssRulesOf: RuleHelper;
+  getStyleSheets: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;
   getInternalsStateInfo: RuleHelper;
@@ -367,7 +378,8 @@ export interface LocaleResolution {
 export interface RenderingEnvironment {
   /**
    * False in jsdom and other DOM emulators, and then the only field
-   * besides `internalsHook` and `listenerHook`, where the page runs them.
+   * besides `internalsHook`, `listenerHook` and `liveRegionHook`, where the
+   * page runs them.
    */
   layout: boolean;
   /** CSS pixels. */
@@ -381,6 +393,14 @@ export interface RenderingEnvironment {
    * occurrences carry `details.forcedColors: true`. Only with a layout.
    */
   forcedColors?: 'active' | 'none';
+  /**
+   * Under forced colors, true when the page's own CSS reacts to them in a
+   * way the scan can't hold off: a `forced-colors` media query, which still
+   * matches, or a system color (GrayText, Canvas...), which still takes the
+   * forced palette's. The contrast results can then differ from a scan with
+   * forced colors off. Absent otherwise.
+   */
+  forcedColorsCss?: true;
   /** 'loading' while any of the page's font faces is still loading. */
   fonts?: 'loaded' | 'loading';
   /** 'loading' while any image not loaded lazily is still loading. */
@@ -501,6 +521,24 @@ export interface Uncertainty {
   evidence?: Record<string, unknown>;
 }
 
+/**
+ * Which way a cantTell finding points, when the page gives evidence for one.
+ * The outcome stays cantTell: a lean is advice, not a verdict. Absent where
+ * only a person can judge.
+ */
+export interface Lean {
+  toward: 'pass' | 'fail';
+  /** What in the page points that way, in the scan's locale. */
+  why: string;
+  /** The facts the rule read: a name and a plain value each. */
+  signals: { signal: string; value: string | number | boolean | null }[];
+  /** What could make the lean wrong, in the scan's locale. */
+  caution?: string;
+  /** How often this lean was right, once it has been measured. */
+  measured?: { agreed: number; cases: number; corpus?: string; coreVersion?: string };
+  i18n?: { whyKey?: string; cautionKey?: string; params?: Record<string, unknown> };
+}
+
 export interface VisibilityFilter {
   /** Absent from the page-level findings of a few rules, such as page-title-present. */
   eligible?: boolean;
@@ -526,6 +564,10 @@ export interface Occurrence {
   occurrenceOutcome?: 'fail' | 'cantTell';
   /** Present only on a cantTell-tier occurrence. */
   uncertainty?: Uncertainty;
+  /** On a cantTell occurrence only: the answer the evidence makes likely. */
+  lean?: Lean;
+  /** On a cantTell occurrence only: how a person answers the question, in the scan's locale. */
+  howToCheck?: HowToCheck;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;
@@ -607,19 +649,28 @@ export interface CheckResult {
   occurrences: Occurrence[];
   title: string;
   description: string;
-  i18n: { titleKey: string; descriptionKey: string } | null;
+  /** variantOfTitleKey: a variant's only, its base rule's titleKey. */
+  i18n: { titleKey: string; descriptionKey: string; variantOfTitleKey?: string } | null;
   meta: RuleMeta;
   /** The resolved options this rule ran under. */
   engineOptions: Record<string, unknown>;
   schemaVersion: string;
   /** The rulesResults entries that group this rule in this run. */
   rollupIds: string[];
+  /** A pack's variant only: the id of the rule it runs at other settings. */
+  variantOf?: string;
   /** Page-level data a rule reports whatever its outcome; not a stable contract. */
   data?: Record<string, unknown>;
   /** Present only on a rule that declares `meta.margin`, when an element met its threshold. */
   margin?: Margin;
   /** Present only when the target WCAG version changed this outcome. */
-  wcagVersionScope?: { target: '2.0' | '2.1' | '2.2'; removedSc: string[]; coercedFrom: 'fail' };
+  wcagVersionScope?: {
+    target: '2.0' | '2.1' | '2.2';
+    removedSc: string[];
+    coercedFrom: 'fail';
+    /** Under 2.0 or 2.1: their 2023 errata count the criterion as always satisfied. */
+    by?: 'errata';
+  };
   /**
    * Present when the rule did not complete (cantTell with no occurrences),
    * or with the engine's notes on what it changed in what the rule returned
@@ -847,6 +898,56 @@ export function flattenCrossFrameResult(
   value: CrossFrameResult | BindingFramesResult | ScanResult
 ): FlatFrame[];
 
+/**
+ * An occurrence's outcome, as the reporters read it: its own tier
+ * (`occurrenceOutcome`) when it is 'fail' or 'cantTell', or else its check's
+ * outcome when that is; null otherwise.
+ */
+export function occurrenceOutcome(
+  check: Pick<CheckResult, 'outcome'> | null | undefined,
+  occurrence: Occurrence | null | undefined
+): 'fail' | 'cantTell' | null;
+
+/**
+ * Where an occurrence goes in a review: 'leanFail' or 'leanPass' for an
+ * undecided one whose lean points that way, 'open' for one only a person can
+ * judge.
+ */
+export type ReviewGroup = 'leanFail' | 'leanPass' | 'open';
+
+/**
+ * Where an occurrence goes in a review, as the HTML report groups them:
+ * 'fail' for a failure, a ReviewGroup for an undecided one (its outcome, as
+ * occurrenceOutcome reads it, is 'cantTell'), and null for neither.
+ */
+export function reviewGroupOf(
+  check: Pick<CheckResult, 'outcome'> | null | undefined,
+  occurrence: Occurrence | null | undefined
+): 'fail' | ReviewGroup | null;
+
+/** An undecided finding whose lean points to fail. */
+export interface LeaningFailure {
+  ruleId: string;
+  /** Its reason code, or 'DEFAULT'. */
+  reasonCode: string;
+  occurrence: Occurrence;
+  /** For a finding inside a frame of a cross-frame result: the frame's path (FramePosition.path). */
+  frame?: string[];
+}
+
+/**
+ * The undecided findings that lean fail and gate under the reporters'
+ * `leanFailAs` (docs/LEANS.md): the findings of a rule whose every WCAG
+ * criterion is outside the scan's target are left out, as JUnit and SARIF
+ * leave them out. With `wcagOnly`, only those of rules mapped to a WCAG
+ * criterion in the target, as `leanFailWcagOnly` does. A cross-frame result
+ * covers every frame. Throws a TypeError for anything else.
+ */
+export function leaningFailures(
+  result: ScanResult | CrossFrameResult | BindingFramesResult,
+  options?: { wcagOnly?: boolean }
+): LeaningFailure[];
+
 // ---- Scanning ----
 
 /**
@@ -859,6 +960,51 @@ export function runDomRulesInPage(
   engineOptions?: EngineOptions | StrictEngineOptions | null,
   runOnly?: RunOnly | LegacyTagRunOnly | StringList | null
 ): ScanResult;
+
+export interface HowToCheck {
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+}
+
+/**
+ * A copy of a scan result, a cross-frame result or a binding's frames result
+ * whose undecided findings carry howToCheck in the scan's locale. Each frame's
+ * result in the tree gains them; a frame that could not be scanned is left as
+ * it is. runDomRulesInPage does this itself; a binding that runs
+ * runa11yCoreInPage in a page calls it on what comes back.
+ */
+export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
+  result: T,
+  options?: HowToCheckOptions
+): T;
+
+/**
+ * The packs a result was scanned with: their rules' meta.review give steps,
+ * in English, and their variants are known for howToCheckFor.
+ */
+export interface HowToCheckOptions {
+  packs?: readonly unknown[] | null;
+  /**
+   * addHowToCheck and applyHowToCheck only: the locale to give the steps in
+   * ('fr-CA'), or a list of locales, most wanted first, in place of the
+   * scan's. Steps a finding already has are given again in it; English is
+   * the fallback for every step a locale lacks.
+   */
+  locale?: string | readonly string[] | null;
+}
+
+/**
+ * A rule's steps for one reason code, in a locale (English when
+ * untranslated), or null: core's, a variant's base rule's where it has none
+ * of its own, and, with options.packs, a pack rule's own.
+ */
+export function howToCheckFor(
+  ruleId: string,
+  reasonCode: string,
+  locale?: string,
+  options?: HowToCheckOptions
+): HowToCheck | null;
 
 /**
  * The same scan from a single self-contained function, which can be
@@ -955,8 +1101,8 @@ export interface InternalsHookOptions {
  * (onclick="…") from the markup; a listener added with addEventListener, or
  * set as a property (el.onclick = fn), is invisible to them. The hook wraps
  * EventTarget.prototype.addEventListener and removeEventListener and the
- * on* property setters, records which elements have click, key, focus and
- * mouse listeners, and otherwise gives the page exactly what it would have
+ * on* property setters, records which elements have click, key, focus,
+ * mouse and paste listeners, and otherwise gives the page exactly what it would have
  * had. `engine.environment.listenerHook` says whether a scan saw it. See
  * docs/INTEGRATION.md.
  *
@@ -999,6 +1145,32 @@ export interface ListenerHookOptions {
  */
 export function liveRegionHookScript(options?: LiveRegionHookOptions): string;
 
+/** What a hook's record does to a reason code: see HOOK_REASON_CODES. */
+export type HookEffect = 'reports' | 'decides' | 'leans';
+
+export interface HookReasonCode {
+  readonly ruleId: string;
+  readonly reasonCode: string;
+  /**
+   * 'reports': given only where the hook ran. 'decides': the hook's record
+   * settles it (a question becomes a pass or a fail, or a fail a question).
+   * 'leans': the hook's record sets or changes its lean.
+   */
+  readonly effect: HookEffect;
+}
+
+/**
+ * The reason codes each opt-in hook decides or changes, one entry per rule
+ * and code, so a binding can say what installing a hook does without copying
+ * the codes (docs/BINDING_AUTHORS_GUIDE.md). Frozen; a minor release may add
+ * entries.
+ */
+export const HOOK_REASON_CODES: {
+  readonly internals: readonly HookReasonCode[];
+  readonly listener: readonly HookReasonCode[];
+  readonly liveRegion: readonly HookReasonCode[];
+};
+
 export interface LiveRegionHookOptions {
   /**
    * Record the hook as early whatever the document's state. A promise the
@@ -1016,6 +1188,17 @@ export interface Announcement {
   politeness: 'polite' | 'assertive';
   /** performance.now(), in milliseconds, when the hook saw it. */
   time: number;
+  /**
+   * The change's place among all the changes the page made, counted in
+   * mutation records, so changes made in one task keep their order.
+   */
+  order: number;
+  /**
+   * true when the region was behind an open modal <dialog> in the document
+   * when it was given the text: the browser made it inert, so assistive
+   * technology did not get it. Only listed with { includeBehindModal: true }.
+   */
+  behindModal: boolean;
   /** The live region, which may since have left the page. */
   element: Element;
 }
@@ -1023,11 +1206,57 @@ export interface Announcement {
 /**
  * What the page's live regions were given while shown and reachable by
  * assistive technology, as the live-region hook recorded it: what the page
- * made available to announce, not what a screen reader said. Changes made in
- * the current task are included. null when the window has no hook. `win`
- * defaults to the global `window`.
+ * made available to announce, not what a screen reader said. A text given
+ * to a region behind an open modal dialog is left out, unless
+ * `includeBehindModal: true`, which lists it with behindModal: true. Changes
+ * made in the current task are included. null when the window has no hook.
+ * `win` defaults to the global `window`. Self-contained, like
+ * runa11yCoreInPage: `getAnnouncements.toString()` evaluated in a page works
+ * there. With `selectors: true`, each entry names its region by a selector
+ * instead of holding it, so the list crosses a driver (page.evaluate).
  */
-export function getAnnouncements(win?: Window): Announcement[] | null;
+export function getAnnouncements(
+  win: Window | undefined,
+  options: GetAnnouncementsOptions & { selectors: true }
+): LocatedAnnouncement[] | null;
+export function getAnnouncements(
+  options: GetAnnouncementsOptions & { selectors: true }
+): LocatedAnnouncement[] | null;
+export function getAnnouncements(
+  win?: Window,
+  options?: GetAnnouncementsOptions
+): Announcement[] | null;
+export function getAnnouncements(options: GetAnnouncementsOptions): Announcement[] | null;
+
+/**
+ * An announcement as getAnnouncements({ selectors: true }) gives it: the
+ * region named by a selector, in place of the element.
+ */
+export interface LocatedAnnouncement extends Omit<Announcement, 'element'> {
+  /**
+   * The region: its id where that is unique in its tree, else its tag and
+   * place among its siblings up to the root. null for a region no longer in
+   * the page.
+   */
+  selector: string | null;
+  /** For a region inside a shadow root: the shadow hosts leading to it, outermost first. */
+  shadowHostSelectors?: string[];
+}
+
+export interface GetAnnouncementsOptions {
+  /**
+   * Also list the texts given to a region behind an open modal dialog,
+   * which assistive technology did not get, marked behindModal: true.
+   * Default: false.
+   */
+  includeBehindModal?: boolean;
+  /**
+   * Name each region by a selector (`selector`, and `shadowHostSelectors`
+   * inside a shadow root) instead of holding it in `element`, so the list
+   * can be returned through a driver's page.evaluate. Default: false.
+   */
+  selectors?: boolean;
+}
 
 /**
  * The WCAG target a conformance profile comes to, for `runOnly.wcag`:

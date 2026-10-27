@@ -29,7 +29,8 @@
  *   ruleIdMatches,
  *   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES (the rollups a
  *   scan adds for the rules it named on its own),
- *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable).
+ *   COMPLETE_APPLICABILITY_SCS (the criteria whose rollups can be notApplicable),
+ *   COMPLETE_CHECK_SCS (the criteria whose rollups can pass).
  */
 
 // The only modules required here: self-contained ones, inlined into the
@@ -47,7 +48,8 @@ const { readLiveRegionHook } = require('./live-region-hook');
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
    criteriaNamingRule, optInTagsOf, ruleIdMatches,
-   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS */
+   criterionInWcagTarget, PROFILE_TARGETS, PROFILE_EXCLUDES, COMPLETE_APPLICABILITY_SCS,
+   COMPLETE_CHECK_SCS */
 
 // A WCAG conformance level as the engine names it ('aa' is 'AA'), or null.
 function normalizeWcagLevel(v) {
@@ -221,6 +223,42 @@ function rollupMembers(checksIds, wcagSc, customDefs) {
     }
   }
   return { ids, customIds: ids.filter((id) => defs.has(id)), added, left };
+}
+
+// A selection whose includes and excludes cancel each other (a rule both
+// included and excluded, an 'and' of rules and tags no rule has both of)
+// runs no rule, and its result reads as a clean pass: JUnit tests="0",
+// SARIF with no result. Said so, and an error under strictOptions, as an
+// include naming nothing already is. The scan and the catalog functions
+// (getChecksForRunOnly, getRulesForRunOnly) say it alike.
+function noteEmptySelection(runOnly, engineOptions) {
+  const parts = [];
+  const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
+  for (const k of [
+    'tags',
+    'excludeTags',
+    'includeRuleIds',
+    'excludeRuleIds',
+    'includeTestIds',
+    'excludeTestIds'
+  ]) {
+    if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
+  }
+  if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
+  if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
+  if (parts.length && sel.includeMode) parts.push('includeMode ' + JSON.stringify(sel.includeMode));
+  const message =
+    'The rule selection runs no rule' +
+    (parts.length ? ' (' + parts.join(', ') + ')' : '') +
+    ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
+  if (strictOf(engineOptions)) {
+    const err = new Error(message + '. (strictOptions)');
+    err.code = 'INVALID_RUN_ONLY';
+    throw err;
+  }
+  try {
+    console.warn('[surea11y] ' + message + '.');
+  } catch {}
 }
 
 /**
@@ -744,9 +782,21 @@ function rollupCompositeResults(
       // fail if any fail
       // cantTell if any cantTell OR missing and none fail
       // notApplicable if all notApplicable (and there is at least one test)
-      // pass otherwise
+      // pass otherwise, where the rules check all the criterion asks
       let outcome = 'pass';
       let reasonCode = 'composite.rollup.pass.otherwise';
+
+      // The WCAG criteria the rollup judges: a standard's rollup only when it
+      // restates WCAG criteria (__restatesWcag); its own requirements are
+      // its to judge, except one its rules don't check in full (__partial).
+      const sc = cDef0.standard
+        ? cDef0.__restatesWcag || []
+        : details && Array.isArray(details.wcagSc)
+          ? details.wcagSc
+          : [];
+      const coveredBy = (list) =>
+        !cDef0.__partial &&
+        (typeof list === 'undefined' || !sc.length || sc.every((n) => list.includes(n)));
 
       if (failCount > 0) {
         outcome = 'fail';
@@ -764,19 +814,13 @@ function rollupCompositeResults(
         // A WCAG criterion is notApplicable only when its rules find every
         // case it applies to (src/coverage/complete-applicability.js);
         // otherwise they only found none of the cases they look for.
-        // A standard's rollup only when it restates WCAG criteria
-        // (__restatesWcag); its own requirements are its to judge.
-        const sc = cDef0.standard
-          ? cDef0.__restatesWcag || []
-          : details && Array.isArray(details.wcagSc)
-            ? details.wcagSc
-            : [];
-        const complete =
-          !cDef0.__partial &&
-          (typeof COMPLETE_APPLICABILITY_SCS === 'undefined' ||
-            !sc.length ||
-            sc.every((n) => COMPLETE_APPLICABILITY_SCS.includes(n)));
-        if (complete) {
+        if (
+          coveredBy(
+            typeof COMPLETE_APPLICABILITY_SCS === 'undefined'
+              ? undefined
+              : COMPLETE_APPLICABILITY_SCS
+          )
+        ) {
           outcome = 'notApplicable';
           reasonCode = 'composite.rollup.notApplicable.allInapplicable';
         } else {
@@ -786,6 +830,14 @@ function rollupCompositeResults(
       } else if (checksIds.length === 0) {
         outcome = 'cantTell';
         reasonCode = 'composite.rollup.cantTell.emptyComposite';
+      } else if (
+        !coveredBy(typeof COMPLETE_CHECK_SCS === 'undefined' ? undefined : COMPLETE_CHECK_SCS)
+      ) {
+        // A WCAG criterion passes only when its rules check all it asks (the
+        // same file); otherwise they passed only the parts they check, and a
+        // person checks the rest.
+        outcome = 'cantTell';
+        reasonCode = 'composite.rollup.cantTell.partialCheck';
       }
 
       const raw = {
@@ -853,7 +905,14 @@ function rollupCompositeResults(
       // catalog entry lists every rule's tests, most of which say nothing
       // about this page. A rule judged by its findings names the
       // requirements those that decided count toward, when they name them.
-      const deciding = outcome === 'notApplicable' ? null : outcome;
+      // A rollup cantTell because its rules check only part of the criterion
+      // is decided by the passing ones.
+      const deciding =
+        outcome === 'notApplicable'
+          ? null
+          : reasonCode === 'composite.rollup.cantTell.partialCheck'
+            ? 'pass'
+            : outcome;
       const ruleMapped = Array.isArray(RULE_MAPPED_STANDARDS) ? RULE_MAPPED_STANDARDS : [];
       if (ruleMapped.length && rolled.meta && Array.isArray(rolled.meta.normativeMappings)) {
         const keyOf = (m) => m.standard + '|' + m.version + '|' + m.requirement;
@@ -908,10 +967,38 @@ function rollupCompositeResults(
  * finding reproducible. It reads input, as reading the DOM does, so the
  * same page rendered the same way still gives the same result.
  *
- * Without a layout (jsdom, any DOM emulator) a viewport or a colour scheme
+ * Without a layout (jsdom, any DOM emulator) a viewport or a color scheme
  * describes nothing that was measured, so only `layout: false` is reported.
  */
 function readRenderingEnvironment(win, doc) {
+  // Whether the document's style sheets, its own and adopted ones, hold a
+  // forced-colors media query or a system color.
+  const SYSTEM_COLOR =
+    /(?:^|[\s:,(])(?:accentcolor|accentcolortext|activetext|buttonborder|buttonface|buttontext|canvas|canvastext|field|fieldtext|graytext|highlight|highlighttext|linktext|mark|marktext|selecteditem|selecteditemtext|visitedtext)(?=[\s;,)!]|$)/i;
+  function cssReactsToForcedColors(doc, dom) {
+    const stack = [];
+    for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+      try {
+        for (const sheet of dom.get(doc, name) || []) {
+          try {
+            stack.push(sheet.cssRules || []);
+          } catch {
+            // another origin's: not readable
+          }
+        }
+      } catch {}
+    }
+    for (let guard = 0; stack.length && guard < 10000; guard++) {
+      for (const rule of stack.pop()) {
+        if (!rule) continue;
+        const condition = String(rule.conditionText || (rule.media && rule.media.mediaText) || '');
+        if (/forced-colors/i.test(condition)) return true;
+        if (rule.style && SYSTEM_COLOR.test(String(rule.style.cssText || ''))) return true;
+        if (rule.cssRules && rule.cssRules.length) stack.push(rule.cssRules);
+      }
+    }
+    return false;
+  }
   const dom = createSafeDom();
   let layout;
   try {
@@ -968,6 +1055,13 @@ function readRenderingEnvironment(win, doc) {
         : 'none';
     }
   } catch {}
+  // The scan holds the page in its own colors, but its own CSS can still
+  // react to forced colors: a forced-colors media query still matches, and
+  // a system color (GrayText, Canvas...) still takes the forced palette's.
+  // Then the contrast rules measure colors the page has only under forced
+  // colors, so the results can differ from a scan with them off.
+  if (env.forcedColors === 'active' && cssReactsToForcedColors(doc, dom))
+    env.forcedColorsCss = true;
   // Whether a font face is still loading, asked of each face rather than of
   // document.fonts.status: Chromium reports the set as loading for a while
   // after a style sheet adds a cascade layer, as text-spacing-content-loss
@@ -1059,13 +1153,17 @@ function settleAnimations(doc) {
   } catch {
     animations = [];
   }
-  const moved = [];
+  // Every animation is read before any is moved: setting currentTime makes
+  // the next read update the page's style, so reading and moving one at a
+  // time cost a style update per animation, quadratic in their number (4,000
+  // animations took about 10 s).
+  const plan = [];
   const running = [];
+  const docTimeline = dom.timeline(doc);
   for (const anim of animations) {
     try {
       if (!anim || anim.playState !== 'running') continue;
-      if (dom.timeline(anim) && dom.timeline(doc) && dom.timeline(anim) !== dom.timeline(doc))
-        continue;
+      if (dom.timeline(anim) && docTimeline && dom.timeline(anim) !== docTimeline) continue;
       const currentTime = anim.currentTime;
       if (typeof currentTime !== 'number') continue;
       const timing =
@@ -1077,7 +1175,13 @@ function settleAnimations(doc) {
       running.push(describeAnimation(anim, timing));
       const end = timing ? Number(timing.endTime) : NaN;
       const forward = !(Number(anim.playbackRate) < 0);
-      anim.currentTime = Number.isFinite(end) && forward ? end : 0;
+      plan.push({ anim, currentTime, to: Number.isFinite(end) && forward ? end : 0 });
+    } catch {}
+  }
+  const moved = [];
+  for (const { anim, currentTime, to } of plan) {
+    try {
+      anim.currentTime = to;
       moved.push({ anim, currentTime });
     } catch {}
   }
@@ -1599,7 +1703,25 @@ function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    return { mode, rootCanvasFallback };
+    // Set below, once the color is known to be usable.
+    return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
+  }
+
+  // Whether the caller gave contrast.rootCanvasFallback, rather than the
+  // engine filling in white. An echoed result's options passed back say
+  // rootCanvasFallbackSet: false for a white the engine filled in.
+  function __canvasGiven(engineOptions2) {
+    const c =
+      engineOptions2 && typeof engineOptions2 === 'object' && engineOptions2.contrast
+        ? engineOptions2.contrast
+        : null;
+    return (
+      !!c &&
+      typeof c === 'object' &&
+      typeof c.rootCanvasFallback === 'string' &&
+      !!c.rootCanvasFallback.trim() &&
+      switchOf(c.rootCanvasFallbackSet) !== false
+    );
   }
 
   const engineOptionsResolved =
@@ -1754,6 +1876,16 @@ function runCoreSettled(
         console.warn('[surea11y] ' + message + '; white is used.');
       } catch {}
       engineOptionsResolved.contrast.rootCanvasFallback = '#ffffff';
+    } else if (__canvasGiven(engineOptions)) {
+      // A canvas the caller named, white included, which a rule may decide
+      // by where it would only lean on the default; the result echoes it.
+      engineOptionsResolved.contrast.rootCanvasFallbackSet = true;
+      // The contrast rules measure text on it in place of the page's own
+      // canvas (contrast-helpers, __canvasFor).
+      try {
+        if (sharedHelpers.contrast && typeof sharedHelpers.contrast.useNamedCanvas === 'function')
+          sharedHelpers.contrast.useNamedCanvas(given);
+      } catch {}
     }
   }
 
@@ -2013,8 +2145,19 @@ function runCoreSettled(
   }
   warnDeprecatedStandards(mappingSelection.tokens);
 
+  // W3C's 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as always satisfied
+  // for content in HTML or XML, so a 2.0 or 2.1 target is treated as 2.2 is.
+  // A profile whose standard keeps the criterion's text (keepsParsing in the
+  // registry: EN 301 549 V3.2.1) keeps the fail.
+  function removesParsing() {
+    if (targetWcagVersion === '2.2') return 'removed';
+    const keeps = (CATALOG && CATALOG.profileKeepsParsing) || [];
+    return appliedProfile && keeps.includes(appliedProfile) ? null : 'errata';
+  }
+
   function scopeOutcomeToWcagVersion(def, result) {
-    if (targetWcagVersion !== '2.2') return result;
+    const why = removesParsing();
+    if (!why) return result;
     if (!result || typeof result !== 'object' || result.outcome !== 'fail') return result;
 
     const defTags = def && Array.isArray(def.tags) ? def.tags : [];
@@ -2034,8 +2177,33 @@ function runCoreSettled(
           if (!next.uncertainty) {
             next.uncertainty = {
               code: 'out-of-scope',
-              needed: `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`,
+              needed:
+                why === 'removed'
+                  ? `Whether this still matters under WCAG ${targetWcagVersion}, which removed the criterion it was found against.`
+                  : `Whether this still matters under WCAG ${targetWcagVersion}: its 2023 errata count the criterion it was found against as always satisfied for HTML and XML.`,
               evidence: { removedSc, target: targetWcagVersion, findingStands: true }
+            };
+          }
+          // Under the target the criterion is met, by its removal or by the
+          // errata: the finding still stands, as a defect of its own.
+          if (!next.lean) {
+            next.lean = {
+              toward: 'pass',
+              why:
+                why === 'removed'
+                  ? `WCAG ${targetWcagVersion} removed the criterion this was found against.`
+                  : `WCAG ${targetWcagVersion}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.`,
+              signals: [
+                { signal: 'target-wcag-version', value: targetWcagVersion },
+                { signal: 'criterion-scope', value: why }
+              ],
+              caution:
+                'The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.',
+              i18n: {
+                whyKey: why === 'removed' ? 'engine_lean_why_removedSc' : 'engine_lean_why_errata',
+                cautionKey: 'engine_lean_caution_scopedSc',
+                params: { version: targetWcagVersion }
+              }
             };
           }
           return next;
@@ -2051,7 +2219,8 @@ function runCoreSettled(
       wcagVersionScope: {
         target: targetWcagVersion,
         removedSc,
-        coercedFrom: 'fail'
+        coercedFrom: 'fail',
+        ...(why === 'errata' ? { by: 'errata' } : {})
       }
     };
   }
@@ -2794,40 +2963,8 @@ function runCoreSettled(
     }
   }
 
-  // A selection whose includes and excludes cancel each other (a rule both
-  // included and excluded, an 'and' of rules and tags no rule has both of)
-  // runs no rule, and its result reads as a clean pass: JUnit tests="0",
-  // SARIF with no result. Said so, and an error under strictOptions, as an
-  // include naming nothing already is.
   if (!selectedRuleCount && effectiveCheckDefs.length) {
-    const parts = [];
-    const sel = runOnly && typeof runOnly === 'object' ? runOnly : {};
-    for (const k of [
-      'tags',
-      'excludeTags',
-      'includeRuleIds',
-      'excludeRuleIds',
-      'includeTestIds',
-      'excludeTestIds'
-    ]) {
-      if (Array.isArray(sel[k]) && sel[k].length) parts.push(k + ' ' + JSON.stringify(sel[k]));
-    }
-    if (sel.wcag) parts.push('wcag ' + JSON.stringify(sel.wcag));
-    if (sel.profile) parts.push('profile ' + JSON.stringify(sel.profile));
-    if (parts.length && sel.includeMode)
-      parts.push('includeMode ' + JSON.stringify(sel.includeMode));
-    const message =
-      'The rule selection runs no rule' +
-      (parts.length ? ' (' + parts.join(', ') + ')' : '') +
-      ': what it includes is excluded, or its parts have no rule in common, so the result reads as a clean pass though nothing was checked';
-    if (strictOf(engineOptionsResolved)) {
-      const err = new Error(message + '. (strictOptions)');
-      err.code = 'INVALID_RUN_ONLY';
-      throw err;
-    }
-    try {
-      console.warn('[surea11y] ' + message + '.');
-    } catch {}
+    noteEmptySelection(runOnly, engineOptionsResolved);
   }
 
   const rulesResults = rollupCompositeResults(
@@ -2866,20 +3003,36 @@ function runCoreSettled(
   // capped copy rules read (the raw object could be circular, or megabytes
   // repeated on every result), and `customRules` as their ids (the rules'
   // functions cannot be cloned, and their source repeated on every result).
+  // `styleSheetTexts` is echoed as the sheets' hrefs: their text is data the
+  // run read, as the dictionaries are, and a page's CSS repeated on every
+  // result multiplied it by the number of rules.
   const rawCustomRules = Array.isArray(engineOptionsResolved.customRules)
     ? engineOptionsResolved.customRules
     : [];
   const echoedCustomRules = rawCustomRules
     .filter((c) => c && typeof c === 'object' && typeof c.id === 'string' && c.id.trim())
     .map((c) => ({ id: c.id.trim() }));
+  const echoedStyleSheets = Array.isArray(engineOptionsResolved.styleSheetTexts)
+    ? engineOptionsResolved.styleSheetTexts
+        .filter((s) => s && typeof s === 'object' && typeof s.href === 'string')
+        .map((s) => ({ href: s.href }))
+    : [];
   for (const r of checksResults.concat(rulesResults)) {
     if (!r || !r.engineOptions || typeof r.engineOptions !== 'object') continue;
     const eo = r.engineOptions;
-    if (!('messages' in eo) && !('probes' in eo) && !('customRules' in eo)) continue;
+    if (
+      !('messages' in eo) &&
+      !('probes' in eo) &&
+      !('customRules' in eo) &&
+      !('styleSheetTexts' in eo)
+    ) {
+      continue;
+    }
     const echoed = { ...eo };
     delete echoed.messages;
     if ('probes' in echoed) echoed.probes = probes;
     if ('customRules' in echoed) echoed.customRules = echoedCustomRules;
+    if ('styleSheetTexts' in echoed) echoed.styleSheetTexts = echoedStyleSheets;
     r.engineOptions = echoed;
   }
 
@@ -3068,6 +3221,7 @@ module.exports = {
   settleAnimations,
   holdPageColors,
   rollupCompositeResults,
+  noteEmptySelection,
   rollupMembers,
   normalizeWcagLevel,
   normalizeWcagVersion,

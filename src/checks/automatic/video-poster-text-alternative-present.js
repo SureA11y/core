@@ -30,7 +30,16 @@
  *   tell.
  * @reports
  *   - `reasonCode`: `VIDEO_POSTER_FIGCAPTION_REVIEW` on the cantTell
- *     finding, with `figcaption`, the caption's text up to 100 characters.
+ *     finding, with `figcaption`, the caption's text up to 100 characters;
+ *     `TEXT_ALTERNATIVE_MISSING` on a failure.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): a <video> with a poster image has
+ *     no name from aria-label, aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; HTML video poster; accname 1.2.
+ *   - `VIDEO_POSTER_FIGCAPTION_REVIEW` (cantTell): a <video> with a poster
+ *     has no name but is the only content of a figure with a caption, and a
+ *     person checks that the caption describes the poster.
+ *     Basis: WCAG 1.1.1 (not settled); HTML-AAM figcaption.
  */
 
 const id = 'video-poster-text-alternative-present';
@@ -62,6 +71,20 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['video-poster-text-alt-present']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    VIDEO_POSTER_FIGCAPTION_REVIEW: {
+      steps: [
+        'Find the video the report names and look at its poster image before it plays.',
+        "Read the figure's caption shown with it.",
+        'Decide whether the caption tells someone who cannot see the poster what the video is.'
+      ],
+      passWhen: 'The caption identifies the video and what its poster shows.',
+      failWhen:
+        'The caption does not identify the video, so the poster has no text alternative, which fails WCAG 1.1.1.'
     }
   }
 };
@@ -267,6 +290,7 @@ function runInPage(ctx) {
         params: { element: 'video' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         poster,
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         nameInfo: nameInfo || null

@@ -29,6 +29,10 @@
  *   a tooltip if wanted.
  * @reports
  *   - `role`: the control's role, `button` or `link`.
+ * @reason-codes
+ *   - `NAME_FROM_TITLE_ONLY` (cantTell): the button or link takes its only
+ *     name from its title, which is shown only on mouse hover.
+ *     Basis: accname 1.2 (best practice).
  * @implementation-notes
  * - Best practice, with no WCAG mapping: a title is a valid name under
  *   HTML-AAM, and whether the control needs visible text depends on what
@@ -61,7 +65,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    NAME_FROM_TITLE_ONLY: {
+      steps: [
+        'Look at the button or link the report names without hovering over it.',
+        'Decide whether what it shows (text or an icon) makes its purpose clear.',
+        'Tab to it with the keyboard and note that the title tooltip does not appear.'
+      ],
+      passWhen:
+        "The control's purpose is clear from what it shows, or it is given visible text or an aria-label with the title kept as a tooltip.",
+      failWhen:
+        'The purpose is only explained by a title that keyboard, touch and speech input users never see (best practice, accname 1.2).'
+    }
+  }
 };
 
 function runInPage(ctx) {

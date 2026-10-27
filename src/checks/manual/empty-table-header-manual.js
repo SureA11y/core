@@ -35,6 +35,21 @@
  *   - `ariaName` (`TABLE_HEADER_NAME_NOT_VISIBLE_TEXT`): the name the header
  *     cell gets from `aria-label` or `aria-labelledby` instead of visible
  *     text.
+ * @reason-codes
+ *   - `TABLE_HEADER_EMPTY` (cantTell): a header cell has no visible text and
+ *     no name from aria-label or aria-labelledby.
+ *     It leans fail when the cell is a <th> holding nothing that could name
+ *     it (an svg, an element with an ARIA name or title, a control), is not
+ *     the top-left corner above a column of row headers, and has a data cell
+ *     with text below it or after it in a table with no spans; otherwise no
+ *     lean.
+ *     Basis: HTML table model th element (best practice); WAI-ARIA 1.2
+ *     columnheader role (best practice).
+ *   - `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` (cantTell): a header cell has no
+ *     visible text and is named only by aria-label or aria-labelledby, which
+ *     some screen readers do not read on header cells.
+ *     It leans fail: the page states it.
+ *     Basis: accname 1.2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -64,7 +79,34 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TABLE_HEADER_EMPTY: {
+      steps: [
+        'Find the header cell the report names and look at what it shows on screen.',
+        "Inspect it in the Accessibility pane of the browser's developer tools and note its computed name; an image with alt text or a labelled icon inside can give it one.",
+        'Look at the cells under or beside it and decide whether they need a header to be understood.',
+        'If it is the empty top-left corner cell of a table whose first column holds row headers, note that it heads nothing.'
+      ],
+      passWhen:
+        'The cell has a name that describes its column or row, or it is an empty corner cell that heads no data (better still marked up as a td).',
+      failWhen:
+        'The cell heads data cells but has no visible text and no name, so its column or row has no header, a best-practice miss for table header cells.'
+    },
+    TABLE_HEADER_NAME_NOT_VISIBLE_TEXT: {
+      steps: [
+        'Find the header cell the report names and read the name the report gives (from aria-label or aria-labelledby).',
+        'Look at the cell on screen and confirm it shows no text of its own.',
+        'With a screen reader, move through a data cell in that column or row and listen to whether the header name is announced with it.'
+      ],
+      passWhen:
+        'The header is announced with its data cells, or the cell is given visible text (visually hidden text inside the cell also works) that states the same name.',
+      failWhen:
+        'The header has no visible text and relies on an ARIA name that is not announced with its data cells, a best-practice miss under accessible-name guidance.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -100,6 +142,32 @@ function runInPage(ctx) {
       if (dom.nodeType(node) === 3) return dom.nodeValue(node) || '';
       if (dom.nodeType(node) !== 1) return '';
       if (!isEligible(node)) return '';
+      // An image shows its text: its alt (or, for role="img", its ARIA name)
+      // is what a screen reader reads and what the picture says, so a header
+      // holding <img alt="Price"> is not empty.
+      const tag = String(dom.tagName(node) || '').toLowerCase();
+      const type = String(dom.getAttribute(node, 'type') || '').toLowerCase();
+      if (tag === 'img' || (tag === 'input' && type === 'image')) {
+        return ' ' + String(dom.getAttribute(node, 'alt') || '') + ' ';
+      }
+      // An <svg> or role="img" element is named as an image is: by its ARIA
+      // name, or an <svg>'s own <title>.
+      if (tag === 'svg' || (helpers.aria && helpers.aria.getExplicitRole(node) === 'img')) {
+        let name;
+        try {
+          const info = helpers.getAccessibleNameInfo(node, ctx);
+          name = info && info.present ? String(info.value || '') : '';
+        } catch {
+          name = '';
+        }
+        if (!name && tag === 'svg') {
+          const title = Array.from(dom.childNodes(node) || []).find(
+            (c) => dom.nodeType(c) === 1 && String(dom.tagName(c) || '').toLowerCase() === 'title'
+          );
+          name = title ? String(dom.textContent(title) || '') : '';
+        }
+        return ' ' + name + ' ';
+      }
       let text = '';
       for (const child of dom.childNodes(node) || []) text += walk(child);
       return text;
@@ -153,6 +221,64 @@ function runInPage(ctx) {
     return !role && String(dom.tagName(el) || '').toLowerCase() === 'th';
   });
 
+  // Which way an empty native header cell points. Content that may name
+  // it without text (an svg, an element with an ARIA name or a title, a
+  // control) gives no direction, nor does the corner cell above a column
+  // of row headers, the usual empty top-left cell. Otherwise a header with
+  // a data cell with text below it or after it in its row heads data and
+  // says nothing about it.
+  const MAY_NAME =
+    'svg, img, canvas, object, embed, input, select, textarea, button, [role], [aria-label], [aria-labelledby], [title]';
+  function emptyHeaderLean(th) {
+    if (String(dom.localName(th) || '').toLowerCase() !== 'th') return null;
+    try {
+      if (dom.querySelector(th, MAY_NAME)) return null;
+    } catch {
+      return null;
+    }
+    const row = dom.parentElement(th);
+    const table = row ? dom.closest(row, 'table') : null;
+    if (!table || !table.rows) return null;
+    const rows = Array.from(table.rows).map((tr) => Array.from(tr.cells || []));
+    const r = rows.findIndex((cells) => cells.indexOf(th) !== -1);
+    if (r === -1) return null;
+    const c = rows[r].indexOf(th);
+    const spans = rows.some((cells) =>
+      cells.some(
+        (x) =>
+          Number.parseInt(dom.getAttribute(x, 'colspan') || '1', 10) > 1 ||
+          Number.parseInt(dom.getAttribute(x, 'rowspan') || '1', 10) !== 1
+      )
+    );
+    if (spans) return null;
+    const isTh = (x) => !!x && String(dom.localName(x) || '').toLowerCase() === 'th';
+    if (r === 0 && c === 0 && rows.length > 1 && rows.slice(1).every((cells) => isTh(cells[0])))
+      return null;
+    const dataWithText = (x) =>
+      !!x &&
+      String(dom.localName(x) || '').toLowerCase() === 'td' &&
+      normalizeWs(dom.textContent(x)) !== '';
+    const hasData =
+      rows[r].slice(c + 1).some(dataWithText) ||
+      rows.slice(r + 1).some((cells) => dataWithText(cells[c]));
+    if (!hasData) return null;
+    return {
+      toward: 'fail',
+      why: 'The header cell is empty, holds nothing that could name it, and heads data cells with text.',
+      signals: [
+        { signal: 'named-content', value: false },
+        { signal: 'corner-cell', value: false },
+        { signal: 'heads-data-cells', value: true }
+      ],
+      caution:
+        'A header drawn only through CSS (a background image or generated content) has no text in the page.',
+      i18n: {
+        whyKey: 'emptyTableHeader_lean_why_empty',
+        cautionKey: 'emptyTableHeader_lean_caution_empty'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -180,6 +306,12 @@ function runInPage(ctx) {
             hintKey: 'emptyTableHeader_hint_cantTell_ariaOnly',
             params: {}
           },
+          lean: {
+            toward: 'fail',
+            why: 'The header cell has no visible text; its only name is an ARIA one, which some screen readers ignore on header cells.',
+            signals: [{ signal: 'visible-text-absent', value: true }],
+            i18n: { whyKey: 'emptyTableHeader_lean_why_notVisible' }
+          },
           data: {
             details: { reasonCode: 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT', ariaName }
           }
@@ -188,8 +320,13 @@ function runInPage(ctx) {
       continue;
     }
 
+    let lean = null;
+    try {
+      lean = emptyHeaderLean(el);
+    } catch {}
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: 'This table header cell has no accessible name.',
         hint: "Give the header cell text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {

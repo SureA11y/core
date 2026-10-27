@@ -46,8 +46,9 @@ test(`${RULE_ID}: cantTell when at least one applicable element triggers manual 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 5, maxOccurrences: 5 });
 
-  const expected = ['o_q_01', 'o_q_02', 'o_q_04', 'o_q_06', 'o_q_10'];
-  const notExpected = ['o_q_03', 'o_q_05', 'o_q_07', 'o_q_08', 'o_q_09'];
+  const expected = ['o_q_02', 'o_q_04', 'o_q_06', 'o_q_10', 'o_q_11'];
+  // o_q_01 embeds a PDF, which renders no non-text content (ACT 8fc3b6).
+  const notExpected = ['o_q_01', 'o_q_03', 'o_q_05', 'o_q_07', 'o_q_08', 'o_q_09'];
 
   for (const id of expected) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -129,4 +130,72 @@ test(`${RULE_ID} (node runtime): a focusable role="presentation" object is NOT e
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'cantTell');
   assert.strictEqual(rule.occurrences.length, 1);
+});
+
+// An object that embeds a page, a PDF or text renders no non-text content,
+// so 1.1.1 asks nothing of it, as object-text-alternative-present has it
+// (ACT 8fc3b6). An image object with the same fallback is still asked about.
+test(`${RULE_ID}: an object that embeds a page, a PDF or text is not asked about`, () => {
+  for (const attrs of [
+    'data="report.pdf" type="application/pdf"',
+    'data="report.pdf"',
+    'data="page.html"',
+    'data="notes" type="text/plain"'
+  ]) {
+    const html = `<!doctype html><html><body><object ${attrs} aria-label="Focusable object"></object></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+  const html = `<!doctype html><html><body><object data="chart.png" aria-label="Focusable object"></object></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+// No current browser runs Flash, so a Flash object shows its fallback
+// content, ordinary HTML other rules judge: nothing non-text is left to ask
+// about.
+test(`${RULE_ID}: a Flash object is not asked about`, () => {
+  const html = `<!doctype html><html><body>
+    <object type="application/x-shockwave-flash" data="movie.swf" aria-label="Product tour"></object>
+    <object type="application/x-shockwave-flash" data="intro.swf"><p>Watch the intro.</p></object>
+    <object data="banner.swf?v=2" aria-label="Spring sale"></object>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// Text that is the data file's name, a generic word, or only a note that a
+// plugin is missing says nothing of the content: it leans fail. A note
+// beside a real description, or any other text, needs a person.
+test(`${RULE_ID}: leans fail on a file name, a placeholder or a missing-plugin note`, () => {
+  const run = (obj) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body><main>${obj}</main></body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const plugin = run(
+    '<object data="intro.mp4" type="video/mp4">Your browser does not support this video. Download a newer player.</object>'
+  );
+  assert.strictEqual(plugin.lean.toward, 'fail');
+  assert.strictEqual(plugin.lean.i18n.whyKey, 'object_textAltQuality_lean_why_plugin');
+  for (const obj of [
+    '<object data="intro.mp4" type="video/mp4">intro.mp4</object>',
+    '<object data="intro.mp4" type="video/mp4" aria-label="Video"></object>'
+  ]) {
+    const o = run(obj);
+    assert.strictEqual(o.lean.toward, 'fail', obj);
+    assert.strictEqual(o.lean.i18n.whyKey, 'object_textAltQuality_lean_why', obj);
+  }
+  for (const obj of [
+    '<object data="intro.mp4" type="video/mp4">Your browser does not support this video. A tour of the new library, floor by floor.</object>',
+    '<object data="intro.mp4" type="video/mp4">A tour of the new library, floor by floor.</object>'
+  ]) {
+    assert.strictEqual(run(obj).lean, undefined, obj);
+  }
 });

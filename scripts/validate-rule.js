@@ -237,6 +237,57 @@ function validateI18nMatchesMeta(dict, key, value, context) {
   );
 }
 
+// meta.review: how a person checks each undecided finding, by reason code.
+// Each code is one the rule gives (it appears in the rule's source), and its
+// steps, passWhen and failWhen match the English entries of
+// src/i18n/review/en.json,
+// <prefix>_review_<code>_step<n>, _pass and _fail, which the engine reads
+// for the scan's locale.
+function validateReview(dict, meta, runFilePath) {
+  if (!meta || meta.review === undefined) return;
+  assert.ok(
+    meta.review && typeof meta.review === 'object' && !Array.isArray(meta.review),
+    'meta.review, when given, must be an object of reason code -> { steps, passWhen, failWhen }'
+  );
+  const prefix = String(meta.i18n.titleKey).replace(/_title$/, '');
+  const src = fs.readFileSync(runFilePath, 'utf8');
+  for (const [code, entry] of Object.entries(meta.review)) {
+    assert.ok(
+      src.includes(`'${code}'`) || src.includes('`' + code + '`'),
+      `meta.review: "${code}" is not a reason code of this rule`
+    );
+    assert.ok(
+      entry && Array.isArray(entry.steps) && entry.steps.length >= 1 && entry.steps.length <= 6,
+      `meta.review.${code}.steps must list 1 to 6 steps`
+    );
+    entry.steps.forEach((step, i) =>
+      validateI18nMatchesMeta(
+        dict,
+        `${prefix}_review_${code}_step${i + 1}`,
+        step,
+        `meta.review.${code}.steps[${i}]`
+      )
+    );
+    assert.equal(
+      dict[`${prefix}_review_${code}_step${entry.steps.length + 1}`],
+      undefined,
+      `meta.review.${code}: the dictionary has a step the rule doesn't (${prefix}_review_${code}_step${entry.steps.length + 1})`
+    );
+    validateI18nMatchesMeta(
+      dict,
+      `${prefix}_review_${code}_pass`,
+      entry.passWhen,
+      `meta.review.${code}.passWhen`
+    );
+    validateI18nMatchesMeta(
+      dict,
+      `${prefix}_review_${code}_fail`,
+      entry.failWhen,
+      `meta.review.${code}.failWhen`
+    );
+  }
+}
+
 function extractI18nKeysFromSource(runFilePath) {
   // Conservative extraction: find string literals assigned to *Key properties.
   // This catches the real-world pattern used in your rule family:
@@ -279,8 +330,21 @@ function extractUncertaintyCodesFromSource(runFilePath) {
 
 // meta.reasonCodes lists the reason codes a rule builds at runtime, which a
 // read of its source can't see (scripts/generate-finding-ids.js). Each has to
-// appear in the source as a string, so a typo can't register a code the rule
-// never reports.
+// appear as a string in the rule's source, or in the shared helpers' for a
+// code the rule passes on from one, so a typo can't register a code nothing
+// reports.
+let helperSources = null;
+function readHelperSources() {
+  if (helperSources === null) {
+    const dir = path.join(__dirname, '..', 'src', 'core');
+    helperSources = fs
+      .readdirSync(dir)
+      .filter((f) => f.endsWith('.js'))
+      .map((f) => fs.readFileSync(path.join(dir, f), 'utf8'))
+      .join('\n');
+  }
+  return helperSources;
+}
 function validateDeclaredReasonCodes(meta, runFilePath) {
   if (!meta || meta.reasonCodes === undefined) return;
   assert.ok(
@@ -294,9 +358,10 @@ function validateDeclaredReasonCodes(meta, runFilePath) {
       typeof code === 'string' && /^[A-Za-z][\w.-]*$/.test(code),
       `meta.reasonCodes: "${code}" is not a reason code`
     );
+    const quoted = (text) => text.includes(`'${code}'`) || text.includes(`"${code}"`);
     assert.ok(
-      src.includes(`'${code}'`) || src.includes(`"${code}"`),
-      `meta.reasonCodes: "${code}" does not appear in the rule's source`
+      quoted(src) || quoted(readHelperSources()),
+      `meta.reasonCodes: "${code}" does not appear in the rule's source or the shared helpers'`
     );
   }
 }
@@ -878,6 +943,12 @@ function main() {
     mod.meta.i18n.descriptionKey,
     mod.meta.description,
     'meta.description'
+  );
+
+  validateReview(
+    JSON.parse(fs.readFileSync(path.join(repoRoot, 'src/i18n/review/en.json'), 'utf8')),
+    mod.meta,
+    codePath
   );
 
   // Validate i18n keys referenced in source (static extraction)

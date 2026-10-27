@@ -21,6 +21,8 @@
     .bold { font-weight: 700; }
     .italic { font-style: italic; }
     .sufficientContrast { color: #969696; } /* vs #222222 parent text: ~5.4:1, >= 3:1 */
+    /* An underline on hover and on focus, as G183 asks of a color-only link. */
+    .hoverCue:hover, .hoverCue:focus { text-decoration: underline; }
     .colorOnly { color: #2a2a2a; } /* vs #222222 parent text: ~1.1:1, well under 3:1 */
     .bgImage { background-image: linear-gradient(90deg, #ffffff, #000000); }
     .sameColor { color: #222222; }
@@ -72,22 +74,22 @@
   </div>
 
   <div class="case" id="case_05b">
-    <div class="case-title">05b — FAIL: the same colour-only link with background layers that are all none ("none, none" paints no image, so it is no cue)</div>
+    <div class="case-title">05b — FAIL: the same color-only link with background layers that are all none ("none, none" paints no image, so it is no cue)</div>
     <p>Read <a href="#" id="litb_case_05b" class="nodeco colorOnly" style="background-image:none, none">this color-only link</a> for more information.</p>
   </div>
 
   <div class="case" id="case_05c">
-    <div class="case-title">05c — FAIL: the same colour-only link with a background layer sized to nothing (no cue)</div>
+    <div class="case-title">05c — FAIL: the same color-only link with a background layer sized to nothing (no cue)</div>
     <p>Read <a href="#" id="litb_case_05c" class="nodeco colorOnly" style="background-image:linear-gradient(currentColor, currentColor); background-size:0px 2px; background-position:0 100%; background-repeat:no-repeat">this color-only link</a> for more information.</p>
   </div>
 
   <div class="case" id="case_05d">
-    <div class="case-title">05d — FAIL: the same colour-only link with a transparent gradient layer (no cue)</div>
+    <div class="case-title">05d — FAIL: the same color-only link with a transparent gradient layer (no cue)</div>
     <p>Read <a href="#" id="litb_case_05d" class="nodeco colorOnly" style="background-image:linear-gradient(transparent, transparent)">this color-only link</a> for more information.</p>
   </div>
 
   <div class="case" id="case_05e">
-    <div class="case-title">05e — FAIL: the same colour-only link with a white gradient layer on the white page (no cue)</div>
+    <div class="case-title">05e — FAIL: the same color-only link with a white gradient layer on the white page (no cue)</div>
     <p>Read <a href="#" id="litb_case_05e" class="nodeco colorOnly" style="background-image:linear-gradient(#ffffff, #ffffff)">this color-only link</a> for more information.</p>
   </div>
 
@@ -99,8 +101,13 @@
   </div>
 
   <div class="case" id="case_07">
-    <div class="case-title">07 — CANTTELL: color contrast vs surrounding text not confidently computable (background-image blocker behind the paragraph) — recorded as undecided, outranked here by case 05&rsquo;s failure</div>
+    <div class="case-title">07 — FAIL: a background image behind the whole paragraph keeps the background from being worked out, but the link and the text are drawn in opaque colors ~1.1:1 apart, which compare without it</div>
     <p class="bgImage">Read <a href="#" id="litb_case_07" class="nodeco colorOnly">this link over a background image</a> for more information.</p>
+  </div>
+
+  <div class="case" id="case_07b">
+    <div class="case-title">07b — CANTTELL: the same image behind a paragraph drawn in a translucent color, the link in that same color; how it is drawn depends on the image &mdash; recorded as undecided, leaning fail, outranked here by the failures</div>
+    <p class="bgImage" style="color: rgba(34, 34, 34, 0.6)">Read <a href="#" id="litb_case_07b" class="nodeco" style="color: rgba(34, 34, 34, 0.6)">this link in the text&rsquo;s own translucent color</a> for more information.</p>
   </div>
 
   <h2>D. Other link shapes</h2>
@@ -116,8 +123,13 @@
   </div>
 
   <div class="case" id="case_10">
-    <div class="case-title">10 — NEUTRAL: a row of colour-only links separated by "|" — the bar is no text for them to sit in, so they are navigation, not links in a text block</div>
+    <div class="case-title">10 — NEUTRAL: a row of color-only links separated by "|" — the bar is no text for them to sit in, so they are navigation, not links in a text block</div>
     <p><a href="#" id="litb_case_10" class="nodeco colorOnly">Privacy</a> | <a href="#" class="nodeco colorOnly">Terms</a> · <a href="#" class="nodeco colorOnly">Cookies</a></p>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — CANTTELL: as 04, color contrast vs surrounding text is >= 3:1, and the style sheet underlines it on hover and on focus &mdash; still asked about, leaning pass</div>
+    <p>Read <a href="#" id="litb_case_11" class="nodeco sufficientContrast hoverCue">this link underlined on hover and focus</a> for more information.</p>
   </div>
 
   <p class="note">End of fixture.</p>

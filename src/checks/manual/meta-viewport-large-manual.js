@@ -21,6 +21,11 @@
  *   - `reasons`: each setting in the content attribute that limits zoom,
  *     as written there in lowercase, such as `user-scalable=no` or
  *     `maximum-scale=2` (below 5).
+ * @reason-codes
+ *   - `VIEWPORT_ZOOM_BELOW_500` (cantTell): the viewport meta tag blocks
+ *     zoom or caps it below 500%.
+ *     It leans fail: the page states it.
+ *     Basis: WCAG 1.4.4 (best practice); CSS Viewport meta viewport.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -48,7 +53,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    VIEWPORT_ZOOM_BELOW_500: {
+      steps: [
+        "Read the viewport meta tag's content in the page source; the report lists the settings that limit zoom, such as user-scalable=no or maximum-scale=2.",
+        "Open the page on a phone or in the browser's device emulation and pinch-zoom (or use the zoom gesture) as far as it will go.",
+        'Note whether it reaches 500% and whether text is still readable.'
+      ],
+      passWhen:
+        'The page can be zoomed to 500% with no user-scalable=no and no maximum-scale below 5.',
+      failWhen:
+        'Zoom is blocked or stops below 500%, which misses the best-practice target beyond WCAG 1.4.4.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -95,6 +115,12 @@ function runInPage(ctx) {
           summaryKey: 'metaViewportLarge_summary_cantTell',
           hintKey: 'metaViewportLarge_hint_cantTell',
           params: { reasons: reasons.join(', ') }
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The viewport meta tag keeps zoom below 500%.',
+          signals: [{ signal: 'zoom-limited', value: true }],
+          i18n: { whyKey: 'metaViewportLarge_lean_why' }
         },
         data: {
           details: { reasonCode: 'VIEWPORT_ZOOM_BELOW_500', reasons }

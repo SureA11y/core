@@ -120,4 +120,56 @@ test('a scan settles animations and restores them', { skip }, async (t) => {
       assert.equal(state, 'paused', 'the scan did not pin the animation as playing');
     });
   });
+
+  // Moving an animation makes the next read of one update the page's style,
+  // so the scan reads them all before it moves any. Read and moved one at a
+  // time, 4,000 animations took about 10 s; checked here by the order of the
+  // reads and writes, not by a time.
+  await t.test('every animation is read before any is moved', async () => {
+    const p = await browser.newPage();
+    try {
+      const spans = Array.from({ length: 5 }, (_, i) => `<span class="a">M${i}</span>`).join(' ');
+      await p.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>@keyframes m{to{transform:translateX(50px)}}.a{display:inline-block;animation:m 10s infinite}</style></head><body><main>${spans}</main></body></html>`
+      );
+      // Before the bundle loads, so the engine reads through these too.
+      await p.evaluate(() => {
+        window.__animLog = [];
+        const proto = Animation.prototype;
+        const time = Object.getOwnPropertyDescriptor(proto, 'currentTime');
+        const state = Object.getOwnPropertyDescriptor(proto, 'playState');
+        Object.defineProperty(proto, 'currentTime', {
+          configurable: true,
+          get() {
+            window.__animLog.push('r');
+            return time.get.call(this);
+          },
+          set(v) {
+            window.__animLog.push('w');
+            time.set.call(this, v);
+          }
+        });
+        Object.defineProperty(proto, 'playState', {
+          configurable: true,
+          get() {
+            window.__animLog.push('r');
+            return state.get.call(this);
+          }
+        });
+      });
+      await addBundle(p);
+      const log = await p.evaluate(() => {
+        window.__animLog.length = 0;
+        window.a11ycore.runa11yCoreInPage(location.href, null, {}, ['img-alt-present']);
+        return window.__animLog.join('');
+      });
+      // The settling reads, then the five moves, then the five moves back.
+      const first = log.indexOf('w');
+      assert.ok(first > 0, log);
+      assert.equal(log.slice(first, first + 5), 'wwwww', log);
+      assert.ok(!log.slice(0, first).includes('w'), log);
+    } finally {
+      await p.close();
+    }
+  });
 });

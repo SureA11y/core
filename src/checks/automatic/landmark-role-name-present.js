@@ -27,12 +27,16 @@
  *   landmark harms anyone depends on the page.
  * @reports
  *   - `role`: the role that needs a name, `region` or `form`.
+ * @reason-codes
+ *   - `LANDMARK_ROLE_NAME_MISSING` (cantTell): an element given the region or
+ *     form role has no accessible name, so it is not exposed as a landmark.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 region role (MUST); WAI-ARIA 1.2 form role (MUST);
+ *     ARIA13.
  * @implementation-notes
  * - Explicit roles only. An unnamed <section> or <form> is simply not a
  *   landmark, which is what HTML intends; only a role attribute asks for
- *   one. Siteimprove Alfa's SIA-R40 and IBM's aria_region_labelled report
- *   the region case the same way; neither checks form, which WAI-ARIA
- *   words identically.
+ *   one. WAI-ARIA words the form case identically, so both are reported.
  * - Deterministic, so `type: 'automatic'`, like aria-allowed-role, which
  *   also reports an author requirement that names no criterion; see
  *   docs/RULE_TAXONOMY.md 1.1.
@@ -59,7 +63,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_ROLE_NAME_MISSING: {
+      steps: [
+        'Inspect the element the report names and note its role (region or form).',
+        'Look at the content it wraps and any visible heading at its start.',
+        'Decide whether the area is important enough that users should be able to jump to it as a landmark.',
+        'If so, check whether it is given a name, for example with aria-labelledby pointing at its heading.'
+      ],
+      passWhen:
+        'The area does not need to be a landmark (and the role can be removed), or it is given a name that makes it one.',
+      failWhen:
+        'An area meant as a landmark has no name, so it is not exposed as one, which fails the WAI-ARIA requirement that region and form roles be labelled (best practice, ARIA13).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -101,6 +121,12 @@ function runInPage(ctx) {
           code: 'spec-only',
           needed: 'Whether losing the landmark matters to people navigating this page by landmark.',
           evidence: { role, source: 'WAI-ARIA 1.2, roles region and form', wcagSc: [] }
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The landmark has no name, which WAI-ARIA requires for its role.',
+          signals: [{ signal: 'landmark-name-missing', value: true }],
+          i18n: { whyKey: 'landmarkRoleNamePresent_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_ROLE_NAME_MISSING', role }

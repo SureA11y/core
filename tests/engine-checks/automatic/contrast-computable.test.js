@@ -182,7 +182,7 @@ test(`${RULE_ID}: background gradient blocker => cantTell with reasonCode BACKGR
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_bgGradient');
 });
 
-test(`${RULE_ID}: text matching the page colour over an ancestor gradient => cantTell, not invisible`, () => {
+test(`${RULE_ID}: text matching the page color over an ancestor gradient => cantTell, not invisible`, () => {
   const html = `
 <!doctype html>
 <html style="background-color: rgb(255, 255, 255)">
@@ -476,7 +476,7 @@ test(`${RULE_ID}: filter/backdrop-filter blocker => cantTell with reasonCode BAC
   assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_filter');
 });
 
-test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCode BACKGROUND_NOT_OPAQUE_AT_ROOT`, () => {
+test(`${RULE_ID}: strictConformance + root not opaque => pass, measured on the page's canvas`, () => {
   const html = `
 <!doctype html>
 <html><head><style>
@@ -491,10 +491,33 @@ test(`${RULE_ID}: strictConformance + root not opaque => cantTell with reasonCod
     contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
   });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  // The page's canvas, which its color scheme gives it, is no assumption;
+  // the white the scan names is.
+  assert.deepStrictEqual(rule.occurrences[0].data.details.assumptionsApplied, [
+    'ROOT_CANVAS_FALLBACK'
+  ]);
+  const own = assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.deepStrictEqual(own.occurrences[0].data.details.assumptionsApplied, []);
+});
+
+test(`${RULE_ID}: the text's color in the page's dark scheme unknown => COLOR_SCHEME_NOT_RENDERED`, () => {
+  // jsdom applies no prefers-color-scheme rule; the page is drawn only in
+  // dark, where the rule makes the text white.
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>#pick { color: #000000 } @media (prefers-color-scheme: dark) { #pick { color: #ffffff } }</style>
+    </head><body>
+    <p id="pick">Picked by the scheme</p>
+    <p id="own" style="color:#bbbbbb">Its own color</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   const occ = rule.occurrences[0];
-  assert.strictEqual(occ.data.details.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_rootNotOpaque');
+  assert.ok(occ.html.includes('id="pick"'));
+  assert.strictEqual(occ.data.details.reasonCode, 'COLOR_SCHEME_NOT_RENDERED');
+  assert.strictEqual(occ.data.details.blockerValue, 'dark');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_colorScheme');
+  // No lean: the color it would lean by is the one that can't be read.
+  assert.strictEqual(occ.lean, undefined);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass (rootCanvasFallback applied)`, () => {
@@ -590,7 +613,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 16, maxOccurrences: 16 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 21, maxOccurrences: 21 });
 
   const expectedReasonCodeById = {
     blocker_gradient_bg: 'BACKGROUND_IMAGE_OR_GRADIENT',
@@ -609,7 +632,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     layer_fixed: 'BACKGROUND_IMAGE_OR_GRADIENT',
     // Without a layout nothing shows the text inside the opaque header.
     drop_shadow_opaque: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
-    drop_shadow_overflow: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER'
+    drop_shadow_overflow: 'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+    unreachable_any_background: 'BACKGROUND_IMAGE_OR_GRADIENT',
+    opacity_lean_fail: 'ANCESTOR_OPACITY',
+    select_option_lean_fail: 'SELECT_OPTION_COLOR'
   };
 
   for (const [id, reasonCode] of Object.entries(expectedReasonCodeById)) {
@@ -635,11 +661,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     );
   }
 
+  // Faded text below the AA ratio before the fading leans fail; black or
+  // white text under the same blockers has no lean.
+  const byId = (id) =>
+    (rule.occurrences || []).find(
+      (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+    );
+  assert.equal(byId('opacity_lean_fail').lean.toward, 'fail');
+  assert.equal(byId('opacity_lean_fail').lean.i18n.whyKey, 'contrastComputable_lean_why_opacity');
+  assert.equal(byId('select_option_lean_fail').lean.toward, 'fail');
+  for (const id of [
+    'blocker_ancestor_opacity_unresolvable',
+    'own_opacity_unresolvable',
+    'blocker_gradient_bg'
+  ]) {
+    assert.equal(byId(id).lean, undefined, `id="${id}" has no lean`);
+  }
+
   // The gradient/image blockers, and the ancestor- and own-opacity-plus-
   // gradient cases, are set on the ANCESTOR <section>, so each section's
-  // own case-title paragraph is also blocked (4 extra anonymous
-  // occurrences), for 12 + 4 = 16 total.
-  assert.strictEqual(rule.occurrences.length, 16);
+  // own case-title paragraph is also blocked (6 extra anonymous
+  // occurrences), for 15 + 6 = 21 total.
+  assert.strictEqual(rule.occurrences.length, 21);
 });
 
 // Optional: determinism smoke check (run twice, compare results)
@@ -659,3 +702,100 @@ test(`${RULE_ID}: determinism (same input => same output)`, () => {
   assert.deepStrictEqual(r2, r1);
 });
 */
+
+// ---- Leans ----
+
+const leanOf = (rule, id) => {
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `an occurrence for id="${id}"`);
+  return occ.lean;
+};
+
+test(`${RULE_ID}: a page with no opaque background is not asked about, in either color scheme`, () => {
+  for (const head of ['', '<meta name="color-scheme" content="light dark">']) {
+    const html = `<!doctype html><html><head>${head}</head><body>
+      <p id="light" style="color:#bbbbbb">Light gray</p>
+      <p id="dark" style="color:#000000">Black</p>
+    </body></html>`;
+    assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+test(`${RULE_ID}: an option of its own colors leans by its ratio in the open list`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <select>
+      <option>One</option>
+      <option id="faint" style="color:#bbbbbb; background:#ffffff">Two</option>
+      <option id="strong" style="color:#000000; background:#ffffff">Three</option>
+      <option id="mid" style="color:#767676; background:#ffffff">Four</option>
+    </select>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
+  const faint = leanOf(rule, 'faint');
+  assert.strictEqual(faint.toward, 'fail');
+  assert.strictEqual(faint.i18n.whyKey, 'contrastComputable_lean_why_selectOption_fail');
+  assert.strictEqual(faint.i18n.cautionKey, 'contrastComputable_lean_caution_selectOption');
+  assert.strictEqual(leanOf(rule, 'strong').toward, 'pass');
+  assert.strictEqual(
+    leanOf(rule, 'strong').i18n.whyKey,
+    'contrastComputable_lean_why_selectOption_pass'
+  );
+  assert.strictEqual(leanOf(rule, 'mid'), undefined);
+});
+
+test(`${RULE_ID}: own opacity over a background image leans fail only where the unfaded colors already fail`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <div style="background-image:linear-gradient(red, blue)">
+      <p id="faint" style="color:#bbbbbb; background-color:#ffffff; opacity:0.6">Faint badge</p>
+      <p id="strong" style="color:#000000; background-color:#ffffff; opacity:0.6">Strong badge</p>
+    </div>
+  </body></html>`;
+  const rule = run(html).checksResults.find((r) => r.ruleId === RULE_ID);
+  const faint = rule.occurrences.find((o) => o.html.includes('id="faint"'));
+  assert.strictEqual(faint.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(faint.lean.toward, 'fail');
+  assert.strictEqual(faint.lean.i18n.whyKey, 'contrastComputable_lean_why_opacity');
+  const strong = rule.occurrences.find((o) => o.html.includes('id="strong"'));
+  assert.strictEqual(strong.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(strong.lean, undefined);
+});
+
+// Text whose colors in the page's scheme jsdom can't read is asked about,
+// over an opaque background too: a prefers-color-scheme rule jsdom doesn't
+// apply, or, on a page drawn in dark, a control the browser paints in its
+// own colors.
+test(`${RULE_ID}: colors an emulator can't read in the page's scheme are asked about (COLOR_SCHEME_NOT_RENDERED)`, () => {
+  const light = `<!doctype html><html><head><style>
+    #ruled { color: #000000 }
+    @media (prefers-color-scheme: light) { #ruled { color: #999999 } }
+    @media (prefers-color-scheme: dark) and (min-width: 1px) { #darkonly { color: #ffffff } }
+    </style></head><body style="background:#ffffff">
+    <p id="ruled">A light rule jsdom doesn't apply</p>
+    <p id="darkonly">A dark rule, which doesn't apply in light</p>
+  </body></html>`;
+  const rule = assertRule(run(light), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.match(rule.occurrences[0].html, /id="ruled"/);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'COLOR_SCHEME_NOT_RENDERED');
+  assert.strictEqual(rule.occurrences[0].data.details.blockerValue, 'light');
+
+  const dark = `<!doctype html><html><head><meta name="color-scheme" content="dark"></head><body style="background:#222222">
+    <p id="plain">The scheme's own color</p>
+    <button id="btn">The browser's button colors</button>
+  </body></html>`;
+  const darkRule = assertRule(run(dark), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.match(darkRule.occurrences[0].html, /id="btn"/);
+  assert.strictEqual(darkRule.occurrences[0].data.details.blockerValue, 'dark');
+  // The same page in light is measured as jsdom computes it.
+  assertRule(run(dark.replace('content="dark"', 'content="light"')), RULE_ID, 'pass', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

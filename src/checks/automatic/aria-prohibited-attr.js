@@ -36,6 +36,22 @@
  *   - `attr`: the naming attribute found, `aria-label` or
  *     `aria-labelledby`.
  *   - `role`: the role that prohibits it; `null` on an element with no role.
+ * @reason-codes
+ *   - `ARIA_ATTR_PROHIBITED` (fail): aria-label or aria-labelledby on an
+ *     element whose role cannot be named, such as paragraph, generic or
+ *     presentation.
+ *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 prohibited states and
+ *     properties (MUST).
+ *   - `ARIA_ATTR_PROHIBITED_ROLELESS` (fail): a naming attribute on an element
+ *     with no role and no other source for a name, or a role description on an
+ *     element with no role.
+ *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 generic (MUST); HTML-AAM.
+ *   - `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` (cantTell): a naming
+ *     attribute on an element with no role whose own text gives it a name, so
+ *     the attribute may be a deliberate override.
+ *     It leans pass when the label's words already appear, in order, in the
+ *     element's text, and fail when the label has words the text lacks.
+ *     Basis: WCAG 4.1.2 (not settled); ACT kb1m8s; WAI-ARIA 1.2 generic.
  * @implementation-notes
  * - Scoped to the single, well-established prohibition class
  *   (naming attributes on pure text-semantics roles) rather than an
@@ -115,7 +131,22 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-not-prohibited'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-not-prohibited'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW: {
+      steps: [
+        'Inspect the element the report names and note its aria-label or aria-labelledby text and its visible text.',
+        'Compare the two: check whether the label says anything the visible text does not.',
+        'With a screen reader, read the element in browse mode and note whether the label is announced or ignored.'
+      ],
+      passWhen:
+        'The visible text already says everything the label says, so nothing is lost if the label is ignored.',
+      failWhen:
+        'The label carries information missing from the text (such as "Price in euros" on "12"), which is lost because naming is not supported on an element with no role (WCAG 4.1.2, ACT kb1m8s).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -403,6 +434,59 @@ function runInPage(ctx) {
       String(nameInfo.value || '').trim() !== ''
     );
 
+    // Which way a naming attribute's finding points: a label the element's
+    // own text already says loses nothing if it is ignored; one with words
+    // the text lacks loses them.
+    const words = (v) =>
+      String(v || '')
+        .toLowerCase()
+        .match(/[\p{L}\p{N}]+/gu) || [];
+    const contentWords = hasContentFallback ? words(nameInfo.value) : [];
+    function leanFor(attr) {
+      let label = '';
+      try {
+        if (attr === 'aria-label') label = dom.getAttribute(el, 'aria-label');
+        else if (attr === 'aria-labelledby')
+          label = helpers.getTextFromIdRefs(dom.getAttribute(el, attr), ctx, {}, el).text;
+      } catch {
+        label = '';
+      }
+      const labelWords = words(label);
+      if (!labelWords.length || !contentWords.length) return null;
+      const inContent = (' ' + contentWords.join(' ') + ' ').includes(
+        ' ' + labelWords.join(' ') + ' '
+      );
+      if (inContent) {
+        return {
+          toward: 'pass',
+          why: 'The element’s own text already says what its label says, so nothing is lost if the label is ignored.',
+          signals: [{ signal: 'label-in-content', value: true }],
+          caution:
+            'ACT kb1m8s fails a naming attribute on an element with no role, whatever its text.',
+          i18n: {
+            whyKey: 'ariaProhibitedAttr_lean_why_inContent',
+            cautionKey: 'ariaProhibitedAttr_lean_caution_inContent'
+          }
+        };
+      }
+      const missingWords = labelWords.filter((w) => !contentWords.includes(w)).length;
+      if (!missingWords) return null;
+      return {
+        toward: 'fail',
+        why: 'The label says something the element’s text does not, which is lost where a label on an element with no role is ignored.',
+        signals: [
+          { signal: 'label-in-content', value: false },
+          { signal: 'label-words-missing-from-content', value: missingWords }
+        ],
+        caution:
+          'Some browser and screen reader pairs still announce a label on an element with no role.',
+        i18n: {
+          whyKey: 'ariaProhibitedAttr_lean_why_extraWords',
+          cautionKey: 'ariaProhibitedAttr_lean_caution_extraWords'
+        }
+      };
+    }
+
     for (const attr of present) {
       // A role description has nothing to describe without a role, whatever
       // the element's content: content can stand in for a name, not a role.
@@ -428,6 +512,7 @@ function runInPage(ctx) {
           })
         );
       } else if (hasContentFallback) {
+        const lean = leanFor(attr);
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
@@ -443,6 +528,7 @@ function runInPage(ctx) {
               needed: 'Whether the element’s own content already serves as its label.',
               evidence: { attribute: attr, element: tag, role: null, hasOwnContent: true }
             },
+            ...(lean ? { lean } : {}),
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',

@@ -58,6 +58,7 @@
   { "actId": "d0f69e", "actName": "Table header cell has assigned cells", "ourRuleIds": ["table-th-has-data-cells"], "matchType": "exact" },
   { "actId": "09o5cg", "actName": "Text has enhanced contrast", "ourRuleIds": ["contrast-enhanced", "contrast-computable"], "matchType": "family" },
   { "actId": "afw4f7", "actName": "Text has minimum contrast", "ourRuleIds": ["contrast-minimum", "contrast-computable"], "matchType": "family" },
+  { "actId": "0va7u6", "actName": "HTML images contain no text", "ourRuleIds": ["image-of-text"], "matchType": "partial" },
   { "actId": "f51b46", "actName": "Video element auditory content has captions", "ourRuleIds": ["video-caption"], "matchType": "partial" },
   { "actId": "2ee8b8", "actName": "Visible label is part of accessible name", "ourRuleIds": ["label-in-name"], "matchType": "exact" }
 ]

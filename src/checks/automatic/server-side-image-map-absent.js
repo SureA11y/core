@@ -22,6 +22,11 @@
  *   are outside a link is notApplicable: ismap does nothing there, so there
  *   is no server-side image map (the misplaced attribute is invalid HTML,
  *   a matter for the validator).
+ * @reason-codes
+ *   - `SERVER_SIDE_IMAGE_MAP` (cantTell): an <img ismap> in a link is a
+ *     server-side image map, which a keyboard cannot operate; a person
+ *     checks that the same destinations are offered as ordinary links.
+ *     Basis: WCAG 2.1.1 (not settled); HTML img ismap.
  * @implementation-notes
  * - There is no automatable way to verify that a usable alternative exists
  *   elsewhere on the page, so the rule never fails.
@@ -53,7 +58,22 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['server-side-image-map-absent'] } }
+  coverage: { facetsBySc: { '2.1.1': ['server-side-image-map-absent'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SERVER_SIDE_IMAGE_MAP: {
+      steps: [
+        'Find the image map the report names and click its regions to list where each one leads.',
+        'Put the pointer aside and press Tab through the page to the image link, then press Enter, and note what happens.',
+        'Look elsewhere on the page for ordinary text links to each of the destinations you listed, and check you can reach and follow them with Tab and Enter.'
+      ],
+      passWhen:
+        'Every destination of the image map is also offered as a link that works by keyboard.',
+      failWhen:
+        'Some destination can be reached only by clicking a point on the image, which fails WCAG 2.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

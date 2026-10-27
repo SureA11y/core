@@ -18,6 +18,11 @@
  *   Practices, this only makes sense when that subtree contains no
  *   focusable content: a focusable descendant inside a "this is just
  *   text" region is unreachable or confusing for keyboard/AT users.
+ * @reason-codes
+ *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
+ *     role="text" contains content that can take keyboard focus.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA Authoring Practices (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see
@@ -48,7 +53,22 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT: {
+      steps: [
+        'Inspect the element the report names and find the focusable element inside it.',
+        'Press Tab until that element has focus, with a screen reader running, and listen to what is announced.',
+        'Try to activate it with Enter or Space.'
+      ],
+      passWhen:
+        "The focusable element is announced with its role and name and can be used, or it doesn't need to be focusable.",
+      failWhen:
+        "The focusable element is announced as plain text, or not at all, so users can't tell it is interactive (best practice, WAI-ARIA Authoring Practices)."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -103,6 +123,12 @@ function runInPage(ctx) {
         summaryKey: 'ariaText_summary_cantTell',
         hintKey: 'ariaText_hint_cantTell',
         params: {}
+      },
+      lean: {
+        toward: 'fail',
+        why: 'A focusable element sits inside role="text", which flattens it into plain text.',
+        signals: [{ signal: 'focusable-descendant', value: true }],
+        i18n: { whyKey: 'ariaText_lean_why' }
       },
       data: {
         details: { reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT' }

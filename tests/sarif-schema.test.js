@@ -54,21 +54,21 @@ test('the schema is the SARIF 2.1.0 one, and names the property the engine write
 test('the SARIF of a scan of every fixture page is valid', () => {
   const files = fs.readdirSync(FIXTURES).filter((f) => f.endsWith('.html'));
   assert.ok(files.length > 100);
-  let withNotifications = 0;
   for (const f of files) {
     const result = runa11yCoreOnHtml(fs.readFileSync(path.join(FIXTURES, f), 'utf8'), {
       entryPointParity: false
     });
-    const sarif = assertValid(renderSarifReport(result, { toolVersion: '1.2.3' }), f);
-    if (sarif.runs[0].invocations) withNotifications++;
+    assertValid(renderSarifReport(result, { toolVersion: '1.2.3' }), f);
   }
-  // The notes a rule leaves when it had nothing to judge are covered too.
-  assert.ok(withNotifications > 0, 'some scan carries tool execution notifications');
+  // The notes a rule leaves when it had nothing to judge: the next test.
 });
 
+// Text over a background image can't be measured, so the contrast rules
+// have nothing to judge and say why (a page with no background no longer
+// does: its text is measured on the canvas the browser paints).
 test('notes from a rule that could not check are tool execution notifications', () => {
   const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>'
+    '<!doctype html><html lang="en"><head><title>t</title></head><body style="background-image:url(bg.png)"><p>Hello world</p></body></html>'
   );
   const sarif = assertValid(renderSarifReport(result), 'notes only');
   const invocation = sarif.runs[0].invocations[0];

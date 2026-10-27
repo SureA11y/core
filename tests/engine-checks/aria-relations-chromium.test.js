@@ -18,7 +18,12 @@
  *   leaves out of aria-allowed-attr's scope (the attributes it supports
  *   are a columnheader's too);
  * - a popovertarget button has an expanded state with no aria-expanded, so
- *   a rule that ever requires aria-expanded has to count it.
+ *   a rule that ever requires aria-expanded has to count it;
+ * - an aria-labelledby target under aria-hidden="true" names its control
+ *   with all of its text, as accname's LabelledBy traversal says;
+ * - role="image", ARIA 1.3's synonym of img, is exposed as an image;
+ * - an SVG <title> names its own parent only: a presentational <svg>'s
+ *   <title> does not name its link, and an SVG <a> is named by its own.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -51,6 +56,7 @@ async function axOf(page, cdp, selector) {
     role: ax && ax.role ? ax.role.value : null,
     ignored: !!(ax && ax.ignored),
     value: ax && ax.value ? ax.value.value : undefined,
+    name: ax && ax.name ? ax.name.value : undefined,
     prop,
     childRoles: children.map((c) => c.role && c.role.value)
   };
@@ -103,7 +109,24 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       '<div id="w" role="slider" tabindex="0" aria-label="v" aria-valuemin="0" aria-valuemax="10" aria-valuenow="5"></div>',
       false
     ],
-    ['<div id="w" role="spinbutton" tabindex="0" aria-label="v" aria-valuenow="150"></div>', false]
+    ['<div id="w" role="spinbutton" tabindex="0" aria-label="v" aria-valuenow="150"></div>', false],
+    // A native element's own min and max are its range, not ARIA's 0 to 100.
+    [
+      '<progress id="w" role="progressbar" aria-label="v" max="1000" value="500" aria-valuenow="500"></progress>',
+      false
+    ],
+    [
+      '<input id="w" type="range" role="slider" aria-label="v" min="1900" max="2100" value="2000" aria-valuenow="2000">',
+      false
+    ],
+    [
+      '<meter id="w" role="meter" aria-label="v" max="500" value="250" aria-valuenow="250"></meter>',
+      false
+    ],
+    [
+      '<input id="w" type="range" role="slider" aria-label="v" min="0" max="10" value="5" aria-valuenow="50">',
+      true
+    ]
   ];
   for (const [markup, clamped] of RANGES) {
     await t.test(`range: ${markup}`, () =>
@@ -244,6 +267,42 @@ test('ARIA constraints follow Chromium', { skip }, async (t) => {
       })
     );
   }
+
+  await t.test('an aria-hidden labelledby target names with its whole subtree', () =>
+    withPage(
+      '<button id="w" aria-labelledby="l"></button><span id="l" aria-hidden="true"><b>Save</b> <span>now</span></span>',
+      async (page, cdp) => {
+        assert.equal((await axOf(page, cdp, '#w')).name, 'Save now');
+        assert.equal((await ruleOutcome(page, 'button-name-present')).outcome, 'pass');
+      }
+    )
+  );
+
+  await t.test('role="image" is an image, as role="img" is', () =>
+    withPage('<div id="w" role="image" aria-label="Three stars">★★★</div>', async (page, cdp) => {
+      assert.equal((await axOf(page, cdp, '#w')).role, 'image');
+      assert.equal((await ruleOutcome(page, 'aria-roles-valid')).outcome, 'pass');
+    })
+  );
+
+  await t.test('an SVG <title> names its own parent only', () =>
+    withPage(
+      '<a id="w" href="/"><svg role="presentation" width="20" height="20"><title>Home</title><rect width="20" height="20"/></svg></a>' +
+        '<svg width="20" height="20"><a id="v" href="/next"><title>Next page</title><rect width="20" height="20"/></a></svg>',
+      async (page, cdp) => {
+        assert.equal((await axOf(page, cdp, '#w')).name, '');
+        assert.equal((await axOf(page, cdp, '#v')).name, 'Next page');
+        const got = await ruleOutcome(page, 'link-name-present');
+        assert.equal(got.outcome, 'fail');
+        const failed = await page.evaluate(() =>
+          window.a11ycore
+            .runa11yCoreInPage(null, null, {}, ['link-name-present'])
+            .checksResults[0].occurrences.map((o) => o.selector)
+        );
+        assert.deepEqual(failed, ['#w']);
+      }
+    )
+  );
 
   await t.test('img alt="" with nothing naming it has no role', () =>
     withPage(

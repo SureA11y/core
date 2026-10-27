@@ -56,6 +56,7 @@ const {
   settleAnimations,
   holdPageColors,
   rollupCompositeResults,
+  noteEmptySelection,
   rollupMembers,
   normalizeWcagLevel,
   normalizeWcagVersion,
@@ -73,7 +74,7 @@ const {
 const { createContrastHelpers } = require('../src/core/contrast-helpers');
 const { readInternalsHook } = require('../src/core/internals-hook');
 const { readListenerHook } = require('../src/core/listener-hook');
-const { readLiveRegionHook } = require('../src/core/live-region-hook');
+const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { createAriaHelpers } = require('../src/core/aria-helpers');
 const { normalizeRuleMeta } = require('../src/core/rule-meta');
 const { NORMATIVE_STANDARDS, createRegistry } = require('../src/coverage/standards');
@@ -93,6 +94,23 @@ const {
   isUncertaintyCode,
   normalizeUncertainty
 } = require('../src/core/uncertainty');
+const { LEAN_DIRECTIONS, SIGNAL_NAME, signalValue, normalizeLean } = require('../src/core/lean');
+// How often each lean agreed with the ACT test cases (scripts/measure-leans.js),
+// embedded below as LEAN_MEASURES. Absent before a first measurement. A lean
+// carries its counts only from minCases cases up: fewer say too little.
+const LEAN_MEASURES = (() => {
+  try {
+    const { corpus, coreVersion, minCases, leans } = require('./data/lean-measures.json');
+    return {
+      corpus,
+      coreVersion,
+      minCases: Number.isInteger(minCases) && minCases > 0 ? minCases : 5,
+      leans: leans || {}
+    };
+  } catch {
+    return { corpus: null, coreVersion: null, minCases: 5, leans: {} };
+  }
+})();
 const { resolveMargin, getMargins } = require('../src/core/margin');
 const {
   FRAME_RPC_CHANNEL,
@@ -130,7 +148,10 @@ const ENGINE_VERSION = require('../package.json').version;
 // version's release tag.
 const helpUrlOf = (ruleId, meta) => catalogHelpUrl(ruleId, meta, ENGINE_VERSION);
 const { WCAG_CRITERIA, wcagLinks, wcagTitle } = require('../src/coverage/wcag-criteria');
-const { COMPLETE_APPLICABILITY } = require('../src/coverage/complete-applicability');
+const {
+  COMPLETE_APPLICABILITY,
+  COMPLETE_CHECK
+} = require('../src/coverage/complete-applicability');
 
 // The built-in registry (src/coverage/standards.js) and its tables, emitted
 // into the generated core: the standards engineOptions.mappings can switch on,
@@ -810,6 +831,9 @@ const WCAG_LEVELS_BY_SC = ${JSON.stringify(WCAG_LEVELS_BY_SC)};
 // (src/coverage/complete-applicability.js): only their rollups can be
 // notApplicable.
 const COMPLETE_APPLICABILITY_SCS = ${JSON.stringify(Object.keys(COMPLETE_APPLICABILITY))};
+// The criteria whose rules check all they ask (the same file): only their
+// rollups can pass.
+const COMPLETE_CHECK_SCS = ${JSON.stringify(Object.keys(COMPLETE_CHECK))};
 const WCAG_MAPPING_BY_SC = ${JSON.stringify(WCAG_MAPPING_BY_SC)};
 // A criterion's tag is its number without dots: wcag1412 for 1.4.12.
 const WCAG_SC_BY_TAG = Object.fromEntries(
@@ -1222,7 +1246,7 @@ function applyOptInRules(selection, requested) {
  * applied) or "profileNotApplied" ('unknown' | 'overridden') so the runner
  * can report which.
  */
-// runOnly given as a bare array or string, as axe-core takes it: rule ids
+// runOnly given as a bare array or string: rule ids
 // (built-in, composite or engineOptions.customRules) select those rules, and
 // anything else is read as tags. A mix, or a value that is neither a known
 // rule id nor a known tag, is an error, so a typo can't quietly run every
@@ -1439,7 +1463,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
       } catch {}
     }
   }
-  // axe-core's { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
+  // runOnly as { type, values }: 'rule'/'rules' names rules, 'tag'/'tags'
   // tags, as a list or a comma-separated string. Its values are checked like
   // any rule ids or tags, and the other keys beside it (excludeTags,
   // excludeRuleIds...) still apply.
@@ -1820,6 +1844,17 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   out.title = def.title;
   out.description = def.description;
   out.i18n = def.i18n || null;
+  // A variant (src/core/rule-variants.js) names the rule it runs, and that
+  // rule's titleKey, whose prefix keys the base's messages and steps.
+  const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
+  // A rule's own result can't claim one.
+  delete out.variantOf;
+  if (variant && typeof variant.of === 'string' && variant.of) {
+    out.variantOf = variant.of;
+    if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
+      out.i18n = { ...out.i18n, variantOfTitleKey: variant.messages.from + '_title' };
+    }
+  }
 
   if (!pol.allowedOutcomes.includes(out.outcome)) {
     if (['fail', 'pass', 'cantTell', 'notApplicable'].includes(out.outcome)) {
@@ -2024,6 +2059,32 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
       delete o.uncertainty;
     }
 
+    // A lean says which way a cantTell points; on a decided occurrence it has
+    // nothing to say, so it is dropped there, as uncertainty is.
+    const normalizedLean = occTier === 'cantTell' ? normalizeLean(o.lean) : null;
+    if (normalizedLean) {
+      const li = normalizedLean.i18n;
+      const params = (li && li.params) || {};
+      if (li && li.whyKey) normalizedLean.why = t(li.whyKey, normalizedLean.why, params, out.engineOptions || null);
+      if (li && li.cautionKey && normalizedLean.caution)
+        normalizedLean.caution = t(li.cautionKey, normalizedLean.caution, params, out.engineOptions || null);
+      // How often a lean of this rule, code and direction was right, where
+      // it was counted against enough ACT test cases (scripts/measure-leans.js).
+      if (!normalizedLean.measured) {
+        const details = o.data && o.data.details;
+        const code = details && typeof details.reasonCode === 'string' && details.reasonCode ? details.reasonCode : 'DEFAULT';
+        const byCode = Object.prototype.hasOwnProperty.call(LEAN_MEASURES.leans, out.ruleId) ? LEAN_MEASURES.leans[out.ruleId] : null;
+        const byToward = byCode && Object.prototype.hasOwnProperty.call(byCode, code) ? byCode[code] : null;
+        const m = byToward && Object.prototype.hasOwnProperty.call(byToward, normalizedLean.toward) ? byToward[normalizedLean.toward] : null;
+        if (m && m.cases >= LEAN_MEASURES.minCases) {
+          normalizedLean.measured = { agreed: m.agreed, cases: m.cases };
+          if (LEAN_MEASURES.corpus) normalizedLean.measured.corpus = LEAN_MEASURES.corpus;
+          if (LEAN_MEASURES.coreVersion) normalizedLean.measured.coreVersion = LEAN_MEASURES.coreVersion;
+        }
+      }
+      o.lean = normalizedLean;
+    } else delete o.lean;
+
     // Existing i18n normalization/resolution (leave as-is, shown shortened here)
     if (o.i18n && typeof o.i18n === 'object' && !Array.isArray(o.i18n)) {
       const ii = { ...o.i18n };
@@ -2175,6 +2236,14 @@ const UNCERTAINTY_CODE_VALUES = ${jsStringify(UNCERTAINTY_CODE_VALUES)};
 ${inlineConstFunction('isUncertaintyCode', isUncertaintyCode)}
 ${inlineConstFunction('normalizeUncertainty', normalizeUncertainty)}
 
+// Inlined from src/core/lean.js -- which way a cantTell finding points.
+const LEAN_DIRECTIONS = ${jsStringify(LEAN_DIRECTIONS)};
+// From scripts/data/lean-measures.json -- how often each lean was right.
+const LEAN_MEASURES = ${jsStringify(LEAN_MEASURES)};
+const SIGNAL_NAME = ${SIGNAL_NAME.toString()};
+${inlineConstFunction('signalValue', signalValue)}
+${inlineConstFunction('normalizeLean', normalizeLean)}
+
 // Inlined from src/core/margin.js -- normalizeRuleResult turns a rule's
 // margin candidates into the result's margin in-page.
 ${inlineConstFunction('resolveMargin', resolveMargin)}
@@ -2193,6 +2262,7 @@ ${inlineConstFunction('targetWcagLevelOf', targetWcagLevelOf)}
 ${inlineConstFunction('warnIgnoredWcagTarget', warnIgnoredWcagTarget)}
 ${inlineConstFunction('rollupMembers', rollupMembers)}
 ${inlineConstFunction('rollupCompositeResults', rollupCompositeResults)}
+${inlineConstFunction('noteEmptySelection', noteEmptySelection)}
 
 ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
@@ -2504,11 +2574,14 @@ ${getMargins.toString()}
 
 // What the page's live regions were given while shown and reachable, by the
 // live-region hook (src/core/live-region-hook.js): [{ text, politeness,
-// time, element }], or null when the window has no hook.
-function getAnnouncements(win) {
+// time, order, behindModal, element }], or null when the window has no hook.
+// getAnnouncements([win], [options]) or getAnnouncements(options); options
+// { includeBehindModal: true } adds the texts given to a region behind an
+// open modal dialog. Self-contained: bindings serialize it into pages.
+function getAnnouncements(win, options) {
   const read = ${readLiveRegionHook.toString()};
-  const hook = read(win || (typeof window !== 'undefined' ? window : null));
-  return hook ? hook.announcements : null;
+  const select = ${selectAnnouncements.toString()};
+  return select(read, typeof window !== 'undefined' ? window : null, win, options);
 }
 `.trim();
 
@@ -2677,7 +2750,10 @@ function getChecksForRunOnly(runOnly, engineOptions) {
     ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
     (overridden.includes(r.ruleId) &&
       CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
-  return defs.filter(selected).map((r) => toCatalogEntry(r, engineOptions, tokens));
+  const chosen = defs.filter(selected);
+  // A selection that cancels itself is said so, as a scan says it.
+  if (!chosen.length && defs.length) noteEmptySelection(selection, engineOptions);
+  return chosen.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
 // The rollups a scan with this selection and these options reports: those the
@@ -2704,6 +2780,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
     if (criteria.length) namedCriteria.set(r.ruleId, criteria);
   }
+  if (!selectedIds.size && defs.length) noteEmptySelection(selection, engineOptions);
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
   const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));

@@ -22,6 +22,11 @@
  * @reports
  *   - `count`: how many banner landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ * @reason-codes
+ *   - `LANDMARK_DUPLICATE_BANNER` (cantTell): the page exposes more than one
+ *     banner landmark; each one is reported.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 banner role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -53,7 +58,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_DUPLICATE_BANNER: {
+      steps: [
+        "Open a screen reader's landmarks list, or the Accessibility pane, and count the banner landmarks.",
+        'For each one the report names, decide whether it is the page-wide header or the header of a section, card or dialog.',
+        'Check that hidden or closed copies (such as a header inside a closed menu) are really hidden from assistive technology.'
+      ],
+      passWhen: 'Assistive technology finds only one banner, the page-wide header.',
+      failWhen:
+        'More than one banner is exposed, so landmark navigation offers several page headers, a best-practice miss under the WAI-ARIA banner role.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -113,6 +132,12 @@ function runInPage(ctx) {
         summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell',
         hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',
         params: { count: String(banners.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one banner landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateBanner_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }

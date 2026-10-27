@@ -24,8 +24,16 @@
  *   - `parentElement`: the tag name of the `<li>`'s parent, the container
  *     it is in instead of a list.
  *   - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
- *   - `parentElement` is a stable contract (API_STABILITY.md), unlike the
+ *   - `parentElement` is a stable contract, unlike the
  *     rest of `data.details`.
+ * @reason-codes
+ *   - `LISTITEM_INVALID_PARENT` (fail): an li is not inside a ul, ol, menu or
+ *     an element with role list, so it is not exposed as a list item.
+ *     Basis: WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2
+ *     listitem role (MUST).
+ *   - `LIST_ROLE_OVERRIDDEN` (fail): the li's parent is a ul, ol or menu
+ *     whose explicit role replaces list, so the li is not in a list.
+ *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST).
  * @implementation-notes
  * - The parent is the <li>'s parent in the flat tree, as the page renders
  *   it: an <li> slotted into a shadow <ul><slot></slot></ul> is in that

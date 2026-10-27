@@ -34,6 +34,22 @@
  *     `present`, `value`, `mechanism` (the attribute or element the name
  *     would come from, `none` when there is none) and `flags` (notes on
  *     why a source gave no name). `null` when no lookup was made.
+ * @reason-codes
+ *   - `name_missing` (fail): a link exposed to assistive technology has no
+ *     accessible name, from attributes or from its content.
+ *     Basis: WCAG 2.4.4; WCAG 2.4.9; WCAG 4.1.2; ACT c487ae; F89; accname
+ *     1.2.
+ *   - `name_closedContent` (cantTell): the link may take its name from
+ *     content in a closed shadow root, which no script can read.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2.
+ *   - `name_contentTooDeep` (cantTell): the link's content is nested too
+ *     deeply to work out a name from it.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 2.4.4 (not settled); WCAG 2.4.9 (not settled); WCAG 4.1.2
+ *     (not settled); accname 1.2 (not settled).
  */
 
 const id = 'link-name-present';
@@ -93,6 +109,43 @@ const meta = {
       '2.4.4': ['link-name-present'],
       '2.4.9': ['link-name-present'],
       '4.1.2': ['link-name-present']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_closedContent: {
+      steps: [
+        'Find the link the report names and note the text or icon it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the link, taken from its content, and the screen reader announces it.',
+      failWhen:
+        'The link has no name in the accessibility tree, since its content gives none, which fails WCAG 2.4.4 and 4.1.2.'
+    },
+    name_contentTooDeep: {
+      steps: [
+        'Find the link the report names and note the text it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the link, taken from its nested content, and the screen reader announces it.',
+      failWhen:
+        'The link has no name in the accessibility tree, since its content gives none, which fails WCAG 2.4.4 and 4.1.2.'
+    },
+    name_internals: {
+      steps: [
+        'Inspect the link the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the link, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The link has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 2.4.4 and 4.1.2.'
     }
   }
 };

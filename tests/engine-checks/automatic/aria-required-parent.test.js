@@ -283,3 +283,38 @@ test('aria-required-parent: role="listitem" inside role="directory" has its cont
   assert.deepStrictEqual(occ.data.details.requiredContextRoles, ['list', 'directory']);
   assert.doesNotMatch(occ.summary + ' ' + (occ.hint || ''), /directory/);
 });
+
+// Each element owned through aria-owns used to look through every owner on
+// the page, so the work grew with items times owners (4,000 took 9 s in a
+// browser and minutes in jsdom). Counted in attribute reads rather than
+// timed, so the test doesn't flake under load.
+test(`${RULE_ID}: elements owned through aria-owns are checked in work linear in the page`, () => {
+  const { JSDOM } = require('jsdom');
+  const scan = (n) => {
+    const dom = new JSDOM(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body>' +
+        Array.from(
+          { length: n },
+          (_, i) =>
+            `<div role="listbox" aria-label="L${i}" aria-owns="o${i}"></div><div role="option" id="o${i}">O${i}</div>`
+        ).join('') +
+        '</body></html>'
+    );
+    const proto = dom.window.Element.prototype;
+    const getAttribute = proto.getAttribute;
+    let reads = 0;
+    proto.getAttribute = function (...args) {
+      reads++;
+      return getAttribute.apply(this, args);
+    };
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    return { result, reads };
+  };
+  const fifty = scan(50);
+  const hundred = scan(100);
+  assert.ok(
+    hundred.reads <= fifty.reads * 2.5,
+    `${fifty.reads} reads for 50, ${hundred.reads} for 100`
+  );
+  assertRule(hundred.result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});

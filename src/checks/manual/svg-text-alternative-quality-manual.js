@@ -34,7 +34,22 @@
  *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the <svg> is the
  *     only content of a link or button (no text and no other image in it),
  *     so its text alternative is the control's name, with `controlContent`
- *     naming the control's role (`link` or `button`). Absent otherwise.
+ *     naming the control's role (`link` or `button`);
+ *     `TEXT_ALTERNATIVE_REVIEW` otherwise.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <svg> has a text
+ *     alternative, and a person checks that it conveys what the graphic
+ *     shows.
+ *     It leans fail when its name (aria-label, aria-labelledby, else
+ *     <title>) is a leftover of the drawing tool or the export ("Layer 1",
+ *     "Group 3", "Created with Sketch.", "icon-search"), a file name or a
+ *     placeholder word.
+ *     Basis: WCAG 1.1.1 (not settled); ACT qt1vmo; SVG-AAM.
+ *   - `IMAGE_ONLY_CONTROL_CONTENT` (cantTell): the <svg> is the only
+ *     content of a link or button, so its text alternative is the
+ *     control's name and should say what the control does.
+ *     It leans fail on the same names as TEXT_ALTERNATIVE_REVIEW.
+ *     Basis: WCAG 1.1.1 (not settled); ACT qt1vmo; accname 1.2.
  */
 
 const id = 'svg-text-alternative-quality';
@@ -66,6 +81,32 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ONLY_CONTROL_CONTENT: {
+      steps: [
+        'Find the link or button the report names; its only content is this svg.',
+        'Activate the control and note what it does or where it goes.',
+        "Read the control's name in the Accessibility pane of the developer tools (it comes from the svg's text alternative), or Tab to it with a screen reader.",
+        'Compare: does the name say what the control does ("Search", "Close menu"), not just what the icon looks like ("magnifying glass")?'
+      ],
+      passWhen: "The control's name says what it does or where it goes.",
+      failWhen:
+        "The name describes the picture, is vague, or is wrong for the action, which fails WCAG 1.1.1 (and leaves the control's purpose unclear)."
+    },
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at the graphic the report names and note what it shows (an icon, a logo, a chart and its data).',
+        'Read its text alternative from the report (title, desc, aria-label or aria-labelledby text), or in the Accessibility pane of the developer tools.',
+        'Compare: does the text say what the graphic shows or means? If the graphic is decorative, it should instead be hidden (aria-hidden="true").'
+      ],
+      passWhen:
+        'The text alternative conveys what the graphic shows, or the decorative graphic is hidden from assistive technology.',
+      failWhen:
+        'The text alternative is wrong, vague (such as "image" or "icon") or leaves out what the graphic conveys, which fails WCAG 1.1.1.'
     }
   }
 };
@@ -225,6 +266,54 @@ function runInPage(ctx) {
     return other ? '' : role;
   }
 
+  // Names a drawing tool or an export leaves behind: layer and shape names,
+  // the "Created with" note, icon ids. None is written to describe.
+  const TOOL_ARTEFACT_RES = [
+    /^(?:layer|group|path|shape|artboard|vector|frame|combined shape|compound path|clip ?path|mask)(?:[ _-]*\d+)?(?:[ _-]*copy(?:[ _-]*\d+)?)?$/i,
+    // Separators, digits and "copy", ending in a digit or "copy". Each step
+    // takes one character or "copy", so a run of digits matches one way only.
+    /^(?:rectangle|rect|ellipse|oval|polygon|line)(?:[ _-]|\d|copy)*(?:\d|copy)$/i,
+    /^created with (?:sketch|figma|adobe illustrator|illustrator|inkscape|method draw|svg-edit)\b/i,
+    /^(?:icon|ic|ico|svg)[-_][a-z0-9][a-z0-9_-]*$/i,
+    /^svg$/i
+  ];
+  function leanFor(el, rawName, controlContent) {
+    const name = trim(rawName).replace(/\s+/g, ' ');
+    if (!name) return null;
+    let value = '';
+    if (TOOL_ARTEFACT_RES.some((re) => re.test(name))) value = 'tool-artefact';
+    if (!value) {
+      try {
+        const s =
+          typeof helpers.getTextAlternativeSignal === 'function'
+            ? helpers.getTextAlternativeSignal(el, name)
+            : null;
+        if (s && (s.altSignal === 'file-name' || s.altSignal === 'placeholder'))
+          value = s.altSignal;
+      } catch {
+        value = '';
+      }
+    }
+    if (!value) return null;
+    return {
+      toward: 'fail',
+      why: controlContent
+        ? "The graphic's name is the control's name, and a name left by the drawing tool, a file name or a generic word does not say what the control does."
+        : 'A name left by the drawing tool, a file name or a generic word does not say what the graphic shows.',
+      signals: [
+        { signal: 'name-signal', value },
+        ...(controlContent ? [{ signal: 'control-content-only-image', value: controlContent }] : [])
+      ],
+      caution: 'A <desc>, read as the description, may still say what the graphic shows.',
+      i18n: {
+        whyKey: controlContent
+          ? 'svg_textAltQuality_lean_why_control'
+          : 'svg_textAltQuality_lean_why',
+        cautionKey: 'svg_textAltQuality_lean_caution'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -289,8 +378,10 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     const controlContent = onlyContentOf(el);
+    const lean = leanFor(el, ariaLabel || labelledByText || titleText, controlContent);
 
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <svg> is accurate.',
       hint: 'The <title>, <desc> or ARIA name should say what the graphic means or does here.',
       i18n: {
@@ -301,6 +392,7 @@ function runInPage(ctx) {
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
+          reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
           hasNonEmptyTitle,
           hasNonEmptyDesc,
           ariaLabel: ariaLabel || null,

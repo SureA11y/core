@@ -113,6 +113,54 @@
     <button id="fclq_visible_label" type="button">Go</button>
   </div>
 
+  <h2>E. Radio buttons and checkboxes: the question their group answers</h2>
+
+  <div class="case" id="case_12">
+    <div class="case-title">12 — PASS: Yes/No options under different plain questions, no fieldset</div>
+    <form>
+      <div>
+        <p>Do you smoke?</p>
+        <label><input id="fclq_case_12" type="radio" name="smoke" /> Yes</label>
+        <label><input id="fclq_case_12b" type="radio" name="smoke" /> No</label>
+      </div>
+      <div>
+        <p>Do you drink?</p>
+        <label><input id="fclq_case_12c" type="radio" name="drink" /> Yes</label>
+        <label><input id="fclq_case_12d" type="radio" name="drink" /> No</label>
+      </div>
+    </form>
+  </div>
+
+  <div class="case" id="case_13">
+    <div class="case-title">13 — PASS: Yes/No options in radiogroups named by different questions</div>
+    <div role="radiogroup" aria-labelledby="fclq_q13a">
+      <span id="fclq_q13a">Do you cycle?</span>
+      <label><input id="fclq_case_13" type="radio" name="cycle" /> Yes</label>
+      <label><input id="fclq_case_13b" type="radio" name="cycle" /> No</label>
+    </div>
+    <div role="radiogroup" aria-labelledby="fclq_q13b">
+      <span id="fclq_q13b">Do you drive?</span>
+      <label><input id="fclq_case_13c" type="radio" name="drive" /> Yes</label>
+      <label><input id="fclq_case_13d" type="radio" name="drive" /> No</label>
+    </div>
+  </div>
+
+  <div class="case" id="case_14">
+    <div class="case-title">14 — CANTTELL: Yes/No options under the same question twice</div>
+    <form>
+      <div>
+        <p>Do you agree?</p>
+        <label><input id="fclq_case_14" type="radio" name="agree1" /> Yes</label>
+        <label><input id="fclq_case_14b" type="radio" name="agree1" /> No</label>
+      </div>
+      <div>
+        <p>Do you agree?</p>
+        <label><input id="fclq_case_14c" type="radio" name="agree2" /> Yes</label>
+        <label><input id="fclq_case_14d" type="radio" name="agree2" /> No</label>
+      </div>
+    </form>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

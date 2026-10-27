@@ -21,6 +21,11 @@
  *   At least one main landmark (role="main" or <main>), exposed to
  *   assistive technology, exists on the page. A page with none gives
  *   AT users no landmark to jump straight to for the primary content.
+ * @reason-codes
+ *   - `LANDMARK_MAIN_MISSING` (cantTell): the page exposes no main landmark
+ *     to assistive technology.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 main role (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -53,7 +58,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_MAIN_MISSING: {
+      steps: [
+        "Open a screen reader's landmarks list, or the Accessibility pane, and look for a main landmark.",
+        'Find the page\'s primary content and inspect its container for a main element or role="main".',
+        'If the content is inside an iframe, check the framed document for a main instead.'
+      ],
+      passWhen: "A main landmark exists and wraps the page's primary content.",
+      failWhen:
+        'No main landmark is exposed, so users cannot jump straight to the primary content, a best-practice miss under the WAI-ARIA main role (ARIA11).'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -128,6 +147,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkOneMain_summary_cantTell_missing',
           hintKey: 'landmarkOneMain_hint_cantTell_missing',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no main landmark.',
+          signals: [{ signal: 'main-landmark-absent', value: true }],
+          i18n: { whyKey: 'landmarkOneMain_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_MISSING' }

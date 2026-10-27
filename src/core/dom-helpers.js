@@ -205,10 +205,15 @@ function createDomHelpers(opts) {
   // alone accepts "eng" and "em-US", which look like language tags but are not
   // registered: the IANA registry lists a three-letter subtag only when no
   // two-letter one exists, so "en" is registered and "eng" is not.
+  // The registry also lists the range qaa..qtz, reserved for private use, as
+  // one entry of Type: language, which the generated list doesn't spell out:
+  // ACT de46e4 counts it as a known language subtag too.
   let __languageSubtagSet = null;
   function isRegisteredLanguageSubtag(subtag) {
+    const c = String(subtag || '').toLowerCase();
+    if (/^q[a-t][a-z]$/.test(c)) return true;
     if (!__languageSubtagSet) __languageSubtagSet = new Set(LANGUAGE_SUBTAGS.split(' '));
-    return __languageSubtagSet.has(String(subtag || '').toLowerCase());
+    return __languageSubtagSet.has(c);
   }
 
   // <generated:iso-639-alpha3>
@@ -569,6 +574,49 @@ function createDomHelpers(opts) {
     return display !== 'inline' && display !== 'contents';
   };
 
+  // The document and each open shadow root in it, nested ones included,
+  // found once per run (the style sheets are read from the same list).
+  // The layer the console helpers draw in (highlight(), inspect()) is the
+  // engine's own, not the page's.
+  function documentRoots() {
+    let roots;
+    try {
+      roots = __domSharedCache.documentRoots || null;
+    } catch {
+      roots = null;
+    }
+    if (roots) return roots;
+    roots = document ? [document] : [];
+    for (let i = 0; i < roots.length; i++) {
+      let els;
+      try {
+        els = dom.querySelectorAll(roots[i], '*');
+      } catch {
+        els = [];
+      }
+      for (const el of els) {
+        if (dom.hasAttribute(el, 'data-surea11y-highlights')) continue;
+        const sr = dom.shadowRoot(el);
+        if (sr) roots.push(sr);
+      }
+    }
+    try {
+      __domSharedCache.documentRoots = roots;
+    } catch {}
+    return roots;
+  }
+
+  // Whether `node` contains the modal dialog `d` in the flat tree: a light
+  // DOM ancestor of it, or the host (or an ancestor of the host) of the
+  // shadow tree it is in.
+  const containsModal = (node, d) => {
+    if (dom.get(node, 'contains') && dom.contains(node, d)) return true;
+    try {
+      if (dom.getRootNode(d) === document) return false;
+    } catch {}
+    return ancestorsIncludingSelf(d).indexOf(node) !== -1;
+  };
+
   const getOpenModalDialogs = () => {
     // Per-run memoization of open modal dialogs (document-scoped).
     // Safe under engine constraints (no DOM mutation during a run); deterministic.
@@ -599,8 +647,9 @@ function createDomHelpers(opts) {
     // top layer (jsdom: no showModal(), :modal never matches) falls back to
     // an open dialog with aria-modal="true", the closest it can tell.
     // The whole document is searched, not the scan's scope: a modal outside
-    // a scoped scan still blocks what is inside it. A modal <dialog> inside
-    // a shadow root is not found (known limit).
+    // a scoped scan still blocks what is inside it. Open shadow roots are
+    // searched too: a dialog opened with showModal() in a shadow tree is in
+    // the top layer and blocks the rest of the document all the same.
     let hasTopLayer;
     try {
       const view = window || dom.defaultView(document);
@@ -611,10 +660,10 @@ function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const selectors = hasTopLayer ? ['dialog:modal'] : ['dialog[open][aria-modal="true"]'];
-    for (const sel of selectors) {
+    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
+    for (const root of documentRoots()) {
       try {
-        for (const el of dom.querySelectorAll(document, sel)) {
+        for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
         }
       } catch {
@@ -985,7 +1034,11 @@ function createDomHelpers(opts) {
   // then reads "" and only the IDL attribute holds them; browsers name the
   // element from them. The getter already leaves out references the element
   // can't see (into a shadow root, or detached). Read only where the
-  // attribute gives no id, so references written as ids resolve as before.
+  // attribute is present and gives no id, so references written as ids
+  // resolve as before. Chromium also reflects the misspelled
+  // aria-labeledby, which is no ARIA attribute and leaves aria-labelledby
+  // absent: that is not read, so such an element is unnamed in every
+  // environment, as in other browsers.
   const REFLECTED_REFS = {
     'aria-labelledby': 'ariaLabelledByElements',
     'aria-describedby': 'ariaDescribedByElements',
@@ -993,14 +1046,53 @@ function createDomHelpers(opts) {
     'aria-owns': 'ariaOwnsElements',
     'aria-details': 'ariaDetailsElements',
     'aria-errormessage': 'ariaErrorMessageElements',
-    'aria-flowto': 'ariaFlowToElements'
+    'aria-flowto': 'ariaFlowToElements',
+    'aria-activedescendant': 'ariaActiveDescendantElement'
   };
 
   // A style sheet's rules: its own, or, for one the page can't read (another
   // origin's), those of the text engineOptions.styleSheetTexts gives for its URL,
-  // parsed apart from the page; null when neither can be had. The sheet's own
-  // media list still applies (sheet.media can be read).
+  // with the sheets it imports given there too, parsed apart from the page;
+  // null when neither can be had. The sheet's own media list still applies
+  // (sheet.media can be read).
   const __suppliedRulesByHref = new Map();
+  // The supplied text for an absolute URL, or null.
+  function suppliedTextFor(href) {
+    const base = (document && dom.get(document, 'baseURI')) || href;
+    const entry = suppliedStyleSheets.find((s) => {
+      try {
+        return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
+      } catch {
+        return false;
+      }
+    });
+    return entry ? entry.text : null;
+  }
+  // A supplied sheet's text with each @import replaced by the supplied text
+  // of the sheet it imports, under its media condition: the text is parsed
+  // apart from the page, where an @import is not followed (a constructed
+  // sheet drops it). One whose text wasn't supplied is left out, as before.
+  const IMPORT_RULE = /@import\s+(?:url\(\s*(['"]?)([^'")\s]+)\1\s*\)|(['"])([^'"]+)\3)([^;]*);/gi;
+  function inlineImports(text, href, depth) {
+    if (depth > 10 || !/@import/i.test(text)) return text;
+    return text.replace(IMPORT_RULE, (all, q1, url1, q2, url2, rest) => {
+      let target;
+      try {
+        target = new URL(url1 || url2, href).href;
+      } catch {
+        return '';
+      }
+      const imported = suppliedTextFor(target);
+      if (imported == null) return '';
+      const inner = inlineImports(imported, target, depth + 1);
+      const media = String(rest || '')
+        .replace(/\blayer(\([^)]*\))?/i, '')
+        .replace(/\bsupports\([^)]*\)/i, '')
+        .trim();
+      return media ? `@media ${media} {\n${inner}\n}` : inner;
+    });
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -1013,25 +1105,19 @@ function createDomHelpers(opts) {
     if (__suppliedRulesByHref.has(href)) return __suppliedRulesByHref.get(href);
     let rules = null;
     try {
-      const base = (document && dom.get(document, 'baseURI')) || href;
-      const entry = suppliedStyleSheets.find((s) => {
-        try {
-          return s && typeof s.text === 'string' && new URL(s.href, base).href === href;
-        } catch {
-          return false;
-        }
-      });
-      if (entry) {
+      const supplied = suppliedTextFor(href);
+      if (supplied != null) {
+        const text = inlineImports(supplied, href, 0);
         const view = window || (document && dom.defaultView(document));
         if (view && typeof view.CSSStyleSheet === 'function') {
           // A constructed sheet parses the text without touching the page.
           const parsed = new view.CSSStyleSheet();
-          parsed.replaceSync(entry.text);
+          parsed.replaceSync(text);
           rules = parsed.cssRules;
         } else if (document && dom.get(document, 'implementation')) {
           const doc = dom.get(document, 'implementation').createHTMLDocument('');
           const style = dom.createElement(doc, 'style');
-          style.textContent = entry.text;
+          style.textContent = text;
           dom.appendChild(dom.head(doc), style);
           rules = style.sheet ? style.sheet.cssRules : null;
         }
@@ -1045,13 +1131,25 @@ function createDomHelpers(opts) {
 
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
+    if (getAttr(el, attr) == null) return [];
     try {
       const list = dom.get(el, REFLECTED_REFS[attr]);
+      // aria-activedescendant reflects as one element, the others as lists.
+      if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
       return Array.from(list).filter(isElement);
     } catch {
       return [];
     }
+  }
+
+  // The elements an ID-reference attribute points at: those its ids name,
+  // or, where it gives no id, those a script set as element references.
+  function getRefElements(el, attr, _ctx) {
+    if (!isElement(el)) return [];
+    const ids = trim(getAttr(el, attr));
+    if (ids) return resolveIdRefs(ids, _ctx, {}, el).refs;
+    return getReflectedRefs(el, attr);
   }
 
   function getAttributeInfo(el, attr) {
@@ -1114,7 +1212,8 @@ function createDomHelpers(opts) {
   }
 
   // What the live-region hook (liveRegionHookScript) recorded in the scanned
-  // window while the page ran: { early, announcements, findings, dropped },
+  // window while the page ran: { early, announcements, findings,
+  // dialogsOpened, dropped },
   // read once per run; null without a hook.
   function getLiveRegionRecord() {
     const byWindow = __sharedWeakMap('liveRegionHookByWindow');
@@ -1395,7 +1494,12 @@ function createDomHelpers(opts) {
     if (!isElement(el))
       return { present: false, value: '', mechanism: 'unsupported', flags: ['notElement'] };
 
-    const lb = getAriaLabelledByInfo(el, _ctx, opts);
+    // accname 2B: an aria-labelledby met while already following one is
+    // not followed.
+    const lb =
+      opts && opts.__inIdRefTraversal
+        ? { present: false, value: '' }
+        : getAriaLabelledByInfo(el, _ctx, opts);
     if (lb.present && lb.value)
       return {
         present: true,
@@ -2086,6 +2190,22 @@ function createDomHelpers(opts) {
     return results;
   }
 
+  // The style sheets that style the page: the document's, linked and
+  // adopted, then those of each open shadow root, each with the root it
+  // applies in ({ sheet, root }). The shadow roots are found once per run.
+  function getStyleSheets() {
+    const roots = documentRoots();
+    const out = [];
+    for (const root of roots) {
+      for (const name of ['styleSheets', 'adoptedStyleSheets']) {
+        try {
+          for (const sheet of dom.get(root, name) || []) if (sheet) out.push({ sheet, root });
+        } catch {}
+      }
+    }
+    return out;
+  }
+
   // Content no rule should judge. `modalInert` is the page behind an open
   // modal dialog, which the browser makes inert (see getOpenModalDialogs):
   // a scan taken while one is open judges the dialog, not what it covers.
@@ -2134,9 +2254,7 @@ function createDomHelpers(opts) {
         const openModals = getOpenModalDialogs();
         if (openModals.length) {
           const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some(
-            (d) => chain.indexOf(d) !== -1 || (dom.get(el, 'contains') && dom.contains(el, d))
-          );
+          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
           if (!reachable) return true;
         }
         const domVis = isDomVisibleEligible(el, null, {
@@ -2910,7 +3028,10 @@ function createDomHelpers(opts) {
     // Only include options that affect this helper's output.
     const disallowContents = !!(opts && opts.disallowContents === true);
     const maxRefs = opts && opts.maxRefs != null ? Number(opts.maxRefs) | 0 : -1;
-    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs);
+    // Inside an aria-labelledby traversal a nested aria-labelledby is not
+    // followed, so a name worked out there is kept apart.
+    const inRefs = !!(opts && opts.__inIdRefTraversal);
+    return (disallowContents ? 'dc1' : 'dc0') + '|mr' + String(maxRefs) + (inRefs ? '|ir' : '');
   }
 
   function __getDescOptsKey(opts) {
@@ -3195,7 +3316,7 @@ function createDomHelpers(opts) {
       if (openModals.length) {
         let reachable = false;
         for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || (dom.get(node, 'contains') && dom.contains(node, d))) {
+          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
             reachable = true;
             break;
           }
@@ -4146,7 +4267,12 @@ function createDomHelpers(opts) {
       let hidden;
       try {
         const elig = isAccTreeEligible(el);
-        hidden = !(elig && elig.eligible);
+        // A target under aria-hidden="true" is eligible only because a
+        // visible reference points at it: it is still hidden, so its whole
+        // subtree counts (accname, LabelledBy traversal).
+        hidden =
+          !(elig && elig.eligible) ||
+          (Array.isArray(elig.reasons) && elig.reasons.includes('ariaHiddenOverriddenIdref'));
       } catch {
         hidden = false;
       }
@@ -4213,6 +4339,14 @@ function createDomHelpers(opts) {
       _ctx,
       opts
     );
+  }
+
+  // The text a list of elements gives when referenced, as getTextFromIdRefs
+  // gives that of the elements ids name: for a reference held as an element
+  // (set from script, so with no id to name it by).
+  function getTextFromElements(els, _ctx, opts) {
+    const refs = (Array.isArray(els) ? els : []).filter(isElement);
+    return getTextFromRefs({ refs, missing: [], flags: [] }, _ctx, opts);
   }
 
   // resolveIdRefs lists each referenced element once (callers count them);
@@ -4566,6 +4700,31 @@ function createDomHelpers(opts) {
         } catch {}
         return out;
       }
+    }
+
+    // An SVG element is named by its first direct child <title> (SVG-AAM),
+    // after ARIA and before the title attribute, so
+    // <svg><a href="/next"><title>Next page</title>…</a></svg> is a link
+    // named "Next page". A presentational one has no name from it.
+    const svgTitle = getSvgTitleChildText(el);
+    if (svgTitle) {
+      const out = { present: true, value: svgTitle, mechanism: 'svg-title', flags };
+      try {
+        if (__accessibleNameCacheByKey && __nameComputationDepth === 0) {
+          const wm =
+            __accessibleNameCacheByKey.get(key) ||
+            (__accessibleNameCacheByKey.set(key, new WeakMap()),
+            __accessibleNameCacheByKey.get(key));
+          if (wm && wm instanceof WeakMap)
+            wm.set(el, {
+              present: true,
+              value: out.value,
+              mechanism: out.mechanism,
+              flags: out.flags.slice(0)
+            });
+        }
+      } catch {}
+      return out;
     }
 
     // POLICY NOTE (revisit if ever reconsidered): title is accepted here as
@@ -5088,22 +5247,13 @@ function createDomHelpers(opts) {
     }
 
     if (tag === 'canvas') {
-      const fallbackText = trim(dom.textContent(el) || '');
-      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
-        return {
-          present: true,
-          value: fallbackText || 'fallback-content',
-          mechanism: 'canvas-fallback',
-          requiredMechanism: 'fallback-or-name',
-          flags
-        };
-      }
-
       // <canvas> is not a labelable element (no browser computes an
       // accessible name from <label for="...">), so only ARIA naming
       // (and title, as a generic last-resort accname source) count,
       // unlike getAccessibleNameInfo, which also accepts native
-      // <label> associations.
+      // <label> associations. An ARIA name comes first, as browsers name
+      // the element from it; the fallback content is what the canvas holds,
+      // and its text alternative only when nothing names it.
       const aria = getAriaNameInfo(el, _ctx, opts);
       if (aria && aria.present && aria.value) {
         return {
@@ -5112,6 +5262,17 @@ function createDomHelpers(opts) {
           mechanism: aria.mechanism || 'aria',
           requiredMechanism: 'fallback-or-name',
           flags: flags.concat(aria.flags ? aria.flags.slice(0) : [])
+        };
+      }
+
+      const fallbackText = trim(dom.textContent(el) || '');
+      if (fallbackText || __hasMeaningfulCanvasFallbackDescendant(el)) {
+        return {
+          present: true,
+          value: fallbackText || 'fallback-content',
+          mechanism: 'canvas-fallback',
+          requiredMechanism: 'fallback-or-name',
+          flags
         };
       }
 
@@ -5398,9 +5559,16 @@ function createDomHelpers(opts) {
         // `<button style="content-visibility:hidden">Save</button>` named
         // the button, though nothing is drawn in it and Chromium gives it
         // no name. A directly referenced hidden target still counts.
+        // Text right inside a closed <details> is in its hidden content,
+        // as only the first <summary> is drawn.
         if (!(opts && opts.includeHidden)) {
           const parent = composedParent(node);
           if (parent && isElement(parent)) {
+            if (
+              lower(dom.localName(parent) || '') === 'details' &&
+              !dom.hasAttribute(parent, 'open')
+            )
+              return;
             let cs;
             try {
               cs = computedStyle(parent);
@@ -5416,6 +5584,20 @@ function createDomHelpers(opts) {
       }
 
       if (!isElement(node)) return;
+
+      // An SVG <title> or <desc> is never content (SVG-AAM: no accessible
+      // object); it names or describes its parent, read where that parent
+      // is named. Chromium gives an SVG <title> display: inline and jsdom
+      // none, so without this the same markup named a link in one and not
+      // the other, and a presentational <svg>'s <title> named its link.
+      {
+        const local = lower(dom.localName(node));
+        if (
+          (local === 'title' || local === 'desc') &&
+          dom.namespaceURI(node) === 'http://www.w3.org/2000/svg'
+        )
+          return;
+      }
 
       // opts.skipNode: the control a <label> is being read for. Its own name
       // is not part of the label's text (accname 2E), so a wrapping label
@@ -5771,14 +5953,18 @@ function createDomHelpers(opts) {
     // Minimal implicit mapping (expand later if needed, but keep stable and small).
     // An input's role follows HTML-AAM (aria.getInputRole): a number input
     // is a spinbutton, one with a datalist a combobox, and the password,
-    // date, time, color and file inputs have no ARIA role.
+    // date, time, color and file inputs have no ARIA role. A select is a
+    // listbox with multiple or a size above 1, else a combobox.
     let role = '';
     if ((tag === 'a' || tag === 'area') && href) role = 'link';
     else if (tag === 'button') role = 'button';
     else if (tag === 'summary') role = 'button';
     else if (tag === 'input') role = aria.getInputRole(el);
-    else if (tag === 'select') role = 'combobox';
-    else if (tag === 'textarea') role = 'textbox';
+    else if (tag === 'select') {
+      const size = parseHtmlInteger(getAttr(el, 'size'));
+      role =
+        dom.hasAttribute(el, 'multiple') || (size !== null && size > 1) ? 'listbox' : 'combobox';
+    } else if (tag === 'textarea') role = 'textbox';
 
     if (role) return { role, source: 'implicit', flags };
     return { role: '', source: 'none', flags };
@@ -6282,8 +6468,8 @@ function createDomHelpers(opts) {
       // tag-only fallback (e.g. plain "header") for elements that actually
       // had a perfectly good, unique aria-label anchor available -- and any
       // downstream consumer re-resolving that bare-tag selector via
-      // `querySelector` (this comparisons project's own tooling included)
-      // silently gets the *wrong* element instead of an error.
+      // `querySelector` silently gets the *wrong* element instead of an
+      // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
         if (!elementId || !elementId.trim()) return null;
@@ -6461,6 +6647,15 @@ function createDomHelpers(opts) {
           }
 
           if (!dom.parentElement(node) || (stopAtMatchedRoot && roots.includes(node))) {
+            // An element at the top of a shadow root has no parent element,
+            // as <html> has none, but its tag alone also matches the same
+            // tag deeper in the root: `:not(* > *)` keeps the step to the
+            // root's own children, so shadowRoot.querySelector finds it.
+            const up = dom.parentNode(node);
+            if (!dom.parentElement(node) && up && dom.nodeType(up) === 11) {
+              parts[0] += ':not(* > *)';
+              steps[steps.length - 1] = [node, steps[steps.length - 1][1] + ':not(* > *)'];
+            }
             pinned = true;
             break;
           }
@@ -6563,12 +6758,7 @@ function createDomHelpers(opts) {
   // in a way that makes indexing impossible. A more robust element-identity
   // mechanism than a CSS selector string alone (survives some DOM changes
   // a selector wouldn't -- e.g. an id/class rename), at the cost of not
-  // being usable as a real CSS selector itself. Deliberately mirrors the
-  // same algorithm used by this project's (external) cross-engine
-  // result-matching tooling exactly, rather than requiring it --
-  // this file must stay self-contained (embedded into the generated
-  // runtime via .toString(), no module requires survive that), so a
-  // correctness fix to the algorithm must be applied to both copies.
+  // being usable as a real CSS selector itself.
   function structuralPath(el) {
     if (!el || typeof el !== 'object') return null;
     const path = [];
@@ -6639,12 +6829,9 @@ function createDomHelpers(opts) {
 
   // Occurrence-level structural path: prefers the actual element reference
   // (exact, no re-resolution risk) and only falls back to re-resolving via
-  // the occurrence's own selector when no element reference was kept --
-  // the same technique the cross-engine live-DOM adapters already use to
-  // recover an element from a reported selector, with the same accepted
-  // caveat (a non-unique selector could resolve to a different element
-  // than originally intended -- already documented as "structural-path
-  // collisions" for the cross-engine tooling).
+  // the occurrence's own selector when no element reference was kept, with
+  // the accepted caveat that a non-unique selector could resolve to a
+  // different element than originally intended.
   function buildStructuralPath(node, selector) {
     if (node && typeof node === 'object') {
       const p = structuralPath(node);
@@ -7042,6 +7229,7 @@ function createDomHelpers(opts) {
     composedParent,
     buildSimpleSelector,
     getLabelControl,
+    cssRulesOf,
     __contrastSharedCache
   };
 
@@ -7074,12 +7262,51 @@ function createDomHelpers(opts) {
   // page's own structure (a level-one heading, a main landmark, a way to
   // bypass blocks, content in landmarks) cannot judge the page then: the
   // scan saw a dialog, not the page. See getOpenModalDialogs.
+  //
+  // A script-made modal counts here too: an element whose role is dialog or
+  // alertdialog, with aria-modal="true", that is shown (drawn, and not under
+  // aria-hidden="true" or inert). Only here: aria-modal makes nothing inert,
+  // Tab and clicks still reach the page behind it, so getOpenModalDialogs and
+  // the `modalInert` hiding leave that page to every other rule. The role is
+  // the role attribute's: a <dialog> with aria-modal="true" opened without
+  // showModal() is not modal (see getOpenModalDialogs). Searched in the
+  // whole document and its open shadow roots, not the scan's scope, as
+  // getOpenModalDialogs is.
+  function isShownAriaModalDialog(el) {
+    const role = aria.getExplicitRole(el);
+    if (role !== 'dialog' && role !== 'alertdialog') return false;
+    if (lower(getAttr(el, 'aria-modal')) !== 'true') return false;
+    const vis = isDomVisibleEligible(el, null, {
+      visibilityMode: 'styleOnly',
+      disableGeometry: true,
+      ignoreOpacity: true
+    });
+    const reasons = Array.isArray(vis && vis.reasons) ? vis.reasons : [];
+    if (reasons.some((r) => HARD_HIDDEN_REASONS.has(r))) return false;
+    for (const n of ancestorsIncludingSelf(el)) {
+      if (!isElement(n)) continue;
+      if (lower(getAttr(n, 'aria-hidden')) === 'true') return false;
+      if (dom.hasAttribute(n, 'inert')) return false;
+    }
+    return true;
+  }
   function isModalDialogOpen() {
     try {
-      return getOpenModalDialogs().length > 0;
+      if (getOpenModalDialogs().length > 0) return true;
     } catch {
       return false;
     }
+    for (const root of documentRoots()) {
+      try {
+        for (const el of dom.querySelectorAll(
+          root,
+          '[role~="dialog" i][aria-modal], [role~="alertdialog" i][aria-modal]'
+        )) {
+          if (isShownAriaModalDialog(el)) return true;
+        }
+      } catch {}
+    }
+    return false;
   }
 
   function isWholeDocumentScope() {
@@ -7147,6 +7374,8 @@ function createDomHelpers(opts) {
     isDomVisibleEligible,
     isWholeDocumentScope,
     isModalDialogOpen,
+    getOpenModalDialogs,
+    getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
@@ -7162,7 +7391,10 @@ function createDomHelpers(opts) {
     resolveIdRefs,
     getElementByIdInTree,
     getTextFromIdRefs,
+    getTextFromElements,
     getReflectedRefs,
+    getRefElements,
+    getStyleSheets,
     cssRulesOf,
     getCustomElementInternals,
     getInternalsNameInfo,

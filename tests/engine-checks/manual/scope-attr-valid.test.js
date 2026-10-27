@@ -80,3 +80,11 @@ test(`${RULE_ID}: only <th> scope is read, and its value is not trimmed`, () => 
   assert.strictEqual(outcome('<table><tr><th scope=" col ">H</th></tr></table>'), 'cantTell');
   assert.strictEqual(outcome('<table><tr><th scope="COL">H</th></tr></table>'), 'pass');
 });
+
+test(`${RULE_ID}: an invalid scope leans fail`, () => {
+  const html = `<!doctype html><html><body><table><tr><th scope="column">Name</th></tr></table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  assert.equal(rule.occurrences[0].lean.toward, 'fail');
+  assert.equal(rule.occurrences[0].lean.i18n.whyKey, 'scopeAttrValid_lean_why');
+  assert.deepEqual(rule.occurrences[0].lean.signals, [{ signal: 'scope-value', value: 'column' }]);
+});

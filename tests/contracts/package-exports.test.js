@@ -64,6 +64,31 @@ test('a locale this build does not ship fails to resolve rather than resolving t
   });
 });
 
+// A binding whose code runs in a browser reads the steps with the
+// how-to-check entry and the review dictionary of each locale it shows.
+test('the how-to-check entry and every review dictionary are reachable by name', () => {
+  const entry = consumerRequire('@surea11y/core/how-to-check');
+  assert.equal(typeof entry.applyHowToCheck, 'function');
+  // With the steps, the readings a browser-run tool sorts them by: the same
+  // functions as the main entry's.
+  const main = consumerRequire('@surea11y/core');
+  assert.equal(entry.occurrenceOutcome, main.occurrenceOutcome);
+  assert.equal(entry.reviewGroupOf, main.reviewGroupOf);
+  assert.equal(entry.HOOK_REASON_CODES, main.HOOK_REASON_CODES);
+  const locales = fs
+    .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'review'))
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.slice(0, -'.json'.length));
+  assert.ok(locales.includes('en') && locales.length > 1);
+  for (const locale of locales) {
+    assert.deepEqual(
+      consumerRequire(`@surea11y/core/review/${locale}`),
+      require(path.join(ROOT_DIR, 'src', 'i18n', 'review', `${locale}.json`))
+    );
+  }
+  assert.ok(pkg.files.includes('src/i18n/review/*.json'));
+});
+
 test('every locale side file the exports map can reach is also published', () => {
   const patterns = Object.keys(pkg.exports);
   assert.ok(patterns.includes('./i18n/*'), 'exports map should expose the locale side files');

@@ -104,12 +104,13 @@ const CASES = [
     null
   ],
   [
+    // Chromium gives it no name, the desc only its description: it fails.
     'an image with a desc after metadata',
     `<svg width="20" height="20"><image id="t" href="${IMG}" width="9" height="9"><metadata>x</metadata><desc>Company logo</desc></image></svg>`,
     'svg-image-text-alternative-present',
     '',
     'Company logo',
-    null
+    'fail'
   ],
   [
     'an svg with no role and a title last is no unlabeled image',

@@ -741,7 +741,7 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 
 ## duplicate-id
 
-*A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. With `engineOptions.wcagVersion: '2.0'` or `'2.1'`, the same markup is `fail`.*
+*A duplicate id maps to SC 4.1.1, which WCAG 2.2 removed and which W3C's 2023 errata to 2.0 and 2.1 count as always satisfied for HTML, so under any WCAG target the defect is `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. It fails only under a profile whose standard keeps 4.1.1, such as `en301549-v3.2.1`.*
 
 **Passed**
 ```html
@@ -915,13 +915,13 @@ The control's only name comes from `aria-label`, which is never shown on screen.
 ```
 A single wrapping label; only one labelling mechanism applies.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <label for="address">Address</label>
 <label for="address">Mailing address</label>
 <input id="address" type="text">
 ```
-Two separate `label[for]` elements both target the same control.
+Two separate `label[for]` elements both target the same control. Browsers join them into one name, "Address Mailing address", and only a person can tell whether it still reads well.
 
 ## heading-order
 
@@ -1086,6 +1086,28 @@ The image's `alt` text ("Home") duplicates the adjacent visible link text word f
 ```
 The `alt` text ("Home icon") differs from the adjacent text ("Home").
 
+## image-of-text
+
+*Manual; asks only where markup shows an image likely holds text. Text in an image's pixels is not seen.*
+
+**Flagged (cantTell)**
+```html
+<input type="image" src="send-button.png" alt="Send">
+```
+A button drawn as an image nearly always carries its label as text in the image; a `<button>` with real text could do the same.
+
+**Flagged (cantTell)**
+```html
+<img alt="WCAG Rocks" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><text x='0' y='15'>WCAG Rocks</text></svg>">
+```
+The SVG's `<text>` is drawn as part of the image, where it can't be restyled as text.
+
+**Not applicable**
+```html
+<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="15">WCAG Rocks</text></svg>
+```
+An inline SVG's text is real text.
+
 ## img-alt-decorative
 
 *Manual; flags every applicable element with a detected text alternative for review, not only the ones that look wrong.*
@@ -1194,13 +1216,13 @@ Empty alt on a functional control is `input-image-alt-decorative`'s question, no
 ```
 The field is marked invalid, and the message `aria-errormessage` names is shown and says what is wrong.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <label for="email">Email</label>
 <input id="email" aria-invalid="true" aria-errormessage="email-error">
 <p id="email-error" hidden>Enter an email address, like name@example.com.</p>
 ```
-The field is marked invalid, but its error message is hidden, so nobody is told what is wrong.
+The field is marked invalid, but its error message is hidden. It leans fail: the message tied to the field can't be seen or heard, though the error may still be told in the label or next to the field.
 
 **Flagged (cantTell)**
 ```html
@@ -1682,11 +1704,11 @@ Each mouse handler is paired with a keyboard-equivalent focus handler.
 
 ## focus-not-removed-by-script
 
-**Flagged (cantTell)**
+**Failed**
 ```html
 <a href="/offers" onfocus="this.blur()">Offers</a>
 ```
-The link removes focus from itself as soon as it receives it, WCAG failure F55's own example. It is asked about, not failed: tabbing to it confirms it.
+The link removes focus from itself as soon as it receives it, WCAG failure F55's own example: a keyboard user can't stay on it to follow it.
 
 **Flagged (cantTell)**
 ```html
@@ -1765,15 +1787,21 @@ No fallback content and no accessible name.
 
 **Flagged (cantTell)**
 ```html
-<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+<object data="sales-chart.png" type="image/png">Sales chart</object>
 ```
-Fallback text is present — worth confirming "Product brochure (PDF)" is genuinely equivalent to the embedded document, not just a filler caption.
+Fallback text is present — worth confirming "Sales chart" is genuinely equivalent to the image, not just a filler caption.
 
 **Not applicable**
 ```html
-<object data="brochure.pdf" type="application/pdf"></object>
+<object data="sales-chart.png" type="image/png"></object>
 ```
 No fallback content, ARIA name, or title exists to review; that's `object-text-alternative-present`'s failure instead.
+
+**Not applicable**
+```html
+<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+```
+A PDF renders text, not non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6), as `object-text-alternative-present` has it too.
 
 ## option-name-present
 
@@ -1837,11 +1865,11 @@ No `<h1>` or `role="heading" aria-level="1"` exists.
 ```
 "Home" is one of the conservative generic-title signals this rule reviews.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <title>Quarterly Sales Report — Q3 2026</title>
 ```
-The title is specific to the page's content, matching none of the low-descriptiveness patterns.
+The title matches none of the low-descriptiveness patterns, but whether it describes the page is still for a person to check (`titleReview`): a title's presence is all that page-title-present claims.
 
 ## page-title-present
 
@@ -1865,7 +1893,7 @@ No `<title>` element anywhere in the document.
 
 ## password-paste-enabled
 
-*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example.*
+*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example; the listener hook (`listenerHookScript()`) records such listeners when the page runs it, and an early hook that saw none takes the caution off a cancel-only handler's lean.*
 
 **Flagged (cantTell)**
 ```html
@@ -2108,7 +2136,7 @@ A `<title>` inside the SVG `<image>` provides the alternative.
   <image href="logo.png"></image>
 </svg>
 ```
-The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s label doesn't transfer to it).
+The `<image>` itself has no `<title>` or ARIA name (the outer `<svg>`'s label doesn't transfer to it, and a `<desc>` would describe it, not name it).
 
 ## svg-text-alternative-present
 
@@ -2122,7 +2150,7 @@ The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s la
 ```html
 <svg role="img"></svg>
 ```
-No `<title>`, `<desc>`, or ARIA name.
+No `<title>` or ARIA name. A `<desc>` alone wouldn't do: it describes the image, it doesn't name it.
 
 ## svg-text-alternative-quality
 
@@ -2279,13 +2307,13 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 **Failed**
 ```html
 <table>
-  <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
-  <tr><td>e</td><td>f</td><td>g</td><td>h</td></tr>
-  <tr><td>i</td><td>j</td><td>k</td><td>l</td></tr>
-  <tr><td>m</td><td>n</td><td>o</td><td>p</td></tr>
+  <tr><th>Name</th><th>Team</th><th>Room</th><td></td></tr>
+  <tr><td>Ana</td><td>Sales</td><td>2.01</td><td>Mon</td></tr>
+  <tr><td>Bo</td><td>Legal</td><td>2.04</td><td>Tue</td></tr>
+  <tr><td>Chen</td><td>IT</td><td>3.10</td><td>Fri</td></tr>
 </table>
 ```
-A 4x4 table with no `<th>` anywhere — no cell has a row, column, or `headers`-attribute association.
+The header row stops one column short: the last column's cells have no row, column, or `headers`-attribute association. A table with no header cell at all is asked about instead, since it may be a layout table, which needs none.
 
 ## text-spacing-content-loss
 
@@ -2368,11 +2396,11 @@ The value isn't valid BCP 47 syntax.
 ```
 No `<track>` element at all, so no evidence of captions. A video whose only track is `kind="subtitles"` is asked about too, since subtitles may translate the dialogue without the sound information captions carry.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <video src="x.mp4"><track kind="captions" src="cap.vtt"></video>
 ```
-A `kind="captions"` track with a real `src` is present.
+A `kind="captions"` track with a real `src` is present, which says captions exist, not that they carry all the dialogue and the sounds that matter (F8): a person checks them.
 
 ## video-poster-text-alternative-present
 

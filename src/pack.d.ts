@@ -45,6 +45,12 @@ export interface PackStandard {
        * `engineOptions.wcagVersion` still wins.
        */
       wcagVersion?: '2.0' | '2.1' | '2.2';
+      /**
+       * True when the standard requires 4.1.1 Parsing as written: a failure of
+       * it stays one under 2.0 or 2.1, which the 2023 errata would have asked.
+       * A profile that takes the place of one of core's doesn't inherit it.
+       */
+      keepsParsing?: boolean;
     }
   >;
   mappingsFor: (rule: { id: string; wcagSc?: string[]; checksIds?: string[] }) => object[];
@@ -96,9 +102,26 @@ export interface StandardRollup {
     tags: string[];
     /** The requirements it covers, entries as mappingsFor gives them. */
     standardMappings: object[];
-    /** The rules it judges by their findings, by rule id. */
+    /**
+     * The rules it judges by their findings, by rule id; the others it judges
+     * by their outcome.
+     */
     contributions?: Record<string, RollupContribution>;
-    /** Its rules don't check all its requirements ask. */
+    /**
+     * 'wcag' when it restates WCAG criteria, the `wcagSc` of its
+     * `standardMappings`: it is judged as WCAG's rollup of them would be
+     * (`notApplicable` and `pass` only where theirs would be), and its
+     * result's `data.details.restatesWcag` lists them. Without it, it is
+     * judged as a requirement of the standard's own; definePack refuses any
+     * other value.
+     */
+    applicability?: 'wcag';
+    /**
+     * True when its rules don't check all its requirement asks: where they all
+     * pass it is `cantTell` (`composite.rollup.cantTell.partialCheck`), where
+     * they are all notApplicable `cantTell` (`partialCoverage`), and its
+     * result's `data.details.partial` is true.
+     */
     partial?: boolean;
     [field: string]: unknown;
   };
@@ -139,6 +162,8 @@ export interface Pack {
       severity?: Record<string, 'minor' | 'moderate' | 'serious' | 'critical'>;
       /** The WCAG version its scans are judged by, when its tags don't imply it. */
       wcagVersion?: '2.0' | '2.1' | '2.2';
+      /** True when it requires 4.1.1 Parsing as written, whatever the 2023 errata say. */
+      keepsParsing?: boolean;
     }
   >;
   /** A checklist's items: each groups rules into one result, under its profiles. */
@@ -196,8 +221,15 @@ export function satisfiesRange(version: string, range: string): boolean | null;
 export function ruleMappedStandard(options: {
   standard: string;
   tag: string;
-  /** The standard's versions, oldest first: [{ version: '1.0' }, ...]. */
-  versions: Array<{ version: string; [field: string]: unknown }>;
+  /**
+   * The standard's versions, oldest first, each with the WCAG version its
+   * requirements are built on: [{ version: '1.0', wcagVersion: '2.1' }, ...].
+   */
+  versions: Array<{
+    version: string;
+    wcagVersion: '2.0' | '2.1' | '2.2';
+    [field: string]: unknown;
+  }>;
   /**
    * Per version, each requirement by its number: { '1.0': { '1': { title, wcagSc } } }.
    * `partial: true` when its rules don't check all it asks: its rollup is then

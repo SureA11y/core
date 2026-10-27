@@ -55,3 +55,18 @@ test('options without probes or customRules echo neither', () => {
   assert.ok(!('probes' in eo));
   assert.ok(!('customRules' in eo));
 });
+
+test('styleSheetTexts is echoed as the sheets’ hrefs, without their text', () => {
+  const text = `.x { color: red; } ${'/* padding */'.repeat(1000)}`;
+  const result = runa11yCoreOnHtml(HTML, {
+    engineOptions: { styleSheetTexts: [{ href: 'https://cdn.other.test/site.css', text }] }
+  });
+  for (const r of result.checksResults.concat(result.rulesResults)) {
+    assert.deepEqual(
+      r.engineOptions.styleSheetTexts,
+      [{ href: 'https://cdn.other.test/site.css' }],
+      r.ruleId
+    );
+  }
+  assert.ok(!JSON.stringify(result).includes('/* padding */'));
+});

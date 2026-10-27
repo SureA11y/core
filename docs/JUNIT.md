@@ -28,7 +28,7 @@ gives:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="surea11y" tests="13" failures="1" errors="0" skipped="5" time="0">
+<testsuites name="surea11y" tests="14" failures="1" errors="0" skipped="4" time="0">
   <testsuite name="WCAG 1.1.1" tests="1" failures="1" errors="0" skipped="0" time="0">
     <properties>
       <property name="wcagCriterion" value="1.1.1"/>
@@ -50,11 +50,11 @@ gives:
 help: https://www.w3.org/WAI/WCAG22/Understanding/non-text-content.html</failure>
     </testcase>
   </testsuite>
-  <!-- 10 more suites trimmed: 12 tests, 5 of them skipped (manual review) -->
+  <!-- 10 more suites trimmed: 13 tests, 4 of them skipped (manual review) -->
 </testsuites>
 ```
 
-- **A green suite named for a criterion** means the rules that ran for it reported no failure. It doesn't mean the criterion was fully checked, or met: most criteria have parts no rule covers ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)).
+- **A green suite named for a criterion** means the rules that ran for it reported no failure. It doesn't mean the criterion was fully checked, or met: most criteria have parts no rule covers ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)). Its `criterionOutcome` property says so: `cantTell` where the rules passed but check only part of the criterion, which today is every criterion.
 - **Suites follow the criterion**, because that is what people track, and **testcases follow the rule** rather than the occurrence, so a defect repeated forty times on a page is one failing test whose body lists all forty, and test counts stay stable between runs.
 - **Names are the same in every locale.** A suite is named `WCAG <criterion>` (`WCAG 1.4.3`), the suite of rules mapped to no criterion `Other checks`, a testcase by its rule id, and its `classname` is `wcag-<criterion>` or `other`, whatever `engineOptions.locale` the scan ran in. CI test history (GitLab, Jenkins, GitHub test reporters) is keyed on these names, so a scan read in French gives the same tests as one read in English. The criterion's title, which is translated, is the suite's `title` property (`Contrast: minimum`, `Contraste (minimum)`). The findings' own text (each occurrence's message and hint) is in the scan's locale; the words the report adds around it are English in every locale: the count that starts a `message` (`1 failing occurrence: Cet élément <img> n’a pas d’attribut alt.`), the `selector:`, `html:` and `help:` labels, and the `<skipped>` messages.
 - Suites come from each rule's own WCAG mappings, not from the composites, so every rule that ran is reported even when composites were excluded. The composite, when it ran, supplies the suite's `title` property and the `criterionOutcome` property, which counts the custom rules mapped to the criterion as it counts the built-in ones. A criterion checked by several composites (4.1.2: its accessible name and its ARIA validity) takes the worst of their outcomes, since one part failing fails the criterion, and the title their titles share (`Name, role, value`). A rule mapped to two criteria appears in both suites. A rule mapped to no criterion goes into a final `Other checks` suite with `classname="other"`.
@@ -90,8 +90,11 @@ The `selector:` line of an element inside a shadow tree names the shadow hosts f
 | Option | Default | Effect |
 |---|---|---|
 | `cantTellAs` | `'skipped'` | `'failure'` reports `cantTell` rules as `<failure type="cantTell">`, for a pipeline that must not pass while anything is undecided. Read in any case; another value throws a `TypeError`, as a misspelt one would quietly not gate. |
+| `leanFailAs` | `'skipped'` | `'failure'` reports a rule whose undecided findings include one that leans to fail (its `lean`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#leans)) as `<failure type="leanFail">`, listing those findings, each with why it likely fails (`likely fails:`), the lean's caution where it has one, and how a person confirms it (`how to check:`, the finding's `howToCheck` steps, then `fails when:`), which the report adds in Node to a result that comes without them; its other undecided findings stay as `cantTellAs` says. For a pipeline that gates on likely failures without gating on every question. A best-practice rule's too: such a rule, mapped to no WCAG criterion, never fails, and the facts it states lean fail without condition ([`LEANS.md`](./LEANS.md#how-far-to-trust-a-lean)), so a skipped heading level (`heading-order`, an `<h1>` then an `<h3>`) is a `<failure type="leanFail">` in `Other checks`. A rule whose every criterion is outside the scan's target does not gate, as for a failure. Read in any case; another value throws a `TypeError`. `leaningFailures(result, { wcagOnly })`, from `@surea11y/core`, lists the findings it gates on, before the baseline. |
+| `leanFailWcagOnly` | `false` | With `leanFailAs: 'failure'`, `true` gates only on the findings of rules mapped to a WCAG criterion in the scan's target, leaving out the best-practice rules' leans. A value other than `true` or `false` throws a `TypeError`. |
 | `includeNotApplicable` | `false` | Include `notApplicable` rules as skipped tests. |
-| `baselineEntries` | none | Entries from [`BASELINE.md`](./BASELINE.md)'s `buildBaselineEntries()`. Fail occurrences recorded there are dropped, exactly as in SARIF. A rule whose every failure is already known is `<skipped message="N known failures recorded in the baseline">`, not passing: it did not pass. |
+| `baselineEntries` | none | Entries from [`BASELINE.md`](./BASELINE.md)'s `buildBaselineEntries()`. Fail occurrences recorded there are dropped, exactly as in SARIF. A rule whose every failure is already known is `<skipped message="N known failures recorded in the baseline">`, not passing: it did not pass. An entry written by 1.13 under a reason code that changed in 1.14 still matches the finding under its new one ([`BASELINE.md`](./BASELINE.md#upgrading)). Under `leanFailAs: 'failure'`, a finding that leans fail and has an entry marked `lean: 'fail'` (`buildBaselineEntries(result, { leanFail: true })`) does not gate either, and the `<skipped>` message counts it among the `known likely failures recorded in the baseline` ([`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)). |
+| `packs` | none | The packs the scan ran (`engineOptions.packs`): with `leanFailAs: 'failure'`, a pack rule's likely failures give the steps of its own `meta.review`, as in the HTML report. |
 | `name` | `'surea11y'` | The `name` of the root `<testsuites>`, for telling several pages' reports apart in one dashboard. |
 
 ## Determinism

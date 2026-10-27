@@ -24,14 +24,26 @@
  *   disabled <fieldset> but not its first <legend>) or inert; a tabindex
  *   that parses as an integer decides, and an invalid one ("", "abc") is
  *   ignored; otherwise links with href, form controls but hidden inputs,
- *   frames, media with controls, an <area> of an image map an <img> uses
- *   (usemap matched exactly), the first <summary> of a <details> and
+ *   frames, media with controls, an <area> of an image map a rendered
+ *   <img> uses (usemap matched exactly), the first <summary> of a <details> and
  *   editing hosts (contenteditable "", "true" or "plaintext-only") are.
  *   Exception: an iframe with
  *   both a `width` and `height` HTML attribute of 2px or less (a common
  *   "tracking pixel" pattern) cannot render any perceptible content, so
  *   focusable content inside it never satisfies ACT akn7bn's "visible"
  *   requirement and doesn't count.
+ * @reason-codes
+ *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` (fail): a frame with a
+ *     negative tabindex holds content in the tab order, which Tab skips, so
+ *     a keyboard user cannot reach it.
+ *     Basis: WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation.
+ *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` (cantTell): a frame
+ *     with a negative tabindex holds one focusable element, but focus moved
+ *     straight on from it, so keyboard access is checked in a real browser.
+ *     It leans pass when that element is an empty focus guard (a plain
+ *     element made focusable by tabindex alone, with no text, content, name
+ *     or role) and focus left the frame.
+ *     Basis: WCAG 2.1.1 (not settled); ACT akn7bn (not settled).
  * @implementation-notes
  * - Scoped to same-origin, currently-accessible content only
  *   (contentDocument access is wrapped in try/catch and treated as "no
@@ -79,7 +91,23 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } }
+  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT: {
+      steps: [
+        'Click on the page just before the frame the report names, then press Tab to move toward it.',
+        'Keep pressing Tab and watch whether focus ever lands inside the frame, and where it goes when it would arrive there.',
+        'Inspect the focusable element inside the frame in the Elements panel: note whether it is an empty focus guard or a real link or control with content.',
+        "If it is a real link or control, try every other keyboard route to it (Shift+Tab, the frame's own controls) to see if it can be reached and used."
+      ],
+      passWhen:
+        'The only focusable element inside the frame is an empty focus guard that sends focus on, and nothing a user needs inside the frame is left out of keyboard reach.',
+      failWhen:
+        'A real link or control inside the frame cannot be reached or used with the keyboard because focus skips or bounces away from it, which fails WCAG 2.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -99,6 +127,13 @@ function runInPage(ctx) {
   // visually-rendered focusable element inside the frame is still
   // reachable by keyboard and must stay flagged.
   function isRenderedInDoc(doc, el) {
+    // An <area> has no box of its own, and browsers differ on what
+    // checkVisibility() says of it (true in Chrome 151, false from 153): it is
+    // drawn, and Tab reaches it, as part of the image that uses its map, whose
+    // rendering decides. inert or hidden on the area or its map don't take it
+    // out of the tab order in Chromium or Firefox (1.8.0).
+    if (dom.localName(el) === 'area')
+      return imagesUsingMap(doc, el).some((img) => isRenderedInDoc(doc, img));
     try {
       if (dom.get(el, 'closest') && dom.closest(el, '[inert]')) return false;
       if (typeof dom.get(el, 'checkVisibility') === 'function') {
@@ -250,13 +285,14 @@ function runInPage(ctx) {
     return m[1] === '-' ? -n : n;
   }
 
-  // Whether an <area>'s <map> is used by an <img> in the same document:
-  // an <area> is focusable only as part of an image map in use. A usemap
-  // is "#" and the map's name (or id), matched exactly.
-  function isAreaInUsedMap(doc, area) {
+  // The <img> elements in the same document that use an <area>'s <map>: an
+  // <area> is focusable only as part of an image map in use. A usemap is
+  // "#" and the map's name (or id), matched exactly.
+  function imagesUsingMap(doc, area) {
+    const out = [];
     try {
       const map = dom.closest(area, 'map');
-      if (!map) return false;
+      if (!map) return out;
       for (const img of dom.querySelectorAll(doc, 'img[usemap]')) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
@@ -268,11 +304,12 @@ function runInPage(ctx) {
             break;
           }
         }
-        if (target === map) return true;
+        if (target === map) out.push(img);
       }
     } catch {}
-    return false;
+    return out;
   }
+  const isAreaInUsedMap = (doc, area) => imagesUsingMap(doc, area).length > 0;
 
   // Whether an element is in its document's sequential focus navigation
   // order, by HTML's rules, read in the frame's own document: a disabled
@@ -398,6 +435,29 @@ function runInPage(ctx) {
     };
   }
 
+  // A focus guard: a plain element made focusable only by its tabindex,
+  // with no text, no embedded content, no name and no role. Embedded
+  // widgets put one at their edge to send focus on; it holds nothing a
+  // user needs to reach.
+  const GUARD_TAGS = new Set(['div', 'span']);
+  function isFocusSentinel(el) {
+    try {
+      if (!GUARD_TAGS.has(String(dom.localName(el) || '').toLowerCase())) return false;
+      const t = parseTabIndex(dom.getAttribute(el, 'tabindex'));
+      if (t === null || t < 0) return false;
+      for (const a of ['role', 'aria-label', 'aria-labelledby', 'title', 'contenteditable']) {
+        if (dom.getAttribute(el, a) != null) return false;
+      }
+      if (/\S/.test(String(dom.textContent(el) || ''))) return false;
+      return !dom.querySelector(
+        el,
+        'img, svg, canvas, picture, video, audio, object, embed, iframe, input, button, select, textarea, a[href]'
+      );
+    } catch {
+      return false;
+    }
+  }
+
   function getNegativeTabIndex(el) {
     const raw = dom.getAttribute(el, 'tabindex');
     if (raw == null) return false;
@@ -482,8 +542,27 @@ function runInPage(ctx) {
       : null;
 
     if (runtimeProbe && runtimeProbe.redirected) {
+      const sentinel = runtimeProbe.redirectedOutOfFrame && isFocusSentinel(candidates[0]);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
+          ...(sentinel
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The only focusable element in the frame is an empty focus guard that sends focus out of the frame, the usual pattern of embedded widgets; it holds nothing a user needs to reach.',
+                  signals: [
+                    { signal: 'focus-redirected-out-of-frame', value: true },
+                    { signal: 'candidate-is-sentinel', value: true }
+                  ],
+                  caution:
+                    'A script may still reveal real content behind the guard later; the probe only waits a short moment.',
+                  i18n: {
+                    whyKey: 'iframeFocusableContent_lean_why',
+                    cautionKey: 'iframeFocusableContent_lean_caution'
+                  }
+                }
+              }
+            : {}),
           summary: `This <${tag}> has tabindex="-1" and focusable content, but focus moves straight on to another element. Check keyboard access in a real browser.`,
           hint: 'If this is a deliberate focus handoff, check that keyboard focus never gets stuck on content inside the frame.',
           i18n: {

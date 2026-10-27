@@ -19,6 +19,13 @@
  *   - `accesskey`: the shared key, in lower case.
  *   - `duplicateCount`: how many elements on the page share it, this one
  *     included.
+ * @reason-codes
+ *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
+ *     also used by another element on the page, so the shortcut may not
+ *     reach it.
+ *     It leans fail: the page states it.
+ *     Basis: WCAG 2.1.1 (best practice); HTML accesskey attribute
+ *     (not settled).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -42,7 +49,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ACCESSKEY_DUPLICATE: {
+      steps: [
+        'Note the access key the report names and find the other elements sharing it.',
+        "Press the browser's access key combination with that key (for example Alt, or Alt+Shift, plus the key) and note which element is focused or activated.",
+        'Press it again and check whether each element sharing the key can be reached.'
+      ],
+      passWhen:
+        'Each element with that key can be reached by it, or the duplicates are intended and harmless.',
+      failWhen:
+        'Only one of the elements responds to the key, so the others cannot be reached by their shortcut (best practice, related to WCAG 2.1.1).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -77,6 +99,12 @@ function runInPage(ctx) {
             summaryKey: 'accesskeys_summary_cantTell',
             hintKey: 'accesskeys_hint_cantTell',
             params: { accesskey: key, duplicateCount: String(els.length) }
+          },
+          lean: {
+            toward: 'fail',
+            why: 'Another element on the page uses the same access key.',
+            signals: [{ signal: 'accesskey-shared', value: true }],
+            i18n: { whyKey: 'accesskeys_lean_why' }
           },
           data: {
             details: {

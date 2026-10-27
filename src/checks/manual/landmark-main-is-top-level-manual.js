@@ -18,6 +18,11 @@
  *   A main region nested inside another landmark is not a top-level,
  *   whole-page main content area and confuses landmark-based navigation
  *   for assistive technology users.
+ * @reason-codes
+ *   - `LANDMARK_MAIN_NOT_TOP_LEVEL` (cantTell): a main landmark sits inside
+ *     another landmark instead of at the top level of the page.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 main role (best practice); HTML-AAM main element.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -50,7 +55,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_MAIN_NOT_TOP_LEVEL: {
+      steps: [
+        'Find the main landmark the report names and the landmark it sits inside.',
+        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where main appears.",
+        "Check whether main is the outermost container of the page's primary content."
+      ],
+      passWhen: 'The main landmark sits at the top level of the page, outside any other landmark.',
+      failWhen:
+        'The main landmark sits inside another landmark, which confuses landmark navigation, a best-practice miss under the WAI-ARIA main role.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -125,6 +144,12 @@ function runInPage(ctx) {
           summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
           hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The main landmark sits inside another landmark.',
+          signals: [{ signal: 'landmark-ancestor', value: true }],
+          i18n: { whyKey: 'landmarkMainIsTopLevel_lean_why' }
         },
         data: {
           details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }

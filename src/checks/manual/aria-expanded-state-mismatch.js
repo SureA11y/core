@@ -40,6 +40,21 @@
  *   - `ariaExpanded`: `true` or `false`, as the attribute says.
  *   - `controlledCount`: how many elements `aria-controls` names that were
  *     compared.
+ * @reason-codes
+ *   - `EXPANDED_FALSE_CONTROLLED_SHOWN` (cantTell): an element says
+ *     aria-expanded="false" while every element its aria-controls names is
+ *     shown.
+ *     It leans fail when the element is not visually hidden and each element
+ *     it controls is shown in full: not clamped, cut by a max-height, moved by
+ *     a transform, visually hidden or, in a browser, off screen to the side.
+ *     Basis: WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled).
+ *   - `EXPANDED_TRUE_CONTROLLED_HIDDEN` (cantTell): an element says
+ *     aria-expanded="true" while every element its aria-controls names is
+ *     hidden.
+ *     It leans fail when each element it controls is not displayed at all
+ *     (display: none or the hidden attribute), which no animation is midway
+ *     through.
+ *     Basis: WAI-ARIA 1.2 aria-expanded; WCAG 4.1.2 (not settled).
  * @implementation-notes
  * - ARIA 1.2: `aria-expanded` "indicates if a grouping element owned or
  *   controlled by this element is expanded or collapsed". WCAG 4.1.2 asks
@@ -80,7 +95,32 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-expanded-state-mismatch'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-expanded-state-mismatch'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    EXPANDED_FALSE_CONTROLLED_SHOWN: {
+      steps: [
+        'Find the toggle the report names; it says it is collapsed.',
+        'Look at the content it controls and check whether it is shown in full or only a preview, such as a few clamped lines.',
+        'Activate the toggle with Enter or Space and check the Accessibility pane: the expanded state should follow what is shown.'
+      ],
+      passWhen:
+        'The content is collapsed or only previewed while the toggle says collapsed, and the state changes when the content opens.',
+      failWhen:
+        'The content is fully shown while the toggle tells screen reader users it is collapsed, which fails WCAG 4.1.2.'
+    },
+    EXPANDED_TRUE_CONTROLLED_HIDDEN: {
+      steps: [
+        'Find the toggle the report names; it says it is expanded.',
+        'Look for the content it controls and check whether it is shown on screen, waiting for any animation to finish.',
+        'Activate the toggle with Enter or Space and check in the Accessibility pane that the expanded state follows what is shown.'
+      ],
+      passWhen: 'The content is shown while the toggle says expanded, once any transition ends.',
+      failWhen:
+        'The content stays hidden while the toggle tells screen reader users it is expanded, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -115,12 +155,106 @@ function runInPage(ctx) {
     } catch {}
     return false;
   }
+  // content-visibility: hidden on the panel itself keeps its box and skips
+  // its contents, so nothing in it is shown; an inline or display: contents
+  // box can't take it.
+  function skipsContents(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      const display = String((cs && cs.display) || '');
+      return (
+        !!cs && cs.contentVisibility === 'hidden' && display !== 'inline' && display !== 'contents'
+      );
+    } catch {
+      return false;
+    }
+  }
   function isHidden(el) {
     try {
       const info = helpers.isAccTreeEligible(el);
       if (info && info.eligible === false) return true;
     } catch {}
-    return isCollapsedBox(el);
+    return skipsContents(el) || isCollapsedBox(el);
+  }
+
+  // Whether a panel is shown in full: not cut to a few lines by line-clamp
+  // or a max-height that clips, not moved by a transform, not visually
+  // hidden and, where the page has a layout, drawn with an area and not
+  // off screen to the side (an off-canvas drawer).
+  function shownInFull(ref) {
+    try {
+      const cs = helpers.computedStyle(ref) || {};
+      const clamp = String(cs.webkitLineClamp || cs.lineClamp || cs['-webkit-line-clamp'] || '');
+      if (clamp && clamp !== 'none') return false;
+      const clips = (v) => !!v && v !== 'visible';
+      const maxHeight = String(cs.maxHeight || '');
+      if (maxHeight && maxHeight !== 'none' && (clips(cs.overflowY) || clips(cs.overflow)))
+        return false;
+      const transform = String(cs.transform || '');
+      if (transform && transform !== 'none') return false;
+      if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(ref))
+        return false;
+      if (hasLayout()) {
+        const r = dom.getBoundingClientRect(ref);
+        const win = dom.defaultView(document);
+        const width = win ? Number(win.innerWidth) : 0;
+        if (!r || r.width <= 0 || r.height <= 0) return false;
+        if (r.right <= 0 || (width > 0 && r.left >= width)) return false;
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  function toggleVisible(el) {
+    try {
+      return !(typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el));
+    } catch {
+      return false;
+    }
+  }
+  // Whether a panel is not displayed at all: display: none or the hidden
+  // attribute, on it or above it.
+  function notDisplayed(ref) {
+    try {
+      const info = helpers.isAccTreeEligible(ref);
+      const reasons = info && info.eligible === false ? info.reasons || [] : [];
+      return reasons.includes('displayNone') || reasons.includes('hiddenAttr');
+    } catch {
+      return false;
+    }
+  }
+
+  // Which way a contradiction between aria-expanded and the panels points.
+  function leanFor(el, collapsed, refs) {
+    if (collapsed) {
+      if (!toggleVisible(el) || !refs.every(shownInFull)) return null;
+      return {
+        toward: 'fail',
+        why: 'The content it controls is shown in full, not clipped or moved away, while the element says it is collapsed.',
+        signals: [
+          { signal: 'controlled-all-shown', value: true },
+          { signal: 'panel-clamped', value: false },
+          { signal: 'controller-visible', value: true }
+        ],
+        caution: 'The content may be a preview the element expands further.',
+        i18n: {
+          whyKey: 'ariaExpandedStateMismatch_lean_why_collapsedShown',
+          cautionKey: 'ariaExpandedStateMismatch_lean_caution_collapsedShown'
+        }
+      };
+    }
+    if (!refs.every(notDisplayed)) return null;
+    return {
+      toward: 'fail',
+      why: 'The content it controls is not displayed at all (display: none or the hidden attribute), while the element says it is expanded.',
+      signals: [{ signal: 'hidden-by-display', value: true }],
+      caution: 'A script may be about to show the content.',
+      i18n: {
+        whyKey: 'ariaExpandedStateMismatch_lean_why_expandedHidden',
+        cautionKey: 'ariaExpandedStateMismatch_lean_caution_expandedHidden'
+      }
+    };
   }
 
   const occurrences = [];
@@ -137,9 +271,10 @@ function runInPage(ctx) {
     } catch {}
     if (role === 'combobox') continue;
 
+    // Ids, or element references set from script (ariaControlsElements).
     const refs = helpers
-      .resolveIdRefs(dom.getAttribute(el, 'aria-controls'), ctx, {}, el)
-      .refs.filter((ref) => ref !== el && !dom.contains(ref, el));
+      .getRefElements(el, 'aria-controls', ctx)
+      .filter((ref) => ref !== el && !dom.contains(ref, el));
     if (!refs.length) continue;
     applicableCount += 1;
 
@@ -156,6 +291,7 @@ function runInPage(ctx) {
     } catch {}
 
     const collapsed = expanded === 'false';
+    const lean = leanFor(el, collapsed, refs);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: collapsed
@@ -173,6 +309,7 @@ function runInPage(ctx) {
             : 'ariaExpandedStateMismatch_hint_cantTell_expandedHidden',
           params: {}
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: { reasonCode, ariaExpanded: expanded, controlledCount: refs.length },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }

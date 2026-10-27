@@ -25,12 +25,22 @@
   <h2>A. FAIL — large simple table with unheaded data cells</h2>
 
   <div class="case" id="case_01">
-    <div class="case-title">01 — FAIL: 4x4 table with no headers at all — every &lt;td&gt; is unheaded</div>
+    <div class="case-title">01 — CANTTELL: 4x4 table with no headers at all — a layout table needs none, a data table does, and markup does not say which</div>
     <table id="tdh_case_01">
       <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
       <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
       <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr>
       <tr><td>13</td><td>14</td><td>15</td><td>16</td></tr>
+    </table>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — FAIL: 4x4 table whose header row leaves the last column without a header</div>
+    <table id="tdh_case_09">
+      <tr><th>A</th><th>B</th><th>C</th><td></td></tr>
+      <tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+      <tr><td>5</td><td>6</td><td>7</td><td>8</td></tr>
+      <tr><td>9</td><td>10</td><td>11</td><td>12</td></tr>
     </table>
   </div>
 

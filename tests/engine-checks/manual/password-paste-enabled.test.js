@@ -266,3 +266,175 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/password-paste-enabled-all-sc
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+function leans(body) {
+  return assertRule(scan(body), RULE_ID, 'cantTell').occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: a handler that only cancels leans fail, with the cantTell message keys`, () => {
+  const rule = assertRule(
+    scan('<input type="password" onpaste="return false">'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(
+    rule.occurrences[0].i18n.summaryKey,
+    'passwordPasteEnabled_summary_cantTell_cancelled'
+  );
+  assert.equal(rule.occurrences[0].i18n.hintKey, 'passwordPasteEnabled_hint_cantTell_cancelled');
+  assert.deepEqual(leans('<input type="password" onpaste="return false">'), [
+    ['PASTE_CANCELLED', 'fail', 'passwordPasteEnabled_lean_why_cancelled']
+  ]);
+});
+
+test(`${RULE_ID}: a box of a split one-time code has no lean`, () => {
+  const box = (n) =>
+    `<input autocomplete="one-time-code" maxlength="1" aria-label="Digit ${n}" onpaste="return false">`;
+  const codes = leans(`<div>${box(1)}${box(2)}${box(3)}${box(4)}</div>`);
+  assert.equal(codes.length, 4);
+  assert.ok(codes.every(([code, toward]) => code === 'PASTE_CANCELLED' && toward === null));
+});
+
+test(`${RULE_ID}: an opaque handler leans fail only when its words say it blocks pasting`, () => {
+  assert.deepEqual(
+    leans(
+      '<input type="password" onpaste="return disablePaste(event)">' +
+        '<input type="password" onpaste="alert(\'Pasting is not allowed\'); return false">' +
+        '<input type="password" onpaste="handlePaste(event)">' +
+        '<input type="password" onpaste="casinoPaste(event)">'
+    ),
+    [
+      ['PASTE_HANDLER_OPAQUE', 'fail', 'passwordPasteEnabled_lean_why_opaque'],
+      ['PASTE_HANDLER_OPAQUE', 'fail', 'passwordPasteEnabled_lean_why_opaque'],
+      ['PASTE_HANDLER_OPAQUE', null, null],
+      ['PASTE_HANDLER_OPAQUE', null, null]
+    ]
+  );
+});
+
+// A jsdom page with the listener hook installed before the page's own
+// script, as listenerHookScript({ early: true }) is in a browser. jsdom's
+// selector engine adds listeners to the window the first time a selector
+// runs, so one runs before the hook.
+const { JSDOM } = require('jsdom');
+const { listenerHookScript } = require('../../../src/index.js');
+const { runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+function jsdomPage(body) {
+  const dom = new JSDOM(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
+    { runScripts: 'outside-only' }
+  );
+  dom.window.document.querySelector('*');
+  return dom;
+}
+function scanDom(dom) {
+  return runa11yCoreOnDom(dom, {
+    runOnly: [RULE_ID],
+    entryPointParity: false,
+    engineOptions: { includeShadowDom: true }
+  });
+}
+function hooked(body, script, { shadow } = {}) {
+  const dom = jsdomPage(body);
+  if (shadow) {
+    dom.window.document.getElementById(shadow.host).attachShadow({ mode: 'open' }).innerHTML =
+      shadow.html;
+  }
+  dom.window.eval(listenerHookScript({ early: true }));
+  if (script) dom.window.eval(script);
+  return scanDom(dom);
+}
+function cancelledOcc(result) {
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.equal(rule.occurrences[0].data.details.reasonCode, 'PASTE_CANCELLED');
+  return rule.occurrences[0];
+}
+
+test(`${RULE_ID}: an early hook that saw no other paste listener leans fail with no caution`, () => {
+  const occ = cancelledOcc(hooked('<input id="p" type="password" onpaste="return false">'));
+  assert.equal(occ.lean.toward, 'fail');
+  assert.equal(occ.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelledNoListener');
+  assert.equal(occ.lean.i18n.cautionKey, undefined);
+  assert.equal(occ.lean.caution, undefined);
+  // Listeners of other types say nothing about paste.
+  const others = cancelledOcc(
+    hooked(
+      '<form id="f"><input id="p" type="password" onpaste="return false"></form>',
+      "document.getElementById('p').addEventListener('input', () => {}); document.getElementById('f').addEventListener('keydown', () => {});"
+    )
+  );
+  assert.equal(others.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelledNoListener');
+});
+
+test(`${RULE_ID}: a paste listener from script anywhere a paste goes keeps the caution`, () => {
+  for (const script of [
+    "document.getElementById('p').addEventListener('paste', () => {});",
+    "document.getElementById('p').onpaste = () => false;",
+    "document.getElementById('f').addEventListener('paste', () => {}, true);",
+    "document.addEventListener('paste', () => {});",
+    "window.addEventListener('paste', () => {});"
+  ]) {
+    const occ = cancelledOcc(
+      hooked('<form id="f"><input id="p" type="password" onpaste="return false"></form>', script)
+    );
+    assert.equal(occ.lean.toward, 'fail', script);
+    assert.equal(occ.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelled', script);
+    assert.equal(occ.lean.i18n.cautionKey, 'passwordPasteEnabled_lean_caution_cancelled', script);
+  }
+});
+
+test(`${RULE_ID}: a paste listener on a shadow root the field is in keeps the caution`, () => {
+  const shadow = {
+    host: 'h',
+    html: '<input id="p" type="password" aria-label="Password" onpaste="return false">'
+  };
+  const quiet = cancelledOcc(hooked('<div id="h"></div>', null, { shadow }));
+  assert.equal(quiet.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelledNoListener');
+  const listening = cancelledOcc(
+    hooked(
+      '<div id="h"></div>',
+      "document.getElementById('h').shadowRoot.addEventListener('paste', () => {});",
+      { shadow }
+    )
+  );
+  assert.equal(listening.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelled');
+  assert.equal(listening.lean.i18n.cautionKey, 'passwordPasteEnabled_lean_caution_cancelled');
+});
+
+test(`${RULE_ID}: without an early hook, a cancelling handler leans as before`, async () => {
+  // A hook installed once the page has loaded may have missed listeners.
+  const dom = jsdomPage('<input id="p" type="password" onpaste="return false">');
+  await new Promise((resolve) => dom.window.addEventListener('load', resolve));
+  dom.window.eval(listenerHookScript());
+  const result = scanDom(dom);
+  assert.equal(result.engine.environment.listenerHook, 'late');
+  const late = cancelledOcc(result);
+  assert.equal(late.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelled');
+  assert.equal(late.lean.i18n.cautionKey, 'passwordPasteEnabled_lean_caution_cancelled');
+  const none = cancelledOcc(scan('<input id="p" type="password" onpaste="return false">'));
+  assert.equal(none.lean.i18n.whyKey, 'passwordPasteEnabled_lean_why_cancelled');
+  assert.equal(none.lean.i18n.cautionKey, 'passwordPasteEnabled_lean_caution_cancelled');
+});
+
+test(`${RULE_ID}: with an early hook, a split one-time-code box still has no lean and an opaque handler is unchanged`, () => {
+  const box = (n) =>
+    `<input autocomplete="one-time-code" maxlength="1" aria-label="Digit ${n}" onpaste="return false">`;
+  const split = assertRule(
+    hooked(`<div>${box(1)}${box(2)}${box(3)}${box(4)}</div>`),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(split.occurrences.length, 4);
+  assert.ok(split.occurrences.every((o) => o.lean === undefined));
+  const opaque = assertRule(
+    hooked('<input type="password" onpaste="handlePaste(event)">'),
+    RULE_ID,
+    'cantTell'
+  );
+  assert.equal(opaque.occurrences[0].data.details.reasonCode, 'PASTE_HANDLER_OPAQUE');
+  assert.equal(opaque.occurrences[0].lean, undefined);
+});

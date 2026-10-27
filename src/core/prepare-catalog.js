@@ -144,6 +144,13 @@ function prepareStandards(registry, { where = '' } = {}) {
           .map(([name, p]) => [name, p.wcagVersion])
       )
     ),
+    // Profiles whose standard keeps 4.1.1 Parsing's text, whatever the 2023
+    // errata to WCAG 2.0 and 2.1 say (keepsParsing in the registry).
+    profileKeepsParsing: standardsData.flatMap((s) =>
+      Object.entries(s.profiles)
+        .filter(([, p]) => p.keepsParsing)
+        .map(([name]) => name)
+    ),
     profileWcagTargets: Object.fromEntries(
       Object.entries({ ...WCAG_PROFILE_TAGS, ...pick('tags') })
         .map(([name, tags]) => [name, profileWcagTarget(tags)])
@@ -454,7 +461,8 @@ function catalogData({ standards, profiles, optInOwned, i18n, i18nLeftOut, known
     profileSeverity: profiles.profileSeverity || {},
     profileMappings: standards.profileMappings,
     profileTargets: standards.profileTargets,
-    profileWcagVersions: standards.profileWcagVersions || {}
+    profileWcagVersions: standards.profileWcagVersions || {},
+    profileKeepsParsing: standards.profileKeepsParsing || []
   };
 }
 

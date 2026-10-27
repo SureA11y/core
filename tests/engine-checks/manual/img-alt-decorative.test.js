@@ -345,3 +345,40 @@ test(`${RULE_ID}: lazy-load placeholders and differently drawn svgs are not the 
     [1, 1, 2, 1, 2]
   );
 });
+
+// A hidden image that is all a link holds, with no name on the link, leaves
+// it unnamed: it leans fail. An image 2 px wide or high, or one whose file is
+// named as a spacer, shows nothing to describe: it leans pass. Any other
+// hidden image needs a person.
+test(`${RULE_ID}: leans fail on an unnamed control, pass on a spacer, none otherwise`, () => {
+  const run = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body><main>${body}</main></body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+
+  const control = run('<a href="/home"><img src="home.png" alt=""></a>');
+  assert.strictEqual(control.data.details.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
+  assert.strictEqual(control.lean.toward, 'fail');
+  assert.strictEqual(control.lean.i18n.whyKey, 'img_altDecorative_lean_why_control');
+
+  const tiny = run('<p>Text</p><img src="line.png" alt="" width="600" height="1">');
+  assert.strictEqual(tiny.data.details.reasonCode, 'EXCLUDED_ELEMENT_REVIEW');
+  assert.strictEqual(tiny.lean.toward, 'pass');
+  assert.strictEqual(tiny.lean.i18n.whyKey, 'img_altDecorative_lean_why_tiny');
+
+  const spacer = run('<p>Text</p><img src="/img/spacer.gif" alt="">');
+  assert.strictEqual(spacer.lean.toward, 'pass');
+  assert.strictEqual(spacer.lean.i18n.whyKey, 'img_altDecorative_lean_why_spacer');
+  assert.deepStrictEqual(spacer.lean.signals, [
+    { signal: 'spacer-file-name', value: 'spacer.gif' }
+  ]);
+
+  const photo = run('<p>Text</p><img src="team-photo.jpg" alt="" width="400" height="300">');
+  assert.strictEqual(photo.data.details.reasonCode, 'EXCLUDED_ELEMENT_REVIEW');
+  assert.strictEqual(photo.lean, undefined);
+});

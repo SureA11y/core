@@ -10,9 +10,9 @@
  * (CSSOM: cssRules throws), so a rule that looks for something in the CSS,
  * as css-orientation-lock does, can't tell whether it is there and asks
  * about it. Many such sheets are served with CORS headers (fonts services,
- * CDNs), so a script may fetch them all the same; axe does the same before
- * it scans. This fetches every sheet the page can't read, those it links
- * and those an @import brings in, and resolves with
+ * CDNs), so a script may fetch them all the same. This fetches every sheet
+ * the page can't read, those it links and those an @import brings in,
+ * whether in a sheet the page reads or in one it fetches, and resolves with
  * [{ href, text }] for the ones it got, which a scan takes as
  * engineOptions.styleSheetTexts. A sheet the server doesn't share stays
  * unreadable; a binding can fetch it from outside the page instead.
@@ -81,16 +81,50 @@ async function preloadStyleSheets(options) {
     });
   }
 
-  const got = await Promise.all(
-    hrefs.map((href) =>
-      withTimeout(
-        fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
-          res && res.ok ? res.text().then((text) => ({ href, text })) : null
-        )
+  function fetchText(href) {
+    return withTimeout(
+      fetchFn(href, { mode: 'cors', credentials: 'omit' }).then((res) =>
+        res && res.ok ? res.text().then((text) => ({ href, text })) : null
       )
-    )
-  );
-  return got.filter((s) => s && typeof s.text === 'string');
+    );
+  }
+
+  // The sheets a fetched sheet @imports, by their absolute URL. The page
+  // can't list them, since it can't read the sheet that imports them.
+  const IMPORT = /@import\s+(?:url\(\s*(['"]?)([^'")\s]+)\1\s*\)|(['"])([^'"]+)\3)/gi;
+  function importsOf(sheet) {
+    const out = [];
+    const text = sheet.text.replace(/\/\*[\s\S]*?\*\//g, '');
+    for (const m of text.matchAll(IMPORT)) {
+      try {
+        out.push(new URL(m[2] || m[4], sheet.href).href);
+      } catch {
+        // not a URL
+      }
+    }
+    return out;
+  }
+
+  // Fetched level by level, so the sheets one imports are fetched once it
+  // has come, and each URL once.
+  const seen = new Set(hrefs);
+  const out = [];
+  let level = hrefs;
+  for (let depth = 0; level.length && depth <= 10; depth++) {
+    const got = (await Promise.all(level.map(fetchText))).filter(
+      (s) => s && typeof s.text === 'string'
+    );
+    out.push(...got);
+    level = [];
+    for (const sheet of got) {
+      for (const href of importsOf(sheet)) {
+        if (seen.has(href)) continue;
+        seen.add(href);
+        level.push(href);
+      }
+    }
+  }
+  return out;
 }
 
 module.exports = { preloadStyleSheets };

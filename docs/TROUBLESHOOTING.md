@@ -2,7 +2,7 @@
 
 ## "`runOnly` threw: no rule or tag named …, or either rule ids or tags"
 
-Since 1.10.0, `runOnly` given as a bare array or string is read as rule ids or as tags, the way axe-core reads it (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument)). It throws in two cases:
+Since 1.10.0, `runOnly` given as a bare array or string is read as rule ids or as tags (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#via-runonly-4th-argument)). It throws in two cases:
 
 - **A value that names no rule and no tag**, usually a typo: `runOnly: ['img-alt-presnt']`. Check the id against `getChecksCatalog()`. Case is not the cause: rule ids and tags are matched in any case, so `IMG-ALT-PRESENT` selects `img-alt-present`.
 - **Rule ids and tags in one array**: `runOnly: ['img-alt-present', 'wcag2a']`. Use the object form to combine them:
@@ -67,18 +67,30 @@ Two common causes, in order of likelihood:
 1. **The element is excluded from the accessibility tree** — `aria-hidden="true"`, `display: none`, `visibility: hidden`, `hidden`, or an `inert` ancestor. Most rules skip content that's already invisible to assistive technology, since checking a hidden element would be meaningless and could produce a misleading `fail` on content no user encounters. Some rules explicitly opt out of this gating when it wouldn't make sense to (e.g. `no-autoplay-audio` — hidden audio still plays sound) — check the specific rule's file header comment (`@applicability`) in `src/checks/`.
 2. **`excludeSelectors`** — if you've configured this (directly or inherited from a shared config), confirm the element in question isn't matched by it. Remember this can also be scoped to a single rule via `engineOptions.rules[ruleId].excludeSelectors` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#rule-scoped-excludeselectors)) — if a rule you expect to fire keeps coming back `notApplicable`/`pass` for one element only, check whether that rule specifically has its own exclude list configured, not just the global one.
 
-## "Does a clean scan (`pass` everywhere) mean the page is WCAG conformant?"
+## "Every check passed, so why is each WCAG criterion `cantTell`?"
 
-No — see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). A `pass` means the checks that ran came back clean on the part of the page they scanned. A scan scoped to part of a page, limited to some rules, or run under jsdom checks less than it could. A meaningful fraction of WCAG requires human judgment (accurate alt text, understandable error messages) or dynamic testing this engine's architecture can't do at all (keyboard traps, reflow at zoom) — see [`LIMITATIONS.md`](./LIMITATIONS.md) for the explicit, non-exhaustive-on-purpose list.
+Since 1.14.0, a WCAG rollup in `rulesResults` passes only for a criterion whose rules check all it asks, and no criterion is listed as such yet (`COMPLETE_CHECK` in `src/coverage/complete-applicability.js`). Where every rule of a criterion passes, its rollup is `cantTell` with `reasonCode` `composite.rollup.cantTell.partialCheck`: the parts the rules check are met, and a person checks the rest. `html-lang-attr-present` finds that `<html lang="fr">` names a language, not that the page is in French. Likewise, a criterion whose rules all found nothing is `notApplicable` only where they find every case it applies to, and otherwise `cantTell` with `composite.rollup.cantTell.partialCoverage`. A failing rule still fails its criterion. Show these as "checks passed, needs review" and "nothing found to check", never as passed; see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md).
+
+## "Does a clean scan (no failures) mean the page is WCAG conformant?"
+
+No — see [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md). A rule's `pass` means the checks that ran came back clean on the part of the page they scanned. A scan scoped to part of a page, limited to some rules, or run under jsdom checks less than it could. A meaningful fraction of WCAG requires human judgment (accurate alt text, understandable error messages) or dynamic testing this engine's architecture can't do at all (keyboard traps, reflow at zoom) — see [`LIMITATIONS.md`](./LIMITATIONS.md) for the explicit, non-exhaustive-on-purpose list.
 
 ## "Should I treat `cantTell` as a failure?"
 
-Treat it as "needs a human to look" — it's neither pass nor fail by design. A common choice is to log `cantTell` findings without failing CI on them, since failing a build on something the engine explicitly couldn't determine tends to train people to ignore the gate. A team that wants every one reviewed before a merge can gate on them instead; either way, keep them apart from failures. See [`POLICY.md`](./POLICY.md) if you want to reshape this behavior (e.g. via a custom policy contract), and [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) for a concrete CI-gating example.
+Treat it as "needs a human to look" — it's neither pass nor fail by design. A common choice is to log `cantTell` findings without failing CI on them, since failing a build on something the engine explicitly couldn't determine tends to train people to ignore the gate. A team that wants every one reviewed before a merge can gate on them instead; either way, keep them apart from failures. In between, a build can gate only on the findings that lean fail, where the page's evidence points to a failure: `leanFailAs` in the JUnit and SARIF reporters, or `leaningFailures(result)` (see [`LEANS.md`](./LEANS.md)). Each `cantTell` finding of a core rule says how to answer it in `howToCheck`. See [`POLICY.md`](./POLICY.md) if you want to reshape this behavior (e.g. via a custom policy contract), and [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result) for a concrete CI-gating example.
 
 ## "What happens if a locale is only partially translated?"
 
-Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Key parity is enforced rather than hoped for: `npm run i18n:sync` carries any new or renamed `en.json` key into every other locale file, and the build fails if one is out of step. A key it adds holds the English text until someone translates it, so a locale can be behind on wording without ever being behind on keys.
+Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Key parity is enforced in core's own build rather than hoped for: every new or renamed English key is carried into every other locale file, holding the English text until someone translates it, so a locale can be behind on wording without ever being behind on keys.
 
 ## "`runDomRulesInPage` vs `runa11yCoreInPage` — which one do I want?"
 
 `runDomRulesInPage` if you're calling it directly in the same Node process (jsdom). `runa11yCoreInPage` if you're handing the *function itself* to a different JS realm — almost always `page.evaluate` in Puppeteer/Playwright, which serializes the function to source text and re-runs it inside the browser tab (which has no access to your Node module scope). See [`INTEGRATION.md`](./INTEGRATION.md) for both patterns worked out in full.
+
+## "After upgrading, my baseline reports known findings as new and their entries as stale"
+
+A finding's identity includes its reason code, and 1.14.0 gave codes to seventeen rules that had none and split a few codes by cause. A baseline written by 1.13 keeps matching those findings under 1.14.x, through `src/baseline-moves.json`; a finding whose outcome changed with the upgrade is new or gone all the same, and the changelog says why. Rewrite the file's codes with `migrateBaselineEntries` from `@surea11y/core/baseline`, or regenerate it and review the diff, before 1.15. See [`BASELINE.md`](./BASELINE.md#upgrading).
+
+## "`css-orientation-lock` asks about `STYLESHEETS_NOT_READABLE`"
+
+A page's script can't read a style sheet another origin serves (a CDN, a fonts service), so the rules that read CSS can't tell what it holds. Give the scan its text in `engineOptions.styleSheetTexts`: `preloadStyleSheets()`, or `runa11yCoreInPageAsync` on the browser bundle, fetches those the server shares, and a tool driving the browser can fetch the others from outside the page. See [`INTEGRATION.md`](./INTEGRATION.md#style-sheets-from-another-origin).

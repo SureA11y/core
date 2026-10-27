@@ -23,6 +23,7 @@
  *   resources. identical-iframes-same-purpose asks the question 4b1c6c does
  *   ask, of the computed accessible name, which for a frame is the title
  *   attribute unless aria-label or aria-labelledby overrides it.
+ * @reason-codes none
  * @implementation-notes
  * - Reduced to notApplicable rather than only marked deprecated because a
  *   deprecated rule keeps running and reporting normally, and leaving the

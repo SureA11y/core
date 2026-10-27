@@ -4,8 +4,9 @@
 
 const { wcagLinks, WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 const { NORMATIVE_STANDARDS } = require('./coverage/standards.js');
-const { COMPLETE_APPLICABILITY } = require('./coverage/complete-applicability.js');
+const { COMPLETE_APPLICABILITY, COMPLETE_CHECK } = require('./coverage/complete-applicability.js');
 const { POLICY_CONTRACTS } = require('./policy/contracts.js');
+const { tierOf, occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 
 /**
  * What the reporters (/report, /sarif, /junit, /earl, /baseline) accept as a
@@ -254,16 +255,6 @@ function policyOf(check) {
 
 const OUTCOMES = ['fail', 'pass', 'cantTell', 'notApplicable'];
 
-// An occurrence's tier as the reporters read it: occurrenceOutcome, or the
-// outcome an older label-in-name wrote; undefined for none.
-function tierOf(occurrence) {
-  if (!occurrence || typeof occurrence !== 'object') return undefined;
-  for (const tier of [occurrence.occurrenceOutcome, occurrence.outcome]) {
-    if (tier === 'fail' || tier === 'cantTell') return tier;
-  }
-  return undefined;
-}
-
 // A check read by the rule the engine applies as it writes one
 // (normalizeRuleResult in scripts/build-core.js), so a result stored
 // before the engine did reads as it would now. Its outcome agrees with
@@ -309,8 +300,9 @@ function tieredCheck(check) {
 
 // A rollup with its contributors' outcomes read again, rolled up by the
 // engine's precedence (docs/OUTPUT_SCHEMA.md): any fail, then any cantTell
-// or missing rule, then all notApplicable, else pass; an outcome its policy
-// doesn't allow is cantTell, with it kept in policyOutcome, as for a check.
+// or missing rule, then all notApplicable, else pass where the rules check
+// all the criterion asks; an outcome its policy doesn't allow is cantTell,
+// with it kept in policyOutcome, as for a check.
 function rolledUp(rollup, contributors) {
   const count = (outcome) => contributors.filter((c) => c && c.outcome === outcome).length;
   const metrics = {
@@ -322,6 +314,20 @@ function rolledUp(rollup, contributors) {
   };
   const details = rollup.data.details;
   const total = Array.isArray(details.checksIds) ? details.checksIds.length : contributors.length;
+  // As the engine does: the WCAG criteria the rollup judges, a standard's
+  // only when it restates WCAG criteria (details.restatesWcag); its own
+  // requirements are its to judge, except one its rules don't check in full
+  // (details.partial).
+  const meta = rollup.meta || {};
+  const sc = meta.standard
+    ? Array.isArray(details.restatesWcag)
+      ? details.restatesWcag.map(String)
+      : []
+    : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
+        .filter((m) => m && m.standard === 'WCAG')
+        .map((m) => String(m.requirement));
+  const coveredBy = (list) =>
+    details.partial !== true && sc.every((n) => Object.prototype.hasOwnProperty.call(list, n));
   let outcome = 'pass';
   let reasonCode = 'composite.rollup.pass.otherwise';
   if (metrics.failCount) {
@@ -336,23 +342,9 @@ function rolledUp(rollup, contributors) {
       ? 'composite.rollup.cantTell.notSelectedChild'
       : 'composite.rollup.cantTell.missingChild';
   } else if (total && metrics.notApplicableCount === total) {
-    // As the engine does: a WCAG criterion is notApplicable only when its
-    // rules find every case it applies to (coverage/complete-applicability.js).
-    // A standard's rollup only when it restates WCAG criteria
-    // (details.restatesWcag); its own requirements are its to judge, except
-    // one its rules don't check in full (details.partial).
-    const meta = rollup.meta || {};
-    const sc = meta.standard
-      ? Array.isArray(details.restatesWcag)
-        ? details.restatesWcag.map(String)
-        : []
-      : (Array.isArray(meta.normativeMappings) ? meta.normativeMappings : [])
-          .filter((m) => m && m.standard === 'WCAG')
-          .map((m) => String(m.requirement));
-    if (
-      details.partial !== true &&
-      sc.every((n) => Object.prototype.hasOwnProperty.call(COMPLETE_APPLICABILITY, n))
-    ) {
+    // A WCAG criterion is notApplicable only when its rules find every case
+    // it applies to (coverage/complete-applicability.js).
+    if (coveredBy(COMPLETE_APPLICABILITY)) {
       outcome = 'notApplicable';
       reasonCode = 'composite.rollup.notApplicable.allInapplicable';
     } else {
@@ -362,6 +354,10 @@ function rolledUp(rollup, contributors) {
   } else if (!total) {
     outcome = 'cantTell';
     reasonCode = 'composite.rollup.cantTell.emptyComposite';
+  } else if (!coveredBy(COMPLETE_CHECK)) {
+    // It passes only when its rules check all it asks (the same file).
+    outcome = 'cantTell';
+    reasonCode = 'composite.rollup.cantTell.partialCheck';
   }
   const read = { ...rollup, outcome };
   delete read.policyOutcome;
@@ -593,6 +589,69 @@ function wcagScopeOf(result) {
   };
 }
 
+// An occurrence's reason code, or 'DEFAULT'. Only a string is a reason code:
+// a number, an object or an empty string a rule left there reads as none, so
+// no finding identity holds "[object Object]" or a 0.
+function reasonCodeOf(occurrence) {
+  const code =
+    occurrence && occurrence.data && occurrence.data.details && occurrence.data.details.reasonCode;
+  return typeof code === 'string' && code ? code : 'DEFAULT';
+}
+
+function isWcagCriterionEntry(m) {
+  return !!(m && m.requirement && (m.standard == null || m.standard === 'WCAG') && !m.type);
+}
+
+// The undecided occurrences of one frame's result whose lean points to fail,
+// as the reporters gate on them (leanFailAs): [{ check, occurrence }]. A rule
+// whose every WCAG criterion is outside the scan's target (wcagScopeOf) is
+// left out, as its findings never gate a build scoped to the target, and so
+// is a check with no rule id, which no reporter names. With `wcagOnly`, only
+// the rules mapped to a WCAG criterion in the target are kept, which leaves
+// out the best-practice rules, whose stated facts lean fail without condition
+// (docs/LEANS.md).
+function leaningOccurrencesOf(frameResult, options = {}) {
+  const inScope = wcagScopeOf(frameResult);
+  const out = [];
+  for (const check of (frameResult && frameResult.checksResults) || []) {
+    if (!check || !check.ruleId || !Array.isArray(check.occurrences)) continue;
+    if (check.outcome !== 'fail' && check.outcome !== 'cantTell') continue;
+    const mappings = (check.meta && check.meta.normativeMappings) || [];
+    const criteria = (Array.isArray(mappings) ? mappings : []).filter(isWcagCriterionEntry);
+    const inTarget = criteria.filter(inScope);
+    if (criteria.length && !inTarget.length) continue;
+    if (options.wcagOnly && !inTarget.length) continue;
+    for (const occurrence of check.occurrences) {
+      if (!occurrence || occurrenceOutcome(check, occurrence) !== 'cantTell') continue;
+      if (!occurrence.lean || occurrence.lean.toward !== 'fail') continue;
+      out.push({ check, occurrence });
+    }
+  }
+  return out;
+}
+
+// The undecided findings of a result (or of every frame of a cross-frame
+// result) that lean fail and gate under leanFailAs: { ruleId, reasonCode,
+// occurrence, frame? }, `frame` being the path of a child frame.
+function leaningFailures(result, options) {
+  const opts = options && typeof options === 'object' ? options : {};
+  const out = [];
+  for (const { frame, result: frameResult } of framesOf(result, 'leaningFailures')) {
+    if (!frameResult) continue;
+    for (const { check, occurrence } of leaningOccurrencesOf(frameResult, {
+      wcagOnly: opts.wcagOnly === true
+    })) {
+      out.push({
+        ruleId: check.ruleId,
+        reasonCode: reasonCodeOf(occurrence),
+        occurrence,
+        ...(frame.path.length ? { frame: frame.path.slice() } : {})
+      });
+    }
+  }
+  return out;
+}
+
 module.exports = {
   assertScanResult,
   isCrossFrameResult,
@@ -609,5 +668,10 @@ module.exports = {
   standardsOf,
   standardsInfoOf,
   standardOfEntryIn,
-  wcagScopeOf
+  wcagScopeOf,
+  occurrenceOutcome,
+  reviewGroupOf,
+  reasonCodeOf,
+  leaningOccurrencesOf,
+  leaningFailures
 };

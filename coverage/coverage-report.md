@@ -5,19 +5,19 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **144**
+Total rules (loaded without error): **145**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 115 | 26 | 10 |
+| Any WCAG version | 116 | 27 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 107 | 19 | 10 |
+| WCAG 2.0 | 108 | 20 | 10 |
 | WCAG 2.1 | 6 | 5 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
@@ -29,7 +29,7 @@ Total rules (loaded without error): **144**
 | wcag21aa | 5 |
 | wcag22aa | 2 |
 | wcag2a | 96 |
-| wcag2aa | 10 |
+| wcag2aa | 11 |
 | wcag2aaa | 10 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -113,7 +113,7 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| video-caption | manual | Prerecorded video should provide a captions track | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
+| video-caption | manual | Prerecorded video should provide complete captions | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
 
 ### 1.3.1
 
@@ -241,6 +241,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
 
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| image-of-text-evidence | manual | image-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
+
 ### 1.4.6
 
 Facet coverage: **2/2** facets covered.
@@ -290,9 +303,9 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
-| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
@@ -341,7 +354,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
-| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
+| moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
@@ -443,9 +456,9 @@ Rules missing facet mapping for this SC: manual-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
-| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
@@ -545,7 +558,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| invalid-field-error-message | automatic | Fields marked invalid must have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+| invalid-field-error-message | automatic | Fields marked invalid should have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
 
 ### 3.3.2
 
@@ -561,7 +574,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
-| form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-single-label | automatic | Form controls should not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
 | form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
@@ -809,7 +822,7 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| video-caption | manual | Prerecorded video should provide a captions track | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
+| video-caption | manual | Prerecorded video should provide complete captions | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
 
 ### 1.3.1
 
@@ -937,6 +950,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
 
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| image-of-text-evidence | manual | image-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
+
 ### 1.4.6
 
 Facet coverage: **2/2** facets covered.
@@ -986,9 +1012,9 @@ Rules missing facet mapping for this SC: manual-review
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
-| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 | widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
@@ -1037,7 +1063,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
-| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
+| moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
@@ -1139,9 +1165,9 @@ Rules missing facet mapping for this SC: manual-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
-| focus-not-removed-by-script | manual | A script does not remove focus from an element as it receives it | src/checks/manual/focus-not-removed-by-script-manual.js | focus-not-removed-by-script-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.4.9
@@ -1241,7 +1267,7 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| invalid-field-error-message | automatic | Fields marked invalid must have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+| invalid-field-error-message | automatic | Fields marked invalid should have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
 
 ### 3.3.2
 
@@ -1257,7 +1283,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
-| form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-single-label | automatic | Form controls should not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
 | form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8

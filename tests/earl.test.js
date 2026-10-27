@@ -203,6 +203,7 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '1.4.2': 'audio-control',
     '1.4.3': 'contrast-minimum',
     '1.4.4': 'resize-text',
+    '1.4.5': 'images-of-text',
     '1.4.6': 'contrast-enhanced',
     '2.1.1': 'keyboard',
     '2.1.3': 'keyboard-no-exception',

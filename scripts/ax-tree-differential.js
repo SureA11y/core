@@ -26,9 +26,8 @@
  *   --file=   any local HTML file (repeatable)
  *   --url=    any page (repeatable)
  *
- * Not part of `npm test`: a manually run dev tool, like
- * scripts/other-engine-corpus-check.js, since it needs Playwright's Chromium
- * and its results move with Chromium's releases.
+ * Not part of `npm test`: a manually run dev tool, since it needs
+ * Playwright's Chromium and its results move with Chromium's releases.
  *
  * Usage:
  *   node scripts/ax-tree-differential.js [--sources=fixtures,examples]
@@ -202,7 +201,7 @@ const KNOWN_DIFFERENCES = [
   {
     id: 'svg-desc',
     reason:
-      "an SVG <desc> is its parent's description (SVG-AAM), never a node of its own in Chromium's tree; the engine counts it as content, which changes no verdict: the rules read it as the parent's description",
+      "an SVG <desc> is its parent's description (SVG-AAM), never a node of its own in Chromium's tree; the engine counts it as exposed, which changes no verdict: it is read only as the parent's description, never as content",
     matches: (d, e) => d.kind === 'hidden' && !d.element.reasons.length && e.tag === 'desc'
   },
   {
@@ -440,12 +439,6 @@ function engineView(nameFromContent) {
           ? helpers.getNameFromContentInfo(el)
           : helpers.getAccessibleNameInfo(el);
         name = (info && info.value) || '';
-        // An <svg>'s <title> child names it; svg-text-alternative-present
-        // reads it itself, as no shared helper does.
-        if (!name && tag === 'svg') {
-          const title = [...el.children].find((c) => c.localName === 'title');
-          if (title) name = title.textContent.replace(/\s+/g, ' ').trim();
-        }
         // An input button's value, else HTML's default label, as
         // button-name-present reads it.
         const type = tag === 'input' ? String(el.getAttribute('type') || '').toLowerCase() : '';

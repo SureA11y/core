@@ -12,6 +12,9 @@
  *   parent element also has other visible text content (i.e. text nodes
  *   besides the image itself, commonly an <a> or <button> wrapping both
  *   an icon image and a text label).
+ *   Finding nothing to ask about, it reports notApplicable, not pass: it
+ *   applies only to what its check flags, and finding nothing there
+ *   doesn't show that all is well.
  * @expectation
  *   The image's alt text is not the same (case-insensitive, normalized)
  *   as the other visible text already in the same parent. When both are
@@ -21,6 +24,13 @@
  * @reports
  *   - `alt`: the image's alt text, with spacing collapsed. It matches the
  *     text next to it.
+ * @reason-codes
+ *   - `IMAGE_ALT_REDUNDANT` (cantTell): an image's alt text repeats the
+ *     visible text next to it in the same parent, so the same words may be
+ *     read twice.
+ *     It leans fail when the image has no role="none" or "presentation":
+ *     the page states the repetition, and a best practice never fails.
+ *     Basis: HTML img alt (best practice); H2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -49,7 +59,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IMAGE_ALT_REDUNDANT: {
+      steps: [
+        'Find the image the report names and the text next to it in the same link, button or parent.',
+        'With a screen reader, move to that link or button, or read its computed name in the Accessibility pane, and listen to whether the words are said twice.',
+        'If the image is already hidden from assistive technology, note that nothing is repeated.'
+      ],
+      passWhen:
+        'The words are read once: the image is hidden or has alt="", or its alt adds something the text does not say.',
+      failWhen:
+        "The image's alt repeats the text beside it, so the same words are read twice, a best-practice miss (H2)."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -113,6 +138,17 @@ function runInPage(ctx) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     const alt = normalizeWs(dom.getAttribute(el, 'alt'));
     if (!alt) continue;
+    // An image assistive technology never reads (aria-hidden on it or around
+    // it) can't say anything twice.
+    if (helpers && typeof helpers.isAccTreeEligible === 'function') {
+      let elig;
+      try {
+        elig = helpers.isAccTreeEligible(el, ctx);
+      } catch {
+        elig = true;
+      }
+      if ((typeof elig === 'boolean' ? elig : !!(elig && elig.eligible)) === false) continue;
+    }
 
     const parent = dom.parentElement(el);
     if (!parent) continue;
@@ -124,8 +160,29 @@ function runInPage(ctx) {
 
     if (otherText.toLowerCase() !== alt.toLowerCase()) continue;
 
+    // The repetition is a fact the page states; this best practice never
+    // fails, so it leans fail. A presentational role may take the image's
+    // alt out of what is read, so that case gets no lean.
+    const explicitRole = (() => {
+      try {
+        return (helpers.aria && helpers.aria.getExplicitRole(el)) || '';
+      } catch {
+        return '';
+      }
+    })();
+    const presentational = explicitRole === 'none' || explicitRole === 'presentation';
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(presentational
+          ? {}
+          : {
+              lean: {
+                toward: 'fail',
+                why: "The image's alt text is the same as the text beside it, so the words are read twice.",
+                signals: [{ signal: 'alt-equals-adjacent-text', value: true }],
+                i18n: { whyKey: 'imageRedundantAlt_lean_why' }
+              }
+            }),
         summary: "This image's alt text duplicates other visible text right next to it.",
         hint: 'If the image adds nothing beyond that text, use alt=""; otherwise rewrite the alt text so it doesn\'t repeat it.',
         i18n: {

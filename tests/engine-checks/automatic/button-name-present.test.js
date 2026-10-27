@@ -356,7 +356,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/button-name-present-all-scena
     'btn_case_27',
     'btn_case_29',
     'btn_case_31',
-    'btn_case_34'
+    'btn_case_34',
+    'btn_case_36'
   ];
 
   for (const id of expectedFailIds) {

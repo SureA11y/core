@@ -20,23 +20,63 @@
  *   size: 3:1 for large text, 4.5:1 for everything else. Text is large at
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
- *   Text whose fill draws nothing (transparent, or the colour of its
- *   background), drawn only by a -webkit-text-stroke or a text-shadow, is
- *   left to contrast-computable, except where every colour it is drawn in
- *   is below the ratio against a flat background: no reading of it can then
- *   meet the criterion, and it fails, measured by the best of those colours
- *   (`drawnBy`: `textStroke` or `textShadow`).
+ *   Text drawn by a -webkit-text-stroke or a text-shadow is left to
+ *   contrast-computable, except where every color it is drawn in, its
+ *   fill among them unless the fill draws nothing (transparent, or the
+ *   color of its background), is below the ratio against a flat
+ *   background: no reading of it can then meet the criterion, and it
+ *   fails, measured by the best of those colors (`drawnBy`: `textStroke`
+ *   or `textShadow`).
  *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. Only text within 10% of its
  *   ratio counts as close, so text further above it gives no margin.
  *   `measuredCount` counts the elements whose contrast was computed.
+ *   Text part of which a ::first-line or ::first-letter paints in a color
+ *   of its own is measured in both colors: where both reach their ratio it
+ *   passes, where both fall short it fails (`pseudoElementColor` names the
+ *   pseudo-element), and where they disagree it is left to
+ *   contrast-computable.
+ *   contrast-computable decides what to ask about at WCAG's ratios. At
+ *   ratios of this rule's own (a variant's settings), text in two colors
+ *   that disagree only at those ratios, and text drawn by an outline or a
+ *   shadow whose best color reaches them but not WCAG's AA ratio, are
+ *   asked about here (`PSEUDO_ELEMENT_COLOR`, `TEXT_STROKE`,
+ *   `TEXT_SHADOW`), since no other rule would. Text drawn by an outline whose best
+ *   color lies between WCAG's AA ratio and a higher ratio of the
+ *   variant's fails here and is asked about by contrast-computable too:
+ *   two answers to two requirements, the variant's and WCAG 1.4.3.
  *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
- *   fails when the page chose its colours: the placeholder's color,
+ *   fails when the page chose its colors: the placeholder's color,
  *   opacity or background, or the field's background, differ from the
- *   browser's own, read in a blank frame. In the browser's own colours it
- *   meets the ratio (WCAG G148), and when that can't be told it is a
- *   `cantTell` occurrence.
+ *   browser's own, read in a blank frame. A placeholder left in the
+ *   browser's own colors is taken to meet the ratio (WCAG G148), and when
+ *   that can't be told it is a `cantTell` occurrence.
+ *   Text with no opaque background behind it, up to the root, is measured
+ *   on the canvas the browser paints under the page, in either contrast
+ *   mode: the Canvas color of the color scheme the page is drawn in, which
+ *   the page's own color-scheme (on the root, or in <meta
+ *   name="color-scheme">) decides, as CSS Color Adjustment 1 defines it.
+ *   A page that declares no scheme is drawn in light, on white, whatever
+ *   the user prefers; one that declares only dark is drawn on the dark canvas. In a
+ *   browser the colors are read from the page; an emulator (jsdom), which
+ *   resolves no system color, takes Chromium's (#121212 for the dark
+ *   canvas, #ffffff for the text a dark scheme gives). A canvas the scan
+ *   names, when `contrast.rootCanvasFallback` gives one, is measured in its
+ *   place.
+ *   Where the canvas can't be known (in a frame, where the page around it
+ *   may show through; under forced colors, where it is the user's palette)
+ *   the text is left to contrast-computable, or measured on the fallback
+ *   with the `auditorAssist` mode.
+ *   A page that supports both schemes (`light dark`) is drawn in the one
+ *   the user prefers. The scan sees that one (in a browser, as it is drawn;
+ *   jsdom draws light), and its text is measured there and, where its
+ *   colors can't change with the scheme, in the other too, on that
+ *   scheme's canvas: not where a rule in a prefers-color-scheme query, a
+ *   light-dark() value or a system color (other than the scheme's own
+ *   text and link colors, where no rule colors the text) reaches the
+ *   text's color or a background behind it. It fails where it fails in
+ *   either scheme measured, and passes where it passes in each.
  * @reports
  *   - `metrics.ratio` (text below the threshold): the text's contrast
  *     ratio against its background (4.5 for 4.5:1), against
@@ -47,11 +87,22 @@
  *     hex, after any transparency is blended in.
  *     `colors.foregroundRgba` and `colors.backgroundRgba` give the same two
  *     colors in `rgba()` form.
+ *   - `selectField` (a drop-down select in the browser's own background):
+ *     `backgroundHex`, its computed background, and `fieldHex`, the Field
+ *     color Chromium paints it in. The text is measured against both and
+ *     the lower ratio is reported.
  *   - `typography.fontSizePx`, `typography.fontSizePt` (text below the
  *     threshold): the font size as drawn, in CSS pixels and in points:
  *     the computed size times CSS zoom, or for SVG text its viewBox and
- *     transform scale. This is the size the large-text threshold is judged
- *     on, as WCAG's "size when the content is delivered".
+ *     transform scale, and times what font-size-adjust scales the font by
+ *     (its adjust value over the font's own aspect, read in a browser).
+ *     This is the size the large-text threshold is judged on, as WCAG's
+ *     "size when the content is delivered".
+ *   - `typography.declaredFontSizePx`, `typography.sizeScaledBy` (text
+ *     below the threshold, drawn at another size): the computed font-size,
+ *     and what drew it otherwise (`zoom`, `svg`, `font-size-adjust`). Where
+ *     that puts the text on the other side of the large-text line, the hint
+ *     says so (`contrast_hint_drawnSize`).
  *   - `typography.fontWeight`, `typography.fontWeightLabel` (text below the
  *     threshold): the computed font weight as a number (400, 700) and as
  *     written.
@@ -59,15 +110,30 @@
  *     threshold): whether the text counts as bold, and as large text, the
  *     size that only needs 3:1.
  *   - The ratio, threshold and typography fields above are a stable
- *     contract (API_STABILITY.md), unlike the rest of `data.details`.
+ *     contract, unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (text below the
- *     threshold): `null` unless the `auditorAssist` contrast mode had to
- *     assume a page background because the page sets none that is opaque.
- *     Then `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and
- *     `assumedRootCanvasColor` is the color assumed (white by default).
+ *     threshold): `null` unless the page sets no opaque background and the
+ *     text was measured on a canvas color the scan names
+ *     (`contrast.rootCanvasFallback`), or, with the `auditorAssist` mode
+ *     where the page's own canvas can't be known (in a frame, under forced
+ *     colors), on the fallback (white by default). Then
+ *     `assumptionsApplied` is `['ROOT_CANVAS_FALLBACK']` and
+ *     `assumedRootCanvasColor` is that color.
+ *   - `colorScheme` (text below the threshold, on the canvas of a page that
+ *     supports light and dark): `'light'` or `'dark'`, the scheme in which it
+ *     falls short, where it passes in the other, and the hint names it; the
+ *     ratio and colors are that scheme's. Absent where it falls short in
+ *     every scheme measured (then reported in the scheme the page is drawn
+ *     in) and on a page with one scheme.
+ *   - `colorSchemesChecked` (text below the threshold, and the pass): the
+ *     schemes the text on the canvas was measured in, `['light']` or
+ *     `['dark']`, where the page supports both and one could not be
+ *     measured. A binding can scan again with the browser in the other
+ *     scheme. Absent where every scheme
+ *     the page supports was measured.
  *   - `generatedBy` (generated text below the threshold): `::before`,
  *     `::after` or `::marker`, the pseudo-element whose text is measured;
- *     the selector names its element, and the colours and font are the
+ *     the selector names its element, and the colors and font are the
  *     pseudo-element's.
  *   - `eligibleTextCount`, `computableTextCount` (the summary when nothing
  *     fails): how many text nodes the rule looked at, and how many of them
@@ -76,11 +142,70 @@
  *     forced): `true`, and the hint says to check the page again with
  *     forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
- *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ *     them.
+ * @reason-codes
+ *   - `ALL_ABOVE_THRESHOLD` (pass): all the computable text reaches the ratio
+ *     its size requires.
+ *     Basis: WCAG 1.4.3; G18; G145; ACT afw4f7.
+ *   - `BELOW_THRESHOLD` (fail): text below the ratio its size requires,
+ *     including text drawn by an outline or a shadow every color of which,
+ *     its fill included when seen, is below it.
+ *     Basis: WCAG 1.4.3; G18; G145; ACT afw4f7.
+ *   - `PLACEHOLDER_BELOW_THRESHOLD` (fail, cantTell): a field's placeholder
+ *     below its ratio. It fails when the page chose its colors, and is asked
+ *     about when that can't be told; in the browser's own colors it is not
+ *     reported.
+ *     Basis: WCAG 1.4.3; G148.
+ *   - `SYMBOLIC_CHARACTER_BELOW_THRESHOLD` (cantTell): a symbol that is not a
+ *     letter or a digit, below the ratio; whether it is text the criterion
+ *     covers is for a person.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `LOGO_TEXT_BELOW_THRESHOLD` (cantTell): text that looks like part of a
+ *     logo, below its ratio, asked about with the `logoText: 'ask'` setting:
+ *     logo text has no contrast requirement, and whether this is logo text
+ *     is for a person. By default such text fails (`BELOW_THRESHOLD`, with a
+ *     hint that logo text is exempt).
+ *     Basis: WCAG 1.4.3 (exception: logotypes).
+ *   - `CONTRAST_SWITCH_OFFERED` (cantTell): text below its ratio on a page
+ *     with a control that switches to higher contrast, asked about with the
+ *     `contrastSwitch: 'ask'` setting: whether the switch is easy to find and
+ *     brings the text to its ratio is for a person. By default such text
+ *     fails (`BELOW_THRESHOLD`, with a hint naming the switch).
+ *     Basis: WCAG 1.4.3 (not settled); G174.
+ *   - `SEMIBOLD_BELOW_THRESHOLD` (cantTell): text of weight 600 to 699,
+ *     between the bold large-text size and 24px, that reaches the large-text
+ *     ratio but not the other, asked about with the `semiBold: 'ask'`
+ *     setting: whether it reads as bold, and so is large text, is for a
+ *     person. By default it is normal text and fails (`BELOW_THRESHOLD`).
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `PSEUDO_ELEMENT_COLOR` (cantTell): text part of which a ::first-line
+ *     or ::first-letter paints in a color of its own, one of whose colors
+ *     reaches the ratio and the other not, given only at ratios other than
+ *     WCAG's (a variant's settings) where the two agree at WCAG's AA and AAA
+ *     ratios, so contrast-computable doesn't ask; which words each color
+ *     paints depends on line breaks.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `TEXT_STROKE` (cantTell): text drawn by a -webkit-text-stroke whose
+ *     best color reaches the ratio, given only at ratios other than WCAG's
+ *     where that color is below WCAG's AA ratio, so contrast-computable
+ *     doesn't ask; whether the letters are seen in that color is for a
+ *     person.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `TEXT_SHADOW` (cantTell): the same for text drawn by a text-shadow.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error;
+ *     the text is to be measured by hand.
+ *     Basis: WCAG 1.4.3 (not settled).
+ *   - `UNKNOWN` (fail): text below its ratio whose finding lost its details;
+ *     a safeguard, not expected in a normal scan.
+ *     Basis: WCAG 1.4.3.
  * @implementation-notes
  * - Its thresholds are settings (`settings` below), so another standard's
  *   contrast requirement is a variant of this rule rather than a copy
  *   (docs/RULE_AUTHORING.md, "Rule variants"). Without settings it is WCAG's.
+ * - Text whose background can't be worked out is never measured here, so
+ *   this rule has no code for it: contrast-computable asks about that text
+ *   (`BACKGROUND_NOT_COMPUTABLE` and its other blockers).
  */
 
 const id = 'contrast-minimum';
@@ -110,7 +235,120 @@ const meta = {
   type: 'automatic',
   defaultConfidence: 'high',
   coverage: { facetsBySc: { '1.4.3': ['contrast-minimum-text'] } },
-  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } }
+  margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min', band: { relative: 0.1 } },
+  // Reason codes picked from a table (SPECIAL, below) under some settings,
+  // which scripts/generate-finding-ids.js can't read from the source.
+  // Codes given only at ratios other than WCAG's (pushAskOccurrence) too.
+  reasonCodes: [
+    'CONTRAST_SWITCH_OFFERED',
+    'LOGO_TEXT_BELOW_THRESHOLD',
+    'PSEUDO_ELEMENT_COLOR',
+    'SEMIBOLD_BELOW_THRESHOLD',
+    'TEXT_SHADOW',
+    'TEXT_STROKE'
+  ],
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    CONTRAST_SWITCH_OFFERED: {
+      steps: [
+        'Find the contrast switch the report names and check that it is easy to find, near the top of the page or on every page, and reachable by keyboard.',
+        'Turn the switch on.',
+        "Find the text the report names and use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background, comparing with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'Move to another page and check that the setting holds.'
+      ],
+      passWhen:
+        'The switch is easy to find and use, and with it on the text reaches its ratio (G174).',
+      failWhen:
+        'The switch is hard to find or does not raise this text to its ratio, so the text fails WCAG 1.4.3.'
+    },
+    ENGINE_EXCEPTION: {
+      steps: [
+        'Find the text the report names (the check stopped early, so nothing was measured).',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background directly behind the letters.",
+        'Note the text size and weight and compare the ratio with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).'
+      ],
+      passWhen: 'The ratio reaches the threshold for its size.',
+      failWhen: 'The ratio is below the threshold for its size, which fails WCAG 1.4.3.'
+    },
+    LOGO_TEXT_BELOW_THRESHOLD: {
+      steps: [
+        'Find the text the report names (often in the site header or its home link).',
+        "Decide whether it is part of a logo or brand name, such as the site's name in its logo treatment, rather than a slogan, menu item or other text.",
+        "If it is not logo text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold)."
+      ],
+      passWhen:
+        'The text is part of a logo or brand name, which has no contrast requirement, or it reaches its ratio.',
+      failWhen:
+        'The text is not part of a logo or brand name and is below its ratio, which fails WCAG 1.4.3.'
+    },
+    PLACEHOLDER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the field the report names and empty it so the placeholder shows.',
+        "In the Styles pane, check whether the page's CSS sets the ::placeholder color or opacity, or the field's background.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the placeholder text against the field background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
+      ],
+      passWhen:
+        "The placeholder reaches 4.5:1 (or 3:1 if large), or it is drawn entirely in the browser's own default colors.",
+      failWhen:
+        'The page sets the placeholder or field colors and the ratio is below the threshold, which fails WCAG 1.4.3.'
+    },
+    PSEUDO_ELEMENT_COLOR: {
+      steps: [
+        'Find the text the report names and note the ::first-line or ::first-letter color in the Styles pane.',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure both the element's text color and the first-line or first-letter color against the background.",
+        'Resize the window to see which words the first-line color paints at different widths.',
+        'Compare each ratio with the one the report gives as needed for that color.'
+      ],
+      passWhen: 'Both colors reach the ratio they need.',
+      failWhen: 'Either color gives a ratio below the one it needs, so the text fails the check.'
+    },
+    SEMIBOLD_BELOW_THRESHOLD: {
+      steps: [
+        'Find the semi-bold text the report names.',
+        'Compare it side by side with bold text (weight 700) of the same size and font on the page or in the developer tools, toggling font-weight.',
+        'Decide whether it reads as bold; if it does, it counts as large and needs 3:1, otherwise 4.5:1.'
+      ],
+      passWhen: 'The text reads as bold, so it is large text and its ratio meets 3:1.',
+      failWhen:
+        'The text does not read as bold, so it is normal text below 4.5:1, which fails WCAG 1.4.3.'
+    },
+    SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
+      steps: [
+        'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
+        'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
+        "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 4.5:1 (3:1 for large text: at least 24px, or 18.66px and bold).",
+        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
+      ],
+      passWhen:
+        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
+      failWhen:
+        'It is text below 4.5:1, which fails WCAG 1.4.3; or an icon below 3:1, which fails WCAG 1.4.11.'
+    },
+    TEXT_SHADOW: {
+      steps: [
+        'Find the text the report names and note its text-shadow.',
+        'Zoom in and check whether the shadow forms a solid outline or halo around every letter.',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the color that forms the letters against the background.",
+        'Compare the ratio with the one the report gives as needed.'
+      ],
+      passWhen: 'The color that forms the letters reaches the ratio needed.',
+      failWhen:
+        'The color that forms the letters gives a ratio below the one needed, so the text fails the check.'
+    },
+    TEXT_STROKE: {
+      steps: [
+        'Find the text the report names and note its -webkit-text-stroke width and color.',
+        'Zoom in to see which color forms most of each letter (a thin stroke counts less than the fill).',
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure that color against the background.",
+        'Compare the ratio with the one the report gives as needed.'
+      ],
+      passWhen: 'The color that forms the letters reaches the ratio needed.',
+      failWhen:
+        'The color that forms the letters gives a ratio below the one needed, so the text fails the check.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -215,18 +453,19 @@ function runInPage(ctx) {
       const fontSizePx = cs ? helpers.contrast.parsePx(cs.fontSize) : null;
       const fontWeightNum = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
 
-      // The size as drawn: CSS zoom and an SVG viewBox scale the text the
-      // page delivers (helpers.contrast.renderedTextScale).
-      const scale =
-        typeof helpers.contrast.renderedTextScale === 'function'
-          ? helpers.contrast.renderedTextScale(el)
-          : 1;
-      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * scale : 0;
+      // The size as drawn: CSS zoom, an SVG viewBox and font-size-adjust
+      // scale the text the page delivers (helpers.contrast.renderedTextSize).
+      const drawn =
+        typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const sizePx = Number.isFinite(fontSizePx) ? fontSizePx * drawn.scale : 0;
       const isBold = Number.isFinite(fontWeightNum) && fontWeightNum >= 700;
-      const isLarge =
+      const largeAt = (px) =>
         BOLD_LARGE_MIN_PX === null
-          ? helpers.contrast.isLargeText(sizePx, fontWeightNum)
-          : helpers.contrast.isLargeText(sizePx, fontWeightNum, BOLD_LARGE_MIN_PX);
+          ? helpers.contrast.isLargeText(px, fontWeightNum)
+          : helpers.contrast.isLargeText(px, fontWeightNum, BOLD_LARGE_MIN_PX);
+      const isLarge = largeAt(sizePx);
 
       const out = {
         fontSizePx: sizePx,
@@ -237,6 +476,12 @@ function runInPage(ctx) {
         isLarge,
         isLargeText: isLarge
       };
+      // What the page drew it at, where that isn't its font-size.
+      if (drawn.by.length && Number.isFinite(fontSizePx)) {
+        out.declaredFontSizePx = fontSizePx;
+        out.sizeScaledBy = drawn.by;
+        out.declaredIsLargeText = largeAt(fontSizePx);
+      }
 
       __elFontCache.set(el, out);
       return out;
@@ -279,6 +524,9 @@ function runInPage(ctx) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // The color schemes text on the page's canvas was measured in, where the
+  // page supports one it wasn't (acrossSchemes), for the pass's evidence.
+  let schemesChecked = null;
 
   function pushPassOccurrence(eligibleCount, computableCount) {
     try {
@@ -303,7 +551,8 @@ function runInPage(ctx) {
             metrics: {
               eligibleTextCount: Number(eligibleCount) || 0,
               computableTextCount: Number(computableCount) || 0
-            }
+            },
+            ...(schemesChecked ? { colorSchemesChecked: schemesChecked.slice(0) } : {})
           }
         }
       });
@@ -316,7 +565,7 @@ function runInPage(ctx) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colors
   // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
@@ -350,7 +599,7 @@ function runInPage(ctx) {
   }
 
   // Logo-like text and a page's contrast switch stay failures by default,
-  // as in axe and Alfa, with a hint that says why they might not be: WCAG
+  // with a hint that says why they might not be: WCAG
   // 1.4.3 exempts logo text, and a switch to sufficient contrast meets it
   // (G174). A variant may ask about them instead (logoText, contrastSwitch:
   // 'ask'), and ask about semi-bold text that would pass as bold (semiBold).
@@ -405,6 +654,26 @@ function runInPage(ctx) {
   // special: { kind: 'logo' | 'switch' | 'semiBold', mode: 'fail' | 'ask',
   // switchName } for text that looks like a logo, on a page with a contrast
   // switch, or semi-bold (the settings above); null otherwise.
+  // What scaled the text, as CSS names it.
+  const SCALED_BY_LABEL = {
+    zoom: 'zoom',
+    svg: 'SVG transform',
+    'font-size-adjust': 'font-size-adjust'
+  };
+
+  // The params of a finding whose drawn size puts it on the other side of the
+  // large-text line from its font-size, so its threshold isn't the one its
+  // CSS suggests; {} for any other.
+  function drawnSizeNote(font) {
+    if (!font || !font.sizeScaledBy || font.declaredIsLargeText === font.isLargeText) return {};
+    return {
+      sizeNote: true,
+      declaredFontSizePx: String(Math.round(font.declaredFontSizePx * 100) / 100),
+      drawnFontSizePx: String(Math.round(font.fontSizePx * 100) / 100),
+      scaledBy: font.sizeScaledBy.map((b) => SCALED_BY_LABEL[b] || b).join(' + ')
+    };
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -415,7 +684,7 @@ function runInPage(ctx) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
-      // placeholder is 'ask' (whose colours they are can't be told) or
+      // placeholder is 'ask' (whose colors they are can't be told) or
       // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -429,29 +698,23 @@ function runInPage(ctx) {
         };
       }
 
-      // The background is the only input this rule can fail to resolve; every other
-      // reason code here describes a ratio it did compute.
+      // Every reason code here describes a ratio the rule computed: text
+      // whose colors can't be worked out is left to contrast-computable.
       const uncertainty =
-        det.reasonCode === 'BACKGROUND_NOT_COMPUTABLE'
+        placeholder === 'ask'
           ? {
-              code: 'not-computable',
-              needed: 'The effective background colour behind this text.',
-              evidence: { reasonCode: det.reasonCode, foreground: det.fg || null }
+              code: 'judgement-required',
+              needed:
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colors.'
             }
-          : placeholder === 'ask'
+          : symbol
             ? {
                 code: 'judgement-required',
                 needed:
-                  'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                  'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
+                evidence: { character: symbol }
               }
-            : symbol
-              ? {
-                  code: 'judgement-required',
-                  needed:
-                    'Whether this character is text to read, held to the text ratio, or an icon, held to 3:1 as a graphic (1.4.11).',
-                  evidence: { character: symbol }
-                }
-              : null;
+            : null;
 
       const occBase = {
         selector: '',
@@ -491,6 +754,24 @@ function runInPage(ctx) {
         data: { details: det }
       };
 
+      if (params && params.sizeNote && !placeholder && !symbol) {
+        occBase.hint = `Its font-size is ${params.declaredFontSizePx}px, but ${params.scaledBy} draws it at ${params.drawnFontSizePx}px, and text is judged by the size it is drawn at: ${params.isLargeText ? 'large text' : 'not large text'}, which needs ${params.threshold}:1. Change the text color, the background color, or both, so the ratio reaches it.`;
+        occBase.i18n.hintKey = 'contrast_hint_drawnSize';
+      }
+
+      // Text that falls short in one of the two color schemes the page
+      // supports, on its canvas: the hint names the scheme.
+      if (
+        det.colorScheme &&
+        !placeholder &&
+        !symbol &&
+        (occBase.i18n.hintKey === 'contrastMinimum_hint_fail' ||
+          occBase.i18n.hintKey === 'contrast_hint_drawnSize')
+      ) {
+        const scheme = det.colorScheme === 'dark' ? 'dark' : 'light';
+        occBase.hint = `In the page's ${scheme} color scheme, this text has a contrast ratio of ${params.ratio}:1 against ${params.backgroundHex}, below ${params.threshold}:1. Change its colors in that scheme so the ratio reaches it.`;
+        occBase.i18n.hintKey = `contrast_hint_colorScheme_${scheme}`;
+      }
       if (special && !placeholder && !symbol) applySpecial(occBase, special, params);
 
       // Bind the occurrence to an element deterministically, but still let the engine
@@ -534,6 +815,107 @@ function runInPage(ctx) {
     }
   }
 
+  // Text drawn by an outline or a shadow, or painted in part by a
+  // ::first-line or ::first-letter, that this rule can't decide at its own
+  // ratios and contrast-computable, deciding at WCAG's, leaves to it (ask:
+  // from outlineOnlyAnalysis or pseudoColorAnalysis).
+  function pushAskOccurrence(el, ask) {
+    try {
+      if (!el || seenFailEls.has(el) || occurrences.length >= MAX_OCCURRENCES) return;
+      seenFailEls.add(el);
+      const C = helpers.contrast;
+      const hex = (c) => (C.rgbToHex ? C.rgbToHex(c) : '');
+      const rc = ask.reasonCode;
+      let params;
+      let details;
+      let summary;
+      let hint;
+      let summaryKey;
+      let hintKey;
+      if (rc === 'PSEUDO_ELEMENT_COLOR') {
+        const side = (x) => ({
+          ratio: x.ratio,
+          threshold: x.threshold,
+          foregroundHex: hex(x.fg),
+          backgroundHex: hex(x.bg),
+          isLargeText: !!x.font.isLargeText
+        });
+        const own = side(ask.own);
+        const part = side(ask.pseudo);
+        params = {
+          reasonCode: rc,
+          pseudoElement: ask.pseudoElement,
+          ownRatio: C.round2(own.ratio),
+          ownThreshold: String(own.threshold),
+          ownForegroundHex: own.foregroundHex,
+          pseudoRatio: C.round2(part.ratio),
+          pseudoThreshold: String(part.threshold),
+          pseudoForegroundHex: part.foregroundHex
+        };
+        details = {
+          reasonCode: rc,
+          pseudoElementColor: ask.pseudoElement,
+          own,
+          pseudoElement: part
+        };
+        summary = `Part of this text is painted by ${params.pseudoElement}, and which part depends on how the lines break. In its own color (${params.ownForegroundHex}) it has a contrast of ${params.ownRatio}:1, against ${params.ownThreshold}:1 needed; in the ${params.pseudoElement} color (${params.pseudoForegroundHex}), ${params.pseudoRatio}:1, against ${params.pseudoThreshold}:1. One reaches its ratio and the other does not.`;
+        hint = `Resize the window to see which words ${params.pseudoElement} paints, and check that each color reaches its ratio there; if one falls short, change it.`;
+        summaryKey = 'contrastMinimum_cantTell_pseudoElementColor';
+        hintKey = 'contrastMinimum_hint_cantTell_pseudoElementColor';
+      } else {
+        params = {
+          reasonCode: rc,
+          ratio: C.round2(ask.ratio),
+          threshold: String(ask.threshold),
+          foregroundHex: hex(ask.fg),
+          backgroundHex: hex(ask.bg),
+          blockerProperty: ask.blockerProperty,
+          blockerValue: ask.blockerValue
+        };
+        details = {
+          reasonCode: rc,
+          drawnBy: ask.drawnBy,
+          metrics: { ratio: ask.ratio, threshold: ask.threshold },
+          colors: { foregroundHex: params.foregroundHex, backgroundHex: params.backgroundHex },
+          blockerProperty: ask.blockerProperty,
+          blockerValue: ask.blockerValue
+        };
+        const by = rc === 'TEXT_STROKE' ? 'an outline' : 'a shadow';
+        summary = `This text is drawn with ${by} (${params.blockerProperty}=${params.blockerValue}). Its best color, ${params.foregroundHex}, has a contrast of ${params.ratio}:1 against ${params.backgroundHex}, which reaches ${params.threshold}:1, but whether the letters are seen in that color depends on how much of them it draws.`;
+        hint = `Zoom in and measure the color that forms most of each letter against the background; it needs ${params.threshold}:1.`;
+        summaryKey =
+          rc === 'TEXT_STROKE'
+            ? 'contrastMinimum_cantTell_textStroke'
+            : 'contrastMinimum_cantTell_textShadow';
+        hintKey = 'contrastMinimum_hint_cantTell_outline';
+      }
+      const occBase = {
+        selector: '',
+        html: '',
+        summary,
+        hint,
+        i18n: { summaryKey, hintKey, params },
+        uncertainty: {
+          code: 'not-computable',
+          needed:
+            rc === 'PSEUDO_ELEMENT_COLOR'
+              ? 'Which words the pseudo-element paints, and whether each color reaches its ratio there.'
+              : 'Which color forms the letters, and whether it reaches the ratio.',
+          evidence: { reasonCode: rc }
+        },
+        occurrenceOutcome: 'cantTell',
+        data: { details }
+      };
+      const reported =
+        typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(el, occBase)
+          : occBase;
+      occurrences.push(reported && typeof reported === 'object' ? reported : occBase);
+    } catch {
+      // no-throw
+    }
+  }
+
   // perf: per-element analysis cache (per run)
   let __elAnalysisCache = new WeakMap();
   if (__contrastSharedCache) {
@@ -558,11 +940,11 @@ function runInPage(ctx) {
     scan = null;
   }
 
-  // Text drawn only by a stroke or a shadow, whose fill draws nothing: the
-  // computability gate asks about it (TEXT_STROKE, TEXT_SHADOW), but where
-  // even the best colour it is drawn in is below the ratio against a flat
-  // background, no reading of it meets the criterion, so it is measured by
-  // that colour (helpers.contrast.measureOutlineOnlyText).
+  // Text drawn by a stroke or a shadow: the computability gate asks about
+  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best color it is
+  // drawn in, its fill included when seen, is below the ratio against a
+  // flat background, no reading of it meets the criterion, so it is
+  // measured by that color (helpers.contrast.measureOutlineOnlyText).
   function outlineOnlyAnalysis(el, blocker) {
     if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
       return null;
@@ -579,7 +961,27 @@ function runInPage(ctx) {
         : font.isLargeText
           ? LARGE_TEXT_RATIO
           : NORMAL_TEXT_RATIO;
-    if (!(m.ratio < threshold)) return null;
+    if (!(m.ratio < threshold)) {
+      // At ratios of its own (a variant's settings), text whose best color
+      // reaches them but not WCAG's AA ratio is one contrast-computable
+      // leaves to this rule and this rule can't decide: it asks.
+      if (SETTINGS_KEY !== '' && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) {
+        return {
+          computable: false,
+          ask: {
+            reasonCode: blocker.reasonCode,
+            ratio: m.ratio,
+            threshold,
+            fg: m.drawn,
+            bg: m.background,
+            drawnBy: m.drawnBy,
+            blockerProperty: blocker.blockerProperty || '',
+            blockerValue: blocker.blockerValue || ''
+          }
+        };
+      }
+      return null;
+    }
     return {
       computable: true,
       ratio: m.ratio,
@@ -589,6 +991,7 @@ function runInPage(ctx) {
           : null,
       bgAssumedRootCanvasColor:
         typeof m.bg.assumedRootCanvasColor === 'string' ? m.bg.assumedRootCanvasColor : null,
+      canvas: m.bg.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -599,8 +1002,86 @@ function runInPage(ctx) {
     };
   }
 
+  // Text part of which a ::first-line or ::first-letter paints in a color
+  // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
+  // but where its own colors and the pseudo-element's both reach their
+  // ratio, or both fall short of it, every reading of the text does too
+  // (helpers.contrast.measurePseudoElementText). It is measured then by the
+  // colors closest to their ratio when both reach it, and by the best when
+  // both fall short; where they disagree it is left to contrast-computable.
+  function pseudoColorAnalysis(el, blocker) {
+    if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
+      return null;
+    if (typeof helpers.contrast.measurePseudoElementText !== 'function') return null;
+    const m = helpers.contrast.measurePseudoElementText(el, {
+      contrast: { mode, rootCanvasFallback },
+      collectStack: false
+    });
+    if (!m) return null;
+    const thresholdFor = (large) =>
+      SETTINGS_KEY === ''
+        ? helpers.contrast.requiredRatio('AA', large)
+        : large
+          ? LARGE_TEXT_RATIO
+          : NORMAL_TEXT_RATIO;
+    const ownFont = getFontInfo(el);
+    const pWeight = m.pseudo.fontWeightNum;
+    const pLarge =
+      BOLD_LARGE_MIN_PX === null
+        ? helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight)
+        : helpers.contrast.isLargeText(m.pseudo.fontSizePx, pWeight, BOLD_LARGE_MIN_PX);
+    const pseudoFont = {
+      fontSizePx: m.pseudo.fontSizePx,
+      fontSizePt: helpers.contrast.pxToPt(m.pseudo.fontSizePx),
+      fontWeightNum: pWeight,
+      fontWeight: helpers.contrast.fontWeightLabel(pWeight),
+      isBold: Number.isFinite(pWeight) && pWeight >= 700,
+      isLarge: pLarge,
+      isLargeText: pLarge
+    };
+    const own = { ...m.own, font: ownFont, threshold: thresholdFor(ownFont.isLargeText) };
+    const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
+    const ownPasses = own.ratio >= own.threshold;
+    if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
+      // contrast-computable asks where the colors disagree at WCAG's AA or
+      // AAA ratio. Where they disagree only at ratios of this rule's own (a
+      // variant's settings), no one else asks, so this rule does.
+      if (SETTINGS_KEY === '') return null;
+      const agreeAt = (level) =>
+        m.own.ratio >= helpers.contrast.requiredRatio(level, m.own.isLargeText) ===
+        m.pseudo.ratio >= helpers.contrast.requiredRatio(level, m.pseudo.isLargeText);
+      if (!agreeAt('AA') || !agreeAt('AAA')) return null;
+      return {
+        computable: false,
+        ask: { reasonCode: 'PSEUDO_ELEMENT_COLOR', pseudoElement: m.pseudo.pseudo, own, pseudo }
+      };
+    }
+    const share = (x) => x.ratio / x.threshold;
+    const pick = ownPasses
+      ? share(pseudo) < share(own)
+        ? pseudo
+        : own
+      : share(pseudo) > share(own)
+        ? pseudo
+        : own;
+    return {
+      computable: true,
+      ratio: pick.ratio,
+      bgAssumptionsApplied: m.assumptionsApplied,
+      bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
+      ratioStr: helpers.contrast.round2(pick.ratio),
+      threshold: pick.threshold,
+      thresholdStr: `${pick.threshold}`,
+      font: pick.font,
+      fgOpaque: pick.fg,
+      bgOpaque: pick.bg,
+      pseudoElementColor: m.pseudo.pseudo
+    };
+  }
+
   // Text a ::before, ::after or ::marker generates (#219), measured in the
-  // pseudo-element's colour and font against what lies behind it
+  // pseudo-element's color and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
   // to contrast-computable, as for an element's own text.
   function generatedAnalysis(el, pseudo) {
@@ -637,6 +1118,7 @@ function runInPage(ctx) {
       ratio: m.ratio,
       bgAssumptionsApplied: m.assumptionsApplied,
       bgAssumedRootCanvasColor: m.assumedRootCanvasColor,
+      canvas: m.canvas || null,
       ratioStr: helpers.contrast.round2(m.ratio),
       threshold,
       thresholdStr: `${threshold}`,
@@ -644,6 +1126,145 @@ function runInPage(ctx) {
       fgOpaque: m.fg,
       bgOpaque: m.bg
     };
+  }
+
+  // Text measured against its background: bg and fg as computed, in
+  // `scheme` where given (a color scheme the page supports and isn't drawn
+  // in now, on its canvas: helpers.contrast.colorSchemeMeasurable), else as
+  // the page is drawn. { computable, ratio, threshold, ..., canvas }.
+  function mainAnalysis(el, scheme) {
+    let analysis;
+    // The caches hold the scheme the page is drawn in.
+    const bgCache = scheme ? null : __elBgCache;
+    const fgCache = scheme ? null : __elFgCache;
+    let bg = bgCache ? bgCache.get(el) : null;
+    if (!bg) {
+      bg = helpers.contrast.computeEffectiveBackground(el, {
+        contrast: { mode, rootCanvasFallback, ...(scheme ? { colorScheme: scheme } : {}) },
+        collectStack: false
+      });
+      // Not computable: contrast-computable asks about this text.
+      bg = bg || { ok: false, rgba: null, alpha: 0 };
+      if (bgCache) bgCache.set(el, bg);
+    }
+
+    const bgAssumptionsApplied =
+      bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
+        ? bg.assumptionsApplied.slice(0)
+        : null;
+    const bgAssumedRootCanvasColor =
+      bg && typeof bg.assumedRootCanvasColor === 'string' ? bg.assumedRootCanvasColor : null;
+
+    let fg = fgCache ? fgCache.get(el) : null;
+    if (!fg) {
+      fg = scheme
+        ? helpers.contrast.computeEffectiveForeground(el, { contrast: { colorScheme: scheme } })
+        : helpers.contrast.computeEffectiveForeground(el);
+      fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
+      if (fgCache) fgCache.set(el, fg);
+    }
+
+    if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
+      analysis = { computable: false };
+    } else {
+      // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
+      let fgOpaque =
+        fg.rgba.a != null && fg.rgba.a < 1
+          ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
+          : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
+
+      let bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
+
+      let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
+
+      // A drop-down select in the browser's own background is drawn
+      // on the Field color in some browsers and on its computed
+      // background in others: text that fails on either fails, so
+      // the lower ratio counts.
+      const field =
+        typeof helpers.contrast.nativeSelectField === 'function'
+          ? helpers.contrast.nativeSelectField(el)
+          : null;
+      let selectField = null;
+      if (field) {
+        const fgOnField =
+          fg.rgba.a != null && fg.rgba.a < 1
+            ? helpers.contrast.compositeRgba(fg.rgba, field)
+            : fgOpaque;
+        const onField = helpers.contrast.contrastRatio(fgOnField, field);
+        selectField = {
+          backgroundHex: helpers.contrast.rgbToHex(bgOpaque),
+          fieldHex: helpers.contrast.rgbToHex(field)
+        };
+        if (onField < ratio) {
+          fgOpaque = fgOnField;
+          bgOpaque = field;
+          ratio = onField;
+        }
+      }
+
+      const font = getFontInfo(el);
+      const threshold =
+        SETTINGS_KEY === ''
+          ? helpers.contrast.requiredRatio('AA', font.isLargeText)
+          : font.isLargeText
+            ? LARGE_TEXT_RATIO
+            : NORMAL_TEXT_RATIO;
+
+      analysis = {
+        computable: true,
+        ratio,
+        bgAssumptionsApplied,
+        bgAssumedRootCanvasColor,
+        ratioStr: helpers.contrast.round2(ratio),
+        threshold,
+        thresholdStr: `${threshold}`,
+        font,
+        fgOpaque,
+        bgOpaque,
+        selectField,
+        canvas: bg.canvas || null
+      };
+    }
+    return analysis;
+  }
+
+  // Text on the page's canvas (analysis.canvas), on a page that supports
+  // two color schemes: measured in the one the page is drawn in, and in the
+  // other where its colors can't change with the scheme (measureIn,
+  // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
+  // scheme measured, by its ratio there, and colorScheme names that scheme
+  // where the other passes (failing in both, it is reported in the scheme
+  // the page is drawn in, naming none); it passes where it passes in each,
+  // by the ratio closest to its threshold.
+  // colorSchemesChecked lists the schemes measured where one wasn't.
+  function acrossSchemes(el, analysis, measureIn) {
+    const canvas = analysis && analysis.computable === true ? analysis.canvas : null;
+    if (!canvas || !canvas.scheme || !Array.isArray(canvas.supported)) return analysis;
+    if (canvas.supported.length < 2) return analysis;
+    const measured = [{ scheme: canvas.scheme, a: analysis }];
+    for (const scheme of canvas.supported) {
+      if (scheme === canvas.scheme || !measureIn) continue;
+      if (typeof helpers.contrast.colorSchemeMeasurable !== 'function') continue;
+      if (!helpers.contrast.colorSchemeMeasurable(el, scheme)) continue;
+      const other = measureIn(scheme);
+      if (other && other.computable === true && other.canvas && other.canvas.scheme === scheme)
+        measured.push({ scheme, a: other });
+    }
+    const share = (m) => m.a.ratio / m.a.threshold;
+    const failing = measured.filter((m) => !(m.a.ratio >= m.a.threshold));
+    // Failing in every scheme measured, it is reported as the page is drawn.
+    const pick =
+      failing.length === measured.length
+        ? measured[0]
+        : (failing.length ? failing : measured).reduce((best, m) =>
+            share(m) < share(best) ? m : best
+          );
+    const out = { ...pick.a };
+    if (failing.length && failing.length < measured.length) out.colorScheme = failing[0].scheme;
+    const checked = canvas.supported.filter((s) => measured.some((m) => m.scheme === s));
+    if (checked.length < canvas.supported.length) out.colorSchemesChecked = checked;
+    return out;
   }
 
   // Walk eligible visible text nodes (counted per text node), but compute expensive analysis once per element.
@@ -662,7 +1283,9 @@ function runInPage(ctx) {
         if (!el || textCount <= 0) continue;
 
         // Computability + contrast analysis (cached per element)
-        let analysis = pseudo ? generatedAnalysis(el, pseudo) : __elAnalysisCache.get(el);
+        let analysis = pseudo
+          ? acrossSchemes(el, generatedAnalysis(el, pseudo), null)
+          : __elAnalysisCache.get(el);
         if (!analysis) {
           // Computability gate (do NOT emit cantTell here; Rule 1 is responsible for that)
           let blocker = __elBlockerCache ? __elBlockerCache.get(el) : null;
@@ -679,80 +1302,33 @@ function runInPage(ctx) {
           }
 
           if (blocker && blocker.ok === false) {
-            analysis = outlineOnlyAnalysis(el, blocker) || { computable: false };
+            analysis = acrossSchemes(
+              el,
+              outlineOnlyAnalysis(el, blocker) ||
+                pseudoColorAnalysis(el, blocker) || { computable: false },
+              null
+            );
           } else {
-            let bg = __elBgCache ? __elBgCache.get(el) : null;
-            if (!bg) {
-              bg = helpers.contrast.computeEffectiveBackground(el, {
-                contrast: { mode, rootCanvasFallback },
-                collectStack: false
-              });
-              bg = bg || {
-                ok: false,
-                reasonCode: 'BACKGROUND_NOT_COMPUTABLE',
-                rgba: null,
-                alpha: 0
-              };
-              if (__elBgCache) __elBgCache.set(el, bg);
-            }
-
-            const bgAssumptionsApplied =
-              bg && Array.isArray(bg.assumptionsApplied) && bg.assumptionsApplied.length
-                ? bg.assumptionsApplied.slice(0)
-                : null;
-            const bgAssumedRootCanvasColor =
-              bg && typeof bg.assumedRootCanvasColor === 'string'
-                ? bg.assumedRootCanvasColor
-                : null;
-
-            let fg = __elFgCache ? __elFgCache.get(el) : null;
-            if (!fg) {
-              fg = helpers.contrast.computeEffectiveForeground(el);
-              fg = fg || { rgba: null, alpha: 0, opacityProduct: 1 };
-              if (__elFgCache) __elFgCache.set(el, fg);
-            }
-
-            if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
-              analysis = { computable: false };
-            } else {
-              // Compose FG over BG if FG has alpha (effective fg may be < 1 due to opacity chain)
-              const fgOpaque =
-                fg.rgba.a != null && fg.rgba.a < 1
-                  ? helpers.contrast.compositeRgba(fg.rgba, bg.rgba)
-                  : { r: fg.rgba.r, g: fg.rgba.g, b: fg.rgba.b, a: 1 };
-
-              const bgOpaque = { r: bg.rgba.r, g: bg.rgba.g, b: bg.rgba.b, a: 1 };
-
-              const ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
-
-              const font = getFontInfo(el);
-              const threshold =
-                SETTINGS_KEY === ''
-                  ? helpers.contrast.requiredRatio('AA', font.isLargeText)
-                  : font.isLargeText
-                    ? LARGE_TEXT_RATIO
-                    : NORMAL_TEXT_RATIO;
-
-              analysis = {
-                computable: true,
-                ratio,
-                bgAssumptionsApplied,
-                bgAssumedRootCanvasColor,
-                ratioStr: helpers.contrast.round2(ratio),
-                threshold,
-                thresholdStr: `${threshold}`,
-                font,
-                fgOpaque,
-                bgOpaque
-              };
-            }
+            analysis = acrossSchemes(el, mainAnalysis(el, null), (scheme) =>
+              mainAnalysis(el, scheme)
+            );
           }
           __elAnalysisCache.set(el, analysis);
         }
 
+        // Text this rule asks about itself (outlineOnlyAnalysis,
+        // pseudoColorAnalysis): only under ratios of its own.
+        if (analysis && analysis.ask && !pseudo) {
+          deferredCount += textCount;
+          pushAskOccurrence(el, analysis.ask);
+          continue;
+        }
         if (!analysis || analysis.computable !== true) continue;
 
         computableTextCount += textCount;
+        // Text on the canvas measured in only some of the page's color schemes.
+        if (analysis.colorSchemesChecked && !schemesChecked)
+          schemesChecked = analysis.colorSchemesChecked;
 
         const ratio = analysis.ratio;
         const font = analysis.font;
@@ -779,7 +1355,7 @@ function runInPage(ctx) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          // A placeholder in colours the page chose fails; in the browser's
+          // A placeholder in colors the page chose fails; in the browser's
           // own (G148) it meets the ratio; when that can't be told it is
           // asked about.
           const placeholderSource =
@@ -863,7 +1439,10 @@ function runInPage(ctx) {
             fontSizePx: font.fontSizePx,
             fontWeight: font.fontWeight,
             isBold: font.isBold,
-            isLargeText: font.isLargeText
+            isLargeText: font.isLargeText,
+            // The drawn size put the text on the other side of the large-text
+            // line from its font-size: the hint says why (drawnSizeNote).
+            ...drawnSizeNote(font)
           };
 
           const assumptionsApplied =
@@ -886,7 +1465,10 @@ function runInPage(ctx) {
               fontWeight: Number.isFinite(fwNum) ? fwNum : null,
               fontWeightLabel: fwLabel,
               isBold: !!font.isBold,
-              isLargeText: !!font.isLargeText
+              isLargeText: !!font.isLargeText,
+              ...(font.sizeScaledBy
+                ? { declaredFontSizePx: font.declaredFontSizePx, sizeScaledBy: font.sizeScaledBy }
+                : {})
             },
             colors: {
               foregroundHex: fgHex,
@@ -897,7 +1479,18 @@ function runInPage(ctx) {
             assumptionsApplied: assumptionsApplied,
             assumedRootCanvasColor: assumedRootCanvasColor,
             ...(analysis.drawnBy ? { drawnBy: analysis.drawnBy } : {}),
-            ...(pseudo ? { generatedBy: pseudo } : {})
+            ...(analysis.pseudoElementColor
+              ? { pseudoElementColor: analysis.pseudoElementColor }
+              : {}),
+            ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
+            ...(pseudo ? { generatedBy: pseudo } : {}),
+            // On the canvas of a page with two color schemes: the one it
+            // fails in, where it passes in the other, and those measured,
+            // where one wasn't (acrossSchemes).
+            ...(analysis.colorScheme ? { colorScheme: analysis.colorScheme } : {}),
+            ...(analysis.colorSchemesChecked
+              ? { colorSchemesChecked: analysis.colorSchemesChecked.slice(0) }
+              : {})
           };
 
           pushFailOccurrence(el, params, details, placeholderMode, pseudo, symbol, special);
@@ -939,8 +1532,9 @@ function runInPage(ctx) {
   }
 
   // If there was eligible text but nothing computable, this rule stays notApplicable
-  // because Rule 1 (computability) is responsible for cantTell.
-  if (computableTextCount === 0) {
+  // because Rule 1 (computability) is responsible for cantTell, unless this
+  // rule asked about some itself.
+  if (computableTextCount === 0 && deferredCount === 0) {
     return {
       ruleId: rule.ruleId,
       outcome: 'notApplicable',
@@ -1026,7 +1620,7 @@ const settingsInfo = {
   logoText: {
     values: ['fail', 'ask', 'exempt'],
     description:
-      "Text that looks like part of a logo (an id or class naming a logo or brand near it, or the banner's first link to the home page) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
+      "Text that looks like part of a logo (an id or class naming a logo, or the site's brand, on the text, up to two levels above it or on its link; or the banner's first link to the home page, holding an image or the site's name) below its ratio: fail, with a hint that logo text is exempt; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).",
     basis:
       'WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement"'
   },
@@ -1039,7 +1633,7 @@ const settingsInfo = {
   semiBold: {
     values: ['normal', 'ask'],
     description:
-      'Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700 (axe and Alfa count bold from 700); or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.',
+      'Text of weight 600 to 699, between the bold large-text size and 24px, that reaches largeTextRatio but not normalTextRatio: normal text, as for any weight under 700; or ask (cantTell, SEMIBOLD_BELOW_THRESHOLD) whether it reads as bold.',
     basis: 'WCAG 1.4.3 "large scale" text: WCAG says bold without a number'
   }
 };

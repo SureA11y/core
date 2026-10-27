@@ -1,10 +1,12 @@
 # RULE_TEMPLATE.md — Rule templates
 
 The template to copy is [`RULE_TEMPLATE.js`](./RULE_TEMPLATE.js): a complete rule module with
-the structured header, every meta key `scripts/validate-rule.js` reads, and a `runInPage` that
-reads the DOM through `ctx.helpers.dom`, reports through `helpers.reportOccurrence` and decides
-with `helpers.resolveTieredOutcome`. Its test is [`RULE_TEST_TEMPLATE.md`](./RULE_TEST_TEMPLATE.md).
-[`RULE_AUTHORING.md`](./RULE_AUTHORING.md) explains each part.
+the structured header, its `@reason-codes`, the meta keys every rule needs plus `review`, and a
+`runInPage` that reads the DOM through `ctx.helpers.dom`, reports through
+`helpers.reportOccurrence` and decides with `helpers.resolveTieredOutcome`. Its test is
+[`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js) ([`RULE_TEST_TEMPLATE.md`](./RULE_TEST_TEMPLATE.md)).
+[`RULE_AUTHORING.md`](./RULE_AUTHORING.md) explains each part, and the optional meta keys the
+template leaves out (`margin`, `reasonCodes`, `deprecated`).
 
 ---
 
@@ -15,12 +17,20 @@ with `helpers.resolveTieredOutcome`. Its test is [`RULE_TEST_TEMPLATE.md`](./RUL
    rules folder ([`PACKS.md`](./PACKS.md)). The id is bare kebab-case (`RULE_AUTHORING.md` §3).
 2. Replace every `<placeholder>`: the header tags, `meta`, the selector and the check itself.
    `meta.wcagSc`, `meta.normativeMappings`, the `wcag…` tags and `meta.coverage.facetsBySc`
-   name the same criteria; facet ids come from `src/coverage/wcag-facets.js`.
-3. Add each message key and its English text to `src/i18n/en.json`, then run
+   name the same criteria; facet ids come from `src/coverage/wcag-facets.js`, never a `macro`
+   one, which is for coverage only.
+3. List each reason code under `@reason-codes`, with its outcome, meaning and basis
+   (`RULE_AUTHORING.md` §10.1), and give each `cantTell` code its steps in `meta.review` (§8.6).
+4. Add each message key and its English text to `src/i18n/en.json`, then run
    `npm run i18n:sync`. `meta.title` and `meta.description` must match the dictionary text.
-4. Write the test and the scenario page (`RULE_AUTHORING.md` §11).
-5. Run `npx eslint <file>`, then `npm run build` and `node scripts/validate-rule.js <file>`.
+   The `meta.review` keys go in `src/i18n/review/en.json` and in each other locale there, by
+   hand: `i18n:sync` doesn't cover that folder.
+5. Write the test and the scenario page (`RULE_AUTHORING.md` §11).
+6. Run `npx eslint <file>`, then `npm run build` and `node scripts/validate-rule.js <file>`.
    The validator runs the rule through the built engine, so it needs the build.
+7. Regenerate what describes the rule: `npm run finding-ids`, `npm run fixtures:index`,
+   `npm run fixtures:markers` and `npm run docs:rule-catalog`, and add its section to
+   [`RULE_EXAMPLES.md`](./RULE_EXAMPLES.md).
 
 ## The core of `runInPage`
 

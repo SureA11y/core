@@ -1,7 +1,7 @@
 'use strict';
 
 // Logo-like text and a page's contrast switch still fail the contrast rules,
-// as in axe and Alfa, with a hint that says why they might not: WCAG 1.4.3
+// with a hint that says why they might not: WCAG 1.4.3
 // exempts logo text, and a switch to sufficient contrast meets it (G174). A
 // pack's variant of contrast-minimum may ask about them instead, exempt logo
 // text, and ask about semi-bold text that would pass as bold.
@@ -46,6 +46,25 @@ test('logo-like text still fails, with a hint that logo text is exempt', () => {
     }
     assert.equal(details(result, ruleId, 'logout').looksLikeLogo, undefined);
   }
+});
+
+// A brand's color classes and sections, a nav link to the home page and a
+// language switcher are not logos: only a logo word, or a token about the
+// site's name, near the text or on its link counts, and a banner's home
+// link only with an image or the site's name in it.
+test('text in a brand’s style or a navigation link is not taken for a logo', () => {
+  const html = page(
+    `<button class="btn btn-brand" id="btn" style="${GREY}">Buy now</button>` +
+      `<p class="text-brand-500" id="color" style="${GREY}">Text</p>` +
+      `<section class="brand-story"><div><div><div><p id="deep" style="${GREY}">Story</p></div></div></div></section>` +
+      `<div class="site-branding"><p id="tagline" style="${GREY}">Just another site</p></div>` +
+      `<header><nav><a href="/" id="home" style="${GREY}">Home</a></nav></header>` +
+      `<a class="site-logo" href="/"><span id="logo" style="${GREY}">Acme</span></a>`
+  );
+  const result = runa11yCoreOnHtml(html, { runOnly: ['contrast-minimum'] });
+  for (const id of ['btn', 'color', 'deep', 'tagline', 'home'])
+    assert.equal(details(result, 'contrast-minimum', id).looksLikeLogo, undefined, id);
+  assert.equal(details(result, 'contrast-minimum', 'logo').looksLikeLogo, true);
 });
 
 test('on a page with a contrast switch, failures name it in the hint', () => {

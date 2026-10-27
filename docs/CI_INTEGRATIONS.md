@@ -21,7 +21,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci && npm run build   # produce whatever static HTML you're scanning
       - run: npx @surea11y/cli scan ./dist/index.html
 ```
@@ -47,6 +47,8 @@ A baseline keeps known violations from failing the build; it doesn't make them a
 
 `upload-sarif` needs `security-events: write` permission and does not fail the job itself — pair it with a separate gating step (or `continue-on-error` + your own check) if you also want the build to fail on new violations.
 
+Findings that lean fail are `warning` alerts by default. Rendered with `renderSarifReport(result, { leanFailAs: 'error' })` from `@surea11y/core/sarif`, they are `error`s, so a gate on errors stops on likely failures too ([`SARIF.md`](./SARIF.md#options)); a baseline written with `buildBaselineEntries(result, { leanFail: true })` accepts the ones a page already has ([`BASELINE.md`](./BASELINE.md#findings-that-lean-fail)).
+
 ```yaml
 name: Accessibility scan
 on: [pull_request]
@@ -62,7 +64,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm ci && npm run build
       - name: Scan (report, don't fail the job here)
         run: npx @surea11y/cli scan ./dist/index.html --baseline a11y-baseline.json --sarif results.sarif
@@ -89,7 +91,7 @@ pipelines:
     '**':
       - step:
           name: Accessibility scan
-          image: node:20
+          image: node:22
           script:
             - npm ci
             - npm run build
@@ -108,7 +110,7 @@ GitLab, Azure DevOps, Jenkins and CircleCI show JUnit XML in their own test view
 
 ```yaml
 a11y:
-  image: node:20
+  image: node:22
   script:
     - npm ci
     - npm run build
@@ -137,7 +139,7 @@ steps:
       testResultsFiles: a11y.junit.xml
 ```
 
-`cantTell` rules arrive as skipped tests, never failures. With `--baseline`, failures already in the baseline are skipped tests too. To show `cantTell` rules as failures, the CLI has no flag: save the scan with `--json` and render it with `renderJunitReport(result, { cantTellAs: 'failure' })` from `@surea11y/core/junit` (see [`JUNIT.md`](./JUNIT.md)), which needs `@surea11y/core` in the project's own `devDependencies`. That changes the report, not the CLI's exit code.
+`cantTell` rules arrive as skipped tests, never failures. With `--baseline`, failures already in the baseline are skipped tests too. To show `cantTell` rules as failures, the CLI has no flag: save the scan with `--json` and render it with `renderJunitReport(result, { cantTellAs: 'failure' })` from `@surea11y/core/junit` (see [`JUNIT.md`](./JUNIT.md)), which needs `@surea11y/core` in the project's own `devDependencies`. `{ leanFailAs: 'failure' }` is the narrower choice: only the `cantTell` findings that lean fail become failures, each with why and the steps to confirm it. Either changes the report, not the CLI's exit code.
 
 ## Free-tier/private-repo minute limits
 

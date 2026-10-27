@@ -15,7 +15,10 @@
  * - each text a live region was given while shown and reachable by
  *   assistive technology: what the page made available to announce, read by
  *   getAnnouncements(). Not what a screen reader said, which depends on the
- *   screen reader, its settings and what else was being announced.
+ *   screen reader, its settings and what else was being announced. A text
+ *   given to a region behind an open modal dialog, which the browser makes
+ *   inert, is kept with behindModal: true: assistive technology did not get
+ *   it.
  * - a live region added to the page with its text already in it
  *   (LIVE_REGION_INSERTED_WITH_CONTENT): screen readers commonly announce
  *   changes to a region they already know, not the content of a new one, so
@@ -24,7 +27,14 @@
  * - a live region that was hidden (display: none, visibility: hidden,
  *   [hidden]) and was shown and given its text in the same task
  *   (LIVE_REGION_SHOWN_AND_FILLED): the region was not in the accessibility
- *   tree before the text arrived.
+ *   tree before the text arrived. A region shown because a <dialog> or
+ *   <details> around it was opened (its open attribute set, as showModal()
+ *   and show() do) or a popover around it was shown is taken as already
+ *   there with the text it had: only text given after counts, as an
+ *   announcement.
+ * - the last time each <dialog> was opened (its open attribute set), so
+ *   that a scan can tell what was given to a region behind a modal dialog
+ *   while it was open.
  *
  * The two findings are reported by live-region-announcements. A live region
  * is an element whose aria-live is polite or assertive, or, without an
@@ -34,16 +44,23 @@
  * recorded until the document has loaded.
  *
  * The page gets exactly what it would have: the hook wraps nothing, and only
- * observes. Its cost is one MutationObserver on the document, whose callback
+ * observes. Its cost is one MutationObserver on the document, and a
+ * beforetoggle listener that hands the observer's records to the hook before
+ * a popover opens, as showing a popover changes no attribute. The observer's callback
  * looks at the live regions a batch touched, so a page that changes no live
  * region pays for the mutation records only. Each list keeps its first
  * MAX_ENTRIES entries and counts the rest.
  *
  * The registry it leaves is a frozen object on the global, under
  * Symbol.for('surea11y.liveRegions'), which no page markup or named access
- * can produce: { version: 1, early, announcements, findings, dropped, flush }.
- * Each announcement is { text, politeness, time, element }; each finding is
- * { code, text, time, element }; time is performance.now() in milliseconds.
+ * can produce: { version: 1, early, announcements, findings, dialogsOpened,
+ * dropped, flush }. Each announcement is { text, politeness, time, order,
+ * behindModal, element }; each finding is { code, text, time, order,
+ * behindModal, element }; each
+ * dialogsOpened entry is { time, order, element }, one per dialog, for the
+ * last time it was opened. time is performance.now() in milliseconds; order
+ * is the place of the change among all the page made, counted in mutation
+ * records, so that changes made in one task keep their order.
  * `early` is whether it was installed before the document finished loading,
  * so that it saw every change since. `flush` hands the observer's pending
  * records to the hook, so a scan run in the same task as a change sees it.
@@ -135,6 +152,7 @@ const CONCRETE_ROLES = [
   'gridcell',
   'group',
   'heading',
+  'image',
   'img',
   'insertion',
   'link',
@@ -218,7 +236,11 @@ const LIVE_REGION_HOOK_SOURCE = [
   `    var CONCRETE = new Set(${JSON.stringify(CONCRETE_ROLES)});`,
   '    var announcements = [];',
   '    var findings = [];',
-  '    var dropped = { announcements: 0, findings: 0 };',
+  '    var dialogsOpened = [];',
+  '    var dropped = { announcements: 0, findings: 0, dialogsOpened: 0 };',
+  // The place of each change in the order the page made them: the index of
+  // the mutation record, counted from the first batch.
+  '    var order = 0;',
   // Each region seen: whether it was shown, and its text, when last looked at.
   '    var known = new WeakMap();',
   '    var regions = new Set();',
@@ -248,8 +270,10 @@ const LIVE_REGION_HOOK_SOURCE = [
   "      if (!role && String(el.localName).toLowerCase() === 'output') return 'polite';",
   "      return '';",
   '    }',
+  // An alert is announced when it is added with its text, whatever
+  // aria-live says beside it (aria-live="off" is left out before this).
   '    function isAlert(el) {',
-  "      return roleOf(el) === 'alert' && attr(el, 'aria-live') === '';",
+  "      return roleOf(el) === 'alert';",
   '    }',
   '    function parentOf(node) {',
   '      var p = node.parentNode;',
@@ -306,6 +330,85 @@ const LIVE_REGION_HOOK_SOURCE = [
   '      if (list.length < MAX) list.push(entry);',
   '      else dropped[key]++;',
   '    }',
+  // Whether a node is at or inside a box, through shadow roots to their hosts.
+  '    function within(node, box) {',
+  '      for (var n = node; n; n = parentOf(n)) if (n === box) return true;',
+  '      return false;',
+  '    }',
+  '    function nameOf(el) {',
+  "      return String(el.localName || '').toLowerCase();",
+  '    }',
+  // The last time each <dialog> was opened: one entry per dialog.
+  '    function logOpen(el, at) {',
+  '      for (var i = 0; i < dialogsOpened.length; i++) {',
+  '        if (dialogsOpened[i].element === el) {',
+  '          dialogsOpened.splice(i, 1);',
+  '          break;',
+  '        }',
+  '      }',
+  "      push(dialogsOpened, 'dialogsOpened', { time: now(), order: at, element: el });",
+  '    }',
+  // Whether nothing between a region and a box about to be shown (a
+  // popover) hides it, so that it is shown once the box is.
+  '    function shownWithin(el, box) {',
+  '      var view = doc.defaultView;',
+  '      for (var n = el; n && n !== box && n.nodeType === 1; n = parentOf(n)) {',
+  "        if (n.hasAttribute('hidden')) return false;",
+  "        if (view && view.getComputedStyle(n).display === 'none') return false;",
+  '      }',
+  "      var v = view ? view.getComputedStyle(el).visibility : '';",
+  "      return v !== 'hidden' && v !== 'collapse';",
+  '    }',
+  // A hidden region inside a box that is opened (a <dialog> or <details>
+  // given its open attribute, a popover shown) is taken as already there,
+  // with the text it had: the box showed it, not the page filling it, so
+  // only text given after counts. ready says whether the region is shown
+  // once the box is; skip, whether it is left as it is.
+  // The modal dialogs open now: :modal where the browser has a top layer,
+  // else an open dialog with aria-modal="true", as the engine reads them. In
+  // the document only, as the hook does not look inside shadow roots.
+  '    var modalSelector = null;',
+  '    function openModals() {',
+  '      if (modalSelector === null) {',
+  '        var proto = global.HTMLDialogElement && global.HTMLDialogElement.prototype;',
+  "        modalSelector = proto && typeof proto.showModal === 'function' ? 'dialog:modal' : 'dialog[open][aria-modal=true]';",
+  '        try {',
+  '          doc.querySelector(modalSelector);',
+  '        } catch (e) {',
+  "          modalSelector = 'dialog[open][aria-modal=true]';",
+  '        }',
+  '      }',
+  '      try {',
+  '        return doc.querySelectorAll(modalSelector);',
+  '      } catch (e) {',
+  '        return [];',
+  '      }',
+  '    }',
+  // Whether a region was behind an open modal dialog when it was given its
+  // text (at, in the order of the page's changes): in none of the modal
+  // dialogs open now and containing none, one of which was opened before
+  // (one the hook never saw open has been open since it started watching).
+  '    function behindModalAt(el, at, modals) {',
+  '      var behind = false;',
+  '      for (var i = 0; i < modals.length; i++) {',
+  '        var m = modals[i];',
+  '        if (within(el, m) || within(m, el)) return false;',
+  '        var opened = -1;',
+  '        for (var j = 0; j < dialogsOpened.length; j++) {',
+  '          if (dialogsOpened[j].element === m) opened = dialogsOpened[j].order;',
+  '        }',
+  '        if (opened < at) behind = true;',
+  '      }',
+  '      return behind;',
+  '    }',
+  '    function openedIn(box, ready, skip, text) {',
+  '      regions.forEach(function (el) {',
+  '        var state = known.get(el);',
+  '        if (!state || state.shown || !el.isConnected || !within(el, box) || !ready(el)) return;',
+  '        if (skip && skip(el)) return;',
+  '        known.set(el, { shown: true, text: text ? textOf(el) : state.text });',
+  '      });',
+  '    }',
   '    function note(el) {',
   '      var state = { shown: shown(el), text: textOf(el) };',
   '      known.set(el, state);',
@@ -323,25 +426,51 @@ const LIVE_REGION_HOOK_SOURCE = [
   '    function handle(records) {',
   // The regions the batch touched, in the order it touched them: 'added'
   // for one added in it, 'changed' for one whose text changed or that an
-  // attribute change may have shown or hidden.
+  // attribute change may have shown or hidden. last: the index of the last
+  // record that changed a region's content, and of the last that touched
+  // it at all.
   '      var touched = new Map();',
   '      var regionByTarget = new Map();',
   '      var moved = [];',
+  '      var movedAt = new Map();',
+  '      var filledAt = new Map();',
+  '      var base = order;',
+  '      order += records.length;',
+  // Regions given text in this batch before the dialog or details around
+  // them opened: the text came while they were hidden, and opening the box
+  // shows it, which is not a change the page made to a shown region.
+  '      var filledHidden = new Set();',
+  '      function filled(el, i) {',
+  '        filledAt.set(el, i);',
+  '        if (filledHidden.has(el)) {',
+  '          filledHidden.delete(el);',
+  '          known.set(el, { shown: true, text: known.get(el).text });',
+  '        }',
+  '      }',
   '      for (var i = 0; i < records.length; i++) {',
   '        var r = records[i];',
   "        if (r.type === 'childList') {",
   // Records of one batch often share a target (rows added to one list).
   '          var around = regionByTarget.has(r.target) ? regionByTarget.get(r.target) : regionOf(r.target);',
   '          regionByTarget.set(r.target, around);',
-  "          if (around && !touched.has(around)) touched.set(around, 'changed');",
+  '          if (around) {',
+  "            if (!touched.has(around)) touched.set(around, 'changed');",
+  '            filled(around, i);',
+  '          }',
   '          for (var j = 0; j < r.addedNodes.length; j++) {',
   '            var inserted = [];',
   '            regionsIn(r.addedNodes[j], inserted);',
-  "            for (var k = 0; k < inserted.length; k++) touched.set(inserted[k], 'added');",
+  '            for (var k = 0; k < inserted.length; k++) {',
+  "              touched.set(inserted[k], 'added');",
+  '              filledAt.set(inserted[k], i);',
+  '            }',
   '          }',
   "        } else if (r.type === 'characterData') {",
   '          var at = regionOf(r.target);',
-  "          if (at && !touched.has(at)) touched.set(at, 'changed');",
+  '          if (at) {',
+  "            if (!touched.has(at)) touched.set(at, 'changed');",
+  '            filled(at, i);',
+  '          }',
   '        } else {',
   // An element that has just become a live region is noted as it is now,
   // so its next change counts and the text it came with does not.
@@ -349,20 +478,37 @@ const LIVE_REGION_HOOK_SOURCE = [
   "          if ((name === 'aria-live' || name === 'role') && !known.has(r.target) && politeness(r.target)) {",
   '            note(r.target);',
   '          }',
+  // A <dialog> or <details> given its open attribute, and open still.
+  "          if (name === 'open' && r.oldValue === null && r.target.hasAttribute('open')) {",
+  '            var box = nameOf(r.target);',
+  "            if (box === 'dialog') logOpen(r.target, base + i);",
+  "            if (box === 'dialog' || box === 'details') {",
+  '              openedIn(r.target, shown, function (el) {',
+  '                if (!filledAt.has(el)) return false;',
+  '                filledHidden.add(el);',
+  '                return true;',
+  '              });',
+  '            }',
+  '          }',
   '          if (moved.indexOf(r.target) === -1) moved.push(r.target);',
+  '          movedAt.set(r.target, i);',
   '        }',
   '      }',
+  '      var lastAt = new Map();',
+  '      filledAt.forEach(function (i, el) {',
+  '        lastAt.set(el, i);',
+  '      });',
   '      if (moved.length) {',
   '        regions.forEach(function (el) {',
   '          if (!el.isConnected) {',
   '            regions.delete(el);',
   '            return;',
   '          }',
-  '          if (touched.has(el)) return;',
   '          for (var m = 0; m < moved.length; m++) {',
   '            if (moved[m] === el || (moved[m].contains && moved[m].contains(el))) {',
-  "              touched.set(el, 'changed');",
-  '              break;',
+  "              if (!touched.has(el)) touched.set(el, 'changed');",
+  '              var mi = movedAt.get(moved[m]);',
+  '              if (!lastAt.has(el) || lastAt.get(el) < mi) lastAt.set(el, mi);',
   '            }',
   '          }',
   '        });',
@@ -374,24 +520,29 @@ const LIVE_REGION_HOOK_SOURCE = [
   '          if (!el.isConnected) regions.delete(el);',
   '        });',
   '      }',
+  '      var modals = null;',
   '      touched.forEach(function (kind, el) {',
   '        if (!politeness(el)) return;',
   '        var before = known.get(el);',
   '        var state = note(el);',
+  '        if (filledHidden.has(el)) return;',
   '        if (!state.text || !state.shown || unreachable(el)) return;',
+  '        var at = base + (lastAt.has(el) ? lastAt.get(el) : 0);',
+  '        if (modals === null) modals = openModals();',
+  '        var behind = modals.length > 0 && behindModalAt(el, at, modals);',
   // A region added with its text: asked about unless it is an alert. Its
   // text is not counted as announced, as screen readers commonly skip it.
   "        if (kind === 'added' && el.isConnected) {",
-  "          if (isAlert(el)) push(announcements, 'announcements', { text: state.text, politeness: 'assertive', time: now(), element: el });",
-  "          else push(findings, 'findings', { code: 'LIVE_REGION_INSERTED_WITH_CONTENT', text: state.text, time: now(), element: el });",
+  "          if (isAlert(el)) push(announcements, 'announcements', { text: state.text, politeness: politeness(el), time: now(), order: at, behindModal: behind, element: el });",
+  "          else push(findings, 'findings', { code: 'LIVE_REGION_INSERTED_WITH_CONTENT', text: state.text, time: now(), order: at, behindModal: behind, element: el });",
   '          return;',
   '        }',
   '        if (!before || state.text === before.text) return;',
   '        if (!before.shown) {',
-  "          push(findings, 'findings', { code: 'LIVE_REGION_SHOWN_AND_FILLED', text: state.text, time: now(), element: el });",
+  "          push(findings, 'findings', { code: 'LIVE_REGION_SHOWN_AND_FILLED', text: state.text, time: now(), order: at, behindModal: behind, element: el });",
   '          return;',
   '        }',
-  "        push(announcements, 'announcements', { text: state.text, politeness: politeness(el), time: now(), element: el });",
+  "        push(announcements, 'announcements', { text: state.text, politeness: politeness(el), time: now(), order: at, behindModal: behind, element: el });",
   '      });',
   '    }',
   '    function start() {',
@@ -409,8 +560,28 @@ const LIVE_REGION_HOOK_SOURCE = [
   '        childList: true,',
   '        characterData: true,',
   '        attributes: true,',
-  "        attributeFilter: ['hidden', 'style', 'class', 'aria-hidden', 'inert', 'aria-live', 'role']",
+  '        attributeOldValue: true,',
+  "        attributeFilter: ['hidden', 'style', 'class', 'aria-hidden', 'inert', 'aria-live', 'role', 'open']",
   '      });',
+  // A popover changes no attribute when it is shown; its beforetoggle event
+  // comes just before. What the page did until then is handed to the hook
+  // first, so text given before the popover opens is not counted as given
+  // after.
+  "      doc.addEventListener('beforetoggle', function (e) {",
+  '        try {',
+  '          var box = e.target;',
+  "          if (!box || box.nodeType !== 1 || e.newState !== 'open' || !box.hasAttribute('popover')) return;",
+  '          flush();',
+  '          openedIn(',
+  '            box,',
+  '            function (el) {',
+  '              return shownWithin(el, box);',
+  '            },',
+  '            null,',
+  '            true',
+  '          );',
+  '        } catch (err) {}',
+  '      }, true);',
   '    }',
   '    function flush() {',
   '      if (!observer) return;',
@@ -431,6 +602,7 @@ const LIVE_REGION_HOOK_SOURCE = [
   '        early: early,',
   '        announcements: announcements,',
   '        findings: findings,',
+  '        dialogsOpened: dialogsOpened,',
   '        dropped: dropped,',
   '        flush: flush',
   '      })',
@@ -490,7 +662,8 @@ function liveRegionHookScript(options) {
 }
 
 // The registry the hook left in a window, as { early, announcements,
-// findings, dropped }, copies of its lists, or null when there is none or it
+// findings, dialogsOpened, dropped }, copies of its lists (dialogsOpened null
+// for a registry without one), or null when there is none or it
 // isn't shaped as the hook makes it: a page can define that symbol itself.
 // Read through property descriptors, so no getter on it runs. The hook's own
 // flush runs first, so changes made in the current task are in the lists.
@@ -512,7 +685,7 @@ function readLiveRegionHook(win) {
         // The lists as they are.
       }
     }
-    const copy = (list, fields) => {
+    const copy = (list, fields, keep = (item) => typeof item.text === 'string') => {
       const out = [];
       if (!Array.isArray(list)) return out;
       const n = own(list, 'length');
@@ -521,7 +694,7 @@ function readLiveRegionHook(win) {
         if (!entry || typeof entry !== 'object') continue;
         const item = {};
         for (const f of fields) item[f] = own(entry, f);
-        if (typeof item.text !== 'string') continue;
+        if (!keep(item)) continue;
         out.push(item);
       }
       return out;
@@ -537,14 +710,179 @@ function readLiveRegionHook(win) {
         'text',
         'politeness',
         'time',
+        'order',
+        'behindModal',
         'element'
       ]),
-      findings: copy(own(registry, 'findings'), ['code', 'text', 'time', 'element']),
-      dropped: { announcements: count('announcements'), findings: count('findings') }
+      findings: copy(own(registry, 'findings'), [
+        'code',
+        'text',
+        'time',
+        'order',
+        'behindModal',
+        'element'
+      ]),
+      // null for a registry that has no such list.
+      dialogsOpened: Array.isArray(own(registry, 'dialogsOpened'))
+        ? copy(
+            own(registry, 'dialogsOpened'),
+            ['time', 'order', 'element'],
+            (item) => typeof item.order === 'number' && !!item.element
+          )
+        : null,
+      dropped: {
+        announcements: count('announcements'),
+        findings: count('findings'),
+        dialogsOpened: count('dialogsOpened')
+      }
     };
   } catch {
     return null;
   }
+}
+
+// What getAnnouncements returns, from a window's hook record, read with
+// `read` (readLiveRegionHook): the texts given while shown and reachable, or
+// null without a hook. Takes (win, options) or (options); options:
+// { includeBehindModal } adds the texts given to a region behind an open
+// modal dialog, marked behindModal: true; { selectors: true } names each
+// region by a selector instead of its element, so the list crosses a
+// driver (page.evaluate). Self-contained, as it is inlined into
+// getAnnouncements, which bindings serialize into pages.
+function selectAnnouncements(read, fallbackWin, first, second) {
+  let win = first;
+  let options = second;
+  if (
+    first &&
+    typeof first === 'object' &&
+    Object.prototype.toString.call(first) === '[object Object]' &&
+    !('document' in first)
+  ) {
+    win = undefined;
+    options = first;
+  }
+  if (options !== undefined && options !== null) {
+    if (typeof options !== 'object' || Array.isArray(options)) {
+      throw new TypeError('getAnnouncements(options): options must be an object.');
+    }
+    const unknown = Object.keys(options).filter(
+      (k) => k !== 'includeBehindModal' && k !== 'selectors'
+    );
+    if (unknown.length) {
+      throw new TypeError(
+        'getAnnouncements(options): no option named ' +
+          unknown.map((k) => '"' + k + '"').join(', ') +
+          '; use includeBehindModal or selectors.'
+      );
+    }
+    for (const name of ['includeBehindModal', 'selectors']) {
+      if (options[name] !== undefined && typeof options[name] !== 'boolean') {
+        throw new TypeError('getAnnouncements(options): ' + name + ' must be true or false.');
+      }
+    }
+  }
+  const hook = read(win || fallbackWin);
+  if (!hook) return null;
+  const listed =
+    options && options.includeBehindModal === true
+      ? hook.announcements
+      : hook.announcements.filter((a) => a.behindModal !== true);
+  if (!options || options.selectors !== true) return listed;
+
+  // A selector for an element in its own tree (the document or a shadow
+  // root): its id where that is unique there, else its tag and place among
+  // its siblings of that tag, up to the root. The shadow hosts that lead to
+  // it, outermost first, as a finding's shadowHostSelectors do. null for an
+  // element no longer in the page. The DOM is read through the window's own
+  // prototypes, as the page's form controls can shadow a property by name
+  // (<input name="parentElement">), and nothing here may throw.
+  const realm = win || fallbackWin;
+  const proto = (name) => {
+    const ctor = realm && Object.getOwnPropertyDescriptor(realm, name);
+    const value = ctor && ctor.value;
+    return value && value.prototype ? value.prototype : null;
+  };
+  const accessor = (p, key, kind) => {
+    const d = p && Object.getOwnPropertyDescriptor(p, key);
+    return d ? d[kind] : undefined;
+  };
+  const NODE = proto('Node');
+  const ELEMENT = proto('Element');
+  const via = {
+    nodeType: accessor(NODE, 'nodeType', 'get'),
+    parentElement: accessor(NODE, 'parentElement', 'get'),
+    isConnected: accessor(NODE, 'isConnected', 'get'),
+    getRootNode: accessor(NODE, 'getRootNode', 'value'),
+    localName: accessor(ELEMENT, 'localName', 'get'),
+    previousElementSibling: accessor(ELEMENT, 'previousElementSibling', 'get'),
+    getAttribute: accessor(ELEMENT, 'getAttribute', 'value'),
+    host: accessor(proto('ShadowRoot'), 'host', 'get'),
+    queryInDocument: accessor(proto('Document'), 'querySelectorAll', 'value'),
+    queryInFragment: accessor(proto('DocumentFragment'), 'querySelectorAll', 'value')
+  };
+  const call = (fn, self, args) => {
+    try {
+      return typeof fn === 'function' ? Reflect.apply(fn, self, args || []) : undefined;
+    } catch {
+      return undefined;
+    }
+  };
+  const cssEscape = (() => {
+    const css = realm && Object.getOwnPropertyDescriptor(realm, 'CSS');
+    const escape = css && css.value && css.value.escape;
+    return typeof escape === 'function' ? escape : null;
+  })();
+  const escapeId = (id) =>
+    cssEscape
+      ? call(cssEscape, undefined, [id])
+      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) => '\\' + c);
+  const uniqueIn = (root, selector) => {
+    const query = call(via.nodeType, root) === 9 ? via.queryInDocument : via.queryInFragment;
+    const found = call(query, root, [selector]);
+    return !!found && found.length === 1;
+  };
+  const inTree = (el) => {
+    const root = call(via.getRootNode, el);
+    const steps = [];
+    for (let node = el; node && call(via.nodeType, node) === 1;) {
+      const parent = call(via.parentElement, node);
+      const id = call(via.getAttribute, node, ['id']);
+      if (typeof id === 'string' && id) {
+        const byId = '#' + escapeId(id);
+        if (uniqueIn(root, byId)) {
+          steps.unshift(byId);
+          break;
+        }
+      }
+      const tag = call(via.localName, node);
+      let n = 1;
+      for (let sib = call(via.previousElementSibling, node); sib;) {
+        if (call(via.localName, sib) === tag) n += 1;
+        sib = call(via.previousElementSibling, sib);
+      }
+      steps.unshift(parent ? tag + ':nth-of-type(' + n + ')' : tag);
+      node = parent;
+    }
+    return { selector: steps.join(' > '), root };
+  };
+  const locate = (el) => {
+    if (!el || call(via.nodeType, el) !== 1 || call(via.isConnected, el) !== true) {
+      return { selector: null };
+    }
+    const hosts = [];
+    let { selector, root } = inTree(el);
+    for (let host = call(via.host, root); host; host = call(via.host, root)) {
+      const outer = inTree(host);
+      hosts.unshift(outer.selector);
+      root = outer.root;
+    }
+    return hosts.length ? { selector, shadowHostSelectors: hosts } : { selector };
+  };
+  return listed.map((a) => {
+    const out = {};
+    for (const key of Object.keys(a)) if (key !== 'element') out[key] = a[key];
+    return Object.assign(out, locate(a.element));
+  });
 }
 
 module.exports = {
@@ -552,5 +890,6 @@ module.exports = {
   LIVE_REGION_HOOK_SOURCE,
   MAX_ENTRIES,
   liveRegionHookScript,
-  readLiveRegionHook
+  readLiveRegionHook,
+  selectAnnouncements
 };

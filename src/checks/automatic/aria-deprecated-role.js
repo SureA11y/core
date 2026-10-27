@@ -30,6 +30,21 @@
  * @reports
  *   - `role`: the deprecated or reserved role in use.
  *   - `guidance`: advice on what to use instead, as English text.
+ * @reason-codes
+ *   - `ARIA_ROLE_DEPRECATED` (cantTell): an explicit role that WAI-ARIA has
+ *     deprecated, such as directory; it still works, and a replacement role is
+ *     suggested.
+ *     Basis: WAI-ARIA 1.2 directory; WCAG 4.1.2 (not settled).
+ *   - `ARIA_ROLE_AUTHOR_DISCOURAGED` (cantTell): an explicit role that WAI-ARIA
+ *     reserves for user agents and says authors should not use, such as
+ *     generic.
+ *     It leans pass when the element is a plain container (div, span, b, i
+ *     and the like) whose native role is already generic.
+ *     Basis: WAI-ARIA 1.2 generic (SHOULD); WCAG 4.1.2 (not settled).
+ *   - `ARIA_ROLE_AUTHOR_PROHIBITED` (fail): an explicit role that WAI-ARIA says
+ *     authors must not use; no current concrete role is listed, so this code is
+ *     not given yet.
+ *     Basis: WAI-ARIA 1.2 role definitions (MUST); WCAG 4.1.2.
  */
 
 const id = 'aria-deprecated-role';
@@ -58,7 +73,35 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-role-not-deprecated'] } }
+  coverage: { facetsBySc: { '4.1.2': ['aria-role-not-deprecated'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ROLE_AUTHOR_DISCOURAGED: {
+      steps: [
+        'Inspect the element the report names and note its tag and role="generic".',
+        'If the tag is a plain container (div, span, b, i), the role changes nothing; remove it as cleanup.',
+        "Otherwise open the Accessibility pane in the browser's developer tools and check whether the element's native meaning (button, link, heading, list item, navigation) has been lost.",
+        'With a screen reader, move to the element and, if it is focusable, press Tab to it and listen to what is announced.'
+      ],
+      passWhen:
+        'The element was already a generic container, or its native role still shows and is announced.',
+      failWhen:
+        'role="generic" strips a native meaning, such as a link or heading no longer announced as one, which fails WCAG 4.1.2 (and 1.3.1 for structure).'
+    },
+    ARIA_ROLE_DEPRECATED: {
+      steps: [
+        'Inspect the element the report names and note its deprecated role (such as directory).',
+        "Open the Accessibility pane in the browser's developer tools and check which role is exposed (directory is usually mapped to list).",
+        'With a screen reader, move to the element and its items and listen for the structure being announced.',
+        'Consider the suggested replacement role (list for directory) and whether it fits.'
+      ],
+      passWhen:
+        'The structure is announced correctly (for example as a list with its item count), or the role is replaced with the suggested one.',
+      failWhen:
+        'The structure is not conveyed by assistive technology because it relies on the deprecated role, which can fail WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -77,6 +120,18 @@ function runInPage(ctx) {
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Elements HTML-AAM maps to the generic role, whatever their attributes
+  // (an <a> only without href): role="generic" on them restates what they
+  // already are.
+  const GENERIC_TAGS = new Set(['div', 'span', 'b', 'i', 'u', 'small', 'bdi', 'bdo']);
+  function isNativelyGeneric(el) {
+    if (dom.namespaceURI(el) && dom.namespaceURI(el) !== 'http://www.w3.org/1999/xhtml')
+      return false;
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (GENERIC_TAGS.has(tag)) return true;
+    return tag === 'a' && !dom.hasAttribute(el, 'href');
+  }
 
   // A role on an element hidden from assistive technology has no effect, so
   // ACT 674b10 does not apply to it.
@@ -171,6 +226,21 @@ function runInPage(ctx) {
               'Whether this user-agent-reserved role misleads the assistive technology in use.',
             evidence: { role, ariaStatus: 'discouraged-for-authors' }
           },
+          // On an element that is generic by its tag, the role changes
+          // nothing the browser exposes, whatever assistive technology does.
+          ...(role === 'generic' && isNativelyGeneric(el)
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'This element is already generic by its tag, so role="generic" changes nothing that is exposed.',
+                  signals: [
+                    { signal: 'native-role', value: 'generic' },
+                    { signal: 'element', value: String(dom.localName(el) || '').toLowerCase() }
+                  ],
+                  i18n: { whyKey: 'ariaDeprecatedRole_lean_why_nativeGeneric' }
+                }
+              }
+            : {}),
           data: {
             details: { reasonCode: 'ARIA_ROLE_AUTHOR_DISCOURAGED', role, guidance: guidance.text }
           }

@@ -129,6 +129,12 @@ test('an unusable rootCanvasFallback is white, said, and echoed as white', () =>
       '#ffffff',
       color
     );
+    // Echoed as the default, not as a canvas the caller named.
+    assert.equal(
+      result.checksResults[0].engineOptions.contrast.rootCanvasFallbackSet,
+      false,
+      color
+    );
     assert.ok(
       warnings.some((w) => /rootCanvasFallback must be an opaque color/.test(w)),
       color

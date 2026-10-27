@@ -284,9 +284,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 16 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
-  // deprecated-but-allowed attr) => resolves to fail overall, 17 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
+  // 17 fail occurrences (case_04 carries two) + 2 cantTell (case_14 and
+  // case_34, deprecated-but-allowed attrs, on a role and on an element with
+  // no role) => resolves to fail overall, 19 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 19, maxOccurrences: 19 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
@@ -308,11 +309,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_23',
     'aaa_case_24',
     'aaa_case_30',
-    'aaa_case_32'
+    'aaa_case_32',
+    'aaa_case_36'
   ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
+  assert.strictEqual(outcomeForId('aaa_case_34'), 'cantTell');
   const expectedNoOccIds = [
+    'aaa_case_35',
     'aaa_case_01',
     'aaa_case_02',
     'aaa_case_06',
@@ -448,13 +452,36 @@ test(`${RULE_ID}: elements whose role their attributes decide are judged as ARIA
       'ARIA_ATTR_NOT_ALLOWED',
       'textbox'
     ],
+    // ARIA 1.2's deprecated global attributes are asked about, not failed,
+    // on an element with no role as on a role.
     [
       '<input type="color" aria-label="c" aria-invalid="true">',
+      'cantTell',
+      'ARIA_ATTR_DEPRECATED',
+      null
+    ],
+    [
+      '<input type="file" aria-label="f" aria-errormessage="e"><p id="e">Too large</p>',
+      'cantTell',
+      'ARIA_ATTR_DEPRECATED',
+      null
+    ],
+    ['<video controls aria-disabled="true"></video>', 'cantTell', 'ARIA_ATTR_DEPRECATED', null],
+    [
+      '<input type="color" aria-label="c" aria-checked="true">',
       'fail',
       'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
       null
     ],
-    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null]
+    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null],
+    // A type HTML doesn't define is a text field; one named like an
+    // Object.prototype key ("constructor") is too, and doesn't break the rule.
+    ...['datetime', 'txt', 'constructor', '__proto__', ' Text '].map((type) => [
+      `<input type="${type}" aria-label="n" aria-pressed="true">`,
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'textbox'
+    ])
   ];
   for (const [markup, outcome, code, role] of cases) {
     const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
@@ -570,6 +597,18 @@ test(`${RULE_ID}: a <td> in a presentational table has no role, so only global a
   assert.strictEqual(rule.occurrences.length, 1);
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED_ROLELESS');
   assert.strictEqual(rule.occurrences[0].data.details.attr, 'aria-colindex');
+});
+
+test(`${RULE_ID}: a presentational role a table can't keep leaves its <td>s cells`, () => {
+  // A global ARIA attribute or a tabindex makes browsers ignore role="none".
+  for (const table of [
+    '<table role="presentation" aria-label="Prices">',
+    '<table role="none" tabindex="0">',
+    '<table role="none" tabindex="-1">'
+  ]) {
+    const html = `<!doctype html><html><body>${table}<tr><td aria-colindex="1">x</td></tr></table></body></html>`;
+    assert.strictEqual(roleJudged(html).outcome, 'pass', table);
+  }
 });
 
 test(`${RULE_ID}: a cell's own attributes are allowed on a <td>`, () => {

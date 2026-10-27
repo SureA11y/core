@@ -1,6 +1,6 @@
 {
   "name": "@surea11y/core",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "Deterministic WCAG 2.2 accessibility engine that tells you what it can't tell you. Zero dependencies.",
   "keywords": [
     "accessibility",
@@ -65,6 +65,12 @@
       "pack-docs": [
         "src/pack-docs.d.ts"
       ],
+      "how-to-check": [
+        "src/how-to-check-core.d.ts"
+      ],
+      "review/*": [
+        "src/review-dictionary.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -120,6 +126,14 @@
       "types": "./src/pack-docs.d.ts",
       "default": "./src/pack-docs.js"
     },
+    "./how-to-check": {
+      "types": "./src/how-to-check-core.d.ts",
+      "default": "./src/how-to-check-core.js"
+    },
+    "./review/*": {
+      "types": "./src/review-dictionary.d.ts",
+      "default": "./src/i18n/review/*.json"
+    },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
       "import": "./surea11y.browser.mjs",
@@ -146,6 +160,12 @@
   },
   "files": [
     "src/index.js",
+    "src/how-to-check.js",
+    "src/how-to-check-lazy.js",
+    "src/how-to-check-core.js",
+    "src/how-to-check-core.d.ts",
+    "src/review-dictionary.d.ts",
+    "src/i18n/review/*.json",
     "src/index.d.ts",
     "src/baseline.d.ts",
     "src/report.d.ts",
@@ -157,7 +177,9 @@
     "surea11y.browser.d.ts",
     "src/core.js",
     "src/baseline.js",
+    "src/baseline-moves.json",
     "src/scan-result.js",
+    "src/occurrence-outcome.js",
     "src/policy/contracts.js",
     "src/report.js",
     "src/i18n-coverage.js",
@@ -182,6 +204,7 @@
     "src/core/internals-hook.js",
     "src/core/listener-hook.js",
     "src/core/live-region-hook.js",
+    "src/hook-reason-codes.js",
     "src/core/engine-options.js",
     "src/pack-docs.js",
     "src/pack-docs.d.ts",
@@ -234,6 +257,7 @@
     "language-subtags:check": "node scripts/generate-language-subtags.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",
     "finding-ids:release": "node scripts/freeze-finding-ids.js",
+    "leans:measure": "node scripts/measure-leans.js",
     "fixtures:index": "node scripts/generate-fixture-index.js",
     "fixtures:check": "node scripts/generate-fixture-index.js --check",
     "fixtures:markers": "npm run build && node scripts/generate-fixture-markers.js",

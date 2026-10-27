@@ -184,6 +184,13 @@ test('validateAttrValue: number', () => {
   // value is out of scope (valid: true), not an invalid number.
   assert.equal(helpers.validateAttrValue('aria-valuenow', '').valid, true);
   assert.equal(helpers.validateAttrValue('aria-valuenow', 'nan-ish').valid, false);
+  // Decimal only, with or without an exponent; Number() reads more.
+  for (const v of ['1e2', '.5', '+4', '1.']) {
+    assert.equal(helpers.validateAttrValue('aria-valuenow', v).valid, true, v);
+  }
+  for (const v of ['0x10', '0b1', '0o7', 'Infinity', '1_000']) {
+    assert.equal(helpers.validateAttrValue('aria-valuenow', v).valid, false, v);
+  }
 });
 
 test('validateAttrValue: token', () => {

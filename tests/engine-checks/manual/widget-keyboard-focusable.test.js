@@ -143,6 +143,20 @@ test(`${RULE_ID}: a host with aria-activedescendant must take focus to manage it
   );
 });
 
+test(`${RULE_ID}: an empty aria-activedescendant points at nothing, so it manages no focus`, () => {
+  // Without an element set from script (jsdom has no reflection), the
+  // focusable host points at no item, and the checkbox is judged.
+  const rule = assertRule(
+    run(
+      '<div tabindex="0" aria-activedescendant=""><div id="c" role="checkbox" aria-checked="false">Agree</div></div>'
+    ),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.deepEqual(reasonCodes(rule), ['WIDGET_NOT_FOCUSABLE']);
+});
+
 test(`${RULE_ID}: a composite's aria-activedescendant is a tab stop only when it is in the tab order`, () => {
   const rule = assertRule(
     run(
@@ -177,6 +191,85 @@ test(`${RULE_ID}: a widget in an open shadow root is judged`, () => {
   assert.deepEqual(reasonCodes(rule), ['WIDGET_NOT_FOCUSABLE']);
 });
 
+test(`${RULE_ID}: leans`, async (t) => {
+  const occOf = (body, code) =>
+    assertRule(run(body), RULE_ID, 'cantTell').occurrences.find(
+      (o) => o.data.details.reasonCode === code
+    );
+  await t.test(
+    'a widget that cannot take focus leans fail, unless a tab stop has its role and name',
+    () => {
+      const lone = occOf('<div role="button">Save</div>', 'WIDGET_NOT_FOCUSABLE');
+      assert.equal(lone.lean.toward, 'fail');
+      assert.equal(lone.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_notFocusable');
+      const twin = occOf(
+        '<div role="button">Save</div><button>Save</button>',
+        'WIDGET_NOT_FOCUSABLE'
+      );
+      assert.equal(twin.lean, undefined);
+    }
+  );
+  await t.test('out of the tab order, a twin in it leans pass; without the hook, no lean', () => {
+    const twin = occOf(
+      '<div role="button" tabindex="-1">Save</div><button>Save</button>',
+      'WIDGET_NOT_IN_TAB_ORDER'
+    );
+    assert.equal(twin.lean.toward, 'pass');
+    assert.equal(twin.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_duplicate');
+    assert.equal(
+      occOf('<div role="button" tabindex="-1">Save</div>', 'WIDGET_NOT_IN_TAB_ORDER').lean,
+      undefined
+    );
+  });
+  await t.test(
+    'out of the tab order, with an early hook and no key listener above, leans fail',
+    () => {
+      const { JSDOM } = require('jsdom');
+      const { listenerHookScript } = require('../../../src/index.js');
+      const dom = new JSDOM(
+        '<!doctype html><html lang="en"><body><div role="button" tabindex="-1">Save</div></body></html>',
+        { runScripts: 'outside-only' }
+      );
+      // jsdom's selector engine adds key listeners to the window the first
+      // time a selector runs, so one runs before the hook.
+      dom.window.document.querySelector('*');
+      dom.window.eval(listenerHookScript({ early: true }));
+      const occ = assertRule(
+        runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false }),
+        RULE_ID,
+        'cantTell'
+      ).occurrences[0];
+      assert.equal(occ.data.details.reasonCode, 'WIDGET_NOT_IN_TAB_ORDER');
+      assert.equal(occ.lean.toward, 'fail');
+      assert.equal(occ.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_noKeyListener');
+    }
+  );
+  await t.test(
+    'a composite with no tab stop leans fail, unless a popup trigger sits before it',
+    () => {
+      const lone = occOf(
+        '<div role="listbox" aria-label="l"><div role="option">A</div></div>',
+        'COMPOSITE_NO_TAB_STOP'
+      );
+      assert.equal(lone.lean.toward, 'fail');
+      assert.equal(lone.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_compositeNoTabStop');
+      const popup = occOf(
+        '<button aria-haspopup="menu">More</button><div role="menu" aria-label="m"><div role="menuitem">A</div></div>',
+        'COMPOSITE_NO_TAB_STOP'
+      );
+      assert.equal(popup.lean, undefined);
+    }
+  );
+  await t.test('an aria-activedescendant host that cannot take focus leans fail', () => {
+    const occ = occOf(
+      '<div aria-activedescendant="o1"><div id="o1">A</div></div>',
+      'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE'
+    );
+    assert.equal(occ.lean.toward, 'fail');
+    assert.equal(occ.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_activedescendantHost');
+  });
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/widget-keyboard-focusable-all-scenarios.html)`, () => {
   const fixturePath = path.join(
     __dirname,
@@ -186,7 +279,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/widget-keyboard-focusable-all
   );
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
 
   const byId = new Map(
     rule.occurrences.map((o) => [o.html.match(/id="(wkf_case_\d+)"/)[1], o.data.details.reasonCode])
@@ -199,6 +292,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/widget-keyboard-focusable-all
     wkf_case_13: 'COMPOSITE_NO_TAB_STOP',
     wkf_case_14: 'COMPOSITE_NO_TAB_STOP',
     wkf_case_22: 'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE',
-    wkf_case_23: 'COMPOSITE_NO_TAB_STOP'
+    wkf_case_23: 'COMPOSITE_NO_TAB_STOP',
+    wkf_case_24: 'WIDGET_NOT_FOCUSABLE'
   });
 });

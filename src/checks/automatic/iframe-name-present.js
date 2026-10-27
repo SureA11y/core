@@ -19,6 +19,11 @@
  *   an iframe's name is never derived from its rendered content (the
  *   embedded document is a separate browsing context), this mirrors
  *   dialog-name-present's "name-from-author-only" reasoning.
+ * @reason-codes
+ *   - `IFRAME_NAME_MISSING` (fail): a focusable iframe or frame has no
+ *     accessible name from aria-labelledby, aria-label or title.
+ *     Basis: WCAG 4.1.2; H64; ACT cae760; HTML-AAM iframe element; accname
+ *     1.2.
  * @implementation-notes
  * - Uses helpers.getAccessibleNameInfo, which already stops at
  *   aria-label/aria-labelledby/label[for]/title without falling back to
@@ -32,11 +37,10 @@
  *   frame regardless of whether it also carries a role, a plain
  *   `<iframe tabindex="-1">` with no role at all is just as out of scope
  *   as `<iframe role="none" tabindex="-1">`; ACT cae760's own passed
- *   example is the roleless case. (The role="none" reasoning, "because
- *   iframe elements are part of sequential focus navigation, the
- *   explicit semantic role of none will be ignored, due to Presentational
- *   Roles Conflict Resolution", is *why* a focusable role="none" iframe
- *   still needs a name, not a separate applicability path of its own.)
+ *   example is the roleless case. A focusable role="none"/"presentation"
+ *   frame is left out too, as the comment below says: its decorative role
+ *   and the focus it keeps contradict each other, which
+ *   presentation-role-conflict asks about.
  *   helpers.getFocusableInfo doesn't model iframe/frame's native
  *   focusability at all, so it's computed locally here instead.
  */

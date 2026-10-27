@@ -4,12 +4,12 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 144,
+    "totalRules": 145,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
-          "A": 107,
-          "AA": 19,
+          "A": 108,
+          "AA": 20,
           "AAA": 10
         },
         "2.1": {
@@ -24,15 +24,15 @@
         }
       },
       "anyVersion": {
-        "A": 115,
-        "AA": 26,
+        "A": 116,
+        "AA": 27,
         "AAA": 10
       },
       "rawTagCounts": {
         "wcag2a": 96,
         "wcag21aa": 5,
         "wcag2aaa": 10,
-        "wcag2aa": 10,
+        "wcag2aa": 11,
         "wcag21a": 1,
         "wcag22aa": 2
       }
@@ -1914,6 +1914,70 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/automatic/focus-not-removed-by-script.js",
+      "ruleId": "focus-not-removed-by-script",
+      "wcagScNormative": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScAll": [
+        "2.1.1",
+        "2.4.7"
+      ],
+      "wcagScInformative": [],
+      "type": "automatic",
+      "title": "A script must not remove focus from an element as it receives it",
+      "tags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag211",
+        "wcag247",
+        "navigation",
+        "focus",
+        "atomic",
+        "automatic"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2a",
+            "version": "2.0",
+            "level": "A"
+          },
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.1.1": [
+            "focus-not-removed-by-script-evidence"
+          ],
+          "2.4.7": [
+            "focus-not-removed-by-script-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/automatic/form-control-programmatic-label-present.js",
       "ruleId": "form-control-programmatic-label-present",
       "wcagScNormative": [
@@ -1986,7 +2050,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Form controls must not have multiple labels",
+      "title": "Form controls should not have multiple labels",
       "tags": [
         "wcag2a",
         "wcag332",
@@ -2395,7 +2459,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Fields marked invalid must have a shown error message",
+      "title": "Fields marked invalid should have a shown error message",
       "tags": [
         "wcag2a",
         "wcag331",
@@ -4892,70 +4956,6 @@
       "deprecated": false
     },
     {
-      "file": "src/checks/manual/focus-not-removed-by-script-manual.js",
-      "ruleId": "focus-not-removed-by-script",
-      "wcagScNormative": [
-        "2.1.1",
-        "2.4.7"
-      ],
-      "wcagScAll": [
-        "2.1.1",
-        "2.4.7"
-      ],
-      "wcagScInformative": [],
-      "type": "manual",
-      "title": "A script does not remove focus from an element as it receives it",
-      "tags": [
-        "wcag2a",
-        "wcag2aa",
-        "wcag211",
-        "wcag247",
-        "navigation",
-        "focus",
-        "atomic",
-        "manual"
-      ],
-      "wcagTagSignals": {
-        "parsed": [
-          {
-            "tag": "wcag2a",
-            "version": "2.0",
-            "level": "A"
-          },
-          {
-            "tag": "wcag2aa",
-            "version": "2.0",
-            "level": "AA"
-          }
-        ],
-        "versions": [
-          "2.0"
-        ],
-        "cumulativeLevelsByVersion": {
-          "2.0": [
-            "A",
-            "AA"
-          ]
-        },
-        "cumulativeLevelsAny": [
-          "A",
-          "AA"
-        ]
-      },
-      "error": null,
-      "coverage": {
-        "facetsBySc": {
-          "2.1.1": [
-            "focus-not-removed-by-script-evidence"
-          ],
-          "2.4.7": [
-            "focus-not-removed-by-script-evidence"
-          ]
-        }
-      },
-      "deprecated": false
-    },
-    {
       "file": "src/checks/manual/focus-order-semantics-manual.js",
       "ruleId": "focus-order-semantics",
       "wcagScNormative": [],
@@ -5210,6 +5210,58 @@
         "facetsBySc": {
           "2.4.9": [
             "identical-links-same-purpose-evidence"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/manual/image-of-text-manual.js",
+      "ruleId": "image-of-text",
+      "wcagScNormative": [
+        "1.4.5"
+      ],
+      "wcagScAll": [
+        "1.4.5"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "Text should be real text, not an image of text",
+      "tags": [
+        "wcag2aa",
+        "wcag145",
+        "nontext",
+        "images",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag2aa",
+            "version": "2.0",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.0"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.0": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "1.4.5": [
+            "image-of-text-evidence"
           ]
         }
       },
@@ -5983,7 +6035,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "title": "Content that moves by itself should be possible to pause, stop or hide",
       "tags": [
         "wcag2a",
         "wcag222",
@@ -6622,7 +6674,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Prerecorded video should provide a captions track",
+      "title": "Prerecorded video should provide complete captions",
       "tags": [
         "wcag2a",
         "wcag122",
@@ -7289,6 +7341,28 @@
             "automation": "full",
             "coveredBy": [
               "meta-viewport-zoom-enabled"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.5",
+        "title": "Images of Text",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "image-of-text-evidence",
+            "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+            "automation": "manual",
+            "coveredBy": [
+              "image-of-text"
             ]
           }
         ]
@@ -8867,6 +8941,28 @@
             "automation": "full",
             "coveredBy": [
               "meta-viewport-zoom-enabled"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.5",
+        "title": "Images of Text",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "manual": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "image-of-text-evidence",
+            "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+            "automation": "manual",
+            "coveredBy": [
+              "image-of-text"
             ]
           }
         ]

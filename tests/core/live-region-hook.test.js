@@ -166,6 +166,21 @@ test('a region added with its text is asked about, except an alert, which is ann
   assert.deepEqual(texts(d), [['Failed', 'assertive']]);
 });
 
+// An alert stays an alert with aria-live beside it; aria-live="off" turns it
+// off. Before, any aria-live made it a region added with its text.
+test('an alert added with its text is announced whatever aria-live says, unless it is off', async () => {
+  const d = await page('<div id="w"></div>', [
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"assertive\">Payment failed</div>');",
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"polite\">Saved with warnings</div>');",
+    "document.getElementById('w').insertAdjacentHTML('beforeend', '<div role=\"alert\" aria-live=\"off\">Quiet</div>');"
+  ]);
+  assert.deepEqual(findings(d), []);
+  assert.deepEqual(texts(d), [
+    ['Payment failed', 'assertive'],
+    ['Saved with warnings', 'polite']
+  ]);
+});
+
 test('a region added empty and given its text later is announced; added and filled in one task is not', async () => {
   const d = await page('<div id="w"></div>', [
     "const r = document.createElement('div'); r.setAttribute('role', 'status'); r.id = 'r'; document.getElementById('w').append(r);",
@@ -187,6 +202,153 @@ test('a hidden region shown and filled in one task is asked about; shown first a
   );
   assert.deepEqual(findings(d), [['LIVE_REGION_SHOWN_AND_FILLED', 'Together']]);
   assert.deepEqual(texts(d), [['Apart', 'polite']]);
+});
+
+test('a region shown because its dialog or details opened counts from its next text', async () => {
+  const d = await page(
+    '<dialog id="d"><div id="i" role="status"></div></dialog>' +
+      '<dialog id="e"><div id="j" role="status"></div></dialog>' +
+      '<details id="t"><summary>More</summary><div id="k" role="status" hidden></div></details>' +
+      '<dialog id="f"><div id="h" role="status" hidden></div></dialog>',
+    [
+      "document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('i').textContent = 'In the dialog';",
+      // Given its text while hidden, then shown by the dialog: not recorded.
+      "document.getElementById('j').textContent = 'Before'; document.getElementById('e').setAttribute('open', ''); ",
+      // Then given text: announced.
+      "document.getElementById('j').textContent = 'After';",
+      // Its own [hidden] still hides it: shown and filled at once after.
+      "document.getElementById('f').setAttribute('open', '');",
+      "const h = document.getElementById('h'); h.hidden = false; h.textContent = 'Together';"
+    ]
+  );
+  assert.deepEqual(texts(d), [
+    ['In the dialog', 'polite'],
+    ['After', 'polite']
+  ]);
+  assert.deepEqual(findings(d), [['LIVE_REGION_SHOWN_AND_FILLED', 'Together']]);
+});
+
+test('the last time each dialog was opened is recorded, in the order of the page’s changes', async () => {
+  const d = await page(
+    '<div id="s" role="status"></div><dialog id="d"></dialog><dialog id="e"></dialog>',
+    [
+      "document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('s').textContent = 'One';",
+      "document.getElementById('e').setAttribute('open', ''); document.getElementById('d').removeAttribute('open');",
+      "document.getElementById('s').textContent = 'Two'; document.getElementById('d').setAttribute('open', '');"
+    ]
+  );
+  const read = readLiveRegionHook(d.window);
+  const opened = read.dialogsOpened.map((o) => [o.element.id, o.order]);
+  assert.deepEqual(
+    opened.map(([id]) => id),
+    ['e', 'd']
+  );
+  const at = (text) => read.announcements.find((a) => a.text === text).order;
+  const [[, e], [, dAgain]] = opened;
+  assert.ok(at('One') < e, 'One came before e opened');
+  assert.ok(e < at('Two') && at('Two') < dAgain, 'Two came after e opened, before d opened again');
+  assert.equal(typeof read.dialogsOpened[0].time, 'number');
+  assert.equal(read.dropped.dialogsOpened, 0);
+});
+
+test('a text given to a region behind an open modal dialog is left out, or kept marked on request', async () => {
+  // jsdom has no top layer: an open dialog with aria-modal="true" stands in
+  // for one opened with showModal().
+  const d = await page(
+    '<div id="b" role="status"></div><dialog id="d" aria-modal="true"><div id="i" role="status"></div></dialog>',
+    [
+      "document.getElementById('b').textContent = 'Before'; document.getElementById('d').setAttribute('open', '');",
+      "document.getElementById('i').textContent = 'Inside';",
+      "document.getElementById('b').textContent = 'Behind';",
+      "document.getElementById('d').removeAttribute('open');",
+      "document.getElementById('b').textContent = 'Closed';"
+    ]
+  );
+  assert.deepEqual(
+    getAnnouncements(d.window).map((a) => a.text),
+    ['Before', 'Inside', 'Closed']
+  );
+  assert.deepEqual(
+    getAnnouncements(d.window, { includeBehindModal: true }).map((a) => [a.text, a.behindModal]),
+    [
+      ['Before', false],
+      ['Inside', false],
+      ['Behind', true],
+      ['Closed', false]
+    ]
+  );
+  assert.equal(getAnnouncements(d.window, { includeBehindModal: false }).length, 3);
+  assert.throws(() => getAnnouncements(d.window, { behindModal: true }), TypeError);
+  assert.throws(() => getAnnouncements(d.window, { includeBehindModal: 'yes' }), TypeError);
+  assert.throws(() => getAnnouncements(d.window, 'all'), TypeError);
+
+  // Serialized into the page, as a binding does, and run there on the
+  // page's own window, with or without options.
+  const inPage = d.window.eval(`(${getAnnouncements.toString()})`);
+  assert.deepEqual(
+    Array.from(inPage(), (a) => a.text),
+    ['Before', 'Inside', 'Closed']
+  );
+  assert.deepEqual(
+    Array.from(inPage({ includeBehindModal: true }), (a) => a.text),
+    ['Before', 'Inside', 'Behind', 'Closed']
+  );
+});
+
+test('getAnnouncements({ selectors: true }) names each region by a selector, so the list crosses a driver', async () => {
+  const d = await page(
+    '<div id="status" aria-live="polite"></div>' +
+      '<ul><li><div role="status"></div></li><li><div role="status"></div></li></ul>' +
+      '<section><div id="dup" role="log"></div><div id="dup" role="log"></div></section>' +
+      '<form><input name="parentElement"><input name="id"><div role="alert" aria-live="polite"></div></form>' +
+      '<div id="gone" aria-live="polite"></div>',
+    [
+      "document.getElementById('status').textContent = 'Saved';",
+      "document.querySelectorAll('li [role=status]')[1].textContent = 'Second';",
+      "document.querySelectorAll('[role=log]')[1].textContent = 'Logged';",
+      "document.querySelector('form [role=alert]').textContent = 'Sent';",
+      "document.getElementById('gone').textContent = 'Bye';",
+      "document.getElementById('gone').remove();"
+    ]
+  );
+  // As a binding runs it: serialized into the page, its answer copied out
+  // through JSON, as a driver's serialization boundary does.
+  const inPage = d.window.eval(`(${getAnnouncements.toString()})`);
+  const listed = JSON.parse(JSON.stringify(inPage({ selectors: true })));
+  assert.deepEqual(
+    listed.map((a) => [a.text, a.selector]),
+    [
+      ['Saved', '#status'],
+      [
+        'Second',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(2) > div:nth-of-type(1)'
+      ],
+      [
+        'Logged',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > section:nth-of-type(1) > div:nth-of-type(2)'
+      ],
+      [
+        'Sent',
+        'html > body:nth-of-type(1) > main:nth-of-type(1) > form:nth-of-type(1) > div:nth-of-type(1)'
+      ],
+      ['Bye', null]
+    ]
+  );
+  // Each selector finds its region; no entry holds an element.
+  const regions = getAnnouncements(d.window);
+  listed.forEach((a, i) => {
+    assert.ok(!('element' in a));
+    if (a.selector) assert.equal(d.window.document.querySelector(a.selector), regions[i].element);
+  });
+  // The other fields are those of the plain list.
+  const without = (key) => (a) => Object.fromEntries(Object.entries(a).filter(([k]) => k !== key));
+  assert.deepEqual(
+    listed.map(without('selector')),
+    JSON.parse(JSON.stringify(regions.map(without('element'))))
+  );
+  assert.throws(() => getAnnouncements(d.window, { selectors: 'yes' }), TypeError);
 });
 
 test('a role attribute gives its first known role, in any case', async () => {

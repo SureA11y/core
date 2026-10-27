@@ -35,23 +35,36 @@
  *   - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`,
  *     `label_from_aria_label_only` or `label_from_hidden_labelledby`.
  *   - `sourceText`: the label text, up to 120 characters.
+ * @reason-codes
+ *   - `label_from_aria_label_only` (cantTell): the field's name comes from
+ *     aria-label, which is not shown on screen, so whether a visible label
+ *     sits next to it needs checking.
+ *     Basis: WCAG 3.3.2 (not settled); H44.
+ *   - `label_from_hidden_labelledby` (cantTell): the field's name comes from
+ *     aria-labelledby pointing only at hidden elements, so no label it names
+ *     is shown on screen.
+ *     Basis: WCAG 3.3.2 (not settled); H44.
+ *   - `label_from_placeholder_primary` (cantTell): the field's only label is
+ *     its placeholder, which disappears once someone types.
+ *     Basis: WCAG 3.3.2 (not settled); H44; HTML-AAM 4.1.1.
+ *   - `label_from_title_primary` (cantTell): the field's only label is its
+ *     title, which is shown only on mouse hover.
+ *     Basis: WCAG 3.3.2 (not settled); H44; HTML-AAM 4.1.1.
  * @note
  *   Mapped to SC 3.3.2 Labels or Instructions, not 4.1.2: a control named
  *   by title or placeholder has an accessible name, so 4.1.2 is met (WCAG
  *   lists title as sufficient technique H65), but 3.3.2's label is "presented
  *   to all users", which a title (shown only on hover) and a placeholder
- *   (gone once the user types) are not. IBM Equal Access maps its visible-
- *   label check to 3.3.2 the same way. It replaces label-title-only, whose
+ *   (gone once the user types) are not. It replaces label-title-only, whose
  *   findings were a subset of this rule's.
  *
- *   aria-label and aria-labelledby to hidden text are flagged as IBM Equal
- *   Access's input_label_visible flags them, as a potential issue: visible
- *   text beside the control that is not linked to it still meets 3.3.2,
- *   and markup can't tell. Two scope choices also match IBM: a visually
+ *   aria-label and aria-labelledby to hidden text are flagged as a
+ *   potential issue: visible text beside the
+ *   control that is not linked to it still meets 3.3.2, and markup can't
+ *   tell. Two scope choices: a visually
  *   hidden (clipped) <label> or aria-labelledby target is not flagged, since
  *   that text was placed on purpose and often repeats a visible cue; and
  *   aria-labelledby with at least one rendered target is not flagged.
- *   axe and Alfa have no equivalent check.
  */
 
 const id = 'form-control-programmatic-label-quality';
@@ -83,6 +96,51 @@ const meta = {
   coverage: {
     facetsBySc: {
       '3.3.2': ['form-control-visible-label-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    label_from_aria_label_only: {
+      steps: [
+        'Find the field the report names on screen and read its aria-label, which the report gives.',
+        'Look for text shown next to the field (a visible label, a heading or a legend) that tells what to enter.'
+      ],
+      passWhen:
+        'Text shown next to the field, or an icon whose meaning is plain such as a magnifier on a search field, tells what to enter.',
+      failWhen: 'Nothing shown on screen tells what to enter in the field, which fails WCAG 3.3.2.'
+    },
+    label_from_hidden_labelledby: {
+      steps: [
+        'Find the field the report names and, in the developer tools, follow its aria-labelledby ids to the elements they point at.',
+        'Check whether those elements are shown on screen when the field is.',
+        'Look for other text shown next to the field that tells what to enter.'
+      ],
+      passWhen:
+        'The labelling text is shown with the field, or other text next to it tells what to enter.',
+      failWhen:
+        'The label is only in hidden elements and nothing on screen tells what to enter, which fails WCAG 3.3.2.'
+    },
+    label_from_placeholder_primary: {
+      steps: [
+        'Find the field the report names and read its placeholder.',
+        'Type something in the field.',
+        'Check whether anything still shown on screen tells what the field is for.'
+      ],
+      passWhen:
+        'A label or text shown next to the field stays on screen once it is filled in and tells what to enter.',
+      failWhen:
+        'Once the field is filled in, nothing on screen tells what it is for, which fails WCAG 3.3.2.'
+    },
+    label_from_title_primary: {
+      steps: [
+        'Look at the field the report names without hovering over it.',
+        'Look for text shown next to it that tells what to enter.',
+        'Tab to the field with the keyboard and note that its title tooltip does not appear.'
+      ],
+      passWhen: 'Text shown next to the field, without hovering, tells what to enter.',
+      failWhen:
+        'What to enter is told only by the title, shown on mouse hover, so keyboard and touch users never see it, which fails WCAG 3.3.2.'
     }
   }
 };
@@ -210,16 +268,9 @@ function runInPage(ctx) {
   // so visually hidden (clipped) text counts as rendered, as it does for a
   // visually hidden <label>: someone placed that text on purpose, and markup
   // can't tell whether it repeats a visible cue.
+  // The references may be ids or elements set from script.
   function hasRenderedLabelledByRef(el) {
-    const ids = trim(dom.getAttribute(el, 'aria-labelledby')).split(/\s+/).filter(Boolean);
-    const scope =
-      dom.get(el, 'getRootNode') &&
-      typeof dom.get(dom.getRootNode(el), 'getElementById') === 'function'
-        ? dom.getRootNode(el)
-        : document;
-    for (const refId of ids) {
-      const ref = dom.getElementById(scope, refId);
-      if (!ref) continue;
+    for (const ref of helpers.getRefElements(el, 'aria-labelledby', ctx)) {
       if (!isDomVisibleEligible) return true;
       try {
         const r = isDomVisibleEligible(ref, ctx, {

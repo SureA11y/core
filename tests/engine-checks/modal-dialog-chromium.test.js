@@ -74,9 +74,41 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
         d.setAttribute('aria-modal', 'true');
         d.show();
       }
+      if (how === 'aria-modal-div') {
+        const div = document.createElement('div');
+        div.setAttribute('role', 'dialog');
+        div.setAttribute('aria-modal', 'true');
+        div.setAttribute('aria-label', 'Sign in');
+        div.innerHTML = '<img id="inside" src="y.png"><button>Close</button>';
+        document.body.appendChild(div);
+      }
       if (how === 'closed') {
         d.showModal();
         d.close();
+      }
+      // The dialog moved into a component's shadow root, with an image the
+      // page slots into it and one it slots beside it.
+      if (how.startsWith('shadow')) {
+        const host = document.createElement('div');
+        host.id = 'host';
+        host.innerHTML =
+          '<img slot="in" id="slotted-in" src="z.png"><img id="slotted-out" src="w.png">';
+        document.body.appendChild(host);
+        const root = host.attachShadow({ mode: 'open' });
+        root.innerHTML = '<slot></slot>';
+        d.appendChild(document.createElement('slot')).name = 'in';
+        root.appendChild(d);
+        if (how === 'shadow-modal') d.showModal();
+        if (how === 'shadow-non-modal') d.show();
+        if (how === 'shadow-aria-modal-div') {
+          d.remove();
+          const div = document.createElement('div');
+          div.setAttribute('role', 'dialog');
+          div.setAttribute('aria-modal', 'true');
+          div.setAttribute('aria-label', 'Sign in');
+          div.innerHTML = '<button>Close</button>';
+          root.appendChild(div);
+        }
       }
     }, open);
     await addBundle(p);
@@ -142,4 +174,54 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
       }
     );
   }
+
+  // A dialog opened with showModal() in a shadow tree is in the top layer
+  // too, and the rest of the document is inert behind it.
+  await t.test('a modal dialog in a shadow root', async () => {
+    const r = await scan('shadow-modal');
+    const imgs = r['img-alt-present'].html;
+    assert.ok(
+      imgs.some((h) => h.includes('id="inside"')),
+      'inside'
+    );
+    assert.ok(
+      imgs.some((h) => h.includes('id="slotted-in"')),
+      'slotted into the dialog'
+    );
+    assert.ok(!imgs.some((h) => h.includes('id="behind"')), 'behind');
+    assert.ok(!imgs.some((h) => h.includes('id="slotted-out"')), 'slotted beside the dialog');
+    for (const id of [
+      'page-has-heading-one',
+      'landmark-one-main',
+      'bypass-blocks-present',
+      'region'
+    ]) {
+      assert.equal(r[id].outcome, 'notApplicable', id);
+    }
+
+    const plain = await scan('shadow-non-modal');
+    assert.ok(plain['img-alt-present'].html.some((h) => h.includes('id="behind"')));
+    assert.equal(plain['page-has-heading-one'].outcome, 'pass');
+
+    const aria = await scan('shadow-aria-modal-div');
+    assert.ok(aria['img-alt-present'].html.some((h) => h.includes('id="behind"')));
+    assert.equal(aria['page-has-heading-one'].outcome, 'notApplicable');
+  });
+
+  // A script-made modal, role="dialog" with aria-modal="true", makes
+  // nothing inert: the page behind it is still judged, but the structure
+  // rules know the scan saw a dialog.
+  await t.test('a shown role="dialog" with aria-modal="true"', async () => {
+    const r = await scan('aria-modal-div');
+    assert.ok(r['img-alt-present'].html.some((h) => h.includes('id="behind"')));
+    assert.ok(r['img-alt-present'].html.some((h) => h.includes('id="inside"')));
+    for (const id of [
+      'page-has-heading-one',
+      'landmark-one-main',
+      'bypass-blocks-present',
+      'region'
+    ]) {
+      assert.equal(r[id].outcome, 'notApplicable', id);
+    }
+  });
 });

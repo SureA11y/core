@@ -15,6 +15,11 @@
  *   (case-insensitive, normalized). When both are present and say the
  *   same thing, assistive technology that surfaces both announces the
  *   same text twice for one table.
+ * @reason-codes
+ *   - `TABLE_CAPTION_SUMMARY_DUPLICATE` (cantTell): the table's caption and
+ *     its summary attribute say the same text, which may be announced twice.
+ *     It leans fail: the page states it.
+ *     Basis: HTML table element summary attribute (best practice); H39.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -41,7 +46,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TABLE_CAPTION_SUMMARY_DUPLICATE: {
+      steps: [
+        'Find the table the report names and read its caption and its summary attribute in the page source.',
+        'Move to the table with a screen reader and listen to what is announced as it starts.',
+        'Note whether the same text is read twice.'
+      ],
+      passWhen:
+        "The table's title is announced once, and the summary (if kept) adds different information, such as how the table is laid out.",
+      failWhen:
+        'The same text is read twice because caption and summary repeat each other (best practice, H39); remove the summary or make it say something else.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -66,7 +86,9 @@ function runInPage(ctx) {
     const summary = normalizeWs(dom.getAttribute(el, 'summary'));
     if (!summary) continue;
 
-    const captionEl = dom.get(el, 'querySelector') ? dom.querySelector(el, 'caption') : null;
+    // The table's own caption (its first <caption> child, HTML's
+    // table.caption), not one of a table nested in its cells.
+    const captionEl = dom.get(el, 'caption') || null;
     const captionText = captionEl ? normalizeWs(dom.textContent(captionEl)) : '';
     if (!captionText) continue;
 
@@ -82,6 +104,12 @@ function runInPage(ctx) {
           summaryKey: 'tableDuplicateName_summary_cantTell',
           hintKey: 'tableDuplicateName_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: "The table's caption and summary say the same thing, so it is read twice.",
+          signals: [{ signal: 'caption-equals-summary', value: true }],
+          i18n: { whyKey: 'tableDuplicateName_lean_why' }
         },
         data: {
           details: { reasonCode: 'TABLE_CAPTION_SUMMARY_DUPLICATE' }

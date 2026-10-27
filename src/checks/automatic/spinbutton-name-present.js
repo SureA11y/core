@@ -28,6 +28,16 @@
  *   On a text-like <input> or a <textarea>, the placeholder counts last
  *   (HTML-AAM's final name source): a placeholder-only label is a 3.3.2
  *   question, not a missing name.
+ * @reason-codes
+ *   - `name_missing` (fail): the spin button has no accessible name from
+ *     aria-label, aria-labelledby, title, an associated label or a
+ *     placeholder.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; HTML-AAM 4.1.1;
+ *     WAI-ARIA 1.2 spinbutton role; ACT e086e5.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'spinbutton-name-present';
@@ -55,7 +65,22 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['spinbutton-name-present'] } }
+  coverage: { facetsBySc: { '4.1.2': ['spinbutton-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the spin button the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the spin button, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The spin button has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {

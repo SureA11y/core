@@ -298,6 +298,28 @@ test('getAccessibleNameInfo: aria-labelledby wins over aria-label when both are 
   assert.equal(info.mechanism, 'aria-labelledby');
 });
 
+test('getAccessibleNameInfo: an aria-labelledby inside the text aria-labelledby points at is not followed (accname 2B)', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b" aria-labelledby="l1"><span id="l1">Delete <span aria-labelledby="l2">file</span></span></button><span id="l2" hidden>everything</span>'
+  );
+  const info = helpers.getAccessibleNameInfo(byId(document, 'b'));
+  assert.equal(info.value, 'Delete file');
+  // Named on its own, the inner span still takes its aria-labelledby.
+  assert.equal(
+    helpers.getAccessibleNameInfo(document.querySelector('[aria-labelledby="l2"]')).value,
+    'everything'
+  );
+});
+
+test('getAccessibleNameInfo: text right inside a closed <details> is hidden content, left out of a name', () => {
+  const { helpers, document } = helpersFor(
+    '<label for="n">Name <details><summary>Help</summary>Use the name on your passport</details></label><input id="n">' +
+      '<label for="m">Other <details open><summary>Help</summary>Shown</details></label><input id="m">'
+  );
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'n')).value, 'Name Help');
+  assert.equal(helpers.getAccessibleNameInfo(byId(document, 'm')).value, 'Other Help Shown');
+});
+
 test('getAccessibleNameInfo: falls back to aria-label when aria-labelledby points at nothing', () => {
   const { helpers, document } = helpersFor(
     '<button id="b" aria-label="Label text" aria-labelledby="missing-id">X</button>'
@@ -991,6 +1013,41 @@ test('getTextFromIdRefsIdrefEligible: a referenced target that resolves to empty
   const t = helpers.getTextFromIdRefsIdrefEligible('a', {});
   assert.equal(t.text, '');
   assert.ok(t.flags.includes('resolved-empty-text'));
+});
+
+// accname's LabelledBy traversal: a referenced node that is hidden gives its
+// whole subtree, aria-hidden included. Before, only text directly in an
+// aria-hidden target counted, so <b>Save</b> inside it named nothing.
+test('getAccessibleNameInfo: an aria-hidden labelledby target gives the text of its whole subtree', () => {
+  const { helpers, document } = helpersFor(
+    '<button id="b1" aria-labelledby="l1"></button><span id="l1" aria-hidden="true"><b>Save</b></span>' +
+      '<button id="b2" aria-labelledby="l2"></button><span id="l2" aria-hidden="true">AH <span>child</span> <span style="display:none">gone</span></span>' +
+      '<button id="b3" aria-labelledby="l3"></button><span id="l3">Plain <span aria-hidden="true">hidden</span></span>'
+  );
+  const name = (id) => helpers.getAccessibleNameInfo(byId(document, id), { helpers }).value;
+  assert.equal(name('b1'), 'Save');
+  assert.equal(name('b2'), 'AH child gone');
+  // A visible target still leaves out its own hidden content.
+  assert.equal(name('b3'), 'Plain');
+});
+
+// SVG-AAM: an SVG <title> or <desc> is never content. It names (or
+// describes) its own parent only, so a presentational <svg>'s <title> names
+// nothing, and an SVG <a> is named by its own <title>.
+test('SVG <title> and <desc> name their parent only, never as content', () => {
+  const { helpers, document } = helpersFor(
+    '<a id="pres" href="/"><svg role="presentation"><title>Home</title><rect/></svg></a>' +
+      '<a id="desc" href="/d"><svg role="presentation"><desc>Docs</desc><rect/></svg></a>' +
+      '<a id="icon" href="/s"><svg><title>Search</title><rect/></svg></a>' +
+      '<svg><a id="svglink" href="/next"><title>Next page</title><rect/></a></svg>'
+  );
+  const content = (id) => helpers.getContentNameInfo(byId(document, id), { helpers }).value;
+  assert.equal(content('pres'), '');
+  assert.equal(content('desc'), '');
+  assert.equal(content('icon'), 'Search');
+  const info = helpers.getAccessibleNameInfo(byId(document, 'svglink'), { helpers });
+  assert.equal(info.value, 'Next page');
+  assert.equal(info.mechanism, 'svg-title');
 });
 
 // ===== getLabelSubtreeNameInfo (via getAccessibleNameInfo's native-<label> path) =====

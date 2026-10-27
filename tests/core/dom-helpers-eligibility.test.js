@@ -430,6 +430,60 @@ test('isModalDialogOpen: true only while an open modal dialog is in the document
   );
 });
 
+// jsdom has no top layer: an open dialog with aria-modal="true" stands in
+// for one opened with showModal(), in a shadow root as in the document
+// (modal-dialog-chromium.test.js has the browser's own).
+test('a modal dialog in an open shadow root blocks the rest of the document', () => {
+  const { helpers, document } = helpersFor(
+    '<p id="outside">Background</p><div id="wrapper"><div id="host"><span id="slotted">Slotted</span></div></div>'
+  );
+  const outer = byId(document, 'host').attachShadow({ mode: 'open' });
+  outer.innerHTML = '<div id="inner"></div><slot></slot><p id="beside">Beside</p>';
+  // Nested: a shadow root inside a shadow root.
+  const inner = outer.getElementById('inner').attachShadow({ mode: 'open' });
+  inner.innerHTML =
+    '<dialog id="dlg" open aria-modal="true"><p id="inside">Dialog</p><slot></slot></dialog>';
+  assert.equal(helpers.isModalDialogOpen(), true);
+  assert.deepEqual(helpers.getOpenModalDialogs(), [inner.getElementById('dlg')]);
+  assert.equal(helpers.isAccTreeEligible(inner.getElementById('inside')).eligible, true);
+  // What contains the dialog by the flat tree is not what is denied.
+  for (const el of [
+    document.body,
+    byId(document, 'wrapper'),
+    byId(document, 'host'),
+    outer.getElementById('inner')
+  ]) {
+    assert.equal(helpers.isAccTreeEligible(el).eligible, true, el.id || el.localName);
+  }
+  for (const el of [byId(document, 'outside'), outer.getElementById('beside')]) {
+    assert.deepEqual(helpers.isAccTreeEligible(el).reasons, ['modalInert'], el.id);
+  }
+  // Slotted into the host, not into the dialog: behind it.
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'slotted')).reasons, ['modalInert']);
+});
+
+test('a dialog in a shadow root that is not modal blocks nothing', () => {
+  const { helpers, document } = helpersFor('<p id="outside">Background</p><div id="host"></div>');
+  byId(document, 'host').attachShadow({ mode: 'open' }).innerHTML =
+    '<dialog open><p>Dialog</p></dialog><dialog aria-modal="true"><p>Closed</p></dialog>';
+  assert.equal(helpers.isModalDialogOpen(), false);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'outside')).eligible, true);
+});
+
+test('isModalDialogOpen: a shown aria-modal role="dialog" in a shadow root counts; it blocks nothing', () => {
+  const { helpers, document } = helpersFor('<p id="outside">Background</p><div id="host"></div>');
+  const root = byId(document, 'host').attachShadow({ mode: 'open' });
+  root.innerHTML = '<div role="dialog" aria-modal="true" aria-label="Sign in">Dialog</div>';
+  assert.equal(helpers.isModalDialogOpen(), true);
+  assert.deepEqual(helpers.getOpenModalDialogs(), []);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'outside')).eligible, true);
+
+  const hidden = helpersFor('<div id="host"></div>');
+  byId(hidden.document, 'host').attachShadow({ mode: 'open' }).innerHTML =
+    '<div role="dialog" aria-modal="true" hidden>Dialog</div>';
+  assert.equal(hidden.helpers.isModalDialogOpen(), false);
+});
+
 // ===== isDomVisibleEligible =====
 
 test('isDomVisibleEligible: display:none ancestor blocks (styleOnly, the default mode)', () => {

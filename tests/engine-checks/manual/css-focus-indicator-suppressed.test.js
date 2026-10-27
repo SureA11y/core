@@ -105,6 +105,83 @@ test(`${RULE_ID}: :focus-visible counts as a focus rule`, () => {
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: an outline removed only for focus that is not focus-visible is not reported`, () => {
+  const outcome = (css, body = '<a href="/x" id="a">x</a>') =>
+    runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] }).checksResults.find(
+      (c) => c.ruleId === RULE_ID
+    );
+  const htmlScoped = (body) =>
+    `<!doctype html><html class="js-focus-visible"><head><style>${body}</style></head><body><a href="/x" id="a">x</a></body></html>`;
+  const attrScoped = (body) =>
+    `<!doctype html><html data-js-focus-visible=""><head><style>${body}</style></head><body><a href="/x" id="a">x</a></body></html>`;
+  const run = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find((c) => c.ruleId === RULE_ID);
+
+  // Native.
+  assert.strictEqual(outcome('a:focus:not(:focus-visible){outline:none}').outcome, 'notApplicable');
+  // The WICG polyfill's class form, scoped under .js-focus-visible.
+  for (const css of [
+    '.js-focus-visible :focus:not(.focus-visible){outline:none}',
+    '.js-focus-visible a:focus:not(.focus-visible){outline:0}',
+    'html.js-focus-visible > body a:not(.focus-visible){outline:none}'
+  ]) {
+    const r = run(htmlScoped(css));
+    assert.strictEqual(r.outcome, 'notApplicable', css);
+    assert.strictEqual(r.occurrences.length, 0, css);
+  }
+  // Its attribute form, scoped under [data-js-focus-visible].
+  for (const css of [
+    '[data-js-focus-visible] :focus:not([data-focus-visible-added]){outline:none}',
+    '[data-js-focus-visible] a:focus:not([data-focus-visible-added]){outline:none}'
+  ]) {
+    const r = run(attrScoped(css));
+    assert.strictEqual(r.outcome, 'notApplicable', css);
+    assert.strictEqual(r.occurrences.length, 0, css);
+  }
+  // A rule that also removes the outline outright is still reported.
+  const both = run(
+    htmlScoped('.js-focus-visible :focus:not(.focus-visible){outline:none} a{outline:none}')
+  );
+  assert.strictEqual(both.outcome, 'cantTell');
+  assert.deepStrictEqual(both.occurrences[0].data.details.suppressingSelectors, ['a']);
+});
+
+test(`${RULE_ID}: .focus-visible outside the polyfill's scope is judged as before`, () => {
+  const run = (html) =>
+    runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults.find((c) => c.ruleId === RULE_ID);
+  const doc = (htmlAttrs, css, body = '<a href="/x" id="a">x</a>') =>
+    `<!doctype html><html${htmlAttrs}><head><style>${css}</style></head><body>${body}</body></html>`;
+  for (const [attrs, css, body] of [
+    // No scope at all.
+    ['', 'a:focus:not(.focus-visible){outline:none}'],
+    ['', ':focus:not(.focus-visible){outline:none}'],
+    // Names that only look like the polyfill's.
+    [' class="js-focus-visible-x"', '.js-focus-visible-x :focus:not(.focus-visible){outline:none}'],
+    [' class="js-focus-visible"', '.js-focus-visible :focus:not(.focus-visible-x){outline:none}'],
+    // The scope on the element itself, or as a sibling, is not a scope above it.
+    ['', 'a.js-focus-visible:focus:not(.focus-visible), a:focus:not(.focus-visible){outline:none}'],
+    [
+      '',
+      '.js-focus-visible + div :focus:not(.focus-visible){outline:none}',
+      '<div class="js-focus-visible"></div><div><a href="/x" id="a">x</a></div>'
+    ],
+    // The class form under the attribute scope, and the other way round.
+    [
+      ' data-js-focus-visible=""',
+      '[data-js-focus-visible] :focus:not(.focus-visible){outline:none}'
+    ],
+    [
+      ' class="js-focus-visible"',
+      '.js-focus-visible :focus:not([data-focus-visible-added]){outline:none}'
+    ]
+  ]) {
+    const r = run(doc(attrs, css, body));
+    assert.strictEqual(r.outcome, 'cantTell', css);
+    assert.strictEqual(r.occurrences.length, 1, css);
+    assert.strictEqual(r.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
+  }
+});
+
 test(`${RULE_ID}: suppression nested in a grouping rule is found`, () => {
   const result = runa11yCoreOnHtml(
     page('@media screen{a:focus{outline:none}}', '<a href="/x" id="a">x</a>'),
@@ -243,6 +320,36 @@ test(`${RULE_ID}: catches ACT oj04fd's failed example once its stylesheet is ava
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: leans fail when nothing readable shows focus another way`, () => {
+  const lean = (css, body) => {
+    const result = runa11yCoreOnHtml(page(css, body), { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'FOCUS_INDICATOR_SUPPRESSED');
+    return rule.occurrences[0].lean;
+  };
+  const plain = lean('a:focus{outline:none}', '<a href="/x" id="a">x</a>');
+  assert.strictEqual(plain.toward, 'fail');
+  assert.strictEqual(plain.i18n.whyKey, 'cssFocusIndicatorSuppressed_lean_why');
+  // An inline focus handler may draw the indicator: no lean.
+  assert.strictEqual(
+    lean('a:focus{outline:none}', '<a href="/x" id="a" onfocus="mark(this)">x</a>'),
+    undefined
+  );
+  // A :focus-within rule around it draws a change: no lean.
+  assert.strictEqual(
+    lean(
+      'a:focus{outline:none} nav:focus-within{background:yellow}',
+      '<nav><a href="/x" id="a">x</a></nav>'
+    ),
+    undefined
+  );
+  // A focus-visible polyfill's class: no lean.
+  assert.strictEqual(
+    lean('a:focus:not(.focus-visible){outline:none}', '<a href="/x" id="a">x</a>'),
+    undefined
+  );
+});
+
 test(`${RULE_ID}: manual rule never reports fail`, () => {
   const result = runa11yCoreOnHtml(page('*:focus{outline:none}', '<a href="/x" id="a">x</a>'), {
     runOnly: [RULE_ID]
@@ -269,7 +376,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
 
   const expectedIds = [
     'cfis_case_01',
@@ -277,7 +384,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_03',
     'cfis_case_04',
     'cfis_case_05',
-    'cfis_case_13'
+    'cfis_case_13',
+    'cfis_case_17'
   ];
   const expectedNoOccIds = [
     'cfis_case_06',
@@ -287,7 +395,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     'cfis_case_10',
     'cfis_case_11',
     'cfis_case_12',
-    'cfis_case_14'
+    'cfis_case_14',
+    'cfis_case_15',
+    'cfis_case_16'
   ];
 
   for (const id of expectedIds) {

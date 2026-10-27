@@ -21,11 +21,19 @@
  *   when it can take focus or carries a global ARIA attribute, as
  *   WAI-ARIA's presentational roles conflict resolution has browsers
  *   ignore that role then.
+ *   A native <hx> with a valid aria-level (a positive integer) has that
+ *   level, as browsers expose it: <h2 aria-level="1"> is a level-one
+ *   heading and <h1 aria-level="2"> is not, as heading-order reads them.
  * @expectation
  *   At least one heading with level 1 exists (native <h1>, or
  *   role="heading" with aria-level="1"). A page with no top-level
  *   heading has no clear entry point for assistive technology users
  *   navigating by heading.
+ * @reason-codes
+ *   - `HEADING_ONE_MISSING` (cantTell): the page exposes no level-one
+ *     heading to assistive technology.
+ *     It leans fail: the page states it.
+ *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -61,7 +69,21 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    HEADING_ONE_MISSING: {
+      steps: [
+        'Open the page and find its main title (the text that says what this page is).',
+        "Open the Accessibility pane of the developer tools, or a screen reader's list of headings, and look for a heading at level 1.",
+        'If there is none, check whether the main title is marked up as a heading at all, and at which level.'
+      ],
+      passWhen: 'The page has a level-one heading that names its main content.',
+      failWhen:
+        'No heading on the page is level one, so heading navigation has no clear start (best practice, G141).'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -126,7 +148,17 @@ function runInPage(ctx) {
       return ariaLevelOf(el) === '1';
     }
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
-    return tag === 'h1';
+    const m = /^h([1-6])$/.exec(tag);
+    if (!m) return false;
+    // Browsers expose a valid aria-level on <hx> in place of the tag level,
+    // as heading-order reads it.
+    const ariaLevel = normalizeWs(
+      dom.get(el, 'getAttribute') && dom.getAttribute(el, 'aria-level')
+    );
+    if (/^[0-9]+$/.test(ariaLevel) && parseInt(ariaLevel, 10) >= 1) {
+      return parseInt(ariaLevel, 10) === 1;
+    }
+    return m[1] === '1';
   }
 
   const isAccTreeEligible =
@@ -149,8 +181,8 @@ function runInPage(ctx) {
   try {
     nodes =
       helpers && typeof helpers.queryAllSmart === 'function'
-        ? helpers.queryAllSmart('h1, [role]', { internalsRoles: true })
-        : dom.querySelectorAll(document, 'h1, [role]');
+        ? helpers.queryAllSmart('h1, h2, h3, h4, h5, h6, [role]', { internalsRoles: true })
+        : dom.querySelectorAll(document, 'h1, h2, h3, h4, h5, h6, [role]');
   } catch {
     nodes = [];
   }
@@ -173,6 +205,12 @@ function runInPage(ctx) {
           summaryKey: 'pageHasHeadingOne_summary_cantTell',
           hintKey: 'pageHasHeadingOne_hint_cantTell',
           params: {}
+        },
+        lean: {
+          toward: 'fail',
+          why: 'The page has no level-one heading.',
+          signals: [{ signal: 'heading-one-absent', value: true }],
+          i18n: { whyKey: 'pageHasHeadingOne_lean_why' }
         },
         data: {
           details: { reasonCode: 'HEADING_ONE_MISSING' }

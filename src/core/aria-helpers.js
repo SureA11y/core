@@ -327,6 +327,7 @@ function createAriaHelpers(opts, shared) {
     'gridcell',
     'group',
     'heading',
+    'image',
     'img',
     'insertion',
     'link',
@@ -950,12 +951,16 @@ function createAriaHelpers(opts, shared) {
     return firstConcreteRole(getAttr(el, 'role'));
   }
 
+  // ARIA 1.3 role synonyms, read as the role they stand for, so the rules
+  // judge role="image" as role="img".
+  const ROLE_SYNONYMS = { image: 'img' };
+
   function firstConcreteRole(value) {
     const raw = trim(value);
     if (!raw) return '';
     for (const token of raw.split(/\s+/)) {
       const t = lower(token);
-      if (t && CONCRETE_ROLES.has(t)) return t;
+      if (t && CONCRETE_ROLES.has(t)) return ROLE_SYNONYMS[t] || t;
     }
     return '';
   }
@@ -1114,7 +1119,9 @@ function createAriaHelpers(opts, shared) {
         return { valid: false, reason: 'integer-out-of-range' };
       }
       case 'number': {
-        const ok = Number.isFinite(Number(v));
+        // A decimal number, with an exponent or not: Number() also reads
+        // "0x10", "0b1" and "0o7", which browsers don't take as numbers.
+        const ok = /^[-+]?(\d+\.?\d*|\.\d+)([eE][-+]?\d+)?$/.test(v) && Number.isFinite(Number(v));
         return { valid: ok, reason: ok ? '' : 'expected-number' };
       }
       case 'token': {
@@ -1434,8 +1441,9 @@ function createAriaHelpers(opts, shared) {
   // A <td>'s role, from the nearest <table> above it, as HTML-AAM maps it:
   // cell in a table, gridcell in a grid or treegrid, and no role when the
   // table is not exposed as one of those (role="presentation", or a role
-  // with no cells). A table is not focusable, so presentational role
-  // conflict resolution does not give it back its role.
+  // with no cells). A presentational role is ignored, as WAI-ARIA's
+  // conflict resolution has it, on a table with a global ARIA attribute or
+  // a tabindex, which makes it focusable: its cells are cells then.
   // Chromium differs for a table it judges to be for layout (no header
   // cells, few rows): it exposes the cells as LayoutTableCell. HTML-AAM
   // has no such heuristic, so a cell there is a cell.
@@ -1450,7 +1458,13 @@ function createAriaHelpers(opts, shared) {
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
     if (tableCellRoleCache.has(table)) return tableCellRoleCache.get(table);
-    const tableRole = getExplicitRole(table);
+    let tableRole = getExplicitRole(table);
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      (hasGlobalAriaAttr(table) || /^\s*[+-]?\d/.test(getAttr(table, 'tabindex') || ''))
+    ) {
+      tableRole = '';
+    }
     let role = '';
     if (!tableRole || tableRole === 'table') role = 'cell';
     else if (tableRole === 'grid' || tableRole === 'treegrid') role = 'gridcell';

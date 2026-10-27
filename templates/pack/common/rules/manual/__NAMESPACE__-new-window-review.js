@@ -27,7 +27,24 @@ const meta = {
   wcagSc: [],
   defaultSeverity: 'minor',
   type: 'manual',
-  defaultConfidence: 'medium'
+  defaultConfidence: 'medium',
+  // The reason codes the rule gives, so definePack can check that `review`
+  // names only these.
+  reasonCodes: ['OPENS_NEW_WINDOW'],
+  // How a person answers each question the rule asks, per reason code: a few
+  // steps from the element the finding names, then what they see if it
+  // passes and if it fails. In English; reports show it as "How to check".
+  review: {
+    OPENS_NEW_WINDOW: {
+      steps: [
+        'Find the link the report names on the page.',
+        'Read its text, and any text or icon next to it.'
+      ],
+      passWhen: 'The link, or something next to it, says it opens a new window or tab.',
+      failWhen:
+        'Nothing says the link opens a new window or tab, so people are not warned before the change of context (best practice, WCAG technique G201).'
+    }
+  }
 };
 
 function runInPage(ctx) {

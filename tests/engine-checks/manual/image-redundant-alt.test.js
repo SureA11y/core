@@ -105,3 +105,22 @@ test(`${RULE_ID}: every image in a parent is still judged against its text`, () 
   assert.ok(rule.occurrences.some((o) => o.html.includes('alt="Home"')));
   assert.ok(!rule.occurrences.some((o) => o.html.includes('alt="Logo"')));
 });
+
+// The repetition is a fact the page states, and this best practice never
+// fails: it leans fail, unless a presentational role may keep the alt from
+// being read.
+test(`${RULE_ID}: leans fail, except on an image with role="presentation"`, () => {
+  const run = (img) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body><a href="/">${img}Home</a></body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const o = run('<img alt="Home">');
+  assert.strictEqual(o.lean.toward, 'fail');
+  assert.strictEqual(o.lean.i18n.whyKey, 'imageRedundantAlt_lean_why');
+  assert.strictEqual(run('<img alt="Home" role="presentation">').lean, undefined);
+});

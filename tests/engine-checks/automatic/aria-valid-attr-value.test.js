@@ -289,7 +289,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
     'avav_case_28',
     'avav_case_29',
     'avav_case_30',
-    'avav_case_31'
+    'avav_case_31',
+    'avav_case_32'
   ];
 
   for (const id of expectedFailIds) {
@@ -383,6 +384,26 @@ test(`${RULE_ID}: aria-valuenow outside the range fails, with ARIA's defaults wh
     [
       '<div role="slider" tabindex="0" aria-label="v" aria-valuenow="150" aria-valuetext="Max plus"></div>',
       'pass'
+    ],
+    // A native element's range is its own min and max (HTML-AAM), not 0 to 100.
+    [
+      '<progress role="progressbar" aria-label="v" max="1000" value="500" aria-valuenow="500"></progress>',
+      'pass'
+    ],
+    [
+      '<input type="range" role="slider" aria-label="v" min="1900" max="2100" value="2000" aria-valuenow="2000">',
+      'pass'
+    ],
+    [
+      '<meter role="meter" aria-label="v" max="500" value="250" aria-valuenow="250"></meter>',
+      'pass'
+    ],
+    ['<meter role="meter" aria-label="v" value="0.5" aria-valuenow="7"></meter>', 'fail', 0, 1],
+    [
+      '<input type="number" role="spinbutton" aria-label="v" max="5" aria-valuenow="9">',
+      'fail',
+      null,
+      5
     ]
   ];
   for (const [markup, outcome, min, max] of cases) {
@@ -436,7 +457,10 @@ test(`${RULE_ID}: aria-haspopup naming another role than its popup's is asked ab
   for (const markup of [
     '<button aria-haspopup="dialog" aria-controls="d">a</button><dialog id="d" open>x</dialog>',
     '<button aria-haspopup="grid" aria-controls="w">a</button><div id="w"><div role="grid" aria-label="g"></div></div>',
-    '<button aria-haspopup="menu" aria-controls="w">a</button><div id="w">no role</div>'
+    '<button aria-haspopup="menu" aria-controls="w">a</button><div id="w">no role</div>',
+    // A select with multiple or a size above 1 is a listbox.
+    '<button aria-haspopup="listbox" aria-controls="s">a</button><select id="s" multiple aria-label="l"><option>x</option></select>',
+    '<button aria-haspopup="listbox" aria-controls="s">a</button><select id="s" size="3" aria-label="l"><option>x</option></select>'
   ]) {
     assert.equal(relation(markup).outcome, 'pass', markup);
   }
@@ -456,4 +480,69 @@ test(`${RULE_ID}: aria-activedescendant outside the host is asked about, unless 
   ]) {
     assert.equal(relation(markup).outcome, 'pass', markup);
   }
+});
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a reference to an id that differs only in case`, () => {
+  const lean = leanOn(
+    '<div id="a" aria-describedby="Hint-Text">x</div><p id="hint-text">h</p>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_nearMiss');
+});
+
+test(`${RULE_ID}: no lean for a reference to the next number of a numbered id`, () => {
+  assert.strictEqual(
+    leanOn('<div id="a" aria-describedby="item-3">x</div><p id="item-2">h</p>', 'a'),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: leans fail for a reference to an id in another shadow tree`, () => {
+  const { createDom, runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createDom(
+    '<!doctype html><html lang="en"><body><div id="a" aria-describedby="tip">x</div><div id="host"></div></body></html>'
+  );
+  const host = dom.window.document.getElementById('host');
+  host.attachShadow({ mode: 'open' }).innerHTML = '<p id="tip">Tip</p>';
+  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1
+  });
+  const occ = rule.occurrences.find((o) => o.html.includes('id="a"'));
+  assert.strictEqual(occ.lean.toward, 'fail');
+  assert.strictEqual(occ.lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_otherTree');
+});
+
+test(`${RULE_ID}: leans fail for an open popup with another role than aria-haspopup`, () => {
+  const lean = leanOn(
+    '<button id="a" aria-haspopup="menu" aria-controls="p" aria-expanded="true">Open</button><div id="p" role="dialog">d</div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaValidAttrValue_lean_why_haspopupOpen');
+});
+
+test(`${RULE_ID}: no lean for a closed popup with another role than aria-haspopup`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<button id="a" aria-haspopup="menu" aria-controls="p" aria-expanded="false">Open</button><div id="p" role="dialog" hidden>d</div>',
+      'a'
+    ),
+    undefined
+  );
 });

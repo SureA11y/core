@@ -41,6 +41,20 @@
  *     `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE`): the keyboard
  *     handler attributes the element carries, which keyboard events cannot
  *     reach. One item is an attribute name, such as `onfocus`.
+ * @reason-codes
+ *   - `MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT` (cantTell): the element has
+ *     pointer-only event handlers and no key, focus or blur handler.
+ *     It leans fail when a listener hook installed before the page's scripts
+ *     saw no key listener on it, an ancestor, the document or the window,
+ *     a handler is a mousedown, mouseup or dblclick one that does something,
+ *     and neither it, anything in it nor any ancestor can take focus.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54.
+ *   - `MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE` (cantTell): the
+ *     element has pointer-only event handlers, and its keyboard handlers
+ *     cannot run because neither it nor anything inside it can take focus.
+ *     It leans fail when nothing inside it can take focus either (a focus
+ *     or blur handler alone is reported whatever its content holds).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F54.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail), not
  *   `automatic`: this can only see inline `on*="..."` HTML attributes.
@@ -105,6 +119,33 @@ const meta = {
     facetsBySc: {
       '2.1.1': ['mouse-only-event-handlers-evidence'],
       '2.1.3': ['mouse-only-event-handlers-evidence']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE: {
+      steps: [
+        'Find the element the report names and note what its mouse handlers do by hovering or clicking it.',
+        'Press Tab through that part of the page and watch whether focus ever lands on the element or on something inside it.',
+        'If it does, try Enter, Space and the arrow keys and compare with what the mouse did.'
+      ],
+      passWhen:
+        'The element (or something inside it) gets keyboard focus and its key or focus handlers give the same result as the mouse, or the mouse action is only visual.',
+      failWhen:
+        'Focus never reaches the element, so its keyboard handlers never run and the mouse action cannot be done by keyboard, which fails WCAG 2.1.1 (F54).'
+    },
+    MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT: {
+      steps: [
+        'Find the element the report names and note its mouse handlers (such as onmouseover or ondblclick).',
+        'Hover, click or double-click it with the mouse and note what happens (a menu opens, a tooltip shows, an item moves).',
+        'Reload, then use only the keyboard: Tab to the element (or the control around it) and try Enter, Space, the arrow keys and Escape.',
+        'Check whether the same result happens, or whether the same function is offered by another control a keyboard can reach.'
+      ],
+      passWhen:
+        'The mouse action only adds a visual effect, or the keyboard gets the same result on focus or with a key.',
+      failWhen:
+        'Something the mouse does (opening a menu, showing information, moving an item) cannot be done with the keyboard, which fails WCAG 2.1.1 (F54).'
     }
   }
 };
@@ -193,6 +234,62 @@ function runInPage(ctx) {
     );
   }
 
+  // A shown descendant that can take focus.
+  function focusableInside(el) {
+    let descendants;
+    try {
+      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+    } catch {
+      return true;
+    }
+    return descendants.some(
+      (d) => !(helpers.isHiddenContent && helpers.isHiddenContent(d)) && canTakeFocus(d)
+    );
+  }
+  function focusableAncestor(el) {
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (canTakeFocus(a)) return true;
+    }
+    return false;
+  }
+  // The hook's mode ('none', 'early' or 'late'), and whether it saw a key
+  // listener on an ancestor, the document or the window.
+  const KEY_TYPES = ['keydown', 'keyup', 'keypress'];
+  function hookOf(target, types) {
+    try {
+      return typeof helpers.getEventListenerInfo === 'function'
+        ? helpers.getEventListenerInfo(target, types)
+        : { hook: 'none', listens: false };
+    } catch {
+      return { hook: 'none', listens: false };
+    }
+  }
+  const doc = ctx.document || null;
+  const win = doc && dom.defaultView ? dom.defaultView(doc) : null;
+  const pageKeyListener =
+    (doc && hookOf(doc, KEY_TYPES).listens) || (win && hookOf(win, KEY_TYPES).listens);
+  function keyListenerAbove(el) {
+    if (pageKeyListener) return true;
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      if (hookOf(a, KEY_TYPES).listens) return true;
+    }
+    return false;
+  }
+  // Pointer handlers that perform an action, not a hover effect; an inline
+  // one made only of statements that do nothing doesn't count.
+  const ACTION_ATTRS = ['onmousedown', 'onmouseup', 'ondblclick'];
+  const NO_OP =
+    /^(?:return(?:\s*\(?\s*false\s*\)?)?|void\s*\(?\s*0\s*\)?|event\.preventDefault\(\)|event\.stopPropagation\(\))$/;
+  function isActionHandler(el, attr) {
+    const code = trim(dom.getAttribute(el, attr));
+    if (!code) return true; // a listener added from script
+    const parts = code
+      .split(';')
+      .map((p) => p.trim())
+      .filter(Boolean);
+    return !parts.every((p) => NO_OP.test(p));
+  }
+
   const selector = MOUSE_ONLY_ATTRS.map((a) => `[${a}]`).join(', ');
   // With the listener hook, elements given a pointer listener from script
   // are candidates too.
@@ -233,8 +330,27 @@ function runInPage(ctx) {
       : null;
 
     if (unreachable) {
+      const nothingInside = !focusableInside(el);
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(nothingInside
+            ? {
+                lean: {
+                  toward: 'fail',
+                  why: 'The element has keyboard handlers, but neither it nor anything in it can take focus, so they never run.',
+                  signals: [
+                    { signal: 'keyboard-attrs', value: presentKeyboardAttrs.join(', ') },
+                    { signal: 'not-focusable', value: true }
+                  ],
+                  caution:
+                    'A script may make it focusable later, or another control may offer the same function.',
+                  i18n: {
+                    whyKey: 'mouseOnlyEventHandlers_lean_why_notFocusable',
+                    cautionKey: 'mouseOnlyEventHandlers_lean_caution_notFocusable'
+                  }
+                }
+              }
+            : {}),
           summary: `This element has ${presentMouseAttrs.join(', ')} and ${presentKeyboardAttrs.join(', ')}, but it cannot take keyboard focus, so the keyboard handlers never run.`,
           hint: 'Make the element focusable (use a native control, or add tabindex="0"), or move the handlers to a focusable element, so this functionality is also reachable by keyboard.',
           i18n: {
@@ -258,8 +374,38 @@ function runInPage(ctx) {
       continue;
     }
 
+    const actions = presentMouseAttrs.filter(
+      (a) => ACTION_ATTRS.indexOf(a) !== -1 && isActionHandler(el, a)
+    );
+    const noKeyboardPath =
+      actions.length > 0 &&
+      hookOf(el, KEY_TYPES).hook === 'early' &&
+      !canTakeFocus(el) &&
+      !focusableInside(el) &&
+      !focusableAncestor(el) &&
+      !keyListenerAbove(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(noKeyboardPath
+          ? {
+              lean: {
+                toward: 'fail',
+                why: 'The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.',
+                signals: [
+                  { signal: 'listener-hook-active', value: true },
+                  { signal: 'mouse-attrs', value: actions.join(', ') },
+                  { signal: 'element-focusable', value: false },
+                  { signal: 'ancestor-key-listener', value: false }
+                ],
+                caution:
+                  'The handler may only draw an effect or track the pointer, or another control may offer the same function.',
+                i18n: {
+                  whyKey: 'mouseOnlyEventHandlers_lean_why_noKeyboard',
+                  cautionKey: 'mouseOnlyEventHandlers_lean_caution_noKeyboard'
+                }
+              }
+            }
+          : {}),
         summary: `This element has ${presentMouseAttrs.join(', ')} but no keyboard-reachable equivalent handler.`,
         hint: 'Check with the keyboard whether this behavior can be triggered: a keyboard handler added from script counts, and a purely visual hover effect needs none. If it can’t be, add keyboard handling that does the same thing (onkeydown, or onfocus/onblur for hover behavior).',
         i18n: {

@@ -140,3 +140,36 @@ test(`${RULE_ID}: layout and named tables are notApplicable under wcag22-aa`, ()
     assertRule(result, RULE_ID, 'notApplicable');
   }
 });
+
+// A table's caption is its own <caption> child (HTML's table.caption): the
+// caption of a table nested in a cell doesn't caption the outer one.
+test(`${RULE_ID}: a nested table's caption doesn't count for the table around it`, () => {
+  const html = `<!doctype html><html><body><table id="outer"><tr><td>Quarterly results</td></tr><tr><td>Q1</td><td><table><caption>Detail</caption><tr><td>x</td></tr></table></td></tr></table></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'outer'));
+});
+
+test(`${RULE_ID}: a lone full-width first cell leans fail; repeated full-width rows or a narrow cell have no lean`, () => {
+  const lean = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell'
+    ).occurrences[0].lean;
+  const title = lean(
+    '<table><tr><td colspan="3">Sales</td></tr><tr><td>a</td><td>b</td><td>c</td></tr></table>'
+  );
+  assert.equal(title.toward, 'fail');
+  assert.equal(title.i18n.whyKey, 'tableFakeCaption_lean_why');
+  assert.equal(
+    lean(
+      '<table><tr><td colspan="2">Group 1</td></tr><tr><td>a</td><td>b</td></tr><tr><td colspan="2">Group 2</td></tr><tr><td>c</td><td>d</td></tr></table>'
+    ),
+    undefined
+  );
+  assert.equal(
+    lean('<table><tr><td>Sales</td></tr><tr><td>a</td><td>b</td></tr></table>'),
+    undefined
+  );
+});

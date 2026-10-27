@@ -13,7 +13,9 @@
  *   assertive, or, without an aria-live, whose role is status, log or
  *   alert, and <output> elements. aria-live="off" turns any of them off. A
  *   live region hidden with display: none, visibility: hidden or [hidden]
- *   is left out: a region waiting to be shown is the page at rest. With
+ *   is left out: a region waiting to be shown is the page at rest. A live
+ *   region behind an open modal <dialog>, which the browser makes inert,
+ *   is included, though other rules leave that content out. With
  *   the live-region hook (liveRegionHookScript), also the live regions it
  *   saw given their text in a way that is commonly not announced, whether
  *   or not they are still on the page.
@@ -21,9 +23,10 @@
  *   WCAG 4.1.3: a status message can be presented to the user by
  *   assistive technology without receiving focus, which a live region does
  *   when its content changes while assistive technology can reach it.
- *   - A drawn live region inside, or on, aria-hidden="true" or inert:
- *     cantTell (`LIVE_REGION_HIDDEN`). It is out of the accessibility tree,
- *     so nothing it is given can be announced.
+ *   - A drawn live region inside, or on, aria-hidden="true" or inert, or
+ *     behind an open modal <dialog>: cantTell (`LIVE_REGION_HIDDEN`). It is
+ *     out of the accessibility tree, so nothing it is given can be
+ *     announced (behind the dialog, while the dialog is open).
  *   - A live region with aria-busy="true" when the page was scanned:
  *     cantTell (`LIVE_REGION_BUSY`). Assistive technology may hold back its
  *     changes until aria-busy is cleared.
@@ -42,12 +45,43 @@
  *   it is in the page, shown and reachable, before its text changes.
  * @reports
  *   - `politeness`: the region's, `polite` or `assertive`.
- *   - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden` or `inert`.
+ *   - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or
+ *     `modal` for a region behind an open modal <dialog>. A region behind
+ *     the dialog is `modal` whatever else hides it (inert or aria-hidden on
+ *     it or above it, with or without includeHiddenElements): while the
+ *     dialog is open, it is the cause in effect.
  *   - `text`: for the hook's two findings, the text the region was given
  *     (up to 300 characters).
  *   - `removed`: for the hook's two findings, true when the region was no
  *     longer on the page when it was scanned; the occurrence is then on the
  *     document element, and `region` describes it (`tag`, `role`, `id`).
+ * @reason-codes
+ *   - `LIVE_REGION_HIDDEN` (cantTell): a live region inside or on
+ *     aria-hidden="true" or inert, or behind an open modal <dialog>, so
+ *     nothing it is given (while the dialog is open) can be announced.
+ *     It leans fail, for aria-hidden or inert, when no dialog is shown, which
+ *     would explain the rest of the page being hidden; behind a modal
+ *     dialog, when the live-region hook saw the region given text after the
+ *     dialog was last opened, so while the dialog made it inert (a dialog
+ *     the hook never saw open has been open since it started watching; one
+ *     inside a shadow root gives no lean, as the hook does not see it).
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-hidden; WAI-ARIA 1.2
+ *     aria-live; HTML dialog element showModal method.
+ *   - `LIVE_REGION_BUSY` (cantTell): a live region with aria-busy="true" when
+ *     the page was scanned, so assistive technology may hold back its changes.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-busy.
+ *   - `LIVE_REGION_INSERTED_WITH_CONTENT` (cantTell): a live region, other than
+ *     role="alert", added to the page with its text already in it, which screen
+ *     readers commonly do not announce.
+ *     It leans fail unless the hook saw the same text announced through
+ *     another live region.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
+ *   - `LIVE_REGION_SHOWN_AND_FILLED` (cantTell): a hidden live region shown and
+ *     given its text in the same task, so it was not in the accessibility tree
+ *     when the text arrived.
+ *     It leans fail unless the hook saw the same text announced through
+ *     another live region.
+ *     Basis: WCAG 4.1.3 (not settled); WAI-ARIA 1.2 aria-live.
  * @implementation-notes
  * - Manual: whether a live region carries status messages, and whether a
  *   screen reader announces it, is a person's call; screen readers differ
@@ -56,8 +90,13 @@
  * - The hook's findings come from getLiveRegionRecord(); without the hook
  *   the rule judges the page as it is when scanned.
  * - The hook's findings for a region still on the page are reported only
- *   when it is in the scanned part of the page; one no longer on the page
- *   only when the whole document is scanned.
+ *   when it is in the scanned part of the page, and not behind an open
+ *   modal <dialog>; one no longer on the page only when the whole document
+ *   is scanned.
+ * - For a region behind an open modal <dialog>, the hook's other findings
+ *   (LIVE_REGION_INSERTED_WITH_CONTENT, LIVE_REGION_SHOWN_AND_FILLED) are
+ *   not reported: LIVE_REGION_HIDDEN with hiddenBy 'modal' already covers
+ *   that region.
  */
 
 const id = 'live-region-announcements';
@@ -95,6 +134,55 @@ const meta = {
   ],
   coverage: {
     facetsBySc: { '4.1.3': ['live-region-reachable-evidence', 'live-region-changes-evidence'] }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LIVE_REGION_BUSY: {
+      steps: [
+        'Find the live region the report names; it had aria-busy="true" when the page was scanned.',
+        'Trigger the action that updates the region, then inspect it in the developer tools and see whether aria-busy changes to false or is removed once the update finishes.',
+        'Repeat the action with a screen reader running and listen for the message.'
+      ],
+      passWhen:
+        'aria-busy is cleared when the update finishes and the screen reader announces the message.',
+      failWhen:
+        'aria-busy stays true, so the screen reader holds back or skips the message, which fails WCAG 4.1.3.'
+    },
+    LIVE_REGION_HIDDEN: {
+      steps: [
+        'Find the live region the report names and note what hides it, as the report says: aria-hidden="true" or inert on it or on an ancestor, or a modal dialog open in front of it.',
+        'Check whether a modal dialog was open when the page was scanned; if so, note whether the page writes to the region while it is open, then close it and see whether the region is still hidden.',
+        'Trigger the action that updates the region (submit a form, add to cart, run a search) with a screen reader running.',
+        'Listen for the message, and check in the Accessibility pane of the developer tools that the region is in the tree when its text changes.'
+      ],
+      passWhen:
+        'The region is not hidden, nor behind an open modal dialog, when its text changes (or is never used for messages), and the screen reader announces the message without focus moving.',
+      failWhen:
+        'The region is still hidden by aria-hidden, inert or an open modal dialog when the message arrives, so the screen reader says nothing, which fails WCAG 4.1.3.'
+    },
+    LIVE_REGION_INSERTED_WITH_CONTENT: {
+      steps: [
+        'Find the message the report quotes and the action that shows it (the report gives the text and the region).',
+        'Start a screen reader, then perform that action.',
+        'Listen for the message without moving focus to it.',
+        'If it is not read, check in the developer tools whether the page adds the region already filled; an empty region should be on the page first, with the text written into it later.'
+      ],
+      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
+      failWhen:
+        'The message appears on screen but the screen reader does not announce it, because the region was added with its text already in it, which fails WCAG 4.1.3 (ARIA22).'
+    },
+    LIVE_REGION_SHOWN_AND_FILLED: {
+      steps: [
+        'Find the message the report quotes and the action that shows it.',
+        'Start a screen reader, then perform that action.',
+        'Listen for the message without moving focus to it.',
+        'If it is not read, check in the developer tools whether the region is hidden until the moment its text is set; it should be visible (or present and empty) before the text arrives.'
+      ],
+      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
+      failWhen:
+        'The message appears but the screen reader does not announce it, because the region was shown and filled at the same moment, which fails WCAG 4.1.3 (ARIA22).'
+    }
   }
 };
 
@@ -149,33 +237,196 @@ function runInPage(ctx) {
     }
   }
 
+  // A hidden live region with no dialog open: nothing explains the page
+  // hiding it (the background of an open modal is the usual reason, and a
+  // script-made modal hides it with aria-hidden or inert itself), so what it
+  // is given is not announced. isModalDialogOpen() counts a modal <dialog>
+  // and a shown role="dialog" with aria-modal="true"; dialogShown() also
+  // counts a dialog shown without either, which may hide the page all the
+  // same.
+  let modalOpen = null;
+  // In the document and its open shadow roots.
+  function dialogShown() {
+    let roots;
+    try {
+      roots = helpers.getDocumentRoots();
+    } catch {
+      roots = [document];
+    }
+    for (const root of roots) {
+      for (const d of dom.querySelectorAll(
+        root,
+        'dialog[open], [role~="dialog" i], [role~="alertdialog" i]'
+      )) {
+        if (drawn(d) && !hiddenBy(d)) return true;
+      }
+    }
+    return false;
+  }
+  function hiddenLean() {
+    if (modalOpen === null) {
+      try {
+        modalOpen = !!helpers.isModalDialogOpen() || dialogShown();
+      } catch {
+        modalOpen = true;
+      }
+    }
+    if (modalOpen) return null;
+    return {
+      toward: 'fail',
+      why: 'No dialog is open to explain hiding this live region, so what it is given is not announced.',
+      signals: [{ signal: 'dialog-open', value: false }],
+      caution:
+        'The region may be unused, or the page may show it to assistive technology before writing to it.',
+      i18n: {
+        whyKey: 'liveRegionAnnouncements_lean_why_hidden',
+        cautionKey: 'liveRegionAnnouncements_lean_caution_hidden'
+      }
+    };
+  }
+
+  // What the live-region hook saw while the page ran.
+  const record =
+    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
+
+  // A live region behind an open modal <dialog>: the browser makes the page
+  // behind it inert, so queryAllSmart leaves it out, as it does all content
+  // there. It is asked about all the same: what the page writes to it while
+  // the dialog is open is not announced. Only a modal <dialog> makes the page
+  // inert (`modalInert`). A region is behind the open modal dialogs when it
+  // is in none of them and contains none, by the flat tree, as the browser
+  // decides it, whatever else hides it: while the dialog is open, the dialog
+  // is the cause in effect, so such a region is reported with hiddenBy
+  // 'modal' even under inert or aria-hidden, with or without
+  // includeHiddenElements.
+  function insideOf(box, el) {
+    for (let n = el, guard = 0; n && guard < 500; n = helpers.composedParent(n), guard++) {
+      if (n === box) return true;
+    }
+    return false;
+  }
+  let openModals = null;
+  function behindModal(el) {
+    if (openModals === null) {
+      try {
+        openModals = helpers.getOpenModalDialogs() || [];
+      } catch {
+        openModals = [];
+      }
+    }
+    if (!openModals.length) return false;
+    return !openModals.some((d) => insideOf(d, el) || insideOf(el, d));
+  }
+  // The hook records the last time each <dialog> in the document was opened
+  // (record.dialogsOpened), and the order in which the page made each change
+  // (`order`). A region behind the open modal dialogs is inert since the
+  // first of those that leaves it out was opened: one with no such entry has
+  // been open since the hook started watching, as its opening would
+  // otherwise be recorded. A modal inside a shadow root, whose changes the
+  // hook does not see, says nothing. Text the region was given after that
+  // was given while it was inert.
+  function modalLean(el) {
+    if (!record || !Array.isArray(record.dialogsOpened)) return null;
+    let modals;
+    try {
+      modals = helpers.getOpenModalDialogs();
+    } catch {
+      return null;
+    }
+    const complete = !(record.dropped && record.dropped.dialogsOpened > 0);
+    let since = Infinity;
+    for (const d of modals) {
+      if (insideOf(d, el)) continue;
+      let last = null;
+      for (const e of record.dialogsOpened) {
+        if (e.element === d && (!last || e.order > last.order)) last = e;
+      }
+      if (last) since = Math.min(since, last.order);
+      else if (complete && dom.getRootNode(d) === document) since = -Infinity;
+    }
+    if (since === Infinity) return null;
+    const given = []
+      .concat(Array.isArray(record.announcements) ? record.announcements : [])
+      .concat(Array.isArray(record.findings) ? record.findings : [])
+      .some((e) => e && e.element === el && typeof e.order === 'number' && e.order > since);
+    if (!given) return null;
+    return {
+      toward: 'fail',
+      why: 'The live-region hook saw this region given text after the modal dialog in front of it was opened, while the dialog made it inert, so the text was not announced.',
+      signals: [
+        { signal: 'hidden-by', value: 'modal' },
+        { signal: 'text-given-after-dialog-opened', value: true }
+      ],
+      caution:
+        'Whether that text was a status message the user needed is a person’s call: the page may give its messages to a live region inside the dialog as well.',
+      i18n: {
+        whyKey: 'liveRegionAnnouncements_lean_why_modal',
+        cautionKey: 'liveRegionAnnouncements_lean_caution_modal'
+      }
+    };
+  }
+
+  const SUMMARY = {
+    'aria-hidden': [
+      'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_ariaHidden'
+    ],
+    inert: [
+      'This live region is inside inert content, so nothing it is given can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_inert'
+    ],
+    modal: [
+      'This live region is behind an open modal dialog, which makes it inert, so nothing it is given while the dialog is open can be announced.',
+      'liveRegionAnnouncements_summary_cantTell_modal'
+    ]
+  };
+
   const occurrences = [];
   const inScope = new Set();
   let applicableCount = 0;
 
-  for (const el of helpers.queryAllSmart('[aria-live], [role], output', { inert: true })) {
+  const SELECTOR = '[aria-live], [role], output';
+  let candidates = helpers.queryAllSmart(SELECTOR, { inert: true });
+  const kept = new Set(candidates);
+  let dialogOpen;
+  try {
+    dialogOpen = !!helpers.isModalDialogOpen();
+  } catch {
+    dialogOpen = false;
+  }
+  if (dialogOpen) {
+    candidates = helpers
+      .queryAllSource(SELECTOR)
+      .filter((el) => kept.has(el) || (politeness(el) && behindModal(el)));
+  }
+
+  for (const el of candidates) {
     const level = politeness(el);
     if (!level) continue;
-    inScope.add(el);
+    // A region behind the modal is not in scope for the hook's findings,
+    // which leave out what the browser made inert.
+    if (kept.has(el)) inScope.add(el);
     if (!drawn(el)) continue;
     applicableCount += 1;
 
-    const by = hiddenBy(el);
+    const by = dialogOpen && behindModal(el) ? 'modal' : hiddenBy(el);
     if (by) {
+      const lean = by === 'modal' ? modalLean(el) : hiddenLean();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary:
-            by === 'inert'
-              ? 'This live region is inside inert content, so nothing it is given can be announced.'
-              : 'This live region is hidden with aria-hidden, so nothing it is given can be announced.',
-          hint: 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
+          summary: SUMMARY[by][0],
+          hint:
+            by === 'modal'
+              ? 'Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.'
+              : 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
           i18n: {
-            summaryKey:
-              by === 'inert'
-                ? 'liveRegionAnnouncements_summary_cantTell_inert'
-                : 'liveRegionAnnouncements_summary_cantTell_ariaHidden',
-            hintKey: 'liveRegionAnnouncements_hint_cantTell_hidden'
+            summaryKey: SUMMARY[by][1],
+            hintKey:
+              by === 'modal'
+                ? 'liveRegionAnnouncements_hint_cantTell_modal'
+                : 'liveRegionAnnouncements_hint_cantTell_hidden'
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
             visibilityFilter: eligibility(el)
@@ -204,9 +455,6 @@ function runInPage(ctx) {
     }
   }
 
-  // What the live-region hook saw while the page ran.
-  const record =
-    typeof helpers.getLiveRegionRecord === 'function' ? helpers.getLiveRegionRecord() : null;
   if (record && Array.isArray(record.findings)) {
     const whole = helpers.isWholeDocumentScope();
     const seen = new Map();
@@ -236,6 +484,38 @@ function runInPage(ctx) {
         };
       }
       const target = connected ? el : dom.documentElement(document);
+      // The pattern the hook saw is one screen readers commonly skip; the
+      // message still reached them when the same text was announced
+      // through another region.
+      // Not through one behind an open modal dialog: that was inert.
+      const elsewhere = (record.announcements || []).some(
+        (a) => a && a.element !== el && a.text === f.text && a.behindModal !== true
+      );
+      const lean = elsewhere
+        ? null
+        : {
+            toward: 'fail',
+            why: inserted
+              ? 'The region was added with its text already in it, which screen readers commonly do not announce.'
+              : 'The region was shown and given its text at once, before it was in the accessibility tree, which screen readers commonly do not announce.',
+            signals: [
+              { signal: 'hook-finding', value: f.code },
+              { signal: 'politeness', value: level },
+              { signal: 'text-also-in-existing-region', value: false }
+            ],
+            caution: inserted
+              ? 'Some screen reader and browser pairs do announce a region added with its text.'
+              : 'Some browsers update the accessibility tree in time for such a region to be announced.',
+            i18n: inserted
+              ? {
+                  whyKey: 'liveRegionAnnouncements_lean_why_inserted',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_inserted'
+                }
+              : {
+                  whyKey: 'liveRegionAnnouncements_lean_why_shownAndFilled',
+                  cautionKey: 'liveRegionAnnouncements_lean_caution_shownAndFilled'
+                }
+          };
       occurrences.push(
         helpers.reportOccurrence(target, {
           summary: inserted
@@ -253,6 +533,7 @@ function runInPage(ctx) {
               : 'liveRegionAnnouncements_hint_cantTell_shownAndFilled',
             params: { text: f.text }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details,
             visibilityFilter: connected

@@ -65,6 +65,7 @@
     "iframe-focusable-content",
     "iframe-name-present",
     "iframe-title-unique",
+    "image-of-text",
     "image-redundant-alt",
     "img-alt-decorative",
     "img-alt-present",
@@ -150,6 +151,13 @@
     "accesskeys": [
       "ACCESSKEY_DUPLICATE"
     ],
+    "area-alt-present": [
+      "TEXT_ALTERNATIVE_EMPTY",
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "area-alt-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "aria-allowed-attr": [
       "ARIA_ATTR_DEPRECATED",
       "ARIA_ATTR_NOT_ALLOWED",
@@ -201,15 +209,18 @@
     ],
     "aria-required-attr": [
       "ARIA_ATTR_REQUIRED_MISSING",
-      "ARIA_ATTR_REQUIRED_MISSING_IMPLICIT"
+      "ARIA_ATTR_REQUIRED_MISSING_IMPLICIT",
+      "state_internals"
     ],
     "aria-required-children": [
-      "ARIA_REQUIRED_CHILD_MISSING"
+      "ARIA_REQUIRED_CHILD_MISSING",
+      "ARIA_REQUIRED_CHILD_TEXT_ONLY"
     ],
     "aria-required-parent": [
       "ARIA_REQUIRED_PARENT_MISSING"
     ],
     "aria-role-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "aria-roles-valid": [
@@ -241,18 +252,28 @@
       "INLINE_SPACING_SHORT_TEXT"
     ],
     "binary-control-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "button-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "bypass-blocks-present": [
       "BYPASS_MECHANISM_ABSENT"
     ],
+    "canvas-text-alternative-present": [
+      "ROLE_IMG_NAME_MISSING",
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "canvas-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "click-handler-keyboard-operable": [
       "CLICK_HANDLER_CONTROL_NOT_FOCUSABLE",
+      "CLICK_HANDLER_FOCUS_LISTENER",
       "CLICK_HANDLER_KEY_LISTENER_ABOVE",
       "CLICK_HANDLER_NOT_FOCUSABLE",
       "CLICK_HANDLER_NOT_IN_TAB_ORDER",
@@ -260,6 +281,7 @@
       "CLICK_HANDLER_NO_KEY_LISTENER"
     ],
     "combobox-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "contrast-computable": [
@@ -270,6 +292,7 @@
       "BACKGROUND_NOT_OPAQUE_AT_ROOT",
       "BACKGROUND_OVERLAP",
       "BACKGROUND_UNPARSABLE",
+      "COLOR_SCHEME_NOT_RENDERED",
       "ELEMENT_OPACITY",
       "ENGINE_EXCEPTION",
       "FOREGROUND_UNPARSABLE",
@@ -283,8 +306,8 @@
     ],
     "contrast-enhanced": [
       "ALL_ABOVE_THRESHOLD",
-      "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
+      "CONTRAST_UNREACHABLE_ANY_BACKGROUND",
       "ENGINE_EXCEPTION",
       "PLACEHOLDER_BELOW_THRESHOLD",
       "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
@@ -292,11 +315,16 @@
     ],
     "contrast-minimum": [
       "ALL_ABOVE_THRESHOLD",
-      "BACKGROUND_NOT_COMPUTABLE",
       "BELOW_THRESHOLD",
+      "CONTRAST_SWITCH_OFFERED",
       "ENGINE_EXCEPTION",
+      "LOGO_TEXT_BELOW_THRESHOLD",
       "PLACEHOLDER_BELOW_THRESHOLD",
+      "PSEUDO_ELEMENT_COLOR",
+      "SEMIBOLD_BELOW_THRESHOLD",
       "SYMBOLIC_CHARACTER_BELOW_THRESHOLD",
+      "TEXT_SHADOW",
+      "TEXT_STROKE",
       "UNKNOWN"
     ],
     "control-name-title-only": [
@@ -324,6 +352,7 @@
       "MARQUEE_PAUSE_MECHANISM_UNKNOWN"
     ],
     "dialog-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "dlitem-parent-valid": [
@@ -336,10 +365,17 @@
     "duplicate-id-aria": [
       "DUPLICATE_ID_ARIA_REFERENCED"
     ],
+    "embed-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "embed-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "empty-heading": [
       "HEADING_EMPTY",
       "name_closedContent",
-      "name_contentTooDeep"
+      "name_contentTooDeep",
+      "name_internals"
     ],
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
@@ -347,7 +383,8 @@
     ],
     "focus-not-removed-by-script": [
       "FOCUS_HANDLER_BLURS_SELF",
-      "FOCUS_HANDLER_CALLS_BLUR"
+      "FOCUS_HANDLER_CALLS_BLUR",
+      "FOCUS_HANDLER_MOVES_FOCUS"
     ],
     "focus-order-semantics": [
       "TABBABLE_WITH_NON_INTERACTIVE_ROLE"
@@ -400,6 +437,10 @@
     "iframe-name-present": [
       "IFRAME_NAME_MISSING"
     ],
+    "image-of-text": [
+      "IMAGE_BUTTON_TEXT_REVIEW",
+      "SVG_IMAGE_TEXT_REVIEW"
+    ],
     "image-redundant-alt": [
       "IMAGE_ALT_REDUNDANT"
     ],
@@ -407,15 +448,26 @@
       "EXCLUDED_ELEMENT_REVIEW",
       "IMAGE_ONLY_CONTROL_CONTENT"
     ],
+    "img-alt-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
     "img-alt-quality": [
-      "IMAGE_ONLY_CONTROL_CONTENT"
+      "IMAGE_ONLY_CONTROL_CONTENT",
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
+    "input-image-alt-decorative": [
+      "NAME_FROM_ELSEWHERE_REVIEW"
     ],
     "input-image-alt-present": [
       "default_name",
       "empty_alt",
       "missing_alt"
     ],
+    "input-image-alt-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "invalid-field-error-message": [
+      "ERROR_MESSAGE_ARIA_HIDDEN",
       "ERROR_MESSAGE_EMPTY",
       "ERROR_MESSAGE_HIDDEN",
       "ERROR_MESSAGE_NOT_SHOWN_DESCRIBED",
@@ -464,18 +516,28 @@
       "LANDMARK_NOT_UNIQUE"
     ],
     "link-in-text-block": [
+      "ANCESTOR_OPACITY",
+      "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
       "BACKGROUND_IMAGE_OR_GRADIENT",
+      "BACKGROUND_NOT_OPAQUE_AT_ROOT",
       "BACKGROUND_OVERLAP",
       "COLOR_NOT_COMPUTABLE",
       "COLOR_ONLY_DIFFERENTIATION",
       "CONTRAST_HELPERS_UNAVAILABLE",
+      "ELEMENT_OPACITY",
       "ENGINE_EXCEPTION",
       "LINK_COLOR_CONTRAST_ONLY",
-      "TEXT_DECORATION_NOT_RESOLVABLE"
+      "MIX_BLEND_MODE",
+      "PSEUDO_ELEMENT_COLOR",
+      "SELECT_OPTION_COLOR",
+      "TEXT_DECORATION_NOT_RESOLVABLE",
+      "TEXT_SHADOW",
+      "TEXT_STROKE"
     ],
     "link-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "link-name-quality": [
@@ -487,6 +549,7 @@
       "LIST_ITEM_ROLE_OVERRIDDEN"
     ],
     "listbox-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "listitem-parent-valid": [
@@ -499,6 +562,9 @@
       "LIVE_REGION_INSERTED_WITH_CONTENT",
       "LIVE_REGION_SHOWN_AND_FILLED"
     ],
+    "manual-review": [
+      "KEYBOARD_REVIEW"
+    ],
     "media-alternative-transcript-evidence": [
       "transcriptEvidenceUnverified",
       "transcriptNotDetected"
@@ -506,6 +572,7 @@
     "menuitem-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "meta-refresh-no-exceptions": [
@@ -518,9 +585,11 @@
       "VIEWPORT_ZOOM_BELOW_500"
     ],
     "meta-viewport-zoom-enabled": [
-      "VIEWPORT_ZOOM_RESTRICTED"
+      "VIEWPORT_ZOOM_RESTRICTED",
+      "VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN"
     ],
     "meter-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "mouse-only-event-handlers": [
@@ -539,9 +608,16 @@
       "AUTOPLAY_NO_CONTROLS_MECHANISM",
       "EMBEDDED_SOUND_SOURCE"
     ],
+    "object-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "object-text-alternative-quality": [
+      "TEXT_ALTERNATIVE_REVIEW"
+    ],
     "option-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "p-as-heading": [
@@ -554,10 +630,16 @@
       "HEADING_ONE_MISSING"
     ],
     "page-title-patterns": [
-      "genericTitle"
+      "duplicateTitlesAcrossPages",
+      "genericTitle",
+      "templateLikeTitle",
+      "templatedTitlesAcrossPages",
+      "titleReview",
+      "veryShortTitle"
     ],
     "page-title-present": [
-      "emptyTitleText"
+      "emptyTitleText",
+      "missingTitleElement"
     ],
     "password-paste-enabled": [
       "PASTE_CANCELLED",
@@ -570,6 +652,7 @@
       "PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT"
     ],
     "progressbar-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "region": [
@@ -579,7 +662,8 @@
       "emptyAriaLabel",
       "emptyAriaLabelledby",
       "missingTextAlternative",
-      "nameNotResolved"
+      "nameNotResolved",
+      "name_internals"
     ],
     "scope-attr-valid": [
       "SCOPE_ATTR_INVALID"
@@ -588,7 +672,7 @@
       "SCROLLABLE_OVERFLOW_NOT_FOCUSABLE"
     ],
     "searchbox-name-present": [
-      "name_from_aria_placeholder_only",
+      "name_internals",
       "name_missing"
     ],
     "server-side-image-map-absent": [
@@ -599,9 +683,11 @@
       "SKIP_LINK_TARGET_UNUSABLE"
     ],
     "slider-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "spinbutton-name-present": [
+      "name_internals",
       "name_missing"
     ],
     "summary-name-present": [
@@ -609,12 +695,20 @@
       "name_contentTooDeep",
       "name_missing"
     ],
+    "svg-image-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
+    "svg-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING"
+    ],
     "svg-text-alternative-quality": [
-      "IMAGE_ONLY_CONTROL_CONTENT"
+      "IMAGE_ONLY_CONTROL_CONTENT",
+      "TEXT_ALTERNATIVE_REVIEW"
     ],
     "tab-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "tabindex": [
@@ -630,6 +724,7 @@
       "TABLE_HEADERS_ATTR_INVALID"
     ],
     "table-th-has-data-cells": [
+      "TABLE_TH_NO_ASSIGNED_CELL",
       "TABLE_TH_NO_DATA_CELLS"
     ],
     "target-size-minimum": [
@@ -638,7 +733,8 @@
       "undersized-plausibly-essential"
     ],
     "td-has-header": [
-      "TD_NO_ASSOCIATED_HEADER"
+      "TD_NO_ASSOCIATED_HEADER",
+      "TD_TABLE_NO_HEADERS"
     ],
     "text-spacing-content-loss": [
       "SPACING_NOT_APPLIED",
@@ -651,17 +747,19 @@
       "VIEWPORT_SCROLL_LOCKED"
     ],
     "textbox-name-present": [
-      "name_from_aria_placeholder_only",
+      "name_internals",
       "name_missing"
     ],
     "tooltip-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "treeitem-name-present": [
       "name_closedContent",
       "name_contentTooDeep",
+      "name_internals",
       "name_missing"
     ],
     "valid-lang": [
@@ -669,10 +767,12 @@
       "ELEMENT_LANG_INVALID"
     ],
     "video-caption": [
+      "CAPTIONS_REVIEW",
       "CAPTIONS_TRACK_NOT_DETECTED",
       "SUBTITLES_TRACK_ONLY"
     ],
     "video-poster-text-alternative-present": [
+      "TEXT_ALTERNATIVE_MISSING",
       "VIDEO_POSTER_FIGCAPTION_REVIEW"
     ],
     "widget-keyboard-focusable": [

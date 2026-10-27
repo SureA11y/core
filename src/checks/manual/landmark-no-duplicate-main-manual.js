@@ -20,6 +20,11 @@
  * @reports
  *   - `count`: how many main landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ * @reason-codes
+ *   - `LANDMARK_DUPLICATE_MAIN` (cantTell): the page exposes more than one
+ *     main landmark; each one is reported.
+ *     It leans fail: the page states it.
+ *     Basis: WAI-ARIA 1.2 main role (SHOULD).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -47,7 +52,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    LANDMARK_DUPLICATE_MAIN: {
+      steps: [
+        "Open a screen reader's landmarks list, or the Accessibility pane, and count the main landmarks.",
+        "For each one the report names, decide which holds the page's primary content.",
+        'Check that any other main is hidden (the hidden attribute) when it is not the current view.'
+      ],
+      passWhen:
+        "Assistive technology finds only one main landmark, around the page's primary content.",
+      failWhen:
+        "More than one main is exposed, so users cannot tell which is the primary content, a best-practice miss under the WAI-ARIA main role and HTML's rule of one visible main."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -107,6 +127,12 @@ function runInPage(ctx) {
         summaryKey: 'landmarkNoDuplicateMain_summary_cantTell',
         hintKey: 'landmarkNoDuplicateMain_hint_cantTell',
         params: { count: String(mains.length) }
+      },
+      lean: {
+        toward: 'fail',
+        why: 'The page exposes more than one main landmark.',
+        signals: [{ signal: 'landmark-repeated', value: true }],
+        i18n: { whyKey: 'landmarkNoDuplicateMain_lean_why' }
       },
       data: {
         details: { reasonCode: 'LANDMARK_DUPLICATE_MAIN', count: mains.length }

@@ -54,7 +54,7 @@ Absolute times depend on the machine, the operating system and the Chromium vers
 - **An index is a ratio to 1.8.0** on the same page; below 1.00 is faster. A difference within the run's spread is noise.
 - **A slower release is not always a regression.** A rule that now checks more of the page costs more, and the [changelog](../CHANGELOG.md) says when one does. The per-rule timings show which rules a change in time comes from, and whether those rules' results changed with it: a rule slower with the same results is a regression; one that is slower and finds more may be paying for what it now finds.
 - **jsdom is not a browser.** Scans under jsdom are dominated by jsdom's own style computation, and skip layout. Full runs check that the Node path still works and hasn't slowed; its times are not comparable with Chromium's.
-- **Only this engine's releases are compared here.** Engines run different rule sets, so a faster engine is not doing the same work faster, and a comparison with another engine is out of scope for this page.
+- **Only this engine's releases are compared here.**
 
 ## History
 
@@ -62,13 +62,15 @@ Chromium. Index to 1.8.0 (= 1.00) on the same page in the same run; lower is fas
 
 | Release | Composite | Real-world (3 pages) | Scaling, 4N (5 hot paths) | Sibling links, 4N | Run | Linked through |
 |---|---:|---:|---:|---:|---|---|
-| 1.8.0 | 1.00 | 1.00 | 1.00 | 1.00 | [1, 2, 3, 4](#runs) | reference |
+| 1.8.0 | 1.00 | 1.00 | 1.00 | 1.00 | [1, 2, 3, 4, 5](#runs) | reference |
 | 1.9.0 | 1.00 | 1.00–1.04 | 0.96–1.03 | 1.01 | [2](#runs) | same run as 1.8.0 |
 | 1.10.0 | 1.11 | 1.09–1.20 | 0.96–1.15 | 0.41 | [2](#runs) | same run as 1.8.0 |
 | 1.11.1 | 1.27 | 1.34–1.38 | 1.11–1.30 | 0.31 | [2](#runs) | same run as 1.8.0 |
 | 1.12.0 | 1.28 | 1.43–1.62 | 1.14–1.26 | 0.36 | [2](#runs) | same run as 1.8.0 |
 | 1.12.1 | 1.27 | 1.41–1.45 | 1.12–1.28 | 0.36 | [3](#runs) | 1.12.0, run 3 to run 2 |
 | 1.13.0 | 1.26 | 1.40–1.45 | 1.12–1.26 | 0.36 | [4](#runs) | 1.12.1, run 4 to run 3 |
+| 1.13.1 | 1.32 | 1.36–1.44 | 1.13–1.26 | 0.36 | [5](#runs) | 1.13.0, run 5 to run 4 |
+| 1.14.0 | 1.39 | 1.41–1.52 | 1.22–1.41 | 0.37 | [5](#runs) | 1.13.0, run 5 to run 4 |
 
 Notes:
 
@@ -77,6 +79,8 @@ Notes:
 - **The real-world pages** are the three of the quick protocol: Spiegel, Daily Mail and Falabella. 1.12.0's largest increases are on Spiegel and Falabella, and both are in `contrast-computable`: on Spiegel it asks about 50 passages where 1.11.1 asked about 31; on Falabella its results are unchanged and it takes longer.
 - **1.12.1:** the contrast rules look for text a `::before` or `::after` draws only on elements a style sheet rule gives `content`. 1.12.0 looked on every element a rule named one of them for, which the common `*, ::before, ::after { box-sizing: border-box }` makes every element; that was the time 1.12.0 added on Falabella with the same results. In run 3, scans of Spiegel take 12% less than in 1.12.0 and Falabella 8% less, Daily Mail and the composite page 1%, with the same results on every page; the scaling pages are unchanged. Measured against 1.8.0 directly in run 3, the indices agree with the chained ones within 0.04, except cards with overlays: 1.35 directly against 1.25 through 1.12.0, where 1.12.0 moved by 0.97 between runs 2 and 3 and 1.8.0 by 0.89.
 - **1.13.0:** no change in time or results; the release deprecates EN 301 549 built into core and changes no rule. In run 4, every page takes 0.99–1.01 of 1.12.1's time, no rule's time moves by more than 30 ms over the ten pages, and every page gives the same results. Measured against 1.8.0 directly in run 4, the indices agree with the chained ones within 0.03, except cards with overlays again: 1.36 directly against 1.26 through 1.12.1.
+- **1.13.1:** no change in results, and none expected in time: the release only stops a scan leaving a property on the page's `window`. In run 5, every page takes 0.97–1.02 of 1.13.0's time except the composite page (1.05) and sibling paragraphs (1.06), with the same results on every page. Neither is in the rules: on the composite page they take 17 ms less than in 1.13.0, on sibling paragraphs 3 ms more, and over the ten pages no rule's time moves by more than 12 ms. Read those two pages' indices as noise of about 5%.
+- **1.14.0:** slower on every page but Falabella, with changed results on every page: the release adds nine rules to a WCAG 2.2 A and AA scan and checks more in others. In run 5, pages take 0.97–1.19 of 1.13.0's time: the composite page 1.10, Spiegel 1.07, Daily Mail 1.08, Falabella 0.97, the scaling pages 1.03–1.19. Over the ten pages the rules take 9% longer (4.41 s to 4.79 s), most of it in rules whose results changed: `contrast-computable` (+122 ms), which measures contrast on more of what the page paints, `css-hidden-focus` (+64 ms), `contrast-minimum` (+34 ms) and `table-th-has-data-cells` (+31 ms, nearly all on the table page). Rules with the same results add at most 27 ms each (`text-spacing-content-loss`, `aria-valid-attr-value`, `p-as-heading`, `link-in-text-block`), `css-focus-indicator-suppressed` takes 45 ms less, and no new rule takes more than 10 ms. On the two paragraph pages the time is outside the rules: wrapped paragraphs take 100 ms longer with 12 ms less in the rules, sibling paragraphs 66 ms longer with 4 ms more; the bundle grows from 1106 KB to 1499 KB, and the result by 17% over the four non-scaling pages. The changelog's performance fixes (long runs of punctuation in a link name, many owners for `aria-required-parent`, many animations) are on pages the quick protocol doesn't have. Measured against 1.8.0 directly in run 5, the indices agree with the chained ones within 0.09, except Daily Mail (1.69 directly against 1.52), table rows (1.38 against 1.22) and wrapped paragraphs (1.28 against 1.41), where 1.8.0 and 1.13.0 moved differently between runs 4 and 5 (0.99 and 1.10, 1.00 and 1.10, 1.12 and 1.03).
 
 ## Runs
 
@@ -88,3 +92,4 @@ Each run behind the history, with what it ran on and how it links to the runs be
 | 2 | 2026-10-16 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness 9e4e9e4, pages 8c67ab164d8f | on AC power; load 5.55 at start, 3.63 at end; 2.6 GB free at start, 1.6 GB at end | 1.8.0, 1.9.0, 1.10.0, 1.11.1, 1.12.0 | 1.8.0 and 1.9.0, to run 1 | 1.10 (1.8.0) and 1.09 (1.9.0); every page within 10% | yes, on every page |
 | 3 | 2026-10-17 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness 05316fc, pages 8c67ab164d8f | on battery power at start and end, though the run's note says plugged in; load 3.75 at start, 2.66 at end; 0.5 GB free at start, 1.3 GB at end | 1.8.0, 1.12.0, 1.12.1 | 1.12.0 and 1.8.0, to run 2 | 0.91 (1.12.0) and 0.91 (1.8.0); every page within 10% | yes, on every page |
 | 4 | 2026-10-17 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness df3b489 with uncommitted changes (the line adding 1.13.0 to the harness's releases), pages 8c67ab164d8f | on battery power at start and end; load 8.1 at start, 4.85 at end; 6.9 GB free at start, 6.4 GB at end | 1.8.0, 1.12.1, 1.13.0 | 1.12.1 and 1.8.0, to run 3 | 1.02 (1.12.1) and 1.02 (1.8.0); every page within 10% | yes, on every page |
+| 5 | 2026-10-26 | Apple M3, 8 cores, 24 GB, not virtualized | macOS 26.5.2 (darwin 25.5.0, arm64), Node 22.14.0, Playwright 1.62.1 | Chromium 151.0.7922.34 | quick protocol; harness e660659, pages 8c67ab164d8f | on AC power, other work closed; load 3.08 at start, 3.45 at end; 3.4 GB free at start, 4.1 GB at end | 1.8.0, 1.13.0, 1.13.1, 1.14.0 | 1.13.0 and 1.8.0, to run 4 | 1.09 (1.13.0) and 1.07 (1.8.0); every page within 10% | yes, on every page |
