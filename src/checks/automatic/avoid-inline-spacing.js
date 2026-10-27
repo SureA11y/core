@@ -483,7 +483,7 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing WCAG 1.4.12 lets users apply, so they can't increase it.`,
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing WCAG 1.4.12 lets users apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so they can't increase it.`,
         hint: 'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em.',
         i18n: {
           summaryKey: 'avoidInlineSpacing_summary_fail',
@@ -626,7 +626,7 @@ function runInPage(ctx) {
       undecided.map(({ el, props }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing WCAG asks for is unknown.`,
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing WCAG 1.4.12 asks for (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
           hint: "Check the value by hand against line-height 1.5, letter-spacing 0.12em and word-spacing 0.16em, or use a unit the engine can work out from the element's font size.",
           i18n: {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
