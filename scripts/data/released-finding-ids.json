@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.14.0",
+  "version": "1.14.1",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -744,6 +744,7 @@
       "TEXT_CLIPPED_FURTHER",
       "TEXT_CLIPPED_MOVING",
       "TEXT_CLIPPED_PARTLY",
+      "TEXT_CLIPPED_SCRIPT_SIZED",
       "TEXT_OVERLAPS",
       "VIEWPORT_SCROLL_LOCKED"
     ],
