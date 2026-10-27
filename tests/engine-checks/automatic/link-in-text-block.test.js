@@ -553,8 +553,8 @@ function occFor(rule, id) {
 
 test(`${RULE_ID}: colors that can't be read in the page's color scheme are asked about, with no lean`, () => {
   // A prefers-color-scheme rule reaches the text, which jsdom doesn't apply:
-  // its colours in the scheme the page is drawn in are unknown, so even the
-  // same translucent colour on link and text leans nowhere. (A background
+  // its colors in the scheme the page is drawn in are unknown, so even the
+  // same translucent color on link and text leans nowhere. (A background
   // the link and the text share leans fail on that: the gradient case below.)
   const html = `<!doctype html><html><head><style>
     @media (prefers-color-scheme: light) { body { margin: 8px; } }
@@ -572,7 +572,7 @@ test(`${RULE_ID}: colors that can't be read in the page's color scheme are asked
     assert.strictEqual(occ.lean, undefined, id);
   }
   // Without the rule the two are drawn on the page's canvas and measured:
-  // in the same colour the link fails.
+  // in the same color the link fails.
   const known = runa11yCoreOnHtml(html.replace(/@media[^\n]*\n/, ''), { runOnly: [RULE_ID] });
   assert.strictEqual(
     occFor(known.checksResults[0], 'same').data.details.reasonCode,
@@ -707,7 +707,7 @@ test(`${RULE_ID}: a highlight of its own on a page with no background is decided
   });
   assert.strictEqual(echoOf({ rootCanvasFallback: 'banana' }).rootCanvasFallbackSet, false);
 
-  // Where the colours can't be read in the page's scheme (jsdom applies no
+  // Where the colors can't be read in the page's scheme (jsdom applies no
   // prefers-color-scheme rule, and one reaches the text), it is asked
   // about, with no lean, whatever the canvas.
   const unknown = page(
@@ -734,7 +734,7 @@ test(`${RULE_ID}: a highlight is compared with the page's canvas in each color s
   const page = (css, highlight) =>
     `<!doctype html><html><head><style>:root{color-scheme:light dark} ${css}</style></head><body><p style="color:#000">Read the <a id="hl" href="/x" style="color:#000;text-decoration:none;background:${highlight}">annual report</a> today.</p></body></html>`;
   const scan = (html) => runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  // The dark canvas's own colour marks nothing there; on white it does.
+  // The dark canvas's own color marks nothing there; on white it does.
   const dark = assertRule(scan(page('', '#121212')), RULE_ID, 'fail', {
     minOccurrences: 1,
     maxOccurrences: 1

@@ -1,10 +1,10 @@
 'use strict';
 
 /**
- * A link's colour under jsdom. jsdom ranks its own `:link { color: #0000EE }`
+ * A link's color under jsdom. jsdom ranks its own `:link { color: #0000EE }`
  * with the page's rules by specificity alone, so `a { color: #fff }` lost
  * to it and white link text on black was measured in blue, failing at
- * 2.23:1. Under jsdom the link's colour is now worked out from the page's
+ * 2.23:1. Under jsdom the link's color is now worked out from the page's
  * rules, as a browser's cascade does (helpers.contrast,
  * __jsdomLinkTextColor), and these pages give the same results in jsdom
  * and in Chromium. Where jsdom can't work it out, the text is not
@@ -63,7 +63,7 @@ function summarize(checksResults) {
   return out;
 }
 
-// [name, css, markup, contrast-minimum, link-in-text-block, the colour it fails in]
+// [name, css, markup, contrast-minimum, link-in-text-block, the color it fails in]
 const CASES = [
   ['a type selector', `${DARK} a{color:#fff}`, LINK, 'pass', 'pass'],
   ['a descendant selector', `${DARK} p a{color:#fff}`, LINK, 'pass', 'pass'],
@@ -88,7 +88,7 @@ const CASES = [
     '#111111'
   ],
   ['a rule in :where()', `${DARK} :where(p) a{color:#111} a{color:#fff}`, LINK, 'pass', 'pass'],
-  // A browser's link colour where no author rule sets one.
+  // A browser's link color where no author rule sets one.
   ['no rule for the link', DARK, LINK, 'fail', 'pass', '#0000ee'],
   [
     'an !important rule',
@@ -107,9 +107,9 @@ const CASES = [
     '#222222'
   ],
   // A fill the page sets paints the text, even in the browser's link
-  // colour, which jsdom also computes for a fill that follows color.
+  // color, which jsdom also computes for a fill that follows color.
   [
-    'a fill in the link colour',
+    'a fill in the link color',
     `${DARK} a{color:#fff;-webkit-text-fill-color:#0000ee}`,
     LINK,
     'fail',
@@ -117,7 +117,7 @@ const CASES = [
     '#0000ee'
   ],
   [
-    'a fill in the link colour, inherited',
+    'a fill in the link color, inherited',
     `${DARK} a{color:#fff} p{-webkit-text-fill-color:#0000ee}`,
     '<p>Read the <a href="/x">annual report</a></p><p>More text</p>',
     'fail',
@@ -131,7 +131,7 @@ const CASES = [
     'pass',
     'pass'
   ],
-  // The same colour as the text around it, and no underline.
+  // The same color as the text around it, and no underline.
   [
     'a link told apart by nothing',
     `${DARK} a{color:#fff;text-decoration:none}`,
@@ -148,14 +148,14 @@ const expected = ([, , , minimum, link, foreground]) => ({
   ...(foreground ? { foreground } : {})
 });
 
-test('a link’s colour from the page’s rules, in jsdom', () => {
+test('a link’s color from the page’s rules, in jsdom', () => {
   for (const c of CASES) {
     const result = runa11yCoreOnHtml(html(c[1], c[2]), { runOnly: RULES });
     assert.deepEqual(summarize(result.checksResults), expected(c), c[0]);
   }
 });
 
-test('in jsdom, a link colour that can’t be worked out leaves the text not computable', () => {
+test('in jsdom, a link color that can’t be worked out leaves the text not computable', () => {
   for (const css of [
     // A custom property jsdom doesn't substitute.
     `${DARK} a{color:var(--x)}`,
@@ -174,7 +174,7 @@ test('in jsdom, a link colour that can’t be worked out leaves the text not com
   }
 });
 
-test('a link’s colour, in Chromium', { skip }, async (t) => {
+test('a link’s color, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   for (const c of CASES) {

@@ -261,7 +261,7 @@ test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's 
   assert.strictEqual(det.colorSchemesChecked, undefined);
 });
 
-test(`${RULE_ID}: root not opaque, the text's colour in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
+test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
   const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
     <style>p { color: #767676 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
     </head><body>
@@ -1034,9 +1034,9 @@ test(`${RULE_ID}: text is measured in the -webkit-text-fill-color it is painted 
 });
 
 // A page drawn in a dark color scheme is measured on the dark canvas, in
-// either contrast mode (#170). jsdom resolves no Canvas colour and lays
+// either contrast mode (#170). jsdom resolves no Canvas color and lays
 // nothing out, so the engine takes Chromium's (#121212), and the text the
-// scheme colours its CanvasText (#ffffff); nothing is left in the page.
+// scheme colors its CanvasText (#ffffff); nothing is left in the page.
 test('contrast-minimum: a page drawn in dark is measured on the dark canvas, in jsdom', () => {
   for (const head of [
     '<style>html{color-scheme:dark}</style>',
@@ -1146,8 +1146,8 @@ test(`${RULE_ID}: no color rules out the AA ratio, so text on an unknown backgro
 });
 
 // contrast-computable doesn't ask about text drawn by a shadow whose best
-// colour is below WCAG's AA ratio, since this rule fails it. A variant
-// whose ratio that colour reaches can't decide it either, so it asks.
+// color is below WCAG's AA ratio, since this rule fails it. A variant
+// whose ratio that color reaches can't decide it either, so it asks.
 
 const ratioVariant = (config) =>
   definePack({
@@ -1182,7 +1182,7 @@ const shadowScan = (shadow, config) => {
   return { rule: by[config ? 'ratios-contrast' : RULE_ID], computable: by['contrast-computable'] };
 };
 
-test(`${RULE_ID}: at a variant's lower ratio, shadow-drawn text its best colour reaches is asked about (TEXT_SHADOW)`, () => {
+test(`${RULE_ID}: at a variant's lower ratio, shadow-drawn text its best color reaches is asked about (TEXT_SHADOW)`, () => {
   // #999 on white: 2.85:1, below WCAG's 3:1 for large text, above 2.5:1.
   const { rule, computable } = shadowScan('#999', { largeTextRatio: 2.5 });
   assert.strictEqual(computable.outcome, 'pass');
@@ -1216,7 +1216,7 @@ test(`${RULE_ID}: at WCAG's ratios, or below a variant's, shadow-drawn text stil
 
 // A page that supports light and dark (#219 follow-up): text on its canvas
 // is measured in the scheme the scan sees (light, under jsdom) and in the
-// other where its colours can't change with the scheme.
+// other where its colors can't change with the scheme.
 test('contrast-minimum: text on the canvas of a page with two color schemes is measured in each', () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title>
     <style>:root{color-scheme:light dark} #themed{color:#bbb} @media (prefers-color-scheme: dark){#themed{color:#eee}}</style>
@@ -1224,7 +1224,7 @@ test('contrast-minimum: text on the canvas of a page with two color schemes is m
     <p id="grey" style="color:#333">Fails on the dark canvas only</p>
     <p id="faint" style="color:#bbb">Fails on white only</p>
     <p id="mid" style="color:#777">Fails on both</p>
-    <p id="plain">The scheme's own text colour</p>
+    <p id="plain">The scheme's own text color</p>
     <p id="themed">Coloured by a prefers-color-scheme rule</p>
     </main></body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
@@ -1262,7 +1262,7 @@ test('contrast-minimum: text on the canvas of a page with two color schemes is m
     undefined,
     'contrastMinimum_hint_fail'
   ]);
-  // Measured in light only: the dark rule's colour isn't what jsdom sees.
+  // Measured in light only: the dark rule's color isn't what jsdom sees.
   assert.deepStrictEqual(row('themed'), [
     1.92,
     '#ffffff',
@@ -1301,7 +1301,7 @@ test('contrast-minimum: text on the canvas of a page with two color schemes is m
 
 // jsdom computes the -webkit-text-fill-color of light-dark() text as
 // transparent; the text was dropped from the scan. It is measured in the
-// colour light-dark() gives the scheme the page is drawn in.
+// color light-dark() gives the scheme the page is drawn in.
 test('contrast-minimum: light-dark() text is measured in the scheme the page is drawn in, in jsdom', () => {
   const page = (head, style) =>
     `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main><p id="ld" style="${style}">Opening hours</p></main></body></html>`;
@@ -1317,7 +1317,7 @@ test('contrast-minimum: light-dark() text is measured in the scheme the page is 
       o.data.details.colors && o.data.details.colors.backgroundHex,
       o.data.details.colorSchemesChecked
     ]);
-  // Light: its first colour, on white.
+  // Light: its first color, on white.
   assert.deepStrictEqual(row(scan(page('', 'color:light-dark(#bbbbbb, #000000)'))), [
     ['BELOW_THRESHOLD', '#bbbbbb', '#ffffff', undefined]
   ]);
@@ -1329,7 +1329,7 @@ test('contrast-minimum: light-dark() text is measured in the scheme the page is 
     [['BELOW_THRESHOLD', '#333333', '#121212', undefined]]
   );
   // Light and dark: measured in light, which jsdom draws, and not in dark,
-  // where light-dark() picks another colour.
+  // where light-dark() picks another color.
   assert.deepStrictEqual(
     row(
       scan(
@@ -1341,10 +1341,10 @@ test('contrast-minimum: light-dark() text is measured in the scheme the page is 
 });
 
 // A page drawn only in dark (#219 follow-up): jsdom computes the light
-// scheme's colours, so text the scheme colours read as black wherever it
+// scheme's colors, so text the scheme colors read as black wherever it
 // was. It takes the dark scheme's CanvasText and LinkText (Chromium's),
 // over an opaque background too.
-test('contrast-minimum: text the dark scheme colours is measured in its colours, in jsdom', () => {
+test('contrast-minimum: text the dark scheme colors is measured in its colors, in jsdom', () => {
   const html = `<!doctype html><html lang="en"><head><title>t</title><meta name="color-scheme" content="dark"></head><body><main>
     <div style="background:#000000"><p id="onblack">Plain text on black</p><p id="link">Read <a href="/x">the guide</a> first.</p><p id="sys" style="color:CanvasText">CanvasText on black</p></div>
     <div style="background:#eeeeee"><p id="onwhite">Plain text on light grey</p></div>
@@ -1363,7 +1363,7 @@ test('contrast-minimum: text the dark scheme colours is measured in its colours,
     [['onwhite', '#ffffff', '#eeeeee']]
   );
   // The same page in light: black text on black is drawn invisibly and
-  // left out; the light link colour fails on it.
+  // left out; the light link color fails on it.
   const light = runa11yCoreOnDom(createDom(html.replace('content="dark"', 'content="light"')), {
     runOnly: ['contrast-minimum'],
     engineOptions: { visibilityMode: 'styleOnly' }

@@ -2984,12 +2984,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   //
   // A drop-down select (no `multiple`, a size of 1 or none) shows its
   // selected option in the closed control, drawn in the select's own
-  // colour, font and background whatever colours the option has. Its
+  // color, font and background whatever colors the option has. Its
   // other options are shown only in the list it opens, which the platform
-  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // draws, in the options' colors or in its own. A list box (`multiple`,
   // or a size above 1) draws its options as they are styled, and so does a
   // customizable select (`appearance: base-select`), whose list the page
-  // styles; both are left to the options' own colours. A customizable
+  // styles; both are left to the options' own colors. A customizable
   // select with no <button> of its own shows its selected option in the
   // closed control as a drop-down does.
 
@@ -2998,7 +2998,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // For el, an <option> of a drop-down select or an element in one:
   // { select, option, shown, differs }, where shown says whether the option
   // is the one the closed control shows, and differs names the first of
-  // its colours that isn't the select's ({ el, property, value }), or is
+  // its colors that isn't the select's ({ el, property, value }), or is
   // null. Null for every other element.
   function __dropDownOption(el) {
     if (!el || dom.nodeType(el) !== 1) return null;
@@ -3010,7 +3010,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const selectCs = select ? __contrastComputedStyle(select) : null;
       // A customizable select draws its closed control from the page's own
       // <button>, measured as any element; without one, from the selected
-      // option, in the select's colours, as a drop-down does. Its other
+      // option, in the select's colors, as a drop-down does. Its other
       // options are in the list the page styles.
       const base = !!selectCs && String(selectCs.appearance || '') === 'base-select';
       const ownButton =
@@ -3078,10 +3078,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The element whose colours, font and background el's text is drawn in,
+  // The element whose colors, font and background el's text is drawn in,
   // where that is not el: for text in a drop-down select's shown option,
-  // and in any other of its options whose colours are the select's, the
-  // select. Null otherwise: an option with colours of its own, shown only
+  // and in any other of its options whose colors are the select's, the
+  // select. Null otherwise: an option with colors of its own, shown only
   // in the list the platform draws, is asked about instead
   // (getComputabilityBlocker, SELECT_OPTION_COLOR).
   function __closedSelectTextOwner(el) {
@@ -3527,8 +3527,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
           // A drop-down select's shown option is drawn by the closed
-          // control, in the select's colours and font, as are its other
-          // options that have the select's colours: the select is measured.
+          // control, in the select's colors and font, as are its other
+          // options that have the select's colors: the select is measured.
           const owner = __closedSelectTextOwner(el) || el;
           if (isSameColorAsBackground(owner)) continue;
 
@@ -4389,10 +4389,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
-    // An emulator that resolves no system colour hands the keyword back as
+    // An emulator that resolves no system color hands the keyword back as
     // the computed value (jsdom 26 computes an unstyled text's color as
-    // "canvastext", and a button's colours as "buttontext" on "buttonface"),
-    // and the probe above gets it back the same. Such a page has no colour
+    // "canvastext", and a button's colors as "buttontext" on "buttonface"),
+    // and the probe above gets it back the same. Such a page has no color
     // scheme of its own to follow, so these are the light scheme's in
     // Chromium, as __SCHEME_COLORS gives them for jsdom. A browser always
     // resolves them, so it never gets here.
@@ -4476,7 +4476,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Rounded to 12 decimals: past that, a ratio's digits depend on the order
-  // the colours were composited in, which differs between jsdom and a
+  // the colors were composited in, which differs between jsdom and a
   // browser (1.0778038367054583 against 1.077803836705458), and one page
   // would report two numbers. The thresholds have two decimals, so no
   // outcome turns on a digit this far down.
@@ -4776,7 +4776,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        // currentColor: el's colour, in the scheme the page is drawn in.
+        // currentColor: el's color, in the scheme the page is drawn in.
         const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
@@ -5038,7 +5038,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
-  // Text whose fill is transparent, or the colour of its background, is not
+  // Text whose fill is transparent, or the color of its background, is not
   // drawn by its fill, but an outline or a shadow still draws it: outlined
   // headings are a common design, and WCAG's techniques count an outline or
   // halo in a text's contrast (G18, G145). Such text is not skipped as
@@ -5056,7 +5056,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (width > 0 && !(stroke && stroke.a === 0)) return true;
       const shadow = __textShadowInfoEl(el, cs);
       if (!shadow.has) return false;
-      // A shadow drawn only in transparent colours draws nothing.
+      // A shadow drawn only in transparent colors draws nothing.
       const colors =
         String(shadow.value).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent/gi) || [];
       return !(
@@ -5071,10 +5071,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // The colours el's glyphs are drawn in by a visible -webkit-text-stroke
+  // The colors el's glyphs are drawn in by a visible -webkit-text-stroke
   // and text-shadow, for text whose fill draws nothing: { colors, complete }.
-  // complete is false when a colour can't be read, so a caller never
-  // concludes from part of what is drawn. Each colour keeps its own alpha.
+  // complete is false when a color can't be read, so a caller never
+  // concludes from part of what is drawn. Each color keeps its own alpha.
   function getOutlineColors(el) {
     const out = { colors: [], complete: true };
     try {
@@ -5094,7 +5094,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       const shadow = __textShadowInfoEl(el, cs);
       if (shadow.has) {
-        // One shadow per comma outside parentheses, each with one colour.
+        // One shadow per comma outside parentheses, each with one color.
         const parts = [];
         let depth = 0;
         let start = 0;
@@ -5121,12 +5121,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Text drawn by a stroke or a shadow, measured by the best of the colours
+  // Text drawn by a stroke or a shadow, measured by the best of the colors
   // it is drawn in against a flat background, its fill among them when the
   // fill is seen: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
-  // null when the background isn't one opaque colour, a colour can't be
+  // null when the background isn't one opaque color, a color can't be
   // read, or the text is a placeholder with its fill seen (the rules judge
-  // placeholders by whose colours they are). Below the ratio, no reading of
+  // placeholders by whose colors they are). Below the ratio, no reading of
   // the text meets it (ACT: "If all background pixels have a low contrast
   // with all foreground pixels, the success criterion is guaranteed to not
   // be satisfied"); above it, how legible the outline is takes a person.
@@ -5262,26 +5262,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return value;
   }
 
-  // -------- Link colours under jsdom --------
+  // -------- Link colors under jsdom --------
   //
   // jsdom's cascade orders its own style sheet's rules with the page's by
   // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
   // beats a page's `a { color: #fff }`, which a browser applies: a white
-  // link read back as blue, and text measured in a colour no browser draws.
-  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
-  // the text inside it that takes its colour from it, is worked out here
+  // link read back as blue, and text measured in a color no browser draws.
+  // Under jsdom, the color of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its color from it, is worked out here
   // from the page's own rules, as a browser's cascade does: the author's
   // declarations win over the browser's whatever their specificity, ordered
   // among themselves by !important, the style attribute, specificity and
-  // order. Where no author rule sets it, the browser's link colour stands,
+  // order. Where no author rule sets it, the browser's link color stands,
   // and jsdom's value is right. Where it can't be worked out (a sheet that
   // can't be read, a selector or value it can't follow, a rule whose
-  // condition it can't tell), the colour is unknown, and the text is not
+  // condition it can't tell), the color is unknown, and the text is not
   // computable rather than measured in jsdom's blue.
   //
-  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // __jsdomLinkTextColor(el): a color value for el's text, null where it
   // can't be worked out, or undefined where jsdom's own value stands (a
-  // browser, text outside any link, a link no author rule colours).
+  // browser, text outside any link, a link no author rule colors).
   const __jsdomByDoc = new WeakMap();
   function __underJsdom(doc) {
     if (!doc) return false;
@@ -5389,7 +5389,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set a colour property (`color`, or
+  // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
@@ -5618,7 +5618,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
   function __jsdomLinkTextColorUncached(el) {
     if (!__underJsdom(dom.ownerDocument(el))) return undefined;
-    // Only text in a link: the browser's sheet sets the colour of nothing
+    // Only text in a link: the browser's sheet sets the color of nothing
     // else that jsdom ranks differently.
     let inLink = false;
     for (let cur = el, depth = 0; cur && depth < 200; depth++) {
@@ -5640,11 +5640,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const decl = __authorColorOf(el);
     if (decl && decl.unknown) return null;
     if (!decl) {
-      // A link no author rule colours is in the browser's link colour, as
+      // A link no author rule colors is in the browser's link color, as
       // jsdom 29 has it. jsdom 26 gives it none, and the link takes its
-      // parent's colour: it is then the light scheme's link colour, as
-      // jsdom 29's. Text inside one takes its colour from its parent,
-      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // parent's color: it is then the light scheme's link color, as
+      // jsdom 29's. Text inside one takes its color from its parent,
+      // unless the browser's sheet colors it (a <mark>): jsdom then gives
       // it a value of its own.
       if (__isLink(el)) {
         const cs = __contrastComputedStyle(el);
@@ -5667,11 +5667,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return parseCssColorToRgba(decl.value) ? decl.value : null;
   }
 
-  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // Whether the page sets el's -webkit-text-fill-color to a color of its
   // own, on el or an ancestor it inherits from: true, false where it
   // follows color, null where it can't be told. jsdom computes a fill that
-  // follows color as that colour, so a fill the page sets to jsdom's own
-  // link colour reads the same as one that follows it.
+  // follows color as that color, so a fill the page sets to jsdom's own
+  // link color reads the same as one that follows it.
   function __jsdomAuthorFill(el) {
     for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
       const decl = __authorColorOf(cur, '-webkit-text-fill-color');
@@ -5687,12 +5687,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // The colour value el's HTML text is painted in, from its computed style
+  // The color value el's HTML text is painted in, from its computed style
   // cs, before any opacity: -webkit-text-fill-color, else color, with the
-  // colour of text in a link worked out from the page's rules under jsdom
+  // color of text in a link worked out from the page's rules under jsdom
   // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
-  // computes the fill as the colour it follows; one that differs is the
-  // page's own, and paints it, as does one the page sets to that colour.
+  // computes the fill as the color it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that color.
   function __htmlTextFillOf(el, cs) {
     const fillValue = __textFillOfEl(el, cs);
     let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
@@ -5713,7 +5713,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return authored ? fillValue : link;
   }
 
-  // textFillColor(el): the colour value el's text is painted in, before any
+  // textFillColor(el): the color value el's text is painted in, before any
   // opacity, as computeEffectiveForeground reads it ('' where it can't be
   // worked out).
   function textFillColor(el) {
@@ -5769,17 +5769,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colour el's text has in a color scheme other than the one whose
-  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // The color el's text has in a color scheme other than the one whose
+  // colors were computed: in contrast.colorScheme, on the page's canvas,
   // where opts give one; otherwise, in an emulator, in the dark scheme a
   // page drawn only in dark is in, wherever the text is (an emulator
-  // computes the light scheme's colours). Null where the colour computed
+  // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
     const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
-      // A browser computes the colours of the scheme it draws.
+      // A browser computes the colors of the scheme it draws.
       if (!__emulatorWindow()) return null;
       const info = __pageSchemes();
       if (!info || info.laidOut || info.current !== 'dark') return null;
@@ -5794,7 +5794,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
   }
 
-  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // opts.contrast.colorScheme: the text's color in that scheme, on the
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
@@ -5840,13 +5840,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour, is read from the page's rules (__htmlTextFillOf).
+    // Text in a link, under jsdom, whose color jsdom ranks below its own
+    // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
-    // scheme's colour where the text takes it from the scheme.
+    // scheme's color where the text takes it from the scheme.
     if (c && schemeOverride) {
       c = {
         r: schemeOverride.r,
@@ -5915,10 +5915,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
-  // The canvas the browser paints behind the root: the Canvas system colour
+  // The canvas the browser paints behind the root: the Canvas system color
   // of the root's color scheme, white unless the page asks for dark, where
   // Chromium paints #121212. Read once per run, from an element the engine
-  // adds and removes at once, which is how the Canvas system colour
+  // adds and removes at once, which is how the Canvas system color
   // resolves for the page. Null where nothing resolves it (jsdom).
   let __canvas;
   function __pageCanvasColor() {
@@ -5946,7 +5946,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let laidOut = false;
       try {
         // Only a page with a layout paints a canvas: an emulator (jsdom)
-        // resolves system colours to fixed values and measures every box at
+        // resolves system colors to fixed values and measures every box at
         // zero, so it has none to read.
         laidOut = dom.getBoundingClientRect(probe).width === 1;
         bg = String(window.getComputedStyle(probe).backgroundColor || '');
@@ -6035,7 +6035,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- The page's canvas, in each color scheme it supports --------
   //
   // Behind a page that paints no opaque background the browser paints its
-  // canvas, in the Canvas system colour of the root's used color scheme
+  // canvas, in the Canvas system color of the root's used color scheme
   // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
   // own statement: the root's color-scheme, or, while that is normal, its
   // <meta name="color-scheme">. A page that states none is drawn in the
@@ -6044,7 +6044,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // the page and the user's preference, as the browser defines it, not
   // from an assumption.
 
-  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // The Canvas, CanvasText and LinkText system colors of each scheme in
   // Chromium (read in Chromium 153), for an emulator that resolves them to
   // fixed light values and lays nothing out (jsdom). A browser's own are
   // read from the page instead.
@@ -6071,7 +6071,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // current the one it is drawn in now (the user's preference where the
   // page supports it, else the first it names), and colors each scheme's
   // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
-  // its computed colours are the current scheme's; an emulator's are the
+  // its computed colors are the current scheme's; an emulator's are the
   // light scheme's, without its prefers-color-scheme rules. Null under
   // forced colors, where the canvas is the user's palette, and where
   // nothing can be read.
@@ -6125,7 +6125,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
       }
 
-      // In a browser, each scheme's system colours are read from an
+      // In a browser, each scheme's system colors are read from an
       // element the engine adds and removes at once, and the scheme the
       // page is drawn in from the Canvas it inherits from the root.
       // An emulator lays nothing out: nothing to read there, and the page
@@ -6180,7 +6180,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the engine runs in an emulator (jsdom, by its user agent),
-  // which computes the light scheme's colours whatever the page's scheme.
+  // which computes the light scheme's colors whatever the page's scheme.
   let __emulator;
   function __emulatorWindow() {
     if (__emulator !== undefined) return __emulator;
@@ -6211,10 +6211,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The style rules of a document's or shadow root's sheets that may make
-  // a colour depend on the color scheme: those inside an @media on
+  // a color depend on the color scheme: those inside an @media on
   // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
-  // unknown), and those setting a colour, a background or a custom property
-  // to light-dark() or a system colour (`keyword`). Every condition is
+  // unknown), and those setting a color, a background or a custom property
+  // to light-dark() or a system color (`keyword`). Every condition is
   // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
   // unreadable }, once per root.
   const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
@@ -6226,7 +6226,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       .replace(/"[^"]*"|'[^']*'/g, '');
     return __SCHEME_VALUE.test(v);
   }
-  // Which of a declaration block's colours follow the scheme: { color }
+  // Which of a declaration block's colors follow the scheme: { color }
   // for the text's (color, -webkit-text-fill-color), { back } for a
   // background or a custom property, which may feed either; null for none.
   function __styleFollowsScheme(style) {
@@ -6344,12 +6344,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // How the colours behind el's text, and its own, may depend on the color
+  // How the colors behind el's text, and its own, may depend on the color
   // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
   // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
-  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // rules matching one of them; keywordColor: a text color, keywordBack a
   // background or a custom property, set to light-dark() or a system
-  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // color (keyword: either); unknown: a sheet or a selector that can't be
   // read.
   const __schemeDependenceCache = new WeakMap();
   const __noDependence = () => ({
@@ -6409,12 +6409,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Where el's text colour comes from: 'author', a colour of the page's
+  // Where el's text color comes from: 'author', a color of the page's
   // own, the same in every scheme ('authorFill' where it is a
-  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
-  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // -webkit-text-fill-color); 'canvasText', the scheme's text color (no
+  // rule colors it or an ancestor); 'linkText', the browser's link color;
   // { value }, a value the page gives that picks by the scheme (light-dark(),
-  // a system colour); null where it can't be told, or is another colour of
+  // a system color); null where it can't be told, or is another color of
   // the browser's (a field's, a button's, a mark's). SVG text, and text cut
   // out of a background, are left at null.
   const __UA_COLOURED = new Set([
@@ -6484,9 +6484,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return 'canvasText';
   }
 
-  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
-  // first or second colour, a system colour the scheme defines (CanvasText,
-  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  // A color value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second color, a system color the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a color; null for anything else.
   function __resolveSchemeColor(value, scheme, info) {
     const v = String(value || '').trim();
     const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
@@ -6506,7 +6506,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the browser paints a background of its own, in the scheme's
-  // system colours, behind el's text: el or an ancestor is a form control,
+  // system colors, behind el's text: el or an ancestor is a form control,
   // a mark, a dialog or a popover whose background the page doesn't set.
   const __UA_PAINTED = new Set([
     'input',
@@ -6542,18 +6542,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // el's text colour in `scheme`: { color } with color null where it is
-  // the colour computed now, or the colour it has in that scheme (the
+  // el's text color in `scheme`: { color } with color null where it is
+  // the color computed now, or the color it has in that scheme (the
   // scheme's CanvasText or LinkText where the text takes it from the
-  // scheme; a light-dark() or system colour the page gives, worked out);
-  // null where it can't be told. The colours computed now are the scheme a
+  // scheme; a light-dark() or system color the page gives, worked out);
+  // null where it can't be told. The colors computed now are the scheme a
   // browser draws, or, in an emulator, the light one with no
   // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
-  // has its text's colours worked out here: not where a
+  // has its text's colors worked out here: not where a
   // prefers-color-scheme rule for dark reaches them, a background behind
   // them picks by the scheme, or the browser paints one there. A scheme the
   // page isn't drawn in is told only where no prefers-color-scheme rule,
-  // light-dark() or system colour reaches the text's colour or the
+  // light-dark() or system color reaches the text's color or the
   // backgrounds behind it.
   function __schemeTextColor(el, scheme) {
     const info = __pageSchemes();
@@ -6580,12 +6580,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return null;
   }
 
-  // The scheme an emulator can't give el's text colours in: the page is
+  // The scheme an emulator can't give el's text colors in: the page is
   // drawn in it, and they can't be worked out (__schemeTextColor). An
-  // emulator computes the light scheme's colours and applies no
+  // emulator computes the light scheme's colors and applies no
   // prefers-color-scheme rule, so on a page drawn in light only text such
-  // a rule reaches; on one drawn in dark, text whose colours there can't be
-  // told. Null in a browser, which computes the colours it draws.
+  // a rule reaches; on one drawn in dark, text whose colors there can't be
+  // told. Null in a browser, which computes the colors it draws.
   function colorSchemeUnread(el) {
     try {
       if (!window || !el || dom.nodeType(el) !== 1) return null;
@@ -6664,7 +6664,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The canvas under el's text in the scheme the page is drawn in, where
-  // the colours computed now are that scheme's (see __canvasFor); null
+  // the colors computed now are that scheme's (see __canvasFor); null
   // otherwise, which leaves it to the contrast mode
   // (computeEffectiveBackground).
   function __measuredCanvasUnder(el) {
@@ -6673,8 +6673,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether el's text can be measured on the page's canvas in `scheme`, one
-  // the page supports but isn't drawn in now: its colours and the
-  // backgrounds behind it are the same in that scheme, or its colour is
+  // the page supports but isn't drawn in now: its colors and the
+  // backgrounds behind it are the same in that scheme, or its color is
   // the scheme's own (__schemeTextColor).
   function colorSchemeMeasurable(el, scheme) {
     try {
@@ -6938,7 +6938,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           alpha: acc.a,
           stack: stack || [],
           reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
-          // On a page whose canvas is known, the text's colour in the
+          // On a page whose canvas is known, the text's color in the
           // scheme it is drawn in could not be told (__schemeTextColor).
           ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
@@ -7126,7 +7126,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       // The browser's canvas, where it was read, lies under the root and
-      // outside every group, so both colours are composited onto it.
+      // outside every group, so both colors are composited onto it.
       const canvas = bgAcc.a < 1 || fgAcc.a < 1 ? __measuredCanvasUnder(el) : null;
       if (canvas) {
         bgAcc = compositeRgba(bgAcc, canvas);
@@ -7217,7 +7217,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // item's marker, is drawn, but no text node holds it, so the text walk
   // never meets it. It is read from the pseudo-element's computed style,
   // which only a browser gives (jsdom computes none), and measured in the
-  // pseudo-element's colour and font, against its element's background and
+  // pseudo-element's color and font, against its element's background and
   // its own if it has one.
 
   // ::before and ::after: their styles are read only for the elements a
@@ -7632,8 +7632,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
-  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
-  // drawn (CSS zoom included), and same when the text is the colour of its
+  // fontSizePx, fontWeightNum, same }, the colors opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the color of its
   // background. bgOpts as computeEffectiveBackground's.
   function measureGeneratedText(el, pseudo, bgOpts) {
     try {
@@ -7653,7 +7653,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
       // Effects on the generated text itself, which draw something other
-      // than its declared colours.
+      // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
       if (hasFilter(ps)) {
         const filter = trim(ps.filter);
@@ -7766,16 +7766,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the text el shows is its placeholder: below its ratio, the
-  // contrast rules fail it, pass it or ask about it by whose colours they
+  // contrast rules fail it, pass it or ask about it by whose colors they
   // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
   }
 
-  // Where a field's placeholder colours come from: 'browser' when its
+  // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
-  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the browser's (WCAG G148: colors left to the browser count as meeting
   // the ratio), 'page' when the page changed any of them, '' when that
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
@@ -7852,10 +7852,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // A drop-down <select> whose background is the browser's own is drawn
   // as the platform draws a field: Chromium paints it in the Field system
-  // colour (white), though its computed background is ButtonFace (#efefef),
+  // color (white), though its computed background is ButtonFace (#efefef),
   // which other browsers may paint. Text the page coloured on it fails if
   // it fails in either, so the contrast rules measure it against both. This
-  // gives the Field colour, as an rgba, for such a select when it differs
+  // gives the Field color, as an rgba, for such a select when it differs
   // from the computed background; null otherwise, and for a select the page
   // gave a background, a list box, a customizable select, or no layout.
   // The browser's values are read once per color-scheme in a blank frame,
@@ -7932,7 +7932,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // (brand, marque, marca) name one only when every word of the token is
   // about the site's name ("brand", "navbar-brand", "site-brand",
   // "brand-name"): "btn-brand", "text-brand-500" and "brand-story" are
-  // colours and sections in a brand's style, and "site-branding" commonly
+  // colors and sections in a brand's style, and "site-branding" commonly
   // holds the tagline beside the logo.
   const __LOGO_WORDS = new Set(['logo', 'logos', 'logotype', 'wordmark']);
   const __BRAND_WORDS = new Set(['brand', 'marque', 'marca']);
@@ -8088,16 +8088,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
   // What stops el's contrast being computed, or { ok: true }. A
-  // ::first-line or ::first-letter in a colour of its own
-  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // ::first-line or ::first-letter in a color of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colors, as
   // `pseudoColors`, when nothing else stands in the way: each rule can then
-  // measure both colours against its own threshold, and decide where they
+  // measure both colors against its own threshold, and decide where they
   // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
-    // The text's colours in the scheme the page is drawn in can't be read
+    // The text's colors in the scheme the page is drawn in can't be read
     // (an emulator: colorSchemeUnread), so whatever else is in the way, they
     // are what is unknown.
     const unread = colorSchemeUnread(el);
@@ -8118,7 +8118,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
-      // The rest of the walk, past the pseudo-element: its colours are
+      // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
@@ -8131,10 +8131,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colours of the ::first-line or ::first-letter style that differs
+  // The colors of the ::first-line or ::first-letter style that differs
   // from el's own, for measurePseudoElementText: null when both differ (the
   // first letter is then drawn in one or the other, by rules this does not
-  // model), or when that style draws something other than its colours (a
+  // model), or when that style draws something other than its colors (a
   // background image, a shadow, an outline, an opacity).
   function __pseudoColorsOf(pseudos) {
     if (pseudos.length !== 1) return null;
@@ -8165,13 +8165,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // El's text measured in its own colours and in those of the
+  // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
   // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colours or
+  // background's assumptions. Null when the blocker carries no colors or
   // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colours meet a ratio, or
+  // paints depends on line breaks, but where both colors meet a ratio, or
   // both fall short of it, every reading of the text does too.
   function measurePseudoElementText(el, bgOpts) {
     try {
@@ -8234,8 +8234,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // stands in the way.
   function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
-    // colours that aren't the select's: it is shown only in the list the
-    // select opens, which the platform draws in those colours or in its
+    // colors that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colors or in its
     // own, so there is no one way it is drawn to measure.
     const dropDown = __dropDownOption(el);
     if (dropDown && !dropDown.shown && dropDown.differs) {
@@ -8424,12 +8424,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      // ::first-line and ::first-letter paint part of the text in a colour
+      // ::first-line and ::first-letter paint part of the text in a color
       // of their own (a first line in black over #bbb text, a drop cap).
       // Which text is on the first line takes layout to know, so a
-      // pseudo-element whose colour or background differs from the
+      // pseudo-element whose color or background differs from the
       // element's defers to manual review rather than measuring the wrong
-      // colour.
+      // color.
       if (
         !skipPseudo &&
         cur === el &&
@@ -8445,8 +8445,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         if (__rootStylesFirstLineOrLetter(root)) {
           let out = null;
-          // Each pseudo-element whose colours differ from el's, for the
-          // colours the blocker carries (__pseudoColorsOf).
+          // Each pseudo-element whose colors differ from el's, for the
+          // colors the blocker carries (__pseudoColorsOf).
           const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
@@ -8486,9 +8486,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      // -webkit-text-stroke outlines each glyph in its own colour, and a
-      // wide stroke is most of what is drawn: the fill colour alone is not
-      // the text's colour, and there is no model for combining the two, so
+      // -webkit-text-stroke outlines each glyph in its own color, and a
+      // wide stroke is most of what is drawn: the fill color alone is not
+      // the text's color, and there is no model for combining the two, so
       // it defers to manual review as a text-shadow does.
       if (cur === el && !placeholder) {
         let strokeWidth;
@@ -20143,7 +20143,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
-  // the loop was quadratic: on a page where most text shares a colour every
+  // the loop was quadratic: on a page where most text shares a color every
   // candidate ties, and in Blink each compareDocumentPosition walks the
   // siblings between the two elements.
   let ties = [];
@@ -21845,7 +21845,7 @@ const runCoreSettled = (function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the colour is known to be usable.
+    // Set below, once the color is known to be usable.
     return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
   }
 
@@ -26239,7 +26239,7 @@ const RUNTIME_CATALOG = {
   {
     "ruleId": "click-handler-keyboard-operable",
     "title": "Click handlers on elements that are not native controls must work by keyboard",
-    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.",
     "i18n": {
       "titleKey": "clickHandlerKeyboardOperable_title",
       "descriptionKey": "clickHandlerKeyboardOperable_description"
@@ -27657,7 +27657,7 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "focus-not-removed-by-script",
-    "title": "A script does not remove focus from an element as it receives it",
+    "title": "A script must not remove focus from an element as it receives it",
     "description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
     "i18n": {
       "titleKey": "focusNotRemovedByScript_title",
@@ -28099,7 +28099,7 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "form-control-single-label",
-    "title": "Form controls must not have multiple labels",
+    "title": "Form controls should not have multiple labels",
     "description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "i18n": {
       "titleKey": "formControlSingleLabel_title",
@@ -29414,8 +29414,8 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "invalid-field-error-message",
-    "title": "Fields marked invalid must have a shown error message",
-    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+    "title": "Fields marked invalid should have a shown error message",
+    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage should name a shown element with text, and a field with no linked message is asked about.",
     "i18n": {
       "titleKey": "invalidFieldErrorMessage_title",
       "descriptionKey": "invalidFieldErrorMessage_description"
@@ -30073,7 +30073,7 @@ const RUNTIME_CATALOG = {
         "standard": "EN 301 549",
         "version": "V3.2.1",
         "requirement": "9.1.4.1",
-        "title": "Use of colour",
+        "title": "Use of color",
         "wcagSc": [
           "1.4.1"
         ]
@@ -30082,7 +30082,7 @@ const RUNTIME_CATALOG = {
         "standard": "EN 301 549",
         "version": "V4.1.1",
         "requirement": "9.1.4.1",
-        "title": "Use of colour",
+        "title": "Use of color",
         "wcagSc": [
           "1.4.1"
         ]
@@ -31403,7 +31403,7 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "moving-content-pausable",
-    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "title": "Content that moves by itself should be possible to pause, stop or hide",
     "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
     "i18n": {
       "titleKey": "movingContentPausable_title",
@@ -34217,7 +34217,7 @@ const RUNTIME_CATALOG = {
   },
   {
     "ruleId": "video-caption",
-    "title": "Prerecorded video should provide a captions track",
+    "title": "Prerecorded video should provide complete captions",
     "description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
     "i18n": {
       "titleKey": "videoCaption_title",
@@ -34644,7 +34644,7 @@ const RUNTIME_CATALOG = {
           "standard": "EN 301 549",
           "version": "V3.2.1",
           "requirement": "9.1.4.1",
-          "title": "Use of colour",
+          "title": "Use of color",
           "wcagSc": [
             "1.4.1"
           ]
@@ -34653,7 +34653,7 @@ const RUNTIME_CATALOG = {
           "standard": "EN 301 549",
           "version": "V4.1.1",
           "requirement": "9.1.4.1",
-          "title": "Use of colour",
+          "title": "Use of color",
           "wcagSc": [
             "1.4.1"
           ]
@@ -36611,7 +36611,7 @@ const RUNTIME_CATALOG = {
       "serverSideImageMapAbsent_description": "Fragt für jedes <img ismap> in einem Link, ob die Seite dieselben Ziele als per Tastatur erreichbare Links anbietet, da eine serverseitige Image-Map keine per Tastatur bedienbaren Bereiche hat.",
       "serverSideImageMapAbsent_summary_cantTell": "Dieses Bild ist eine serverseitige Image-Map (ismap in einem Link), deren Bereiche nicht per Tastatur erreichbar sind.",
       "serverSideImageMapAbsent_hint_cantTell": "Prüfen Sie, ob die Seite dieselben Ziele als separate Links anbietet. Besser: Ersetzen Sie die serverseitige Image-Map durch eine clientseitige Image-Map (<map>/<area>) oder separate Links/Schaltflächen.",
-      "formControlSingleLabel_title": "Formularelemente dürfen nicht mehrere Beschriftungen haben",
+      "formControlSingleLabel_title": "Formularelemente sollten nicht mehrere Beschriftungen haben",
       "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Dieses <{{element}}> hat {{labelCount}} <label>-Elemente; prüfen Sie den Namen, den sie zusammen ergeben.",
       "formControlSingleLabel_hint_cantTell_competing": "Browser fügen die Beschriftungen zu einem Namen zusammen. Prüfen Sie, ob er noch verständlich ist, oder behalten Sie ein <label> pro Feld.",
@@ -36871,7 +36871,7 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_lean_why_bgsound": "Aktuelle Browser ignorieren <bgsound>, also spielt es nichts ab.",
       "noAutoplayAudio_lean_why_flash": "Aktuelle Browser führen Flash nicht mehr aus, also spielt es nichts ab.",
       "noAutoplayAudio_lean_caution_obsolete": "Ältere Browser spielen es noch ab.",
-      "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
+      "videoCaption_title": "Voraufgezeichnetes Video sollte vollständige Untertitel bereitstellen",
       "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
       "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
@@ -36961,8 +36961,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Ein Popup, das ein Skript von einem Auslöser aus öffnet und fokussiert, der dies nicht angibt, sieht genauso aus.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA lässt aria-activedescendant nur an dem Element wirken, das den Fokus hat, und dieses kann ihn nicht erhalten.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Ein Skript kann es fokussierbar machen, wenn sich das Widget öffnet.",
-      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
-      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
+      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder sollten eine angezeigte Fehlermeldung haben",
+      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage sollte ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
@@ -37058,12 +37058,12 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_lean_caution_data": "Auch eine Layouttabelle kann Zahlen enthalten, etwa Preise neben Text.",
       "tdHasHeader_lean_why_layout": "Die Tabelle wirkt wie ein Layout: Ihre Zellen enthalten eine verschachtelte Tabelle, Formularelemente, Bilder oder Textblöcke, und nichts weist sie als Datentabelle aus.",
       "tdHasHeader_lean_caution_layout": "Auch eine Datentabelle kann Bilder oder Bedienelemente in ihren Zellen enthalten, etwa eine Produktliste.",
-      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte sollten sich pausieren, stoppen oder ausblenden lassen",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
-      "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
+      "focusNotRemovedByScript_title": "Ein Skript darf einem Element den Fokus nicht entziehen, sobald es ihn erhält",
       "focusNotRemovedByScript_description": "Wertet Elemente in der Tab-Reihenfolge als Fehler, deren Inline-onfocus-Handler nur blur() auf ihnen aufruft, und fragt bei anderen Handlern nach, die blur() oder focus() auf einem anderen Element aufrufen, was den Fokus entfernen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
@@ -37088,7 +37088,7 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "Das Element führt bei mousedown, mouseup oder Doppelklick eine Aktion aus, ein vor den Skripten der Seite installierter Hook hat weder an ihm noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten-Listener gesehen, und nichts in ihm oder um es herum kann den Fokus erhalten.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Der Handler zeichnet vielleicht nur einen Effekt oder verfolgt den Zeiger, oder ein anderes Bedienelement bietet dieselbe Funktion an.",
       "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
-      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und ein Tasten-Handler am Element, einem Vorfahren oder einem Nachfahren seine Tasten erhält, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
@@ -37427,7 +37427,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter or backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
-      "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+      "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own color, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
@@ -37454,17 +37454,17 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
-      "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
-      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
       "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
       "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
       "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
-      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own colour ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} colour ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
-      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
-      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
-      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each colour reaches its ratio there; if one falls short, change it.",
-      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the colour that forms most of each letter against the background; it needs {{threshold}}:1.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own color ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} color ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
+      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best color, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that color depends on how much of them it draws.",
+      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best color, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that color depends on how much of them it draws.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each color reaches its ratio there; if one falls short, change it.",
+      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -37473,8 +37473,8 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
-      "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
-      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_fail_unreachable": "The text color {{foregroundHex}} reaches at most {{bestRatio}}:1 against any background, white or black being the best there are, below {{threshold}}:1 (font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). The background behind it could not be worked out, but none gives it enough contrast.",
       "contrastEnhanced_hint_unreachable": "Even on white or black, the best backgrounds there are, this text color reaches only {{bestRatio}}:1. Make the text darker or lighter so it can reach {{threshold}}:1 against its background.",
@@ -37943,7 +37943,7 @@ const RUNTIME_CATALOG = {
       "serverSideImageMapAbsent_description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
       "serverSideImageMapAbsent_summary_cantTell": "This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.",
       "serverSideImageMapAbsent_hint_cantTell": "Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.",
-      "formControlSingleLabel_title": "Form controls must not have multiple labels",
+      "formControlSingleLabel_title": "Form controls should not have multiple labels",
       "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "This <{{element}}> has {{labelCount}} <label> elements; check the name they make together.",
       "formControlSingleLabel_hint_cantTell_competing": "Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.",
@@ -38203,7 +38203,7 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_lean_why_bgsound": "Current browsers ignore <bgsound>, so it plays nothing.",
       "noAutoplayAudio_lean_why_flash": "Current browsers no longer run Flash, so it plays nothing.",
       "noAutoplayAudio_lean_caution_obsolete": "Older browsers still play it.",
-      "videoCaption_title": "Prerecorded video should provide a captions track",
+      "videoCaption_title": "Prerecorded video should provide complete captions",
       "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
       "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
@@ -38293,8 +38293,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "A popup opened and focused by a script from a trigger that does not say so looks the same.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "A script may make it focusable when the widget opens.",
-      "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
-      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+      "invalidFieldErrorMessage_title": "Fields marked invalid should have a shown error message",
+      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage should name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
@@ -38390,12 +38390,12 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_lean_caution_data": "A layout table can also hold numbers, such as prices beside text.",
       "tdHasHeader_lean_why_layout": "The table looks like layout: its cells hold a nested table, form controls, images or blocks of text, and nothing marks it as data.",
       "tdHasHeader_lean_caution_layout": "A data table can hold images or controls in its cells, such as a product list.",
-      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_title": "Content that moves by itself should be possible to pause, stop or hide",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
-      "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
+      "focusNotRemovedByScript_title": "A script must not remove focus from an element as it receives it",
       "focusNotRemovedByScript_description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
@@ -38420,7 +38420,7 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "The handler may only draw an effect or track the pointer, or another control may offer the same function.",
       "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
-      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
@@ -38535,7 +38535,7 @@ const RUNTIME_CATALOG = {
       "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
       "report_card_selector": "Selector:",
       "report_heading_margins": "Closest to the limit",
-      "report_margins_intro": "The passing elements that came close to a rule's threshold, and how much room they had: one per rule, the closest. A rule is listed only when something came close, such as a contrast within 10% of its ratio or a target within 6 px of 24 px. Little room means a small change, such as new text, a colour or a narrower window, can turn it into a failure.",
+      "report_margins_intro": "The passing elements that came close to a rule's threshold, and how much room they had: one per rule, the closest. A rule is listed only when something came close, such as a contrast within 10% of its ratio or a target within 6 px of 24 px. Little room means a small change, such as new text, a color or a narrower window, can turn it into a failure.",
       "report_margins_col_closest": "Closest value",
       "report_margins_col_limit": "Limit",
       "report_margins_col_room": "Room left",
@@ -39058,15 +39058,15 @@ const RUNTIME_CATALOG = {
       "ariaValidAttrValue_hint_cantTell_idref": "Comprobar que el elemento al que se refiere se agrega cuando se abre el componente; si nunca se agrega, corregir o quitar la referencia.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
       "ariaValidAttrValue_summary_fail_rangeInverted": "El aria-valuemin de este elemento ({{min}}) es mayor que su aria-valuemax ({{max}}).",
-      "ariaValidAttrValue_hint_fail_rangeInverted": "Ponga en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Poner en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
       "ariaValidAttrValue_summary_fail_valueOutOfRange": "El aria-valuenow de este elemento ({{now}}) está fuera de su rango, así que las tecnologías de apoyo reciben otro valor.",
-      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantenga aria-valuenow entre aria-valuemin y aria-valuemax, o amplíe el rango.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantener aria-valuenow entre aria-valuemin y aria-valuemax, o ampliar el rango.",
       "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "El aria-posinset de este elemento ({{posinset}}) es mayor que su aria-setsize ({{setsize}}).",
-      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dé a cada elemento una posición no mayor que el tamaño de su conjunto.",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dar a cada elemento una posición no mayor que el tamaño de su conjunto.",
       "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" anuncia un tipo de ventana emergente, pero el elemento que controla tiene el rol {{role}}.",
-      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Hacer que aria-haspopup nombre el rol de la ventana emergente, o comprobar si un script muestra otra.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
-      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apuntar aria-activedescendant a uno de los elementos propios del elemento, o hacer suyo ese elemento con aria-owns.",
       "ariaValidAttrValue_lean_why_otherTree": "Existe un elemento con este id, pero en otro árbol del documento (al otro lado de una raíz shadow), donde la referencia nunca puede alcanzarlo.",
       "ariaValidAttrValue_lean_caution_otherTree": "El componente todavía puede crear su propio elemento con este id.",
       "ariaValidAttrValue_lean_why_nearMiss": "Existe un elemento cuyo id solo difiere en mayúsculas o en un carácter, así que la referencia probablemente está mal escrita.",
@@ -39146,7 +39146,7 @@ const RUNTIME_CATALOG = {
       "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
       "deprecatedElements_lean_why_still": "El marquee tiene scrollamount=\"0\", así que su contenido no se mueve.",
       "deprecatedElements_lean_why_pauseControl": "La página tiene un control cuyo nombre indica pausar, detener u ocultar.",
-      "deprecatedElements_lean_caution_pauseControl": "Compruebe que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
+      "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
@@ -39193,7 +39193,7 @@ const RUNTIME_CATALOG = {
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
       "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
-      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quitar el rol del <li>, sacar el elemento de la lista o dar a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -39204,13 +39204,13 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_description": "Señala una región viva oculta a las tecnologías de apoyo o que se queda ocupada y, con el hook de regiones vivas, una añadida con su texto o mostrada y rellenada a la vez, para revisión manual.",
       "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Esta región viva está oculta con aria-hidden, así que nada de lo que reciba puede anunciarse.",
       "liveRegionAnnouncements_summary_cantTell_inert": "Esta región viva está dentro de contenido inert, así que nada de lo que reciba puede anunciarse.",
-      "liveRegionAnnouncements_hint_cantTell_hidden": "Compruebe si la página la usa para mensajes de estado; si es así, manténgala fuera de contenido con aria-hidden o inert.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Comprobar si la página la usa para mensajes de estado; si es así, mantenerla fuera de contenido con aria-hidden o inert.",
       "liveRegionAnnouncements_summary_cantTell_busy": "Esta región viva estaba ocupada (aria-busy=\"true\") cuando se analizó la página, así que sus cambios pueden quedar retenidos.",
-      "liveRegionAnnouncements_hint_cantTell_busy": "Compruebe que aria-busy vuelve a false cuando la región se actualiza.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Comprobar que aria-busy vuelve a false cuando la región se actualiza.",
       "liveRegionAnnouncements_summary_cantTell_inserted": "Se añadió a la página una región viva que ya tenía su texto, «{{text}}»; los lectores de pantalla suelen anunciar solo los cambios en una región que ya está en la página.",
-      "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Comprobar que este mensaje de estado se anuncia; poner primero la región vacía en la página y cambiar su texto después.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
-      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Comprobar que este mensaje de estado se anuncia; mostrar primero la región y cambiar su texto después.",
       "liveRegionAnnouncements_lean_why_hidden": "No hay ningún diálogo abierto que explique que esta región viva esté oculta, así que lo que reciba no se anuncia.",
       "liveRegionAnnouncements_lean_caution_hidden": "Puede que la región no se use, o que la página la haga accesible a las tecnologías de apoyo antes de escribir en ella.",
       "liveRegionAnnouncements_lean_why_inserted": "La región se añadió con su texto ya dentro, algo que los lectores de pantalla no suelen anunciar.",
@@ -39218,7 +39218,7 @@ const RUNTIME_CATALOG = {
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
       "liveRegionAnnouncements_summary_cantTell_modal": "Esta región viva está detrás de un diálogo modal abierto, que la vuelve inert, así que nada de lo que reciba mientras el diálogo esté abierto puede anunciarse.",
-      "liveRegionAnnouncements_hint_cantTell_modal": "Compruebe si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, póngalos en una región viva dentro del diálogo.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Comprobar si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, ponerlos en una región viva dentro del diálogo.",
       "liveRegionAnnouncements_lean_why_modal": "El hook de regiones vivas vio que esta región recibía texto después de que se abriera el diálogo modal que tiene delante, mientras el diálogo la volvía inert, así que el texto no se anunció.",
       "liveRegionAnnouncements_lean_caution_modal": "Si ese texto era un mensaje de estado que el usuario necesitaba debe decidirlo una persona: la página puede dar sus mensajes también a una región viva dentro del diálogo.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
@@ -39275,7 +39275,7 @@ const RUNTIME_CATALOG = {
       "serverSideImageMapAbsent_description": "Pregunta, para cada <img ismap> dentro de un enlace, si la página ofrece los mismos destinos como enlaces alcanzables con el teclado, ya que un mapa de imagen del lado del servidor no tiene zonas operables por teclado.",
       "serverSideImageMapAbsent_summary_cantTell": "Esta imagen es un mapa de imagen del lado del servidor (ismap dentro de un enlace), cuyas zonas no se pueden alcanzar con el teclado.",
       "serverSideImageMapAbsent_hint_cantTell": "Comprobar que la página ofrece los mismos destinos como enlaces independientes. Mejor: reemplazar el mapa de imagen del lado del servidor por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones independientes.",
-      "formControlSingleLabel_title": "Los controles de formulario no deben tener varias etiquetas",
+      "formControlSingleLabel_title": "Los controles de formulario no deberían tener varias etiquetas",
       "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Este <{{element}}> tiene {{labelCount}} elementos <label>; comprobar el nombre que forman juntos.",
       "formControlSingleLabel_hint_cantTell_competing": "Los navegadores unen las etiquetas en un solo nombre. Comprobar que sigue teniendo sentido, o dejar un solo <label> por campo.",
@@ -39470,7 +39470,7 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
-      "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_hint_fail_clipped": "Dejar que el contenedor crezca con su texto: evitar alturas y anchuras fijas con overflow: hidden en texto, o permitir que se desplace (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Comprobar con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
@@ -39535,7 +39535,7 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_lean_why_bgsound": "Los navegadores actuales ignoran <bgsound>, así que no reproduce nada.",
       "noAutoplayAudio_lean_why_flash": "Los navegadores actuales ya no ejecutan Flash, así que no reproduce nada.",
       "noAutoplayAudio_lean_caution_obsolete": "Los navegadores más antiguos todavía lo reproducen.",
-      "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
+      "videoCaption_title": "El video pregrabado debería proporcionar subtítulos completos",
       "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
       "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
@@ -39592,9 +39592,9 @@ const RUNTIME_CATALOG = {
       "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
       "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
-      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Comprobar si el contenido está abierto; si lo está, poner aria-expanded=\"true\", u ocultar el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
-      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Comprobar si el contenido está abierto; si no lo está, poner aria-expanded=\"false\", o mostrar el contenido mientras esté expandido.",
       "ariaExpandedStateMismatch_lean_why_collapsedShown": "El contenido que controla se muestra completo, sin recortar ni desplazar, mientras el elemento dice que está contraído.",
       "ariaExpandedStateMismatch_lean_caution_collapsedShown": "El contenido puede ser una vista previa que el elemento amplía más.",
       "ariaExpandedStateMismatch_lean_why_expandedHidden": "El contenido que controla no se muestra en absoluto (display: none o el atributo hidden), mientras el elemento dice que está expandido.",
@@ -39602,19 +39602,19 @@ const RUNTIME_CATALOG = {
       "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
       "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
       "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
-      "ariaOwnsValid_hint_fail_duplicate": "Deje su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
+      "ariaOwnsValid_hint_fail_duplicate": "Dejar su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
       "ariaOwnsValid_summary_fail_ancestor": "El aria-owns de este elemento nombra {{id}}, que contiene al propio elemento.",
-      "ariaOwnsValid_hint_fail_ancestor": "Quite ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
+      "ariaOwnsValid_hint_fail_ancestor": "Quitar ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
-      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Compruebe que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Comprobar que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
       "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Este elemento tiene el rol {{role}}, pero solo recibe el foco desde un script (tabindex=\"-1\").",
-      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Comprobar que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, darle tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
-      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Comprobar que un usuario de teclado puede alcanzarlo: dar tabindex=\"0\" a un elemento (tabindex itinerante), o hacer que el {{role}} pueda recibir el foco y apuntar aria-activedescendant al elemento activo.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
-      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Comprobar que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que darle tabindex=\"0\".",
       "widgetKeyboardFocusable_lean_why_notFocusable": "El elemento dice ser un widget, pero ni él ni nada de lo que contiene puede recibir el foco, y ningún control del orden de tabulación tiene su rol y su nombre.",
       "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script puede hacerlo enfocable cuando haga falta, o el rol puede ser incorrecto para un contenido que no hace nada.",
       "widgetKeyboardFocusable_lean_why_duplicate": "Otro control del orden de tabulación tiene el mismo rol y el mismo nombre, así que este es un duplicado sacado del orden de tabulación.",
@@ -39625,22 +39625,22 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Una ventana emergente que un script abre y enfoca desde un activador que no lo indica se ve igual.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA solo da efecto a aria-activedescendant en el elemento que tiene el foco, y este no puede recibirlo.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script puede hacerlo enfocable cuando se abre el widget.",
-      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
-      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
+      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deberían tener un mensaje de error visible",
+      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debería nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
-      "invalidFieldErrorMessage_hint_cantTell_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Mostrar el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
-      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quitar aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
-      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Comprobar que la descripción dice al usuario, en texto, qué está mal; mostrar el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage se muestra, pero aria-hidden oculta su texto a las tecnologías de apoyo.",
       "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Comprobar que los usuarios de lectores de pantalla también conocen el error; quitar aria-hidden del mensaje, o describir el error en la descripción del campo.",
       "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Este campo está marcado como no válido, pero ningún elemento tiene el id que nombra aria-errormessage.",
-      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Comprobar que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
-      "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Comprobar que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asociar el mensaje al campo con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
       "invalidFieldErrorMessage_lean_why_empty": "El mensaje de error vinculado al campo está vacío y el campo no tiene descripción, así que probablemente no se comunica el error.",
@@ -39655,14 +39655,14 @@ const RUNTIME_CATALOG = {
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
-      "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "labelForValid_hint_cantTell": "Comprobar para qué control es la etiqueta y poner en for el id de ese control.",
       "labelForValid_lean_why_notLabelable": "El atributo for de la etiqueta nombra un elemento que no se puede etiquetar, así que la etiqueta no etiqueta nada.",
       "labelForValid_lean_why_targetMissing": "El atributo for de la etiqueta no nombra ningún elemento, así que la etiqueta no etiqueta nada.",
       "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
       "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
       "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
       "controlNameTitleOnly_summary_cantTell_link": "El único nombre de este enlace es su title, que solo se muestra al pasar el ratón.",
-      "controlNameTitleOnly_hint_cantTell": "Compruebe si puede tener texto visible, o un aria-label si solo muestra un icono; puede mantener el title como información emergente.",
+      "controlNameTitleOnly_hint_cantTell": "Comprobar si puede tener texto visible, o un aria-label si solo muestra un icono; se puede mantener el title como información emergente.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -39680,7 +39680,7 @@ const RUNTIME_CATALOG = {
       "cssOrientationLock_lean_why_rotateMessage": "En esa orientación, la página muestra en lugar de su contenido un mensaje para girar el dispositivo.",
       "cssOrientationLock_lean_caution_rotateMessage": "Una orientación puede ser esencial, como en un teclado de piano o la foto de un cheque.",
       "cssOrientationLock_lean_why_alternateContent": "En esa orientación, la página muestra otros elementos con al menos la mitad de texto, una disposición alternativa del contenido.",
-      "cssOrientationLock_lean_caution_alternateContent": "Compruebe que la otra disposición ofrece el mismo contenido y las mismas funciones.",
+      "cssOrientationLock_lean_caution_alternateContent": "Comprobar que la otra disposición ofrece el mismo contenido y las mismas funciones.",
       "cssOrientationLock_lean_why_fontSheets": "Cada hoja de estilos que no se pudo leer viene de un servicio de fuentes web, que solo sirve definiciones de fuentes.",
       "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
@@ -39700,7 +39700,7 @@ const RUNTIME_CATALOG = {
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
-      "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
+      "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -39722,19 +39722,19 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_lean_caution_data": "Una tabla de maquetación también puede contener números, como precios junto a un texto.",
       "tdHasHeader_lean_why_layout": "La tabla parece de maquetación: sus celdas contienen una tabla anidada, controles de formulario, imágenes o bloques de texto, y nada la señala como de datos.",
       "tdHasHeader_lean_caution_layout": "Una tabla de datos puede contener imágenes o controles en sus celdas, como una lista de productos.",
-      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_title": "El contenido que se mueve solo debería poder pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
-      "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
+      "focusNotRemovedByScript_title": "Un script no debe quitar el foco a un elemento cuando lo recibe",
       "focusNotRemovedByScript_description": "Da por fallidos los elementos del orden de tabulación cuyo controlador onfocus en línea solo llama a blur() sobre ellos, y pregunta por otros controladores que llaman a blur(), o a focus() sobre otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo F55 de WCAG).",
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
-      "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
-      "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
+      "focusNotRemovedByScript_hint_cantTell": "Llegar al elemento con la tecla Tab y comprobar que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): eliminar la llamada a blur(), o hacer que el elemento no pueda recibir el foco si no debe recibirlo.",
+      "focusNotRemovedByScript_hint_fail": "Quitar la llamada a blur() para que el foco se quede en el elemento, o hacer que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
       "focusNotRemovedByScript_lean_why_calls": "El manejador llama a blur() sobre el propio elemento en una instrucción propia, fuera de cualquier condición, así que el foco se quita al llegar.",
       "focusNotRemovedByScript_lean_caution_calls": "Otro código del manejador puede devolver el foco, o abrir a propósito algo que toma el foco.",
       "focusNotRemovedByScript_lean_why_sentinel": "El elemento es una guarda de foco vacía y sin nombre en el borde de un diálogo o de un grupo de controles: enviar el foco en cuanto llega es como una trampa de foco mantiene el foco dentro.",
@@ -39752,18 +39752,18 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "El elemento ejecuta una acción con mousedown, mouseup o doble clic, un hook instalado antes de los scripts de la página no vio ningún detector de teclas en él, sus antepasados, el documento ni la ventana, y nada dentro ni alrededor puede recibir el foco.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Puede que el controlador solo dibuje un efecto o siga el puntero, u otro control puede ofrecer la misma función.",
       "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
-      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y que un controlador de teclas, en él, un ancestro o un descendiente, recibe sus teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
-      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Comprobar que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, usar un <button> o un <a href> nativo, o gestionar keydown para esas teclas.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
-      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Usar el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añadir tabindex=\"0\" y hacer que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
-      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Comprobar que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, usar un <button> o un <a href> nativo, o añadir tabindex=\"0\" y gestionar Intro y Espacio.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
-      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Comprobar que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, usar tabindex=\"0\" o un <button> o un <a href> nativo.",
       "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Aún no tiene detector de teclas, pero un detector de foco en él, en un antepasado, en el documento o en la ventana puede añadirlo cuando reciba el foco.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
-      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Usar el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestionar keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Aunque un script mueva el foco aquí, no hay ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio no harían nada.",
       "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Puede que el clic solo registre clics, o que repita lo que hace otro control de la página.",
@@ -39776,7 +39776,7 @@ const RUNTIME_CATALOG = {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
-      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestione keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -39794,7 +39794,7 @@ const RUNTIME_CATALOG = {
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
       "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
-      "linkNameQuality_lean_caution_formatBesideName": "Compruebe que el otro enlace nombra este mismo documento.",
+      "linkNameQuality_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
       "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
       "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "report_title_default": "Informe de análisis de surea11y",
@@ -40607,7 +40607,7 @@ const RUNTIME_CATALOG = {
       "serverSideImageMapAbsent_description": "Demande, pour chaque <img ismap> placé dans un lien, si la page propose les mêmes destinations sous forme de liens accessibles au clavier, puisqu’une carte d’image côté serveur n’a pas de zones utilisables au clavier.",
       "serverSideImageMapAbsent_summary_cantTell": "Cette image est une carte d’image côté serveur (ismap dans un lien), dont les zones ne peuvent pas être atteintes au clavier.",
       "serverSideImageMapAbsent_hint_cantTell": "Vérifiez que la page propose les mêmes destinations sous forme de liens distincts. Mieux : remplacez la carte d’image côté serveur par une carte d’image côté client (<map>/<area>) ou par des liens/boutons distincts.",
-      "formControlSingleLabel_title": "Les contrôles de formulaire ne doivent pas avoir plusieurs étiquettes",
+      "formControlSingleLabel_title": "Les contrôles de formulaire ne devraient pas avoir plusieurs étiquettes",
       "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Cet élément <{{element}}> a {{labelCount}} éléments <label> ; vérifiez le nom qu’ils forment ensemble.",
       "formControlSingleLabel_hint_cantTell_competing": "Les navigateurs joignent les étiquettes en un seul nom. Vérifiez qu’il a encore du sens, ou gardez un seul <label> par champ.",
@@ -40867,7 +40867,7 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_lean_why_bgsound": "Les navigateurs actuels ignorent <bgsound> : il ne joue rien.",
       "noAutoplayAudio_lean_why_flash": "Les navigateurs actuels n’exécutent plus Flash : il ne joue rien.",
       "noAutoplayAudio_lean_caution_obsolete": "Des navigateurs plus anciens le jouent encore.",
-      "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
+      "videoCaption_title": "Une vidéo préenregistrée devrait proposer des sous-titres complets",
       "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
       "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
@@ -40957,8 +40957,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Une fenêtre surgissante ouverte et focalisée par un script depuis un déclencheur qui ne l’indique pas a la même apparence.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA ne donne d’effet à aria-activedescendant que sur l’élément qui a le focus, et celui-ci ne peut pas le recevoir.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script peut le rendre focalisable à l’ouverture du widget.",
-      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
-      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
+      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides devraient avoir un message d’erreur affiché",
+      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage devrait nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
@@ -41054,12 +41054,12 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_lean_caution_data": "Un tableau de mise en page peut aussi contenir des nombres, comme des prix à côté d’un texte.",
       "tdHasHeader_lean_why_layout": "Le tableau ressemble à une mise en page : ses cellules contiennent un tableau imbriqué, des contrôles de formulaire, des images ou des blocs de texte, et rien ne le signale comme des données.",
       "tdHasHeader_lean_caution_layout": "Un tableau de données peut contenir des images ou des contrôles dans ses cellules, comme une liste de produits.",
-      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même devrait pouvoir être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
-      "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
+      "focusNotRemovedByScript_title": "Un script ne doit pas retirer le focus d’un élément au moment où il le reçoit",
       "focusNotRemovedByScript_description": "Signale en échec les éléments de l’ordre de tabulation dont le gestionnaire onfocus en ligne ne fait qu’appeler blur() sur eux, et pose la question pour les autres gestionnaires qui appellent blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
@@ -41084,7 +41084,7 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "L’élément exécute une action au mousedown, au mouseup ou au double-clic, un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur lui, ses ancêtres, le document ni la fenêtre, et rien en lui ni autour ne peut recevoir le focus.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Le gestionnaire peut ne faire que dessiner un effet ou suivre le pointeur, ou une autre commande peut offrir la même fonction.",
       "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
-      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et qu’un gestionnaire de touches, sur lui, un ancêtre ou un descendant, reçoit ses touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
@@ -41939,7 +41939,7 @@ const RUNTIME_CATALOG = {
       "serverSideImageMapAbsent_description": "リンク内の <img ismap> ごとに、同じリンク先をキーボードで到達できるリンクとしてページが提供しているかを確認します。サーバーサイドイメージマップ自体には、キーボードで操作できる領域がないためです。",
       "serverSideImageMapAbsent_summary_cantTell": "この画像はサーバーサイドイメージマップ (リンク内の ismap) であり、その領域にはキーボードで到達できません。",
       "serverSideImageMapAbsent_hint_cantTell": "同じリンク先が個別のリンクとしてページにあるか確認してください。より良い方法: サーバーサイドイメージマップを、クライアントサイドイメージマップ (<map>/<area>) か、個別のリンクやボタンに置き換えてください。",
-      "formControlSingleLabel_title": "フォームコントロールに複数のラベルがあってはならない",
+      "formControlSingleLabel_title": "フォームコントロールに複数のラベルがないことが望ましい",
       "formControlSingleLabel_description": "フォームコントロールに関連付けられた <label> (囲む形式または label[for] による) が 1 つ以下であるかを確認します。",
       "formControlSingleLabel_summary_cantTell_competing": "この <{{element}}> には <label> 要素が {{labelCount}} 個あります。合わせてできる名前を確認してください。",
       "formControlSingleLabel_hint_cantTell_competing": "ブラウザーはラベルをつなげて 1 つの名前にします。その名前が意味をなすか確認するか、1 つの項目に <label> は 1 つにしてください。",
@@ -42199,7 +42199,7 @@ const RUNTIME_CATALOG = {
       "noAutoplayAudio_lean_why_bgsound": "現在のブラウザーは <bgsound> を無視するため、何も再生されません。",
       "noAutoplayAudio_lean_why_flash": "現在のブラウザーは Flash を実行しないため、何も再生されません。",
       "noAutoplayAudio_lean_caution_obsolete": "古いブラウザーでは今も再生されます。",
-      "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
+      "videoCaption_title": "収録済みの動画には完全なキャプションがあることが望ましい",
       "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
       "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
@@ -42289,8 +42289,8 @@ const RUNTIME_CATALOG = {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "それを示さないトリガーからスクリプトで開いてフォーカスするポップアップも、同じように見えます。",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA では aria-activedescendant はフォーカスを持つ要素でしか効果がありませんが、この要素はフォーカスを受け取れません。",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "ウィジェットが開いたときに、スクリプトがフォーカス可能にする場合があります。",
-      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
-      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
+      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがあることが望ましい",
+      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指すことが望ましく、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
@@ -42386,12 +42386,12 @@ const RUNTIME_CATALOG = {
       "tdHasHeader_lean_caution_data": "レイアウト用の表にも、テキストの横の価格など、数値が入っていることがあります。",
       "tdHasHeader_lean_why_layout": "この表はレイアウト用のようです。セルに入れ子の表、フォームコントロール、画像、またはまとまったテキストがあり、データ表であることを示すものがありません。",
       "tdHasHeader_lean_caution_layout": "商品一覧のように、データ表のセルにも画像やコントロールが入っていることがあります。",
-      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできることが望ましい",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
-      "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
+      "focusNotRemovedByScript_title": "スクリプトは、フォーカスを受け取った要素からフォーカスを外してはならない",
       "focusNotRemovedByScript_description": "タブ順序内の要素で、インラインの onfocus ハンドラーが自身に blur() を呼ぶだけのものを不適合とし、blur() や別要素への focus() を呼ぶその他のハンドラーについては確認を求めます。これらは要素がフォーカスを受けた直後にフォーカスを失わせることがあります (WCAG 失敗例 F55)。",
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_fail_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
@@ -42416,7 +42416,7 @@ const RUNTIME_CATALOG = {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "この要素は mousedown、mouseup、ダブルクリックで操作を実行します。ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーを見つけておらず、要素の中にも周囲にもフォーカスを受け取れるものがありません。",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "ハンドラーは効果を描くか、ポインターを追跡するだけかもしれません。また、別のコントロールが同じ機能を提供している可能性があります。",
       "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
-      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、要素自身、祖先、または子孫のキー ハンドラーがそのキー入力を受け取ることを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
@@ -45168,7 +45168,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "ruleId": "click-handler-keyboard-operable",
     "title": "Click handlers on elements that are not native controls must work by keyboard",
-    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+    "description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.",
     "i18n": {
       "titleKey": "clickHandlerKeyboardOperable_title",
       "descriptionKey": "clickHandlerKeyboardOperable_description"
@@ -46586,7 +46586,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "focus-not-removed-by-script",
-    "title": "A script does not remove focus from an element as it receives it",
+    "title": "A script must not remove focus from an element as it receives it",
     "description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
     "i18n": {
       "titleKey": "focusNotRemovedByScript_title",
@@ -47028,7 +47028,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "form-control-single-label",
-    "title": "Form controls must not have multiple labels",
+    "title": "Form controls should not have multiple labels",
     "description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
     "i18n": {
       "titleKey": "formControlSingleLabel_title",
@@ -48343,8 +48343,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "invalid-field-error-message",
-    "title": "Fields marked invalid must have a shown error message",
-    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+    "title": "Fields marked invalid should have a shown error message",
+    "description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage should name a shown element with text, and a field with no linked message is asked about.",
     "i18n": {
       "titleKey": "invalidFieldErrorMessage_title",
       "descriptionKey": "invalidFieldErrorMessage_description"
@@ -49002,7 +49002,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "standard": "EN 301 549",
         "version": "V3.2.1",
         "requirement": "9.1.4.1",
-        "title": "Use of colour",
+        "title": "Use of color",
         "wcagSc": [
           "1.4.1"
         ]
@@ -49011,7 +49011,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "standard": "EN 301 549",
         "version": "V4.1.1",
         "requirement": "9.1.4.1",
-        "title": "Use of colour",
+        "title": "Use of color",
         "wcagSc": [
           "1.4.1"
         ]
@@ -50332,7 +50332,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "moving-content-pausable",
-    "title": "Content that moves by itself can be paused, stopped or hidden",
+    "title": "Content that moves by itself should be possible to pause, stop or hide",
     "description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
     "i18n": {
       "titleKey": "movingContentPausable_title",
@@ -53146,7 +53146,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   },
   {
     "ruleId": "video-caption",
-    "title": "Prerecorded video should provide a captions track",
+    "title": "Prerecorded video should provide complete captions",
     "description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
     "i18n": {
       "titleKey": "videoCaption_title",
@@ -53573,7 +53573,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "standard": "EN 301 549",
           "version": "V3.2.1",
           "requirement": "9.1.4.1",
-          "title": "Use of colour",
+          "title": "Use of color",
           "wcagSc": [
             "1.4.1"
           ]
@@ -53582,7 +53582,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "standard": "EN 301 549",
           "version": "V4.1.1",
           "requirement": "9.1.4.1",
-          "title": "Use of colour",
+          "title": "Use of color",
           "wcagSc": [
             "1.4.1"
           ]
@@ -64459,7 +64459,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
   // lean: which way the evidence points, for the few blockers where the
-  // colours that are known bound the answer (leanFor, below), or null.
+  // colors that are known bound the answer (leanFor, below), or null.
   function pushCantTellOccurrence(el, reasonCode, extraDetails, lean) {
     try {
       const pseudo =
@@ -64637,9 +64637,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return '';
   }
 
-  // The colour el's text is painted in, as declared, when it is opaque:
+  // The color el's text is painted in, as declared, when it is opaque:
   // its -webkit-text-fill-color, or its color. Null for SVG text (painted
-  // with fill), a placeholder, or a colour that is not opaque.
+  // with fill), a placeholder, or a color that is not opaque.
   function opaqueTextColor(el) {
     try {
       if (dom.namespaceURI(el) === SVG_NS) return null;
@@ -64669,7 +64669,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // The background el's text sits on before any opacity fades it: the
   // first opaque background-color from el up, with nothing translucent and
-  // no background image on the way. Null where that isn't one colour.
+  // no background image on the way. Null where that isn't one color.
   function unfadedBackground(el) {
     try {
       for (let cur = el, depth = 0; cur && depth < 200; cur = parentOf(cur), depth += 1) {
@@ -64697,7 +64697,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (!C || !el || dom.nodeType(el) !== 1) return null;
       const cs = styleOf(el);
       // Opacity fades the text and its background together toward what
-      // lies behind them, which brings two colours closer, never further
+      // lies behind them, which brings two colors closer, never further
       // apart: below the AA ratio before the fading, the text is below it
       // after. Above it, how far the fading lowers the ratio depends on
       // what is behind, so there is no lean.
@@ -64725,7 +64725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         };
       }
       // An option shown only in the list the select opens: where the
-      // platform draws that list in the option's colours, they are what is
+      // platform draws that list in the option's colors, they are what is
       // on screen.
       if (reasonCode === 'SELECT_OPTION_COLOR') {
         const fg = opaqueTextColor(el);
@@ -64791,9 +64791,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
-  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // Text part of which a ::first-line or ::first-letter paints in a color
   // of its own (PSEUDO_ELEMENT_COLOR) is decided by contrast-minimum and
-  // contrast-enhanced where its own colours and the pseudo-element's agree,
+  // contrast-enhanced where its own colors and the pseudo-element's agree,
   // at the AA ratio and at the AAA ratio, both reaching it or both falling
   // short (helpers.contrast.measurePseudoElementText). It is asked about
   // here only where they disagree at one of them.
@@ -65322,7 +65322,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colors
   // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
@@ -65391,7 +65391,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
-      // placeholder is 'ask' (whose colours they are can't be told) or
+      // placeholder is 'ask' (whose colors they are can't be told) or
       // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -65406,13 +65406,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       // Every reason code here describes a ratio the rule computed: text
-      // whose colours can't be worked out is left to contrast-computable.
+      // whose colors can't be worked out is left to contrast-computable.
       const uncertainty =
         placeholder === 'ask'
           ? {
               code: 'judgement-required',
               needed:
-                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colors.'
             }
           : symbol
             ? {
@@ -65461,7 +65461,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: { details: det }
       };
 
-      // Text whose own colour can't reach the ratio on any background
+      // Text whose own color can't reach the ratio on any background
       // (unreachableOnAnyBackground): it fails whatever lies behind it.
       if (det.reasonCode === 'CONTRAST_UNREACHABLE_ANY_BACKGROUND') {
         occBase.i18n.summaryKey = 'contrastEnhanced_fail_unreachable';
@@ -65567,10 +65567,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Text drawn by a stroke or a shadow: the computability gate asks about
-  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best colour it is
+  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best color it is
   // drawn in, its fill included when seen, is below the ratio against a
   // flat background, no reading of it meets the criterion, so it is
-  // measured by that colour (helpers.contrast.measureOutlineOnlyText).
+  // measured by that color (helpers.contrast.measureOutlineOnlyText).
   function outlineOnlyAnalysis(el, blocker) {
     if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
       return null;
@@ -65603,12 +65603,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // Text part of which a ::first-line or ::first-letter paints in a color
   // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
-  // but where its own colours and the pseudo-element's both reach their
+  // but where its own colors and the pseudo-element's both reach their
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
-  // colours closest to their ratio when both reach it, and by the best when
+  // colors closest to their ratio when both reach it, and by the best when
   // both fall short; where they disagree it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
@@ -65668,7 +65668,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Text a ::before, ::after or ::marker generates (#219), measured in the
-  // pseudo-element's colour and font against what lies behind it
+  // pseudo-element's color and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
   // to contrast-computable, as for an element's own text.
   function generatedAnalysis(el, pseudo) {
@@ -65707,16 +65707,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Text whose background can't be worked out, but whose own colour rules
-  // out the ratio on every background: the best background for a colour is
-  // white or black, and a colour of relative luminance L reaches at most
+  // Text whose background can't be worked out, but whose own color rules
+  // out the ratio on every background: the best background for a color is
+  // white or black, and a color of relative luminance L reaches at most
   // max(1.05 / (L + 0.05), (L + 0.05) / 0.05) against them, below 7:1 for
-  // L between 0.1 and 0.3. Normal text in such a colour fails 1.4.6
+  // L between 0.1 and 0.3. Normal text in such a color fails 1.4.6
   // whatever lies behind it (CONTRAST_UNREACHABLE_ANY_BACKGROUND). Large
-  // text never does: every colour reaches about 4.58:1 against white or
+  // text never does: every color reaches about 4.58:1 against white or
   // black, above its 4.5:1. Only where nothing but the background is
-  // unknown: an opaque text colour, no blend mode or filter on the text or
-  // around it, and not a placeholder, which is judged by whose colours it
+  // unknown: an opaque text color, no blend mode or filter on the text or
+  // around it, and not a placeholder, which is judged by whose colors it
   // has. backgroundCode: what stopped the background being worked out.
   // { bestRatio, threshold, fg, font, backgroundCode }, or null.
   const BACKGROUND_ONLY_BLOCKERS = new Set(['BACKGROUND_IMAGE_OR_GRADIENT', 'BACKGROUND_OVERLAP']);
@@ -65732,7 +65732,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (fg && __elFgCache) __elFgCache.set(el, fg);
       }
       if (!fg || !fg.rgba || fg.rgba.a !== 1) return null;
-      // The colour the text is painted in, as declared: a transparent fill
+      // The color the text is painted in, as declared: a transparent fill
       // (text cut out of a background) is drawn in that background.
       const cs = safeComputedStyle(el);
       const fill =
@@ -65854,7 +65854,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
       analysis = { computable: false };
-      // Not where the text's own colour in the page's color scheme
+      // Not where the text's own color in the page's color scheme
       // is what can't be read (bg.textColorUnknown).
       if ((!bg || bg.ok === false || !bg.rgba) && !(bg && bg.textColorUnknown)) {
         analysis.unreachable = unreachableOnAnyBackground(
@@ -65874,7 +65874,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
       // A drop-down select in the browser's own background is drawn
-      // on the Field colour in some browsers and on its computed
+      // on the Field color in some browsers and on its computed
       // background in others: text that fails on either fails, so
       // the lower ratio counts.
       const field =
@@ -65922,7 +65922,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Text on the page's canvas (analysis.canvas), on a page that supports
   // two color schemes: measured in the one the page is drawn in, and in the
-  // other where its colours can't change with the scheme (measureIn,
+  // other where its colors can't change with the scheme (measureIn,
   // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
   // scheme measured, by its ratio there, and colorScheme names that scheme
   // where the other passes (failing in both, it is reported in the scheme
@@ -66048,7 +66048,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          // A placeholder in colours the page chose fails; in the browser's
+          // A placeholder in colors the page chose fails; in the browser's
           // own (G148) it meets the ratio; when that can't be told it is
           // asked about.
           const placeholderSource =
@@ -66482,7 +66482,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colors
   // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
@@ -66601,7 +66601,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
-      // placeholder is 'ask' (whose colours they are can't be told) or
+      // placeholder is 'ask' (whose colors they are can't be told) or
       // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -66616,13 +66616,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       // Every reason code here describes a ratio the rule computed: text
-      // whose colours can't be worked out is left to contrast-computable.
+      // whose colors can't be worked out is left to contrast-computable.
       const uncertainty =
         placeholder === 'ask'
           ? {
               code: 'judgement-required',
               needed:
-                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colors.'
             }
           : symbol
             ? {
@@ -66775,8 +66775,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           own,
           pseudoElement: part
         };
-        summary = `Part of this text is painted by ${params.pseudoElement}, and which part depends on how the lines break. In its own colour (${params.ownForegroundHex}) it has a contrast of ${params.ownRatio}:1, against ${params.ownThreshold}:1 needed; in the ${params.pseudoElement} colour (${params.pseudoForegroundHex}), ${params.pseudoRatio}:1, against ${params.pseudoThreshold}:1. One reaches its ratio and the other does not.`;
-        hint = `Resize the window to see which words ${params.pseudoElement} paints, and check that each colour reaches its ratio there; if one falls short, change it.`;
+        summary = `Part of this text is painted by ${params.pseudoElement}, and which part depends on how the lines break. In its own color (${params.ownForegroundHex}) it has a contrast of ${params.ownRatio}:1, against ${params.ownThreshold}:1 needed; in the ${params.pseudoElement} color (${params.pseudoForegroundHex}), ${params.pseudoRatio}:1, against ${params.pseudoThreshold}:1. One reaches its ratio and the other does not.`;
+        hint = `Resize the window to see which words ${params.pseudoElement} paints, and check that each color reaches its ratio there; if one falls short, change it.`;
         summaryKey = 'contrastMinimum_cantTell_pseudoElementColor';
         hintKey = 'contrastMinimum_hint_cantTell_pseudoElementColor';
       } else {
@@ -66798,8 +66798,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           blockerValue: ask.blockerValue
         };
         const by = rc === 'TEXT_STROKE' ? 'an outline' : 'a shadow';
-        summary = `This text is drawn with ${by} (${params.blockerProperty}=${params.blockerValue}). Its best colour, ${params.foregroundHex}, has a contrast of ${params.ratio}:1 against ${params.backgroundHex}, which reaches ${params.threshold}:1, but whether the letters are seen in that colour depends on how much of them it draws.`;
-        hint = `Zoom in and measure the colour that forms most of each letter against the background; it needs ${params.threshold}:1.`;
+        summary = `This text is drawn with ${by} (${params.blockerProperty}=${params.blockerValue}). Its best color, ${params.foregroundHex}, has a contrast of ${params.ratio}:1 against ${params.backgroundHex}, which reaches ${params.threshold}:1, but whether the letters are seen in that color depends on how much of them it draws.`;
+        hint = `Zoom in and measure the color that forms most of each letter against the background; it needs ${params.threshold}:1.`;
         summaryKey =
           rc === 'TEXT_STROKE'
             ? 'contrastMinimum_cantTell_textStroke'
@@ -66816,8 +66816,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           code: 'not-computable',
           needed:
             rc === 'PSEUDO_ELEMENT_COLOR'
-              ? 'Which words the pseudo-element paints, and whether each colour reaches its ratio there.'
-              : 'Which colour forms the letters, and whether it reaches the ratio.',
+              ? 'Which words the pseudo-element paints, and whether each color reaches its ratio there.'
+              : 'Which color forms the letters, and whether it reaches the ratio.',
           evidence: { reasonCode: rc }
         },
         occurrenceOutcome: 'cantTell',
@@ -66858,10 +66858,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Text drawn by a stroke or a shadow: the computability gate asks about
-  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best colour it is
+  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best color it is
   // drawn in, its fill included when seen, is below the ratio against a
   // flat background, no reading of it meets the criterion, so it is
-  // measured by that colour (helpers.contrast.measureOutlineOnlyText).
+  // measured by that color (helpers.contrast.measureOutlineOnlyText).
   function outlineOnlyAnalysis(el, blocker) {
     if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
       return null;
@@ -66879,7 +66879,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ? LARGE_TEXT_RATIO
           : NORMAL_TEXT_RATIO;
     if (!(m.ratio < threshold)) {
-      // At ratios of its own (a variant's settings), text whose best colour
+      // At ratios of its own (a variant's settings), text whose best color
       // reaches them but not WCAG's AA ratio is one contrast-computable
       // leaves to this rule and this rule can't decide: it asks.
       if (SETTINGS_KEY !== '' && m.ratio < helpers.contrast.requiredRatio('AA', m.isLargeText)) {
@@ -66919,12 +66919,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
-  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // Text part of which a ::first-line or ::first-letter paints in a color
   // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
-  // but where its own colours and the pseudo-element's both reach their
+  // but where its own colors and the pseudo-element's both reach their
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
-  // colours closest to their ratio when both reach it, and by the best when
+  // colors closest to their ratio when both reach it, and by the best when
   // both fall short; where they disagree it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
@@ -66960,7 +66960,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const pseudo = { ...m.pseudo, font: pseudoFont, threshold: thresholdFor(pLarge) };
     const ownPasses = own.ratio >= own.threshold;
     if (ownPasses !== pseudo.ratio >= pseudo.threshold) {
-      // contrast-computable asks where the colours disagree at WCAG's AA or
+      // contrast-computable asks where the colors disagree at WCAG's AA or
       // AAA ratio. Where they disagree only at ratios of this rule's own (a
       // variant's settings), no one else asks, so this rule does.
       if (SETTINGS_KEY === '') return null;
@@ -66998,7 +66998,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // Text a ::before, ::after or ::marker generates (#219), measured in the
-  // pseudo-element's colour and font against what lies behind it
+  // pseudo-element's color and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
   // to contrast-computable, as for an element's own text.
   function generatedAnalysis(el, pseudo) {
@@ -67095,7 +67095,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
       // A drop-down select in the browser's own background is drawn
-      // on the Field colour in some browsers and on its computed
+      // on the Field color in some browsers and on its computed
       // background in others: text that fails on either fails, so
       // the lower ratio counts.
       const field =
@@ -67148,7 +67148,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Text on the page's canvas (analysis.canvas), on a page that supports
   // two color schemes: measured in the one the page is drawn in, and in the
-  // other where its colours can't change with the scheme (measureIn,
+  // other where its colors can't change with the scheme (measureIn,
   // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
   // scheme measured, by its ratio there, and colorScheme names that scheme
   // where the other passes (failing in both, it is reported in the scheme
@@ -67272,7 +67272,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          // A placeholder in colours the page chose fails; in the browser's
+          // A placeholder in colors the page chose fails; in the browser's
           // own (G148) it meets the ratio; when that can't be told it is
           // asked about.
           const placeholderSource =
@@ -80181,7 +80181,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // Whether a background-image layer draws something seen behind el's text:
   // `none`, a layer sized to nothing, a transparent gradient and a solid one
-  // in the colour already behind it draw nothing.
+  // in the color already behind it draw nothing.
   function hasBackgroundImage(cs, el) {
     const contrast = helpers.contrast;
     if (contrast && typeof contrast.backgroundLayerKinds === 'function') {
@@ -80716,10 +80716,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   // ---- Leans (docs/LEANS.md) ----
 
-  // The colour a style paints text in: -webkit-text-fill-color, else color.
+  // The color a style paints text in: -webkit-text-fill-color, else color.
   // For an element's own style, given el, read as the contrast helpers read
-  // it (textFillColor): under jsdom, the colour of text in a link comes
-  // from the page's rules, not jsdom's own link colour; null where it
+  // it (textFillColor): under jsdom, the color of text in a link comes
+  // from the page's rules, not jsdom's own link color; null where it
   // can't be worked out.
   function fillOf(cs, el) {
     if (!cs || !c) return null;
@@ -80736,8 +80736,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return !!a && !!b && a.r === b.r && a.g === b.g && a.b === b.b && a.a === b.a;
   }
 
-  // The effects that stopped the colours being measured where two equal
-  // colours stay equal under them, applied alike to the link and the text:
+  // The effects that stopped the colors being measured where two equal
+  // colors stay equal under them, applied alike to the link and the text:
   // the same blocker, or the same shadow or stroke on both.
   const SAME_COLOR = new Set([
     'COLOR_NOT_COMPUTABLE',
@@ -80783,7 +80783,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
-  // Whether what stopped the link's colours being measured is the same for
+  // Whether what stopped the link's colors being measured is the same for
   // the text around it: the same blocker, on the same element, or the same
   // shadow or outline on both.
   function effectShared(reasonCode, blocker, linkCs, textEl, parentCs) {
@@ -80817,7 +80817,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return null;
   }
 
-  // Which way a link left undecided because its colours could not be
+  // Which way a link left undecided because its colors could not be
   // measured points. A link with no underline and no other mark, drawn in
   // the same color as the text around it, or one less than 3:1 from it
   // where the effect in the way applies to both alike, has color as its
@@ -80942,12 +80942,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A link whose own highlight is compared with the page's canvas around it
   // (parentBg.canvas), on a page that supports two color schemes: compared
   // in the scheme the page is drawn in (`current`: { differs, ratio,
-  // fgLinkHex, fgParentHex }) and, where `others` and the colours of the
+  // fgLinkHex, fgParentHex }) and, where `others` and the colors of the
   // link and the text around it can't change with the scheme
   // (helpers.contrast.colorSchemeMeasurable), in the other, with the
-  // link's and the text's colours there. The highlight sets the link apart
+  // link's and the text's colors there. The highlight sets the link apart
   // where it does in each scheme measured; where it doesn't in one, the
-  // link is judged there by its colour, failing below 3:1. detail:
+  // link is judged there by its color, failing below 3:1. detail:
   // colorScheme, the scheme it falls short in where it doesn't in the
   // other, and colorSchemesChecked, the schemes measured where one wasn't.
   // { differs, ratio, fgLinkHex, fgParentHex, detail }, or null on a page
@@ -81407,7 +81407,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    // The colours of the link or of the text around it in the color scheme
+    // The colors of the link or of the text around it in the color scheme
     // the page is drawn in can't be read (an emulator:
     // helpers.contrast.colorSchemeUnread), so nothing they would decide is
     // known, and no lean either.
@@ -97897,7 +97897,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "serverSideImageMapAbsent_description": "Fragt für jedes <img ismap> in einem Link, ob die Seite dieselben Ziele als per Tastatur erreichbare Links anbietet, da eine serverseitige Image-Map keine per Tastatur bedienbaren Bereiche hat.",
       "serverSideImageMapAbsent_summary_cantTell": "Dieses Bild ist eine serverseitige Image-Map (ismap in einem Link), deren Bereiche nicht per Tastatur erreichbar sind.",
       "serverSideImageMapAbsent_hint_cantTell": "Prüfen Sie, ob die Seite dieselben Ziele als separate Links anbietet. Besser: Ersetzen Sie die serverseitige Image-Map durch eine clientseitige Image-Map (<map>/<area>) oder separate Links/Schaltflächen.",
-      "formControlSingleLabel_title": "Formularelemente dürfen nicht mehrere Beschriftungen haben",
+      "formControlSingleLabel_title": "Formularelemente sollten nicht mehrere Beschriftungen haben",
       "formControlSingleLabel_description": "Prüft, ob ein Formularelement mit höchstens einem <label> verknüpft ist (durch Umschließen oder durch label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Dieses <{{element}}> hat {{labelCount}} <label>-Elemente; prüfen Sie den Namen, den sie zusammen ergeben.",
       "formControlSingleLabel_hint_cantTell_competing": "Browser fügen die Beschriftungen zu einem Namen zusammen. Prüfen Sie, ob er noch verständlich ist, oder behalten Sie ein <label> pro Feld.",
@@ -98157,7 +98157,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_lean_why_bgsound": "Aktuelle Browser ignorieren <bgsound>, also spielt es nichts ab.",
       "noAutoplayAudio_lean_why_flash": "Aktuelle Browser führen Flash nicht mehr aus, also spielt es nichts ab.",
       "noAutoplayAudio_lean_caution_obsolete": "Ältere Browser spielen es noch ab.",
-      "videoCaption_title": "Voraufgezeichnetes Video sollte eine Untertitelspur bereitstellen",
+      "videoCaption_title": "Voraufgezeichnetes Video sollte vollständige Untertitel bereitstellen",
       "videoCaption_description": "Fragt bei jedem <video> nach: ohne <track kind=\"captions\">-Kind, ob es eine Tonspur hat, die Untertitel für Hörgeschädigte braucht (eine Untertitelspur allein kann nur eine Übersetzung sein); mit einem, ob die Untertitel vollständig sind und zum Ton passen.",
       "videoCaption_summary_cantTell": "Dieses Video hat keine Untertitelspur (captions).",
       "videoCaption_hint_cantTell": "Falls dieses Video eine informationstragende Audiospur hat, fügen Sie ein <track kind=\"captions\" src=\"…\"> mit dem untertitelten Inhalt hinzu. Untertitel sind nicht nötig, wenn das Video eine Medienalternative zu Text auf der Seite ist und klar als solche gekennzeichnet ist.",
@@ -98247,8 +98247,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Ein Popup, das ein Skript von einem Auslöser aus öffnet und fokussiert, der dies nicht angibt, sieht genauso aus.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA lässt aria-activedescendant nur an dem Element wirken, das den Fokus hat, und dieses kann ihn nicht erhalten.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Ein Skript kann es fokussierbar machen, wenn sich das Widget öffnet.",
-      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder müssen eine angezeigte Fehlermeldung haben",
-      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage muss ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
+      "invalidFieldErrorMessage_title": "Als ungültig markierte Felder sollten eine angezeigte Fehlermeldung haben",
+      "invalidFieldErrorMessage_description": "Prüft, ob ein Element mit aria-invalid eine Fehlermeldung als Text hat: Sein aria-errormessage sollte ein angezeigtes Element mit Text nennen, und bei einem Feld ohne verknüpfte Meldung wird nachgefragt.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist ausgeblendet.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Zeigen Sie die Fehlermeldung an, solange das Feld ungültig ist.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Dieses Feld ist als ungültig markiert, aber die von aria-errormessage genannte Fehlermeldung ist mit aria-hidden vor assistiven Technologien verborgen.",
@@ -98344,12 +98344,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_lean_caution_data": "Auch eine Layouttabelle kann Zahlen enthalten, etwa Preise neben Text.",
       "tdHasHeader_lean_why_layout": "Die Tabelle wirkt wie ein Layout: Ihre Zellen enthalten eine verschachtelte Tabelle, Formularelemente, Bilder oder Textblöcke, und nichts weist sie als Datentabelle aus.",
       "tdHasHeader_lean_caution_layout": "Auch eine Datentabelle kann Bilder oder Bedienelemente in ihren Zellen enthalten, etwa eine Produktliste.",
-      "movingContentPausable_title": "Sich selbst bewegende Inhalte lassen sich pausieren, stoppen oder ausblenden",
+      "movingContentPausable_title": "Sich selbst bewegende Inhalte sollten sich pausieren, stoppen oder ausblenden lassen",
       "movingContentPausable_description": "Fragt bei Elementen, die beim Laden der Seite länger als fünf Sekunden oder endlos animiert sind, ob sich die Bewegung pausieren, stoppen oder ausblenden lässt.",
       "movingContentPausable_summary_cantTell_loops": "Dieses <{{element}}> bewegt sich von selbst ohne Ende{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Dieses <{{element}}> bewegt sich von selbst länger als fünf Sekunden{{#name}} (Animation „{{name}}“){{/name}}.",
       "movingContentPausable_hint_cantTell": "Prüfen Sie, ob ein Bedienelement diese Bewegung pausieren, stoppen oder ausblenden lässt, sofern sie nicht wesentlich ist (WCAG 2.2.2). Eine Bewegung, die innerhalb von fünf Sekunden von selbst endet, braucht keines.",
-      "focusNotRemovedByScript_title": "Ein Skript entzieht einem Element den Fokus nicht, sobald es ihn erhält",
+      "focusNotRemovedByScript_title": "Ein Skript darf einem Element den Fokus nicht entziehen, sobald es ihn erhält",
       "focusNotRemovedByScript_description": "Wertet Elemente in der Tab-Reihenfolge als Fehler, deren Inline-onfocus-Handler nur blur() auf ihnen aufruft, und fragt bei anderen Handlern nach, die blur() oder focus() auf einem anderen Element aufrufen, was den Fokus entfernen kann, sobald das Element ihn erhält (WCAG-Fehler F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Dieses <{{element}}> entzieht sich den Fokus, sobald es ihn erhält (onfocus=\"{{handler}}\").",
@@ -98374,7 +98374,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "Das Element führt bei mousedown, mouseup oder Doppelklick eine Aktion aus, ein vor den Skripten der Seite installierter Hook hat weder an ihm noch an seinen Vorfahren, am Dokument oder am Fenster einen Tasten-Listener gesehen, und nichts in ihm oder um es herum kann den Fokus erhalten.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Der Handler zeichnet vielleicht nur einen Effekt oder verfolgt den Zeiger, oder ein anderes Bedienelement bietet dieselbe Funktion an.",
       "clickHandlerKeyboardOperable_title": "Klick-Handler an Elementen, die keine nativen Bedienelemente sind, müssen per Tastatur funktionieren",
-      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und einen Tasten-Handler hat, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
+      "clickHandlerKeyboardOperable_description": "Prüft, dass ein Element, das kein natives Bedienelement ist und einen Klick-Handler hat (ein Inline-onclick oder einen Klick-Listener, den der Listener-Hook erfasst hat), den Tastaturfokus erhalten kann und ein Tasten-Handler am Element, einem Vorfahren oder einem Nachfahren seine Tasten erhält, damit Tastaturnutzer ausführen können, was ein Klick ausführt.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Dieses <{{element}}> führt einen Klick-Handler aus und erhält den Tastaturfokus, hat aber keinen eigenen Tasten-Handler; Eingabe und Leertaste bewirken daher womöglich nichts.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Prüfen Sie, dass die Eingabetaste (und bei einer Schaltfläche die Leertaste) dasselbe bewirkt wie ein Klick. Falls nicht, verwenden Sie ein natives <button> oder <a href>, oder behandeln Sie keydown für diese Tasten.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Dieses Element hat role=\"{{role}}\" und einen Klick-Handler, aber weder es noch etwas darin kann den Tastaturfokus erhalten, sodass Tastaturnutzer es nicht erreichen.",
@@ -98713,7 +98713,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_cantTell_backdropFilter": "Contrast is not computable because backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_filterOrBackdropFilter": "Contrast is not computable because filter or backdrop-filter is used ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_textShadow": "Contrast is not computable because a text-shadow is used, which may add contrast this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
-      "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own colour, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
+      "contrastComputable_cantTell_textStroke": "Contrast is not computable because the text has an outline (-webkit-text-stroke), drawn in its own color, which this calculation does not account for ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_pseudoElementColor": "Contrast is not computable because part of the text is painted by {{blockerSelector}} in a {{blockerProperty}} of its own ({{blockerValue}}), and which text that is depends on how the lines break.",
       "contrastComputable_cantTell_selectOption": "Contrast is not computable because this option of a drop-down list has a {{blockerProperty}} of its own ({{blockerValue}}), and it is shown only when the list opens, drawn as the platform draws it, in those colors or its own.",
       "contrastComputable_cantTell_generatedText": "Contrast is not computable for the text this element's {{pseudo}} generates ({{reasonCode}}{{#blockerProperty}}: {{blockerProperty}}={{blockerValue}}{{/blockerProperty}}).",
@@ -98740,17 +98740,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
-      "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
-      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
+      "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
       "contrastMinimum_cantTell_logo": "This text looks like part of a logo and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Logo text has no contrast requirement.",
       "contrastMinimum_cantTell_contrastSwitch": "This text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, on a page that offers a contrast switch (\"{{switchName}}\").",
       "contrastMinimum_cantTell_semiBold": "This semi-bold text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}): enough for large text, below {{threshold}}:1 for other text.",
       "contrastMinimum_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
-      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own colour ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} colour ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
-      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
-      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best colour, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that colour depends on how much of them it draws.",
-      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each colour reaches its ratio there; if one falls short, change it.",
-      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the colour that forms most of each letter against the background; it needs {{threshold}}:1.",
+      "contrastMinimum_cantTell_pseudoElementColor": "Part of this text is painted by {{pseudoElement}}, and which part depends on how the lines break. In its own color ({{ownForegroundHex}}) it has a contrast of {{ownRatio}}:1, against {{ownThreshold}}:1 needed; in the {{pseudoElement}} color ({{pseudoForegroundHex}}), {{pseudoRatio}}:1, against {{pseudoThreshold}}:1. One reaches its ratio and the other does not.",
+      "contrastMinimum_cantTell_textStroke": "This text is drawn with an outline ({{blockerProperty}}={{blockerValue}}). Its best color, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that color depends on how much of them it draws.",
+      "contrastMinimum_cantTell_textShadow": "This text is drawn with a shadow ({{blockerProperty}}={{blockerValue}}). Its best color, {{foregroundHex}}, has a contrast of {{ratio}}:1 against {{backgroundHex}}, which reaches {{threshold}}:1, but whether the letters are seen in that color depends on how much of them it draws.",
+      "contrastMinimum_hint_cantTell_pseudoElementColor": "Resize the window to see which words {{pseudoElement}} paints, and check that each color reaches its ratio there; if one falls short, change it.",
+      "contrastMinimum_hint_cantTell_outline": "Zoom in and measure the color that forms most of each letter against the background; it needs {{threshold}}:1.",
       "contrastEnhanced_title": "Text meets enhanced color contrast (AAA)",
       "contrastEnhanced_description": "Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 (large), when contrast is computable from CSS.",
       "contrastEnhanced_fail_belowThreshold": "Element has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
@@ -98759,8 +98759,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
       "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
-      "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colours, needs a person to decide.",
-      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colours the page chose.",
+      "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
+      "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
       "contrastEnhanced_cantTell_symbol": "The character {{character}} stands in for its control's name and has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is text held to that ratio or an icon held to 3:1 needs a person to decide.",
       "contrastEnhanced_fail_unreachable": "The text color {{foregroundHex}} reaches at most {{bestRatio}}:1 against any background, white or black being the best there are, below {{threshold}}:1 (font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). The background behind it could not be worked out, but none gives it enough contrast.",
       "contrastEnhanced_hint_unreachable": "Even on white or black, the best backgrounds there are, this text color reaches only {{bestRatio}}:1. Make the text darker or lighter so it can reach {{threshold}}:1 against its background.",
@@ -99229,7 +99229,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "serverSideImageMapAbsent_description": "Asks, for each <img ismap> inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.",
       "serverSideImageMapAbsent_summary_cantTell": "This image is a server-side image map (ismap inside a link), whose regions cannot be reached from the keyboard.",
       "serverSideImageMapAbsent_hint_cantTell": "Check that the page offers the same destinations as separate links. Better: replace the server-side image map with a client-side image map (<map>/<area>) or separate links/buttons.",
-      "formControlSingleLabel_title": "Form controls must not have multiple labels",
+      "formControlSingleLabel_title": "Form controls should not have multiple labels",
       "formControlSingleLabel_description": "Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "This <{{element}}> has {{labelCount}} <label> elements; check the name they make together.",
       "formControlSingleLabel_hint_cantTell_competing": "Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.",
@@ -99489,7 +99489,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_lean_why_bgsound": "Current browsers ignore <bgsound>, so it plays nothing.",
       "noAutoplayAudio_lean_why_flash": "Current browsers no longer run Flash, so it plays nothing.",
       "noAutoplayAudio_lean_caution_obsolete": "Older browsers still play it.",
-      "videoCaption_title": "Prerecorded video should provide a captions track",
+      "videoCaption_title": "Prerecorded video should provide complete captions",
       "videoCaption_description": "Asks about each <video>: with no <track kind=\"captions\"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.",
       "videoCaption_summary_cantTell": "This video has no captions track.",
       "videoCaption_hint_cantTell": "If this video has an audio track that conveys information, add a <track kind=\"captions\" src=\"...\"> with the captioned content. Captions are not needed when the video is a media alternative for text on the page and is clearly labelled as one.",
@@ -99579,8 +99579,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "A popup opened and focused by a script from a trigger that does not say so looks the same.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA gives aria-activedescendant effect only on the element that has focus, and this one cannot take it.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "A script may make it focusable when the widget opens.",
-      "invalidFieldErrorMessage_title": "Fields marked invalid must have a shown error message",
-      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.",
+      "invalidFieldErrorMessage_title": "Fields marked invalid should have a shown error message",
+      "invalidFieldErrorMessage_description": "Checks that an element with aria-invalid has an error message in text: its aria-errormessage should name a shown element with text, and a field with no linked message is asked about.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "This field is marked invalid, but the error message aria-errormessage names is hidden.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Show the error message while the field is invalid.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.",
@@ -99676,12 +99676,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_lean_caution_data": "A layout table can also hold numbers, such as prices beside text.",
       "tdHasHeader_lean_why_layout": "The table looks like layout: its cells hold a nested table, form controls, images or blocks of text, and nothing marks it as data.",
       "tdHasHeader_lean_caution_layout": "A data table can hold images or controls in its cells, such as a product list.",
-      "movingContentPausable_title": "Content that moves by itself can be paused, stopped or hidden",
+      "movingContentPausable_title": "Content that moves by itself should be possible to pause, stop or hide",
       "movingContentPausable_description": "Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.",
       "movingContentPausable_summary_cantTell_loops": "This <{{element}}> moves by itself without end{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "This <{{element}}> moves by itself for more than five seconds{{#name}} (animation \"{{name}}\"){{/name}}.",
       "movingContentPausable_hint_cantTell": "Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.",
-      "focusNotRemovedByScript_title": "A script does not remove focus from an element as it receives it",
+      "focusNotRemovedByScript_title": "A script must not remove focus from an element as it receives it",
       "focusNotRemovedByScript_description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "This <{{element}}> removes focus from itself as soon as it receives it (onfocus=\"{{handler}}\").",
@@ -99706,7 +99706,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "The element runs a mousedown, mouseup or double-click action, a hook installed before the page’s scripts saw no key listener on it, its ancestors, the document or the window, and nothing in or around it can take focus.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "The handler may only draw an effect or track the pointer, or another control may offer the same function.",
       "clickHandlerKeyboardOperable_title": "Click handlers on elements that are not native controls must work by keyboard",
-      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.",
+      "clickHandlerKeyboardOperable_description": "Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "This <{{element}}> runs a click handler and takes keyboard focus, but has no key handler of its own, so Enter and Space may do nothing.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Check that Enter (and Space, for a button) does what a click does. If not, use a native <button> or <a href>, or handle keydown for those keys.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "This element has role=\"{{role}}\" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.",
@@ -99821,7 +99821,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_card_mixed": "({{fail}} fail / {{review}} needs review)",
       "report_card_selector": "Selector:",
       "report_heading_margins": "Closest to the limit",
-      "report_margins_intro": "The passing elements that came close to a rule's threshold, and how much room they had: one per rule, the closest. A rule is listed only when something came close, such as a contrast within 10% of its ratio or a target within 6 px of 24 px. Little room means a small change, such as new text, a colour or a narrower window, can turn it into a failure.",
+      "report_margins_intro": "The passing elements that came close to a rule's threshold, and how much room they had: one per rule, the closest. A rule is listed only when something came close, such as a contrast within 10% of its ratio or a target within 6 px of 24 px. Little room means a small change, such as new text, a color or a narrower window, can turn it into a failure.",
       "report_margins_col_closest": "Closest value",
       "report_margins_col_limit": "Limit",
       "report_margins_col_room": "Room left",
@@ -100344,15 +100344,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaValidAttrValue_hint_cantTell_idref": "Comprobar que el elemento al que se refiere se agrega cuando se abre el componente; si nunca se agrega, corregir o quitar la referencia.",
       "ariaValidAttrValue_hint_cantTell_idrefList": "Comprobar si más adelante se añade un elemento con este id. Si no, corregir o eliminar la referencia; mientras tanto, el elemento usa sus otras fuentes de nombre o descripción.",
       "ariaValidAttrValue_summary_fail_rangeInverted": "El aria-valuemin de este elemento ({{min}}) es mayor que su aria-valuemax ({{max}}).",
-      "ariaValidAttrValue_hint_fail_rangeInverted": "Ponga en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
+      "ariaValidAttrValue_hint_fail_rangeInverted": "Poner en aria-valuemin el valor más bajo y en aria-valuemax el más alto.",
       "ariaValidAttrValue_summary_fail_valueOutOfRange": "El aria-valuenow de este elemento ({{now}}) está fuera de su rango, así que las tecnologías de apoyo reciben otro valor.",
-      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantenga aria-valuenow entre aria-valuemin y aria-valuemax, o amplíe el rango.",
+      "ariaValidAttrValue_hint_fail_valueOutOfRange": "Mantener aria-valuenow entre aria-valuemin y aria-valuemax, o ampliar el rango.",
       "ariaValidAttrValue_summary_fail_posinsetExceedsSetsize": "El aria-posinset de este elemento ({{posinset}}) es mayor que su aria-setsize ({{setsize}}).",
-      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dé a cada elemento una posición no mayor que el tamaño de su conjunto.",
+      "ariaValidAttrValue_hint_fail_posinsetExceedsSetsize": "Dar a cada elemento una posición no mayor que el tamaño de su conjunto.",
       "ariaValidAttrValue_summary_cantTell_haspopupMismatch": "aria-haspopup=\"{{haspopup}}\" anuncia un tipo de ventana emergente, pero el elemento que controla tiene el rol {{role}}.",
-      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Haga que aria-haspopup nombre el rol de la ventana emergente, o compruebe si un script muestra otra.",
+      "ariaValidAttrValue_hint_cantTell_haspopupMismatch": "Hacer que aria-haspopup nombre el rol de la ventana emergente, o comprobar si un script muestra otra.",
       "ariaValidAttrValue_summary_cantTell_activedescendantOutside": "El aria-activedescendant de este elemento apunta a un elemento que no está dentro de él ni le pertenece.",
-      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apunte aria-activedescendant a uno de los elementos propios del elemento, o haga suyo ese elemento con aria-owns.",
+      "ariaValidAttrValue_hint_cantTell_activedescendantOutside": "Apuntar aria-activedescendant a uno de los elementos propios del elemento, o hacer suyo ese elemento con aria-owns.",
       "ariaValidAttrValue_lean_why_otherTree": "Existe un elemento con este id, pero en otro árbol del documento (al otro lado de una raíz shadow), donde la referencia nunca puede alcanzarlo.",
       "ariaValidAttrValue_lean_caution_otherTree": "El componente todavía puede crear su propio elemento con este id.",
       "ariaValidAttrValue_lean_why_nearMiss": "Existe un elemento cuyo id solo difiere en mayúsculas o en un carácter, así que la referencia probablemente está mal escrita.",
@@ -100432,7 +100432,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "deprecatedElements_hint_cantTell": "Comprobar que la página ofrece un control que pausa, detiene u oculta este contenido. Mejor: sustituirlo por contenido estático, o por una animación con un control de pausa/detención.",
       "deprecatedElements_lean_why_still": "El marquee tiene scrollamount=\"0\", así que su contenido no se mueve.",
       "deprecatedElements_lean_why_pauseControl": "La página tiene un control cuyo nombre indica pausar, detener u ocultar.",
-      "deprecatedElements_lean_caution_pauseControl": "Compruebe que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
+      "deprecatedElements_lean_caution_pauseControl": "Comprobar que el control actúa sobre este marquee y que se puede alcanzar con el teclado.",
       "deprecatedElements_lean_why_noMechanism": "Ningún control de la página indica en su nombre pausar, detener u ocultar, y ningún script de la página detiene el marquee.",
       "deprecatedElements_lean_caution_noMechanism": "Un script cargado desde un archivo puede vincular un control por su id, como un botón de icono.",
       "iframeNamePresent_title": "Los marcos tienen un nombre accesible",
@@ -100479,7 +100479,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "listChildrenValid_summary_fail": "Este <{{element}}> contiene un hijo directo que no es un elemento de lista: {{invalidChildren}}.",
       "listChildrenValid_hint_fail": "Solo <li>, <script> y <template> pueden ir directamente dentro de <ul> u <ol>; mover el resto del marcado dentro de un <li>.",
       "listChildrenValid_summary_fail_itemRoleOverridden": "Este <{{element}}> contiene un <li> cuyo rol ({{roles}}) sustituye a listitem, así que no es un elemento de la lista.",
-      "listChildrenValid_hint_fail_itemRoleOverridden": "Quite el rol del <li>, saque el elemento de la lista o dé a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
+      "listChildrenValid_hint_fail_itemRoleOverridden": "Quitar el rol del <li>, sacar el elemento de la lista o dar a la propia lista el rol que necesitan sus hijos, como tablist para pestañas.",
       "listitemParentValid_title": "Los elementos de lista deben estar dentro de un contenedor de lista",
       "listitemParentValid_description": "Comprueba que los elementos <li> estén contenidos por <ul>, <ol>, <menu>, o un elemento con role=\"list\".",
       "listitemParentValid_summary_fail": "El padre de este elemento de lista (<{{parentElement}}>) no es un contenedor de lista.",
@@ -100490,13 +100490,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_description": "Señala una región viva oculta a las tecnologías de apoyo o que se queda ocupada y, con el hook de regiones vivas, una añadida con su texto o mostrada y rellenada a la vez, para revisión manual.",
       "liveRegionAnnouncements_summary_cantTell_ariaHidden": "Esta región viva está oculta con aria-hidden, así que nada de lo que reciba puede anunciarse.",
       "liveRegionAnnouncements_summary_cantTell_inert": "Esta región viva está dentro de contenido inert, así que nada de lo que reciba puede anunciarse.",
-      "liveRegionAnnouncements_hint_cantTell_hidden": "Compruebe si la página la usa para mensajes de estado; si es así, manténgala fuera de contenido con aria-hidden o inert.",
+      "liveRegionAnnouncements_hint_cantTell_hidden": "Comprobar si la página la usa para mensajes de estado; si es así, mantenerla fuera de contenido con aria-hidden o inert.",
       "liveRegionAnnouncements_summary_cantTell_busy": "Esta región viva estaba ocupada (aria-busy=\"true\") cuando se analizó la página, así que sus cambios pueden quedar retenidos.",
-      "liveRegionAnnouncements_hint_cantTell_busy": "Compruebe que aria-busy vuelve a false cuando la región se actualiza.",
+      "liveRegionAnnouncements_hint_cantTell_busy": "Comprobar que aria-busy vuelve a false cuando la región se actualiza.",
       "liveRegionAnnouncements_summary_cantTell_inserted": "Se añadió a la página una región viva que ya tenía su texto, «{{text}}»; los lectores de pantalla suelen anunciar solo los cambios en una región que ya está en la página.",
-      "liveRegionAnnouncements_hint_cantTell_inserted": "Compruebe que este mensaje de estado se anuncia; ponga primero la región vacía en la página y cambie su texto después.",
+      "liveRegionAnnouncements_hint_cantTell_inserted": "Comprobar que este mensaje de estado se anuncia; poner primero la región vacía en la página y cambiar su texto después.",
       "liveRegionAnnouncements_summary_cantTell_shownAndFilled": "Una región viva oculta se mostró y recibió su texto, «{{text}}», a la vez, antes de estar en el árbol de accesibilidad.",
-      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Compruebe que este mensaje de estado se anuncia; muestre primero la región y cambie su texto después.",
+      "liveRegionAnnouncements_hint_cantTell_shownAndFilled": "Comprobar que este mensaje de estado se anuncia; mostrar primero la región y cambiar su texto después.",
       "liveRegionAnnouncements_lean_why_hidden": "No hay ningún diálogo abierto que explique que esta región viva esté oculta, así que lo que reciba no se anuncia.",
       "liveRegionAnnouncements_lean_caution_hidden": "Puede que la región no se use, o que la página la haga accesible a las tecnologías de apoyo antes de escribir en ella.",
       "liveRegionAnnouncements_lean_why_inserted": "La región se añadió con su texto ya dentro, algo que los lectores de pantalla no suelen anunciar.",
@@ -100504,7 +100504,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "liveRegionAnnouncements_lean_why_shownAndFilled": "La región se mostró y recibió su texto a la vez, antes de estar en el árbol de accesibilidad, algo que los lectores de pantalla no suelen anunciar.",
       "liveRegionAnnouncements_lean_caution_shownAndFilled": "Algunos navegadores actualizan el árbol de accesibilidad a tiempo para que una región así se anuncie.",
       "liveRegionAnnouncements_summary_cantTell_modal": "Esta región viva está detrás de un diálogo modal abierto, que la vuelve inert, así que nada de lo que reciba mientras el diálogo esté abierto puede anunciarse.",
-      "liveRegionAnnouncements_hint_cantTell_modal": "Compruebe si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, póngalos en una región viva dentro del diálogo.",
+      "liveRegionAnnouncements_hint_cantTell_modal": "Comprobar si la página escribe mensajes de estado en ella mientras el diálogo está abierto; si es así, ponerlos en una región viva dentro del diálogo.",
       "liveRegionAnnouncements_lean_why_modal": "El hook de regiones vivas vio que esta región recibía texto después de que se abriera el diálogo modal que tiene delante, mientras el diálogo la volvía inert, así que el texto no se anunció.",
       "liveRegionAnnouncements_lean_caution_modal": "Si ese texto era un mensaje de estado que el usuario necesitaba debe decidirlo una persona: la página puede dar sus mensajes también a una región viva dentro del diálogo.",
       "definitionListChildrenValid_title": "Las listas de descripción deben estar estructuradas correctamente",
@@ -100561,7 +100561,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "serverSideImageMapAbsent_description": "Pregunta, para cada <img ismap> dentro de un enlace, si la página ofrece los mismos destinos como enlaces alcanzables con el teclado, ya que un mapa de imagen del lado del servidor no tiene zonas operables por teclado.",
       "serverSideImageMapAbsent_summary_cantTell": "Esta imagen es un mapa de imagen del lado del servidor (ismap dentro de un enlace), cuyas zonas no se pueden alcanzar con el teclado.",
       "serverSideImageMapAbsent_hint_cantTell": "Comprobar que la página ofrece los mismos destinos como enlaces independientes. Mejor: reemplazar el mapa de imagen del lado del servidor por un mapa de imagen del lado del cliente (<map>/<area>) o por enlaces/botones independientes.",
-      "formControlSingleLabel_title": "Los controles de formulario no deben tener varias etiquetas",
+      "formControlSingleLabel_title": "Los controles de formulario no deberían tener varias etiquetas",
       "formControlSingleLabel_description": "Comprueba que un control de formulario esté asociado a como máximo una <label> (por envoltura o mediante label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Este <{{element}}> tiene {{labelCount}} elementos <label>; comprobar el nombre que forman juntos.",
       "formControlSingleLabel_hint_cantTell_competing": "Los navegadores unen las etiquetas en un solo nombre. Comprobar que sigue teniendo sentido, o dejar un solo <label> por campo.",
@@ -100756,7 +100756,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_title": "El texto sigue siendo legible cuando el usuario aumenta el espaciado del texto",
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
-      "textSpacingContentLoss_hint_fail_clipped": "Deje que el contenedor crezca con su texto: evite alturas y anchuras fijas con overflow: hidden en texto, o permita que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_hint_fail_clipped": "Dejar que el contenedor crezca con su texto: evitar alturas y anchuras fijas con overflow: hidden en texto, o permitir que se desplace (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Comprobar con el espaciado aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
@@ -100821,7 +100821,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_lean_why_bgsound": "Los navegadores actuales ignoran <bgsound>, así que no reproduce nada.",
       "noAutoplayAudio_lean_why_flash": "Los navegadores actuales ya no ejecutan Flash, así que no reproduce nada.",
       "noAutoplayAudio_lean_caution_obsolete": "Los navegadores más antiguos todavía lo reproducen.",
-      "videoCaption_title": "El video pregrabado debería proporcionar una pista de subtítulos",
+      "videoCaption_title": "El video pregrabado debería proporcionar subtítulos completos",
       "videoCaption_description": "Pregunta por cada <video>: sin un hijo <track kind=\"captions\">, si tiene una pista de audio que necesite subtítulos para personas sordas (una pista de subtítulos sola puede ser solo una traducción); con uno, si sus subtítulos están completos y coinciden con el audio.",
       "videoCaption_summary_cantTell": "Este video no tiene ninguna pista de subtítulos para personas sordas (captions).",
       "videoCaption_hint_cantTell": "Si este video tiene una pista de audio que transmite información, agregar un <track kind=\"captions\" src=\"...\"> con el contenido subtitulado. No hacen falta subtítulos si el video es una alternativa multimedia a un texto de la página y está claramente identificado como tal.",
@@ -100878,9 +100878,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaExpandedStateMismatch_title": "aria-expanded debería coincidir con si el contenido controlado se muestra",
       "ariaExpandedStateMismatch_description": "Señala, para revisión manual, un elemento cuyo valor de aria-expanded no coincide con si se muestran los elementos que nombra su aria-controls.",
       "ariaExpandedStateMismatch_summary_cantTell_collapsedShown": "aria-expanded=\"false\" indica que el contenido controlado está contraído, pero se muestra.",
-      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Compruebe si el contenido está abierto; si lo está, ponga aria-expanded=\"true\", u oculte el contenido mientras esté contraído.",
+      "ariaExpandedStateMismatch_hint_cantTell_collapsedShown": "Comprobar si el contenido está abierto; si lo está, poner aria-expanded=\"true\", u ocultar el contenido mientras esté contraído.",
       "ariaExpandedStateMismatch_summary_cantTell_expandedHidden": "aria-expanded=\"true\" indica que el contenido controlado está expandido, pero está oculto.",
-      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Compruebe si el contenido está abierto; si no lo está, ponga aria-expanded=\"false\", o muestre el contenido mientras esté expandido.",
+      "ariaExpandedStateMismatch_hint_cantTell_expandedHidden": "Comprobar si el contenido está abierto; si no lo está, poner aria-expanded=\"false\", o mostrar el contenido mientras esté expandido.",
       "ariaExpandedStateMismatch_lean_why_collapsedShown": "El contenido que controla se muestra completo, sin recortar ni desplazar, mientras el elemento dice que está contraído.",
       "ariaExpandedStateMismatch_lean_caution_collapsedShown": "El contenido puede ser una vista previa que el elemento amplía más.",
       "ariaExpandedStateMismatch_lean_why_expandedHidden": "El contenido que controla no se muestra en absoluto (display: none o el atributo hidden), mientras el elemento dice que está expandido.",
@@ -100888,19 +100888,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaOwnsValid_title": "aria-owns debe dar a cada elemento un único propietario, y nunca un antecesor del propietario",
       "ariaOwnsValid_description": "Comprueba que ningún elemento aparece en más de un aria-owns y que ningún aria-owns nombra al propio elemento ni a uno de sus antecesores.",
       "ariaOwnsValid_summary_fail_duplicate": "Este elemento aparece en el aria-owns de {{count}} elementos, pero solo puede tener un propietario.",
-      "ariaOwnsValid_hint_fail_duplicate": "Deje su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
+      "ariaOwnsValid_hint_fail_duplicate": "Dejar su id en un solo aria-owns; el navegador lo asigna a solo uno de ellos.",
       "ariaOwnsValid_summary_fail_ancestor": "El aria-owns de este elemento nombra {{id}}, que contiene al propio elemento.",
-      "ariaOwnsValid_hint_fail_ancestor": "Quite ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
+      "ariaOwnsValid_hint_fail_ancestor": "Quitar ese id de aria-owns: un elemento no puede ser propietario de uno de sus antecesores, y el navegador lo ignora.",
       "widgetKeyboardFocusable_title": "Los widgets deberían poder alcanzarse con el teclado",
       "widgetKeyboardFocusable_description": "Señala, para revisión manual, un elemento con un rol de widget que no puede recibir el foco o está fuera del orden de tabulación, y un widget compuesto sin parada de tabulación.",
       "widgetKeyboardFocusable_summary_cantTell_notFocusable": "Este elemento tiene el rol {{role}}, pero no puede recibir el foco del teclado.",
-      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Compruebe que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
+      "widgetKeyboardFocusable_hint_cantTell_notFocusable": "Comprobar que un usuario de teclado puede alcanzarlo, por ejemplo con tabindex=\"0\" o un control nativo, o que lo que hace se ofrece de otra forma.",
       "widgetKeyboardFocusable_summary_cantTell_notInTabOrder": "Este elemento tiene el rol {{role}}, pero solo recibe el foco desde un script (tabindex=\"-1\").",
-      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Compruebe que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_hint_cantTell_notInTabOrder": "Comprobar que un script le mueve el foco, o que lo que hace se ofrece de otra forma; si no, darle tabindex=\"0\".",
       "widgetKeyboardFocusable_summary_cantTell_compositeNoTabStop": "Este {{role}} no tiene parada de tabulación: ni él ni nada de su interior está en el orden de tabulación.",
-      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Compruebe que un usuario de teclado puede alcanzarlo: dé tabindex=\"0\" a un elemento (tabindex itinerante), o haga que el {{role}} pueda recibir el foco y apunte aria-activedescendant al elemento activo.",
+      "widgetKeyboardFocusable_hint_cantTell_compositeNoTabStop": "Comprobar que un usuario de teclado puede alcanzarlo: dar tabindex=\"0\" a un elemento (tabindex itinerante), o hacer que el {{role}} pueda recibir el foco y apuntar aria-activedescendant al elemento activo.",
       "widgetKeyboardFocusable_summary_cantTell_activedescendantHostNotFocusable": "Este elemento señala su elemento activo con aria-activedescendant, pero no puede recibir el foco del teclado.",
-      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Compruebe que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que dele tabindex=\"0\".",
+      "widgetKeyboardFocusable_hint_cantTell_activedescendantHostNotFocusable": "Comprobar que un usuario de teclado puede alcanzarlo: aria-activedescendant solo se anuncia mientras el elemento que lo lleva tiene el foco, así que darle tabindex=\"0\".",
       "widgetKeyboardFocusable_lean_why_notFocusable": "El elemento dice ser un widget, pero ni él ni nada de lo que contiene puede recibir el foco, y ningún control del orden de tabulación tiene su rol y su nombre.",
       "widgetKeyboardFocusable_lean_caution_notFocusable": "Un script puede hacerlo enfocable cuando haga falta, o el rol puede ser incorrecto para un contenido que no hace nada.",
       "widgetKeyboardFocusable_lean_why_duplicate": "Otro control del orden de tabulación tiene el mismo rol y el mismo nombre, así que este es un duplicado sacado del orden de tabulación.",
@@ -100911,22 +100911,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Una ventana emergente que un script abre y enfoca desde un activador que no lo indica se ve igual.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA solo da efecto a aria-activedescendant en el elemento que tiene el foco, y este no puede recibirlo.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script puede hacerlo enfocable cuando se abre el widget.",
-      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deben tener un mensaje de error visible",
-      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debe nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
+      "invalidFieldErrorMessage_title": "Los campos marcados como no válidos deberían tener un mensaje de error visible",
+      "invalidFieldErrorMessage_description": "Comprueba que un elemento con aria-invalid tiene un mensaje de error en texto: su aria-errormessage debería nombrar un elemento visible con texto, y se pregunta por un campo sin mensaje asociado.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto.",
-      "invalidFieldErrorMessage_hint_cantTell_hidden": "Muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_hidden": "Mostrar el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage está oculto a los productos de apoyo con aria-hidden.",
-      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quite aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_hiddenAria": "Quitar aria-hidden del mensaje de error, y de lo que lo contiene, mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_empty": "Este campo está marcado como no válido, pero el mensaje de error que nombra aria-errormessage no tiene texto.",
       "invalidFieldErrorMessage_hint_cantTell_empty": "Comprobar que se indica al usuario, en texto, qué está mal, en la etiqueta o junto al campo; poner ese texto en el mensaje de error.",
       "invalidFieldErrorMessage_summary_cantTell_notShownDescribed": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage está oculto o no tiene texto; su descripción puede contener el error.",
-      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Compruebe que la descripción dice al usuario, en texto, qué está mal; muestre el mensaje de error mientras el campo no sea válido.",
+      "invalidFieldErrorMessage_hint_cantTell_notShownDescribed": "Comprobar que la descripción dice al usuario, en texto, qué está mal; mostrar el mensaje de error mientras el campo no sea válido.",
       "invalidFieldErrorMessage_summary_cantTell_ariaHidden": "Este campo está marcado como no válido, y el mensaje de error que nombra aria-errormessage se muestra, pero aria-hidden oculta su texto a las tecnologías de apoyo.",
       "invalidFieldErrorMessage_hint_cantTell_ariaHidden": "Comprobar que los usuarios de lectores de pantalla también conocen el error; quitar aria-hidden del mensaje, o describir el error en la descripción del campo.",
       "invalidFieldErrorMessage_summary_cantTell_targetMissing": "Este campo está marcado como no válido, pero ningún elemento tiene el id que nombra aria-errormessage.",
-      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Compruebe que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
+      "invalidFieldErrorMessage_hint_cantTell_targetMissing": "Comprobar que el mensaje de error está en la página mientras el campo no sea válido, con el id que nombra aria-errormessage.",
       "invalidFieldErrorMessage_summary_cantTell_none": "Este campo está marcado como no válido, pero ningún mensaje de error está asociado a él con aria-errormessage o aria-describedby.",
-      "invalidFieldErrorMessage_hint_cantTell_none": "Compruebe que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asocie el mensaje al campo con aria-errormessage o aria-describedby.",
+      "invalidFieldErrorMessage_hint_cantTell_none": "Comprobar que se dice al usuario, en texto, qué campo tiene el error y qué está mal; asociar el mensaje al campo con aria-errormessage o aria-describedby.",
       "invalidFieldErrorMessage_lean_why_hidden": "El mensaje de error vinculado al campo está oculto, así que probablemente no se comunica el error.",
       "invalidFieldErrorMessage_lean_why_hiddenAria": "El mensaje de error vinculado al campo está oculto a las tecnologías de apoyo, así que probablemente los usuarios de lectores de pantalla no conocen el error.",
       "invalidFieldErrorMessage_lean_why_empty": "El mensaje de error vinculado al campo está vacío y el campo no tiene descripción, así que probablemente no se comunica el error.",
@@ -100941,14 +100941,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "labelForValid_description": "Señala, para revisión manual, una etiqueta cuyo atributo for no nombra ningún elemento, o nombra uno que no se puede etiquetar, de modo que no etiqueta nada.",
       "labelForValid_summary_cantTell_missing": "El for=\"{{for}}\" de esta etiqueta no nombra ningún elemento, así que no etiqueta nada.",
       "labelForValid_summary_cantTell_notLabelable": "El for=\"{{for}}\" de esta etiqueta nombra un <{{element}}>, que no se puede etiquetar, así que no etiqueta nada.",
-      "labelForValid_hint_cantTell": "Compruebe para qué control es la etiqueta y ponga en for el id de ese control.",
+      "labelForValid_hint_cantTell": "Comprobar para qué control es la etiqueta y poner en for el id de ese control.",
       "labelForValid_lean_why_notLabelable": "El atributo for de la etiqueta nombra un elemento que no se puede etiquetar, así que la etiqueta no etiqueta nada.",
       "labelForValid_lean_why_targetMissing": "El atributo for de la etiqueta no nombra ningún elemento, así que la etiqueta no etiqueta nada.",
       "controlNameTitleOnly_title": "Un botón o enlace no debería tomar su nombre solo de su title",
       "controlNameTitleOnly_description": "Señala un botón o enlace cuyo único nombre accesible es su atributo title, que solo se muestra al pasar el ratón, para revisión manual.",
       "controlNameTitleOnly_summary_cantTell_button": "El único nombre de este botón es su title, que solo se muestra al pasar el ratón.",
       "controlNameTitleOnly_summary_cantTell_link": "El único nombre de este enlace es su title, que solo se muestra al pasar el ratón.",
-      "controlNameTitleOnly_hint_cantTell": "Compruebe si puede tener texto visible, o un aria-label si solo muestra un icono; puede mantener el title como información emergente.",
+      "controlNameTitleOnly_hint_cantTell": "Comprobar si puede tener texto visible, o un aria-label si solo muestra un icono; se puede mantener el title como información emergente.",
       "cssOrientationLock_title": "El CSS no debe bloquear la página a una única orientación",
       "cssOrientationLock_description": "Comprueba que ninguna regla @media (orientation: portrait|landscape) establezca un transform: rotate(...) en la página, una técnica conocida para anular la orientación del dispositivo, y pregunta por cualquier regla de este tipo que oculte el contenido principal de la página.",
       "cssOrientationLock_summary_fail": "Una consulta de medios \"{{mediaText}}\" rota \"{{selectorText}}\", bloqueando la página a una sola orientación.",
@@ -100966,7 +100966,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssOrientationLock_lean_why_rotateMessage": "En esa orientación, la página muestra en lugar de su contenido un mensaje para girar el dispositivo.",
       "cssOrientationLock_lean_caution_rotateMessage": "Una orientación puede ser esencial, como en un teclado de piano o la foto de un cheque.",
       "cssOrientationLock_lean_why_alternateContent": "En esa orientación, la página muestra otros elementos con al menos la mitad de texto, una disposición alternativa del contenido.",
-      "cssOrientationLock_lean_caution_alternateContent": "Compruebe que la otra disposición ofrece el mismo contenido y las mismas funciones.",
+      "cssOrientationLock_lean_caution_alternateContent": "Comprobar que la otra disposición ofrece el mismo contenido y las mismas funciones.",
       "cssOrientationLock_lean_why_fontSheets": "Cada hoja de estilos que no se pudo leer viene de un servicio de fuentes web, que solo sirve definiciones de fuentes.",
       "ariaText_title": "Los elementos con role=\"text\" no deberían tener descendientes enfocables",
       "ariaText_description": "Comprueba que los elementos con role=\"text\" no contengan ningún descendiente enfocable (enlace, botón, control de formulario, tabindex, iframe o contenteditable).",
@@ -100986,7 +100986,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pAsHeading_summary_cantTell": "Este párrafo está completamente en negrita y se renderiza con un tamaño similar al de un encabezado.",
       "pAsHeading_hint_cantTell": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un párrafo el estilo de un encabezado.",
       "pAsHeading_summary_cantTell_div": "Este bloque de texto está completamente en negrita y se muestra con un tamaño similar al de un encabezado.",
-      "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, use un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
+      "pAsHeading_hint_cantTell_div": "Si este texto introduce una nueva sección, usar un elemento de encabezado real (<h1>-<h6> o role=\"heading\") en lugar de dar a un <div> el aspecto de uno.",
       "pAsHeading_lean_why_headingStyle": "El texto tiene el tamaño, el grosor y la familia de fuente de un encabezado real de esta página, y no termina como una frase.",
       "pAsHeading_lean_why_bodyFollows": "El texto va seguido de texto normal más pequeño y sin negrita, y no termina como una frase, igual que un título de sección.",
       "pAsHeading_lean_caution_style": "Una frase introductoria o una cita destacada también pueden ir antes del texto normal, y un sistema de diseño puede reutilizar los estilos de encabezado para otros textos.",
@@ -101008,19 +101008,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_lean_caution_data": "Una tabla de maquetación también puede contener números, como precios junto a un texto.",
       "tdHasHeader_lean_why_layout": "La tabla parece de maquetación: sus celdas contienen una tabla anidada, controles de formulario, imágenes o bloques de texto, y nada la señala como de datos.",
       "tdHasHeader_lean_caution_layout": "Una tabla de datos puede contener imágenes o controles en sus celdas, como una lista de productos.",
-      "movingContentPausable_title": "El contenido que se mueve solo puede pausarse, detenerse u ocultarse",
+      "movingContentPausable_title": "El contenido que se mueve solo debería poder pausarse, detenerse u ocultarse",
       "movingContentPausable_description": "Pregunta, de los elementos animados al cargar la página durante más de cinco segundos o sin fin, si su movimiento puede pausarse, detenerse u ocultarse.",
       "movingContentPausable_summary_cantTell_loops": "Este <{{element}}> se mueve solo sin fin{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Este <{{element}}> se mueve solo durante más de cinco segundos{{#name}} (animación «{{name}}»){{/name}}.",
       "movingContentPausable_hint_cantTell": "Comprobar que un control permite pausar, detener u ocultar este movimiento, salvo que sea esencial (WCAG 2.2.2). Un movimiento que se detiene solo en cinco segundos no lo necesita.",
-      "focusNotRemovedByScript_title": "Un script no quita el foco a un elemento cuando lo recibe",
+      "focusNotRemovedByScript_title": "Un script no debe quitar el foco a un elemento cuando lo recibe",
       "focusNotRemovedByScript_description": "Da por fallidos los elementos del orden de tabulación cuyo controlador onfocus en línea solo llama a blur() sobre ellos, y pregunta por otros controladores que llaman a blur(), o a focus() sobre otro elemento, lo que puede quitar el foco en cuanto el elemento lo recibe (fallo F55 de WCAG).",
       "focusNotRemovedByScript_summary_cantTell_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Este <{{element}}> se quita el foco en cuanto lo recibe (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_calls": "El manejador onfocus de este <{{element}}> llama a blur(), lo que puede quitar el foco al llegar (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_cantTell_moves": "El manejador onfocus de este <{{element}}> lleva el foco a otro elemento al llegar (onfocus=\"{{handler}}\").",
-      "focusNotRemovedByScript_hint_cantTell": "Llegue al elemento con la tecla Tab y compruebe que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): elimine la llamada a blur(), o haga que el elemento no pueda recibir el foco si no debe recibirlo.",
-      "focusNotRemovedByScript_hint_fail": "Quite la llamada a blur() para que el foco se quede en el elemento, o haga que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
+      "focusNotRemovedByScript_hint_cantTell": "Llegar al elemento con la tecla Tab y comprobar que el foco permanece en él. Un script no debe quitar el foco a un elemento que lo recibe (fallo WCAG F55): eliminar la llamada a blur(), o hacer que el elemento no pueda recibir el foco si no debe recibirlo.",
+      "focusNotRemovedByScript_hint_fail": "Quitar la llamada a blur() para que el foco se quede en el elemento, o hacer que el elemento no sea enfocable si no debe recibir el foco (fallo F55 de WCAG).",
       "focusNotRemovedByScript_lean_why_calls": "El manejador llama a blur() sobre el propio elemento en una instrucción propia, fuera de cualquier condición, así que el foco se quita al llegar.",
       "focusNotRemovedByScript_lean_caution_calls": "Otro código del manejador puede devolver el foco, o abrir a propósito algo que toma el foco.",
       "focusNotRemovedByScript_lean_why_sentinel": "El elemento es una guarda de foco vacía y sin nombre en el borde de un diálogo o de un grupo de controles: enviar el foco en cuanto llega es como una trampa de foco mantiene el foco dentro.",
@@ -101038,18 +101038,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "El elemento ejecuta una acción con mousedown, mouseup o doble clic, un hook instalado antes de los scripts de la página no vio ningún detector de teclas en él, sus antepasados, el documento ni la ventana, y nada dentro ni alrededor puede recibir el foco.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Puede que el controlador solo dibuje un efecto o siga el puntero, u otro control puede ofrecer la misma función.",
       "clickHandlerKeyboardOperable_title": "Los controladores de clic en elementos que no son controles nativos deben funcionar con el teclado",
-      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y tiene un controlador de teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
+      "clickHandlerKeyboardOperable_description": "Comprueba que un elemento que no es un control nativo y tiene un controlador de clic (un onclick en línea, o un detector de clic que registró el hook de detectores) puede recibir el foco del teclado y que un controlador de teclas, en él, un ancestro o un descendiente, recibe sus teclas, para que quien usa el teclado pueda ejecutar lo que ejecuta un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado, pero no tiene ningún controlador de teclas propio, así que Intro y Espacio pueden no hacer nada.",
-      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Compruebe que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, use un <button> o un <a href> nativo, o gestione keydown para esas teclas.",
+      "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Comprobar que Intro (y Espacio, en un botón) hace lo mismo que un clic. Si no, usar un <button> o un <a href> nativo, o gestionar keydown para esas teclas.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado, así que quien usa el teclado no puede alcanzarlo.",
-      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añada tabindex=\"0\" y haga que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_notFocusable": "Usar el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o añadir tabindex=\"0\" y hacer que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_notFocusable": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada de lo que contiene puede recibir el foco del teclado.",
-      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Compruebe que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, use un <button> o un <a href> nativo, o añada tabindex=\"0\" y gestione Intro y Espacio.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notFocusable": "Comprobar que quien usa el teclado puede hacer lo mismo, aquí o con otro control de la página. Si no, usar un <button> o un <a href> nativo, o añadir tabindex=\"0\" y gestionar Intro y Espacio.",
       "clickHandlerKeyboardOperable_summary_cantTell_notInTabOrder": "Este <{{element}}> ejecuta un controlador de clic, pero ni él ni nada en su interior está en el orden de tabulación (tabindex=\"-1\"), así que un usuario de teclado solo llega a él si un script le mueve el foco.",
-      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Compruebe que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, use tabindex=\"0\" o un <button> o un <a href> nativo.",
+      "clickHandlerKeyboardOperable_hint_cantTell_notInTabOrder": "Comprobar que un usuario de teclado puede mover el foco hasta él, por ejemplo con las flechas del widget al que pertenece, y que Intro y Espacio hacen entonces lo mismo que un clic. Si no, usar tabindex=\"0\" o un <button> o un <a href> nativo.",
       "clickHandlerKeyboardOperable_summary_cantTell_focusListener": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Aún no tiene detector de teclas, pero un detector de foco en él, en un antepasado, en el documento o en la ventana puede añadirlo cuando reciba el foco.",
       "clickHandlerKeyboardOperable_summary_cantTell_keyListenerAbove": "Este <{{element}}> ejecuta un controlador de clic y recibe el foco del teclado. Los únicos detectores de teclas están en un antepasado, en el documento o en la ventana, y pueden gestionar sus teclas o no.",
-      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Use el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestione keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListener": "Usar el elemento nativo (<button>, <a href> o <input type=\"checkbox\">), o gestionar keydown para que las teclas a las que responde un {{role}} hagan lo mismo que un clic.",
       "clickHandlerKeyboardOperable_summary_fail_noKeyListener": "Este elemento tiene role=\"{{role}}\" y un controlador de clic, y recibe el foco del teclado, pero no hay ningún detector de teclas en él, en un antepasado, en el documento ni en la ventana, así que Intro y Espacio no hacen nada.",
       "clickHandlerKeyboardOperable_lean_why_noKeyPathNotInTabOrder": "Aunque un script mueva el foco aquí, no hay ningún detector de teclas ni de foco en el elemento, sus antepasados, el documento ni la ventana, así que Intro y Espacio no harían nada.",
       "clickHandlerKeyboardOperable_lean_caution_clickOnly": "Puede que el clic solo registre clics, o que repita lo que hace otro control de la página.",
@@ -101062,7 +101062,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "clickHandlerKeyboardOperable_lean_why_managed": "Un antepasado mantiene el foco para sus elementos (aria-activedescendant, o un widget compuesto enfocable), que es como ese widget acciona un elemento sin darle el foco.",
       "clickHandlerKeyboardOperable_lean_why_pointerOnly": "El elemento muestra un cursor de mano y ejecuta un controlador de clic, pero no tiene rol de widget; ni él, ni nada de lo que contiene, ni ningún antepasado recibe el foco, y ningún antepasado gestiona el foco por él.",
       "clickHandlerKeyboardOperable_lean_caution_elsewhere": "La misma acción puede ofrecerla otro control de la página, como un enlace junto a una fila en la que se puede hacer clic.",
-      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestione keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
+      "clickHandlerKeyboardOperable_hint_fail_noKeyListenerItem": "Gestionar keydown para que las teclas a las que responde un {{role}} (Intro y Espacio, y las flechas de su widget) hagan lo mismo que un clic.",
       "headingQuality_title": "El texto del encabezado debería describir el contenido, en lugar de ser un texto provisional",
       "headingQuality_description": "Señala encabezados cuyo nombre accesible es un texto provisional en lugar de una descripción del contenido que sigue: una palabra genérica («Encabezado», «Sin título»), una ranura numerada de plantilla («Sección 2»), un nombre de archivo o una URL. Las frases en inglés se reconocen siempre, y las alemanas, españolas, francesas o japonesas cuando el encabezado está en ese idioma.",
       "headingQuality_summary_cantTell_placeholder": "El nombre accesible de este encabezado («{{name}}») es un texto provisional, no una descripción del contenido que introduce.",
@@ -101080,7 +101080,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkNameQuality_summary_cantTell_formatName": "El nombre de este enlace (\"{{name}}\") indica un formato de archivo, pero no de qué documento se trata.",
       "linkNameQuality_hint_cantTell_formatName": "Nombrar el documento en el texto del enlace, o en un texto o encabezado asociado al enlace, como \"Descargar el informe anual (HTML)\" en vez de solo \"HTML\".",
       "linkNameQuality_lean_why_formatBesideName": "Otro enlace del mismo elemento de lista, párrafo o celda nombra el documento al que pertenece este formato.",
-      "linkNameQuality_lean_caution_formatBesideName": "Compruebe que el otro enlace nombra este mismo documento.",
+      "linkNameQuality_lean_caution_formatBesideName": "Comprobar que el otro enlace nombra este mismo documento.",
       "linkNameQuality_lean_why_repeated": "Otros enlaces con el mismo texto llevan a otros sitios, y ningún texto ni encabezado cercano permite distinguirlos.",
       "linkNameQuality_lean_caution_repeated": "La disposición de la página, como una tarjeta con imagen o un encabezado tras el que no está el enlace, puede aún dejar claro cada enlace.",
       "report_title_default": "Informe de análisis de surea11y",
@@ -101893,7 +101893,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "serverSideImageMapAbsent_description": "Demande, pour chaque <img ismap> placé dans un lien, si la page propose les mêmes destinations sous forme de liens accessibles au clavier, puisqu’une carte d’image côté serveur n’a pas de zones utilisables au clavier.",
       "serverSideImageMapAbsent_summary_cantTell": "Cette image est une carte d’image côté serveur (ismap dans un lien), dont les zones ne peuvent pas être atteintes au clavier.",
       "serverSideImageMapAbsent_hint_cantTell": "Vérifiez que la page propose les mêmes destinations sous forme de liens distincts. Mieux : remplacez la carte d’image côté serveur par une carte d’image côté client (<map>/<area>) ou par des liens/boutons distincts.",
-      "formControlSingleLabel_title": "Les contrôles de formulaire ne doivent pas avoir plusieurs étiquettes",
+      "formControlSingleLabel_title": "Les contrôles de formulaire ne devraient pas avoir plusieurs étiquettes",
       "formControlSingleLabel_description": "Vérifie qu’un contrôle de formulaire est associé à au plus un <label> (par imbrication ou par label[for]).",
       "formControlSingleLabel_summary_cantTell_competing": "Cet élément <{{element}}> a {{labelCount}} éléments <label> ; vérifiez le nom qu’ils forment ensemble.",
       "formControlSingleLabel_hint_cantTell_competing": "Les navigateurs joignent les étiquettes en un seul nom. Vérifiez qu’il a encore du sens, ou gardez un seul <label> par champ.",
@@ -102153,7 +102153,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_lean_why_bgsound": "Les navigateurs actuels ignorent <bgsound> : il ne joue rien.",
       "noAutoplayAudio_lean_why_flash": "Les navigateurs actuels n’exécutent plus Flash : il ne joue rien.",
       "noAutoplayAudio_lean_caution_obsolete": "Des navigateurs plus anciens le jouent encore.",
-      "videoCaption_title": "Une vidéo préenregistrée devrait proposer une piste de sous-titres",
+      "videoCaption_title": "Une vidéo préenregistrée devrait proposer des sous-titres complets",
       "videoCaption_description": "Pose une question sur chaque <video> : sans enfant <track kind=\"captions\">, s’il a une piste audio qui demande des sous-titres pour sourds et malentendants (une piste de sous-titres seule peut n’être qu’une traduction) ; avec un, si ses sous-titres sont complets et correspondent à l’audio.",
       "videoCaption_summary_cantTell": "Cette vidéo n’a aucune piste de sous-titres pour sourds et malentendants (captions).",
       "videoCaption_hint_cantTell": "Si cette vidéo a une piste audio porteuse d’information, ajoutez un <track kind=\"captions\" src=\"...\"> avec le contenu sous-titré. Aucun sous-titrage n’est nécessaire si la vidéo est une alternative à un texte de la page et est clairement signalée comme telle.",
@@ -102243,8 +102243,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "Une fenêtre surgissante ouverte et focalisée par un script depuis un déclencheur qui ne l’indique pas a la même apparence.",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA ne donne d’effet à aria-activedescendant que sur l’élément qui a le focus, et celui-ci ne peut pas le recevoir.",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "Un script peut le rendre focalisable à l’ouverture du widget.",
-      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides doivent avoir un message d’erreur affiché",
-      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage doit nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
+      "invalidFieldErrorMessage_title": "Les champs marqués comme invalides devraient avoir un message d’erreur affiché",
+      "invalidFieldErrorMessage_description": "Vérifie qu’un élément ayant aria-invalid a un message d’erreur sous forme de texte : son aria-errormessage devrait nommer un élément affiché qui contient du texte, et un champ sans message associé fait l’objet d’une question.",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué.",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "Affichez le message d’erreur tant que le champ est invalide.",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "Ce champ est marqué comme invalide, mais le message d’erreur que nomme aria-errormessage est masqué aux technologies d’assistance par aria-hidden.",
@@ -102340,12 +102340,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_lean_caution_data": "Un tableau de mise en page peut aussi contenir des nombres, comme des prix à côté d’un texte.",
       "tdHasHeader_lean_why_layout": "Le tableau ressemble à une mise en page : ses cellules contiennent un tableau imbriqué, des contrôles de formulaire, des images ou des blocs de texte, et rien ne le signale comme des données.",
       "tdHasHeader_lean_caution_layout": "Un tableau de données peut contenir des images ou des contrôles dans ses cellules, comme une liste de produits.",
-      "movingContentPausable_title": "Un contenu qui bouge de lui-même peut être mis en pause, arrêté ou masqué",
+      "movingContentPausable_title": "Un contenu qui bouge de lui-même devrait pouvoir être mis en pause, arrêté ou masqué",
       "movingContentPausable_description": "Interroge sur les éléments animés au chargement de la page, plus de cinq secondes ou sans fin : leur mouvement peut-il être mis en pause, arrêté ou masqué ?",
       "movingContentPausable_summary_cantTell_loops": "Cet élément <{{element}}> bouge de lui-même sans fin{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_summary_cantTell_long": "Cet élément <{{element}}> bouge de lui-même plus de cinq secondes{{#name}} (animation « {{name}} »){{/name}}.",
       "movingContentPausable_hint_cantTell": "Vérifiez qu’une commande permet de mettre en pause, d’arrêter ou de masquer ce mouvement, sauf s’il est essentiel (WCAG 2.2.2). Un mouvement qui s’arrête de lui-même en cinq secondes n’en a pas besoin.",
-      "focusNotRemovedByScript_title": "Un script ne retire pas le focus d’un élément au moment où il le reçoit",
+      "focusNotRemovedByScript_title": "Un script ne doit pas retirer le focus d’un élément au moment où il le reçoit",
       "focusNotRemovedByScript_description": "Signale en échec les éléments de l’ordre de tabulation dont le gestionnaire onfocus en ligne ne fait qu’appeler blur() sur eux, et pose la question pour les autres gestionnaires qui appellent blur(), ou focus() sur un autre élément, ce qui peut retirer le focus dès que l’élément le reçoit (échec WCAG F55).",
       "focusNotRemovedByScript_summary_cantTell_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
       "focusNotRemovedByScript_summary_fail_self": "Cet élément <{{element}}> se retire le focus dès qu’il le reçoit (onfocus=\"{{handler}}\").",
@@ -102370,7 +102370,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "L’élément exécute une action au mousedown, au mouseup ou au double-clic, un hook installé avant les scripts de la page n’a vu aucun écouteur de touches sur lui, ses ancêtres, le document ni la fenêtre, et rien en lui ni autour ne peut recevoir le focus.",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "Le gestionnaire peut ne faire que dessiner un effet ou suivre le pointeur, ou une autre commande peut offrir la même fonction.",
       "clickHandlerKeyboardOperable_title": "Les gestionnaires de clic sur des éléments qui ne sont pas des contrôles natifs doivent fonctionner au clavier",
-      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et a un gestionnaire de touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
+      "clickHandlerKeyboardOperable_description": "Vérifie qu’un élément qui n’est pas un contrôle natif et a un gestionnaire de clic (un onclick en ligne, ou un écouteur de clic relevé par le hook d’écouteurs) peut recevoir le focus clavier et qu’un gestionnaire de touches, sur lui, un ancêtre ou un descendant, reçoit ses touches, afin qu’un utilisateur du clavier puisse exécuter ce qu’exécute un clic.",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "Cet élément <{{element}}> exécute un gestionnaire de clic et reçoit le focus clavier, mais n’a aucun gestionnaire de touches qui lui soit propre : Entrée et Espace risquent de ne rien faire.",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Vérifiez qu’Entrée (et Espace, pour un bouton) fait ce que fait un clic. Sinon, utilisez un <button> ou un <a href> natif, ou gérez keydown pour ces touches.",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "Cet élément a role=\"{{role}}\" et un gestionnaire de clic, mais ni lui ni rien de ce qu’il contient ne peut recevoir le focus clavier : un utilisateur du clavier ne peut pas l’atteindre.",
@@ -103225,7 +103225,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "serverSideImageMapAbsent_description": "リンク内の <img ismap> ごとに、同じリンク先をキーボードで到達できるリンクとしてページが提供しているかを確認します。サーバーサイドイメージマップ自体には、キーボードで操作できる領域がないためです。",
       "serverSideImageMapAbsent_summary_cantTell": "この画像はサーバーサイドイメージマップ (リンク内の ismap) であり、その領域にはキーボードで到達できません。",
       "serverSideImageMapAbsent_hint_cantTell": "同じリンク先が個別のリンクとしてページにあるか確認してください。より良い方法: サーバーサイドイメージマップを、クライアントサイドイメージマップ (<map>/<area>) か、個別のリンクやボタンに置き換えてください。",
-      "formControlSingleLabel_title": "フォームコントロールに複数のラベルがあってはならない",
+      "formControlSingleLabel_title": "フォームコントロールに複数のラベルがないことが望ましい",
       "formControlSingleLabel_description": "フォームコントロールに関連付けられた <label> (囲む形式または label[for] による) が 1 つ以下であるかを確認します。",
       "formControlSingleLabel_summary_cantTell_competing": "この <{{element}}> には <label> 要素が {{labelCount}} 個あります。合わせてできる名前を確認してください。",
       "formControlSingleLabel_hint_cantTell_competing": "ブラウザーはラベルをつなげて 1 つの名前にします。その名前が意味をなすか確認するか、1 つの項目に <label> は 1 つにしてください。",
@@ -103485,7 +103485,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "noAutoplayAudio_lean_why_bgsound": "現在のブラウザーは <bgsound> を無視するため、何も再生されません。",
       "noAutoplayAudio_lean_why_flash": "現在のブラウザーは Flash を実行しないため、何も再生されません。",
       "noAutoplayAudio_lean_caution_obsolete": "古いブラウザーでは今も再生されます。",
-      "videoCaption_title": "収録済みの動画にはキャプションのトラックがあることが望ましい",
+      "videoCaption_title": "収録済みの動画には完全なキャプションがあることが望ましい",
       "videoCaption_description": "各 <video> について確認を求めます。<track kind=\"captions\"> の子がない場合は、キャプションが必要な音声トラックがあるかを (字幕トラックだけでは翻訳のみの場合があります)、ある場合は、キャプションが完全で音声と一致しているかを確認します。",
       "videoCaption_summary_cantTell": "この動画にはキャプション (captions) のトラックがありません。キャプションが必要な音声があるか、人による確認が必要です。",
       "videoCaption_hint_cantTell": "この動画に情報を伝える音声トラックがある場合は、キャプションの内容を含む <track kind=\"captions\" src=\"...\"> を追加してください。動画がページ上のテキストのメディアによる代替であり、そのことが明示されている場合、キャプションは不要です。",
@@ -103575,8 +103575,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "widgetKeyboardFocusable_lean_caution_compositeNoTabStop": "それを示さないトリガーからスクリプトで開いてフォーカスするポップアップも、同じように見えます。",
       "widgetKeyboardFocusable_lean_why_activedescendantHost": "ARIA では aria-activedescendant はフォーカスを持つ要素でしか効果がありませんが、この要素はフォーカスを受け取れません。",
       "widgetKeyboardFocusable_lean_caution_activedescendantHost": "ウィジェットが開いたときに、スクリプトがフォーカス可能にする場合があります。",
-      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがなければなりません",
-      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指す必要があり、メッセージが関連付けられていないフィールドは確認対象として報告します。",
+      "invalidFieldErrorMessage_title": "無効とマークされたフィールドには、表示されたエラーメッセージがあることが望ましい",
+      "invalidFieldErrorMessage_description": "aria-invalid を持つ要素にテキストのエラーメッセージがあることを確認します。aria-errormessage はテキストを持つ表示された要素を指すことが望ましく、メッセージが関連付けられていないフィールドは確認対象として報告します。",
       "invalidFieldErrorMessage_summary_cantTell_hidden": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは隠れています。",
       "invalidFieldErrorMessage_hint_cantTell_hidden": "フィールドが無効な間は、エラーメッセージを表示してください。",
       "invalidFieldErrorMessage_summary_cantTell_hiddenAria": "このフィールドは無効とマークされていますが、aria-errormessage が指すエラーメッセージは aria-hidden によって支援技術から隠されています。",
@@ -103672,12 +103672,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "tdHasHeader_lean_caution_data": "レイアウト用の表にも、テキストの横の価格など、数値が入っていることがあります。",
       "tdHasHeader_lean_why_layout": "この表はレイアウト用のようです。セルに入れ子の表、フォームコントロール、画像、またはまとまったテキストがあり、データ表であることを示すものがありません。",
       "tdHasHeader_lean_caution_layout": "商品一覧のように、データ表のセルにも画像やコントロールが入っていることがあります。",
-      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできる",
+      "movingContentPausable_title": "自動で動くコンテンツは一時停止、停止、または非表示にできることが望ましい",
       "movingContentPausable_description": "ページの読み込み時に 5 秒を超えて、または終わりなくアニメーションする要素について、その動きを一時停止、停止、または非表示にできるかを確認します。",
       "movingContentPausable_summary_cantTell_loops": "この <{{element}}> は終わりなく自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_summary_cantTell_long": "この <{{element}}> は 5 秒を超えて自動で動いています{{#name}} (アニメーション「{{name}}」){{/name}}。",
       "movingContentPausable_hint_cantTell": "この動きを一時停止、停止、または非表示にできる操作があるか確認してください。動きが必須の場合を除きます (WCAG 2.2.2)。5 秒以内に自動で止まる動きには不要です。",
-      "focusNotRemovedByScript_title": "スクリプトが、フォーカスを受け取った要素からフォーカスを外さないこと",
+      "focusNotRemovedByScript_title": "スクリプトは、フォーカスを受け取った要素からフォーカスを外してはならない",
       "focusNotRemovedByScript_description": "タブ順序内の要素で、インラインの onfocus ハンドラーが自身に blur() を呼ぶだけのものを不適合とし、blur() や別要素への focus() を呼ぶその他のハンドラーについては確認を求めます。これらは要素がフォーカスを受けた直後にフォーカスを失わせることがあります (WCAG 失敗例 F55)。",
       "focusNotRemovedByScript_summary_cantTell_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
       "focusNotRemovedByScript_summary_fail_self": "この <{{element}}> は、フォーカスを受け取るとすぐに自らフォーカスを外します (onfocus=\"{{handler}}\")。",
@@ -103702,7 +103702,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "mouseOnlyEventHandlers_lean_why_noKeyboard": "この要素は mousedown、mouseup、ダブルクリックで操作を実行します。ページのスクリプトより前に組み込んだフックは、要素自体にも祖先にも document にも window にもキー リスナーを見つけておらず、要素の中にも周囲にもフォーカスを受け取れるものがありません。",
       "mouseOnlyEventHandlers_lean_caution_noKeyboard": "ハンドラーは効果を描くか、ポインターを追跡するだけかもしれません。また、別のコントロールが同じ機能を提供している可能性があります。",
       "clickHandlerKeyboardOperable_title": "ネイティブのコントロールではない要素のクリック ハンドラーはキーボードで操作できなければならない",
-      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、キー ハンドラーを持つことを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
+      "clickHandlerKeyboardOperable_description": "ネイティブのコントロールではなく、クリック ハンドラー(インラインの onclick、またはリスナー フックが記録したクリック リスナー)を持つ要素が、キーボード フォーカスを受け取れ、要素自身、祖先、または子孫のキー ハンドラーがそのキー入力を受け取ることを確認します。キーボード利用者がクリックと同じ処理を実行できるようにするためです。",
       "clickHandlerKeyboardOperable_summary_cantTell_noKeyHandler": "この <{{element}}> はクリック ハンドラーを実行し、キーボード フォーカスを受け取りますが、要素自体のキー ハンドラーがないため、Enter や Space では何も起きない可能性があります。",
       "clickHandlerKeyboardOperable_hint_cantTell_noKeyHandler": "Enter(ボタンの場合は Space も)でクリックと同じことが起きるか確認してください。起きない場合は、ネイティブの <button> または <a href> を使うか、それらのキーの keydown を処理してください。",
       "clickHandlerKeyboardOperable_summary_fail_notFocusable": "この要素は role=\"{{role}}\" とクリック ハンドラーを持ちますが、要素自体もその中身もキーボード フォーカスを受け取れないため、キーボード利用者はこの要素に到達できません。",
@@ -106989,12 +106989,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   //
   // A drop-down select (no `multiple`, a size of 1 or none) shows its
   // selected option in the closed control, drawn in the select's own
-  // colour, font and background whatever colours the option has. Its
+  // color, font and background whatever colors the option has. Its
   // other options are shown only in the list it opens, which the platform
-  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // draws, in the options' colors or in its own. A list box (`multiple`,
   // or a size above 1) draws its options as they are styled, and so does a
   // customizable select (`appearance: base-select`), whose list the page
-  // styles; both are left to the options' own colours. A customizable
+  // styles; both are left to the options' own colors. A customizable
   // select with no <button> of its own shows its selected option in the
   // closed control as a drop-down does.
 
@@ -107003,7 +107003,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // For el, an <option> of a drop-down select or an element in one:
   // { select, option, shown, differs }, where shown says whether the option
   // is the one the closed control shows, and differs names the first of
-  // its colours that isn't the select's ({ el, property, value }), or is
+  // its colors that isn't the select's ({ el, property, value }), or is
   // null. Null for every other element.
   function __dropDownOption(el) {
     if (!el || dom.nodeType(el) !== 1) return null;
@@ -107015,7 +107015,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       const selectCs = select ? __contrastComputedStyle(select) : null;
       // A customizable select draws its closed control from the page's own
       // <button>, measured as any element; without one, from the selected
-      // option, in the select's colours, as a drop-down does. Its other
+      // option, in the select's colors, as a drop-down does. Its other
       // options are in the list the page styles.
       const base = !!selectCs && String(selectCs.appearance || '') === 'base-select';
       const ownButton =
@@ -107083,10 +107083,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The element whose colours, font and background el's text is drawn in,
+  // The element whose colors, font and background el's text is drawn in,
   // where that is not el: for text in a drop-down select's shown option,
-  // and in any other of its options whose colours are the select's, the
-  // select. Null otherwise: an option with colours of its own, shown only
+  // and in any other of its options whose colors are the select's, the
+  // select. Null otherwise: an option with colors of its own, shown only
   // in the list the platform draws, is asked about instead
   // (getComputabilityBlocker, SELECT_OPTION_COLOR).
   function __closedSelectTextOwner(el) {
@@ -107532,8 +107532,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
           // A drop-down select's shown option is drawn by the closed
-          // control, in the select's colours and font, as are its other
-          // options that have the select's colours: the select is measured.
+          // control, in the select's colors and font, as are its other
+          // options that have the select's colors: the select is measured.
           const owner = __closedSelectTextOwner(el) || el;
           if (isSameColorAsBackground(owner)) continue;
 
@@ -108394,10 +108394,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
-    // An emulator that resolves no system colour hands the keyword back as
+    // An emulator that resolves no system color hands the keyword back as
     // the computed value (jsdom 26 computes an unstyled text's color as
-    // "canvastext", and a button's colours as "buttontext" on "buttonface"),
-    // and the probe above gets it back the same. Such a page has no colour
+    // "canvastext", and a button's colors as "buttontext" on "buttonface"),
+    // and the probe above gets it back the same. Such a page has no color
     // scheme of its own to follow, so these are the light scheme's in
     // Chromium, as __SCHEME_COLORS gives them for jsdom. A browser always
     // resolves them, so it never gets here.
@@ -108481,7 +108481,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Rounded to 12 decimals: past that, a ratio's digits depend on the order
-  // the colours were composited in, which differs between jsdom and a
+  // the colors were composited in, which differs between jsdom and a
   // browser (1.0778038367054583 against 1.077803836705458), and one page
   // would report two numbers. The thresholds have two decimals, so no
   // outcome turns on a digit this far down.
@@ -108781,7 +108781,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        // currentColor: el's colour, in the scheme the page is drawn in.
+        // currentColor: el's color, in the scheme the page is drawn in.
         const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
@@ -109043,7 +109043,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
-  // Text whose fill is transparent, or the colour of its background, is not
+  // Text whose fill is transparent, or the color of its background, is not
   // drawn by its fill, but an outline or a shadow still draws it: outlined
   // headings are a common design, and WCAG's techniques count an outline or
   // halo in a text's contrast (G18, G145). Such text is not skipped as
@@ -109061,7 +109061,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (width > 0 && !(stroke && stroke.a === 0)) return true;
       const shadow = __textShadowInfoEl(el, cs);
       if (!shadow.has) return false;
-      // A shadow drawn only in transparent colours draws nothing.
+      // A shadow drawn only in transparent colors draws nothing.
       const colors =
         String(shadow.value).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent/gi) || [];
       return !(
@@ -109076,10 +109076,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // The colours el's glyphs are drawn in by a visible -webkit-text-stroke
+  // The colors el's glyphs are drawn in by a visible -webkit-text-stroke
   // and text-shadow, for text whose fill draws nothing: { colors, complete }.
-  // complete is false when a colour can't be read, so a caller never
-  // concludes from part of what is drawn. Each colour keeps its own alpha.
+  // complete is false when a color can't be read, so a caller never
+  // concludes from part of what is drawn. Each color keeps its own alpha.
   function getOutlineColors(el) {
     const out = { colors: [], complete: true };
     try {
@@ -109099,7 +109099,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
       const shadow = __textShadowInfoEl(el, cs);
       if (shadow.has) {
-        // One shadow per comma outside parentheses, each with one colour.
+        // One shadow per comma outside parentheses, each with one color.
         const parts = [];
         let depth = 0;
         let start = 0;
@@ -109126,12 +109126,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Text drawn by a stroke or a shadow, measured by the best of the colours
+  // Text drawn by a stroke or a shadow, measured by the best of the colors
   // it is drawn in against a flat background, its fill among them when the
   // fill is seen: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
-  // null when the background isn't one opaque colour, a colour can't be
+  // null when the background isn't one opaque color, a color can't be
   // read, or the text is a placeholder with its fill seen (the rules judge
-  // placeholders by whose colours they are). Below the ratio, no reading of
+  // placeholders by whose colors they are). Below the ratio, no reading of
   // the text meets it (ACT: "If all background pixels have a low contrast
   // with all foreground pixels, the success criterion is guaranteed to not
   // be satisfied"); above it, how legible the outline is takes a person.
@@ -109267,26 +109267,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return value;
   }
 
-  // -------- Link colours under jsdom --------
+  // -------- Link colors under jsdom --------
   //
   // jsdom's cascade orders its own style sheet's rules with the page's by
   // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
   // beats a page's `a { color: #fff }`, which a browser applies: a white
-  // link read back as blue, and text measured in a colour no browser draws.
-  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
-  // the text inside it that takes its colour from it, is worked out here
+  // link read back as blue, and text measured in a color no browser draws.
+  // Under jsdom, the color of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its color from it, is worked out here
   // from the page's own rules, as a browser's cascade does: the author's
   // declarations win over the browser's whatever their specificity, ordered
   // among themselves by !important, the style attribute, specificity and
-  // order. Where no author rule sets it, the browser's link colour stands,
+  // order. Where no author rule sets it, the browser's link color stands,
   // and jsdom's value is right. Where it can't be worked out (a sheet that
   // can't be read, a selector or value it can't follow, a rule whose
-  // condition it can't tell), the colour is unknown, and the text is not
+  // condition it can't tell), the color is unknown, and the text is not
   // computable rather than measured in jsdom's blue.
   //
-  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // __jsdomLinkTextColor(el): a color value for el's text, null where it
   // can't be worked out, or undefined where jsdom's own value stands (a
-  // browser, text outside any link, a link no author rule colours).
+  // browser, text outside any link, a link no author rule colors).
   const __jsdomByDoc = new WeakMap();
   function __underJsdom(doc) {
     if (!doc) return false;
@@ -109394,7 +109394,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set a colour property (`color`, or
+  // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
@@ -109623,7 +109623,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
   function __jsdomLinkTextColorUncached(el) {
     if (!__underJsdom(dom.ownerDocument(el))) return undefined;
-    // Only text in a link: the browser's sheet sets the colour of nothing
+    // Only text in a link: the browser's sheet sets the color of nothing
     // else that jsdom ranks differently.
     let inLink = false;
     for (let cur = el, depth = 0; cur && depth < 200; depth++) {
@@ -109645,11 +109645,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const decl = __authorColorOf(el);
     if (decl && decl.unknown) return null;
     if (!decl) {
-      // A link no author rule colours is in the browser's link colour, as
+      // A link no author rule colors is in the browser's link color, as
       // jsdom 29 has it. jsdom 26 gives it none, and the link takes its
-      // parent's colour: it is then the light scheme's link colour, as
-      // jsdom 29's. Text inside one takes its colour from its parent,
-      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // parent's color: it is then the light scheme's link color, as
+      // jsdom 29's. Text inside one takes its color from its parent,
+      // unless the browser's sheet colors it (a <mark>): jsdom then gives
       // it a value of its own.
       if (__isLink(el)) {
         const cs = __contrastComputedStyle(el);
@@ -109672,11 +109672,11 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return parseCssColorToRgba(decl.value) ? decl.value : null;
   }
 
-  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // Whether the page sets el's -webkit-text-fill-color to a color of its
   // own, on el or an ancestor it inherits from: true, false where it
   // follows color, null where it can't be told. jsdom computes a fill that
-  // follows color as that colour, so a fill the page sets to jsdom's own
-  // link colour reads the same as one that follows it.
+  // follows color as that color, so a fill the page sets to jsdom's own
+  // link color reads the same as one that follows it.
   function __jsdomAuthorFill(el) {
     for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
       const decl = __authorColorOf(cur, '-webkit-text-fill-color');
@@ -109692,12 +109692,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // The colour value el's HTML text is painted in, from its computed style
+  // The color value el's HTML text is painted in, from its computed style
   // cs, before any opacity: -webkit-text-fill-color, else color, with the
-  // colour of text in a link worked out from the page's rules under jsdom
+  // color of text in a link worked out from the page's rules under jsdom
   // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
-  // computes the fill as the colour it follows; one that differs is the
-  // page's own, and paints it, as does one the page sets to that colour.
+  // computes the fill as the color it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that color.
   function __htmlTextFillOf(el, cs) {
     const fillValue = __textFillOfEl(el, cs);
     let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
@@ -109718,7 +109718,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return authored ? fillValue : link;
   }
 
-  // textFillColor(el): the colour value el's text is painted in, before any
+  // textFillColor(el): the color value el's text is painted in, before any
   // opacity, as computeEffectiveForeground reads it ('' where it can't be
   // worked out).
   function textFillColor(el) {
@@ -109774,17 +109774,17 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colour el's text has in a color scheme other than the one whose
-  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // The color el's text has in a color scheme other than the one whose
+  // colors were computed: in contrast.colorScheme, on the page's canvas,
   // where opts give one; otherwise, in an emulator, in the dark scheme a
   // page drawn only in dark is in, wherever the text is (an emulator
-  // computes the light scheme's colours). Null where the colour computed
+  // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
     const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
-      // A browser computes the colours of the scheme it draws.
+      // A browser computes the colors of the scheme it draws.
       if (!__emulatorWindow()) return null;
       const info = __pageSchemes();
       if (!info || info.laidOut || info.current !== 'dark') return null;
@@ -109799,7 +109799,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
   }
 
-  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // opts.contrast.colorScheme: the text's color in that scheme, on the
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
@@ -109845,13 +109845,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour, is read from the page's rules (__htmlTextFillOf).
+    // Text in a link, under jsdom, whose color jsdom ranks below its own
+    // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
-    // scheme's colour where the text takes it from the scheme.
+    // scheme's color where the text takes it from the scheme.
     if (c && schemeOverride) {
       c = {
         r: schemeOverride.r,
@@ -109920,10 +109920,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
-  // The canvas the browser paints behind the root: the Canvas system colour
+  // The canvas the browser paints behind the root: the Canvas system color
   // of the root's color scheme, white unless the page asks for dark, where
   // Chromium paints #121212. Read once per run, from an element the engine
-  // adds and removes at once, which is how the Canvas system colour
+  // adds and removes at once, which is how the Canvas system color
   // resolves for the page. Null where nothing resolves it (jsdom).
   let __canvas;
   function __pageCanvasColor() {
@@ -109951,7 +109951,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       let laidOut = false;
       try {
         // Only a page with a layout paints a canvas: an emulator (jsdom)
-        // resolves system colours to fixed values and measures every box at
+        // resolves system colors to fixed values and measures every box at
         // zero, so it has none to read.
         laidOut = dom.getBoundingClientRect(probe).width === 1;
         bg = String(window.getComputedStyle(probe).backgroundColor || '');
@@ -110040,7 +110040,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // -------- The page's canvas, in each color scheme it supports --------
   //
   // Behind a page that paints no opaque background the browser paints its
-  // canvas, in the Canvas system colour of the root's used color scheme
+  // canvas, in the Canvas system color of the root's used color scheme
   // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
   // own statement: the root's color-scheme, or, while that is normal, its
   // <meta name="color-scheme">. A page that states none is drawn in the
@@ -110049,7 +110049,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // the page and the user's preference, as the browser defines it, not
   // from an assumption.
 
-  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // The Canvas, CanvasText and LinkText system colors of each scheme in
   // Chromium (read in Chromium 153), for an emulator that resolves them to
   // fixed light values and lays nothing out (jsdom). A browser's own are
   // read from the page instead.
@@ -110076,7 +110076,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // current the one it is drawn in now (the user's preference where the
   // page supports it, else the first it names), and colors each scheme's
   // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
-  // its computed colours are the current scheme's; an emulator's are the
+  // its computed colors are the current scheme's; an emulator's are the
   // light scheme's, without its prefers-color-scheme rules. Null under
   // forced colors, where the canvas is the user's palette, and where
   // nothing can be read.
@@ -110130,7 +110130,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         };
       }
 
-      // In a browser, each scheme's system colours are read from an
+      // In a browser, each scheme's system colors are read from an
       // element the engine adds and removes at once, and the scheme the
       // page is drawn in from the Canvas it inherits from the root.
       // An emulator lays nothing out: nothing to read there, and the page
@@ -110185,7 +110185,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the engine runs in an emulator (jsdom, by its user agent),
-  // which computes the light scheme's colours whatever the page's scheme.
+  // which computes the light scheme's colors whatever the page's scheme.
   let __emulator;
   function __emulatorWindow() {
     if (__emulator !== undefined) return __emulator;
@@ -110216,10 +110216,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The style rules of a document's or shadow root's sheets that may make
-  // a colour depend on the color scheme: those inside an @media on
+  // a color depend on the color scheme: those inside an @media on
   // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
-  // unknown), and those setting a colour, a background or a custom property
-  // to light-dark() or a system colour (`keyword`). Every condition is
+  // unknown), and those setting a color, a background or a custom property
+  // to light-dark() or a system color (`keyword`). Every condition is
   // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
   // unreadable }, once per root.
   const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
@@ -110231,7 +110231,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       .replace(/"[^"]*"|'[^']*'/g, '');
     return __SCHEME_VALUE.test(v);
   }
-  // Which of a declaration block's colours follow the scheme: { color }
+  // Which of a declaration block's colors follow the scheme: { color }
   // for the text's (color, -webkit-text-fill-color), { back } for a
   // background or a custom property, which may feed either; null for none.
   function __styleFollowsScheme(style) {
@@ -110349,12 +110349,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // How the colours behind el's text, and its own, may depend on the color
+  // How the colors behind el's text, and its own, may depend on the color
   // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
   // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
-  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // rules matching one of them; keywordColor: a text color, keywordBack a
   // background or a custom property, set to light-dark() or a system
-  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // color (keyword: either); unknown: a sheet or a selector that can't be
   // read.
   const __schemeDependenceCache = new WeakMap();
   const __noDependence = () => ({
@@ -110414,12 +110414,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Where el's text colour comes from: 'author', a colour of the page's
+  // Where el's text color comes from: 'author', a color of the page's
   // own, the same in every scheme ('authorFill' where it is a
-  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
-  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // -webkit-text-fill-color); 'canvasText', the scheme's text color (no
+  // rule colors it or an ancestor); 'linkText', the browser's link color;
   // { value }, a value the page gives that picks by the scheme (light-dark(),
-  // a system colour); null where it can't be told, or is another colour of
+  // a system color); null where it can't be told, or is another color of
   // the browser's (a field's, a button's, a mark's). SVG text, and text cut
   // out of a background, are left at null.
   const __UA_COLOURED = new Set([
@@ -110489,9 +110489,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return 'canvasText';
   }
 
-  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
-  // first or second colour, a system colour the scheme defines (CanvasText,
-  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  // A color value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second color, a system color the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a color; null for anything else.
   function __resolveSchemeColor(value, scheme, info) {
     const v = String(value || '').trim();
     const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
@@ -110511,7 +110511,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the browser paints a background of its own, in the scheme's
-  // system colours, behind el's text: el or an ancestor is a form control,
+  // system colors, behind el's text: el or an ancestor is a form control,
   // a mark, a dialog or a popover whose background the page doesn't set.
   const __UA_PAINTED = new Set([
     'input',
@@ -110547,18 +110547,18 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // el's text colour in `scheme`: { color } with color null where it is
-  // the colour computed now, or the colour it has in that scheme (the
+  // el's text color in `scheme`: { color } with color null where it is
+  // the color computed now, or the color it has in that scheme (the
   // scheme's CanvasText or LinkText where the text takes it from the
-  // scheme; a light-dark() or system colour the page gives, worked out);
-  // null where it can't be told. The colours computed now are the scheme a
+  // scheme; a light-dark() or system color the page gives, worked out);
+  // null where it can't be told. The colors computed now are the scheme a
   // browser draws, or, in an emulator, the light one with no
   // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
-  // has its text's colours worked out here: not where a
+  // has its text's colors worked out here: not where a
   // prefers-color-scheme rule for dark reaches them, a background behind
   // them picks by the scheme, or the browser paints one there. A scheme the
   // page isn't drawn in is told only where no prefers-color-scheme rule,
-  // light-dark() or system colour reaches the text's colour or the
+  // light-dark() or system color reaches the text's color or the
   // backgrounds behind it.
   function __schemeTextColor(el, scheme) {
     const info = __pageSchemes();
@@ -110585,12 +110585,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return null;
   }
 
-  // The scheme an emulator can't give el's text colours in: the page is
+  // The scheme an emulator can't give el's text colors in: the page is
   // drawn in it, and they can't be worked out (__schemeTextColor). An
-  // emulator computes the light scheme's colours and applies no
+  // emulator computes the light scheme's colors and applies no
   // prefers-color-scheme rule, so on a page drawn in light only text such
-  // a rule reaches; on one drawn in dark, text whose colours there can't be
-  // told. Null in a browser, which computes the colours it draws.
+  // a rule reaches; on one drawn in dark, text whose colors there can't be
+  // told. Null in a browser, which computes the colors it draws.
   function colorSchemeUnread(el) {
     try {
       if (!window || !el || dom.nodeType(el) !== 1) return null;
@@ -110669,7 +110669,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // The canvas under el's text in the scheme the page is drawn in, where
-  // the colours computed now are that scheme's (see __canvasFor); null
+  // the colors computed now are that scheme's (see __canvasFor); null
   // otherwise, which leaves it to the contrast mode
   // (computeEffectiveBackground).
   function __measuredCanvasUnder(el) {
@@ -110678,8 +110678,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether el's text can be measured on the page's canvas in `scheme`, one
-  // the page supports but isn't drawn in now: its colours and the
-  // backgrounds behind it are the same in that scheme, or its colour is
+  // the page supports but isn't drawn in now: its colors and the
+  // backgrounds behind it are the same in that scheme, or its color is
   // the scheme's own (__schemeTextColor).
   function colorSchemeMeasurable(el, scheme) {
     try {
@@ -110943,7 +110943,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
           alpha: acc.a,
           stack: stack || [],
           reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
-          // On a page whose canvas is known, the text's colour in the
+          // On a page whose canvas is known, the text's color in the
           // scheme it is drawn in could not be told (__schemeTextColor).
           ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
@@ -111131,7 +111131,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
 
       // The browser's canvas, where it was read, lies under the root and
-      // outside every group, so both colours are composited onto it.
+      // outside every group, so both colors are composited onto it.
       const canvas = bgAcc.a < 1 || fgAcc.a < 1 ? __measuredCanvasUnder(el) : null;
       if (canvas) {
         bgAcc = compositeRgba(bgAcc, canvas);
@@ -111222,7 +111222,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // item's marker, is drawn, but no text node holds it, so the text walk
   // never meets it. It is read from the pseudo-element's computed style,
   // which only a browser gives (jsdom computes none), and measured in the
-  // pseudo-element's colour and font, against its element's background and
+  // pseudo-element's color and font, against its element's background and
   // its own if it has one.
 
   // ::before and ::after: their styles are read only for the elements a
@@ -111637,8 +111637,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
-  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
-  // drawn (CSS zoom included), and same when the text is the colour of its
+  // fontSizePx, fontWeightNum, same }, the colors opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the color of its
   // background. bgOpts as computeEffectiveBackground's.
   function measureGeneratedText(el, pseudo, bgOpts) {
     try {
@@ -111658,7 +111658,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
       // Effects on the generated text itself, which draw something other
-      // than its declared colours.
+      // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
       if (hasFilter(ps)) {
         const filter = trim(ps.filter);
@@ -111771,16 +111771,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   }
 
   // Whether the text el shows is its placeholder: below its ratio, the
-  // contrast rules fail it, pass it or ask about it by whose colours they
+  // contrast rules fail it, pass it or ask about it by whose colors they
   // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
   }
 
-  // Where a field's placeholder colours come from: 'browser' when its
+  // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
-  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the browser's (WCAG G148: colors left to the browser count as meeting
   // the ratio), 'page' when the page changed any of them, '' when that
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
@@ -111857,10 +111857,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
 
   // A drop-down <select> whose background is the browser's own is drawn
   // as the platform draws a field: Chromium paints it in the Field system
-  // colour (white), though its computed background is ButtonFace (#efefef),
+  // color (white), though its computed background is ButtonFace (#efefef),
   // which other browsers may paint. Text the page coloured on it fails if
   // it fails in either, so the contrast rules measure it against both. This
-  // gives the Field colour, as an rgba, for such a select when it differs
+  // gives the Field color, as an rgba, for such a select when it differs
   // from the computed background; null otherwise, and for a select the page
   // gave a background, a list box, a customizable select, or no layout.
   // The browser's values are read once per color-scheme in a blank frame,
@@ -111937,7 +111937,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // (brand, marque, marca) name one only when every word of the token is
   // about the site's name ("brand", "navbar-brand", "site-brand",
   // "brand-name"): "btn-brand", "text-brand-500" and "brand-story" are
-  // colours and sections in a brand's style, and "site-branding" commonly
+  // colors and sections in a brand's style, and "site-branding" commonly
   // holds the tagline beside the logo.
   const __LOGO_WORDS = new Set(['logo', 'logos', 'logotype', 'wordmark']);
   const __BRAND_WORDS = new Set(['brand', 'marque', 'marca']);
@@ -112093,16 +112093,16 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
   // What stops el's contrast being computed, or { ok: true }. A
-  // ::first-line or ::first-letter in a colour of its own
-  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // ::first-line or ::first-letter in a color of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colors, as
   // `pseudoColors`, when nothing else stands in the way: each rule can then
-  // measure both colours against its own threshold, and decide where they
+  // measure both colors against its own threshold, and decide where they
   // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
-    // The text's colours in the scheme the page is drawn in can't be read
+    // The text's colors in the scheme the page is drawn in can't be read
     // (an emulator: colorSchemeUnread), so whatever else is in the way, they
     // are what is unknown.
     const unread = colorSchemeUnread(el);
@@ -112123,7 +112123,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
-      // The rest of the walk, past the pseudo-element: its colours are
+      // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
@@ -112136,10 +112136,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colours of the ::first-line or ::first-letter style that differs
+  // The colors of the ::first-line or ::first-letter style that differs
   // from el's own, for measurePseudoElementText: null when both differ (the
   // first letter is then drawn in one or the other, by rules this does not
-  // model), or when that style draws something other than its colours (a
+  // model), or when that style draws something other than its colors (a
   // background image, a shadow, an outline, an opacity).
   function __pseudoColorsOf(pseudos) {
     if (pseudos.length !== 1) return null;
@@ -112170,13 +112170,13 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
   }
 
-  // El's text measured in its own colours and in those of the
+  // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
   // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colours or
+  // background's assumptions. Null when the blocker carries no colors or
   // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colours meet a ratio, or
+  // paints depends on line breaks, but where both colors meet a ratio, or
   // both fall short of it, every reading of the text does too.
   function measurePseudoElementText(el, bgOpts) {
     try {
@@ -112239,8 +112239,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   // stands in the way.
   function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
-    // colours that aren't the select's: it is shown only in the list the
-    // select opens, which the platform draws in those colours or in its
+    // colors that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colors or in its
     // own, so there is no one way it is drawn to measure.
     const dropDown = __dropDownOption(el);
     if (dropDown && !dropDown.shown && dropDown.differs) {
@@ -112429,12 +112429,12 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      // ::first-line and ::first-letter paint part of the text in a colour
+      // ::first-line and ::first-letter paint part of the text in a color
       // of their own (a first line in black over #bbb text, a drop cap).
       // Which text is on the first line takes layout to know, so a
-      // pseudo-element whose colour or background differs from the
+      // pseudo-element whose color or background differs from the
       // element's defers to manual review rather than measuring the wrong
-      // colour.
+      // color.
       if (
         !skipPseudo &&
         cur === el &&
@@ -112450,8 +112450,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
         if (__rootStylesFirstLineOrLetter(root)) {
           let out = null;
-          // Each pseudo-element whose colours differ from el's, for the
-          // colours the blocker carries (__pseudoColorsOf).
+          // Each pseudo-element whose colors differ from el's, for the
+          // colors the blocker carries (__pseudoColorsOf).
           const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
@@ -112491,9 +112491,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         }
       }
 
-      // -webkit-text-stroke outlines each glyph in its own colour, and a
-      // wide stroke is most of what is drawn: the fill colour alone is not
-      // the text's colour, and there is no model for combining the two, so
+      // -webkit-text-stroke outlines each glyph in its own color, and a
+      // wide stroke is most of what is drawn: the fill color alone is not
+      // the text's color, and there is no model for combining the two, so
       // it defers to manual review as a text-shadow does.
       if (cur === el && !placeholder) {
         let strokeWidth;
@@ -124148,7 +124148,7 @@ const resolveMargin = (function resolveMargin(declaration, candidates, measuredC
 
   // Collect every candidate tied at the smallest headroom first, and settle
   // the tie once at the end. Comparing each tie against the current best in
-  // the loop was quadratic: on a page where most text shares a colour every
+  // the loop was quadratic: on a page where most text shares a color every
   // candidate ties, and in Blink each compareDocumentPosition walks the
   // siblings between the two elements.
   let ties = [];
@@ -125850,7 +125850,7 @@ const runCoreSettled = (function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the colour is known to be usable.
+    // Set below, once the color is known to be usable.
     return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
   }
 

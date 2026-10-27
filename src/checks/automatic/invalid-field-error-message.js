@@ -5,7 +5,7 @@
 /**
  * @check invalid-field-error-message
  * @atomic true
- * @summary A field marked invalid must have a shown error message in text
+ * @summary A field marked invalid should have a shown error message in text
  * @standard WCAG 2.2
  * @sc 3.3.1
  * @applicability
@@ -111,9 +111,9 @@
 const id = 'invalid-field-error-message';
 
 const meta = {
-  title: 'Fields marked invalid must have a shown error message',
+  title: 'Fields marked invalid should have a shown error message',
   description:
-    'Checks that an element with aria-invalid has an error message in text: its aria-errormessage must name a shown element with text, and a field with no linked message is asked about.',
+    'Checks that an element with aria-invalid has an error message in text: its aria-errormessage should name a shown element with text, and a field with no linked message is asked about.',
   i18n: {
     titleKey: 'invalidFieldErrorMessage_title',
     descriptionKey: 'invalidFieldErrorMessage_description'

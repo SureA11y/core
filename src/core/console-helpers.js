@@ -194,7 +194,7 @@ function consoleHelpers(global, api, scriptSrc) {
   // The layer highlight() and inspect() draw in: one element added to the
   // page, holding a shadow root, hidden from assistive technology and inert.
   // Each mark is a box over an element with a label above it; `kind` picks
-  // its colour. The labels' white text is above 7:1 on each colour, so a
+  // its color. The labels' white text is above 7:1 on each color, so a
   // scan run with them on the page finds nothing in them to report. Returns
   // how many marks it drew; an element with no box (display: none) is
   // skipped. The boxes are placed from the probe, so a transform, zoom,

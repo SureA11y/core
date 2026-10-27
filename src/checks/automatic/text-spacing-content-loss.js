@@ -48,7 +48,7 @@
  *     sheet to the page cannot override it, though a user style sheet can.
  *     A value relative to the font size is read as declared, and a computed
  *     one meets the value within the rounding browsers report lengths with,
- *     so a rule setting exactly the minimum is not asked about (#108).
+ *     so a rule setting exactly the minimum is not asked about.
  *   - The spacing is applied with a <style> element, or, where the page's
  *     Content Security Policy blocks one, as a style sheet the document
  *     adopts. Where neither applies, the page is asked about

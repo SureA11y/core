@@ -41,7 +41,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><video src="x.mp4"></video></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Prerecorded video should provide a captions track');
+  assert.strictEqual(rule.title, 'Prerecorded video should provide complete captions');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/video-caption-all-scenarios.html)`, () => {

@@ -9,7 +9,7 @@
  * have no layout box of their own but are drawn (the selected one in the
  * closed control, the others in the list it opens), so they are checked, as
  * text below the fold is: the closed control as the select, and an option
- * with colours of its own that only the open list shows is asked about by
+ * with colors of its own that only the open list shows is asked about by
  * contrast-computable. jsdom has no layout, so these tests run in
  * Chromium.
  *

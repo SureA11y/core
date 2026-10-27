@@ -78,7 +78,7 @@
  *     the element that keeps focus, and the action may be offered by another
  *     control of the page.
  * @reports
- *   - `role`: the element's ARIA role, or '' for none.
+ *   - `role`: the element's ARIA role, or `''` for none.
  *   - `focusable`: whether the element itself can take focus.
  * @reason-codes
  *   - `CLICK_HANDLER_NO_KEY_LISTENER` (fail): a button, link, checkbox,
@@ -160,7 +160,7 @@ const id = 'click-handler-keyboard-operable';
 const meta = {
   title: 'Click handlers on elements that are not native controls must work by keyboard',
   description:
-    'Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and has a key handler, so a keyboard user can run what a click runs.',
+    'Checks that an element that is not a native control and has a click handler (an inline onclick, or a click listener the listener hook saw) can take keyboard focus and that a key handler on it, an ancestor or a descendant receives its keys, so a keyboard user can run what a click runs.',
   i18n: {
     titleKey: 'clickHandlerKeyboardOperable_title',
     descriptionKey: 'clickHandlerKeyboardOperable_description'

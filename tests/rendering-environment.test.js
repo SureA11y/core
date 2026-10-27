@@ -1,7 +1,7 @@
 'use strict';
 
 /**
- * engine.environment without a layout. The browser side (viewport, colour
+ * engine.environment without a layout. The browser side (viewport, color
  * scheme, fonts) is tested in Chromium, in
  * engine-checks/automatic/text-spacing-content-loss-chromium.test.js.
  */

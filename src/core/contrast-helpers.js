@@ -422,12 +422,12 @@ function createContrastHelpers(opts, shared) {
   //
   // A drop-down select (no `multiple`, a size of 1 or none) shows its
   // selected option in the closed control, drawn in the select's own
-  // colour, font and background whatever colours the option has. Its
+  // color, font and background whatever colors the option has. Its
   // other options are shown only in the list it opens, which the platform
-  // draws, in the options' colours or in its own. A list box (`multiple`,
+  // draws, in the options' colors or in its own. A list box (`multiple`,
   // or a size above 1) draws its options as they are styled, and so does a
   // customizable select (`appearance: base-select`), whose list the page
-  // styles; both are left to the options' own colours. A customizable
+  // styles; both are left to the options' own colors. A customizable
   // select with no <button> of its own shows its selected option in the
   // closed control as a drop-down does.
 
@@ -436,7 +436,7 @@ function createContrastHelpers(opts, shared) {
   // For el, an <option> of a drop-down select or an element in one:
   // { select, option, shown, differs }, where shown says whether the option
   // is the one the closed control shows, and differs names the first of
-  // its colours that isn't the select's ({ el, property, value }), or is
+  // its colors that isn't the select's ({ el, property, value }), or is
   // null. Null for every other element.
   function __dropDownOption(el) {
     if (!el || dom.nodeType(el) !== 1) return null;
@@ -448,7 +448,7 @@ function createContrastHelpers(opts, shared) {
       const selectCs = select ? __contrastComputedStyle(select) : null;
       // A customizable select draws its closed control from the page's own
       // <button>, measured as any element; without one, from the selected
-      // option, in the select's colours, as a drop-down does. Its other
+      // option, in the select's colors, as a drop-down does. Its other
       // options are in the list the page styles.
       const base = !!selectCs && String(selectCs.appearance || '') === 'base-select';
       const ownButton =
@@ -516,10 +516,10 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The element whose colours, font and background el's text is drawn in,
+  // The element whose colors, font and background el's text is drawn in,
   // where that is not el: for text in a drop-down select's shown option,
-  // and in any other of its options whose colours are the select's, the
-  // select. Null otherwise: an option with colours of its own, shown only
+  // and in any other of its options whose colors are the select's, the
+  // select. Null otherwise: an option with colors of its own, shown only
   // in the list the platform draws, is asked about instead
   // (getComputabilityBlocker, SELECT_OPTION_COLOR).
   function __closedSelectTextOwner(el) {
@@ -965,8 +965,8 @@ function createContrastHelpers(opts, shared) {
           if (!isVisibleEligible(el)) continue;
           if (isInactive(el)) continue;
           // A drop-down select's shown option is drawn by the closed
-          // control, in the select's colours and font, as are its other
-          // options that have the select's colours: the select is measured.
+          // control, in the select's colors and font, as are its other
+          // options that have the select's colors: the select is measured.
           const owner = __closedSelectTextOwner(el) || el;
           if (isSameColorAsBackground(owner)) continue;
 
@@ -1827,10 +1827,10 @@ function createContrastHelpers(opts, shared) {
       }
     } catch {}
 
-    // An emulator that resolves no system colour hands the keyword back as
+    // An emulator that resolves no system color hands the keyword back as
     // the computed value (jsdom 26 computes an unstyled text's color as
-    // "canvastext", and a button's colours as "buttontext" on "buttonface"),
-    // and the probe above gets it back the same. Such a page has no colour
+    // "canvastext", and a button's colors as "buttontext" on "buttonface"),
+    // and the probe above gets it back the same. Such a page has no color
     // scheme of its own to follow, so these are the light scheme's in
     // Chromium, as __SCHEME_COLORS gives them for jsdom. A browser always
     // resolves them, so it never gets here.
@@ -1914,7 +1914,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Rounded to 12 decimals: past that, a ratio's digits depend on the order
-  // the colours were composited in, which differs between jsdom and a
+  // the colors were composited in, which differs between jsdom and a
   // browser (1.0778038367054583 against 1.077803836705458), and one page
   // would report two numbers. The thresholds have two decimals, so no
   // outcome turns on a digit this far down.
@@ -2214,7 +2214,7 @@ function createContrastHelpers(opts, shared) {
         const matched =
           images.length === 1 ||
           [sizes, positions, repeats].every((l) => l.length === images.length);
-        // currentColor: el's colour, in the scheme the page is drawn in.
+        // currentColor: el's color, in the scheme the page is drawn in.
         const currentColor = __schemeTextOverride(el) || parseCssColorToRgba(cs.color);
         const px = (t) =>
           /^-?[\d.]+px$/.test(t) ? Number.parseFloat(t) : /^0%?$/.test(t) ? 0 : NaN;
@@ -2476,7 +2476,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Whether a visible -webkit-text-stroke or text-shadow draws el's glyphs.
-  // Text whose fill is transparent, or the colour of its background, is not
+  // Text whose fill is transparent, or the color of its background, is not
   // drawn by its fill, but an outline or a shadow still draws it: outlined
   // headings are a common design, and WCAG's techniques count an outline or
   // halo in a text's contrast (G18, G145). Such text is not skipped as
@@ -2494,7 +2494,7 @@ function createContrastHelpers(opts, shared) {
       if (width > 0 && !(stroke && stroke.a === 0)) return true;
       const shadow = __textShadowInfoEl(el, cs);
       if (!shadow.has) return false;
-      // A shadow drawn only in transparent colours draws nothing.
+      // A shadow drawn only in transparent colors draws nothing.
       const colors =
         String(shadow.value).match(/rgba?\([^)]*\)|#[0-9a-f]{3,8}\b|transparent/gi) || [];
       return !(
@@ -2509,10 +2509,10 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // The colours el's glyphs are drawn in by a visible -webkit-text-stroke
+  // The colors el's glyphs are drawn in by a visible -webkit-text-stroke
   // and text-shadow, for text whose fill draws nothing: { colors, complete }.
-  // complete is false when a colour can't be read, so a caller never
-  // concludes from part of what is drawn. Each colour keeps its own alpha.
+  // complete is false when a color can't be read, so a caller never
+  // concludes from part of what is drawn. Each color keeps its own alpha.
   function getOutlineColors(el) {
     const out = { colors: [], complete: true };
     try {
@@ -2532,7 +2532,7 @@ function createContrastHelpers(opts, shared) {
       }
       const shadow = __textShadowInfoEl(el, cs);
       if (shadow.has) {
-        // One shadow per comma outside parentheses, each with one colour.
+        // One shadow per comma outside parentheses, each with one color.
         const parts = [];
         let depth = 0;
         let start = 0;
@@ -2559,12 +2559,12 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Text drawn by a stroke or a shadow, measured by the best of the colours
+  // Text drawn by a stroke or a shadow, measured by the best of the colors
   // it is drawn in against a flat background, its fill among them when the
   // fill is seen: { ratio, drawn, background, isLargeText, drawnBy, bg }, or
-  // null when the background isn't one opaque colour, a colour can't be
+  // null when the background isn't one opaque color, a color can't be
   // read, or the text is a placeholder with its fill seen (the rules judge
-  // placeholders by whose colours they are). Below the ratio, no reading of
+  // placeholders by whose colors they are). Below the ratio, no reading of
   // the text meets it (ACT: "If all background pixels have a low contrast
   // with all foreground pixels, the success criterion is guaranteed to not
   // be satisfied"); above it, how legible the outline is takes a person.
@@ -2700,26 +2700,26 @@ function createContrastHelpers(opts, shared) {
     return value;
   }
 
-  // -------- Link colours under jsdom --------
+  // -------- Link colors under jsdom --------
   //
   // jsdom's cascade orders its own style sheet's rules with the page's by
   // specificity alone, ignoring origin, so its `:link { color: #0000EE }`
   // beats a page's `a { color: #fff }`, which a browser applies: a white
-  // link read back as blue, and text measured in a colour no browser draws.
-  // Under jsdom, the colour of a link (`a` or `area` with an href), and of
-  // the text inside it that takes its colour from it, is worked out here
+  // link read back as blue, and text measured in a color no browser draws.
+  // Under jsdom, the color of a link (`a` or `area` with an href), and of
+  // the text inside it that takes its color from it, is worked out here
   // from the page's own rules, as a browser's cascade does: the author's
   // declarations win over the browser's whatever their specificity, ordered
   // among themselves by !important, the style attribute, specificity and
-  // order. Where no author rule sets it, the browser's link colour stands,
+  // order. Where no author rule sets it, the browser's link color stands,
   // and jsdom's value is right. Where it can't be worked out (a sheet that
   // can't be read, a selector or value it can't follow, a rule whose
-  // condition it can't tell), the colour is unknown, and the text is not
+  // condition it can't tell), the color is unknown, and the text is not
   // computable rather than measured in jsdom's blue.
   //
-  // __jsdomLinkTextColor(el): a colour value for el's text, null where it
+  // __jsdomLinkTextColor(el): a color value for el's text, null where it
   // can't be worked out, or undefined where jsdom's own value stands (a
-  // browser, text outside any link, a link no author rule colours).
+  // browser, text outside any link, a link no author rule colors).
   const __jsdomByDoc = new WeakMap();
   function __underJsdom(doc) {
     if (!doc) return false;
@@ -2827,7 +2827,7 @@ function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
-  // The style rules that set a colour property (`color`, or
+  // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
   // @media for all or screen. A rule under a condition jsdom doesn't
@@ -3056,7 +3056,7 @@ function createContrastHelpers(opts, shared) {
   }
   function __jsdomLinkTextColorUncached(el) {
     if (!__underJsdom(dom.ownerDocument(el))) return undefined;
-    // Only text in a link: the browser's sheet sets the colour of nothing
+    // Only text in a link: the browser's sheet sets the color of nothing
     // else that jsdom ranks differently.
     let inLink = false;
     for (let cur = el, depth = 0; cur && depth < 200; depth++) {
@@ -3078,11 +3078,11 @@ function createContrastHelpers(opts, shared) {
     const decl = __authorColorOf(el);
     if (decl && decl.unknown) return null;
     if (!decl) {
-      // A link no author rule colours is in the browser's link colour, as
+      // A link no author rule colors is in the browser's link color, as
       // jsdom 29 has it. jsdom 26 gives it none, and the link takes its
-      // parent's colour: it is then the light scheme's link colour, as
-      // jsdom 29's. Text inside one takes its colour from its parent,
-      // unless the browser's sheet colours it (a <mark>): jsdom then gives
+      // parent's color: it is then the light scheme's link color, as
+      // jsdom 29's. Text inside one takes its color from its parent,
+      // unless the browser's sheet colors it (a <mark>): jsdom then gives
       // it a value of its own.
       if (__isLink(el)) {
         const cs = __contrastComputedStyle(el);
@@ -3105,11 +3105,11 @@ function createContrastHelpers(opts, shared) {
     return parseCssColorToRgba(decl.value) ? decl.value : null;
   }
 
-  // Whether the page sets el's -webkit-text-fill-color to a colour of its
+  // Whether the page sets el's -webkit-text-fill-color to a color of its
   // own, on el or an ancestor it inherits from: true, false where it
   // follows color, null where it can't be told. jsdom computes a fill that
-  // follows color as that colour, so a fill the page sets to jsdom's own
-  // link colour reads the same as one that follows it.
+  // follows color as that color, so a fill the page sets to jsdom's own
+  // link color reads the same as one that follows it.
   function __jsdomAuthorFill(el) {
     for (let cur = el, depth = 0; cur && dom.nodeType(cur) === 1 && depth < 200; depth++) {
       const decl = __authorColorOf(cur, '-webkit-text-fill-color');
@@ -3125,12 +3125,12 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // The colour value el's HTML text is painted in, from its computed style
+  // The color value el's HTML text is painted in, from its computed style
   // cs, before any opacity: -webkit-text-fill-color, else color, with the
-  // colour of text in a link worked out from the page's rules under jsdom
+  // color of text in a link worked out from the page's rules under jsdom
   // (__jsdomLinkTextColor). '' where it can't be worked out. jsdom
-  // computes the fill as the colour it follows; one that differs is the
-  // page's own, and paints it, as does one the page sets to that colour.
+  // computes the fill as the color it follows; one that differs is the
+  // page's own, and paints it, as does one the page sets to that color.
   function __htmlTextFillOf(el, cs) {
     const fillValue = __textFillOfEl(el, cs);
     let fill = String(cs.webkitTextFillColor || cs['-webkit-text-fill-color'] || '').trim();
@@ -3151,7 +3151,7 @@ function createContrastHelpers(opts, shared) {
     return authored ? fillValue : link;
   }
 
-  // textFillColor(el): the colour value el's text is painted in, before any
+  // textFillColor(el): the color value el's text is painted in, before any
   // opacity, as computeEffectiveForeground reads it ('' where it can't be
   // worked out).
   function textFillColor(el) {
@@ -3207,17 +3207,17 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colour el's text has in a color scheme other than the one whose
-  // colours were computed: in contrast.colorScheme, on the page's canvas,
+  // The color el's text has in a color scheme other than the one whose
+  // colors were computed: in contrast.colorScheme, on the page's canvas,
   // where opts give one; otherwise, in an emulator, in the dark scheme a
   // page drawn only in dark is in, wherever the text is (an emulator
-  // computes the light scheme's colours). Null where the colour computed
+  // computes the light scheme's colors). Null where the color computed
   // now is the one, or it can't be told (colorSchemeUnread).
   function __schemeTextOverride(el, opts) {
     const asked = opts && opts.contrast ? opts.contrast.colorScheme : null;
     const scheme = asked === 'light' || asked === 'dark' ? asked : null;
     if (!scheme) {
-      // A browser computes the colours of the scheme it draws.
+      // A browser computes the colors of the scheme it draws.
       if (!__emulatorWindow()) return null;
       const info = __pageSchemes();
       if (!info || info.laidOut || info.current !== 'dark') return null;
@@ -3232,7 +3232,7 @@ function createContrastHelpers(opts, shared) {
     return bg && bg.ok && bg.canvas && bg.canvas.text ? bg.canvas.text : null;
   }
 
-  // opts.contrast.colorScheme: the text's colour in that scheme, on the
+  // opts.contrast.colorScheme: the text's color in that scheme, on the
   // page's canvas (__schemeTextColor), where it isn't the one computed now.
   function computeEffectiveForeground(el, opts) {
     const schemeOverride = el ? __schemeTextOverride(el, opts) : null;
@@ -3278,13 +3278,13 @@ function createContrastHelpers(opts, shared) {
     // of none (outline-only text) or a paint server (url(#gradient)) does
     // not parse, and leaves the text not computable.
     const svgText = __isSvgTextElement(el);
-    // Text in a link, under jsdom, whose colour jsdom ranks below its own
-    // link colour, is read from the page's rules (__htmlTextFillOf).
+    // Text in a link, under jsdom, whose color jsdom ranks below its own
+    // link color, is read from the page's rules (__htmlTextFillOf).
     const fillValue =
       cs && (svgText ? cs.fill : placeholder ? __textFillOf(cs) : __htmlTextFillOf(el, cs));
     let c = parseCssColorToRgba(fillValue);
     // On the canvas of a page drawn only in dark, in an emulator: the dark
-    // scheme's colour where the text takes it from the scheme.
+    // scheme's color where the text takes it from the scheme.
     if (c && schemeOverride) {
       c = {
         r: schemeOverride.r,
@@ -3353,10 +3353,10 @@ function createContrastHelpers(opts, shared) {
     return `${mode}|${rootCanvasFallback}|${named}|${scheme}`;
   }
 
-  // The canvas the browser paints behind the root: the Canvas system colour
+  // The canvas the browser paints behind the root: the Canvas system color
   // of the root's color scheme, white unless the page asks for dark, where
   // Chromium paints #121212. Read once per run, from an element the engine
-  // adds and removes at once, which is how the Canvas system colour
+  // adds and removes at once, which is how the Canvas system color
   // resolves for the page. Null where nothing resolves it (jsdom).
   let __canvas;
   function __pageCanvasColor() {
@@ -3384,7 +3384,7 @@ function createContrastHelpers(opts, shared) {
       let laidOut = false;
       try {
         // Only a page with a layout paints a canvas: an emulator (jsdom)
-        // resolves system colours to fixed values and measures every box at
+        // resolves system colors to fixed values and measures every box at
         // zero, so it has none to read.
         laidOut = dom.getBoundingClientRect(probe).width === 1;
         bg = String(window.getComputedStyle(probe).backgroundColor || '');
@@ -3473,7 +3473,7 @@ function createContrastHelpers(opts, shared) {
   // -------- The page's canvas, in each color scheme it supports --------
   //
   // Behind a page that paints no opaque background the browser paints its
-  // canvas, in the Canvas system colour of the root's used color scheme
+  // canvas, in the Canvas system color of the root's used color scheme
   // (CSS Color Adjustment 1, §2.1). Which schemes a page supports is its
   // own statement: the root's color-scheme, or, while that is normal, its
   // <meta name="color-scheme">. A page that states none is drawn in the
@@ -3482,7 +3482,7 @@ function createContrastHelpers(opts, shared) {
   // the page and the user's preference, as the browser defines it, not
   // from an assumption.
 
-  // The Canvas, CanvasText and LinkText system colours of each scheme in
+  // The Canvas, CanvasText and LinkText system colors of each scheme in
   // Chromium (read in Chromium 153), for an emulator that resolves them to
   // fixed light values and lays nothing out (jsdom). A browser's own are
   // read from the page instead.
@@ -3509,7 +3509,7 @@ function createContrastHelpers(opts, shared) {
   // current the one it is drawn in now (the user's preference where the
   // page supports it, else the first it names), and colors each scheme's
   // { canvas, text, link } as rgba. laidOut: a browser drew the page, so
-  // its computed colours are the current scheme's; an emulator's are the
+  // its computed colors are the current scheme's; an emulator's are the
   // light scheme's, without its prefers-color-scheme rules. Null under
   // forced colors, where the canvas is the user's palette, and where
   // nothing can be read.
@@ -3563,7 +3563,7 @@ function createContrastHelpers(opts, shared) {
         };
       }
 
-      // In a browser, each scheme's system colours are read from an
+      // In a browser, each scheme's system colors are read from an
       // element the engine adds and removes at once, and the scheme the
       // page is drawn in from the Canvas it inherits from the root.
       // An emulator lays nothing out: nothing to read there, and the page
@@ -3618,7 +3618,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Whether the engine runs in an emulator (jsdom, by its user agent),
-  // which computes the light scheme's colours whatever the page's scheme.
+  // which computes the light scheme's colors whatever the page's scheme.
   let __emulator;
   function __emulatorWindow() {
     if (__emulator !== undefined) return __emulator;
@@ -3649,10 +3649,10 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The style rules of a document's or shadow root's sheets that may make
-  // a colour depend on the color scheme: those inside an @media on
+  // a color depend on the color scheme: those inside an @media on
   // prefers-color-scheme (`pcs`, with the scheme it names: light, dark or
-  // unknown), and those setting a colour, a background or a custom property
-  // to light-dark() or a system colour (`keyword`). Every condition is
+  // unknown), and those setting a color, a background or a custom property
+  // to light-dark() or a system color (`keyword`). Every condition is
   // taken as met. { pcs: [{ parts, scheme }], keyword: [{ parts }],
   // unreadable }, once per root.
   const __SCHEME_PROPS = /^(color|-webkit-text-fill-color|background|background-color)$|^--/i;
@@ -3664,7 +3664,7 @@ function createContrastHelpers(opts, shared) {
       .replace(/"[^"]*"|'[^']*'/g, '');
     return __SCHEME_VALUE.test(v);
   }
-  // Which of a declaration block's colours follow the scheme: { color }
+  // Which of a declaration block's colors follow the scheme: { color }
   // for the text's (color, -webkit-text-fill-color), { back } for a
   // background or a custom property, which may feed either; null for none.
   function __styleFollowsScheme(style) {
@@ -3782,12 +3782,12 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // How the colours behind el's text, and its own, may depend on the color
+  // How the colors behind el's text, and its own, may depend on the color
   // scheme, from el and its ancestors: { pcs, keyword, keywordColor,
   // keywordBack, unknown }. pcs: the schemes of the prefers-color-scheme
-  // rules matching one of them; keywordColor: a text colour, keywordBack a
+  // rules matching one of them; keywordColor: a text color, keywordBack a
   // background or a custom property, set to light-dark() or a system
-  // colour (keyword: either); unknown: a sheet or a selector that can't be
+  // color (keyword: either); unknown: a sheet or a selector that can't be
   // read.
   const __schemeDependenceCache = new WeakMap();
   const __noDependence = () => ({
@@ -3847,12 +3847,12 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // Where el's text colour comes from: 'author', a colour of the page's
+  // Where el's text color comes from: 'author', a color of the page's
   // own, the same in every scheme ('authorFill' where it is a
-  // -webkit-text-fill-color); 'canvasText', the scheme's text colour (no
-  // rule colours it or an ancestor); 'linkText', the browser's link colour;
+  // -webkit-text-fill-color); 'canvasText', the scheme's text color (no
+  // rule colors it or an ancestor); 'linkText', the browser's link color;
   // { value }, a value the page gives that picks by the scheme (light-dark(),
-  // a system colour); null where it can't be told, or is another colour of
+  // a system color); null where it can't be told, or is another color of
   // the browser's (a field's, a button's, a mark's). SVG text, and text cut
   // out of a background, are left at null.
   const __UA_COLOURED = new Set([
@@ -3922,9 +3922,9 @@ function createContrastHelpers(opts, shared) {
     return 'canvasText';
   }
 
-  // A colour value that picks by the scheme, in `scheme`: light-dark()'s
-  // first or second colour, a system colour the scheme defines (CanvasText,
-  // LinkText, Canvas: __pageSchemes), or a colour; null for anything else.
+  // A color value that picks by the scheme, in `scheme`: light-dark()'s
+  // first or second color, a system color the scheme defines (CanvasText,
+  // LinkText, Canvas: __pageSchemes), or a color; null for anything else.
   function __resolveSchemeColor(value, scheme, info) {
     const v = String(value || '').trim();
     const pick = /^light-dark\(([\s\S]*)\)$/i.exec(v);
@@ -3944,7 +3944,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Whether the browser paints a background of its own, in the scheme's
-  // system colours, behind el's text: el or an ancestor is a form control,
+  // system colors, behind el's text: el or an ancestor is a form control,
   // a mark, a dialog or a popover whose background the page doesn't set.
   const __UA_PAINTED = new Set([
     'input',
@@ -3980,18 +3980,18 @@ function createContrastHelpers(opts, shared) {
     return false;
   }
 
-  // el's text colour in `scheme`: { color } with color null where it is
-  // the colour computed now, or the colour it has in that scheme (the
+  // el's text color in `scheme`: { color } with color null where it is
+  // the color computed now, or the color it has in that scheme (the
   // scheme's CanvasText or LinkText where the text takes it from the
-  // scheme; a light-dark() or system colour the page gives, worked out);
-  // null where it can't be told. The colours computed now are the scheme a
+  // scheme; a light-dark() or system color the page gives, worked out);
+  // null where it can't be told. The colors computed now are the scheme a
   // browser draws, or, in an emulator, the light one with no
   // prefers-color-scheme rule applied. In an emulator, a page drawn in dark
-  // has its text's colours worked out here: not where a
+  // has its text's colors worked out here: not where a
   // prefers-color-scheme rule for dark reaches them, a background behind
   // them picks by the scheme, or the browser paints one there. A scheme the
   // page isn't drawn in is told only where no prefers-color-scheme rule,
-  // light-dark() or system colour reaches the text's colour or the
+  // light-dark() or system color reaches the text's color or the
   // backgrounds behind it.
   function __schemeTextColor(el, scheme) {
     const info = __pageSchemes();
@@ -4018,12 +4018,12 @@ function createContrastHelpers(opts, shared) {
     return null;
   }
 
-  // The scheme an emulator can't give el's text colours in: the page is
+  // The scheme an emulator can't give el's text colors in: the page is
   // drawn in it, and they can't be worked out (__schemeTextColor). An
-  // emulator computes the light scheme's colours and applies no
+  // emulator computes the light scheme's colors and applies no
   // prefers-color-scheme rule, so on a page drawn in light only text such
-  // a rule reaches; on one drawn in dark, text whose colours there can't be
-  // told. Null in a browser, which computes the colours it draws.
+  // a rule reaches; on one drawn in dark, text whose colors there can't be
+  // told. Null in a browser, which computes the colors it draws.
   function colorSchemeUnread(el) {
     try {
       if (!window || !el || dom.nodeType(el) !== 1) return null;
@@ -4102,7 +4102,7 @@ function createContrastHelpers(opts, shared) {
   }
 
   // The canvas under el's text in the scheme the page is drawn in, where
-  // the colours computed now are that scheme's (see __canvasFor); null
+  // the colors computed now are that scheme's (see __canvasFor); null
   // otherwise, which leaves it to the contrast mode
   // (computeEffectiveBackground).
   function __measuredCanvasUnder(el) {
@@ -4111,8 +4111,8 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Whether el's text can be measured on the page's canvas in `scheme`, one
-  // the page supports but isn't drawn in now: its colours and the
-  // backgrounds behind it are the same in that scheme, or its colour is
+  // the page supports but isn't drawn in now: its colors and the
+  // backgrounds behind it are the same in that scheme, or its color is
   // the scheme's own (__schemeTextColor).
   function colorSchemeMeasurable(el, scheme) {
     try {
@@ -4376,7 +4376,7 @@ function createContrastHelpers(opts, shared) {
           alpha: acc.a,
           stack: stack || [],
           reasonCode: 'BACKGROUND_NOT_OPAQUE_AT_ROOT',
-          // On a page whose canvas is known, the text's colour in the
+          // On a page whose canvas is known, the text's color in the
           // scheme it is drawn in could not be told (__schemeTextColor).
           ...(__inCanvasScope(el) ? { textColorUnknown: true } : {})
         };
@@ -4564,7 +4564,7 @@ function createContrastHelpers(opts, shared) {
       }
 
       // The browser's canvas, where it was read, lies under the root and
-      // outside every group, so both colours are composited onto it.
+      // outside every group, so both colors are composited onto it.
       const canvas = bgAcc.a < 1 || fgAcc.a < 1 ? __measuredCanvasUnder(el) : null;
       if (canvas) {
         bgAcc = compositeRgba(bgAcc, canvas);
@@ -4655,7 +4655,7 @@ function createContrastHelpers(opts, shared) {
   // item's marker, is drawn, but no text node holds it, so the text walk
   // never meets it. It is read from the pseudo-element's computed style,
   // which only a browser gives (jsdom computes none), and measured in the
-  // pseudo-element's colour and font, against its element's background and
+  // pseudo-element's color and font, against its element's background and
   // its own if it has one.
 
   // ::before and ::after: their styles are read only for the elements a
@@ -5070,8 +5070,8 @@ function createContrastHelpers(opts, shared) {
   // Measures the text el's `pseudo` generates (__generatedTextOf): null
   // where it draws none; { ok: false, reasonCode, blocker... } where its
   // contrast can't be worked out; otherwise { ok: true, fg, bg, ratio,
-  // fontSizePx, fontWeightNum, same }, the colours opaque, the font size as
-  // drawn (CSS zoom included), and same when the text is the colour of its
+  // fontSizePx, fontWeightNum, same }, the colors opaque, the font size as
+  // drawn (CSS zoom included), and same when the text is the color of its
   // background. bgOpts as computeEffectiveBackground's.
   function measureGeneratedText(el, pseudo, bgOpts) {
     try {
@@ -5091,7 +5091,7 @@ function createContrastHelpers(opts, shared) {
       if (!gen.readable) return blocked('GENERATED_TEXT_UNREADABLE', 'content', gen.value);
 
       // Effects on the generated text itself, which draw something other
-      // than its declared colours.
+      // than its declared colors.
       if (hasBlendMode(ps)) return blocked('MIX_BLEND_MODE', 'mix-blend-mode', ps.mixBlendMode);
       if (hasFilter(ps)) {
         const filter = trim(ps.filter);
@@ -5204,16 +5204,16 @@ function createContrastHelpers(opts, shared) {
   }
 
   // Whether the text el shows is its placeholder: below its ratio, the
-  // contrast rules fail it, pass it or ask about it by whose colours they
+  // contrast rules fail it, pass it or ask about it by whose colors they
   // are (placeholderColourSource).
   function isPlaceholderText(el) {
     const field = __fieldText(el);
     return !!(field && field.placeholder);
   }
 
-  // Where a field's placeholder colours come from: 'browser' when its
+  // Where a field's placeholder colors come from: 'browser' when its
   // color, opacity and background, and the field's own background, are all
-  // the browser's (WCAG G148: colours left to the browser count as meeting
+  // the browser's (WCAG G148: colors left to the browser count as meeting
   // the ratio), 'page' when the page changed any of them, '' when that
   // can't be told (no layout, or no blank frame to compare with). The
   // browser's values are read from the same kind of field in a blank
@@ -5290,10 +5290,10 @@ function createContrastHelpers(opts, shared) {
 
   // A drop-down <select> whose background is the browser's own is drawn
   // as the platform draws a field: Chromium paints it in the Field system
-  // colour (white), though its computed background is ButtonFace (#efefef),
+  // color (white), though its computed background is ButtonFace (#efefef),
   // which other browsers may paint. Text the page coloured on it fails if
   // it fails in either, so the contrast rules measure it against both. This
-  // gives the Field colour, as an rgba, for such a select when it differs
+  // gives the Field color, as an rgba, for such a select when it differs
   // from the computed background; null otherwise, and for a select the page
   // gave a background, a list box, a customizable select, or no layout.
   // The browser's values are read once per color-scheme in a blank frame,
@@ -5370,7 +5370,7 @@ function createContrastHelpers(opts, shared) {
   // (brand, marque, marca) name one only when every word of the token is
   // about the site's name ("brand", "navbar-brand", "site-brand",
   // "brand-name"): "btn-brand", "text-brand-500" and "brand-story" are
-  // colours and sections in a brand's style, and "site-branding" commonly
+  // colors and sections in a brand's style, and "site-branding" commonly
   // holds the tagline beside the logo.
   const __LOGO_WORDS = new Set(['logo', 'logos', 'logotype', 'wordmark']);
   const __BRAND_WORDS = new Set(['brand', 'marque', 'marca']);
@@ -5526,16 +5526,16 @@ function createContrastHelpers(opts, shared) {
     __getSharedWeakMapCache('__computabilityBlockerCache') || __localComputabilityBlockerCache;
 
   // What stops el's contrast being computed, or { ok: true }. A
-  // ::first-line or ::first-letter in a colour of its own
-  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colours, as
+  // ::first-line or ::first-letter in a color of its own
+  // (PSEUDO_ELEMENT_COLOR) also carries that pseudo-element's colors, as
   // `pseudoColors`, when nothing else stands in the way: each rule can then
-  // measure both colours against its own threshold, and decide where they
+  // measure both colors against its own threshold, and decide where they
   // agree (measurePseudoElementText).
   function getComputabilityBlocker(el) {
     try {
       if (el && __computabilityBlockerCache.has(el)) return __computabilityBlockerCache.get(el);
     } catch {}
-    // The text's colours in the scheme the page is drawn in can't be read
+    // The text's colors in the scheme the page is drawn in can't be read
     // (an emulator: colorSchemeUnread), so whatever else is in the way, they
     // are what is unknown.
     const unread = colorSchemeUnread(el);
@@ -5556,7 +5556,7 @@ function createContrastHelpers(opts, shared) {
     if (out && out.ok === false && out.reasonCode === 'PSEUDO_ELEMENT_COLOR' && out.__pseudo) {
       const pseudo = out.__pseudo;
       delete out.__pseudo;
-      // The rest of the walk, past the pseudo-element: its colours are
+      // The rest of the walk, past the pseudo-element: its colors are
       // carried only where nothing else blocks the measurement.
       const rest = __computabilityBlockerOf(el, true);
       if (rest && rest.ok === true) out.pseudoColors = pseudo;
@@ -5569,10 +5569,10 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
-  // The colours of the ::first-line or ::first-letter style that differs
+  // The colors of the ::first-line or ::first-letter style that differs
   // from el's own, for measurePseudoElementText: null when both differ (the
   // first letter is then drawn in one or the other, by rules this does not
-  // model), or when that style draws something other than its colours (a
+  // model), or when that style draws something other than its colors (a
   // background image, a shadow, an outline, an opacity).
   function __pseudoColorsOf(pseudos) {
     if (pseudos.length !== 1) return null;
@@ -5603,13 +5603,13 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
-  // El's text measured in its own colours and in those of the
+  // El's text measured in its own colors and in those of the
   // ::first-line or ::first-letter its blocker carries (pseudoColors):
   // { own, pseudo }, each { fg, bg, ratio, fontSizePx, fontWeightNum,
   // isLargeText }, with `pseudo.pseudo` naming the pseudo-element, and the
-  // background's assumptions. Null when the blocker carries no colours or
+  // background's assumptions. Null when the blocker carries no colors or
   // the background can't be worked out. Which text the pseudo-element
-  // paints depends on line breaks, but where both colours meet a ratio, or
+  // paints depends on line breaks, but where both colors meet a ratio, or
   // both fall short of it, every reading of the text does too.
   function measurePseudoElementText(el, bgOpts) {
     try {
@@ -5672,8 +5672,8 @@ function createContrastHelpers(opts, shared) {
   // stands in the way.
   function __computabilityBlockerOf(el, skipPseudo) {
     // An option of a drop-down select, other than the shown one, with
-    // colours that aren't the select's: it is shown only in the list the
-    // select opens, which the platform draws in those colours or in its
+    // colors that aren't the select's: it is shown only in the list the
+    // select opens, which the platform draws in those colors or in its
     // own, so there is no one way it is drawn to measure.
     const dropDown = __dropDownOption(el);
     if (dropDown && !dropDown.shown && dropDown.differs) {
@@ -5862,12 +5862,12 @@ function createContrastHelpers(opts, shared) {
         return out;
       }
 
-      // ::first-line and ::first-letter paint part of the text in a colour
+      // ::first-line and ::first-letter paint part of the text in a color
       // of their own (a first line in black over #bbb text, a drop cap).
       // Which text is on the first line takes layout to know, so a
-      // pseudo-element whose colour or background differs from the
+      // pseudo-element whose color or background differs from the
       // element's defers to manual review rather than measuring the wrong
-      // colour.
+      // color.
       if (
         !skipPseudo &&
         cur === el &&
@@ -5883,8 +5883,8 @@ function createContrastHelpers(opts, shared) {
         }
         if (__rootStylesFirstLineOrLetter(root)) {
           let out = null;
-          // Each pseudo-element whose colours differ from el's, for the
-          // colours the blocker carries (__pseudoColorsOf).
+          // Each pseudo-element whose colors differ from el's, for the
+          // colors the blocker carries (__pseudoColorsOf).
           const differing = [];
           for (const pseudo of ['::first-line', '::first-letter']) {
             let ps;
@@ -5924,9 +5924,9 @@ function createContrastHelpers(opts, shared) {
         }
       }
 
-      // -webkit-text-stroke outlines each glyph in its own colour, and a
-      // wide stroke is most of what is drawn: the fill colour alone is not
-      // the text's colour, and there is no model for combining the two, so
+      // -webkit-text-stroke outlines each glyph in its own color, and a
+      // wide stroke is most of what is drawn: the fill color alone is not
+      // the text's color, and there is no model for combining the two, so
       // it defers to manual review as a text-shadow does.
       if (cur === el && !placeholder) {
         let strokeWidth;

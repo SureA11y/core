@@ -132,7 +132,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><label for="y">Name</label><label for="y">Name2</label><input id="y" type="text"></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Form controls must not have multiple labels');
+  assert.strictEqual(rule.title, 'Form controls should not have multiple labels');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-single-label-all-scenarios.html)`, () => {

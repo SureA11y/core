@@ -2,19 +2,19 @@
 
 /**
  * Text drawn only by an outline or a shadow: a transparent fill, or a fill
- * the colour of the background, with a visible -webkit-text-stroke or
+ * the color of the background, with a visible -webkit-text-stroke or
  * text-shadow. Outlined headings are a common design. Under ACT's
  * definition the text is visible, since making it transparent changes the
  * pixels, and WCAG's techniques count an outline or halo in its contrast
- * (G18, G145). The engine skipped it as undrawn, or as the same colour as
+ * (G18, G145). The engine skipped it as undrawn, or as the same color as
  * its background, before looking at the stroke or shadow, so a #ccc
  * outline on white (1.61:1) passed in silence. It now gets the review a
  * stroke or shadow gets elsewhere (contrast-computable, TEXT_STROKE or
- * TEXT_SHADOW), except where every colour it is drawn in is below the
+ * TEXT_SHADOW), except where every color it is drawn in is below the
  * ratio against a flat background: no reading of it can meet the
  * criterion (ACT: "guaranteed to not be satisfied"), so the ratio rules
- * fail it by the best of those colours. The same holds for a light fill
- * with a light outline: the fill counts among the colours. Text nothing
+ * fail it by the best of those colors. The same holds for a light fill
+ * with a light outline: the fill counts among the colors. Text nothing
  * draws is still skipped.
  *
  * jsdom has no -webkit-text-stroke, so stroke cases run in Chromium, and
@@ -76,7 +76,7 @@ const ASKED = (reason) => ({
   'contrast-computable': 'cantTell',
   reason
 });
-// Every colour the text is drawn in is below even AA's ratio: no reading of
+// Every color the text is drawn in is below even AA's ratio: no reading of
 // it meets the criterion, so both ratio rules fail it, and
 // contrast-computable doesn't ask about it too.
 const FAILED = {
@@ -170,7 +170,7 @@ test('text drawn by an outline, in Chromium', { skip }, async (t) => {
     });
   }
 
-  // A placeholder is judged by whose colours it is drawn in, so a light
+  // A placeholder is judged by whose colors it is drawn in, so a light
   // one with a light shadow is still asked about.
   await t.test('a light placeholder with a light shadow', async () => {
     const got = await scan(
@@ -185,7 +185,7 @@ test('text drawn by an outline, in Chromium', { skip }, async (t) => {
   });
 });
 
-test('in jsdom, a shadow on a fill the colour of the background or a light fill is measured or asked about, and no shadow is skipped', () => {
+test('in jsdom, a shadow on a fill the color of the background or a light fill is measured or asked about, and no shadow is skipped', () => {
   const light = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #ccc'), {
     runOnly: RULES
   });
@@ -201,7 +201,7 @@ test('in jsdom, a shadow on a fill the colour of the background or a light fill 
 });
 
 // A variant of contrast-minimum at a lower ratio than WCAG's: an outline
-// whose best colour reaches it but not WCAG's AA ratio is left by
+// whose best color reaches it but not WCAG's AA ratio is left by
 // contrast-computable to the ratio rules, and the variant can't decide it,
 // so it asks (TEXT_STROKE). At WCAG's ratios it still fails.
 const { definePack, packScript } = require('../../src/pack.js');

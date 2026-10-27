@@ -8,7 +8,7 @@
  * literally, "" made every text an ANCESTOR_OPACITY question (opacity 0),
  * and "canvastext" a FOREGROUND_UNPARSABLE one. jsdom 29 resolves both, so
  * this window gives its computed styles jsdom 26's way. jsdom 26 also gives
- * a link no colour of its own (it takes its parent's, where a browser draws
+ * a link no color of its own (it takes its parent's, where a browser draws
  * it blue), a button "buttontext" on "buttonface", a text field's color its
  * sheet's "initial", and no text a -webkit-text-fill-color.
  */
@@ -64,7 +64,7 @@ function scan(dom) {
   };
 }
 
-test('an opacity and a text colour jsdom 26 leaves unresolved are read as their initial values', () => {
+test('an opacity and a text color jsdom 26 leaves unresolved are read as their initial values', () => {
   const dom = asJsdom26(createDom(PAGE));
   const p = dom.window.document.querySelector('p');
   assert.equal(dom.window.getComputedStyle(p).opacity, '');
@@ -72,7 +72,7 @@ test('an opacity and a text colour jsdom 26 leaves unresolved are read as their 
 
   const old = scan(dom);
   const now = scan(createDom(PAGE));
-  // No question about the plain text's opacity or colour...
+  // No question about the plain text's opacity or color...
   assert.equal(
     old.computable.outcome,
     'pass',
@@ -86,9 +86,9 @@ test('an opacity and a text colour jsdom 26 leaves unresolved are read as their 
   ]);
 });
 
-// A link on a dark paragraph that sets no colour of its own is drawn blue
+// A link on a dark paragraph that sets no color of its own is drawn blue
 // by a browser, and fails; a button and a text field are drawn in their
-// system colours.
+// system colors.
 const CONTROLS =
   '<!doctype html><html lang="en"><head><title>T</title></head><body><main><h1>Hi</h1>' +
   '<p style="background:#000;color:#fff">Read <a href="#more">more about it</a> here</p>' +

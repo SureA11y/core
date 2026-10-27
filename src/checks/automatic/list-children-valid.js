@@ -40,7 +40,7 @@
  *     tag name per child (`#text` for text placed directly inside).
  *   - `overriddenRoles`: with `LIST_ITEM_ROLE_OVERRIDDEN`, the role of
  *     each such <li>, in order.
- *   - `element` is a stable contract (API_STABILITY.md), unlike the rest of
+ *   - `element` is a stable contract, unlike the rest of
  *     `data.details`.
  * @reason-codes
  *   - `LIST_INVALID_CHILD` (fail): the list holds an element that is not a

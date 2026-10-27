@@ -5,7 +5,7 @@
 /**
  * @check video-caption
  * @atomic true
- * @summary Prerecorded <video> should provide a captions track
+ * @summary Prerecorded <video> should provide complete captions
  * @standard WCAG 2.2
  * @sc 1.2.2
  * @applicability
@@ -52,7 +52,7 @@
 const id = 'video-caption';
 
 const meta = {
-  title: 'Prerecorded video should provide a captions track',
+  title: 'Prerecorded video should provide complete captions',
   description:
     'Asks about each <video>: with no <track kind="captions"> child, whether it has an audio track that needs captions (a subtitles track alone may be a translation only); with one, whether its captions are complete and match the audio.',
   i18n: {

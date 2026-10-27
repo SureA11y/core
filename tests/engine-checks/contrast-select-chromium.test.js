@@ -1,15 +1,15 @@
 'use strict';
 
 // A drop-down <select> (#219) is measured as the closed control draws it:
-// its shown option in the select's own colour, font and background. Its
+// its shown option in the select's own color, font and background. Its
 // other options are shown only in the list it opens, which the platform
-// draws, so one with colours of its own is asked about
+// draws, so one with colors of its own is asked about
 // (SELECT_OPTION_COLOR) rather than measured. A list box and a
 // customizable select draw their options as styled, and are measured so.
-// The options' colours were measured instead: a black select with #bbb
+// The options' colors were measured instead: a black select with #bbb
 // options failed, and a #bbb select with black options passed. A select in
 // the browser's own background is measured against both the computed
-// background and the Field colour Chromium paints, and the lower counts.
+// background and the Field color Chromium paints, and the lower counts.
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -27,7 +27,7 @@ const BODY = [
   '<label>A <select id="a" style="color:#000"><option style="color:#bbb">One</option><option style="color:#bbb">Two</option></select></label>',
   // Drawn #bbb, with black options.
   '<label>B <select id="b" style="color:#bbb"><option style="color:#000">One</option><option style="color:#000">Two</option></select></label>',
-  // The shown option is the selected one; the other has the select's colours.
+  // The shown option is the selected one; the other has the select's colors.
   '<label>C <select id="c" style="color:#000"><option>One</option><option selected style="color:#bbb">Two</option></select></label>',
   // An option's own background is asked about too.
   '<label>D <select id="d" style="color:#000"><option>One</option><option style="background:#ff0">Two</option></select></label>',
@@ -98,7 +98,7 @@ test(
     // A select in the browser's own background: Chromium paints its field
     // white (Field), though the computed background is #efefef, which other
     // browsers may paint. Text that fails on either fails, at the lower
-    // ratio, and the finding gives both colours.
+    // ratio, and the finding gives both colors.
     const q = await browser.newPage();
     await q.setContent(
       '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head><body><main><label>G <select id="g" style="color:#767676"><option>One</option></select></label></main></body></html>'
@@ -134,7 +134,7 @@ test('a customizable select is measured by its options, in Chromium', { skip }, 
   });
 
   // With no <button> of the page's own, the closed control shows the
-  // selected option in the select's colours, as a drop-down does; the
+  // selected option in the select's colors, as a drop-down does; the
   // other options, in the list, in their own.
   const q = await browser.newPage();
   await q.setContent(

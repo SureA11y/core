@@ -110,7 +110,7 @@ export interface EngineOptionFields {
     /**
      * Echoed on each result: whether rootCanvasFallback is one the caller gave
      * (true) or the default white the engine filled in (false). Passed back,
-     * false reads the colour as the default. See docs/ENGINE_OPTIONS.md.
+     * false reads the color as the default. See docs/ENGINE_OPTIONS.md.
      */
     rootCanvasFallbackSet?: boolean;
   };
@@ -269,7 +269,7 @@ export interface SafeDom {
 /** `ctx.helpers`: the helpers docs/RULE_HELPERS.md documents, and no others. */
 export interface RuleHelpers {
   dom: SafeDom;
-  /** Colour and contrast helpers (docs/RULE_HELPERS.md section 7). */
+  /** Color and contrast helpers (docs/RULE_HELPERS.md section 7). */
   contrast: { [name: string]: any };
   /** ARIA helpers (docs/RULE_HELPERS.md section 7). */
   aria: { [name: string]: any };

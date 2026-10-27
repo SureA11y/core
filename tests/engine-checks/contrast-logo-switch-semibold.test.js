@@ -48,21 +48,21 @@ test('logo-like text still fails, with a hint that logo text is exempt', () => {
   }
 });
 
-// A brand's colour classes and sections, a nav link to the home page and a
+// A brand's color classes and sections, a nav link to the home page and a
 // language switcher are not logos: only a logo word, or a token about the
 // site's name, near the text or on its link counts, and a banner's home
 // link only with an image or the site's name in it.
 test('text in a brand’s style or a navigation link is not taken for a logo', () => {
   const html = page(
     `<button class="btn btn-brand" id="btn" style="${GREY}">Buy now</button>` +
-      `<p class="text-brand-500" id="colour" style="${GREY}">Text</p>` +
+      `<p class="text-brand-500" id="color" style="${GREY}">Text</p>` +
       `<section class="brand-story"><div><div><div><p id="deep" style="${GREY}">Story</p></div></div></div></section>` +
       `<div class="site-branding"><p id="tagline" style="${GREY}">Just another site</p></div>` +
       `<header><nav><a href="/" id="home" style="${GREY}">Home</a></nav></header>` +
       `<a class="site-logo" href="/"><span id="logo" style="${GREY}">Acme</span></a>`
   );
   const result = runa11yCoreOnHtml(html, { runOnly: ['contrast-minimum'] });
-  for (const id of ['btn', 'colour', 'deep', 'tagline', 'home'])
+  for (const id of ['btn', 'color', 'deep', 'tagline', 'home'])
     assert.equal(details(result, 'contrast-minimum', id).looksLikeLogo, undefined, id);
   assert.equal(details(result, 'contrast-minimum', 'logo').looksLikeLogo, true);
 });

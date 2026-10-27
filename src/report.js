@@ -226,7 +226,7 @@ function renderTargetChips(engine, ui) {
 
 // The conditions the page was rendered under. A layout-dependent finding
 // can come and go with the viewport width, so the report says which width
-// it describes; colour scheme and loading fonts change contrast and text
+// it describes; color scheme and loading fonts change contrast and text
 // measurements too. Fonts get a chip only while still loading, the case
 // that makes results differ between runs. A result from an older engine has
 // no engine.environment and gets no chips.

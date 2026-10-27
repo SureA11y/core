@@ -81,7 +81,7 @@ Treat it as "needs a human to look" — it's neither pass nor fail by design. A 
 
 ## "What happens if a locale is only partially translated?"
 
-Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Key parity is enforced rather than hoped for: `npm run i18n:sync` carries any new or renamed `en.json` key into every other locale file, and the build fails if one is out of step. A key it adds holds the English text until someone translates it, so a locale can be behind on wording without ever being behind on keys.
+Missing keys fall back to English per-string (never a blank or broken result), so a partial locale degrades gracefully rather than failing outright — see [`I18N.md`](./I18N.md) for the mechanism and current coverage. Key parity is enforced in core's own build rather than hoped for: every new or renamed English key is carried into every other locale file, holding the English text until someone translates it, so a locale can be behind on wording without ever being behind on keys.
 
 ## "`runDomRulesInPage` vs `runa11yCoreInPage` — which one do I want?"
 

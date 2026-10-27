@@ -21,37 +21,37 @@
  *   24px or more, or at 14pt (about 18.667px) or more when the computed font
  *   weight is 700 or higher.
  *   Text drawn by a -webkit-text-stroke or a text-shadow is left to
- *   contrast-computable, except where every colour it is drawn in, its
+ *   contrast-computable, except where every color it is drawn in, its
  *   fill among them unless the fill draws nothing (transparent, or the
- *   colour of its background), is below the ratio against a flat
+ *   color of its background), is below the ratio against a flat
  *   background: no reading of it can then meet the criterion, and it
- *   fails, measured by the best of those colours (`drawnBy`: `textStroke`
+ *   fails, measured by the best of those colors (`drawnBy`: `textStroke`
  *   or `textShadow`).
  *   Margin (`contrast-ratio`): of the text that reaches its ratio, the
  *   element closest to it, with the ratio unrounded against the one its size
  *   requires; `context.largeText` says which. Only text within 10% of its
  *   ratio counts as close, so text further above it gives no margin.
  *   `measuredCount` counts the elements whose contrast was computed.
- *   Text part of which a ::first-line or ::first-letter paints in a colour
- *   of its own is measured in both colours: where both reach their ratio it
+ *   Text part of which a ::first-line or ::first-letter paints in a color
+ *   of its own is measured in both colors: where both reach their ratio it
  *   passes, where both fall short it fails (`pseudoElementColor` names the
  *   pseudo-element), and where they disagree it is left to
  *   contrast-computable.
  *   Text with no opaque background behind it, up to the root, is measured
  *   on the canvas the browser paints under the page, in the color scheme
  *   the page is drawn in, and, on a page that supports light and dark, in
- *   the other where its colours can't change with the scheme, as
+ *   the other where its colors can't change with the scheme, as
  *   contrast-minimum describes.
  *   Normal-size text whose background can't be worked out still fails when
- *   its colour can't reach 7:1 on any background
+ *   its color can't reach 7:1 on any background
  *   (`CONTRAST_UNREACHABLE_ANY_BACKGROUND`, `metrics.bestRatio`: its ratio
  *   against white or black, whichever is higher).
  *   A field's placeholder below its ratio (`PLACEHOLDER_BELOW_THRESHOLD`)
- *   fails when the page chose its colours: the placeholder's color,
+ *   fails when the page chose its colors: the placeholder's color,
  *   opacity or background, or the field's background, differ from the
- *   browser's own, read in a blank frame. In the browser's own colours it
- *   meets the ratio (WCAG G148), and when that can't be told it is a
- *   `cantTell` occurrence.
+ *   browser's own, read in a blank frame. A placeholder left in the
+ *   browser's own colors is taken to meet the ratio (WCAG G148), and when
+ *   that can't be told it is a `cantTell` occurrence.
  * @reports
  *   - `metrics.ratio` (a FAIL): the text's contrast ratio, for example 4.5
  *     for 4.5:1, unrounded, against `metrics.threshold` (7, or 4.5 for
@@ -81,7 +81,7 @@
  *   - `typography.isLargeText` (a FAIL): whether the text counts as large,
  *     which sets the threshold.
  *   - The ratio, threshold and typography fields above are a stable
- *     contract (API_STABILITY.md), unlike the rest of `data.details`.
+ *     contract, unlike the rest of `data.details`.
  *   - `assumptionsApplied`, `assumedRootCanvasColor` (a FAIL): `null` unless
  *     the page background never became opaque and was taken to sit on a
  *     canvas color: one the scan names (`contrast.rootCanvasFallback`), or,
@@ -99,7 +99,7 @@
  *     could not be measured.
  *   - `generatedBy` (a FAIL on generated text): `::before`, `::after` or
  *     `::marker`, the pseudo-element whose text is measured; the selector
- *     names its element, and the colours and font are the pseudo-element's.
+ *     names its element, and the colors and font are the pseudo-element's.
  *   - `eligibleTextCount`, `computableTextCount` (the pass, and the
  *     notApplicable result when no text was computable): how many text
  *     nodes were in scope, and how many of those had colors that could be
@@ -108,18 +108,18 @@
  *     forced): `true`, and the hint says to check the page again with
  *     forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
- *     them (docs/LAYOUT_MEASUREMENT.md, "Forced colors").
+ *     them.
  * @reason-codes
  *   - `ALL_ABOVE_THRESHOLD` (pass): all the computable text reaches the
  *     enhanced ratio its size requires.
  *     Basis: WCAG 1.4.6; G17; G18; ACT 09o5cg.
  *   - `BELOW_THRESHOLD` (fail): text below the enhanced ratio its size
- *     requires, including text drawn by an outline or a shadow every colour
+ *     requires, including text drawn by an outline or a shadow every color
  *     of which, its fill included when seen, is below it.
  *     Basis: WCAG 1.4.6; G17; G18; ACT 09o5cg.
  *   - `PLACEHOLDER_BELOW_THRESHOLD` (fail, cantTell): a field's placeholder
- *     below its ratio. It fails when the page chose its colours, and is asked
- *     about when that can't be told; in the browser's own colours it is not
+ *     below its ratio. It fails when the page chose its colors, and is asked
+ *     about when that can't be told; in the browser's own colors it is not
  *     reported.
  *     Basis: WCAG 1.4.6; G148.
  *   - `SYMBOLIC_CHARACTER_BELOW_THRESHOLD` (cantTell): a symbol that is not a
@@ -129,10 +129,10 @@
  *   - `CONTRAST_UNREACHABLE_ANY_BACKGROUND` (fail): normal-size text whose
  *     background could not be worked out (an image or gradient, other paint
  *     under it, or no opaque background where the page's canvas can't be
- *     known, as in a frame), in a colour that cannot reach 7:1
+ *     known, as in a frame), in a color that cannot reach 7:1
  *     against any background: even white or black, the best there are, give
  *     it less (relative luminance between 0.1 and 0.3). Large text never
- *     gives it, since every colour reaches 4.5:1 against one of them.
+ *     gives it, since every color reaches 4.5:1 against one of them.
  *     Basis: WCAG 1.4.6; G17; ACT 09o5cg.
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error;
  *     the text is to be measured by hand.
@@ -180,19 +180,19 @@ const meta = {
   review: {
     CONTRAST_UNREACHABLE_ANY_BACKGROUND: {
       steps: [
-        'Find the text the report names and note its colour, which the report gives.',
-        'With a contrast calculator, measure that colour against white and against black.',
+        'Find the text the report names and note its color, which the report gives.',
+        'With a contrast calculator, measure that color against white and against black.',
         'Compare the higher of the two ratios with 7:1.'
       ],
       passWhen:
-        'Against white or black the text colour reaches 7:1, so some background can bring it to the ratio; measure it then against its own background.',
+        'Against white or black the text color reaches 7:1, so some background can bring it to the ratio; measure it then against its own background.',
       failWhen:
-        'Against both white and black the text colour stays below 7:1, so no background brings it to the ratio, which fails WCAG 1.4.6.'
+        'Against both white and black the text color stays below 7:1, so no background brings it to the ratio, which fails WCAG 1.4.6.'
     },
     ENGINE_EXCEPTION: {
       steps: [
         'Find the text the report names (the check stopped early, so nothing was measured).',
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the text colour against the background directly behind the letters.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the text color against the background directly behind the letters.",
         'Note the text size and weight and compare the ratio with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).'
       ],
       passWhen: 'The ratio reaches the threshold for its size.',
@@ -201,20 +201,20 @@ const meta = {
     PLACEHOLDER_BELOW_THRESHOLD: {
       steps: [
         'Find the field the report names and empty it so the placeholder shows.',
-        "In the Styles pane, check whether the page's CSS sets the ::placeholder colour or opacity, or the field's background.",
-        "Use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure the placeholder text against the field background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
+        "In the Styles pane, check whether the page's CSS sets the ::placeholder color or opacity, or the field's background.",
+        "Use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure the placeholder text against the field background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
         'Check whether the placeholder holds information needed to fill the field (a format or instruction), rather than just an example.'
       ],
       passWhen:
-        "The placeholder reaches 7:1 (or 4.5:1 if large), or it is drawn entirely in the browser's own default colours.",
+        "The placeholder reaches 7:1 (or 4.5:1 if large), or it is drawn entirely in the browser's own default colors.",
       failWhen:
-        'The page sets the placeholder or field colours and the ratio is below the threshold, which fails WCAG 1.4.6.'
+        'The page sets the placeholder or field colors and the ratio is below the threshold, which fails WCAG 1.4.6.'
     },
     SYMBOLIC_CHARACTER_BELOW_THRESHOLD: {
       steps: [
         'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
         'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
-        "If it is text, use the colour picker in the browser's developer tools, or a contrast calculator with colours picked by an eyedropper, to measure it against its background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
+        "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
         'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
       ],
       passWhen:
@@ -414,7 +414,7 @@ function runInPage(ctx) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
-  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colours
+  // placeholder: 'fail' or 'ask' for a field's placeholder, by whose colors
   // they are (docs/LIMITATIONS.md). pseudo: the text is what el's
   // ::before, ::after or ::marker generates.
   // A lone character standing in for the name of the control it labels, as
@@ -483,7 +483,7 @@ function runInPage(ctx) {
       seen.add(el);
 
       let det = details && typeof details === 'object' ? details : { reasonCode: 'UNKNOWN' };
-      // placeholder is 'ask' (whose colours they are can't be told) or
+      // placeholder is 'ask' (whose colors they are can't be told) or
       // 'fail' (the page chose them).
       if (placeholder) {
         det = { ...det, reasonCode: 'PLACEHOLDER_BELOW_THRESHOLD' };
@@ -498,13 +498,13 @@ function runInPage(ctx) {
       }
 
       // Every reason code here describes a ratio the rule computed: text
-      // whose colours can't be worked out is left to contrast-computable.
+      // whose colors can't be worked out is left to contrast-computable.
       const uncertainty =
         placeholder === 'ask'
           ? {
               code: 'judgement-required',
               needed:
-                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colours.'
+                'Whether this placeholder is held to the contrast ratio, and whether the page chose its colors.'
             }
           : symbol
             ? {
@@ -553,7 +553,7 @@ function runInPage(ctx) {
         data: { details: det }
       };
 
-      // Text whose own colour can't reach the ratio on any background
+      // Text whose own color can't reach the ratio on any background
       // (unreachableOnAnyBackground): it fails whatever lies behind it.
       if (det.reasonCode === 'CONTRAST_UNREACHABLE_ANY_BACKGROUND') {
         occBase.i18n.summaryKey = 'contrastEnhanced_fail_unreachable';
@@ -659,10 +659,10 @@ function runInPage(ctx) {
   }
 
   // Text drawn by a stroke or a shadow: the computability gate asks about
-  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best colour it is
+  // it (TEXT_STROKE, TEXT_SHADOW), but where even the best color it is
   // drawn in, its fill included when seen, is below the ratio against a
   // flat background, no reading of it meets the criterion, so it is
-  // measured by that colour (helpers.contrast.measureOutlineOnlyText).
+  // measured by that color (helpers.contrast.measureOutlineOnlyText).
   function outlineOnlyAnalysis(el, blocker) {
     if (!blocker || (blocker.reasonCode !== 'TEXT_STROKE' && blocker.reasonCode !== 'TEXT_SHADOW'))
       return null;
@@ -695,12 +695,12 @@ function runInPage(ctx) {
     };
   }
 
-  // Text part of which a ::first-line or ::first-letter paints in a colour
+  // Text part of which a ::first-line or ::first-letter paints in a color
   // of its own (PSEUDO_ELEMENT_COLOR): which part depends on line breaks,
-  // but where its own colours and the pseudo-element's both reach their
+  // but where its own colors and the pseudo-element's both reach their
   // ratio, or both fall short of it, every reading of the text does too
   // (helpers.contrast.measurePseudoElementText). It is measured then by the
-  // colours closest to their ratio when both reach it, and by the best when
+  // colors closest to their ratio when both reach it, and by the best when
   // both fall short; where they disagree it is left to contrast-computable.
   function pseudoColorAnalysis(el, blocker) {
     if (!blocker || blocker.reasonCode !== 'PSEUDO_ELEMENT_COLOR' || !blocker.pseudoColors)
@@ -760,7 +760,7 @@ function runInPage(ctx) {
   }
 
   // Text a ::before, ::after or ::marker generates (#219), measured in the
-  // pseudo-element's colour and font against what lies behind it
+  // pseudo-element's color and font against what lies behind it
   // (helpers.contrast.measureGeneratedText). What can't be measured is left
   // to contrast-computable, as for an element's own text.
   function generatedAnalysis(el, pseudo) {
@@ -799,16 +799,16 @@ function runInPage(ctx) {
     };
   }
 
-  // Text whose background can't be worked out, but whose own colour rules
-  // out the ratio on every background: the best background for a colour is
-  // white or black, and a colour of relative luminance L reaches at most
+  // Text whose background can't be worked out, but whose own color rules
+  // out the ratio on every background: the best background for a color is
+  // white or black, and a color of relative luminance L reaches at most
   // max(1.05 / (L + 0.05), (L + 0.05) / 0.05) against them, below 7:1 for
-  // L between 0.1 and 0.3. Normal text in such a colour fails 1.4.6
+  // L between 0.1 and 0.3. Normal text in such a color fails 1.4.6
   // whatever lies behind it (CONTRAST_UNREACHABLE_ANY_BACKGROUND). Large
-  // text never does: every colour reaches about 4.58:1 against white or
+  // text never does: every color reaches about 4.58:1 against white or
   // black, above its 4.5:1. Only where nothing but the background is
-  // unknown: an opaque text colour, no blend mode or filter on the text or
-  // around it, and not a placeholder, which is judged by whose colours it
+  // unknown: an opaque text color, no blend mode or filter on the text or
+  // around it, and not a placeholder, which is judged by whose colors it
   // has. backgroundCode: what stopped the background being worked out.
   // { bestRatio, threshold, fg, font, backgroundCode }, or null.
   const BACKGROUND_ONLY_BLOCKERS = new Set(['BACKGROUND_IMAGE_OR_GRADIENT', 'BACKGROUND_OVERLAP']);
@@ -824,7 +824,7 @@ function runInPage(ctx) {
         if (fg && __elFgCache) __elFgCache.set(el, fg);
       }
       if (!fg || !fg.rgba || fg.rgba.a !== 1) return null;
-      // The colour the text is painted in, as declared: a transparent fill
+      // The color the text is painted in, as declared: a transparent fill
       // (text cut out of a background) is drawn in that background.
       const cs = safeComputedStyle(el);
       const fill =
@@ -946,7 +946,7 @@ function runInPage(ctx) {
 
     if (!bg || bg.ok === false || !bg.rgba || !fg || !fg.rgba) {
       analysis = { computable: false };
-      // Not where the text's own colour in the page's color scheme
+      // Not where the text's own color in the page's color scheme
       // is what can't be read (bg.textColorUnknown).
       if ((!bg || bg.ok === false || !bg.rgba) && !(bg && bg.textColorUnknown)) {
         analysis.unreachable = unreachableOnAnyBackground(
@@ -966,7 +966,7 @@ function runInPage(ctx) {
       let ratio = helpers.contrast.contrastRatio(fgOpaque, bgOpaque);
 
       // A drop-down select in the browser's own background is drawn
-      // on the Field colour in some browsers and on its computed
+      // on the Field color in some browsers and on its computed
       // background in others: text that fails on either fails, so
       // the lower ratio counts.
       const field =
@@ -1014,7 +1014,7 @@ function runInPage(ctx) {
 
   // Text on the page's canvas (analysis.canvas), on a page that supports
   // two color schemes: measured in the one the page is drawn in, and in the
-  // other where its colours can't change with the scheme (measureIn,
+  // other where its colors can't change with the scheme (measureIn,
   // helpers.contrast.colorSchemeMeasurable). It fails where it fails in a
   // scheme measured, by its ratio there, and colorScheme names that scheme
   // where the other passes (failing in both, it is reported in the scheme
@@ -1140,7 +1140,7 @@ function runInPage(ctx) {
             typeof helpers.contrast.isPlaceholderText === 'function' &&
             helpers.contrast.isPlaceholderText(el)
           );
-          // A placeholder in colours the page chose fails; in the browser's
+          // A placeholder in colors the page chose fails; in the browser's
           // own (G148) it meets the ratio; when that can't be told it is
           // asked about.
           const placeholderSource =

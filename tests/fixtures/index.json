@@ -931,7 +931,7 @@
     },
     {
       "ruleId": "focus-not-removed-by-script",
-      "title": "A script does not remove focus from an element as it receives it",
+      "title": "A script must not remove focus from an element as it receives it",
       "type": "automatic",
       "wcagSc": [
         "2.1.1",
@@ -1027,7 +1027,7 @@
     },
     {
       "ruleId": "form-control-single-label",
-      "title": "Form controls must not have multiple labels",
+      "title": "Form controls should not have multiple labels",
       "type": "automatic",
       "wcagSc": [
         "3.3.2"
@@ -1361,7 +1361,7 @@
     },
     {
       "ruleId": "invalid-field-error-message",
-      "title": "Fields marked invalid must have a shown error message",
+      "title": "Fields marked invalid should have a shown error message",
       "type": "automatic",
       "wcagSc": [
         "3.3.1"
@@ -1905,7 +1905,7 @@
     },
     {
       "ruleId": "moving-content-pausable",
-      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "title": "Content that moves by itself should be possible to pause, stop or hide",
       "type": "manual",
       "wcagSc": [
         "2.2.2"
@@ -2647,7 +2647,7 @@
     },
     {
       "ruleId": "video-caption",
-      "title": "Prerecorded video should provide a captions track",
+      "title": "Prerecorded video should provide complete captions",
       "type": "manual",
       "wcagSc": [
         "1.2.2"

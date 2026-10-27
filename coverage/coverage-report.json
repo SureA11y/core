@@ -1926,7 +1926,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "A script does not remove focus from an element as it receives it",
+      "title": "A script must not remove focus from an element as it receives it",
       "tags": [
         "wcag2a",
         "wcag2aa",
@@ -2050,7 +2050,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Form controls must not have multiple labels",
+      "title": "Form controls should not have multiple labels",
       "tags": [
         "wcag2a",
         "wcag332",
@@ -2459,7 +2459,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Fields marked invalid must have a shown error message",
+      "title": "Fields marked invalid should have a shown error message",
       "tags": [
         "wcag2a",
         "wcag331",
@@ -6035,7 +6035,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Content that moves by itself can be paused, stopped or hidden",
+      "title": "Content that moves by itself should be possible to pause, stop or hide",
       "tags": [
         "wcag2a",
         "wcag222",
@@ -6674,7 +6674,7 @@
       ],
       "wcagScInformative": [],
       "type": "manual",
-      "title": "Prerecorded video should provide a captions track",
+      "title": "Prerecorded video should provide complete captions",
       "tags": [
         "wcag2a",
         "wcag122",

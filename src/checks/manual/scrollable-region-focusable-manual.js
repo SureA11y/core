@@ -16,7 +16,7 @@
  *   and performant (same style of scope-down as `region`).
  *   Finding nothing to ask about, it reports notApplicable, not pass: it
  *   applies only to what its check flags, and finding nothing there
- *   doesn't show that all is well (RULE_TAXONOMY.md, manual rules).
+ *   doesn't show that all is well.
  * @expectation
  *   A region whose CSS declares it may scroll (`auto`/`scroll`) should be
  *   reachable by keyboard: either it already contains a descendant in the

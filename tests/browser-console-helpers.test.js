@@ -190,7 +190,7 @@ test('inspect() lists headings and the focus order, leaves hidden elements out, 
     [2, '#a', 'One']
   ]);
   await assert.rejects(
-    a11ycore.inspect('colours'),
+    a11ycore.inspect('colors'),
     /inspect: kind must be one of headings, landmarks, names, focus-order/
   );
   dom.window.close();

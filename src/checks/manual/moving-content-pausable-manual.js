@@ -5,7 +5,7 @@
 /**
  * @check moving-content-pausable
  * @atomic true
- * @summary Content that moves by itself for more than five seconds can be paused, stopped or hidden
+ * @summary Content that moves by itself for more than five seconds should be possible to pause, stop or hide
  * @standard WCAG 2.2
  * @sc 2.2.2
  * @type manual
@@ -29,7 +29,7 @@
  *     seconds.
  *   - `animations`: the element's animations, up to five, each with its
  *     `kind` (`css-animation`, `css-transition` or `script`), `name` (the
- *     animation name or transitioned property, '' when it has none) and
+ *     animation name or transitioned property, `''` when it has none) and
  *     `endTime`, in milliseconds from its start, `null` when it never ends.
  * @reason-codes
  *   - `MOVING_CONTENT_LOOPS` (cantTell): the element runs an animation that
@@ -55,7 +55,7 @@
 const id = 'moving-content-pausable';
 
 const meta = {
-  title: 'Content that moves by itself can be paused, stopped or hidden',
+  title: 'Content that moves by itself should be possible to pause, stop or hide',
   description:
     'Asks about elements animated when the page loads, for more than five seconds or without end, whether the movement can be paused, stopped or hidden.',
   i18n: {

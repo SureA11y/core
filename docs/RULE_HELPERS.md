@@ -873,13 +873,13 @@ when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't
 one scroll position only; `target-size-minimum` uses both to find the boxes over a
 target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
 `isPlaceholderText`, `renderedTextScale`):
-`textStyleOf(el)` is the computed style that sets the colour and font of `el`'s text,
+`textStyleOf(el)` is the computed style that sets the color and font of `el`'s text,
 the `::placeholder` style while a text field shows its placeholder (its value is empty)
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
 is never read); `isPlaceholderText(el)` is `true` when the text `el` shows is its
 placeholder (the contrast rules fail such text below its ratio when the page chose its
-colours, ask about it when that can't be told, and leave it out in the browser's own colours,
-reason code `PLACEHOLDER_BELOW_THRESHOLD`; `placeholderColourSource(el)` says whose colours
+colors, ask about it when that can't be told, and leave it out in the browser's own colors,
+reason code `PLACEHOLDER_BELOW_THRESHOLD`; `placeholderColourSource(el)` says whose colors
 they are); and `renderedTextScale(el, style)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
@@ -892,45 +892,45 @@ the font's own aspect (x-height, cap height, `0` width or `水` width over its s
 value names), read from a probe in the same font a CSS unit wide; `1` for `none` and
 `from-font`, `null` where the aspect can't be read. Two read text drawn
 only by an outline (`getOutlineColors`, `measureOutlineOnlyText`): `getOutlineColors(el)`
-is `{ colors, complete }`, the colours a visible `-webkit-text-stroke` and `text-shadow`
+is `{ colors, complete }`, the colors a visible `-webkit-text-stroke` and `text-shadow`
 draw `el`'s glyphs in, `complete` false when one can't be read; and
 `measureOutlineOnlyText(el, opts)` measures text drawn by an outline by the best of
-those colours, and of its fill when the fill is seen, against a flat background (`{ ratio,
+those colors, and of its fill when the fill is seen, against a flat background (`{ ratio,
 drawn, background, isLargeText, drawnBy, bg }`, or `null` when the background isn't one
-opaque colour, a colour can't be read, or the text is a placeholder whose fill is seen).
+opaque color, a color can't be read, or the text is a placeholder whose fill is seen).
 The contrast rules fail such text only below the ratio.
-A `PSEUDO_ELEMENT_COLOR` blocker from `getComputabilityBlocker` carries the colours of
+A `PSEUDO_ELEMENT_COLOR` blocker from `getComputabilityBlocker` carries the colors of
 the one `::first-line` or `::first-letter` that differs from the element's, as
 `pseudoColors` (`{ pseudo, color, background, fontSizePx, fontWeightNum }`), where
-nothing else blocks the measurement and that pseudo-element draws only colours (no
+nothing else blocks the measurement and that pseudo-element draws only colors (no
 image, shadow, outline or opacity); `measurePseudoElementText(el, opts)` then measures
 the text both ways (`{ own, pseudo }`, each `{ fg, bg, ratio, fontSizePx,
-fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colours are on
+fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colors are on
 the same side of its ratio.
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the
-pseudo-element's colour and font (`{ ok: true, fg, bg, ratio, fontSizePx,
+pseudo-element's color and font (`{ ok: true, fg, bg, ratio, fontSizePx,
 fontWeightNum, same }`), or says what stops it (`{ ok: false, reasonCode, ... }`, the
 shape `getComputabilityBlocker` gives), and is `null` where the pseudo-element draws no
 text. `isGeneratedNameHost(el)` says whether a style sheet gives `el`'s `::before` or `::after`
 content, and `getGeneratedNameText(el, pseudo)` is the text that pseudo-element adds to a name
 from content (`{ text, block, glyphs }`, or `null`, as under jsdom); `getContentNameInfo` reads
 them.
-The rest serve the contrast rules' own decisions. `textFillColor(el)` is the colour `el`'s text
+The rest serve the contrast rules' own decisions. `textFillColor(el)` is the color `el`'s text
 is painted in, before opacity (`''` where it can't be told). `paintsBackgroundLayer(cs)` says
 whether any `background-image` layer of a computed style draws something, and
 `backgroundLayerKinds(cs)` describes each layer. `placeholderColourSource(el)` is `'browser'`
-when a field's placeholder colours and background are all the browser's (G148), `'page'` when
+when a field's placeholder colors and background are all the browser's (G148), `'page'` when
 the page changed any of them, and `''` when that can't be told; `nativeSelectField(el)` is the
-`Field` colour Chromium paints a drop-down `<select>` whose background the page left to it, or
+`Field` color Chromium paints a drop-down `<select>` whose background the page left to it, or
 `null`. `looksLikeLogo(el)` says whether text looks like part of a logo, and
 `contrastSwitchName(doc, helpers, ctx)` names a control that switches the page to higher contrast
 (G174), or is `''`: signs the `logoText` and `contrastSwitch` settings act on. The page's color
 schemes are `pageColorSchemes()` (`{ supported, current, declared }`, or `null`);
 `colorSchemeMeasurable(el, scheme)` says whether `el`'s text can be measured on the canvas of a
 scheme the page supports but isn't drawn in now, `colorSchemeUnread(el)` names the scheme an
-emulator can't give its colours in (`null` in a browser), and `useNamedCanvas(color)`, which
+emulator can't give its colors in (`null` in a browser), and `useNamedCanvas(color)`, which
 the runner calls, sets the `contrast.rootCanvasFallback` a scan names as the canvas. That
 is the whole namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule

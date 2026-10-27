@@ -1,7 +1,7 @@
 'use strict';
 
 // Text a ::before or ::after `content`, or a list item's ::marker, generates
-// is measured in a browser (#219), in the pseudo-element's colour and font
+// is measured in a browser (#219), in the pseudo-element's color and font
 // against its element's background and its own. It was never measured: a
 // ::before drawn at 1.61:1 passed. Where it can't be measured (a
 // pseudo-element taken out of the flow, content that can't be read, a
@@ -107,7 +107,7 @@ test('generated text is measured, in Chromium', { skip }, async (t) => {
 
 // Only rules that set `content` make an element a host whose ::before and
 // ::after are read; a rule that only styles one, such as the common reset,
-// doesn't. Generated text whose content and colour come from different
+// doesn't. Generated text whose content and color come from different
 // rules is still found.
 test(
   'generated text is found from the rules that set its content, in Chromium',

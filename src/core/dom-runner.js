@@ -967,7 +967,7 @@ function rollupCompositeResults(
  * finding reproducible. It reads input, as reading the DOM does, so the
  * same page rendered the same way still gives the same result.
  *
- * Without a layout (jsdom, any DOM emulator) a viewport or a colour scheme
+ * Without a layout (jsdom, any DOM emulator) a viewport or a color scheme
  * describes nothing that was measured, so only `layout: false` is reported.
  */
 function readRenderingEnvironment(win, doc) {
@@ -1703,7 +1703,7 @@ function runCoreSettled(
       typeof c.rootCanvasFallback === 'string' && c.rootCanvasFallback.trim()
         ? c.rootCanvasFallback.trim()
         : '#ffffff';
-    // Set below, once the colour is known to be usable.
+    // Set below, once the color is known to be usable.
     return { mode, rootCanvasFallback, rootCanvasFallbackSet: false };
   }
 
