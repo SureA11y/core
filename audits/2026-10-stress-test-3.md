@@ -184,7 +184,7 @@ Ordered by how much each one damages trust in results, or blocks the 1.11.0 rele
   - RB-2 (named-property overrides);
   - RB-3 and RB-4 (now linear);
   - RB-5 (a throwing `shadowRoot` getter).
-- **Not re-checked:** the other open items in §5 of [`2026-10-stress-test-outcomes.md`](https://github.com/SureA11y/core/blob/audit/2026-10-stress-test-outcomes/audits/2026-10-stress-test-outcomes.md) on the earlier audit branch.
+- **Not re-checked:** the other open items in §5 of [`2026-10-stress-test-outcomes.md`](./2026-10-stress-test-outcomes.md).
 
 ## 6. What held up
 
