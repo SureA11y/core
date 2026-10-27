@@ -1,6 +1,8 @@
 # Audits
 
-This branch, `audit/2026-10-stress-test-outcomes`, is where the engine is stress-tested and where the results are kept. It is **never merged** into `main`: `main` flows into it, nothing flows back.
+This branch, `audit/register`, is where the engine is stress-tested and where the results are kept. It is **never merged** into `main`: `main` flows into it, nothing flows back.
+
+It holds every round so far. The first two rounds were kept on `audit/2026-10-stress-test-outcomes`, and rounds 3 to 5 on a branch each (`audit/2026-10-stress-test-3`, `-4`, `-5`); on 2026-10-27 all four were merged here unchanged, and the register brought up to date with rounds 3 to 5. Every later round goes on this branch, not on a branch of its own.
 
 - **The code on this branch is `main`'s code.** Everything outside `audits/` comes from `main` unchanged, apart from three things the branch adds:
   - one line in `eslint.config.js` that leaves the probe scripts out of lint;
@@ -20,15 +22,25 @@ This branch, `audit/2026-10-stress-test-outcomes`, is where the engine is stress
 | [`FINDINGS.md`](./FINDINGS.md) | **The register: the one document to work from.** Every finding still open, deduplicated across audits and verified on a named `main` commit; every finding fixed, with where and when; every finding closed without a fix, with the reason. |
 | [`STATUS.md`](./STATUS.md) | **Where the work stands**: what is in flight (open pull requests, what is verified), what has been decided and is paused, and how the work is done (commits, issues, tests, verification), for whoever picks it up next. |
 | `YYYY-MM-stress-test*.md` | One report per audit round: the evidence behind each finding (full repro, spec quotes, browser evidence, cause). Written once, then left as it was. |
-| `YYYY-MM-stress-test-outcomes.md` | The log of a round's follow-up work (first round only; from now on that history goes in `FINDINGS.md`). |
-| `YYYY-MM-probes*/` | The throwaway scripts behind a round, one folder per area. Not linted, not run in CI. |
+| `YYYY-MM-stress-test*-outcomes.md`, `-evidence.md` | A round's follow-up log (rounds 1 and 3) or its extra evidence for the top findings (round 4). Written once, then left as it was; from now on, follow-up history goes in `FINDINGS.md`. |
+| `YYYY-MM-probes*/` | The throwaway scripts behind a round, one folder per area, each with its own `FINDINGS.md`. Not linted, not run in CI. |
+
+| Round | Date | `main` commit | Report | Probes |
+|---|---|---|---|---|
+| 1 | early 2026-10 | `63af298` | [`2026-10-stress-test.md`](./2026-10-stress-test.md), [outcomes](./2026-10-stress-test-outcomes.md) | [`2026-10-probes/`](./2026-10-probes/) |
+| 2 | 2026-10-06 | `cfefc02` | [`2026-10-stress-test-2.md`](./2026-10-stress-test-2.md) | [`2026-10-probes-2/`](./2026-10-probes-2/) |
+| 3 | 2026-10-09 | `eaa5d3f1` | [`2026-10-stress-test-3.md`](./2026-10-stress-test-3.md), [outcomes](./2026-10-stress-test-3-outcomes.md) | [`2026-10-probes-3/`](./2026-10-probes-3/) |
+| 4 | 2026-10-14 | `3af2008` | [`2026-10-stress-test-4.md`](./2026-10-stress-test-4.md), [evidence](./2026-10-stress-test-4-evidence.md) | [`2026-10-probes-4/`](./2026-10-probes-4/) |
+| 5 | 2026-10-23 | `c528af08` | [`2026-10-stress-test-5.md`](./2026-10-stress-test-5.md) | [`2026-10-probes-5/`](./2026-10-probes-5/) |
+
+**Finding ids.** Each round gives its findings a prefix per area (`NM-`, `VS-`, `RB-`…). Rounds 1 and 2 never shared a prefix, so their ids are used as they are. Later rounds reused some (`RB-` in rounds 2 and 3, `OP-` and `RP-` in rounds 2 and 4), so in the register an id from round 3 on is written with its round: `R3:RB-4`, `R4:OP-5`, `R5:NR-1`. A round's own report and probes keep the short id. A new round picks prefixes not used before, and the register still writes them with the round.
 
 ## Before running an audit
 
 1. **Bring the branch up to date with `main`.** This is always the first step.
    ```sh
    git fetch origin
-   git checkout audit/2026-10-stress-test-outcomes
+   git checkout audit/register
    git merge origin/main
    ```
    The merge must not change anything outside `audits/` except what came from `main`. Check with `git diff --stat origin/main -- . ':!audits' ':!eslint.config.js' ':!.github/workflows/audit-branch-guard.yml' ':!tests/audit-branch-guard.test.js'`, which must print nothing.
