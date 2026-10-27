@@ -80,12 +80,13 @@ const meta = {
         'Inspect the field the report names and note the id in its aria-errormessage.',
         'Enter an invalid value (or leave a required field empty) and submit or leave the field, so any error appears.',
         'Look whether the element with that id now shows error text, and inspect the field again for aria-invalid="true".',
-        'With a screen reader, move back to the field and listen for the error message.'
+        'With a screen reader, move back to the field and listen for the error message.',
+        "If you don't hear the error on the field, check whether the page reads it out another way, for example as soon as the message appears, without you moving focus. It only counts if the screen reader announces the whole message."
       ],
       passWhen:
-        'When the error is shown, the field gets aria-invalid="true" (or the message is in aria-describedby) and the screen reader announces it; when no error is shown, nothing needs exposing.',
+        'When the error is shown, the screen reader announces it, either on the field (aria-invalid="true" or the message in aria-describedby) or as soon as it appears; when no error is shown, nothing needs exposing.',
       failWhen:
-        'Error text is visible but aria-invalid stays absent or false and the message is not announced, which fails WCAG 3.3.1 / 4.1.2 (see ARIA21).'
+        'Error text is visible but aria-invalid stays absent or false, and the screen reader announces the message neither on the field nor when it appears, which fails WCAG 3.3.1 / 4.1.2 (see ARIA21).'
     }
   }
 };

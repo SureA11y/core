@@ -102,12 +102,13 @@ const meta = {
         "Click the browser's address bar, then press Tab repeatedly to move through every link and control on the page.",
         'At each stop, check that you can see where focus is, and that the order follows the reading order of the page.',
         'Operate each control with the keyboard (Enter, Space, arrow keys) and open and close menus and dialogs.',
+        'Where something cannot be reached or used with the keyboard, check whether the page offers another way to do the same with the keyboard alone, such as previous and next buttons for a carousel, or move up and move down buttons for a list you can drag. It only counts if it does everything the mouse can.',
         'Check that focus never gets stuck inside a component and that Escape or Tab lets you move on.'
       ],
       passWhen:
-        'Everything works by keyboard, focus moves in a sensible order and is always visible, and it never gets stuck.',
+        'Everything works with the keyboard, directly or through another way that does the same job, focus moves in a sensible order and is always visible, and it never gets stuck.',
       failWhen:
-        'Something cannot be reached or used by keyboard, focus traps the user, the order is confusing, or focus is invisible, which fails WCAG 2.1.1, 2.1.2, 2.4.3 or 2.4.7.'
+        'Something cannot be reached or used with the keyboard in any way, focus traps the user, the order is confusing, or focus is invisible, which fails WCAG 2.1.1, 2.1.2, 2.4.3 or 2.4.7.'
     }
   }
 };

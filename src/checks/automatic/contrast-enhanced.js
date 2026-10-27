@@ -215,12 +215,13 @@ const meta = {
         'Find the character the report names (such as ×, ☰, › or an icon-font glyph).',
         'Decide whether it is text people read (part of words, a number) or an icon standing in for an action, like a close or menu symbol.',
         "If it is text, use the color picker in the browser's developer tools, or a contrast calculator with colors picked by an eyedropper, to measure it against its background and compare with 7:1 (4.5:1 for large text: at least 24px, or 18.66px and bold).",
-        'If it is an icon for a control, measure it against its background and compare with 3:1 instead (WCAG 1.4.11).'
+        'If it is an icon, check first whether visible text next to it says the same thing, such as the word "Close" beside a close symbol. If it does, the icon is not the only way to understand it and does not need the 3:1 ratio.',
+        'Otherwise, measure the icon against its background and compare with 3:1 (WCAG 1.4.11).'
       ],
       passWhen:
-        'It is text and reaches its ratio, or it is an icon that reaches 3:1 for non-text contrast.',
+        'It is text and reaches its ratio, or it is an icon that reaches 3:1 or whose meaning is also given by visible text next to it.',
       failWhen:
-        'It is text below 7:1, which fails WCAG 1.4.6; or an icon below 3:1, which fails WCAG 1.4.11.'
+        'It is text below 7:1, which fails WCAG 1.4.6; or an icon below 3:1 that is the only visible way to know what it means or does, which fails WCAG 1.4.11.'
     }
   }
 };

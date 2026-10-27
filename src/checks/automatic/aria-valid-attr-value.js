@@ -181,12 +181,13 @@ const meta = {
         'Inspect the element the report names and note the attribute and the ids it refers to.',
         'Use the page as a user would (open, expand, submit) to reach the state where the referenced element should exist.',
         "In the developer tools console, run document.getElementById('the-id') for each id and check for a near-miss id in the markup (different case, typo, or inside another shadow root).",
-        "Open the Accessibility pane in the browser's developer tools and check whether the name, description or relation it should supply appears."
+        "Open the Accessibility pane in the browser's developer tools and check whether the name, description or relation it should supply appears.",
+        'If it does not appear, check in the Accessibility pane whether the element still gets that name or description another way, for example from its own text, a <label> or an aria-label.'
       ],
       passWhen:
-        'The referenced element exists when it matters and the name, description or relation shows in the accessibility tree.',
+        'The referenced element exists when it matters and the name, description or relation shows in the accessibility tree, or the element gets the same name or description another way.',
       failWhen:
-        'The id never resolves (missing, misspelled, or across a shadow boundary), so the label, description or relation is lost, which fails WCAG 4.1.2 (ACT 6a7281).'
+        'The id never resolves (missing, misspelled, or across a shadow boundary) and nothing else gives the label, description or relation, so it is lost, which fails WCAG 4.1.2 (ACT 6a7281).'
     },
     ARIA_HASPOPUP_ROLE_MISMATCH: {
       steps: [

@@ -92,12 +92,13 @@ const meta = {
       steps: [
         "Find all links with the name the report gives (a screen reader's links list helps) and note where each leads.",
         'Open each link and compare the pages it reaches.',
-        'Decide whether the pages serve the same purpose (the same page with tracking parameters, or equivalent pages) or different ones.'
+        'Decide whether the pages serve the same purpose (the same page with tracking parameters, or equivalent pages) or different ones.',
+        'If they lead to different kinds of pages, check whether the page offers a way to make link names say more, such as a setting that shows the full link text. It only counts if you can turn it on with the keyboard and, with it on, every link name says where it leads.'
       ],
       passWhen:
-        'Every link with this name leads to the same page or to pages that serve the same purpose.',
+        'Every link with this name leads to the same page or to pages that serve the same purpose, or a setting you can turn on with the keyboard makes each link name say where it leads.',
       failWhen:
-        'Links with the same name, such as "Read more", lead to pages with different purposes, so their name alone does not tell them apart, which fails WCAG 2.4.9 (ACT b20e66).'
+        'Links with the same name, such as "Read more", lead to pages with different purposes and nothing on the page lets their names tell them apart, which fails WCAG 2.4.9 (ACT b20e66).'
     }
   }
 };

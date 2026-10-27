@@ -214,12 +214,13 @@ const meta = {
       steps: [
         "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important. Rules added in the Styles pane are not blocked by the page's security policy.",
         'Scroll through the whole page and look for text that is cut off, overlaps other text or disappears.',
+        'Where text is cut off, check whether the page offers a way to show all of it, such as a "Read more" link or a button that expands the box. It only counts if you can use it with the keyboard and, with the spacing still applied, it shows the whole text.',
         'Check that controls and menus still work and show all their text.'
       ],
       passWhen:
-        'All text stays visible and readable and nothing stops working with the spacing applied.',
+        'All text stays visible and readable, or any text that is cut off can be shown in full with the keyboard, and nothing stops working with the spacing applied.',
       failWhen:
-        'Some text is cut off, overlaps or is lost with the spacing applied, which fails WCAG 1.4.12.'
+        'Some text is cut off, overlaps or is lost with the spacing applied and cannot be shown in full another way, which fails WCAG 1.4.12.'
     },
     STYLESHEET_IMPORTANT: {
       steps: [
@@ -256,11 +257,13 @@ const meta = {
       steps: [
         "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
         'Find the text the report names and look at the edge of the box that cuts it off.',
-        'Read the text and check whether every letter can still be made out, including the tops and tails of letters.'
+        'Read the text and check whether every letter can still be made out, including the tops and tails of letters.',
+        'Where text is cut off, check whether the page offers a way to show all of it, such as a "Read more" link or a button that expands the box. It only counts if you can use it with the keyboard and, with the spacing still applied, it shows the whole text.'
       ],
-      passWhen: 'Only a sliver at the edge is cut and all the text can still be read.',
+      passWhen:
+        'Only a sliver at the edge is cut and all the text can still be read, or the whole text can be shown with the keyboard another way, with the spacing still applied.',
       failWhen:
-        'Part of the text is cut off so it can no longer be read, which fails WCAG 1.4.12 (F104).'
+        'Part of the text is cut off so it can no longer be read, and it cannot be shown in full another way, which fails WCAG 1.4.12 (F104).'
     },
     TEXT_OVERLAPS: {
       steps: [

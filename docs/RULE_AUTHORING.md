@@ -594,6 +594,22 @@ review: {
   matters, a screen reader; name no testing product.
 - `passWhen` and `failWhen` say what the person sees, and `failWhen` names
   the criterion or best practice that fails.
+- Write for someone who can use a browser and its developer tools but has
+  no accessibility training: plain words, and no term the step leaves
+  unexplained.
+- Before the steps lead to a fail, ask whether another way on the page could
+  make it a pass, and where the criterion allows one, add a step for it:
+  another way to do the same with the keyboard, a pause or mute control
+  placed elsewhere, a description beside a complex image, a captioned
+  version of a video. Give a common example where there is one (a
+  carousel's previous and next buttons), not a list of widgets to look for,
+  and say when it counts: only if it meets the criterion being checked
+  itself, such as working with the keyboard alone for 2.1.1, or being
+  reachable by a screen reader user for a text alternative. Leave it out
+  where no such way exists or where it would not make the content
+  accessible, and `passWhen` and `failWhen` name it too. The contrast
+  rules don't ask about a switch to higher contrast: they ask for the
+  colors to be fixed.
 - Each step and both results have a key in every dictionary of
   `src/i18n/review/` (kept apart from the engine's dictionaries, so the steps
   never enter the bundle): `<prefix>_review_<CODE>_step<n>`, `_pass` and

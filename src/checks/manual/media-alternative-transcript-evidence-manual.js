@@ -80,22 +80,25 @@ const meta = {
       steps: [
         'Find the audio or video player the report names and play it, noting whether it has sound, pictures or both.',
         'Look next to the player and elsewhere on the page for a transcript or a link to one.',
-        'If you find one, compare the transcript with the media and check that it gives the same information: speech, important sounds and what is shown.'
+        'If it is a video with no sound, an audio version that describes everything shown also counts, as long as you can find it and play it from the page with the keyboard.',
+        'Compare the alternative you found with the media and check that it gives the same information: speech, important sounds and what is shown.'
       ],
       passWhen:
-        'A transcript or text alternative is on the page or linked next to the player and gives what the media gives, or the media is itself an alternative for text on the page and is labelled as such.',
+        'A transcript or text alternative is on the page or linked next to the player and gives what the media gives; or a video with no sound has an audio version that gives the same information; or the media is itself an alternative for text on the page and is labelled as such.',
       failWhen:
-        'Prerecorded audio-only or video-only media has no transcript or text alternative, which fails WCAG 1.2.1.'
+        'Prerecorded audio-only media has no transcript, or prerecorded video-only media has neither a transcript nor an audio version with the same information, which fails WCAG 1.2.1.'
     },
     transcriptEvidenceUnverified: {
       steps: [
         'Find the link next to the player the report names (the report gives its href).',
         'Follow the link and check that it leads to a transcript of this media.',
-        'Compare the transcript with the media and check that it gives the same information: speech, important sounds and what is shown.'
+        'If the link is not a transcript, the media may still have one elsewhere on the page or, for a video with no sound, an audio version that describes what is shown. Look for it before deciding.',
+        'Compare the alternative you found with the media and check that it gives the same information: speech, important sounds and what is shown.'
       ],
-      passWhen: 'The link leads to a transcript that gives what the media gives.',
+      passWhen:
+        'The link, or another transcript on the page, gives what the media gives; or a video with no sound has an audio version that gives the same information.',
       failWhen:
-        'The link leads elsewhere or to an incomplete text, so the media has no text alternative, which fails WCAG 1.2.1.'
+        "Neither the link nor anything else on the page gives the media's information as text, or, for a video with no sound, as audio, which fails WCAG 1.2.1."
     }
   }
 };

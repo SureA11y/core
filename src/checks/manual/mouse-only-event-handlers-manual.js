@@ -128,12 +128,13 @@ const meta = {
       steps: [
         'Find the element the report names and note what its mouse handlers do by hovering or clicking it.',
         'Press Tab through that part of the page and watch whether focus ever lands on the element or on something inside it.',
-        'If it does, try Enter, Space and the arrow keys and compare with what the mouse did.'
+        'If it does, try Enter, Space and the arrow keys and compare with what the mouse did.',
+        "If the keyboard can't do it here, check whether what the mouse does can be done another way with the keyboard alone, for example with a button or menu item elsewhere on the page. It only counts if it does everything the mouse does."
       ],
       passWhen:
-        'The element (or something inside it) gets keyboard focus and its key or focus handlers give the same result as the mouse, or the mouse action is only visual.',
+        'The element (or something inside it) gets keyboard focus and its key or focus handlers give the same result as the mouse, or what the mouse does can be done another way with the keyboard alone, or the mouse action is only visual.',
       failWhen:
-        'Focus never reaches the element, so its keyboard handlers never run and the mouse action cannot be done by keyboard, which fails WCAG 2.1.1 (F54).'
+        'Focus never reaches the element and what the mouse does cannot be done another way with the keyboard, which fails WCAG 2.1.1 (F54).'
     },
     MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT: {
       steps: [
