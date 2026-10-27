@@ -156,6 +156,10 @@
  *   stops the propagation in Chromium), <body> clips its own box. Text in a
  *   box fixed to the viewport is judged against the viewport on the axes the
  *   box doesn't scroll; a sticky box scrolls with its container and is not.
+ *   Content already beyond the viewport counts as a scroll lock whether the
+ *   document's scroll size shows it or a box out of flow holds it: a
+ *   `body { position: fixed }` lock, or a fixed box that already reached past
+ *   the viewport.
  *   Only text wholly inside the viewport before the spacing is judged
  *   against it.
  * - Lines are read with Range.getClientRects() on each text node, up to
@@ -604,6 +608,19 @@ function runInPage(ctx) {
       return !contained(rs) && !contained(bs);
     })();
 
+    // Whether el's box, or the content overflowing it, reaches past the
+    // viewport on each axis, as drawn now.
+    function pastViewport(el) {
+      const se = dom.get(document, 'compatMode') === 'BackCompat' ? bodyEl : rootEl;
+      const w = Number(dom.get(se, 'clientWidth')) || view.innerWidth || 0;
+      const h = Number(dom.get(se, 'clientHeight')) || view.innerHeight || 0;
+      const r = dom.getBoundingClientRect(el);
+      if (!r || !w || !h) return { x: false, y: false };
+      const right = Math.max(r.right, r.left + (Number(dom.get(el, 'scrollWidth')) || 0));
+      const bottom = Math.max(r.bottom, r.top + (Number(dom.get(el, 'scrollHeight')) || 0));
+      return { x: r.left < -1 || right > w + 1, y: r.top < -1 || bottom > h + 1 };
+    }
+
     // The viewport clips on each axis its used overflow hides. `locked`: both
     // hidden with content already beyond, a scroll lock the engine can't see past.
     const rootEl = dom.documentElement(document);
@@ -619,11 +636,17 @@ function runInPage(ctx) {
       const y = hides(cs.overflowY);
       const quirks = dom.get(document, 'compatMode') === 'BackCompat';
       const se = quirks ? bodyEl : rootEl;
-      const beyond = (scrollSize, clientSize, offset) =>
+      // A <body> taken out of flow, as `body { position: fixed }` locks the
+      // page behind a banner, leaves the scroll size at the viewport's though
+      // its content lies beyond, so its own box counts too.
+      const bodyPast = bodyEl ? pastViewport(bodyEl) : { x: false, y: false };
+      const beyond = (scrollSize, clientSize, offset, past) =>
         (Number(dom.get(se, scrollSize)) || 0) > (Number(dom.get(se, clientSize)) || 0) + 1 ||
-        offset > 0;
-      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0);
-      const lockedY = x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0);
+        offset > 0 ||
+        past;
+      const lockedX = x && y && beyond('scrollWidth', 'clientWidth', view.scrollX || 0, bodyPast.x);
+      const lockedY =
+        x && y && beyond('scrollHeight', 'clientHeight', view.scrollY || 0, bodyPast.y);
       const out = [];
       if (x && y && lockedX === lockedY) out.push({ el, x, y, viewport: true, locked: lockedX });
       else {
@@ -686,10 +709,14 @@ function runInPage(ctx) {
         if (scrolls === 3) break;
         // A fixed box placed against the viewport doesn't scroll with the
         // page: what it holds outside the viewport can't be scrolled to.
+        // One that already reached past the viewport, as a whole page held
+        // in a fixed box does, is locked like the viewport.
         if (cs && cs.position === 'fixed' && !helpers.containingBlockOf(a)) {
-          tail = [
-            { el: a, key: { fixed: a }, x: !(scrolls & 1), y: !(scrolls & 2), viewport: true }
-          ];
+          const x = !(scrolls & 1);
+          const y = !(scrolls & 2);
+          const past = pastViewport(a);
+          const locked = (x && past.x) || (y && past.y);
+          tail = [{ el: a, key: { fixed: a }, x, y, viewport: true, locked }];
           break;
         }
       }

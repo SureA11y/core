@@ -13,6 +13,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `text-spacing-content-loss` no longer fails text the spacing moves out of a viewport that is scroll-locked with `body { position: fixed }`, or out of a fixed box that already reached past the viewport, such as a whole page held in a fixed box or a fixed sidebar taller than the screen. 1.14.0 judged text in a fixed box, and in a viewport whose overflow is hidden, against the viewport. It saw a scroll lock only where the document's scroll size went past the viewport, and a fixed body leaves it at the viewport's however long the page is, so on a page locked behind a consent banner every line the spacing moved below the fold was a `TEXT_CLIPPED` failure. Both are now asked about as `VIEWPORT_SCROLL_LOCKED`, as a `body { overflow: hidden }` lock already was, and lean pass while a dialog or banner is open.
 - Docs: `ENGINE_OPTIONS.md` credits `en301549-v3.2.1`'s failing duplicate ids to the profile's `keepsParsing`, not to its tags; `TROUBLESHOOTING.md` no longer gives a maintainer command; `OUTPUT_SCHEMA.md` no longer says a bare `runOnly` array doesn't work; `CI_INTEGRATIONS.md` covers SARIF's `leanFailAs: 'error'` and a baseline's `leanFail`.
 
 ## [1.14.0] - 2026-10-26

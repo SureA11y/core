@@ -238,6 +238,34 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  // A body taken out of flow leaves the scroll size at the viewport's; a fixed
+  // box can hold more than the viewport. Either way content already lay beyond.
+  await t.test(
+    'text pushed out of a fixed box already past the viewport is asked about',
+    async () => {
+      for (const [css, body, expected] of [
+        [
+          'body{position:fixed;overflow:hidden;width:100%}',
+          lines(40),
+          [['b', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ],
+        [
+          '#panel{position:fixed;top:0;left:0;right:0;bottom:0}',
+          `<div id="panel">${lines(40)}</div>`,
+          [['panel', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ],
+        [
+          '#panel{position:fixed;top:0;left:0;right:0}',
+          `<div id="panel">${lines(40)}</div>`,
+          [['panel', 'cantTell', 'VIEWPORT_SCROLL_LOCKED']]
+        ]
+      ]) {
+        const result = await scan(viewportPage(css, body), undefined, small);
+        assert.deepEqual(findings(result), expected, css);
+      }
+    }
+  );
+
   await t.test('a viewport hidden on one axis only cuts off what goes past it there', async () => {
     const result = await scan(
       viewportPage(
