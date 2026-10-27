@@ -1,0 +1,8 @@
+## plain: agree
+## ja: agree
+## profile: agree
+## mappings: agree
+## custom: agree
+## messages de: agree
+## pack: agree
+## wcag20: agree

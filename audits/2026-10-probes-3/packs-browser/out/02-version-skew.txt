@@ -1,0 +1,21 @@
+--- a) 1.10.0 bundle + pack script
+{
+ "n": 134,
+ "engineVersion": "1.10.0",
+ "logs": []
+}
+--- a2) same, strictOptions
+{}
+--- b) script names a built-in impl the bundle lacks
+{
+ "replaced": true,
+ "n": 134,
+ "ids": [
+  "contrast-computable:cantTell:",
+  "contrast-enhanced:fail:"
+ ],
+ "packs": [
+  "@s/pack@1.0.0"
+ ],
+ "logs": []
+}

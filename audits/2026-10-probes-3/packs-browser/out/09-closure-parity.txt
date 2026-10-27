@@ -1,0 +1,21 @@
+--- closure-captured constant
+{
+ "node": {
+  "outcome": "fail"
+ },
+ "chromium": {
+  "outcome": "cantTell",
+  "error": "GENERIC is not defined"
+ }
+}
+--- pack script that does not parse
+{
+ "node": "fail",
+ "injectError": null,
+ "chromiumPacks": null,
+ "chromium": null,
+ "logs": [
+  "pageerror: Failed to execute 'appendChild' on 'Node': Unexpected token '('",
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}

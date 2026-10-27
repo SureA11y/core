@@ -1,0 +1,7 @@
+scan ms 36
+CHANGED muts 0 -> 2
+mutations during scan (recorded after microtasks): 2
+childList:HEAD::1/0:
+childList:HEAD::0/1:
+focus events: 0 
+other events: 0 

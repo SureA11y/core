@@ -1,0 +1,16 @@
+{"name":"flatDivs50k","htmlMB":1,"head":{"ms":2155,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1659,"top":[],"errs":[],"nErr":0}}
+{"name":"flatDivs200k","htmlMB":3.5,"head":{"ms":8727,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":6794,"top":[],"errs":[],"nErr":0}}
+{"name":"mixed20k","htmlMB":1.9,"head":{"ms":4551,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":6197,"top":[],"errs":[],"nErr":0}}
+{"name":"deepInButton3000","htmlMB":0,"head":{"ms":378,"top":[],"errs":["button-name-present:Maximum call stack size exceeded"],"nErr":1},"v1.10.0":{"ms":474,"top":[],"errs":["button-name-present:Maximum call stack size exceeded"],"nErr":1}}
+{"name":"nestedShadow2000","htmlMB":0,"head":"ERR page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"file:///Users/jorgefernandorumorososolana/dev/surea11y/core/audits/2026-10-probes-3/robust/tmp/p25370-c","v1.10.0":"ERR page.goto: Page crashed\nCall log:\n\u001b[2m  - navigating to \"file:///Users/jorgefernandorumorososolana/dev/surea11y/core/audits/2026-10-probes-3/robust/tmp/p25370-p"}
+{"name":"buttonOverNestedShadow2000","htmlMB":0,"head":{"ms":185,"top":[],"errs":["button-name-present:Maximum call stack size exceeded"],"nErr":1},"v1.10.0":{"ms":143,"top":[],"errs":[],"nErr":0}}
+{"name":"shadowIconButtons5000","htmlMB":0.2,"head":{"ms":1087,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1105,"top":[],"errs":[],"nErr":0}}
+{"name":"linksOverBigShadow1000","htmlMB":0,"head":{"ms":20943,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":14684,"top":[],"errs":[],"nErr":0}}
+{"name":"iframes500","htmlMB":0,"head":{"ms":33,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":31,"top":[],"errs":[],"nErr":0}}
+{"name":"table300x100","htmlMB":0.4,"head":{"ms":1671,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1291,"top":[],"errs":[],"nErr":0}}
+{"name":"text10MB","htmlMB":0,"head":{"ms":932,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":990,"top":[],"errs":[],"nErr":0}}
+{"name":"svg50k","htmlMB":2.7,"head":{"ms":782,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":735,"top":[],"errs":[],"nErr":0}}
+{"name":"ids20kAria","htmlMB":1.9,"head":{"ms":6003,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":7103,"top":[],"errs":[],"nErr":0}}
+{"name":"headings20k","htmlMB":0.4,"head":{"ms":1038,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1315,"top":[],"errs":[],"nErr":0}}
+{"name":"slots5000","htmlMB":0.2,"head":{"ms":1359,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1296,"top":[],"errs":[],"nErr":0}}
+{"name":"contrast40k","htmlMB":1.9,"head":{"ms":1558,"top":[],"errs":[],"nErr":0},"v1.10.0":{"ms":1325,"top":[],"errs":[],"nErr":0}}

@@ -1,0 +1,14 @@
+v1.10.0-npm Release 1.10.0 | contrast-computable ms 887, 898
+v1.10.0 Release 1.10.0 | contrast-computable ms 865, 908
+c2ad3bb0 Record counting rowspan="0" as a span | contrast-computable ms 1282, 1330
+82cbf7fe Record label-in-name keeping words whole across invisible ch | contrast-computable ms 1313, 1256
+00295c20 Record checking engineOptions | contrast-computable ms 1283, 1276
+HEAD Record the third stress test: packs in Node and pack tooling | contrast-computable ms 1159, 1180
+9721403a Measure an element's own opacity over its own background as  | contrast-computable ms 943, 883
+73401427 Update source-map-js to 1.2.2 | contrast-computable ms 1264, 1286
+a3a236c7 Count the labels HTML associates with a form control | contrast-computable ms 1278, 1304
+6195c74d Measure SVG text against the SVG shapes painted behind it | contrast-computable ms 867, 941
+b41cfe2d Check only text a reader can see in a browser, and keep a se | contrast-computable ms 993, 1048
+b8b3d747 Measure text against what is painted under it, in CSS's pain | contrast-computable ms 1258, 1242
+53effd3d Read the viewport meta tag as browsers do in both viewport r | contrast-computable ms 1291, 1220
+7f88c9c3 Measure the text a form field shows in the contrast rules | contrast-computable ms 1251, 1291

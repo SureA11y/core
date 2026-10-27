@@ -1,0 +1,3 @@
+N=12500: sarif 58ms 13.8MB +39MBheap | sarifWithBaseline 23ms 0.1MB +15MBheap | junit 117ms 2.9MB +94MBheap | report 20ms 4.3MB +13MBheap | earl 2ms 0.0MB +0MBheap | baselineMatch 20ms 0.0MB +14MBheap
+N=25000: sarif 100ms 27.5MB +78MBheap | sarifWithBaseline 40ms 0.1MB +16MBheap | junit 214ms 5.7MB +173MBheap | report 21ms 8.6MB +25MBheap | earl 0ms 0.0MB +0MBheap | baselineMatch 39ms 0.0MB +15MBheap
+N=50000: sarif 195ms 54.9MB +155MBheap | sarifWithBaseline 75ms 0.1MB +29MBheap | junit 509ms 11.5MB +243MBheap | report 45ms 17.3MB +32MBheap | earl 1ms 0.0MB +0MBheap | baselineMatch 75ms 0.0MB +29MBheap

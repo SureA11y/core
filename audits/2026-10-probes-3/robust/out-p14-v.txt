@@ -1,0 +1,1 @@
+resolve: {"selector":"#x","resolvesTo":"<div hidden=\"\" id=\"x\">old</div>","all":2}

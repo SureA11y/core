@@ -1,0 +1,19 @@
+fragment               "false"  img: fail/1 title: pass/0 perf: null logs: 0 
+fragment               false    img: fail/1 title: pass/0 perf: null logs: 0 
+fragment               "true"   img: fail/1 title: pass/0 perf: null logs: 0 
+fragment               0        img: fail/1 title: pass/0 perf: null logs: 0 
+fragment               1        img: fail/1 title: pass/0 perf: null logs: 0 
+includeShadowDom       "false"  img: fail/1 title: pass/0 perf: null logs: 0 
+includeShadowDom       false    img: notApplicable/0 title: pass/0 perf: null logs: 0 
+includeShadowDom       0        img: fail/1 title: pass/0 perf: null logs: 0 
+includeShadowDom       null     img: fail/1 title: pass/0 perf: null logs: 0 
+includeHiddenElements  "true"   img: fail/1 title: pass/0 perf: null logs: 0 
+includeHiddenElements  true     img: fail/1 title: pass/0 perf: null logs: 0 
+includeHiddenElements  1        img: fail/1 title: pass/0 perf: null logs: 0 
+perfStats              "false"  img: fail/1 title: pass/0 perf: obj logs: 0 
+perfStats              1        img: fail/1 title: pass/0 perf: obj logs: 0 
+strictOptions          "true"   img: fail/1 title: pass/0 perf: null logs: 1 warn: [surea11y] engineOptions: unknown option "lcoale" (did you mean "locale"?); ignored.
+strictOptions          1        img: fail/1 title: pass/0 perf: null logs: 1 warn: [surea11y] engineOptions: unknown option "lcoale" (did you mean "locale"?); ignored.
+output.include* "false" html="<img src=\"s.png\">" selector="img" logs 0
+output.include* false html="" selector="" logs 0
+output.include* 0 html="<img src=\"s.png\">" selector="img" logs 0

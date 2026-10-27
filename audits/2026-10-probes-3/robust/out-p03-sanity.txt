@@ -1,0 +1,6 @@
+<form><input name=parentNode></form>  24 fail #1 fail #1 cantTell #1 pass #0
+<img name=documentElement alt=x>  23 fail #1 fail #1 cantTell #1 pass #0
+<form name=title></form>  23 fail #1 fail #1 cantTell #1 pass #0
+<form><input name=getAttribute></form>  24 fail #1 fail #1 cantTell #1 pass #0
+<form aria-foo=bar><input name=attributes></form>  25 fail #1 fail #1 cantTell #2 pass #0
+<form><input name=assignedSlot></form>  25 fail #1 fail #1 cantTell #1 pass #0

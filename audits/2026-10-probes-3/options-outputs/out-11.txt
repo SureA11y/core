@@ -1,0 +1,5 @@
+report escaped
+junit escaped
+sarif UNESCAPED: <img src=x onerror, <script>window.__pwn
+report executed payload: no | injected <img onerror>: 0 | javascript: links: 0
+junit parses as XML: true

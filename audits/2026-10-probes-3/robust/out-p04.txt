@@ -1,0 +1,22 @@
+{"name":"shadowRootGetterThrows","ms":35,"ctlMs":25,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"attrsGetterThrows","ms":34,"ctlMs":24,"ndiff":2,"diffs":["aria-valid-attr: notApplicable #0 -> cantTell ERR:attrs #0","aria-valid-attr-value: notApplicable #0 -> cantTell ERR:attrs #0"],"post":"1/7/BODY","pageErrors":[]}
+{"name":"getAttributeThrows","ms":37,"ctlMs":24,"ndiff":4,"diffs":["aria-deprecated-role: pass #0 -> notApplicable #0","aria-roles-valid: pass #0 -> notApplicable #0","button-name-present: fail #2 -> fail #1","region: cantTell #3 -> cantTell ERR:ga #0"],"post":"1/7/BODY","pageErrors":[]}
+{"name":"childNodesThrows","ms":34,"ctlMs":24,"ndiff":1,"diffs":["region: cantTell #4 -> cantTell ERR:cn #0"],"post":"1/7/BODY","pageErrors":[]}
+{"name":"tagNameThrows","ms":32,"ctlMs":24,"ndiff":5,"diffs":["contrast-computable: cantTell #3 -> notApplicable #0","contrast-enhanced: notApplicable #1 -> notApplicable #0","contrast-minimum: notApplicable #1 -> notApplicable #0","region: cantTell #4 -> cantTell ERR:tn #0","text-spacing-content-loss: pass #0 -> cantTell ERR:ln #0"],"post":"1/7/BODY","pageErrors":[]}
+{"name":"textContentThrows","ms":26,"ctlMs":25,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"roleGetterLies","ms":24,"ctlMs":24,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"gbcrThrowsOne","ms":32,"ctlMs":24,"ndiff":1,"diffs":["contrast-computable: cantTell #3 -> cantTell #2"],"post":"1/7/BODY","pageErrors":[]}
+{"name":"focusMutates","ms":23,"ctlMs":23,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"focusinMutates","ms":24,"ctlMs":22,"ndiff":0,"diffs":[],"post":"1/6/BODY","pageErrors":[]}
+{"name":"focusinRemovesTarget","ms":24,"ctlMs":24,"ndiff":0,"diffs":[],"post":"1/6/BODY","pageErrors":[]}
+{"name":"blurMovesFocus","ms":24,"ctlMs":24,"ndiff":0,"diffs":[],"post":"1/6/BODY","pageErrors":[]}
+{"name":"mutationObserverChurn","ms":24,"ctlMs":24,"ndiff":0,"diffs":[],"post":"201/206/BODY","pageErrors":[]}
+{"name":"attrChangedCallbackMutates","ms":24,"ctlMs":25,"ndiff":2,"diffs":["img-alt-present: fail #1 -> fail #2","region: cantTell #3 -> cantTell #4"],"post":"2/8/BODY","pageErrors":[]}
+{"name":"connectedCallbackLoop","ms":25,"ctlMs":24,"ndiff":2,"diffs":["img-alt-present: fail #1 -> fail #2","region: cantTell #3 -> cantTell #4"],"post":"2/7/BODY","pageErrors":[]}
+{"name":"scrollHandlerMutates","ms":25,"ctlMs":25,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"resizeObserverMutates","ms":25,"ctlMs":25,"ndiff":2,"diffs":["img-alt-present: fail #1 -> fail #3","region: cantTell #3 -> cantTell #5"],"post":"3/8/BODY","pageErrors":[]}
+{"name":"selectionChangeMutates","ms":26,"ctlMs":25,"ndiff":0,"diffs":[],"post":"1/6/BODY","pageErrors":[]}
+{"name":"styleRecalcThrowsInGetter","ms":25,"ctlMs":26,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"infiniteGetterOnOne","ms":9024,"ctlMs":24,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}
+{"name":"slowGetAttribute","ms":25,"ctlMs":25,"ndiff":0,"diffs":[],"post":"1/6/BODY","pageErrors":[]}
+{"name":"ariaHiddenFlipOnFocus","ms":26,"ctlMs":27,"ndiff":0,"diffs":[],"post":"1/7/BODY","pageErrors":[]}

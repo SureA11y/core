@@ -1,0 +1,3 @@
+{"name":"closedShadowIcon","chromeRole":"button","chromeName":"Save","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}
+{"name":"linkClosed","chromeRole":"link","chromeName":"Save","button":"notApplicable#0","link":"fail#1","aria":"notApplicable#0"}
+{"name":"dsdClosed","chromeRole":"button","chromeName":"DSD closed","button":"fail#1","link":"notApplicable#0","aria":"fail#1"}

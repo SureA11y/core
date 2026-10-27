@@ -1,0 +1,24 @@
+== (a) packScript per function shape
+arrowDefaultWithParens     SCRIPT DOES NOT PARSE: Unexpected token '(' | run threw: Unexpected token '(' | checkPack problems: 0
+arrowDestructure           script parses | in-page acme-x: pass#0 | checkPack problems: 0
+asyncLikeName              script parses | in-page acme-x: pass#0 | checkPack problems: 0
+bound                      SCRIPT DOES NOT PARSE: Unexpected identifier 'code' | run threw: Unexpected identifier 'code' | checkPack problems: 0
+arrowWithComment           script parses | in-page acme-x: pass#0 | checkPack problems: 0
+methodWithDefaultParens    script parses | in-page acme-x: pass#0 | checkPack problems: 0
+== (b) a pack rule changing shared state
+no pack: button-name-present fail#1 | img-alt-present fail#1
+helpersReplaced      | with pack: button pass#0 img pass#0 | next scan without pack: button fail#1 img fail#1
+helpersQueryEmpty    | with pack: button notApplicable#0 img notApplicable#0 | next scan without pack: button fail#1 img fail#1
+domChanged           | with pack: button pass#0 img pass#0 | next scan without pack: button fail#1 img fail#1
+ctxFrozenCheck       | with pack: button fail#1 img fail#1 | next scan without pack: button fail#1 img fail#1
+== (c) pack object changed between scans
+scan1 acme-c pass#0 | after changing the pack object: acme-c pass#0 acme-d absent
+== (d) rules that misbehave
+throwsNonError       SCAN THREW nested
+throwsNull           acme-b cantTell#0 ERR null | button fail#1 | 24 ms
+returnsCyclic        acme-b fail#1 | button fail#1 | 20 ms
+occurrenceNotNode    acme-b fail#4 | button fail#1 | 19 ms
+occurrences100k      acme-b fail#100000 | button fail#1 | 221 ms
+outcomeWeird         acme-b cantTell#0 ERR The rule returned outcome "FAIL", which is not one of fail, pass, cantTell, notA | button fail#1 | 19 ms
+outcomeGetterThrows  SCAN THREW getter
+proxyResult          SCAN THREW proxy

@@ -1,0 +1,11 @@
+hiddenFirst jsdom ["button-name-present -> #x [<button id=\"x\"></button>]"]
+hiddenFirst chromium ["button-name-present -> #x [<button id=\"x\"></button>]"]
+displayNoneFirst jsdom ["button-name-present -> #x [<button id=\"x\"></button>]"]
+displayNoneFirst chromium ["button-name-present -> #x [<button id=\"x\"></button>]"]
+templateLike jsdom ["button-name-present -> #x [<button id=\"x\"></button>]"]
+templateLike chromium ["button-name-present -> #x [<button id=\"x\"></button>]"]
+testidHidden jsdom ["button-name-present -> [data-testid=\"save\"] [<button data-testid=\"save\"></button>]"]
+testidHidden chromium ["button-name-present -> [data-testid=\"save\"] [<button data-testid=\"save\"></button>]"]
+nameHidden jsdom ["form-control-programmatic-label-present -> input[name=\"q\"] [<input name=\"q\">]"]
+nameHidden chromium ["form-control-programmatic-label-present -> input[name=\"q\"] [<input name=\"q\">]"]
+resolve: {"selector":"#x","resolvesTo":"<div hidden=\"\" id=\"x\">old</div>","all":2}

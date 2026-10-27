@@ -1,0 +1,30 @@
+OK   rootCanvasFallback undefined: fail "Element has insufficient color contrast of 4.48:1 (foreground: #777777, background: #ffffff, font size: 0px,  | echoed {"mode":"auditorAssist","rootCanvasFallback":"#ffffff"} | logs 
+OK   rootCanvasFallback "#000000": pass "All computable text meets minimum contrast (AA). Eligible text nodes: 1. Computable: 1." | echoed {"mode":"auditorAssist","rootCanvasFallback":"#000000"} | logs 
+OK   rootCanvasFallback "banana": fail "Element has insufficient color contrast of 4.48:1 (foreground: #777777, background: #ffffff, font size: 0px,  | echoed {"mode":"auditorAssist","rootCanvasFallback":"banana"} | logs 
+OK   rootCanvasFallback "rgba(0,0,0,0)": pass "All computable text meets minimum contrast (AA). Eligible text nodes: 1. Computable: 1." | echoed {"mode":"auditorAssist","rootCanvasFallback":"rgba(0,0,0,0)"} | logs 
+OK   rootCanvasFallback "#fff0": fail "Element has insufficient color contrast of 4.48:1 (foreground: #777777, background: #ffffff, font size: 0px,  | echoed {"mode":"auditorAssist","rootCanvasFallback":"#fff0"} | logs 
+OK   rootCanvasFallback "transparent": pass "All computable text meets minimum contrast (AA). Eligible text nodes: 1. Computable: 1." | echoed {"mode":"auditorAssist","rootCanvasFallback":"transparent"} | logs 
+OK   rootCanvasFallback "oklch(0 0 0)": pass "All computable text meets minimum contrast (AA). Eligible text nodes: 1. Computable: 1." | echoed {"mode":"auditorAssist","rootCanvasFallback":"oklch(0 0 0)"} | logs 
+OK   rules[contrast-minimum].normalTextRatio dropped: fail logs:
+OK   probes capped in echo: arr 200, str 2000, keys 50, deep chain 4
+OK   probes with cycle/BigInt/function: {"big":null,"cyc":{"a":1,"self":{"a":1,"self":{"a":1,"self":{"a":1,"self":{"a":null,"self":null}}}}},"fn":null}
+OK   probes with a throwing getter: null
+OK   logUntestedWcag false silences the note: default 1 line(s), false 0
+OK   timestamp "": result.timestamp=null logs 0
+OK   timestamp "   ": result.timestamp=null logs 0
+OK   timestamp "not a date": result.timestamp="not a date" logs 0
+OK   timestamp 1728432000000: result.timestamp=null logs 1
+OK   pageUrl undefined: url="https://e.test/" logs 
+OK   pageUrl null: url="https://e.test/" logs 
+OK   pageUrl "": url="https://e.test/" logs 
+OK   pageUrl 42: url="https://e.test/" logs warn: [surea11y] pageUrl: ignoring the number 42; pass a string. The result's ur
+OK   pageUrl {"href":"x"}: url="https://e.test/" logs warn: [surea11y] pageUrl: ignoring an object; pass a string. The result's url is
+OK   pageUrl "not a url": url="not a url" logs 
+OK   pageUrl "javascript:alert(1)": url="javascript:alert(1)" logs 
+OK   messages with a number and an empty string: title="<img> muss ein alt-Attribut haben" summary="Fehlendes alt-Attribut auf <img>." reason=ok
+OK   excludeSelectors with invalid entries: notApplicable, logs warn: [surea11y] excludeSelectors: "img[" is not a valid CSS selector and excludes nothing | warn: [surea11y] excludeSelectors: ":has(" is not a valid CSS selector and excludes nothin
+OK   findings + includeSelector false: [["img-alt-present",14,[""]],["page-title-present",14,["head > title"]]]
+OK   visibilityMode undefined: fail/1 logs 0
+OK   visibilityMode styleOnly: fail/1 logs 0
+OK   visibilityMode styleAndGeometry: notApplicable/0 logs 0
+OK   visibilityMode geometry: fail/1 logs 0

@@ -1,0 +1,14 @@
+{"name":"clean","ms":36,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"prototype173","ms":34,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"prototype161","ms":34,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"mootools16","ms":31,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"sugarExtended","ms":33,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"zonejs","ms":30,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoThen","ms":43,"nRules":134,"resultKeys":11,"ndiff":134,"sample":["accesskeys: notApplicable #0 -> cantTell ERR:runInPage returned a Promise; rules run synchronously, so it must return a resul #0","area-alt-present: notApplicable #0 -> cantTell ERR:runInPage returned a Promise; rules run synchronously, so it must return a resul #0","area-alt-quality: notApplicable #0 -> cantTell ERR:runInPage returned a Promise; rules run synchronously, so it must return a resul #0","aria-allowed-attr: notApplicable #0 -> cantTell ERR:runInPage returned a Promise; rules run synchronously, so it must return a resul #0","aria-allowed-role: notApplicable #0 -> cantTell ERR:runInPage returned a Promise; rules run synchronously, so it must return a resul #0"],"pageErrors":[]}
+{"name":"objProtoRole","ms":31,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoLength","ms":32,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoOutcome","ms":31,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoSelector","ms":32,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoEnumerableFn","ms":33,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"objProtoToJSON","ms":34,"nRules":134,"resultKeys":11,"ndiff":0,"sample":[],"pageErrors":[]}
+{"name":"arrayFilterIdentity","ms":14,"nRules":0,"resultKeys":12,"ndiff":134,"sample":["accesskeys: notApplicable #0 -> undefined","area-alt-present: notApplicable #0 -> undefined","area-alt-quality: notApplicable #0 -> undefined","aria-allowed-attr: notApplicable #0 -> undefined","aria-allowed-role: notApplicable #0 -> undefined"],"pageErrors":[]}

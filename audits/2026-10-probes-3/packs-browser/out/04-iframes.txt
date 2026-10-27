@@ -1,0 +1,68 @@
+--- a) bundle+pack in every frame, scan each frame
+{
+ "per": [
+  {
+   "frame": "https://example.test/",
+   "packs": [
+    "@f/pack@1.0.0"
+   ],
+   "fOne": "fail",
+   "url": "https://example.test/"
+  },
+  {
+   "frame": "https://example.test/child",
+   "packs": [
+    "@f/pack@1.0.0"
+   ],
+   "fOne": "fail",
+   "url": "https://example.test/child"
+  },
+  {
+   "frame": "https://other.test/child",
+   "packs": [
+    "@f/pack@1.0.0"
+   ],
+   "fOne": "fail",
+   "url": "https://other.test/child"
+  },
+  {
+   "frame": "about:srcdoc",
+   "packs": [
+    "@f/pack@1.0.0"
+   ],
+   "fOne": "fail",
+   "url": "about:srcdoc"
+  }
+ ],
+ "logs": []
+}
+--- b) pack script only in the top frame, scan each frame
+{
+ "per": [
+  {
+   "frame": "https://example.test/",
+   "packs": [
+    "@f/pack@1.0.0"
+   ],
+   "fOne": "fail",
+   "url": "https://example.test/"
+  },
+  {
+   "frame": "https://example.test/child",
+   "url": "https://example.test/child"
+  },
+  {
+   "frame": "https://other.test/child",
+   "url": "https://other.test/child"
+  },
+  {
+   "frame": "about:srcdoc",
+   "url": "about:srcdoc"
+  }
+ ],
+ "logs": [
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored.",
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored.",
+  "warning: [surea11y] engineOptions.packs: this runner has only the rules it was built with; run packs through runDomRulesInPage in Node, or register them in the page (packScript in @surea11y/core/pack) and name them as name@version; ignored."
+ ]
+}
