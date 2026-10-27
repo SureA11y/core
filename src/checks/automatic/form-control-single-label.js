@@ -5,7 +5,7 @@
 /**
  * @check form-control-single-label
  * @atomic true
- * @summary A form control must not be associated with more than one <label>
+ * @summary A form control should not be associated with more than one <label>
  * @standard WCAG 2.2
  * @sc 3.3.2
  * @applicability
@@ -23,8 +23,10 @@
  *     native <label>: the labels then contribute nothing to the name, so
  *     they cannot be ambiguous. A visible-label-vs-name mismatch is SC 2.5.3
  *     Label in Name's concern, not this rule's.
- *   - FAIL when two or more non-empty labels compete and there is no
- *     override: screen readers announce a non-deterministic subset.
+ *   - CANTTELL when two or more non-empty labels compete and there is no
+ *     override: browsers join their text, in DOM order, into one name,
+ *     and only a person can tell whether that joined name still makes
+ *     sense ("Address Mailing address") or reads as noise.
  *   - CANTTELL when one non-empty label is joined by empty label
  *     association(s) and there is no override: the name usually resolves to
  *     the real label, but handling of the empty association is not
@@ -34,10 +36,21 @@
  *   ambiguity, so this rule stays silent.
  * @reports
  *   - `labelCount`: how many labels are associated with the control. On
- *     the competing-labels failure, only the non-empty ones are counted; on
+ *     the competing-labels case, only the non-empty ones are counted; on
  *     the empty-label case, the empty ones are counted too.
  *   - `contributingLabelCount` (the empty-label case): how many of those
  *     labels have text, and so give the control its name.
+ * @reason-codes
+ *   - `FORM_FIELD_MULTIPLE_LABELS` (cantTell): two or more labels with text
+ *     name the field, and no aria-label or aria-labelledby overrides them;
+ *     browsers join them into one name, which a person judges.
+ *     It leans pass when the labels repeat each other (one's words appear
+ *     in another) or the extra ones only mark the field as required.
+ *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled); WCAG 4.1.2.
+ *   - `FORM_FIELD_EXTRA_EMPTY_LABEL` (cantTell): one label with text and one
+ *     or more empty label associations, with no override.
+ *     It leans pass: browsers join the labels' text, so the empty one adds nothing.
+ *     Basis: HTML-AAM 4.1.1; WCAG 3.3.2 (not settled).
  * @implementation-notes
  * - Distinct, atomic decision from form-control-programmatic-label-present
  *   (that rule checks a label exists at all; this one checks at most one
@@ -50,7 +63,7 @@
 const id = 'form-control-single-label';
 
 const meta = {
-  title: 'Form controls must not have multiple labels',
+  title: 'Form controls should not have multiple labels',
   description:
     'Checks that a form control is associated with at most one <label> (by wrapping or by label[for]).',
   i18n: {
@@ -73,7 +86,34 @@ const meta = {
   category: 'understandable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } }
+  coverage: { facetsBySc: { '3.3.2': ['form-control-single-label'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    FORM_FIELD_EXTRA_EMPTY_LABEL: {
+      steps: [
+        'Find the field the report names and note its label with text and the empty label also pointing at it.',
+        "Open the Accessibility pane in the browser's developer tools and check that the field's name is the text of the real label.",
+        'With a screen reader, Tab to the field and listen to the name.'
+      ],
+      passWhen:
+        "The field's name is the text of the real label, and nothing is lost to the empty one.",
+      failWhen:
+        'The field gets no name or an incomplete one because of the empty label, which fails WCAG 3.3.2 (and 4.1.2).'
+    },
+    FORM_FIELD_MULTIPLE_LABELS: {
+      steps: [
+        'Find the field the report names and note the text of each label pointing at it.',
+        "Open the Accessibility pane in the browser's developer tools and read the field's accessible name, which joins all the labels.",
+        'With a screen reader, Tab to the field and listen to the name.',
+        'Decide whether the joined name still says clearly what to enter.'
+      ],
+      passWhen:
+        'The joined name is clear: the labels repeat each other or the extra one is only a marker such as "required".',
+      failWhen:
+        'The joined name is confusing or misleading, such as two unrelated labels run together, which fails WCAG 3.3.2 (and can fail 2.5.3 and 4.1.2).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -94,6 +134,56 @@ function runInPage(ctx) {
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector)
     : helpers.queryAll(selector);
+
+  // The text a label gives the control's name: its own aria name, else its
+  // content without the control, else its title.
+  function labelText(lab, control) {
+    try {
+      const aria = getAriaNameInfo ? getAriaNameInfo(lab, null, {}) : null;
+      if (aria && aria.present && String(aria.value || '').trim()) return String(aria.value);
+    } catch {}
+    try {
+      const info = helpers.getContentNameInfo(lab, null, { skipNode: control });
+      if (info && info.present && String(info.value || '').trim()) return String(info.value);
+    } catch {}
+    return String(dom.getAttribute(lab, 'title') || '');
+  }
+  // Letters and digits only, lower case, single-spaced.
+  function normalize(text) {
+    return String(text || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}]+/gu, ' ')
+      .trim();
+  }
+  // A label that only marks the field as required or optional ("*",
+  // "(required)"), in the languages the dictionaries cover.
+  const MARKERS = new Set([
+    'required',
+    'optional',
+    'mandatory',
+    'req',
+    'obligatoire',
+    'facultatif',
+    'requis',
+    'erforderlich',
+    'pflichtfeld',
+    'obligatorio',
+    'requerido',
+    'opcional',
+    '必須',
+    '任意'
+  ]);
+  const isMarker = (norm) => norm === '' || MARKERS.has(norm);
+  // Whether the joined name only repeats itself: after leaving out marker
+  // labels, every label's words appear, as a run, in the longest one.
+  function labelsRepeat(texts) {
+    const words = texts.map(normalize).filter((t) => !isMarker(t));
+    const markers = texts.length - words.length;
+    if (!words.length) return null;
+    const longest = words.reduce((a, b) => (b.length > a.length ? b : a));
+    const repeat = words.every((w) => (' ' + longest + ' ').indexOf(' ' + w + ' ') !== -1);
+    return repeat ? { markers, distinct: new Set(words).size } : null;
+  }
 
   const failOccurrences = [];
   const cantTellOccurrences = [];
@@ -136,16 +226,42 @@ function runInPage(ctx) {
     const tag = dom.tagName(el).toLowerCase();
 
     if (contributing.length >= 2) {
-      failOccurrences.push(
+      // Labels that repeat each other, or a marker such as "required",
+      // leave the joined name clear, if wordy.
+      const repeat = labelsRepeat(contributing.map((lab) => labelText(lab, el)));
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This form control is associated with more than one <label>.',
-          hint: 'Keep one <label> per field. With several, screen readers may read only one of them, or all of them run together.',
-          occurrenceOutcome: 'fail',
+          hint: 'Browsers join the labels into one name. Check that it still makes sense, or keep one <label> per field.',
+          occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'formControlSingleLabel_summary_fail',
-            hintKey: 'formControlSingleLabel_hint_fail',
+            summaryKey: 'formControlSingleLabel_summary_cantTell_competing',
+            hintKey: 'formControlSingleLabel_hint_cantTell_competing',
             params: { element: tag, labelCount: String(contributing.length) }
           },
+          uncertainty: {
+            code: 'judgement-required',
+            needed: 'Whether the name the labels make together is clear.',
+            evidence: { element: tag, labelCount: contributing.length }
+          },
+          ...(repeat
+            ? {
+                lean: {
+                  toward: 'pass',
+                  why: 'The labels repeat each other or only mark the field as required, so the joined name stays clear.',
+                  signals: [
+                    { signal: 'labels-repeat-each-other', value: true },
+                    { signal: 'marker-only-labels', value: repeat.markers }
+                  ],
+                  caution:
+                    'A repeated name such as "Email Email address" is wordy; a person judges whether it is still clear.',
+                  i18n: {
+                    whyKey: 'formControlSingleLabel_lean_why_competing',
+                    cautionKey: 'formControlSingleLabel_lean_caution_competing'
+                  }
+                }
+              }
+            : {}),
           data: {
             details: {
               reasonCode: 'FORM_FIELD_MULTIPLE_LABELS',
@@ -174,6 +290,18 @@ function runInPage(ctx) {
               element: tag,
               labelCount: eligibleLabels.size,
               contributingLabelCount: contributing.length
+            }
+          },
+          // Browsers join the labels' text, so an empty one adds nothing.
+          lean: {
+            toward: 'pass',
+            why: 'Browsers join the text of a field’s labels, so the empty label adds nothing and the name is the real label’s text.',
+            signals: [{ signal: 'contributing-label-count', value: contributing.length }],
+            caution:
+              'A user agent that reads only the first label may pick the empty one; a script may fill it in.',
+            i18n: {
+              whyKey: 'formControlSingleLabel_lean_why',
+              cautionKey: 'formControlSingleLabel_lean_caution'
             }
           },
           data: {

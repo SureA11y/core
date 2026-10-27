@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **136**
+Total rules (loaded without error): **145**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 109 | 24 | 10 |
+| Any WCAG version | 116 | 27 | 10 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 102 | 18 | 10 |
-| WCAG 2.1 | 5 | 4 | 0 |
+| WCAG 2.0 | 108 | 20 | 10 |
+| WCAG 2.1 | 6 | 5 | 0 |
 | WCAG 2.2 | 2 | 2 | 0 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,10 +26,10 @@ Total rules (loaded without error): **136**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 4 |
+| wcag21aa | 5 |
 | wcag22aa | 2 |
-| wcag2a | 91 |
-| wcag2aa | 9 |
+| wcag2a | 96 |
+| wcag2aa | 11 |
 | wcag2aaa | 10 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
@@ -113,12 +113,12 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| video-caption | manual | Prerecorded video should provide a captions track | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
+| video-caption | manual | Prerecorded video should provide complete captions | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
 
 ### 1.3.1
 
-Facet coverage: **15/16** facets covered.
-Automation mix: **full 12, partial 1, manual 3**.
+Facet coverage: **16/17** facets covered.
+Automation mix: **full 13, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -138,12 +138,14 @@ Automation mix: **full 12, partial 1, manual 3**.
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
+| aria-owns-valid | full | aria-owns-valid |
 
 Uncovered facets: form-control-label-quality-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
@@ -239,6 +241,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
 
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| image-of-text-evidence | manual | image-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
+
 ### 1.4.6
 
 Facet coverage: **2/2** facets covered.
@@ -271,8 +286,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **5/5** facets covered.
-Automation mix: **full 1, partial 2, manual 2**.
+Facet coverage: **7/7** facets covered.
+Automation mix: **full 1, partial 2, manual 4**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -282,14 +297,18 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
-| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
+| mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.1.3
@@ -305,8 +324,8 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
-| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
+| click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 
 ### 2.2.1
@@ -335,7 +354,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
-| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
+| moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
@@ -425,17 +444,19 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -526,6 +547,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 | meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
+### 3.3.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| invalid-field-error-message | partial | invalid-field-error-message |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| invalid-field-error-message | automatic | Fields marked invalid should have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+
 ### 3.3.2
 
 Facet coverage: **3/3** facets covered.
@@ -540,7 +574,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
-| form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-single-label | automatic | Form controls should not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
 | form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
@@ -571,8 +605,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 1, manual 1**.
+Facet coverage: **40/40** facets covered.
+Automation mix: **full 37, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -614,6 +648,8 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
+| aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
+| aria-owns-valid | full | aria-owns-valid |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -623,6 +659,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
@@ -654,6 +691,21 @@ Automation mix: **full 36, partial 1, manual 1**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
+| aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
+
+### 4.1.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| live-region-reachable-evidence | manual | live-region-announcements |
+| live-region-changes-evidence | manual | live-region-announcements |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| live-region-announcements | manual | Live regions should be able to announce status messages | src/checks/manual/live-region-announcements.js | live-region-reachable-evidence, live-region-changes-evidence |  |
 
 ### (unmapped)
 
@@ -664,10 +716,12 @@ Automation mix: **full 36, partial 1, manual 1**.
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| control-name-title-only | manual | A button or link should not take its name only from its title | src/checks/manual/control-name-title-only.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| label-for-valid | manual | A label’s for attribute should name a control it can label | src/checks/manual/label-for-valid.js |  |  |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |
@@ -768,12 +822,12 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| video-caption | manual | Prerecorded video should provide a captions track | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
+| video-caption | manual | Prerecorded video should provide complete captions | src/checks/manual/video-caption-manual.js | video-captions-track-evidence |  |
 
 ### 1.3.1
 
-Facet coverage: **15/16** facets covered.
-Automation mix: **full 12, partial 1, manual 3**.
+Facet coverage: **16/17** facets covered.
+Automation mix: **full 13, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -793,12 +847,14 @@ Automation mix: **full 12, partial 1, manual 3**.
 | table-fake-caption-evidence | manual | table-fake-caption |
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
+| aria-owns-valid | full | aria-owns-valid |
 
 Uncovered facets: form-control-label-quality-review
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-children | automatic | Container roles must not own a child with a disallowed role | src/checks/automatic/aria-prohibited-children.js | aria-role-owned-children-allowed |  |
 | aria-required-children | automatic | Container roles must own at least one required child role | src/checks/automatic/aria-required-children.js | aria-role-required-owned-children |  |
 | aria-required-parent | automatic | Roles requiring a specific context role must be in that context | src/checks/automatic/aria-required-parent.js | aria-role-required-context-parent |  |
@@ -894,6 +950,19 @@ Automation mix: **full 1, partial 0, manual 0**.
 |---|---|---|---|---|---|
 | meta-viewport-zoom-enabled | automatic | Viewport meta tag must not disable zoom | src/checks/automatic/meta-viewport-zoom-enabled.js | meta-viewport-zoom-enabled |  |
 
+### 1.4.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 0, manual 1**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| image-of-text-evidence | manual | image-of-text |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| image-of-text | manual | Text should be real text, not an image of text | src/checks/manual/image-of-text-manual.js | image-of-text-evidence |  |
+
 ### 1.4.6
 
 Facet coverage: **2/2** facets covered.
@@ -926,8 +995,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **5/5** facets covered.
-Automation mix: **full 1, partial 2, manual 2**.
+Facet coverage: **7/7** facets covered.
+Automation mix: **full 1, partial 2, manual 4**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -937,14 +1006,18 @@ Rules missing facet mapping for this SC: manual-review
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
 | server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
-| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
+| mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
 
 ### 2.1.3
@@ -960,8 +1033,8 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| click-handler-keyboard-operable | automatic | Inline click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
-| mouse-only-event-handlers | manual | Pointer-only inline event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
+| click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
 
 ### 2.2.1
@@ -990,7 +1063,7 @@ Automation mix: **full 1, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | deprecated-elements-not-used | automatic | Scrolling &lt;marquee&gt; content must be possible to pause, stop, or hide | src/checks/automatic/deprecated-elements-not-used.js | deprecated-non-stoppable-elements-absent |  |
-| moving-content-pausable | manual | Content that moves by itself can be paused, stopped or hidden | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
+| moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | auto-moving-content-pausable |  |
 
 ### 2.2.4
 
@@ -1080,17 +1153,19 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **3/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
 | css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 | css-hidden-focus | manual | Focusable elements must not be visually hidden | src/checks/manual/css-hidden-focus-manual.js | css-hidden-focusable |  |
 | manual-review | manual | Manual review: keyboard navigation and focus order | src/checks/manual-review.js |  |  |
@@ -1181,6 +1256,19 @@ Automation mix: **full 2, partial 0, manual 0**.
 | meta-refresh-no-exceptions | automatic | Page must not use a timed meta refresh (AAA) | src/checks/automatic/meta-refresh-no-exceptions.js | meta-refresh-no-exceptions |  |
 | meta-refresh-timing-absent | automatic | Page must not use a timed meta refresh | src/checks/automatic/meta-refresh-timing-absent.js | meta-refresh-timing-absent |  |
 
+### 3.3.1
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| invalid-field-error-message | partial | invalid-field-error-message |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| invalid-field-error-message | automatic | Fields marked invalid should have a shown error message | src/checks/automatic/invalid-field-error-message.js | invalid-field-error-message |  |
+
 ### 3.3.2
 
 Facet coverage: **3/3** facets covered.
@@ -1195,7 +1283,7 @@ Automation mix: **full 2, partial 0, manual 1**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | form-control-programmatic-label-present | automatic | Form controls must have a programmatic label | src/checks/automatic/form-control-programmatic-label-present.js | form-control-labels-or-instructions-present |  |
-| form-control-single-label | automatic | Form controls must not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
+| form-control-single-label | automatic | Form controls should not have multiple labels | src/checks/automatic/form-control-single-label.js | form-control-single-label |  |
 | form-control-programmatic-label-quality | manual | Form controls should have a label shown on screen | src/checks/manual/form-control-programmatic-label-quality-manual.js | form-control-visible-label-quality |  |
 
 ### 3.3.8
@@ -1226,8 +1314,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **38/38** facets covered.
-Automation mix: **full 36, partial 1, manual 1**.
+Facet coverage: **40/40** facets covered.
+Automation mix: **full 37, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1269,6 +1357,8 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-braille-equivalent | full | aria-braille-equivalent |
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
+| aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
+| aria-owns-valid | full | aria-owns-valid |
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1278,6 +1368,7 @@ Automation mix: **full 36, partial 1, manual 1**.
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
+| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
@@ -1309,6 +1400,21 @@ Automation mix: **full 36, partial 1, manual 1**.
 | tooltip-name-present | automatic | Tooltips have an accessible name | src/checks/automatic/tooltip-name-present.js | tooltip-name-present |  |
 | treeitem-name-present | automatic | Tree items have an accessible name | src/checks/automatic/treeitem-name-present.js | treeitem-name-present |  |
 | aria-checked-state-mismatch | manual | Native checkbox/radio aria-checked should match its actual state | src/checks/manual/aria-checked-state-mismatch-manual.js | aria-checked-state-mismatch |  |
+| aria-expanded-state-mismatch | manual | aria-expanded should match whether the controlled content is shown | src/checks/manual/aria-expanded-state-mismatch.js | aria-expanded-state-mismatch |  |
+
+### 4.1.3
+
+Facet coverage: **2/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| live-region-reachable-evidence | manual | live-region-announcements |
+| live-region-changes-evidence | manual | live-region-announcements |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| live-region-announcements | manual | Live regions should be able to announce status messages | src/checks/manual/live-region-announcements.js | live-region-reachable-evidence, live-region-changes-evidence |  |
 
 ### (unmapped)
 
@@ -1319,10 +1425,12 @@ Automation mix: **full 36, partial 1, manual 1**.
 | landmark-role-name-present | automatic | Region and form roles must have an accessible name | src/checks/automatic/landmark-role-name-present.js |  |  |
 | accesskeys | manual | accesskey values must be unique | src/checks/manual/accesskeys-manual.js |  |  |
 | aria-text | manual | role="text" elements should have no focusable descendants | src/checks/manual/aria-text-manual.js |  |  |
+| control-name-title-only | manual | A button or link should not take its name only from its title | src/checks/manual/control-name-title-only.js |  |  |
 | empty-table-header | manual | Table header cells must not be empty | src/checks/manual/empty-table-header-manual.js |  |  |
 | focus-order-semantics | manual | Elements added to the tab order should have interactive semantics | src/checks/manual/focus-order-semantics-manual.js |  |  |
 | heading-order | manual | Heading levels must not skip a level | src/checks/manual/heading-order-manual.js |  |  |
 | image-redundant-alt | manual | Image alt text must not duplicate adjacent visible text | src/checks/manual/image-redundant-alt-manual.js |  |  |
+| label-for-valid | manual | A label’s for attribute should name a control it can label | src/checks/manual/label-for-valid.js |  |  |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js |  |  |
 | landmark-banner-is-top-level | manual | Banner landmark must be top-level | src/checks/manual/landmark-banner-is-top-level-manual.js |  |  |
 | landmark-complementary-is-top-level | manual | Complementary landmark must be top-level | src/checks/manual/landmark-complementary-is-top-level-manual.js |  |  |

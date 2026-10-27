@@ -18,11 +18,14 @@ Deterministic precedence, evaluated over that composite's atomic contributors:
 | No `fail`, but any contributor `cantTell` **or** a listed contributor didn't run at all | `cantTell` |
 | Every contributor `notApplicable`, for a criterion whose rules find every case it applies to | `notApplicable` |
 | Every contributor `notApplicable`, for any other criterion | `cantTell` (`composite.rollup.cantTell.partialCoverage`) |
-| Otherwise (all ran, none failed/cantTell, not all N/A) | `pass` |
+| Otherwise (all ran, none failed/cantTell, not all N/A), for a criterion whose rules check all it asks | `pass` |
+| Otherwise, for any other criterion | `cantTell` (`composite.rollup.cantTell.partialCheck`) |
 
-A criterion is `notApplicable` only when its rules find every case it applies to: links for 2.4.4 and 2.4.9, form fields for 1.3.5 and 3.3.2, focusable elements for 2.4.3 and 2.4.7, labelled components for 2.5.3, pointer targets for 2.5.8, markup for 4.1.1 (`src/coverage/complete-applicability.js`, with the reason for each). For any other, rules that all found nothing only say the cases they look for are absent: a script that redirects after a delay is a time limit (2.2.1) with no `<meta http-equiv="refresh">`, and a passage in another language (3.1.2) need not carry a `lang`. In WCAG-EM's terms, "not present" needs every place the content could be to have been looked at, so such a criterion is `cantTell`, with the reason code `composite.rollup.cantTell.partialCoverage`.
+A criterion is `notApplicable` only when its rules find every case it applies to: links for 2.4.4 and 2.4.9, focusable elements for 2.4.3 and 2.4.7, labelled components for 2.5.3, markup for 4.1.1 (`src/coverage/complete-applicability.js`, with the reason for each). Form fields (1.3.5, 3.3.2) and pointer targets (2.5.8) are not on the list: a field made from an ARIA role, a field with no `autocomplete`, or an element that is a target only through a script can be on a page where those rules found nothing. For any other, rules that all found nothing only say the cases they look for are absent: a script that redirects after a delay is a time limit (2.2.1) with no `<meta http-equiv="refresh">`, and a passage in another language (3.1.2) need not carry a `lang`. In WCAG-EM's terms, "not present" needs every place the content could be to have been looked at, so such a criterion is `cantTell`, with the reason code `composite.rollup.cantTell.partialCoverage`.
 
-This means: **a composite `pass` is a real, deterministic "every applicable automated check for this SC came back clean" — but it is not a WCAG conformance claim on its own.** If any facet of that SC has no automated coverage at all (see `coverage-report.md`), a composite `pass` is silent about that facet, not asserting it's fine. Cross-check the facet table before treating a composite `pass` as "SC fully verified."
+A criterion passes only when its rules check all it asks, as WCAG has it satisfied only when all of it is. Rules that all passed say only that the parts they check are met: `html-lang-attr-present` finds that `<html lang="fr">` names a language, not that the page is in French (3.1.1), and `page-title-present` that the page has a title, not that it describes the page (2.4.2). Such a criterion is `cantTell`, with the reason code `composite.rollup.cantTell.partialCheck`, and the HTML report says it was partly checked: a person checks the rest. The criteria whose rules check all of them are listed in `src/coverage/complete-applicability.js` (`COMPLETE_CHECK`), each with the reason, and none is yet: each asks something the rules can't see, whether a text alternative, a label, a heading or a link's text says the right thing, or how content a script draws or changes meets it.
+
+This means: **a composite `fail` is a real, deterministic violation, and a composite `cantTell` whose contributors all passed (`partialCheck`) says every automated check for that criterion came back clean, and what is left is a person's to check.** It is not a conformance claim on its own. The facet table (`coverage-report.md`) shows which parts of each criterion have automated coverage, and which a person checks.
 
 A custom rule (`engineOptions.customRules`) that ran counts toward the composite of each criterion it maps to, through `meta.wcagSc` or a WCAG entry in `meta.normativeMappings`, as a built-in rule does: a failing custom rule fails the composite. The composite marks it `custom: true` among its contributors and lists it in `data.details.customChecksIds`, since custom rules are not checked against the specs as the built-in ones are. An override of a built-in counts where its own mapping says: in its built-in's place when it maps to that criterion, nowhere when it maps to none (with a warning).
 
@@ -67,8 +70,8 @@ runDomRulesInPage(url, null, {}, { tags: ['wcag2a', 'wcag2aa'] });
 **Level tags do not nest, and this is the easiest thing to get wrong here.** A rule
 carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
-`{ tags: ['wcag2aa'] }` on its own therefore runs the 9 rules mapped to a 2.0 AA
-criterion, not the ~100 that make up an A + AA target. List every level you mean, or
+`{ tags: ['wcag2aa'] }` on its own therefore runs the 11 rules mapped to a 2.0 AA
+criterion, not the 105 that make up a 2.0 A + AA target. List every level you mean, or
 use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag22-aa`,
 `section508`, or a pack's, such as EN 301 549's) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
@@ -83,9 +86,10 @@ added.
 else the version of `runOnly.wcag`, else whatever your version tags imply, else `2.2`) and
 reports it back as `engine.wcagVersion`. Under a 2.2 target, a rule mapped only to SC
 4.1.1 Parsing cannot report `fail` — it runs, reports its occurrences, and comes back
-`cantTell` with a `wcagVersionScope` field explaining the coercion. So a default scan
-never gates on a criterion WCAG 2.2 does not contain, and a 2.0/2.1 scan still gets a
-real 4.1.1 verdict.
+`cantTell` with a `wcagVersionScope` field explaining the coercion. Under a 2.0 or 2.1
+target it does the same, with `wcagVersionScope.by: "errata"`: W3C's 2023 errata to those
+versions count 4.1.1 as always satisfied for content in HTML or XML. So no WCAG scan gates
+on 4.1.1; only a profile whose standard keeps its text (`en301549-v3.2.1`, from EN 301 549's pack) still fails it.
 
 Composites, unlike atomic rules, *are* filtered cumulatively. The runner reads
 `engineOptions.wcagLevel`, else the level of `runOnly.wcag`, or the highest level named in `tags`, and drops every composite above it, so requesting
@@ -144,6 +148,7 @@ No automated tool — this one included — can certify full WCAG conformance. T
 What surea11y *can* give you, honestly:
 - Every `fail` is a real, deterministic, normative violation of the standard and version you targeted — never a guess. By default that standard is WCAG: a rule for a requirement only another standard makes (a rule for a national standard's own requirement, say) is opt-in and runs only when you target that standard ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#opt-in-rules)), so a WCAG scan never fails a page for something WCAG does not require. The one exception is a run that asks for every rule (`engineOptions.optInRules`): it targets no single standard, and says so in `engine.optInRules`.
 - Every `cantTell` is an explicit flag for human review, not a swallowed uncertainty.
-- The facet coverage table tells you exactly which parts of which SCs have zero automated coverage, so you know where a `pass` is silent rather than exhaustive.
+- A composite never passes a criterion its rules check only in part: where they all pass, it is `cantTell` (`composite.rollup.cantTell.partialCheck`), so a `pass` is never silent about a part no rule checks.
+- The facet coverage table tells you exactly which parts of which SCs have zero automated coverage, and so what is left to a person.
 
-A composite `pass` across every SC at your target level means: *every automatable check for that level came back clean.* It is the automatable subset of conformance, stated precisely — not a substitute for the manual review WCAG itself requires.
+Composites with no `fail` across every SC at your target level mean: *every automatable check for that level came back clean.* It is the automatable subset of conformance, stated precisely — not a substitute for the manual review WCAG itself requires.

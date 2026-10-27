@@ -29,8 +29,8 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-135 accessibility rules · 59 W3C ACT rules compared against W3C's test
-corpus (942 reference cases) · zero runtime dependencies
+145 accessibility rules · 60 W3C ACT rules compared against W3C's test
+corpus (957 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
 You install it, run it where your code runs, and receive structured results
@@ -124,13 +124,14 @@ cannot determine produces a shorter report and a false sense of coverage.
 
 Every rule with a [W3C ACT Rules](https://www.w3.org/WAI/standards-guidelines/act/rules/)
 counterpart runs against the test cases W3C publishes for it, the set W3C's
-implementation listing scores: 942 examples across 59 rules. The engine fails
+implementation listing scores: 957 examples across 60 rules. The engine fails
 none of the examples ACT marks `passed` or `inapplicable`, so it reports no
 false positives against that corpus. That is a result on those cases, not a
 guarantee for every page. Where it cannot decide a case it returns
 `cantTell`, which ACT permits for an automated implementation.
 
-Twenty-five examples ACT marks `failed` go unflagged. Most are judgement calls,
+Twenty-two examples ACT marks `failed` go unflagged under jsdom, and eighteen in
+a browser. Most are judgement calls,
 such as whether a heading describes the content under it.
 [`docs/ACT_RULE_MAPPING.md`](./docs/ACT_RULE_MAPPING.md) lists every one with the
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
@@ -149,7 +150,8 @@ Some things lie outside what a scan of the DOM can establish. For example,
 the engine will not:
 
 - confirm that alt text is *meaningful*, only that it is present
-  (an alt attribute of `"image123.png"` passes the objective check);
+  (an alt attribute of `"image123.png"` passes the objective check, and is
+  asked about, leaning fail, as a file name);
 - judge whether a color contrast choice is aesthetically appropriate,
   only whether it meets the applicable contrast ratio;
 - determine whether an error message actually *explains* the problem,
@@ -374,6 +376,11 @@ load the standalone bundle. It defines one global, `a11ycore`:
 The bundle carries English only. Other languages, packs, importing it from
 a bundler, and what it leaves out are in
 [`docs/INTEGRATION.md`](./docs/INTEGRATION.md#pattern-3--a-standalone-script-tag-no-driver-no-bundler).
+Loaded from the browser's console, it also has helpers for a scan by hand:
+`await a11ycore.run()` scans the page, `a11ycore.table(result)` lists the
+findings, `a11ycore.highlight(result)` boxes them and
+`await a11ycore.openReport(result)` opens the HTML report
+([From the browser console](./docs/INTEGRATION.md#from-the-browser-console)).
 
 ### Choosing what to check
 
@@ -422,6 +429,35 @@ finer selections are in
 - **A time limit.** Nothing inside a page can stop a scan once it has
   started; put the limit where you start it
   ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#a-time-limit-on-a-scan)).
+- **Listeners added from script.** The keyboard rules read handlers from the
+  markup. Install the opt-in listener hook before the page's scripts and they
+  judge `addEventListener` and `el.onclick = …` listeners too: a
+  `role="button"` given a click listener and no key listener fails
+  ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#seeing-listeners-added-from-script-the-listener-hook)).
+
+  ```js
+  const { listenerHookScript } = require('@surea11y/core');
+  // Playwright: every frame, before any of the page's scripts.
+  await page.addInitScript({ content: listenerHookScript() });
+  await page.goto(url);
+  // ...scan as usual; result.engine.environment.listenerHook === 'early'
+  ```
+
+- **Status messages.** A scan sees the page at one moment. Install the opt-in
+  live-region hook before the page's scripts and `live-region-announcements`
+  (WCAG 4.1.3) also asks about a live region the page added with its text
+  already in it, or showed and filled at once, and `getAnnouncements()` says
+  what the page made available to announce
+  ([`docs/INTEGRATION.md`](./docs/INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook)).
+
+  ```js
+  const { liveRegionHookScript } = require('@surea11y/core');
+  await page.addInitScript({ content: liveRegionHookScript() });
+  await page.goto(url);
+  await page.click('text=Save');
+  await page.evaluate(() => window.a11ycore.getAnnouncements().map((a) => a.text));
+  // ['Saved'], once the bundle is on the page
+  ```
 
 ---
 
@@ -485,6 +521,16 @@ Each occurrence answers four questions, whatever the outcome:
 
 Read the outcome before counting: only `fail` is a violation, and a `pass` or
 `notApplicable` can carry an occurrence that describes the scan.
+
+A `cantTell` occurrence of a core rule also says how a person answers it
+(`howToCheck`: a few steps, and what they see if it passes or fails), and,
+where the page gives evidence, which way it points (`lean`, see
+[`docs/LEANS.md`](./docs/LEANS.md)). The outcome stays `cantTell` either way.
+
+A WCAG criterion's rollup in `rulesResults` is never `pass` today: where every
+rule that checks it passes, it is `cantTell`, since no rule checks all a
+criterion asks and a person checks the rest
+([`docs/WCAG_CONFORMANCE.md`](./docs/WCAG_CONFORMANCE.md)).
 
 The complete schema also includes confidence, severity, WCAG
 traceability, composite rule results and other metadata intended for

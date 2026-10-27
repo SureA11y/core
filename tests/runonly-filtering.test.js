@@ -115,7 +115,7 @@ test('runOnly: an empty or unusable filter value still means no filter', () => {
   }
 });
 
-test('runOnly: a bare array of rule ids selects those rules, as in axe-core', () => {
+test('runOnly: a bare array of rule ids selects those rules', () => {
   assert.deepStrictEqual(ranRuleIds(['img-alt-present']), ['img-alt-present']);
   assert.deepStrictEqual(ranRuleIds('img-alt-present'), ['img-alt-present']);
   assert.deepStrictEqual(ranRuleIds(['img-alt-present', 'button-name-present']).sort(), [
@@ -231,7 +231,7 @@ test('runOnly: a number, a boolean or an object with no key the engine reads thr
   );
 });
 
-test("runOnly: axe-core's { type: 'rule' | 'rules' | 'tag' | 'tags', values } is read", () => {
+test("runOnly: the { type: 'rule' | 'rules' | 'tag' | 'tags', values } shape is read", () => {
   assert.deepStrictEqual(ranRuleIds({ type: 'rule', values: ['img-alt-present'] }), [
     'img-alt-present'
   ]);

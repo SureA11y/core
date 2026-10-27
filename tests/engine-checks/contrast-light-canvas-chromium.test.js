@@ -2,16 +2,14 @@
 
 // A page with no background on html or body (#219): the browser paints its
 // canvas behind it, white unless the page asks for dark, and the contrast
-// rules measure text on the canvas colour they read, in either contrast
+// rules measure text on the canvas color they read, in either contrast
 // mode, rather than asking about every text (BACKGROUND_NOT_OPAQUE_AT_ROOT).
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('text on the canvas is measured against it, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -23,7 +21,7 @@ test('text on the canvas is measured against it, in Chromium', { skip }, async (
     await page.setContent(
       `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body><main>${body}</main></body></html>`
     );
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     return page.evaluate((mode) => {
       const results = window.a11ycore.runa11yCoreInPage(
         null,
@@ -76,4 +74,38 @@ test('text on the canvas is measured against it, in Chromium', { skip }, async (
       String(mode)
     );
   }
+});
+
+// In a frame the canvas may be the page around it showing through, which
+// the frame can't see: its text stays asked about, as before.
+test('text in a frame with no background stays asked about, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const page = await browser.newPage();
+  await page.setContent(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main><iframe title="f" srcdoc='<!doctype html><html lang="en"><head><title>f</title></head><body><p style="color:#bbb">Closed</p></body></html>'></iframe></main></body></html>`
+  );
+  const frame = page.frames()[1];
+  await frame.waitForLoadState();
+  await addBundle(frame);
+  const outcome = await frame.evaluate(() => {
+    const results = window.a11ycore.runa11yCoreInPage(null, null, {}, [
+      'contrast-computable',
+      'contrast-minimum'
+    ]).checksResults;
+    const by = (id) => results.find((r) => r.ruleId === id);
+    return {
+      computable: by('contrast-computable').occurrences.map((o) => [
+        o.data.details.reasonCode,
+        o.i18n.hintKey
+      ]),
+      minimum: by('contrast-minimum').outcome
+    };
+  });
+  assert.deepEqual(outcome, {
+    computable: [
+      ['BACKGROUND_NOT_OPAQUE_AT_ROOT', 'contrastComputable_hint_cantTell_rootNotOpaque']
+    ],
+    minimum: 'notApplicable'
+  });
 });

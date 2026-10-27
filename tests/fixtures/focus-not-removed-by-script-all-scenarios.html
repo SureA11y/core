@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>focus-not-removed-by-script — scenario fixture</title>
+    <style>
+      body {
+        font-family:
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+        line-height: 1.4;
+        margin: 24px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 16px;
+      }
+      h2 {
+        font-size: 16px;
+        margin: 22px 0 10px;
+      }
+      .note {
+        font-size: 12px;
+        opacity: 0.85;
+        margin: 8px 0 16px;
+      }
+      .case {
+        border: 1px solid #ddd;
+        border-radius: 10px;
+        padding: 12px;
+        margin: 10px 0;
+      }
+      .case-title {
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Scenario fixture: <code>focus-not-removed-by-script</code></h1>
+
+    <p class="note">
+      Each target element has a stable <code>id</code> of the form <code>fnrs_case_NN</code>. The
+      rule never fails: an inline focus handler that calls blur() is asked about.
+    </p>
+
+    <h2>A. FAIL and CANTTELL — an inline focus handler calls blur()</h2>
+
+    <div class="case" id="case_01">
+      <div class="case-title">
+        01 — FAIL: a link removes focus from itself (WCAG F55's example)
+      </div>
+      <a id="fnrs_case_01" href="/offers" onfocus="this.blur()">Offers</a>
+    </div>
+
+    <div class="case" id="case_02">
+      <div class="case-title">
+        02 — FAIL: a read-only field removes focus from itself with a bare blur()
+      </div>
+      <input
+        id="fnrs_case_02"
+        aria-label="Reference"
+        value="A-123"
+        readonly
+        onfocus="
+          blur();
+          return false;
+        "
+      />
+    </div>
+
+    <div class="case" id="case_03">
+      <div class="case-title">03 — CANTTELL: blur() among other code</div>
+      <button
+        id="fnrs_case_03"
+        type="button"
+        onfocus="
+          if (locked) this.blur();
+          track('focus');
+        "
+      >
+        Send
+      </button>
+    </div>
+
+    <div class="case" id="case_07">
+      <div class="case-title">
+        07 — CANTTELL: an element outside the tab order removes focus from itself
+      </div>
+      <div id="fnrs_case_07" tabindex="-1" onfocus="this.blur()">Panel</div>
+    </div>
+
+    <h2>B. NOT APPLICABLE</h2>
+
+    <div class="case" id="case_04">
+      <div class="case-title">
+        04 — NOT APPLICABLE: an onfocus handler that does not call blur()
+      </div>
+      <a id="fnrs_case_04" href="/help" onfocus="showTip(this)">Help</a>
+    </div>
+
+    <div class="case" id="case_05">
+      <div class="case-title">
+        05 — NOT APPLICABLE: the element cannot take focus, so its handler never runs
+      </div>
+      <span id="fnrs_case_05" onfocus="this.blur()">Label</span>
+    </div>
+
+    <div class="case" id="case_06">
+      <div class="case-title">06 — NOT APPLICABLE: the element is not rendered</div>
+      <a id="fnrs_case_06" href="/old" hidden onfocus="this.blur()">Old link</a>
+    </div>
+  </body>
+</html>

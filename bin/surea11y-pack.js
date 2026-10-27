@@ -39,7 +39,8 @@ const COMMANDS = {
 };
 
 // { command, flags, values, positional, help } or { error }: an unknown flag,
-// a value missing, or an argument too many is an error, not ignored.
+// a value missing or given twice, or an argument too many is an error, not
+// ignored.
 function parseArgs(argv) {
   const command = argv[0];
   const out = { command, flags: new Set(), values: {}, positional: [], help: false };
@@ -62,6 +63,10 @@ function parseArgs(argv) {
         const value = eq === -1 ? argv[++i] : a.slice(eq + 1);
         if (value === undefined || value === '' || (eq === -1 && value.startsWith('--'))) {
           return { error: `--${name} needs a value` };
+        }
+        // Given twice, which one was meant can't be told.
+        if (Object.prototype.hasOwnProperty.call(out.values, name)) {
+          return { error: `--${name} is given more than once` };
         }
         out.values[name] = value;
       } else if (spec.flags.includes(name) && eq === -1 && a.startsWith('--')) {

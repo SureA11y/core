@@ -25,6 +25,13 @@
  *   conveyed only through this positional convention is not
  *   programmatically associated with the table the way a real
  *   `<caption>` element is (1.3.1).
+ * @reason-codes
+ *   - `SINGLE_CELL_FIRST_ROW_NO_CAPTION` (cantTell): a table with no caption
+ *     or name has a first row of one text cell above rows of several cells,
+ *     which may be a title shown as a cell instead of a caption.
+ *     It leans fail when that cell spans the table's full width and no
+ *     later row is a single cell; otherwise no lean.
+ *     Basis: WCAG 1.3.1 (not settled); H39.
  * @implementation-notes
  * - Heuristic (a legitimately narrow first data row is possible, if
  *   uncommon), so authored as `type: 'manual'` (cantTell-capped, never
@@ -62,7 +69,22 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.3.1': ['table-fake-caption-evidence'] } }
+  coverage: { facetsBySc: { '1.3.1': ['table-fake-caption-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SINGLE_CELL_FIRST_ROW_NO_CAPTION: {
+      steps: [
+        'Find the table the report names and look at its first row, which has one text cell.',
+        'Decide whether that cell is a title for the whole table or real data or a header for its column.',
+        'If it is a title, check in the Accessibility pane of the developer tools whether the table has a name (it should come from a caption element).'
+      ],
+      passWhen:
+        "The first-row cell is real table data or a header, or the table's title is in a caption that gives the table its name.",
+      failWhen:
+        "The table's title is shown only as a cell in the first row, not tied to the table as a caption, which fails WCAG 1.3.1."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -121,7 +143,9 @@ function runInPage(ctx) {
   for (const table of nodes) {
     if (!table || !table.rows) continue;
 
-    const hasCaption = !!(dom.get(table, 'querySelector') && dom.querySelector(table, 'caption'));
+    // The table's own caption (HTML's table.caption): a table nested in a
+    // cell captions only itself.
+    const hasCaption = !!dom.get(table, 'caption');
     if (hasCaption) continue;
     if (hasOtherRole(table) || isNamed(table)) continue;
 
@@ -147,6 +171,41 @@ function runInPage(ctx) {
       .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
+    // A lone cell spanning the table's full width, used once at the top, is
+    // the visual-caption pattern; full-width rows further down group rows
+    // instead, and a cell narrower than the table is no title bar.
+    const colSpan = (cell) => {
+      const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
+      return Number.isFinite(n) && n > 0 ? n : 1;
+    };
+    const laterRows = rows.slice(1).map((r) => Array.from(r.cells || []).filter(isEligible));
+    const width = laterRows.reduce(
+      (m, cells) =>
+        Math.max(
+          m,
+          cells.reduce((sum, c) => sum + colSpan(c), 0)
+        ),
+      0
+    );
+    const spansWidth = colSpan(candidateCell) >= width;
+    const otherSingleRows = laterRows.filter((cells) => cells.length === 1).length;
+    const lean =
+      spansWidth && otherSingleRows === 0
+        ? {
+            toward: 'fail',
+            why: 'The lone first-row cell spans the whole table, and no other row is a single cell: the pattern of a title drawn as a cell.',
+            signals: [
+              { signal: 'first-cell-spans-width', value: true },
+              { signal: 'other-single-cell-rows', value: 0 }
+            ],
+            caution: 'A full-width first row can also head a single group of columns.',
+            i18n: {
+              whyKey: 'tableFakeCaption_lean_why',
+              cautionKey: 'tableFakeCaption_lean_caution'
+            }
+          }
+        : null;
+
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(table) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(table)
@@ -163,6 +222,7 @@ function runInPage(ctx) {
         hintKey: 'tableFakeCaption_hint_cantTell',
         params: {}
       },
+      ...(lean ? { lean } : {}),
       data: {
         details: { reasonCode: 'SINGLE_CELL_FIRST_ROW_NO_CAPTION' }
       }

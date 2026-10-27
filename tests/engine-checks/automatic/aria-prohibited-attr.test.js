@@ -302,3 +302,34 @@ test(`${RULE_ID}: a role description on a role that supports one is not this rul
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assert.notStrictEqual(result.checksResults.find((r) => r.ruleId === RULE_ID).outcome, 'fail');
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans pass when the element's text already says what the label says`, () => {
+  const lean = leanOn('<span id="a" aria-label="3 items">3 items in cart</span>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaProhibitedAttr_lean_why_inContent');
+});
+
+test(`${RULE_ID}: leans fail when the label has words the text lacks`, () => {
+  const lean = leanOn('<span id="a" aria-label="Price in euros">12</span>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaProhibitedAttr_lean_why_extraWords');
+});
+
+test(`${RULE_ID}: no lean when the label's words are all in the text, in another order`, () => {
+  assert.strictEqual(leanOn('<span id="a" aria-label="items 3">3 items</span>', 'a'), undefined);
+});

@@ -33,6 +33,14 @@
  *     its focusability conflicts.
  *   - `focusable`: `true` when the element can take focus, which also
  *     restores its role.
+ * @reason-codes
+ *   - `PRESENTATION_ROLE_CONFLICT` (cantTell): an element with
+ *     role="presentation" or "none", or an <img alt="">, that carries a global
+ *     aria-* attribute or can take focus, so browsers expose its own role
+ *     again.
+ *     It leans fail when the element has a meaningful native role.
+ *     Basis: WAI-ARIA 1.2 presentational roles conflict resolution (best
+ *     practice); ACT 46ca7f; HTML-AAM img.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -86,7 +94,23 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    PRESENTATION_ROLE_CONFLICT: {
+      steps: [
+        'Find the element the report names; it has role="presentation" or "none", or is an img with alt="".',
+        'Note the conflicting aria-* attributes the report lists, and whether it says the element can take focus.',
+        'Open the Accessibility pane of the developer tools and see which role and name the element really exposes.',
+        'Decide what was meant: if it is decorative, remove the aria-* attribute and the focusability; if it carries meaning, remove the presentational role (or give the image real alt text).'
+      ],
+      passWhen:
+        'The element is either purely decorative with no global aria-* attribute and no focus, or it keeps its real role on purpose.',
+      failWhen:
+        'The element is meant to be hidden but its aria-* attribute or focusability brings its role back, so assistive technology exposes it anyway (best practice, WAI-ARIA presentational roles conflict resolution).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -215,6 +239,23 @@ function runInPage(ctx) {
           hintKey: 'presentationRoleConflict_hint_cantTell',
           params: { role, attrs: parts.join(', ') }
         },
+        ...((() => {
+          try {
+            const nr = helpers.aria.getNativeRoleForElement(el);
+            return !!nr && !['generic', 'none', 'presentation'].includes(nr);
+          } catch {
+            return false;
+          }
+        })()
+          ? {
+              lean: {
+                toward: 'fail',
+                why: "Browsers ignore the presentational role here and expose the element's own role.",
+                signals: [{ signal: 'native-role-exposed', value: true }],
+                i18n: { whyKey: 'presentationRoleConflict_lean_why' }
+              }
+            }
+          : {}),
         data: {
           details: {
             reasonCode: 'PRESENTATION_ROLE_CONFLICT',

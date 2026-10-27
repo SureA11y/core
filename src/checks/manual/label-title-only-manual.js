@@ -20,6 +20,7 @@
  *   (label_from_title_primary), which also covers placeholder-only labels,
  *   under SC 3.3.2. Every finding this rule made was a second report of
  *   one that rule makes for the same element.
+ * @reason-codes none
  * @implementation-notes
  * - Reduced to notApplicable at once, as a duplicate finding is a bug:
  *   the policy keeps a rule reporting until 2.0.0 only when it is being

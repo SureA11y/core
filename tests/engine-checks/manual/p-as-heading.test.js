@@ -330,3 +330,71 @@ test('p-as-heading: the number test is linear on long input', () => {
   runa11yCoreOnHtml(html, { runOnly: ['p-as-heading'] });
   assert.ok(Date.now() - t0 < 2000);
 });
+
+// Leans.
+test(`${RULE_ID}: heading-like text leans fail when styled as a real heading or set over body text`, () => {
+  const leanOf = (body, head = '') =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="en"><head><style>${head}</style></head><body>${body}</body></html>`,
+        { runOnly: [RULE_ID] }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1 }
+    ).occurrences.map((o) => [o.data.details.reasonCode, o.lean ? o.lean.i18n.whyKey : null]);
+
+  assert.deepEqual(
+    leanOf(
+      '<h2>Real</h2><p class="t">Our services</p>',
+      'h2, .t { font-size: 24px; font-weight: 700; font-family: Arial }'
+    ),
+    [['BOLD_LARGE_PARAGRAPH', 'pAsHeading_lean_why_headingStyle']]
+  );
+  assert.deepEqual(
+    leanOf(
+      '<p style="font-size:24px;font-weight:700">Our services</p><p style="font-size:16px">We do things for you.</p>'
+    ),
+    [['BOLD_LARGE_PARAGRAPH', 'pAsHeading_lean_why_bodyFollows']]
+  );
+  // A sentence, a lone bold line, or a <div> with only one of the signs:
+  // no lean.
+  for (const body of [
+    '<p style="font-size:24px;font-weight:700">Free shipping on all orders.</p><p style="font-size:16px">We do things.</p>',
+    '<p style="font-size:24px;font-weight:700">Lonely bold text</p>',
+    '<div style="font-size:24px;font-weight:700">Our services</div><p style="font-size:16px">We do things for you.</p>'
+  ]) {
+    assert.ok(
+      leanOf(body).every(([, key]) => key === null),
+      body
+    );
+  }
+});
+
+test(`${RULE_ID}: a bold link over a teaser, repeated across sibling cards, leans fail`, () => {
+  const card = (href, title) =>
+    `<div class="card"><p style="font-size:20px;font-weight:700"><a href="${href}">${title}</a></p><p style="font-size:14px">A teaser for ${title}.</p></div>`;
+  const run = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1 }
+    ).occurrences;
+  const cards = run(`<div class="grid">${card('/a', 'Alpha')}${card('/b', 'Beta')}</div>`);
+  assert.equal(cards.length, 2);
+  for (const o of cards) {
+    assert.equal(o.data.details.reasonCode, 'HEADING_LIKE_LINK');
+    assert.equal(o.lean.toward, 'fail');
+    assert.equal(o.lean.i18n.whyKey, 'pAsHeading_lean_why_cardTitle');
+  }
+  // A call to action alone in its container, or one card: no lean.
+  assert.equal(
+    run('<div><p style="font-size:20px;font-weight:700"><a href="/shop">Shop now</a></p></div>')[0]
+      .lean,
+    undefined
+  );
+  assert.equal(run(`<div class="grid">${card('/a', 'Alpha')}</div>`)[0].lean, undefined);
+});

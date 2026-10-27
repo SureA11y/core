@@ -284,9 +284,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  // 7 fail occurrences (case_04 carries two) + 1 cantTell (case_14, a
-  // deprecated-but-allowed attr) => resolves to fail overall, 8 occurrences.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  // 17 fail occurrences (case_04 carries two) + 2 cantTell (case_14 and
+  // case_34, deprecated-but-allowed attrs, on a role and on an element with
+  // no role) => resolves to fail overall, 19 occurrences.
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 19, maxOccurrences: 19 });
 
   const outcomeForId = (id) =>
     (rule.occurrences || []).find(
@@ -299,11 +300,23 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_05',
     'aaa_case_13',
     'aaa_case_15',
-    'aaa_case_17'
+    'aaa_case_17',
+    'aaa_case_18',
+    'aaa_case_19',
+    'aaa_case_20',
+    'aaa_case_21',
+    'aaa_case_22',
+    'aaa_case_23',
+    'aaa_case_24',
+    'aaa_case_30',
+    'aaa_case_32',
+    'aaa_case_36'
   ];
   assert.ok(hasOccurrenceForId(rule, 'aaa_case_14'), 'Expected occurrence for aaa_case_14');
   assert.strictEqual(outcomeForId('aaa_case_14'), 'cantTell');
+  assert.strictEqual(outcomeForId('aaa_case_34'), 'cantTell');
   const expectedNoOccIds = [
+    'aaa_case_35',
     'aaa_case_01',
     'aaa_case_02',
     'aaa_case_06',
@@ -318,7 +331,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-allowed-attr-all-scenari
     'aaa_case_12b',
     'aaa_case_12c',
     'aaa_case_16',
-    'aaa_case_18'
+    'aaa_case_25',
+    'aaa_case_26',
+    'aaa_case_27',
+    'aaa_case_29',
+    'aaa_case_31',
+    'aaa_case_33',
+    'aaa_case_28'
   ];
 
   for (const id of expectedFailIds) {
@@ -364,12 +383,10 @@ test(`${RULE_ID}: an attribute the implicit role supports passes`, () => {
 
 test(`${RULE_ID}: elements whose implicit role depends on context stay out of scope`, () => {
   for (const markup of [
-    `<a href="#" aria-sort="ascending">x</a>`,
-    `<table><tr><td aria-selected="true">x</td></tr></table>`,
+    `<a aria-sort="ascending">x</a>`,
+    `<table><tr><th aria-pressed="true">x</th></tr></table>`,
     `<section aria-checked="true">x</section>`,
-    `<select aria-sort="ascending"><option>a</option></select>`,
-    `<ul><li aria-checked="true">x</li></ul>`,
-    `<img src="x.png" alt="" aria-checked="true">`
+    `<ul><li aria-checked="true">x</li></ul>`
   ]) {
     const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
       runOnly: [RULE_ID]
@@ -379,15 +396,101 @@ test(`${RULE_ID}: elements whose implicit role depends on context stay out of sc
 });
 
 test(`${RULE_ID}: an element whose role is context-dependent is skipped`, () => {
-  // <a>'s role depends on href, <td>'s on whether the table is a layout
-  // table, so neither is in the context-free table and neither is guessed at.
+  // <a> without href has no fixed role, and a <th> is a column or a row
+  // header by its place in the table, so neither is guessed at.
   for (const body of [
-    '<a href="/x" aria-checked="true">x</a>',
-    '<table><tr><td aria-checked="true">x</td></tr></table>'
+    '<a aria-checked="true">x</a>',
+    '<table><tr><th aria-checked="true">x</th></tr></table>'
   ]) {
     const html = `<!doctype html><html><body>${body}</body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
     assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+test(`${RULE_ID}: elements whose role their attributes decide are judged as ARIA in HTML allows`, () => {
+  const cases = [
+    // [markup, outcome, reason code, role judged against]
+    ['<a href="#" aria-sort="ascending">x</a>', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'link'],
+    ['<a href="#" aria-expanded="false">x</a>', 'pass', null, null],
+    ['<area href="#" aria-checked="true">', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'link'],
+    ['<img src="x.png" alt="Logo" aria-checked="true">', 'fail', 'ARIA_ATTR_NOT_ALLOWED', 'img'],
+    [
+      '<img src="x.png" alt="" aria-checked="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+      null
+    ],
+    [
+      '<img src="x.png" alt="" aria-label="Logo" aria-checked="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'img'
+    ],
+    [
+      '<select aria-sort="ascending"><option>a</option></select>',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'combobox'
+    ],
+    [
+      '<select aria-label="s" aria-orientation="vertical"><option>a</option></select>',
+      'pass',
+      null,
+      null
+    ],
+    [
+      '<select aria-label="s" multiple aria-pressed="true"><option>a</option></select>',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'listbox'
+    ],
+    ['<input type="time" aria-label="t" aria-placeholder="09:00">', 'pass', null, null],
+    [
+      '<input type="week" aria-label="w" aria-pressed="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'textbox'
+    ],
+    // ARIA 1.2's deprecated global attributes are asked about, not failed,
+    // on an element with no role as on a role.
+    [
+      '<input type="color" aria-label="c" aria-invalid="true">',
+      'cantTell',
+      'ARIA_ATTR_DEPRECATED',
+      null
+    ],
+    [
+      '<input type="file" aria-label="f" aria-errormessage="e"><p id="e">Too large</p>',
+      'cantTell',
+      'ARIA_ATTR_DEPRECATED',
+      null
+    ],
+    ['<video controls aria-disabled="true"></video>', 'cantTell', 'ARIA_ATTR_DEPRECATED', null],
+    [
+      '<input type="color" aria-label="c" aria-checked="true">',
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+      null
+    ],
+    ['<input type="file" aria-label="f" aria-required="true">', 'pass', null, null],
+    // A type HTML doesn't define is a text field; one named like an
+    // Object.prototype key ("constructor") is too, and doesn't break the rule.
+    ...['datetime', 'txt', 'constructor', '__proto__', ' Text '].map((type) => [
+      `<input type="${type}" aria-label="n" aria-pressed="true">`,
+      'fail',
+      'ARIA_ATTR_NOT_ALLOWED',
+      'textbox'
+    ])
+  ];
+  for (const [markup, outcome, code, role] of cases) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${markup}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    const rule = assertRule(result, RULE_ID, outcome);
+    const details = rule.occurrences[0] && rule.occurrences[0].data.details;
+    assert.equal(details ? details.reasonCode : null, code, markup);
+    if (role) assert.equal(details.role, role, markup);
   }
 });
 
@@ -435,4 +538,80 @@ test(`${RULE_ID}: an explicit role on a roleless element is judged against that 
   const html = `<!doctype html><html><body><video role="tab" aria-selected="true"></video></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// ---------------------------------------------------------------------------
+// Roles HTML-AAM conditions on an attribute or on context: an input with a
+// datalist is a combobox, and a <td> takes its role from its table.
+// ---------------------------------------------------------------------------
+
+function roleJudged(html) {
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  return result.checksResults.find((c) => c.ruleId === RULE_ID);
+}
+
+test(`${RULE_ID}: a text, search or email input with a datalist is a combobox, so aria-expanded is allowed`, () => {
+  for (const type of ['text', 'search', 'email', 'tel', 'url']) {
+    const html = `<!doctype html><html><body><input type="${type}" list="dl" aria-label="City" aria-expanded="false"><datalist id="dl"><option>a</option></datalist></body></html>`;
+    assert.strictEqual(roleJudged(html).outcome, 'pass', type);
+  }
+});
+
+test(`${RULE_ID}: an input whose list names no datalist stays a textbox`, () => {
+  const html = `<!doctype html><html><body><input list="nope" aria-label="City" aria-expanded="false"><div id="other"></div></body></html>`;
+  const rule = roleJudged(html);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.role, 'textbox');
+});
+
+test(`${RULE_ID}: a password input with a datalist is not a combobox`, () => {
+  const html = `<!doctype html><html><body><input type="password" list="dl" aria-label="P" aria-expanded="false"><datalist id="dl"><option>a</option></datalist></body></html>`;
+  assert.strictEqual(roleJudged(html).outcome, 'fail');
+});
+
+test(`${RULE_ID}: a <td> in a table is a cell, which supports no aria-selected`, () => {
+  const html = `<!doctype html><html><body><table><tr><th>A</th></tr><tr><td aria-selected="true">x</td></tr></table></body></html>`;
+  const rule = roleJudged(html);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.role, 'cell');
+});
+
+test(`${RULE_ID}: a <td> in a grid or treegrid is a gridcell, which supports aria-selected`, () => {
+  for (const role of ['grid', 'treegrid']) {
+    const html = `<!doctype html><html><body><table role="${role}" aria-label="g"><tbody><tr><td aria-selected="true" aria-colindex="1">x</td></tr></tbody></table></body></html>`;
+    assert.strictEqual(roleJudged(html).outcome, 'pass', role);
+  }
+});
+
+test(`${RULE_ID}: a <td> takes its role from its nearest table`, () => {
+  const html = `<!doctype html><html><body><table role="grid" aria-label="g"><tr><td><table><tr><td aria-selected="true">x</td></tr></table></td></tr></table></body></html>`;
+  const rule = roleJudged(html);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences[0].data.details.role, 'cell');
+});
+
+test(`${RULE_ID}: a <td> in a presentational table has no role, so only global attributes are allowed`, () => {
+  const html = `<!doctype html><html><body><table role="presentation"><tr><td aria-colindex="1">x</td><td aria-label="ok">y</td></tr></table></body></html>`;
+  const rule = roleJudged(html);
+  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.occurrences.length, 1);
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED_ROLELESS');
+  assert.strictEqual(rule.occurrences[0].data.details.attr, 'aria-colindex');
+});
+
+test(`${RULE_ID}: a presentational role a table can't keep leaves its <td>s cells`, () => {
+  // A global ARIA attribute or a tabindex makes browsers ignore role="none".
+  for (const table of [
+    '<table role="presentation" aria-label="Prices">',
+    '<table role="none" tabindex="0">',
+    '<table role="none" tabindex="-1">'
+  ]) {
+    const html = `<!doctype html><html><body>${table}<tr><td aria-colindex="1">x</td></tr></table></body></html>`;
+    assert.strictEqual(roleJudged(html).outcome, 'pass', table);
+  }
+});
+
+test(`${RULE_ID}: a cell's own attributes are allowed on a <td>`, () => {
+  const html = `<!doctype html><html><body><table><tr><td aria-colindex="2" aria-rowspan="1">x</td></tr></table></body></html>`;
+  assert.strictEqual(roleJudged(html).outcome, 'pass');
 });

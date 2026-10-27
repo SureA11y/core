@@ -21,12 +21,13 @@ npm run docs                      # docs/RULE_CATALOG.md, and the examples run i
 | `index.js` | The pack: its name, namespace, rules, profiles, checklist items and messages. |
 | `rules/automatic/__NAMESPACE__-link-text-specific.js` | A rule of its own that decides: links named only "click here" or "read more" fail. Uses core's helpers to find links and compute their names. |
 | `rules/automatic/__NAMESPACE__-contrast-enhanced.js` | A variant of core's `contrast-minimum`: the same code at 7:1 instead of 4.5:1, with no code of its own. |
-| `rules/manual/__NAMESPACE__-new-window-review.js` | A manual rule: it never fails, and asks a person to check each link that opens a new window. |
+| `rules/manual/__NAMESPACE__-new-window-review.js` | A manual rule: it never fails, and asks a person to check each link that opens a new window, with the steps to answer it (`meta.review`). |
 | `i18n/en.json` | The rules' messages in English. |
 | `tests/rules/*.test.js` | A test per rule. |
 | `tests/profiles.test.js` | What each profile runs, and the checklist's items. |
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes, checked by `npm run docs`. |
 | `eslint.config.js` | Core's lint rules for rules (`@surea11y/core/eslint-plugin`). |
+| `package.json` | The package: `private`, with core as a peer dependency, and the scripts above. |
 
 ## The profiles: which rules run
 
@@ -56,6 +57,7 @@ Core's rules, with their ids, tags and what each checks, are in core's [`docs/RU
 2. Write its header: `@applicability` (what it applies to), `@expectation` (what it checks), `@reports` (what a finding carries). `npm run docs` puts them in the catalog.
 3. Write `runInPage(ctx)`. It runs in the page, so it uses only `ctx`: `ctx.document`, and `ctx.helpers` for core's helpers ([`docs/RULE_HELPERS.md`](https://github.com/SureA11y/core/blob/main/docs/RULE_HELPERS.md)). Read DOM properties through `ctx.helpers.dom` (`npm run lint` says where). Return `pass`, `fail` (automatic rules), `cantTell` or `notApplicable`, with an occurrence per element from `helpers.reportOccurrence`.
    - For core's rule at other thresholds, write a variant instead: `from` names the core rule, `config` its settings.
+   - Give each finding a `reasonCode` in `data.details`, list the codes in `meta.reasonCodes`, and, for each code the rule asks about (`cantTell`), say in `meta.review` how a person answers it: a few `steps` from the element the finding names, then `passWhen` and `failWhen`, in English. Reports show them as "How to check", as for `__NAMESPACE__-new-window-review`.
 4. Give it the `__NAMESPACE__` tag, list it in `rules` in `index.js`, and put it in a profile or an item.
 5. Add its messages to `i18n/en.json`: the keys in its `meta.i18n` and its occurrences' `i18n`.
 6. Add a test in `tests/rules/` and examples in `docs/RULE_EXAMPLES.md`, then run `npm test`, `npm run lint` and `npm run docs`.
@@ -88,7 +90,7 @@ const result = await new A11yCoreBuilder({ page })
   .analyze();
 ```
 
-In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or, for a `<script>` tag or an extension, ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. The script runs only with the core that wrote it: build it again when you update core or the pack. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
 
 ## Publish
 

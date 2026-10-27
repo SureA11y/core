@@ -70,3 +70,27 @@ test('a selection that runs rules says nothing', () => {
   assert.ok(result.checksResults.length > 0);
   assert.deepEqual(warnings, []);
 });
+
+test('the catalog functions say it as the scan does', () => {
+  const { getChecksForRunOnly, getRulesForRunOnly } = require('../src/index.js');
+  const runOnly = { includeRuleIds: ['img-alt-present'], excludeRuleIds: ['img-alt-present'] };
+  for (const list of [getChecksForRunOnly, getRulesForRunOnly]) {
+    const warnings = [];
+    const warn = console.warn;
+    console.warn = (m) => warnings.push(String(m));
+    try {
+      assert.deepEqual(list(runOnly, {}), []);
+    } finally {
+      console.warn = warn;
+    }
+    assert.ok(
+      warnings.some((w) => /The rule selection runs no rule/.test(w)),
+      list.name
+    );
+    assert.throws(
+      () => list(runOnly, { strictOptions: true }),
+      (e) => e.code === 'INVALID_RUN_ONLY',
+      list.name
+    );
+  }
+});

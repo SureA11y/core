@@ -8,7 +8,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -34,16 +33,16 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('a compact result in Chromium keeps verdicts and margins', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
   const page = await browser.newPage();
   await page.setContent(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div style="white-space:nowrap;overflow:hidden;width:300px">Opening hours today</div><img src="data:,"></main></body></html>'
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div style="white-space:nowrap;overflow:hidden;width:300px;font:16px/20px sans-serif;height:24px">Opening hours today</div><img src="data:,"></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   const got = await page.evaluate(() => {
     const run = (output) =>
       window.a11ycore.runa11yCoreInPage(null, null, output ? { output } : null);
@@ -88,7 +87,7 @@ test('a compact result in Chromium with packs keeps every rule whole', { skip },
   await page.setContent(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><main><img src="data:,"></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   await page.addScriptTag({ content: packScript([sample]) });
   const name = `${sample.name}@${sample.version}`;
   const got = await page.evaluate((name) => {

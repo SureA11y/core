@@ -5,6 +5,11 @@ import type { ScanResult, CrossFrameResult, BindingFramesResult } from './index'
 export interface HtmlReportOptions {
   /** The page's title; a localized default otherwise. */
   title?: string;
+  /**
+   * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
+   * undecided findings show the steps of its meta.review, in English.
+   */
+  packs?: readonly unknown[] | null;
 }
 
 /** A self-contained HTML page, as text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

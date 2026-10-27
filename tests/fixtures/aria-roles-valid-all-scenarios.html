@@ -68,5 +68,22 @@
   </div>
 
   <p class="note">End of fixture.</p>
+
+  <h2>D. ARIA 1.3 roles browsers support</h2>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — PASS: role="sectionheader"</div>
+    <section aria-label="News"><div role="sectionheader" id="arv_case_09">Today</div><p>Text</p></section>
+  </div>
+
+  <div class="case" id="case_10">
+    <div class="case-title">10 — PASS: role="sectionfooter"</div>
+    <section aria-label="Sport"><p>Text</p><div role="sectionfooter" id="arv_case_10">End</div></section>
+  </div>
+
+  <div class="case" id="case_11">
+    <div class="case-title">11 — PASS: role="image", ARIA 1.3's synonym of img</div>
+    <div role="image" aria-label="Three stars" id="arv_case_11">★★★</div>
+  </div>
 </body>
 </html>

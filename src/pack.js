@@ -60,6 +60,79 @@ const PACK_KEYS = [
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
+const ACTS = ['count', 'cantTell', 'ignore'];
+
+/**
+ * Problems with a standard's rollup's meta.contributions, the rules it
+ * judges by their findings: { [ruleId]: { default, codes, findings } }, each
+ * act 'count', 'cantTell' or 'ignore', or { act, requirements } naming
+ * requirements of the rollup's own meta.standardMappings. `at` starts each
+ * message.
+ */
+function contributionProblems(rollup, at) {
+  const out = [];
+  const contributions = rollup.meta.contributions;
+  if (!isObject(contributions)) return [`${at}: contributions must be an object of rule ids`];
+  const checksIds = Array.isArray(rollup.checksIds) ? rollup.checksIds : [];
+  const own = new Set(
+    (Array.isArray(rollup.meta.standardMappings) ? rollup.meta.standardMappings : [])
+      .filter(isObject)
+      .map((m) => String(m.requirement))
+  );
+  const actProblems = (act, where) => {
+    const value = isObject(act) ? act.act : act;
+    if (!ACTS.includes(value)) {
+      return [`${where} must be ${ACTS.map((a) => `'${a}'`).join(', ')} or { act, requirements }`];
+    }
+    if (!isObject(act) || act.requirements === undefined) return [];
+    if (!Array.isArray(act.requirements) || !act.requirements.length) {
+      return [`${where}: requirements must name at least one of the rollup's requirements`];
+    }
+    return act.requirements
+      .filter((id) => !own.has(String(id)))
+      .map((id) => `${where}: requirements names ${id}, which the rollup does not`);
+  };
+  for (const [ruleId, c] of Object.entries(contributions)) {
+    const where = `${at} contributions.${ruleId}`;
+    if (!checksIds.includes(ruleId)) {
+      out.push(`${where}: ${ruleId} is not one of its checksIds`);
+      continue;
+    }
+    if (!isObject(c)) {
+      out.push(`${where} must be { default, codes, findings }`);
+      continue;
+    }
+    out.push(...actProblems(c.default, `${where}.default`));
+    if (c.codes !== undefined) {
+      if (!isObject(c.codes)) out.push(`${where}.codes must be an object of reason codes`);
+      else
+        for (const [code, act] of Object.entries(c.codes)) {
+          out.push(...actProblems(act, `${where}.codes.${code}`));
+        }
+    }
+    if (c.findings !== undefined) {
+      if (!Array.isArray(c.findings)) {
+        out.push(`${where}.findings must be a list`);
+        continue;
+      }
+      c.findings.forEach((f, i) => {
+        const fAt = `${where}.findings[${i}]`;
+        if (!isObject(f) || !isObject(f.when) || !Object.keys(f.when).length) {
+          out.push(`${fAt}: when must name at least one field`);
+          return;
+        }
+        for (const [path, value] of Object.entries(f.when)) {
+          if (value !== null && !['string', 'number', 'boolean'].includes(typeof value)) {
+            out.push(`${fAt}: when.${path} must be a string, number, boolean or null`);
+          }
+        }
+        out.push(...actProblems(f.act, `${fAt}.act`));
+      });
+    }
+  }
+  return out;
+}
+
 // What a pack's names and ids may be. Ids are core's shape: lowercase letters
 // and digits in parts joined by "-", dots allowed within a part (sample-1.0);
 // a rollup id may keep the capitals of its requirement's number (S1, A.1).
@@ -303,11 +376,75 @@ function wcagVersionProblems(wcagVersion, where) {
   ];
 }
 
+// keepsParsing, when given, is true or false.
+function keepsParsingProblems(keepsParsing, where) {
+  if (keepsParsing === undefined || typeof keepsParsing === 'boolean') return [];
+  return [`${where}.keepsParsing must be true or false, not ${JSON.stringify(keepsParsing)}`];
+}
+
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
 // core's is found by preparing it (preparePacks).
 function checkPack(pack) {
   return packProblems(pack, true);
+}
+
+// What is wrong with a rule's meta.review, the steps a person follows to
+// answer each of its undecided findings, by reason code: 1 to 6 steps, a
+// passWhen and a failWhen, as core's own rules' (scripts/validate-rule.js),
+// on a rule with a titleKey. A rule that declares its reason codes
+// (meta.reasonCodes) gives steps only for a code it declares or its
+// runInPage names; one that declares none is checked for shape alone, so
+// codes built in a helper or another module need not be written into
+// runInPage. A variant gives its base's codes, and is checked for shape.
+function reviewProblems(rule, where) {
+  const meta = isObject(rule.meta) ? rule.meta : null;
+  if (!meta || meta.review === undefined) return [];
+  const review = meta.review;
+  if (!isObject(review)) {
+    return [
+      `${where}: ${rule.id}'s meta.review must be an object of reason code -> { steps, passWhen, failWhen }`
+    ];
+  }
+  const problems = [];
+  const titleKey = isObject(meta.i18n) ? meta.i18n.titleKey : undefined;
+  if (typeof titleKey !== 'string' || !/^.+_title$/.test(titleKey)) {
+    problems.push(
+      `${where}: ${rule.id}'s meta.review needs meta.i18n.titleKey, ending in _title: its prefix keys the steps`
+    );
+  }
+  const declared = Array.isArray(meta.reasonCodes)
+    ? meta.reasonCodes.filter((c) => typeof c === 'string')
+    : null;
+  const source = typeof rule.runInPage === 'function' ? String(rule.runInPage) : '';
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [code, entry] of Object.entries(review)) {
+    const at = `${where}: ${rule.id}'s meta.review.${code}`;
+    if (!/^[A-Za-z0-9_]+$/.test(code)) {
+      problems.push(`${at}: a reason code is letters, digits and _`);
+      continue;
+    }
+    if (declared && !declared.includes(code) && !source.includes(code)) {
+      problems.push(
+        `${at}: "${code}" is not a reason code of this rule (not in its meta.reasonCodes, nor named in its runInPage)`
+      );
+    }
+    if (!isObject(entry)) {
+      problems.push(`${at} must be { steps, passWhen, failWhen }`);
+      continue;
+    }
+    if (
+      !Array.isArray(entry.steps) ||
+      entry.steps.length < 1 ||
+      entry.steps.length > 6 ||
+      !entry.steps.every(text)
+    ) {
+      problems.push(`${at}.steps must list 1 to 6 steps, each a non-empty string`);
+    }
+    if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+    if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+  }
+  return problems;
 }
 
 // What is wrong with a variant's config, against the settings of its base:
@@ -425,6 +562,7 @@ function packProblems(pack, withCoreVersion) {
         problems.push(`${where}: ${rule.id} needs runInPage(ctx), or from for a variant`);
       }
       if (typeof rule.from === 'string') problems.push(...variantProblems(pack, rule, where));
+      problems.push(...reviewProblems(rule, where));
       problems.push(...pageCodeProblems(rule, where));
     });
   }
@@ -473,6 +611,7 @@ function packProblems(pack, withCoreVersion) {
       }
       problems.push(...excludeProblems(profile.exclude, `standard.profiles.${name}`));
       problems.push(...wcagVersionProblems(profile.wcagVersion, `standard.profiles.${name}`));
+      problems.push(...keepsParsingProblems(profile.keepsParsing, `standard.profiles.${name}`));
     }
     if (typeof st.composites === 'function') {
       let rollups = [];
@@ -488,7 +627,38 @@ function packProblems(pack, withCoreVersion) {
             `standard.composites(): rollup id ${JSON.stringify(id)} must start with "${ns}-"`
           );
         }
+        if (isObject(r) && isObject(r.meta) && r.meta.contributions !== undefined) {
+          problems.push(...contributionProblems(r, `standard.composites(): ${id}`));
+        }
+        // How the rollup is judged (src/core/dom-runner.js): 'wcag' when it
+        // restates WCAG criteria, and partial when its rules don't check all
+        // its requirement asks, as ruleMappedStandard writes them.
+        if (isObject(r) && isObject(r.meta)) {
+          const { applicability, partial } = r.meta;
+          if (applicability !== undefined && applicability !== 'wcag') {
+            problems.push(
+              `standard.composites(): ${id}: applicability must be 'wcag' or left out, not ${JSON.stringify(applicability)}`
+            );
+          }
+          if (partial !== undefined && typeof partial !== 'boolean') {
+            problems.push(
+              `standard.composites(): ${id}: partial must be true or false, not ${JSON.stringify(partial)}`
+            );
+          }
+        }
       }
+    }
+    // A standard mapped rule by rule checks its own tables against the
+    // rules (validate, from ruleMappedStandard), as preparing the catalog
+    // does for a scan, which skips a pack that fails it.
+    if (typeof st.validate === 'function') {
+      let found;
+      try {
+        found = st.validate(standardRules(pack));
+      } catch (e) {
+        found = [`validate() throws: ${e && e.message ? e.message : e}`];
+      }
+      for (const p of Array.isArray(found) ? found : []) problems.push(`standard: ${p}`);
     }
   }
   if (pack.title !== undefined && (typeof pack.title !== 'string' || !pack.title.trim())) {
@@ -522,6 +692,7 @@ function packProblems(pack, withCoreVersion) {
         } else {
           problems.push(...excludeProblems(profile.exclude, `profiles.${name}`));
           problems.push(...wcagVersionProblems(profile.wcagVersion, `profiles.${name}`));
+          problems.push(...keepsParsingProblems(profile.keepsParsing, `profiles.${name}`));
         }
       }
     }
@@ -705,7 +876,8 @@ function checklistStandard(pack) {
           ...(p.rules ? { rules: p.rules.slice() } : {}),
           ...(p.exclude ? { exclude: p.exclude } : {}),
           ...(p.severity ? { severity: p.severity } : {}),
-          ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
+          ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
+          ...(p.keepsParsing ? { keepsParsing: true } : {})
         }
       ])
     ),
@@ -751,6 +923,23 @@ const standardOf = (pack) =>
 
 // Core's rule modules, as the build prepared them (src/core.js lists them).
 let coreEntries = null;
+// The rules a standard's tables are checked against: core's and the
+// pack's own, as { ruleId, wcagSc }.
+function standardRules(pack) {
+  const out = [];
+  for (const e of coreRuleEntries()) {
+    if (e.mod && typeof e.mod.id === 'string') {
+      out.push({ ruleId: e.mod.id, wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [] });
+    }
+  }
+  for (const r of Array.isArray(pack.rules) ? pack.rules : []) {
+    if (isObject(r) && typeof r.id === 'string') {
+      out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+    }
+  }
+  return out;
+}
+
 function coreRuleEntries() {
   if (!coreEntries) {
     coreEntries = core.__internal.ruleModules.map((spec) => {

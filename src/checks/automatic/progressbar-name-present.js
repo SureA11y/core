@@ -8,6 +8,12 @@
  * @summary Elements with role="progressbar" must have an accessible name
  * @standard WCAG 2.2
  * @sc 1.1.1
+ *   Not 4.1.2: a meter or a progress bar shows a value and takes no input,
+ *   so it is not a user interface component (WCAG's glossary: perceived as
+ *   a single control for a distinct function), and WAI-ARIA doesn't count
+ *   it as a widget. What it needs is a text alternative for what it shows.
+ *   A slider or a spinbutton, whose value the user sets, is a control:
+ *   slider-name-present and spinbutton-name-present map to 4.1.2.
  * @applicability
  *   Applies to elements whose role attribute resolves to progressbar: its first
  *   token naming a known role, matched in any case, is progressbar, so
@@ -25,6 +31,14 @@
  *   accepted: text sitting inside a custom progressbar widget is not
  *   reliably exposed as its name. On a labelable element
  *   (<progress role="progressbar">) an associated <label> counts as well.
+ * @reason-codes
+ *   - `name_missing` (fail): the progress bar has no accessible name from
+ *     aria-label, aria-labelledby, title or an associated label.
+ *     Basis: WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 progressbar role.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'progressbar-name-present';
@@ -52,7 +66,22 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.1.1': ['progressbar-name-present'] } }
+  coverage: { facetsBySc: { '1.1.1': ['progressbar-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the progress bar the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the progress bar, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The progress bar has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 1.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

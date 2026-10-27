@@ -90,7 +90,8 @@ module.exports = [
       'p-as-heading',
       'table-fake-caption',
       'td-has-header',
-      'aria-roles-valid'
+      'aria-roles-valid',
+      'aria-owns-valid'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_131_info_and_relationships.title',
@@ -165,7 +166,9 @@ module.exports = [
       'server-side-image-map-absent',
       'scrollable-region-focusable',
       'mouse-only-event-handlers',
-      'click-handler-keyboard-operable'
+      'click-handler-keyboard-operable',
+      'focus-not-removed-by-script',
+      'widget-keyboard-focusable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_211_keyboard.title',
@@ -280,7 +283,12 @@ module.exports = [
 
   {
     id: 'wcag-2.4.7-focus-visible',
-    checksIds: ['css-hidden-focus', 'css-focus-indicator-suppressed', 'manual-review'],
+    checksIds: [
+      'css-hidden-focus',
+      'css-focus-indicator-suppressed',
+      'focus-not-removed-by-script',
+      'manual-review'
+    ],
     meta: {
       titleKey: 'catalog.rules.wcag_247_focus_visible.title',
       descriptionKey: 'catalog.rules.wcag_247_focus_visible.description',
@@ -496,7 +504,9 @@ module.exports = [
       'presentational-children-focusable-absent',
       'aria-braille-equivalent',
       'aria-conditional-attr',
-      'aria-checked-state-mismatch'
+      'aria-checked-state-mismatch',
+      'aria-expanded-state-mismatch',
+      'aria-owns-valid'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_412_aria_validity.title',
@@ -524,6 +534,20 @@ module.exports = [
   },
 
   {
+    id: 'wcag-1.4.5-images-of-text',
+    checksIds: ['image-of-text'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_145_images_of_text.title',
+      descriptionKey: 'catalog.rules.wcag_145_images_of_text.description',
+      title: 'Images of Text',
+      description:
+        'Rollup of checks asking whether images that markup shows likely to hold text could use real text instead.',
+      wcagSc: ['1.4.5'],
+      level: 'AA'
+    }
+  },
+
+  {
     id: 'wcag-2.2.1-timing-adjustable',
     checksIds: ['meta-refresh-timing-absent'],
     meta: {
@@ -533,6 +557,20 @@ module.exports = [
       description:
         'Rollup of checks ensuring the page does not impose a timed refresh the user cannot control.',
       wcagSc: ['2.2.1'],
+      level: 'A'
+    }
+  },
+
+  {
+    id: 'wcag-3.3.1-error-identification',
+    checksIds: ['invalid-field-error-message'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_331_error_identification.title',
+      descriptionKey: 'catalog.rules.wcag_331_error_identification.description',
+      title: 'Error Identification',
+      description:
+        'Rollup of checks ensuring a field marked invalid has an error message, shown in text.',
+      wcagSc: ['3.3.1'],
       level: 'A'
     }
   },
@@ -564,6 +602,20 @@ module.exports = [
       description:
         'Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place.',
       wcagSc: ['3.3.8'],
+      level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-4.1.3-status-messages',
+    checksIds: ['live-region-announcements'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_413_status_messages.title',
+      descriptionKey: 'catalog.rules.wcag_413_status_messages.description',
+      title: 'Status Messages',
+      description:
+        'Rollup of checks that live regions can present status messages to assistive technology without receiving focus.',
+      wcagSc: ['4.1.3'],
       level: 'AA'
     }
   }

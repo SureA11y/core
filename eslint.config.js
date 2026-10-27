@@ -63,14 +63,14 @@ module.exports = [
     ignores: [
       'node_modules/**',
       'coverage/**',
-      'cross-engine-report/**',
       // Dot-directories hold local editor and tooling config, not project
       // source. Linting them fails on whatever conventions their own tools
       // use, and none of it ships.
       '**/.*/**',
       // Generated bundles -- see .prettierignore for why these aren't hand-edited.
       'src/core.js',
-      'surea11y.browser.js'
+      'surea11y.browser.js',
+      'surea11y.report.js'
     ]
   },
   prettierConfig

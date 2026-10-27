@@ -38,9 +38,11 @@ test('img-alt-quality marks an image that is a link or button’s only content',
   assert.equal(d.only.controlContent, 'link');
   assert.equal(d.only.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
   assert.equal(d.btn.controlContent, 'button');
-  assert.equal(d.beside, null, 'beside text: no details at all, as before');
-  assert.equal(d.alone, null);
-  assert.equal(d['two-a'], null);
+  // Beside text, or not a control's only content: the rule's own code only.
+  const review = { reasonCode: 'TEXT_ALTERNATIVE_REVIEW' };
+  assert.deepEqual(d.beside, review);
+  assert.deepEqual(d.alone, review);
+  assert.deepEqual(d['two-a'], review);
 });
 
 test('img-alt-quality keeps the alt signal beside controlContent', () => {
@@ -63,7 +65,7 @@ test('svg-text-alternative-quality marks an svg that is a link’s only content'
   );
   assert.equal(d.only.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
   assert.equal(d.only.controlContent, 'link');
-  assert.equal(d.beside.reasonCode, undefined);
+  assert.equal(d.beside.reasonCode, 'TEXT_ALTERNATIVE_REVIEW');
   assert.equal(d['hidden-text'].controlContent, 'link');
 });
 

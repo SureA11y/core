@@ -47,9 +47,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-text-all-scenarios.html)
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
-  const expectedFlaggedIds = ['at_case_02', 'at_case_03'];
+  const expectedFlaggedIds = ['at_case_02', 'at_case_03', 'at_case_06'];
   const expectedNoOccIds = ['at_case_01', 'at_case_04', 'at_case_05'];
 
   for (const id of expectedFlaggedIds) {

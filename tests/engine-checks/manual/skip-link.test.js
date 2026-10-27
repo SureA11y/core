@@ -176,3 +176,57 @@ test(`${RULE_ID}: a legacy <a name> target with a backslash or quote in its name
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+// Leans. A missing target leans fail only where the listener hook, installed
+// before the page's scripts, saw no click listener: without the hook a
+// script may still take the click.
+test(`${RULE_ID}: a skip link to a missing target leans fail when nothing listens for its click`, () => {
+  const { JSDOM } = require('jsdom');
+  const { listenerHookScript } = require('../../../src/index.js');
+  const { runa11yCoreOnDom } = require('../../helpers/runDomRulesOnHtml.js');
+  const scan = (body, { hook = true, script = null } = {}) => {
+    const dom = new JSDOM(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
+      { runScripts: 'outside-only' }
+    );
+    // jsdom's selector engine adds its own key listeners on first use.
+    dom.window.document.querySelector('*');
+    if (hook) dom.window.eval(listenerHookScript({ early: true }));
+    if (script) dom.window.eval(script);
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    const occ = result.checksResults.find((c) => c.ruleId === RULE_ID).occurrences[0];
+    assert.equal(occ.data.details.reasonCode, 'SKIP_LINK_TARGET_MISSING');
+    return occ.lean;
+  };
+  const SKIP = '<a href="#main">Skip to content</a><main>Content</main>';
+
+  const lean = scan(SKIP);
+  assert.equal(lean.toward, 'fail');
+  assert.equal(lean.i18n.whyKey, 'skipLink_lean_why_missing');
+
+  assert.equal(scan(SKIP, { hook: false }), undefined);
+  assert.equal(scan(SKIP, { script: "document.addEventListener('click', () => {})" }), undefined);
+  assert.equal(scan('<a href="#/home">Skip to content</a><main>Content</main>'), undefined);
+  // Taken for a skip link only by its place: no lean.
+  assert.equal(scan('<a href="#menu">Menu</a><main>Content</main>'), undefined);
+});
+
+test(`${RULE_ID}: a target hidden by aria-hidden leans fail, one hidden by display gets no lean`, () => {
+  const scan = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const hidden = scan('<a href="#c">Skip to content</a><main id="c" aria-hidden="true">x</main>');
+  assert.equal(hidden.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
+  assert.equal(hidden.lean.toward, 'fail');
+  assert.equal(hidden.lean.i18n.whyKey, 'skipLink_lean_why_hiddenTarget');
+
+  const display = scan('<a href="#c">Skip to content</a><div hidden><main id="c">x</main></div>');
+  assert.equal(display.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
+  assert.equal(display.lean, undefined);
+});

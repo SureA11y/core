@@ -59,6 +59,6 @@ test('the same structure in view is still judged', () => {
     page('<main><div role="list">Shipping</div><div role="listitem">x</div></main>'),
     RULES
   );
-  assert.equal(got['aria-required-children'], 'cantTell');
+  assert.equal(got['aria-required-children'], 'fail');
   assert.equal(got['aria-required-parent'], 'fail');
 });

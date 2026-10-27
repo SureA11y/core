@@ -17,6 +17,19 @@
  *   An author-supplied name that equals a browser default for an image
  *   button ("Submit", "Submit Query") is not an empty name: it may describe
  *   the button, so it is reported as cantTell for a person to judge.
+ * @reason-codes
+ *   - `missing_alt` (fail): an image button has no alt attribute and no
+ *     name from aria-label, aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; WCAG 4.1.2; H36; F65; ACT 59796f; HTML input
+ *     type=image alt (MUST).
+ *   - `empty_alt` (fail): an image button has an empty alt and no name from
+ *     aria-label, aria-labelledby or title, so the button has no name.
+ *     Basis: WCAG 1.1.1; WCAG 4.1.2; H36; ACT 59796f; HTML input type=image
+ *     alt (MUST).
+ *   - `default_name` (cantTell): an image button's author-given name is a
+ *     browser default ("Submit" or "Submit Query"), and a person checks
+ *     that it says what the button does.
+ *     Basis: WCAG 1.1.1 (not settled); HTML-AAM input type=image.
  */
 
 const id = 'input-image-alt-present';
@@ -56,6 +69,21 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['input-image-alt-attr-present'],
       '4.1.2': ['input-image-name-present']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    default_name: {
+      steps: [
+        'Find the image button the report names and read the name the report gives ("Submit" or "Submit Query").',
+        'Look at its image and work out what the button does, for example by what happens when it is pressed.',
+        'Decide whether the name says what the button does.'
+      ],
+      passWhen:
+        'The name says what the button does, as "Submit" does on a button that sends a form.',
+      failWhen:
+        'The name does not say what the button does (such as "Submit Query" on a search button), which fails WCAG 1.1.1.'
     }
   }
 };

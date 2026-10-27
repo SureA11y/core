@@ -19,7 +19,9 @@ const {
   helpLinkOf,
   standardsInfoOf,
   standardOfEntryIn,
-  textOf
+  textOf,
+  occurrenceOutcome,
+  reviewGroupOf
 } = require('./scan-result.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
@@ -55,6 +57,12 @@ function getTranslator() {
   if (!translator) translator = require('./core.js').__internal;
   return translator;
 }
+
+// docs/LEANS.md promises a "How to check" section on every card that needs
+// review, so a result that comes without the steps (a binding's, from
+// runa11yCoreInPage) gains them here, in Node: surea11y.report.js, the
+// report in a browser, shows the steps a result already carries.
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so
@@ -178,26 +186,11 @@ function countByOutcome(checksResults) {
   return counts;
 }
 
-function getOccurrenceOutcome(ruleResult, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return (
-    ruleResult &&
-    (ruleResult.outcome === 'fail' || ruleResult.outcome === 'cantTell' ? ruleResult.outcome : null)
-  );
-}
-
 function getCardOutcome(ruleResult) {
   if (!ruleResult || !Array.isArray(ruleResult.occurrences)) return ruleResult.outcome;
   let hasCantTell = false;
   for (const occ of ruleResult.occurrences) {
-    const outcome = getOccurrenceOutcome(ruleResult, occ);
+    const outcome = occurrenceOutcome(ruleResult, occ);
     if (outcome === 'fail') return 'fail';
     if (outcome === 'cantTell') hasCantTell = true;
   }
@@ -233,7 +226,7 @@ function renderTargetChips(engine, ui) {
 
 // The conditions the page was rendered under. A layout-dependent finding
 // can come and go with the viewport width, so the report says which width
-// it describes; colour scheme and loading fonts change contrast and text
+// it describes; color scheme and loading fonts change contrast and text
 // measurements too. Fonts get a chip only while still loading, the case
 // that makes results differ between runs. A result from an older engine has
 // no engine.environment and gets no chips.
@@ -346,8 +339,15 @@ function renderHeroBar(byOutcome, ui) {
     headline = esc(ui.tr('report_hero_none'));
   }
 
+  // No failure is not conformance: what the rules can't judge is left to a
+  // person, and the report says so where the good news is.
+  const note =
+    byOutcome.fail === 0 && applicable > 0
+      ? `\n    <p class="hero-note">${esc(ui.tr('report_hero_notConformance'))}</p>`
+      : '';
+
   return `<div class="hero">
-    <p class="hero-headline">${headline}</p>
+    <p class="hero-headline">${headline}</p>${note}
     <div class="hero-bar">${segments}</div>
     <div class="hero-legend">${legend}</div>
   </div>`;
@@ -368,9 +368,12 @@ function renderScorecard(byOutcome, ui) {
   return `<div class="scorecard">${tiles}</div>`;
 }
 
-// The line under a rollup's breakdown when the scan selected only some of its
-// rules (contributors marked notSelected): the criterion was checked in part.
+// The line under a rollup's breakdown when the criterion was checked in part:
+// its rules check only part of what it asks (partialCheck), or the scan
+// selected only some of them (contributors marked notSelected).
 function partlyCheckedNote(details, ui) {
+  if (details && details.reasonCode === 'composite.rollup.cantTell.partialCheck')
+    return `<br>${esc(ui.tr('report_rollup_partialCheck'))}`;
   const contributors = Array.isArray(details && details.contributors) ? details.contributors : [];
   const count = contributors.filter((c) => c && c.notSelected === true).length;
   if (!count) return '';
@@ -643,6 +646,31 @@ function helpLink(r, ui) {
 // One card per rule (not per occurrence) -- a rule with many occurrences of
 // the same underlying issue is one thing worth a person's attention, not N.
 const MAX_CARDS = 24;
+// Cards go most severe first, as the CLI's summary lists failing rules.
+const SEVERITY_RANK = { critical: 0, serious: 1, moderate: 2, minor: 3 };
+function severityRank(severity) {
+  return Object.prototype.hasOwnProperty.call(SEVERITY_RANK, severity)
+    ? SEVERITY_RANK[severity]
+    : 4;
+}
+
+// Which way an undecided finding points: 'fail', 'pass', or null when only a
+// person can judge.
+function leanOf(occ) {
+  const t = occ && occ.lean && occ.lean.toward;
+  return t === 'fail' || t === 'pass' ? t : null;
+}
+
+// The cards come in four groups: rules that fail, then the undecided
+// findings that likely fail, those that likely pass, and those only a person
+// can judge. A rule whose undecided findings lean different ways has a card
+// in each group they fall in.
+// `group` is the occurrence's reviewGroupOf, `key` the lean a card shows.
+const REVIEW_GROUPS = [
+  { group: 'leanFail', key: 'fail', headingKey: 'report_cards_group_leanFail' },
+  { group: 'leanPass', key: 'pass', headingKey: 'report_cards_group_leanPass' },
+  { group: 'open', key: null, headingKey: 'report_cards_group_open' }
+];
 
 function renderCards(checksResults, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
@@ -653,7 +681,7 @@ function renderCards(checksResults, ui) {
       Array.isArray(r.occurrences) &&
       (ruleErrorOf(r) ||
         r.occurrences.some((occ) => {
-          const outcome = getOccurrenceOutcome(r, occ);
+          const outcome = occurrenceOutcome(r, occ);
           return outcome === 'fail' || outcome === 'cantTell';
         }))
   );
@@ -661,43 +689,67 @@ function renderCards(checksResults, ui) {
     return `<p class="note">${esc(ui.tr('report_cards_none'))}</p>`;
   }
 
-  const sorted = withIssues.slice().sort((a, b) => {
-    const aOutcome = getCardOutcome(a);
-    const bOutcome = getCardOutcome(b);
-    if (aOutcome !== bOutcome) return aOutcome === 'fail' ? -1 : 1;
-    return b.occurrences.length - a.occurrences.length;
-  });
-  const shown = sorted.slice(0, MAX_CARDS);
+  const bySeverity = (a, b) =>
+    severityRank(a.r.severity) - severityRank(b.r.severity) || b.occs.length - a.occs.length;
+  const failing = [];
+  const review = REVIEW_GROUPS.map(() => []);
+  for (const r of withIssues) {
+    if (getCardOutcome(r) === 'fail' || ruleErrorOf(r)) {
+      failing.push({ r, occs: r.occurrences, outcome: getCardOutcome(r) });
+      continue;
+    }
+    REVIEW_GROUPS.forEach((g, i) => {
+      const occs = r.occurrences.filter((occ) => reviewGroupOf(r, occ) === g.group);
+      if (occs.length) review[i].push({ r, occs, outcome: 'cantTell', lean: g.key });
+    });
+  }
+  failing.sort(bySeverity);
+  review.forEach((list) => list.sort(bySeverity));
 
-  const cards = shown
-    .map((r) => {
-      const cardOutcome = getCardOutcome(r);
-      const info = OUTCOME_INFO[cardOutcome] || OUTCOME_INFO.notApplicable;
-      const occurrenceCounts = { fail: 0, cantTell: 0 };
-      for (const occ of r.occurrences) {
-        const outcome = getOccurrenceOutcome(r, occ);
-        if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
-      }
-      const ruleError = ruleErrorOf(r);
-      const representative = ruleError
-        ? { summary: ui.tr('report_card_ruleError', { error: ruleError }) }
-        : r.occurrences.find((occ) => getOccurrenceOutcome(r, occ) === cardOutcome) ||
-          r.occurrences[0];
-      const occI18n = representative.i18n || {};
-      const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
-        .filter(isWcagCriterion)
-        .map(
-          (m) =>
-            `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
-        )
-        .join('');
-      const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
-      const countLabel =
-        r.occurrences.length > 1
-          ? ` <span class="card-count">× ${ui.num(r.occurrences.length)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
-          : '';
+  const total = failing.length + review.reduce((n, list) => n + list.length, 0);
+  let budget = MAX_CARDS;
+  const take = (list) => {
+    const shown = list.slice(0, Math.max(budget, 0));
+    budget -= shown.length;
+    return shown;
+  };
 
-      return `<div class="card">
+  const renderCard = ({ r, occs, outcome: cardOutcome, lean }) => {
+    const info = OUTCOME_INFO[cardOutcome] || OUTCOME_INFO.notApplicable;
+    const occurrenceCounts = { fail: 0, cantTell: 0 };
+    for (const occ of occs) {
+      const outcome = occurrenceOutcome(r, occ);
+      if (outcome === 'fail' || outcome === 'cantTell') occurrenceCounts[outcome] += 1;
+    }
+    const ruleError = ruleErrorOf(r);
+    const representative = ruleError
+      ? { summary: ui.tr('report_card_ruleError', { error: ruleError }) }
+      : occs.find((occ) => occurrenceOutcome(r, occ) === cardOutcome) || occs[0];
+    const occI18n = representative.i18n || {};
+    const wcagChips = ((r.meta && r.meta.normativeMappings) || [])
+      .filter(isWcagCriterion)
+      .map(
+        (m) =>
+          `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
+      )
+      .join('');
+    const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
+    const countLabel =
+      occs.length > 1
+        ? ` <span class="card-count">× ${ui.num(occs.length)}${hasMixedOutcomes ? ` ${esc(ui.tr('report_card_mixed', { fail: ui.num(occurrenceCounts.fail), review: ui.num(occurrenceCounts.cantTell) }))}` : ''}</span>`
+        : '';
+    // How to answer the question, for an undecided finding.
+    const how = cardOutcome === 'cantTell' && representative.howToCheck;
+    const howBlock =
+      how && Array.isArray(how.steps) && how.steps.length
+        ? `<details class="card-how"><summary>${esc(ui.tr('report_card_howToCheck'))}</summary><ol>${how.steps.map((s) => `<li>${esc(s)}</li>`).join('')}</ol>${how.passWhen ? `<p>${esc(ui.tr('report_card_howToCheck_pass', { text: how.passWhen }))}</p>` : ''}${how.failWhen ? `<p>${esc(ui.tr('report_card_howToCheck_fail', { text: how.failWhen }))}</p>` : ''}</details>`
+        : '';
+    const leanInfo = lean && representative.lean;
+    const leanLine = leanInfo
+      ? `<p class="card-lean">${esc(ui.tr(lean === 'fail' ? 'report_card_leanFail' : 'report_card_leanPass', { why: leanInfo.why }))}${leanInfo.caution ? ` ${esc(ui.tr('report_card_leanCaution', { caution: leanInfo.caution }))}` : ''}</p>`
+      : '';
+
+    return `<div class="card">
       <div class="card-head">
         <span class="hero-legend-swatch" style="background:${info.color}">${info.icon}</span>
         <span class="card-title"><strong>${esc(r.ruleId)}</strong> ${esc(ui.tr('report_card_status', { outcome: info.label, severity: ui.severity(r.severity) }))}${countLabel}</span>
@@ -706,19 +758,32 @@ function renderCards(checksResults, ui) {
         <div class="card-meta">${wcagChips}</div>
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
-        ${r.occurrences.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(r.occurrences.length) }))}</p>` : ''}
+        ${leanLine}
+        ${howBlock}
+        ${occs.length > 1 ? `<p class="card-note">${esc(ui.tr('report_card_representative', { count: ui.num(occs.length) }))}</p>` : ''}
         ${helpLink(r, ui)}
       </div>
     </div>`;
-    })
-    .join('\n');
+  };
+
+  const parts = [];
+  const shownFailing = take(failing);
+  if (shownFailing.length)
+    parts.push(`<div class="cards">${shownFailing.map(renderCard).join('\n')}</div>`);
+  REVIEW_GROUPS.forEach((g, i) => {
+    const shown = take(review[i]);
+    if (!shown.length) return;
+    parts.push(
+      `<h3 class="cards-group">${esc(ui.tr(g.headingKey))}</h3><div class="cards">${shown.map(renderCard).join('\n')}</div>`
+    );
+  });
 
   const overflow =
-    sorted.length > MAX_CARDS
-      ? `<p class="note">${esc(ui.tr('report_cards_overflow', { shown: ui.num(MAX_CARDS), total: ui.num(sorted.length) }))}</p>`
+    total > MAX_CARDS
+      ? `<p class="note">${esc(ui.tr('report_cards_overflow', { shown: ui.num(MAX_CARDS), total: ui.num(total) }))}</p>`
       : '';
 
-  return `<div class="cards">${cards}</div>${overflow}`;
+  return `${parts.join('\n')}${overflow}`;
 }
 
 // A summary or hint for a card, wrapped in its language when that is not the
@@ -736,10 +801,10 @@ function flattenOccurrences(checksResults, ui) {
   for (const r of checksResults) {
     if (!Array.isArray(r.occurrences)) continue;
     for (const occ of r.occurrences) {
-      const occurrenceOutcome = getOccurrenceOutcome(r, occ);
+      const tier = occurrenceOutcome(r, occ);
       rows.push({
         ruleId: r.ruleId,
-        outcome: occurrenceOutcome || r.outcome,
+        outcome: tier || r.outcome,
         severity: r.severity,
         severityLabel: ui.severity(r.severity),
         selector: locationText(occ),
@@ -751,7 +816,13 @@ function flattenOccurrences(checksResults, ui) {
           occ.i18n && occ.i18n.summaryKey,
           occ.i18n && occ.i18n.params
         ),
-        hint: occ.hint || ''
+        hint: occ.hint || '',
+        lean:
+          tier === 'cantTell' && leanOf(occ)
+            ? ui.tr(leanOf(occ) === 'fail' ? 'report_card_leanFail' : 'report_card_leanPass', {
+                why: occ.lean.why
+              })
+            : ''
       });
     }
   }
@@ -782,7 +853,9 @@ function renderHtmlReport(input, options = {}) {
   // A cross-frame result: the page is the top frame's report, and its child
   // frames follow in a section of their own.
   const frames = framesOf(input, 'renderHtmlReport').map((f) =>
-    f.result ? { ...f, result: readableResult(f.result) } : f
+    f.result
+      ? { ...f, result: withHowToCheck(readableResult(f.result), options && options.packs) }
+      : f
   );
   const result = frames[0].result;
   const checksResults = Array.isArray(result && result.checksResults) ? result.checksResults : [];
@@ -872,6 +945,7 @@ function renderHtmlReport(input, options = {}) {
 
   .hero { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 20px 24px; margin-bottom: 28px; }
   .hero-headline { font-size: 17px; margin: 0 0 16px; line-height: 1.5; }
+  .hero-note { margin: -8px 0 16px; line-height: 1.5; }
   .hero-bar { display: flex; height: 22px; border-radius: 6px; overflow: hidden; background: #eee; }
   .hero-bar-seg { height: 100%; }
   .hero-bar-seg:not(:last-child) { border-right: 2px solid #fff; }
@@ -894,6 +968,12 @@ function renderHtmlReport(input, options = {}) {
   .card-snippet { font-family: ui-monospace, monospace; font-size: 11.5px; background: #f7f7f8; border-radius: 5px; padding: 6px 8px; overflow-x: auto; white-space: pre-wrap; word-break: break-word; }
   @media (prefers-color-scheme: dark) { .card-snippet { background: #262a30 !important; } }
   .card-note { font-size: 11px; opacity: 0.6; margin: 6px 0 0; }
+  .card-lean { font-size: 12px; margin: 6px 0 0; }
+  .cards-group { font-size: 14px; margin: 16px 0 8px; }
+  .row-lean { display: block; font-size: 11px; margin-top: 4px; }
+  .card-how { font-size: 12px; margin: 6px 0 0; }
+  .card-how ol { margin: 4px 0 4px 18px; padding: 0; }
+  .card-how p { margin: 2px 0; }
   .card-help { font-size: 12.5px; margin: 6px 0 0; }
 
   details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
@@ -1047,7 +1127,7 @@ ${standardRollups
   function matches(r, q) {
     if (!active[r.outcome]) return false;
     if (!q) return true;
-    var hay = (r.ruleId + ' ' + r.selector + ' ' + r.html + ' ' + r.summary).toLowerCase();
+    var hay = (r.ruleId + ' ' + r.selector + ' ' + r.html + ' ' + r.summary + ' ' + (r.lean || '')).toLowerCase();
     return hay.indexOf(q) !== -1;
   }
 
@@ -1071,7 +1151,7 @@ ${standardRollups
         '<td>' + chip + '</td>' +
         '<td>' + esc(r.severityLabel) + '</td>' +
         '<td class="snippet" title="' + esc(r.html) + '">' + esc(r.selector) + '</td>' +
-        '<td class="snippet"' + (r.summaryLang ? ' lang="' + esc(r.summaryLang) + '"' : '') + '>' + esc(r.summary) + '</td>' +
+        '<td class="snippet"' + (r.summaryLang ? ' lang="' + esc(r.summaryLang) + '"' : '') + '>' + esc(r.summary) + (r.lean ? '<span class="row-lean">' + esc(r.lean) + '</span>' : '') + '</td>' +
         '</tr>';
     }).join('');
 

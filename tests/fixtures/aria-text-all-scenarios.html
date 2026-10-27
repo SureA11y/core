@@ -28,8 +28,8 @@
   </div>
 
   <div class="case" id="case_05">
-    <div class="case-title">05 — PASS: role="text" whose only link is collapsed (hidden="until-found"), not shown and not focusable</div>
-    <span id="at_case_05" role="text">Price <span hidden="until-found"><a href="#">full terms</a></span></span>
+    <div class="case-title">05 — PASS: role="text" whose only link is collapsed (hidden="until-found" on a block box), not shown and not focusable</div>
+    <span id="at_case_05" role="text">Price <span hidden="until-found" style="display: block"><a href="#">full terms</a></span></span>
   </div>
 
   <h2>B. CANTTELL — has a focusable descendant</h2>
@@ -42,6 +42,11 @@
   <div class="case" id="case_03">
     <div class="case-title">03 — CANTTELL: role="text" contains a tabindex-bearing element</div>
     <span id="at_case_03" role="text">Some text with <span tabindex="0">a focusable span</span> inside it.</span>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: hidden="until-found" on an inline element hides nothing (content-visibility has no effect on an inline box), so its link is shown and focusable</div>
+    <span id="at_case_06" role="text">Price <span hidden="until-found"><a href="#">full terms</a></span></span>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

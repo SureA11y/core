@@ -28,6 +28,17 @@ const PROFILES = ['wcag22-aa', 'section508'].concat(
   standardsData().flatMap((s) => Object.keys(s.profiles || {}))
 );
 
+// Profiles whose standard keeps 4.1.1 Parsing's text: its own table says a
+// failure of it stays one, where the 2023 errata to WCAG 2.0 and 2.1 would
+// have it asked about.
+const KEEPS_PARSING = new Set(
+  standardsData().flatMap((s) =>
+    Object.entries(s.profiles || {})
+      .filter(([, p]) => p.keepsParsing)
+      .map(([name]) => name)
+  )
+);
+
 const ALL_RULES = getChecksCatalog({ optInRules: 'all' }).map((r) => r.ruleId);
 
 // Every rule with a scenario page, from core's fixture index and each profile's.
@@ -74,9 +85,35 @@ test('every profile leaves the outcome of each rule it runs unchanged', () => {
             { wcagVersion: version, optInRules: 'all' },
             { includeRuleIds: [ruleId] }
           );
-          alone.set(version, summary(own.checksResults.find((r) => r.ruleId === ruleId)));
+          alone.set(
+            version,
+            own.checksResults.find((r) => r.ruleId === ruleId)
+          );
         }
-        if (summary(check) !== alone.get(version)) {
+        const own = alone.get(version);
+        // Under such a profile the rule's own fail stands: the same findings,
+        // not turned into questions.
+        const expected =
+          KEEPS_PARSING.has(profile) &&
+          own &&
+          own.wcagVersionScope &&
+          own.wcagVersionScope.by === 'errata'
+            ? JSON.stringify({
+                outcome: own.wcagVersionScope.coercedFrom,
+                occurrences: (check.occurrences || []).map((o) => [
+                  o.selector,
+                  o.occurrenceOutcome || null
+                ])
+              })
+            : summary(own);
+        if (KEEPS_PARSING.has(profile) && expected !== summary(own)) {
+          assert.deepEqual(
+            check.occurrences.map((o) => o.selector),
+            own.occurrences.map((o) => o.selector),
+            `${ruleId} under ${profile} reports other findings`
+          );
+        }
+        if (summary(check) !== expected) {
           differences.push(`${ruleId} under ${profile} (WCAG ${version})`);
         }
       }

@@ -19,11 +19,13 @@
  *   tag's.
  * @expectation
  *   At least one descendant, or one aria-owns-referenced element, has one
- *   of the acceptable owned roles for that container role. Reported at
- *   CANTTELL, never FAIL: this rule asks only whether the required content
- *   is PRESENT, and a container that owns nothing conveys nothing false --
- *   an empty role="list" is announced as a list with no items, which is what
- *   it is. Whether the content a container does own is VALID is
+ *   of the acceptable owned roles for that container role. A container
+ *   with none that owns text, directly or through generic wrappers (a
+ *   <span> or <div> with no role), FAILS: the text sits where its required
+ *   children belong, as in a list whose items have no role (ACT bc4a75,
+ *   Failed Example 1). One that owns nothing is asked about (CANTTELL): it
+ *   conveys nothing false -- an empty role="list" is announced as a list
+ *   with no items, which is what it is, and a script may fill it. Whether the content a container does own is VALID is
  *   aria-prohibited-children's decision, and that rule still fails, so a
  *   genuinely misdescribed structure (a role="button" among list items, a
  *   tablist of plain buttons) is caught with the same strength as before.
@@ -34,6 +36,19 @@
  *   - `role`: the container's role.
  *   - `requiredOwnedRoles`: the roles it needs at least one child with.
  *     Each item is a role name.
+ * @reason-codes
+ *   - `ARIA_REQUIRED_CHILD_TEXT_ONLY` (fail): a container role owns text,
+ *     directly or through generic wrappers, and none of the roles it
+ *     requires, such as a list whose items have no role.
+ *     Basis: WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG
+ *     1.3.1.
+ *   - `ARIA_REQUIRED_CHILD_MISSING` (cantTell): a container role owns none of
+ *     the roles it requires, and no text either, such as an empty list.
+ *     It leans pass when the container holds no element at all, and fail
+ *     when it holds content with a name, such as an image with alt text or a
+ *     button, none of it with a required role.
+ *     Basis: WAI-ARIA 1.2 required owned elements (MUST); ACT bc4a75; WCAG
+ *     1.3.1 (not settled).
  * @implementation-notes
  * - Scoped to REQUIRED_OWNED_ROLES in src/core/aria-helpers.js
  *   (see that file's header for the conservative-scope rationale).
@@ -111,7 +126,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '1.3.1': ['aria-role-required-owned-children'] } }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-required-owned-children'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_REQUIRED_CHILD_MISSING: {
+      steps: [
+        'Inspect the container the report names and note its role and the child roles it needs (such as listitem for list, option for listbox).',
+        'Look at what it shows on screen: check whether it is empty or holds images, icons or controls.',
+        'Interact with the page (open menus, load results) and check whether children with the required role are added later.',
+        "Open the Accessibility pane in the browser's developer tools and check the roles of anything it holds."
+      ],
+      passWhen:
+        'The container is empty and conveys nothing, or the items it shows carry the required role.',
+      failWhen:
+        'It shows items (images, icons, controls) that lack the required child role, so the structure is not conveyed, which fails WCAG 1.3.1 (ACT bc4a75).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -161,7 +192,82 @@ function runInPage(ctx) {
     : helpers.queryAll('[role]');
 
   const occurrences = [];
+  const fails = [];
+
+  // Whether `node` owns text directly or through generic wrappers: a text
+  // node with more than whitespace, or an element with no role of its own
+  // (or role generic, none or presentation) that does. Hidden elements, and
+  // elements with another role, don't count.
+  const NO_ROLE = ['', 'generic', 'none', 'presentation'];
+  function ownsBareText(node, depth) {
+    if (depth > 50) return false;
+    for (const child of dom.childNodes(node) || []) {
+      const type = dom.nodeType(child);
+      if (type === 3) {
+        if (String(dom.nodeValue(child) || '').trim()) return true;
+        continue;
+      }
+      if (type !== 1) continue;
+      if (!isEligibleAcc(child)) continue;
+      let childRole;
+      try {
+        childRole =
+          ariaHelpers.getContainmentRole(child) || ariaHelpers.getNativeRoleForElement(child) || '';
+      } catch {
+        childRole = 'unknown';
+      }
+      if (!NO_ROLE.includes(childRole)) continue;
+      if (ownsBareText(child, depth + 1)) return true;
+    }
+    return false;
+  }
   let applicableCount = 0;
+
+  // Which way a container with none of its required children points: one
+  // that holds no element at all (no shadow root, nothing owned) conveys no
+  // items, right or wrong; one that holds named content (an image with alt
+  // text, a button, a labelled control) shows items that lack the role.
+  function leanFor(el) {
+    const ownsAttr = String(dom.getAttribute(el, 'aria-owns') || '').trim();
+    let shadow = null;
+    try {
+      shadow = dom.shadowRoot(el);
+    } catch {}
+    if (dom.childElementCount(el) === 0 && !ownsAttr && !shadow) {
+      return {
+        toward: 'pass',
+        why: 'The container holds no elements, so it conveys no items, right or wrong.',
+        signals: [{ signal: 'child-element-count', value: 0 }],
+        caution: 'A script may fill it later with items that lack the required role.',
+        i18n: {
+          whyKey: 'ariaRequiredChildren_lean_why_empty',
+          cautionKey: 'ariaRequiredChildren_lean_caution_empty'
+        }
+      };
+    }
+    let named = 0;
+    try {
+      const all = dom.querySelectorAll(el, '*');
+      for (let i = 0; i < all.length && i < 500 && !named; i++) {
+        const d = all[i];
+        if (!isEligibleAcc(d)) continue;
+        const info = helpers.getAccessibleNameInfo(d, ctx);
+        if (info && String(info.value || '').trim()) named += 1;
+      }
+    } catch {}
+    if (!named) return null;
+    return {
+      toward: 'fail',
+      why: 'The container holds content with a name, such as an image or a control, but none of it has a role the container requires.',
+      signals: [{ signal: 'named-descendants', value: true }],
+      caution:
+        'aria-prohibited-children judges content that has a role of its own; this is the same structure seen from the container.',
+      i18n: {
+        whyKey: 'ariaRequiredChildren_lean_why_namedContent',
+        cautionKey: 'ariaRequiredChildren_lean_caution_namedContent'
+      }
+    };
+  }
 
   // Composed-tree descendant walk: el.querySelectorAll only sees the raw
   // light-DOM subtree, so a container whose real owned children are
@@ -310,6 +416,36 @@ function runInPage(ctx) {
 
     if (found) continue;
 
+    // Text the container owns itself, or through generic wrappers (a <span>
+    // with no role), is content in place of its required children: a list
+    // whose items have no role (ACT bc4a75, Failed Example 1). It fails. An
+    // element with a role of its own is aria-prohibited-children's to judge,
+    // and an empty container is asked about, as before.
+    if (ownsBareText(el, 0)) {
+      fails.push(
+        helpers.reportOccurrence(el, {
+          summary:
+            'This container role holds content, but none of it has a role the container requires.',
+          hint: 'Give each item the role the container needs, such as role="listitem" in a list.',
+          occurrenceOutcome: 'fail',
+          i18n: {
+            summaryKey: 'ariaRequiredChildren_summary_fail_textOnly',
+            hintKey: 'ariaRequiredChildren_hint_fail_textOnly',
+            params: { role, requiredRoles: requiredOwned.join(', ') }
+          },
+          data: {
+            details: {
+              reasonCode: 'ARIA_REQUIRED_CHILD_TEXT_ONLY',
+              role,
+              requiredOwnedRoles: requiredOwned
+            }
+          }
+        })
+      );
+      continue;
+    }
+
+    const lean = leanFor(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This container role has no owned child with a required role.',
@@ -330,6 +466,7 @@ function runInPage(ctx) {
               typeof dom.childElementCount(el) === 'number' ? dom.childElementCount(el) : null
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
@@ -345,7 +482,7 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
   const resolved = helpers.resolveTieredOutcome(
-    [],
+    fails,
     occurrences,
     rule.defaultSeverity || 'moderate'
   );

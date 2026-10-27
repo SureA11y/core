@@ -65,6 +65,18 @@ test(`${RULE_ID}: a heading role in a fallback list or upper case counts, an unk
   }
 });
 
+test(`${RULE_ID}: a native heading's valid aria-level is its level, as heading-order reads it`, () => {
+  const outcome = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    }).checksResults.find((c) => c.ruleId === RULE_ID).outcome;
+  assert.equal(outcome('<h2 aria-level="1">Title</h2>'), 'pass');
+  assert.equal(outcome('<h1 aria-level="2">Title</h1>'), 'cantTell');
+  // An invalid aria-level leaves the tag's level.
+  assert.equal(outcome('<h1 aria-level="0">Title</h1>'), 'pass');
+  assert.equal(outcome('<h2 aria-level="one">Title</h2>'), 'cantTell');
+});
+
 test(`${RULE_ID}: cantTell when the page has headings but no level-one heading`, () => {
   const html = `<!doctype html><html><body><h2>Section</h2></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -182,4 +194,19 @@ test(`${RULE_ID} (node runtime): cantTell when the only h1 has aria-hidden="true
 test(`${RULE_ID} (node runtime): pass when the h1 is only visually clipped off-screen but remains in the accessibility tree`, () => {
   const html = `<!doctype html><html><body><h1 style="position:absolute;clip-path:inset(50%);visibility:visible">Site title</h1></body></html>`;
   assertNodeRule(html, {}, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// role="none" on an <h1> is ignored when it can take focus or carries a
+// global ARIA attribute (presentational roles conflict resolution).
+test(`${RULE_ID}: an <h1> whose role="none" is ignored is still the page's h1`, () => {
+  for (const h1 of [
+    '<h1 role="none" aria-describedby="d">Title</h1><p id="d">x</p>',
+    '<h1 role="presentation" tabindex="-1">Title</h1>'
+  ]) {
+    const html = `<!doctype html><html><body>${h1}</body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
 });

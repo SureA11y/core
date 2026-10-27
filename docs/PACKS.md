@@ -51,6 +51,8 @@ The pack works as generated: its tests pass, its rules lint clean, its examples 
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes. |
 | `eslint.config.js` | Core's lint rules for rules. |
 | `requirements.js`, `rule-map.js` | Standard only: the requirements and the rules that check each. |
+| `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^1.14.0`), and eslint, jsdom and Playwright as development dependencies. |
+| `README.md`, `.gitignore` | The pack's own guide to these files, and what git leaves out. |
 
 Its README walks through each file. The rest of this guide explains the choices behind them.
 
@@ -59,7 +61,7 @@ Its README walks through each file. The rest of this guide explains the choices 
 - **The package name** is an npm package name (lowercase, with a scope or without, no spaces), and **the version** a whole version (`1.0.0`, `1.0.0-rc.1`). A scan reports them in `engine.packs` (`@acme/a11y-pack@0.1.0`).
 - **The namespace** (`namespace: 'acme'`) keeps the pack's ids apart from core's and other packs': every rule, rollup and profile id starts with it and `-`. It is also the tag of the pack's rules (see [opt-in](#the-namespace-tag-makes-the-packs-rules-opt-in)). It may be a word core's rules use as a tag (`forms`, `best-practice`): the tag still makes only the pack's own rules opt-in. It may not start core's rule ids (`img`, `aria`, `link`), since the pack's ids would then sit among core's, where core could add the same one; such a pack is invalid. Core doesn't start a new rule id with a namespace a published pack uses. Two packs in one scan can't share a namespace, or have one that starts the other's (`city` and `city-parks`): the first by name runs, and the other is skipped. `new` takes the package scope or first word; `--namespace` chooses another.
 - **Ids** have core's shape: lowercase letters and digits in parts joined by `-` (`acme-link-text-specific`), dots allowed within a part (`acme-1.0`); a rollup id may keep the capitals of a requirement's number (`city-1.0-S1`). Rule, rollup and profile ids, and a standard's `key`, start with the namespace and `-` (the key may be the namespace itself), a standard's `ruleTag` is the namespace, and a rule's `meta.wcagSc` names WCAG criteria. A pack that breaks one of these is invalid.
-- **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws.
+- **`core`** is the range of core versions the pack works with (`'^1.11.0'`), read as npm reads the ranges in a `package.json` (`1.x`, `~1.11`, `>=1.11 <2`, `1.11.0 - 2.x`, `||`), so a prerelease core matches only a range that names a prerelease of that version. An empty range, or an empty alternative (`'^1.11.0 ||'`), which npm takes for any version, is no range here. `definePack` takes a pack whatever core is installed, so a host can still load it; a scan with a core outside the range skips the pack, with the reason in `skippedPacks`. A range that can't be read is a mistake in the pack, and `definePack` throws. `new` writes the version that generated the pack (`^1.14.0`); keep a range that starts at 1.14 if the pack uses what 1.14 added: `meta.review`, `reasonCodes` and `findings` rows, `meta.contributions`, `applicability`, `partial` or `keepsParsing`.
 - **`description`** is a sentence on what the pack checks, for tools that let their users choose packs (`describePacks` returns it).
 - **`title`** is what results and reports call a checklist (a standard has its own `standard` name). Reports tell standards apart by name, so it can't be one another standard of the scan has (`WCAG`, another pack's, such as `EN 301 549`): such a pack is invalid.
 
@@ -88,7 +90,7 @@ A rule tagged with the namespace is the pack's own: it runs under the pack's pro
 **`runInPage(ctx)` runs in the page.** In a browser the engine writes the function into the page, so it uses only `ctx`, never a variable or module from outside it:
 
 - `ctx.document`, `ctx.window`, and `ctx.rule` (its `ruleId` and `defaultSeverity`);
-- `ctx.helpers`, core's helpers ([`RULE_HELPERS.md`](./RULE_HELPERS.md)): `queryAllSmart(selector)` finds elements in the scanned part of the page, shadow roots included; `isIncludedInAccessibilityTree(el, ctx)`, `getAccessibleNameInfo(el, ctx)` and `getContentNameInfo(el, ctx)` answer accessibility questions as core's rules do; `helpers.aria.getExplicitRole(el)` reads a role; `helpers.contrast` measures colours;
+- `ctx.helpers`, core's helpers ([`RULE_HELPERS.md`](./RULE_HELPERS.md)): `queryAllSmart(selector)` finds elements in the scanned part of the page, shadow roots included; `isIncludedInAccessibilityTree(el, ctx)`, `getAccessibleNameInfo(el, ctx)` and `getContentNameInfo(el, ctx)` answer accessibility questions as core's rules do; `helpers.aria.getExplicitRole(el)` reads a role; `helpers.contrast` measures colors;
 - `ctx.helpers.dom` reads DOM properties (`dom.getAttribute(el, 'target')`, `dom.parentNode(el)`) where a page's markup can't redirect them. `npm run lint` says where a rule reads the DOM directly.
 
 **It only reads, by rule rather than by sandbox.** A pack's rules run after core's, and `ctx.helpers`, `ctx.engineOptions` and `ctx.inputs.probes` are read-only for them: setting or deleting anything on them throws, and the rule is reported as `cantTell` with that error, so one rule can't change what another sees. A rule must not change the page either: core can't undo a change, so a rule that makes one, in the document or inside an open shadow root, is named in a warning, and the rules after it and the page keep the change. Nothing stops a rule's code from doing more: load only packs you trust ([`SECURITY.md`](../SECURITY.md)). Whatever a rule throws or returns, the scan returns a result: a thrown value that can't be turned into text, or a result that can't be read (a getter or a Proxy that throws), makes that rule alone `cantTell` with an error saying so. Its result is made plain data, as probes are, so the scan's result can be written as JSON and cloned: a BigInt becomes its digits, an element its tag (`"<body>"`), a Map its entries, a Set its values, a Date what `toJSON` gives, a circular reference `"[circular]"`, and functions and Symbols are left out.
@@ -116,6 +118,20 @@ occurrences.push(
 );
 return { outcome: occurrences.length ? 'fail' : 'pass', occurrences };
 ```
+
+**How a person checks a `cantTell`.** A rule that can leave a finding undecided may say, per reason code, how a person answers it, as core's rules do (`howToCheck` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)): a few steps starting from the element the finding names, then what they see if it passes and if it fails.
+
+```js
+meta.review = {
+  GENERIC_LINK_NAME: {
+    steps: ['Find the link the report names.', 'Read the text around it.'],
+    passWhen: 'The text around the link says where it goes.',
+    failWhen: 'Nothing near the link says where it goes, which fails WCAG 2.4.4.'
+  }
+};
+```
+
+`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, whatever the scan's locale, and stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
 
 `reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
@@ -159,9 +175,10 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `exclude` | `{ rules: [...] }` leaves rules out; `{ criteria: ['2.5.8'] }` waives WCAG criteria: their rollups go, and so does each rule whose every criterion is waived; a rule that also checks a criterion the profile keeps still runs. |
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
+| `keepsParsing` | `true` when the standard requires 4.1.1 Parsing as written, as EN 301 549 V3.2.1 does. A failure of it then stays a failure under a 2.0 or 2.1 target; under a profile without it, the 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as satisfied for HTML and XML, and `duplicate-id` asks instead (under 2.2, which removed 4.1.1, it asks whatever the profile says). Only the profile's own field counts: a pack's profile that takes the place of one of core's (a standard moving out of core, such as `en301549-v3.2.1`) doesn't inherit it, and core warns once when the profile it replaces kept 4.1.1 and the pack's doesn't say so. It is a profile's field only: `engineOptions.mappings` names a standard's requirements and never changes an outcome, so a scan judged by a standard that keeps 4.1.1 runs its profile. |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
 
-**A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: 4.1.1 Parsing is gone in 2.2, so `duplicate-id` asks instead of failing. Give the version. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
+**A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: the run reports 2.2's criteria, such as 2.5.8, which the standard doesn't have. Give the version, and `keepsParsing: true` if the standard still requires 4.1.1 Parsing. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
 
 ```js
 'city-1.0': {
@@ -224,11 +241,54 @@ A row can send findings by what they record as well, with `findings: [{ when, re
 }
 ```
 
-Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
+Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
 
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 
-A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A requirement that core's rules don't check in full, though it doesn't restate a criterion, says `partial: true` in the requirements table: its rollup is then `cantTell` (`partialCoverage`) where its rules are all `notApplicable`, since they only found none of the cases they look for. A `pass` stays a `pass`, as for a WCAG criterion, and the rollup's `data.details.partial` is `true`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+**A standard that writes its own rollups** routes findings the same way, in each rollup's `meta.contributions`: `{ [ruleId]: { default, codes, findings } }`, one entry for each of its `checksIds` it judges by findings (the others it judges whole). An act, in `default`, in `codes[code]` or in a `findings` entry's `act`, is `'count'`, `'cantTell'` (a failing finding is a question there) or `'ignore'` (the finding doesn't count there), and a finding goes by the first `findings` entry whose `when` it matches, else by its reason code, else by `default`, as above. That is what `ruleMappedStandard` writes. A rollup that groups several requirements, a criterion and its tests say, can also say which of them a finding counts toward, with an act `{ act, requirements }`: the rollup then names, in its `meta.normativeMappings`, only the requirements of the findings that decided it, rather than every requirement of every rule that did, and the contributor lists them in `requirements`. So a contrast failure in small text names the test for small text, not the one for large text beside it:
+
+```js
+// One rollup for criterion 3.2, whose tests 3.2.1 and 3.2.3 are for regular and large text
+{
+  id: 'city-1.0-3.2',
+  checksIds: ['contrast-minimum'],
+  meta: {
+    contributions: {
+      'contrast-minimum': {
+        default: 'count',
+        findings: [
+          { when: { 'typography.isLargeText': false }, act: { act: 'count', requirements: ['3.2.1'] } },
+          { when: { 'typography.isLargeText': true }, act: { act: 'count', requirements: ['3.2.3'] } }
+        ]
+      }
+    },
+    standardMappings: [/* the entries for 3.2.1 and 3.2.3 */]
+    // title, standard, version, criterion, tags…
+  }
+}
+```
+
+An act without `requirements` names the rule's own requirements, as before. Only a standard with `ruleMapped: true` has its rollups narrowed this way: for any other, the contributor still lists `requirements`, but the rollup names all its requirements. A rollup names each rule by its outcome in that rollup: a rule whose findings all go elsewhere is a `pass` there, so a rollup another rule fails doesn't name it. `definePack` refuses contributions it can't use: a rule that isn't one of the rollup's `checksIds`, an act it doesn't know, a `when` with no field or with a value that isn't a string, number, boolean or null, and `requirements` that are empty or name one the rollup's `standardMappings` don't. `StandardRollup` in `pack.d.ts` gives the shape.
+
+A standard whose requirements restate WCAG criteria one for one (EN 301 549's chapter 9, say) passes `applicability: 'wcag'` to `ruleMappedStandard`: a requirement's rollup is then `notApplicable` only where the WCAG rollup of its criteria would be, and `cantTell` (`composite.rollup.cantTell.partialCoverage`) where core's rules don't see every case the criterion applies to; it passes only where the WCAG rollup would, and is otherwise `cantTell` (`composite.rollup.cantTell.partialCheck`) ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md)), so the two agree in one report. A standard whose requirements are narrower than a criterion leaves it out and judges its own. A requirement that core's rules don't check in full, though it doesn't restate a criterion, says `partial: true` in the requirements table: its rollup is then `cantTell` (`partialCoverage`) where its rules are all `notApplicable`, since they only found none of the cases they look for, and `cantTell` (`composite.rollup.cantTell.partialCheck`) where they all pass, since they checked only part of it, as for a WCAG criterion. The rollup's `data.details.partial` is `true`. A rule's reason codes are in its "What a finding reports" in [`RULE_CATALOG.md`](./RULE_CATALOG.md), and `scripts/data/finding-ids.json` lists every one.
+
+**A standard that writes its own rollups** says both in each rollup's `meta`, as `ruleMappedStandard` writes them: `applicability: 'wcag'` on a rollup that restates WCAG criteria, which are then the `wcagSc` of its `meta.standardMappings` entries, judged as above (a rollup whose entries name no criterion is judged as a requirement of its own); and `partial: true` on one whose rules don't check all its requirement asks. A rollup with neither passes where all its rules pass, and `definePack` refuses any other value of either (an `applicability` that isn't `'wcag'`, a `partial` that isn't `true` or `false`), as `ruleMappedStandard` does its own. The result's `data.details` carries `restatesWcag` (the criteria) and `partial`, by which a stored result read back is judged again. With `meta.contributions` (above), these are the fields of `StandardRollup` in `pack.d.ts` that change how a rollup is judged:
+
+```js
+{
+  id: 'city-1.0-4.2',
+  checksIds: ['img-alt-present', 'img-alt-quality'],
+  meta: {
+    title: 'Images have a text alternative',
+    standard: 'City Standard',
+    version: '1.0',
+    criterion: '4.2',
+    tags: ['city'],
+    applicability: 'wcag',                   // restates 1.1.1: judged as WCAG's rollup of it
+    standardMappings: [{ standard: 'City Standard', version: '1.0', requirement: '4.2', title: 'Images have a text alternative', wcagSc: ['1.1.1'] }]
+  }
+}
+```
 
 ## 6. Messages and languages
 
@@ -270,7 +330,7 @@ await new A11yCoreBuilder({ page }).withPacks(policy).options({ profile: 'acme-p
 
 In Cypress, `withPacks()` takes the module name, and the binding's plugin prepares the pack in Node.
 
-**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. Packs a scan uses together go in one `packScript` call, named together: the page runs exactly the set one call registered, with the core it was prepared with, and lists any other in `skippedPacks`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
+**In a page of your own** (an extension, a `page.evaluate`): inject `packScript([policy])` from `@surea11y/core/pack` after core's browser bundle, or ship one file built with `buildBrowserBundle({ packs: [policy] })`, and name the pack as `name@version`. The script runs only with the core that wrote it, so a page with another core's bundle skips the pack (`skippedPacks` names the two versions): a page with no driver, which loads its scripts as files, is best served by one file from `buildBrowserBundle`, which can't fall out of step. Packs a scan uses together go in one `packScript` call, named together: the page runs exactly the set one call registered, with the core it was prepared with, and lists any other in `skippedPacks`. The script holds your rules' code as you wrote it, so a rule may not contain `</script` (write `'<' + '/script'`), and a rule given as a bound function can't be written into it:
 
 ```js
 const fs = require('node:fs');
@@ -281,9 +341,18 @@ await page.evaluate(() =>
 );
 ```
 
-The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`.
+In a `<script>` tag, with the file `buildBrowserBundle` wrote (`fs.writeFileSync('surea11y-acme.js', buildBrowserBundle({ packs: [policy] }))`), built again for each release of core or of the pack:
 
-**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws, with `code: 'INVALID_ENGINE_OPTIONS'` as every error in `engineOptions.packs` has. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
+```html
+<script src="surea11y-acme.js"></script>
+<script>
+  const result = a11ycore.runa11yCoreInPage(location.href, null, { packs: ['@acme/a11y-pack@0.1.0'], profile: 'acme-policy' }, null);
+</script>
+```
+
+The rules' code is written into the script as functions, so it runs where a Content Security Policy forbids `eval`. See [Packs in a page](./INTEGRATION.md#packs-in-a-page).
+
+**When a pack is wrong**, `definePack` throws, naming each problem, so its own tests fail; `checkPack(pack)` returns the same list without throwing, and with the installed core's version checked too. Both run a standard's own checks of its tables (`validate`, which `ruleMappedStandard` makes) against core's rules and the pack's, as a scan does: a version without its `wcagVersion`, or a finding sent to a requirement the table lacks, is refused there rather than make every scan skip the pack. What only a scan can find (a profile naming a rule that doesn't exist, a core version outside the pack's range, an invalid pack never passed through `definePack`) makes the scan run without the pack, warn, and list it in `skippedPacks` with the reason; under `strictOptions` it throws, with `code: 'INVALID_ENGINE_OPTIONS'` as every error in `engineOptions.packs` has. So a scan can finish without the checks you added the pack for: a tool that depends on a pack should check `skippedPacks` before treating the scan as complete. `describePacks([policy])` lists what a pack brings: its rules, profiles, rollups, locales and the probes its rules read.
 
 ## 9. Publish it
 

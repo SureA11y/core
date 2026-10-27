@@ -10,28 +10,59 @@ on:
 permissions:
   contents: read
 
+# A newer push to a pull request makes the run for the older one moot. On main
+# every commit is tested to the end: the group is the commit itself.
+concurrency:
+  group: test-${{ github.event.pull_request.number || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  test:
+  # The Playwright image of the locked playwright version: its Chromium build
+  # and the system libraries that build needs come installed, so no job waits
+  # on apt, which took 9 to 11 minutes on a slow mirror. The tag follows the
+  # lockfile, so a playwright upgrade brings its own image.
+  playwright:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        node-version: [22.x, 24.x, 26.x]
+    outputs:
+      image: ${{ steps.image.outputs.image }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
         with:
-          node-version: ${{ matrix.node-version }}
+          sparse-checkout: package-lock.json
+          sparse-checkout-cone-mode: false
+      - id: image
+        run: |
+          version="$(jq -r '.packages["node_modules/playwright"].version' package-lock.json)"
+          echo "image=mcr.microsoft.com/playwright:v$version-noble" >> "$GITHUB_OUTPUT"
+
+  # Everything but the test suite, once: lint, format and the generated files
+  # read the same on every Node version, and the suite runs on each below.
+  checks:
+    needs: playwright
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright.outputs.image }}
+      # Chromium keeps its shared memory in /dev/shm, which is 64 MB in a
+      # container unless it shares the host's.
+      options: --ipc=host
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22.x
           cache: npm
       - run: npm ci
       - run: npm run lint
       - run: npm run format:check
-      - run: npx playwright install --with-deps chromium
-      - run: npm test
-      # npm test rebuilds src/core.js and the browser bundles; a PR that
-      # changed a rule without committing the rebuild differs here, not only
-      # at release.
+      - run: npm run build
+      # A PR that changed a rule without committing the rebuild of src/core.js
+      # and the browser bundles differs here, not only at release. The checkout
+      # is owned by another user than the container's, and checkout trusts it
+      # only for its own step, so git is told to trust it here too.
       - name: Committed build artifacts are up to date
         run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           if ! git diff --quiet; then
             echo "::error::generated files differ after a clean build; commit the rebuild"
             git --no-pager diff --stat
@@ -47,13 +78,62 @@ jobs:
       - run: npm run aria-tables:check
       - run: npm run language-subtags:check
 
+  # The whole suite on every Node version, each split into shards that run
+  # side by side: one run took 11 to 17 minutes.
+  test:
+    needs: playwright
+    runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright.outputs.image }}
+      options: --ipc=host
+    timeout-minutes: 30
+    strategy:
+      # A failing shard leaves the others running, so one run shows every
+      # failure.
+      fail-fast: false
+      matrix:
+        node-version: [22.x, 24.x, 26.x]
+        shard: [1/3, 2/3, 3/3]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      # The tests load the bundles, built here from this commit's source.
+      - run: npm run build
+      # Already in the image, so this only checks it; it downloads the build
+      # if the image ever lacks the one playwright launches, rather than let
+      # the Chromium tests skip.
+      - run: npx playwright install chromium
+        timeout-minutes: 5
+      - run: node scripts/run-tests.js --test-shard=${{ matrix.shard }}
+
+  # The one check branch protection requires besides `checks`: it passes only
+  # when every test job above passed, so a change of Node versions or shards
+  # needs no change to the required checks.
+  tests-passed:
+    name: tests passed
+    needs: [checks, test]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Every check and test job passed
+        env:
+          CHECKS: ${{ needs.checks.result }}
+          TESTS: ${{ needs.test.result }}
+        run: |
+          echo "checks: $CHECKS, test: $TESTS"
+          [ "$CHECKS" = success ] && [ "$TESTS" = success ]
+
   # CONTRIBUTING.md asks for a DCO sign-off on every commit. Dependabot's
   # pull requests are left out: a bot can't certify the DCO.
   sign-off:
     if: github.event_name == 'pull_request' && github.event.pull_request.user.login != 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}
@@ -71,10 +151,14 @@ jobs:
           exit $missing
 
   act-corpus:
+    needs: playwright
     runs-on: ubuntu-latest
+    container:
+      image: ${{ needs.playwright.outputs.image }}
+      options: --ipc=host
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 22.x
           cache: npm
@@ -103,7 +187,8 @@ jobs:
       # the engine: scripts run, linked style sheets and frames load, and the
       # page is laid out. Before the cache is saved, so the assets the pages
       # load are kept for the next run too.
-      - run: npx playwright install --with-deps chromium
+      - run: npx playwright install chromium
+        timeout-minutes: 5
       - name: ACT corpus in Chromium has no false positives
         timeout-minutes: 30
         run: node scripts/act-report.js --runner=chromium --out="$RUNNER_TEMP/act-report-browser.jsonld"

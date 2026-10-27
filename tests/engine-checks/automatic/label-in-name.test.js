@@ -4,7 +4,11 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
-const { runa11yCoreOnHtml } = require('../../helpers/runa11yCoreOnHtml');
+const {
+  runa11yCoreOnHtml,
+  createDom,
+  runa11yCoreOnDom
+} = require('../../helpers/runa11yCoreOnHtml');
 const { assertRule } = require('../../helpers/assertRule');
 
 const RULE_ID = 'label-in-name';
@@ -360,7 +364,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'lin_case_02',
@@ -370,7 +374,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_15',
     'lin_case_18',
     'lin_case_23',
-    'lin_case_26'
+    'lin_case_26',
+    'lin_case_27'
   ];
 
   const expectedNoOccIds = [
@@ -391,7 +396,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.h
     'lin_case_21',
     'lin_case_22',
     'lin_case_24',
-    'lin_case_25'
+    'lin_case_25',
+    'lin_case_28'
   ];
 
   for (const id of expectedFailIds) {
@@ -572,4 +578,117 @@ test('label-in-name: a button-type input is labelled by its value', () => {
     outcome('<input type="submit" aria-label="Search site">').outcome,
     'notApplicable'
   );
+});
+
+// A <td> in a grid or treegrid is a gridcell (HTML-AAM), a control whose
+// name can come from its content, so it is judged as role="gridcell" is.
+test(`${RULE_ID}: a <td> in a grid is a gridcell, judged as role="gridcell" is`, () => {
+  for (const role of ['grid', 'treegrid']) {
+    const html = `<!doctype html><html><body><table role="${role}" aria-label="g"><tr><td id="c" tabindex="0" aria-label="Remove row">Delete</td></tr></table></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.ok(hasOccurrenceForId(rule, 'c'), role);
+  }
+});
+
+test(`${RULE_ID}: a <td> in a grid whose name contains its text passes`, () => {
+  const html = `<!doctype html><html><body><table role="grid" aria-label="g"><tr><td tabindex="0" aria-label="Delete row 3">Delete</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
+test(`${RULE_ID}: a <td> in a table is a cell, not a control, and stays out of scope`, () => {
+  const html = `<!doctype html><html><body><table><tr><th>A</th></tr><tr><td aria-label="Remove row">Delete</td></tr></table></body></html>`;
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
+function leans(body) {
+  const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+    runOnly: [RULE_ID]
+  });
+  return assertRule(result, RULE_ID, 'cantTell').occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: a hyphenation difference leans pass`, () => {
+  assert.deepEqual(leans('<button aria-label="Email us">E-mail us</button>'), [
+    ['HYPHENATION_DIFFERS', 'pass', 'labelInName_lean_why_hyphenation']
+  ]);
+});
+
+test(`${RULE_ID}: an abbreviation of three letters or more leans pass; a shorter one has no lean`, () => {
+  assert.deepEqual(leans('<a href="#" aria-label="University Avenue">University Ave.</a>'), [
+    ['POSSIBLE_ABBREVIATION', 'pass', 'labelInName_lean_why_abbreviation']
+  ]);
+  assert.deepEqual(leans('<a href="#" aria-label="Main Street">Main St.</a>'), [
+    ['POSSIBLE_ABBREVIATION', null, null]
+  ]);
+});
+
+test(`${RULE_ID}: a lone "X" leans pass, a lone digit leans fail, another letter has no lean`, () => {
+  assert.deepEqual(
+    leans(
+      '<button aria-label="Close">X</button><button aria-label="Next page">2</button><button aria-label="Profile">J</button>'
+    ),
+    [
+      ['POSSIBLE_SYMBOLIC_CHARACTER', 'pass', 'labelInName_lean_why_symbol'],
+      ['POSSIBLE_SYMBOLIC_CHARACTER', 'fail', 'labelInName_lean_why_digit'],
+      ['POSSIBLE_SYMBOLIC_CHARACTER', null, null]
+    ]
+  );
+});
+
+test(`${RULE_ID}: an icon font ligature leans pass only when the page has loaded the font`, () => {
+  const html = `<!doctype html><html><head><style>button { font-family: 'Material Icons'; }</style></head><body><button aria-label="Find">search</button></body></html>`;
+  // No font set to read: no lean.
+  assert.deepEqual(
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell').occurrences[0]
+      .lean,
+    undefined
+  );
+  const leanWith = (status) => {
+    const dom = createDom(html);
+    Object.defineProperty(dom.window.document, 'fonts', {
+      configurable: true,
+      value: [{ family: '"Material Icons"', status }]
+    });
+    return assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell')
+      .occurrences[0].lean;
+  };
+  const lean = leanWith('loaded');
+  assert.equal(lean.toward, 'pass');
+  assert.equal(lean.i18n.whyKey, 'labelInName_lean_why_iconFont');
+  assert.equal(leanWith('error'), undefined);
+});
+
+// A label of symbols only has no words to look for in the name; it was
+// counted as contained. Like a single "X", it is asked about as a symbol
+// standing for an icon, and leans pass.
+test(`${RULE_ID}: a symbols-only label the name doesn't hold is asked about, leaning pass`, () => {
+  for (const [label, name] of [
+    ['×', 'Close'],
+    ['+', 'Add item'],
+    ['»»', 'Next page']
+  ]) {
+    const html = `<!doctype html><html lang="en"><body><main><button aria-label="${name}">${label}</button></main></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.equal(rule.occurrences[0].data.details.reasonCode, 'POSSIBLE_SYMBOLIC_CHARACTER', label);
+    assert.equal(rule.occurrences[0].lean.toward, 'pass', label);
+  }
+  // One the name holds is in the name.
+  const held = `<!doctype html><html lang="en"><body><main><button aria-label="+ add">+</button></main></body></html>`;
+  assertRule(runa11yCoreOnHtml(held, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
 });

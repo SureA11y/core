@@ -162,18 +162,16 @@ test(`${RULE_ID}: notApplicable when the element has the hidden attribute (not c
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: notApplicable when the element has aria-busy="true" (extended by analogy from WAI-ARIA's required-owned-elements escape hatch)`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="true"></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
-});
-
-test(`${RULE_ID}: aria-busy="false" does NOT exempt a missing required attribute (only the exact string "true" counts)`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="false"></div></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
-});
+// WAI-ARIA's aria-busy exception covers required owned elements, not
+// required states, and ACT 4e8ab6 makes none.
+for (const busy of ['true', 'false']) {
+  test(`${RULE_ID}: aria-busy="${busy}" does not exempt a missing required state`, () => {
+    const html = `<!doctype html><html><body><div id="a" role="checkbox" aria-busy="${busy}"></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    assert.equal(rule.occurrences[0].data.details.attr, 'aria-checked');
+  });
+}
 
 test(`${RULE_ID}: fail when a focusable role="separator" has no aria-valuenow`, () => {
   const html = `<!doctype html><html><body><p>a</p><div role="separator" tabindex="0" id="a"></div><p>b</p></body></html>`;
@@ -221,9 +219,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 7, maxOccurrences: 7 });
 
-  const expectedFailIds = ['ara_case_02', 'ara_case_03', 'ara_case_09', 'ara_case_15'];
+  const expectedFailIds = [
+    'ara_case_02',
+    'ara_case_03',
+    'ara_case_09',
+    'ara_case_14',
+    'ara_case_15'
+  ];
   const expectedCantTellIds = ['ara_case_07', 'ara_case_17'];
 
   for (const id of expectedCantTellIds) {
@@ -241,7 +245,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
     'ara_case_11',
     'ara_case_12',
     'ara_case_13',
-    'ara_case_14',
     'ara_case_16',
     'ara_case_18'
   ];
@@ -252,4 +255,86 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-required-attr-all-scenar
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail for a combobox without aria-expanded whose popup is shown`, () => {
+  const lean = leanOn(
+    '<div id="a" role="combobox" aria-controls="l"></div><ul id="l" role="listbox"><li role="option">One</li></ul>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaRequiredAttr_lean_why_comboboxOpen');
+});
+
+test(`${RULE_ID}: no lean for a combobox without aria-expanded whose popup is hidden`, () => {
+  assert.strictEqual(
+    leanOn(
+      '<div id="a" role="combobox" aria-controls="l"></div><ul id="l" role="listbox" hidden><li role="option">One</li></ul>',
+      'a'
+    ),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: no lean for a heading without aria-level`, () => {
+  assert.strictEqual(leanOn('<div id="a" role="heading">Title</div>', 'a'), undefined);
+});
+
+test(`${RULE_ID}: state_internals leans by what the component's code does`, () => {
+  const {
+    createDom: createLeanDom,
+    runa11yCoreOnDom: runLeanOnDom
+  } = require('../../helpers/runDomRulesOnHtml.js');
+  const dom = createLeanDom(
+    '<!doctype html><html lang="en"><body><x-plain id="a" role="checkbox"></x-plain><x-set id="b" role="checkbox"></x-set><x-other id="c" role="checkbox"></x-other></body></html>'
+  );
+  const W = dom.window;
+  W.customElements.define('x-plain', class extends W.HTMLElement {});
+  W.customElements.define(
+    'x-set',
+    class extends W.HTMLElement {
+      #internals;
+      constructor() {
+        super();
+        this.#internals = this.attachInternals();
+        this.#internals.ariaChecked = 'false';
+      }
+    }
+  );
+  W.customElements.define(
+    'x-other',
+    class extends W.HTMLElement {
+      constructor() {
+        super();
+        this.attachInternals();
+      }
+    }
+  );
+  const rule = assertRule(runLeanOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const lean = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`)).lean;
+  for (const o of rule.occurrences)
+    assert.strictEqual(o.data.details.reasonCode, 'state_internals');
+  assert.strictEqual(lean('a').toward, 'fail');
+  assert.strictEqual(lean('a').i18n.whyKey, 'ariaRequiredAttr_lean_why_internalsUnused');
+  assert.strictEqual(lean('b').toward, 'pass');
+  assert.strictEqual(lean('b').i18n.whyKey, 'ariaRequiredAttr_lean_why_internalsSet');
+  assert.strictEqual(lean('c'), undefined);
 });

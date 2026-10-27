@@ -24,6 +24,15 @@
  *     The role is ignored (presentational role conflict) when the canvas is
  *     focusable or carries aria-label/aria-labelledby, and the canvas is then
  *     judged like any other.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): a <canvas> has no fallback
+ *     content with text and no name from aria-label, aria-labelledby or
+ *     title.
+ *     Basis: WCAG 1.1.1; HTML canvas (MUST); accname 1.2.
+ *   - `ROLE_IMG_NAME_MISSING` (fail): a <canvas> with role="img" has no
+ *     name from aria-label, aria-labelledby or title; its fallback content
+ *     does not count, since the img role makes it presentational.
+ *     Basis: WCAG 1.1.1; WAI-ARIA 1.2 img role (MUST); accname 1.2.
  */
 
 const id = 'canvas-text-alternative-present';
@@ -245,6 +254,7 @@ function runInPage(ctx) {
         params: { element: 'canvas' }
       },
       data: {
+        details: { reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING' },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)

@@ -26,6 +26,12 @@
  *   (main, navigation, banner, contentinfo, complementary, region, form,
  *   search), so assistive technology users navigating by landmark do not
  *   miss content that was never placed inside one.
+ * @reason-codes
+ *   - `CONTENT_OUTSIDE_LANDMARK` (cantTell): content on the page, or an
+ *     iframe whose content can't be seen from the page, is outside every
+ *     landmark region.
+ *     It leans fail, except for an iframe or frame.
+ *     Basis: WAI-ARIA 1.2 landmark role (best practice); ARIA11.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -96,7 +102,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    CONTENT_OUTSIDE_LANDMARK: {
+      steps: [
+        'Find the content the report names (or the iframe) on the page.',
+        "Open the Accessibility pane of the developer tools, or a screen reader's list of landmarks, and see which landmark, if any, contains it.",
+        'Decide whether it belongs in an existing landmark (header, nav, main, footer, aside) or is outside every one.'
+      ],
+      passWhen:
+        'The content sits inside a landmark, or is something that needs none (such as a skip link or a dialog).',
+      failWhen:
+        'Real page content sits outside every landmark, so people moving by landmark can miss it (best practice, ARIA11).'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -347,6 +368,16 @@ function runInPage(ctx) {
         hintKey: 'region_hint_cantTell',
         params: { element: tag }
       },
+      ...(tag !== 'iframe' && tag !== 'frame'
+        ? {
+            lean: {
+              toward: 'fail',
+              why: 'The content is outside every landmark region.',
+              signals: [{ signal: 'outside-landmark', value: true }],
+              i18n: { whyKey: 'region_lean_why' }
+            }
+          }
+        : {}),
       data: {
         details: { reasonCode: 'CONTENT_OUTSIDE_LANDMARK', element: tag }
       }

@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'moving-content-pausable';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 const PAGE = `<!doctype html><html lang="en"><head><title>t</title><style>
   @keyframes slide { from { transform: translateX(0) } to { transform: translateX(100px) } }
@@ -61,7 +60,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async () => {
   try {
     const p = await browser.newPage();
     await p.setContent(PAGE);
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     const r = await p.evaluate((id) => {
       const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
       const own = res.checksResults.find((c) => c.ruleId === id);

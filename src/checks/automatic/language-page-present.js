@@ -40,6 +40,18 @@
  *   This rule does not verify that the declared language matches the actual language
  *   of the page content. Language correctness is out of scope for SC 3.1.1.
  *   Changes of language within the page are covered by SC 3.1.2.
+ *
+ * @reason-codes
+ *   - `lang-missing` (fail): the <html> element has no lang attribute, so the
+ *     page's language is not declared.
+ *     Basis: WCAG 3.1.1; ACT b5c3f8; H57; HTML lang attribute.
+ *   - `lang-empty` (fail): the <html> element's lang attribute is empty or
+ *     only whitespace, so it declares no language.
+ *     Basis: WCAG 3.1.1; ACT b5c3f8; H57; HTML lang attribute.
+ *   - `lang-invalid-bcp47` (fail): the primary subtag of the <html>
+ *     element's lang attribute is not a registered language subtag.
+ *     Basis: WCAG 3.1.1; ACT bf051a; H57; HTML lang attribute (MUST);
+ *     BCP 47.
  */
 
 const id = 'html-lang-attr-present';

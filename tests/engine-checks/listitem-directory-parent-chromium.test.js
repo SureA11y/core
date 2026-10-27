@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const CASES = [
   ['<ol role="directory"><li>a</li></ol>', 'listitem-parent-valid'],
@@ -67,7 +66,7 @@ test('role="directory" is a list item’s parent, in Chromium', { skip }, async 
           'Chromium: a list item in a list'
         );
 
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const outcomes = await page.evaluate(
           (id) =>
             Object.fromEntries(

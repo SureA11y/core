@@ -118,9 +118,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
+    'textbox_case_26',
+    'textbox_case_28',
     'textbox_case_25',
     'textbox_case_22',
     'textbox_case_23',
@@ -133,6 +135,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/textbox-name-present-all-scen
   ];
 
   const expectedNoOccIds = [
+    'textbox_case_27',
     'textbox_case_24',
     'textbox_case_12',
     'textbox_case_13',
@@ -211,4 +214,33 @@ test(`${RULE_ID}: role="foo textbox" and role="TEXTBOX" are in scope, role="link
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.ok(hasOccurrenceForId(rule, 'b'));
   assert.ok(!hasOccurrenceForId(rule, 'c'));
+});
+
+test('textbox-name-present: a textbox named only by aria-placeholder fails, as only some browsers name it', () => {
+  const html = `<!doctype html><html><body><div role="textbox" tabindex="0" aria-placeholder="Add a date"></div></body></html>`;
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
+test('textbox-name-present: a hidden <label> names nothing, as in Chromium; a visible one beside it still does', () => {
+  const html = `<!doctype html><html><body>
+    <label for="lone" style="display:none">Hidden</label><input id="lone" role="textbox">
+    <label for="pair">Full name</label><label for="pair" style="display:none">Decoy</label><input id="pair" role="textbox">
+  </body></html>`;
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.ok(hasOccurrenceForId(rule, 'lone'));
+  assert.ok(!hasOccurrenceForId(rule, 'pair'));
 });

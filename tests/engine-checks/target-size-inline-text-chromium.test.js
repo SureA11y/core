@@ -1,9 +1,10 @@
 'use strict';
 
 /**
- * target-size-minimum applies SC 2.5.8's inline exception only to a link
- * "in a sentence" (#106): the stretch of its block container between line
- * breaks holds text outside any target with a letter or a digit in it.
+ * target-size-minimum applies SC 2.5.8's inline exception only to a target,
+ * a link or a button, "in a sentence" (#106): the stretch of its block
+ * container between line breaks holds text outside any target with a
+ * letter or a digit in it.
  * Pagination, link-only lists and lone links are judged like other
  * targets; links between separators alone, crowded only by each other,
  * are cantTell. Which box is a block container, and where lines break,
@@ -45,6 +46,7 @@ const skip = !chromium
 const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
 
 const TEXT = 'font:12px/14px sans-serif;';
+const BUTTON = 'all:unset;color:#00e;text-decoration:underline';
 
 // [description, markup, what the rule reports on #t: 'fail', 'cantTell',
 // or null for nothing]
@@ -103,10 +105,21 @@ const CASES = [
     'links between separators alone, crowding each other',
     `<p style="${TEXT}"><a href="/1">1</a>|<a id="t" href="/2">2</a>|<a href="/3">3</a></p>`,
     'cantTell'
+  ],
+  // The exception is about any target in a sentence, not only links.
+  [
+    'adjacent buttons in a sentence',
+    `<p style="${TEXT}">Choose <button id="t" style="${BUTTON}">yes</button>/<button style="${BUTTON}">no</button> for this sentence.</p>`,
+    null
+  ],
+  [
+    'buttons crowding each other with no text around them',
+    `<p style="${TEXT}"><button id="t" style="${BUTTON}">yes</button><button style="${BUTTON}">no</button></p>`,
+    'fail'
   ]
 ];
 
-test('target-size-minimum exempts links in a sentence only, in Chromium', { skip }, async (t) => {
+test('target-size-minimum exempts targets in a sentence only, in Chromium', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
   t.after(() => browser.close());
 

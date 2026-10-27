@@ -16,10 +16,19 @@
  *   of those is object-text-alternative-present's failure, not a quality
  *   question. The element must be included in the accessibility tree, and
  *   role="presentation"/"none" takes it out of scope unless it is focusable,
- *   which restores its role.
+ *   which restores its role. An object whose type, or failing that its data
+ *   URL's extension, names an HTML page, a PDF or plain text is left out,
+ *   as object-text-alternative-present leaves it out: it renders no
+ *   non-text content (ACT 8fc3b6). So is a Flash object
+ *   (`type="application/x-shockwave-flash"`, or with no type a `data`
+ *   URL ending in `.swf`): no current
+ *   browser runs Flash (support ended in 2021), so the object draws nothing
+ *   itself and the browser shows its fallback content, ordinary HTML the
+ *   other rules judge. Nothing non-text is left for 1.1.1 (ACT 8fc3b6).
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`.
  *   - `fallbackText`: the text content inside the <object>, trimmed, or
  *     `null` when there is none.
  *   - `ariaLabel`: the `aria-label` value, or `null` when there is none.
@@ -29,6 +38,15 @@
  *     points to. Only looked up when there is no `aria-label`; `null`
  *     otherwise or when it resolves to nothing.
  *   - `title`: the `title` value, or `null` when there is none.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an <object> has a text
+ *     alternative, and a person checks that it describes the object's
+ *     content.
+ *     It leans fail when the text users get (the ARIA name, else the
+ *     fallback text, else the title) is the data file's name, a placeholder
+ *     word, or only a note that a plugin or player is missing (English
+ *     wording).
+ *     Basis: WCAG 1.1.1 (not settled); H53.
  */
 
 const id = 'object-text-alternative-quality';
@@ -61,10 +79,58 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Look at the object the report names and note what it shows or does (image, chart, animation, player).',
+        'Read its text alternative from the report (fallback text, aria-label, aria-labelledby text or title), or in the Accessibility pane of the developer tools.',
+        'Compare: does the text say what the object shows, or, for a control or player, what it is for?'
+      ],
+      passWhen: "The text alternative describes the object's content or purpose accurately.",
+      failWhen:
+        'The text alternative is wrong, vague (such as "object" or a file name) or misses what the object conveys, which fails WCAG 1.1.1.'
+    }
   }
 };
 
 function runInPage(ctx) {
+  // An object that embeds an HTML page, a PDF or plain text renders no
+  // non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6): the same
+  // test as object-text-alternative-present's, by the type attribute or,
+  // failing that, the data URL's extension. An unknown type stays in scope.
+  const NON_MEDIA_EXTENSIONS = new Set([
+    'htm',
+    'html',
+    'xhtml',
+    'xht',
+    'shtml',
+    'php',
+    'asp',
+    'aspx',
+    'jsp',
+    'txt',
+    'xml',
+    'json',
+    'pdf',
+    'csv',
+    // Flash: no current browser runs it, so only the fallback shows.
+    'swf'
+  ]);
+
+  function embedsNonMedia(type, data) {
+    const t = String(type || '')
+      .trim()
+      .toLowerCase()
+      .split(';')[0]
+      .trim();
+    if (t) return !/^(image|audio|video)\//.test(t);
+    const m = /\.([a-z0-9]+)$/i.exec(String(data || '').split(/[?#]/)[0]);
+    return !!(m && NON_MEDIA_EXTENSIONS.has(m[1].toLowerCase()));
+  }
+
   const dom = ctx.helpers.dom;
   const { document, root, helpers, rule } = ctx;
   const safeRoot = root || document;
@@ -138,6 +204,94 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Text that stands in for the object without describing it: the words
+  // for an object itself, and notes that a plugin or player is missing.
+  // Every sentence must be such a note, so one beside a real description
+  // gets no lean. English wording only.
+  const OBJECT_PLACEHOLDER_WORDS = new Set([
+    'object',
+    'embed',
+    'flash',
+    'flash movie',
+    'movie',
+    'video',
+    'audio',
+    'media',
+    'plugin',
+    'plug-in'
+  ]);
+  const MISSING_PLUGIN_SENTENCE_RE = new RegExp(
+    [
+      "\\b(?:flash|plug-?ins?|player|browsers?)\\b.*\\b(?:not installed|is required|are required|required|needed|not supported|isn't supported|unsupported|(?:does not|doesn't|do not|don't|cannot|can't) (?:support|play|display|show))\\b",
+      '\\b(?:install|download|get|update|upgrade|enable)\\b.*\\b(?:flash|plug-?ins?|player|browser)\\b',
+      '^(?:sorry|oops)[.!,]?$'
+    ].join('|'),
+    'i'
+  );
+  function isMissingPluginNote(text) {
+    const sentences = String(text || '')
+      .split(/(?<=[.!?])\s+/)
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return sentences.length > 0 && sentences.every((x) => MISSING_PLUGIN_SENTENCE_RE.test(x));
+  }
+  function normalized(v) {
+    return String(v || '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase();
+  }
+  function dataFileName(data) {
+    const path = String(data || '').split(/[?#]/)[0];
+    let name = path.slice(path.lastIndexOf('/') + 1);
+    try {
+      name = decodeURIComponent(name);
+    } catch {
+      // keep it as written
+    }
+    return normalized(name);
+  }
+
+  function leanFor(el, text, data) {
+    const t = normalized(text);
+    if (!t) return null;
+    if (isMissingPluginNote(t)) {
+      return {
+        toward: 'fail',
+        why: 'The text only says a plugin or player is missing, which tells nothing of the content.',
+        signals: [{ signal: 'missing-plugin-text', value: true }],
+        i18n: { whyKey: 'object_textAltQuality_lean_why_plugin' }
+      };
+    }
+    let signal = null;
+    const fileName = dataFileName(data);
+    if (fileName && /\./.test(fileName) && t === fileName) signal = 'file-name';
+    if (!signal) {
+      try {
+        const s =
+          typeof helpers.getTextAlternativeSignal === 'function'
+            ? helpers.getTextAlternativeSignal(el, text)
+            : null;
+        if (s && (s.altSignal === 'file-name' || s.altSignal === 'placeholder'))
+          signal = s.altSignal;
+      } catch {
+        signal = null;
+      }
+    }
+    if (!signal && OBJECT_PLACEHOLDER_WORDS.has(t.replace(/[.!?:]+$/, ''))) signal = 'placeholder';
+    if (!signal) return null;
+    return {
+      toward: 'fail',
+      why: 'A file name or a generic word does not say what the object shows.',
+      signals: [{ signal: 'alt-signal', value: signal }],
+      caution: 'The word may be all the object shows.',
+      i18n: {
+        whyKey: 'object_textAltQuality_lean_why',
+        cautionKey: 'object_textAltQuality_lean_caution'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -156,6 +310,7 @@ function runInPage(ctx) {
     }
 
     if (isRolePresentationExcluded(el)) continue;
+    if (embedsNonMedia(dom.getAttribute(el, 'type'), dom.getAttribute(el, 'data'))) continue;
 
     const trim = (v) => (v == null ? '' : String(v)).trim();
 
@@ -186,6 +341,7 @@ function runInPage(ctx) {
     }
 
     const details = {
+      reasonCode: 'TEXT_ALTERNATIVE_REVIEW',
       fallbackText: fallbackText || null,
       ariaLabel: ariaLabel || null,
       ariaLabelledBy: ariaLabelledBy || null,
@@ -205,7 +361,13 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    const lean = leanFor(
+      el,
+      ariaLabel || labelledByText || fallbackText || title,
+      dom.getAttribute(el, 'data')
+    );
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: 'Check that the text alternative of this <object> conveys what it embeds.',
       hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {

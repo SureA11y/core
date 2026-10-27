@@ -135,7 +135,7 @@ test(
             };
           });
           assert.equal(r.labels, count);
-          assert.equal(r.outcome, count > 1 ? 'fail' : 'pass');
+          assert.equal(r.outcome, count > 1 ? 'cantTell' : 'pass');
           assert.equal(r.occurrences, count > 1 ? 1 : 0);
         } finally {
           await page.close();

@@ -6,12 +6,10 @@
 
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const fs = require('node:fs');
-const path = require('node:path');
 
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test('text-spacing quotes the text an element shows', { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -24,7 +22,7 @@ test('text-spacing quotes the text an element shows', { skip }, async (t) => {
       'Two words fit, but at 1.5 line height the second line is lost lost lost lost lost</div>' +
       '</article></main></body></html>'
   );
-  await page.addScriptTag({ content: BUNDLE });
+  await addBundle(page);
   const summaries = await page.evaluate(() =>
     window.a11ycore
       .runa11yCoreInPage(null, null, null, ['text-spacing-content-loss'])

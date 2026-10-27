@@ -23,6 +23,7 @@ const path = require('node:path');
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml');
 const core = require('../../src/index.js');
 const samplePack = require('../fixtures/packs/sample.js');
+const { definePack } = require('../../src/pack.js');
 
 let ts;
 try {
@@ -88,6 +89,67 @@ async function browserResults() {
   }
 }
 
+// A standard's rollup that judges a rule by its findings and names the
+// requirement each counts toward: contributors with byReasonCode,
+// checkOutcome and requirements.
+function routedResult() {
+  const entry = (requirement) => ({
+    standard: 'Typed Standard',
+    version: '1',
+    requirement,
+    title: requirement,
+    wcagSc: []
+  });
+  const pack = definePack({
+    name: 'typed-pack',
+    version: '1.0.0',
+    namespace: 'typed',
+    core: '*',
+    standard: {
+      key: 'typed',
+      standard: 'Typed Standard',
+      versions: ['1'],
+      profiles: { 'typed-1': { version: '1', tags: ['typed'], mappedRules: true } },
+      ruleTag: 'typed',
+      ruleMapped: true,
+      mappingsFor: ({ id, checksIds }) =>
+        (checksIds || [id]).includes('contrast-minimum') ? [entry('T.1'), entry('T.2')] : [],
+      composites: () => [
+        {
+          id: 'typed-1-T',
+          checksIds: ['contrast-minimum'],
+          meta: {
+            contributions: {
+              'contrast-minimum': {
+                default: { act: 'count', requirements: ['T.1'] },
+                findings: [
+                  {
+                    when: { 'typography.isLargeText': true },
+                    act: { act: 'cantTell', requirements: ['T.2'] }
+                  }
+                ]
+              }
+            },
+            title: 'T',
+            description: '',
+            wcagSc: [],
+            level: null,
+            standard: 'Typed Standard',
+            version: '1',
+            criterion: 'T',
+            tags: ['typed'],
+            standardMappings: [entry('T.1'), entry('T.2')]
+          }
+        }
+      ]
+    }
+  });
+  return runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><p style="color:#aaa">Pale</p></body></html>',
+    { engineOptions: { packs: [pack], profile: 'typed-1' } }
+  );
+}
+
 test(
   'the types describe real scan results',
   { skip: !ts && 'typescript not installed' },
@@ -130,8 +192,17 @@ test(
       runa11yCoreOnHtml('<!doctype html><html><body><p>x</p></body></html>', {
         contextSelector: '#missing'
       }),
+      routedResult(),
       ...(await browserResults())
     ];
+    assert.ok(
+      results.some((r) =>
+        (r.rulesResults || []).some((x) =>
+          x.data.details.contributors.some((c) => c.byReasonCode && c.requirements)
+        )
+      ),
+      'the scans include a rollup that judged a rule by its findings'
+    );
     const fields = new Set();
     for (const r of results)
       for (const c of r.checksResults)
@@ -170,6 +241,13 @@ test(
             id: 'typed-wcag',
             meta: { title: 't', wcagSc: ['1.1.1', '4.1.1'] },
             runInPage: "() => ({ outcome: 'pass', occurrences: [] })"
+          },
+          // A finding whose details are null, which the types allow.
+          {
+            id: 'typed-null-details',
+            meta: { title: 't' },
+            runInPage:
+              "(ctx) => ({ outcome: 'cantTell', occurrences: [ctx.helpers.reportOccurrence(ctx.document.querySelector('img'), { summary: 'Check it.', data: { details: null } })] })"
           }
         ]
       }
@@ -381,17 +459,19 @@ test(
     fs.writeFileSync(
       file,
       [
-        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult } from '@surea11y/core';",
+        "import { runDomRulesInPage, runa11yCoreAcrossFrames, flattenCrossFrameResult, addHowToCheck, HOOK_REASON_CODES, occurrenceOutcome, reviewGroupOf, leaningFailures, getAnnouncements } from '@surea11y/core';",
         "import { renderSarifReport } from '@surea11y/core/sarif';",
         "import { renderJunitReport } from '@surea11y/core/junit';",
         "import { renderHtmlReport } from '@surea11y/core/report';",
         "import { renderEarlReport, OUTCOME_TO_EARL } from '@surea11y/core/earl';",
-        "import { buildBaselineEntries, matchBaseline } from '@surea11y/core/baseline';",
+        "import { buildBaselineEntries, matchBaseline, migrateBaselineEntries } from '@surea11y/core/baseline';",
         "import { wcagCriteria, wcagCriterion, wcagTags, WCAG_CRITERIA } from '@surea11y/core/wcag';",
-        "import { runa11yCoreInPage as browserScan } from '@surea11y/core/browser';",
+        "import { runa11yCoreInPage as browserScan, run as consoleRun, table, highlight, openReport, version } from '@surea11y/core/browser';",
         "import { definePack, packScript } from '@surea11y/core/pack';",
         "import { runa11yCoreOnHtml, assertRule } from '@surea11y/core/testing';",
         "import { packDocs, ruleCatalog } from '@surea11y/core/pack-docs';",
+        "import { applyHowToCheck, howToCheckFrom, reviewGroupOf as entryReviewGroupOf, HOOK_REASON_CODES as entryHookCodes } from '@surea11y/core/how-to-check';",
+        "declare const fr: typeof import('@surea11y/core/review/fr');",
         "type SafeDom = typeof import('@surea11y/core/eslint-plugin');",
         "const pack = definePack({ name: '@acme/a11y-pack', version: '1.0.0', namespace: 'acme', core: '^1.11.0' });",
         "const script: string = packScript([pack]) + ruleCatalog(pack, { rulesDir: 'rules' });",
@@ -402,14 +482,24 @@ test(
         'const result = runDomRulesInPage();',
         "const sarif: string = renderSarifReport(result, { category: 'a11y-1280/', toolVersion: '1.0.0' });",
         "const junit: string = renderJunitReport(result, { cantTellAs: 'failure', name: 'home' });",
-        "const html: string = renderHtmlReport(result, { title: 'Home' });",
+        "const html: string = renderHtmlReport(result, { title: 'Home', packs: [pack] });",
         "const outcome: string = renderEarlReport([result], { assertor: null })['@graph'][0].assertions[0].result.outcome + OUTCOME_TO_EARL.fail;",
         'const entries = buildBaselineEntries(result);',
         'const fresh: number = matchBaseline(result, entries).newCount;',
+        "const leanEntries = buildBaselineEntries(result, { leanFail: true }).filter((e) => e.lean === 'fail');",
+        'const freshLeans: number | undefined = matchBaseline(result, leanEntries, { leanFail: true }).leanFail?.newCount;',
+        "const leans: Array<'fail' | 'cantTell' | null> = leaningFailures(result, { wcagOnly: true }).map((l) => occurrenceOutcome(result.checksResults[0], l.occurrence));",
+        "const gated: string = renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: true }) + renderSarifReport(result, { leanFailAs: 'error', leanFailWcagOnly: true });",
+        'const migrated: string[] = migrateBaselineEntries({ entries }, result).concat(migrateBaselineEntries(entries)).map((e) => e.reasonCode);',
         "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",
         "const tags: string[] = wcagTags('2.1', ['A', 'AA']).concat(WCAG_CRITERIA.map((c) => c.tag));",
         "const count: number = wcagCriteria('2.2', { levels: 'AA' }).length;",
         "const inPage: number = browserScan(null, null, {}, ['img-alt-present']).checksResults.length;",
+        "void consoleRun({ locale: 'fr', context: 'main', runOnly: ['img-alt-present'] }).then((r) => {",
+        '  const rows: string[] = table(r, { all: true }).map((row) => row.rule + row.outcome + version);',
+        '  const marked: number = highlight(r);',
+        "  void openReport(r, { report: { title: 'Home' } }).then((url: string) => [rows, marked, url]);",
+        '});',
         '// A cross-frame result goes to the reporters as it is (#145).',
         'void runa11yCoreAcrossFrames().then((frames) => {',
         '  const text: string = renderSarifReport(frames) + renderJunitReport(frames) + renderHtmlReport(frames);',
@@ -420,11 +510,37 @@ test(
         "const bindingFrames = { topFrame: result, frames: [result, { url: null, error: 'detached' }] };",
         'const bindingText: string = renderSarifReport(bindingFrames) + renderJunitReport(bindingFrames) + renderHtmlReport(bindingFrames);',
         'void [bindingText, buildBaselineEntries(bindingFrames), flattenCrossFrameResult(bindingFrames)];',
+        'const withSteps: string | undefined = addHowToCheck(bindingFrames).frames[0]?.url ?? undefined;',
+        'void [withSteps, addHowToCheck(result).checksResults.length];',
+        '// @ts-expect-error a result, a cross-frame result or a frames result',
+        "addHowToCheck('not a result');",
+        "const frSteps: string[] = applyHowToCheck(bindingFrames, { fr }).topFrame.checksResults.length ? howToCheckFrom((l) => (l === 'fr' ? fr : null), 'tdHasHeader', 'TD_TABLE_NO_HEADERS', ['fr-CA'])?.steps ?? [] : [];",
+        'void frSteps;',
+        "const group: 'fail' | 'leanFail' | 'leanPass' | 'open' | null = reviewGroupOf(result.checksResults[0], result.checksResults[0]?.occurrences[0]);",
+        'const sameGroup: typeof group = entryReviewGroupOf(result.checksResults[0], null);',
+        'void [group, sameGroup];',
+        '// @ts-expect-error a group is one of four, or null',
+        "const notAGroup: 'cantTell' = reviewGroupOf(null, null);",
+        'void notAGroup;',
+        "void [addHowToCheck(result, { locale: 'fr' }), addHowToCheck(bindingFrames, { locale: ['fr-CA', 'de'] }), applyHowToCheck(result, { fr }, { locale: 'fr' })];",
+        '// @ts-expect-error a locale is a tag or a list of tags',
+        'addHowToCheck(result, { locale: 1 });',
+        "const hookCodes: string[] = HOOK_REASON_CODES.listener.filter((e) => e.effect === 'reports').map((e) => e.ruleId + e.reasonCode);",
+        'void hookCodes;',
+        "const entryCodes: readonly { ruleId: string; reasonCode: string; effect: 'reports' | 'decides' | 'leans' }[] = entryHookCodes.liveRegion;",
+        'void entryCodes;',
+        'const regions: Array<string | null> = (getAnnouncements({ selectors: true }) ?? []).map((a) => a.selector);',
+        'const elements: Element[] = (getAnnouncements() ?? []).map((a) => a.element);',
+        'void [regions, elements];',
+        '// @ts-expect-error no element once named by selectors',
+        'void getAnnouncements(undefined, { selectors: true })?.[0]?.element;',
+        '// @ts-expect-error frozen',
+        'HOOK_REASON_CODES.internals = [];',
         '// @ts-expect-error cantTellAs is skipped or failure',
         "renderJunitReport(result, { cantTellAs: 'warning' });",
         '// @ts-expect-error no WCAG 3.0',
         "wcagCriteria('3.0');",
-        'void [sarif, junit, html, outcome, fresh, level, tags, count, inPage, script, checked, lintRules];',
+        'void [sarif, junit, html, outcome, fresh, migrated, freshLeans, leans, gated, level, tags, count, inPage, script, checked, lintRules];',
         ''
       ].join('\n')
     );

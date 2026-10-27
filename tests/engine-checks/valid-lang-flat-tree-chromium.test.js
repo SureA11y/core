@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // [label, the shadow root's markup, the host's light-DOM text, whether
 // "secret" is rendered (the host, which holds nothing else, has a height),
@@ -68,7 +67,7 @@ test('valid-lang reads governed text in the flat tree, in Chromium', { skip }, a
           () => document.getElementById('host').getBoundingClientRect().height > 0
         );
         assert.equal(shown, rendered, 'Chromium');
-        await page.addScriptTag({ content: BUNDLE });
+        await addBundle(page);
         const got = await page.evaluate(
           () =>
             window.a11ycore.runa11yCoreInPage(null, null, {}, ['valid-lang']).checksResults[0]

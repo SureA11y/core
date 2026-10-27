@@ -24,6 +24,16 @@
  *     does not hold; `DUPLICATE_ID` otherwise. Both fail the same way.
  *   - `id`: the duplicated id.
  *   - `count`: how many elements in the same tree carry it.
+ * @reason-codes
+ *   - `DUPLICATE_ID` (fail, cantTell): two or more elements in the same tree
+ *     have the same id; it is asked about under WCAG 2.2, which removed
+ *     4.1.1, and under 2.0 and 2.1, whose 2023 errata count 4.1.1 as always
+ *     satisfied for HTML and XML. It fails only under a standard's own
+ *     profile that keeps 4.1.1's text (EN 301 549 V3.2.1).
+ *     Basis: WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST).
+ *   - `DUPLICATE_ID_IN_SHADOW_TREE` (fail, cantTell): two or more elements in
+ *     one shadow tree have the same id; it is graded as DUPLICATE_ID is.
+ *     Basis: WCAG 4.1.1; WCAG 2.1 F77; ACT 3ea0c8; HTML id attribute (MUST).
  * @implementation-notes
  * - WCAG-VERSION SCOPED. SC 4.1.1 Parsing was removed in WCAG 2.2, so this
  *   rule is tagged `wcag2a` (its 2.0/2.1 origin) plus `wcag22-removed`.
@@ -33,11 +43,13 @@
  *   field saying why (see scopeOutcomeToWcagVersion in
  *   `src/core/dom-runner.js`). A consumer targeting 2.0 or 2.1
  *   (`engineOptions.wcagVersion`, or a tag set that implies it) gets the
- *   real 4.1.1 failure; one that would rather not see the rule at all
- *   under 2.2 still excludes it with `excludeTags: ['wcag22-removed']`.
- *   The alternative, dropping the SC mapping entirely, would have made a
- *   genuine 2.0/2.1 failure invisible to anyone conformance-testing
- *   against those versions. See `docs/ENGINE_OPTIONS.md` for the option
+ *   same cantTell, by the 2023 errata to WCAG 2.0 and 2.1, which count 4.1.1
+ *   as always satisfied for HTML and XML; only a standard's own profile
+ *   that keeps 4.1.1's text gets a fail. One that would rather not see
+ *   the rule at all still excludes it with `excludeTags: ['wcag22-removed']`.
+ *   The alternative, dropping the SC mapping entirely, would have hidden
+ *   the failure from a standard that keeps the criterion, and the finding
+ *   from everyone. See `docs/ENGINE_OPTIONS.md` for the option
  *   and the tag, and `docs/DESIGN_CHALLENGES.md` for the decision history.
  * - The defect outlives its Success Criterion: a duplicate id breaks
  *   `<label for>` association, fragment navigation, `getElementById`, and
@@ -86,7 +98,35 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.1': ['id-unique-page-wide'] } }
+  coverage: { facetsBySc: { '4.1.1': ['id-unique-page-wide'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    DUPLICATE_ID: {
+      steps: [
+        'Inspect the elements the report names and note the shared id.',
+        "Check whether anything refers to that id: a label's for, an aria-* attribute such as aria-labelledby, or a link to #the-id.",
+        'If something refers to it, follow the reference (click the label or link, or read the name in the Accessibility pane) and check that it reaches the intended element.',
+        'Check which WCAG version and standard the audit applies; under WCAG 2.2 or 2.0/2.1 with the 2023 errata, 4.1.1 is satisfied for HTML.'
+      ],
+      passWhen:
+        'Nothing breaks because of the duplicate (references reach the intended element) and the audit uses WCAG 2.2 or 2.0/2.1 with the errata, under which 4.1.1 is satisfied.',
+      failWhen:
+        "A label, ARIA reference or link reaches the wrong element (WCAG 1.3.1 or 4.1.2), or the audit follows a standard that keeps 4.1.1's text, such as EN 301 549 V3.2.1, where duplicate ids fail 4.1.1 (F77)."
+    },
+    DUPLICATE_ID_IN_SHADOW_TREE: {
+      steps: [
+        'Inspect the elements the report names, inside the same shadow root, and note the shared id.',
+        "Check whether anything refers to that id: a label's for, an aria-* attribute such as aria-labelledby, or a link to #the-id.",
+        'If something refers to it, follow the reference (click the label or link, or read the name in the Accessibility pane) and check that it reaches the intended element.',
+        'Check which WCAG version and standard the audit applies; under WCAG 2.2 or 2.0/2.1 with the 2023 errata, 4.1.1 is satisfied for HTML.'
+      ],
+      passWhen:
+        'Nothing breaks because of the duplicate (references reach the intended element) and the audit uses WCAG 2.2 or 2.0/2.1 with the errata, under which 4.1.1 is satisfied.',
+      failWhen:
+        "A label or ARIA reference in the component reaches the wrong element (WCAG 1.3.1 or 4.1.2), or the audit follows a standard that keeps 4.1.1's text, such as EN 301 549 V3.2.1, where duplicate ids fail 4.1.1 (F77)."
+    }
+  }
 };
 
 function runInPage(ctx) {

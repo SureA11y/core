@@ -27,6 +27,7 @@
  *   is an image, or more than 150 characters. Such a name gets its own summary and hint;
  *   the finding stays `cantTell`.
  * @reports
+ *   - `reasonCode`: `TEXT_ALTERNATIVE_REVIEW`, whatever the signal.
  *   - `name`: the control's text alternative as announced, from the first
  *     source that gives one.
  *   - `sources`: every source that gives a non-empty text alternative, in
@@ -36,6 +37,12 @@
  *     name look like something other than a description, as for
  *     img-alt-quality. Absent when the name is ordinary.
  *   - `alt` (a control with a non-empty `alt`): the `alt` text.
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_REVIEW` (cantTell): an image button has a text
+ *     alternative, and a person checks that it says what the button does.
+ *     It leans fail when the name is a file name, a web address or a
+ *     placeholder word.
+ *     Basis: WCAG 1.1.1 (not settled); H36.
  * @implementation-notes
  * - A page reports at most 50 elements with an ordinary text alternative
  *   and, on top, at most 50 whose text alternative has a signal, each in
@@ -73,6 +80,20 @@ const meta = {
   coverage: {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TEXT_ALTERNATIVE_REVIEW: {
+      steps: [
+        'Find the image button the report names and read the name it gives; check each listed source (alt, aria-label, aria-labelledby, title).',
+        'Press the button or read the form to learn what it does.',
+        'Decide whether the announced name says what the button does, and that the other sources do not contradict it.'
+      ],
+      passWhen: 'The name states the button\'s action, such as "Submit order" or "Search".',
+      failWhen:
+        'The name does not say what the button does, for example a file name, address, generic word or symbols, which fails WCAG 1.1.1 (H36, F30).'
     }
   }
 };
@@ -209,6 +230,8 @@ function runInPage(ctx) {
   // early on can't hide a suspicious one further down.
   const MAX_OCCURRENCES = 50;
   const MAX_SUSPICIOUS = 50;
+  // The signals a lean fail rests on: text that is not a label.
+  const LEAN_SIGNALS = new Set(['file-name', 'url', 'placeholder']);
   let ordinaryReported = 0;
   let suspiciousReported = 0;
   let suspiciousCount = 0;
@@ -272,8 +295,23 @@ function runInPage(ctx) {
         ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
         : null;
     if (message) Object.assign(details, signal);
+    // One code whatever the signal, which changes the message only.
+    details.reasonCode = 'TEXT_ALTERNATIVE_REVIEW';
+
+    // The name is the button's whole label: a file name, an address or a
+    // generic word can't say what it does (F30).
+    const lean =
+      signal && LEAN_SIGNALS.has(signal.altSignal)
+        ? {
+            toward: 'fail',
+            why: 'A file name, a web address or a generic word does not say what the button does.',
+            signals: [{ signal: 'alt-signal', value: signal.altSignal }],
+            i18n: { whyKey: 'inputImage_altQuality_lean_why' }
+          }
+        : null;
 
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
         : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate.`,

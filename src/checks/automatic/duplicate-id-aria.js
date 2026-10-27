@@ -22,6 +22,16 @@
  * @reports
  *   - `id`: the duplicated id an ARIA attribute refers to.
  *   - `duplicateCount`: how many elements in the document carry that id.
+ * @reason-codes
+ *   - `DUPLICATE_ID_ARIA_REFERENCED` (cantTell): an id that an ARIA attribute
+ *     refers to is on more than one element, so the reference goes to the
+ *     first, which may not be the one meant.
+ *     It leans pass when only aria-labelledby, aria-describedby or
+ *     aria-errormessage refer to the id and every element carrying it has the
+ *     same text; and fail when an element referring to it sits nearer a later
+ *     copy than the first, as in repeated components.
+ *     Basis: HTML id attribute (MUST); WAI-ARIA 1.2 ID reference; WCAG 4.1.2
+ *     (not settled).
  * @implementation-notes
  * - Scoped to ids referenced by ARIA. The page-wide check
  *   lives in its own rule, `duplicate-id`, mapped to the WCAG 2.0/2.1 SC
@@ -58,7 +68,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } }
+  coverage: { facetsBySc: { '4.1.2': ['duplicate-id-aria'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    DUPLICATE_ID_ARIA_REFERENCED: {
+      steps: [
+        'Inspect the element the report names and note the ARIA attribute and the duplicated id it refers to.',
+        'In the developer tools, search the markup for id="the-id" and note each element that has it and its text; the browser uses the first one.',
+        "Open the Accessibility pane in the browser's developer tools on the referring element and read the name or description it gets.",
+        "Compare that with the text next to the element on screen (for example, its own card's title)."
+      ],
+      passWhen:
+        'The name or description comes from the intended element, or all the duplicates have the same text.',
+      failWhen:
+        "The referring element gets text from the wrong element, such as card 2 named with card 1's title, which fails WCAG 4.1.2 (and 1.3.1)."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -91,6 +117,8 @@ function runInPage(ctx) {
   }
 
   const referencedIds = new Set();
+  // id -> [{ el, attr }], the elements that refer to it and by what.
+  const referrers = new Map();
   for (const attr of IDREF_ATTRS) {
     const selector = `[${attr}]`;
     const nodes = dom.get(document, 'querySelectorAll')
@@ -101,7 +129,10 @@ function runInPage(ctx) {
       const raw = String(dom.getAttribute(el, attr) || '').trim();
       if (!raw) continue;
       for (const token of raw.split(/\s+/)) {
-        if (token) referencedIds.add(token);
+        if (!token) continue;
+        referencedIds.add(token);
+        if (!referrers.has(token)) referrers.set(token, []);
+        referrers.get(token).push({ el, attr });
       }
     }
   }
@@ -120,9 +151,78 @@ function runInPage(ctx) {
 
   const cantTellOccurrences = [];
 
+  // The attributes whose target only gives text (a name, a description, an
+  // error message): copies with the same text give the same result.
+  const TEXT_ATTRS = new Set(['aria-labelledby', 'aria-describedby', 'aria-errormessage']);
+  const normalized = (el) =>
+    String(dom.textContent(el) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+  // How deep the deepest ancestor two elements share is.
+  function sharedDepth(a, b) {
+    const chain = new Map();
+    let depth = 0;
+    for (let n = a; n; n = dom.parentNode(n)) chain.set(n, depth++);
+    const total = depth;
+    for (let n = b; n; n = dom.parentNode(n)) {
+      if (chain.has(n)) return total - chain.get(n);
+    }
+    return 0;
+  }
+
+  // Which way a duplicated, referenced id points. Copies that all say the
+  // same thing to attributes that only read text give the same result
+  // whichever is reached. A referring element whose nearest copy (the one
+  // it shares the deepest ancestor with, alone) is not the first in tree
+  // order is a repeated component reaching another one's element.
+  function leanFor(refId, els) {
+    const refs = referrers.get(refId) || [];
+    const first = normalized(els[0]);
+    const sameText = els.every((e) => normalized(e) === first);
+    if (sameText && refs.length && refs.every((r) => TEXT_ATTRS.has(r.attr))) {
+      return {
+        toward: 'pass',
+        why: 'Every element with this id has the same text, so whichever one the reference reaches gives the same name or description.',
+        signals: [{ signal: 'duplicates-same-text', value: true }],
+        i18n: { whyKey: 'duplicateIdAria_lean_why_sameText' }
+      };
+    }
+    for (const r of refs) {
+      let best = -1;
+      let nearest = null;
+      let tie = false;
+      for (const e of els) {
+        const d = sharedDepth(r.el, e);
+        if (d > best) {
+          best = d;
+          nearest = e;
+          tie = false;
+        } else if (d === best) tie = true;
+      }
+      if (nearest && !tie && nearest !== els[0]) {
+        return {
+          toward: 'fail',
+          why: 'An element that refers to this id sits next to a later copy of it, but the reference goes to the first one, elsewhere in the page.',
+          signals: [
+            { signal: 'duplicates-same-text', value: sameText },
+            { signal: 'nearest-duplicate-is-first', value: false }
+          ],
+          caution: 'Being nearer is a sign of what was meant, not proof.',
+          i18n: {
+            whyKey: 'duplicateIdAria_lean_why_nearerCopy',
+            cautionKey: 'duplicateIdAria_lean_caution_nearerCopy'
+          }
+        };
+      }
+    }
+    return null;
+  }
+
   for (const refId of referencedIds) {
     const els = idMap.get(refId) || [];
     if (els.length <= 1) continue;
+    const lean = leanFor(refId, els);
 
     for (const el of els) {
       if (inScope && !inScope.has(el)) continue;
@@ -142,6 +242,7 @@ function runInPage(ctx) {
             needed: 'Whether the first element carrying this id is the intended target.',
             evidence: { id: refId, duplicateCount: els.length, resolvesTo: 'first' }
           },
+          ...(lean ? { lean } : {}),
           data: {
             details: {
               reasonCode: 'DUPLICATE_ID_ARIA_REFERENCED',

@@ -40,7 +40,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'text-spacing-content-loss';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 const FIXTURE = fs.readFileSync(
   path.join(__dirname, '../../fixtures', `${RULE_ID}-all-scenarios.html`),
   'utf8'
@@ -82,7 +82,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
           probe.remove();
         }
       });
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const before = await p.evaluate(() => [document.head.innerHTML, window.scrollY]);
       const result = await p.evaluate(
         ([opts, scope]) => window.a11ycore.runa11yCoreInPage(null, scope, opts, null),
@@ -382,8 +382,8 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   await t.test('a fail still names the closest text kept in full', async () => {
     const html = page(
-      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
-      `<div class="fit" id="box">${TEXT}</div><div class="gap" id="roomy">${TEXT}</div>`
+      '#box{white-space:nowrap;overflow:hidden} @media (min-width:700px){#box{width:auto!important}} #kept{white-space:nowrap;overflow:hidden;height:24px}',
+      `<div class="fit" id="box">${TEXT}</div><div class="gap" id="kept">${TEXT}</div>`
     );
     const wide = await scan(html, undefined, { viewport: { width: 1024, height: 600 } });
     const narrow = await scan(html, undefined, { viewport: { width: 500, height: 600 } });
@@ -391,7 +391,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.ok(margin(wide), 'the pass has a margin');
     assert.equal(outcome(narrow), 'fail');
     assert.deepEqual(findings(narrow), [['box', 'fail', 'TEXT_CLIPPED']]);
-    assert.equal(margin(narrow).selector, '#roomy', 'the cut-off box is a finding, not the margin');
+    assert.equal(margin(narrow).selector, '#kept', 'the cut-off box is a finding, not the margin');
   });
 
   // The margin's limit is where a line starts to be partly cut off, 2px past
@@ -418,16 +418,23 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
   await t.test('the margin is measured where text grows, not at its start edge', async () => {
     // A block of auto height grows with the line height, so it can't cut the
-    // text off vertically: only its width counts.
+    // text off vertically: only its width counts. Its width leaves the text a
+    // few px of room, inside the margin's band (8px).
     const auto = margin(
-      await scan(page('#box{white-space:nowrap;overflow:hidden}', `<div id="box">${TEXT}</div>`))
+      await scan(
+        page(
+          '#box{white-space:nowrap;overflow:hidden}',
+          `<div class="fit" id="box" data-extra="44">${TEXT}</div>`
+        )
+      )
     );
     assert.equal(auto.context.axis, 'x');
     assert.ok(auto.value < 0, 'the room on the right, not the flush left edge');
-    // Right-to-left text grows toward the left.
+    // Right-to-left text grows toward the left. The box leaves it 22px of
+    // room, whichever font draws the Arabic.
     const rtl = margin(
       await scan(
-        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden;width:230px}</style></head><body><div id="w">ساعات العمل اليوم من التاسعة</div></body></html>`
+        `<!doctype html><html lang="ar" dir="rtl"><head><title>t</title><style>body{margin:20px;font:16px/20px sans-serif} #w{white-space:nowrap;overflow:hidden}</style></head><body><div class="fit" id="w" data-extra="22">ساعات العمل اليوم من التاسعة</div></body></html>`
       )
     );
     assert.equal(rtl.selector, '#w');
@@ -461,13 +468,13 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     // long one: it is a finding, not text kept in full.
     const result = await scan(
       page(
-        '#box{white-space:nowrap;overflow:hidden;height:200px} #roomy{white-space:nowrap;overflow:hidden;height:200px}',
+        '#box{white-space:nowrap;overflow:hidden;height:200px} #kept{white-space:nowrap;overflow:hidden;height:24px}',
         `<div class="fit" id="box" data-text="${TEXT}"><div>Hi</div><span>${TEXT}</span></div>` +
-          `<div class="gap" id="roomy">${TEXT}</div>`
+          `<div class="gap" id="kept">${TEXT}</div>`
       )
     );
     assert.deepEqual(findings(result), [['box', 'fail', 'TEXT_CLIPPED']]);
-    assert.equal(margin(result).selector, '#roomy');
+    assert.equal(margin(result).selector, '#kept');
   });
 
   await t.test('text outside the scope, excluded or behind a modal is not judged', async () => {
@@ -703,7 +710,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
         )
       );
       await p.evaluate(() => document.fonts.ready);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const [setStatus, second] = await p.evaluate(() => {
         const run = () => window.a11ycore.runa11yCoreInPage(null, null, {}, null);
         run();
@@ -727,5 +734,76 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     const rollup = (id) => result.rulesResults.find((r) => r.ruleId === id).outcome;
     assert.equal(rollup('wcag-1.4.12-text-spacing'), 'fail');
+  });
+});
+
+// Leans on the measured findings.
+test(`${RULE_ID} in Chromium: which way the measured findings lean`, { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  async function scan(html, pageOptions = {}) {
+    const p = await browser.newPage(pageOptions);
+    try {
+      await p.setContent(html);
+      await addBundle(p);
+      const result = await p.evaluate(
+        (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+        RULE_ID
+      );
+      return result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+    } finally {
+      await p.close();
+    }
+  }
+  const LONG =
+    'Opening hours today are from nine in the morning until five in the afternoon, and on Saturdays from ten until two, closed on Sundays.';
+  const excerpt = (height) =>
+    page(
+      `#box{width:320px;font:16px/1.25 sans-serif;height:${height};overflow:hidden}`,
+      `<div id="box">${LONG}</div>`
+    );
+
+  await t.test('an excerpt that shows no line in full leans fail', async () => {
+    const [none] = await scan(excerpt('18px'));
+    assert.equal(none.data.details.reasonCode, 'TEXT_CLIPPED_FURTHER');
+    assert.deepEqual(none.data.details.lines, { shownBefore: 1, shownAfter: 0 });
+    assert.equal(none.lean.toward, 'fail');
+    assert.equal(none.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_clippedFurther');
+
+    const [fewer] = await scan(excerpt('2.5em'));
+    assert.equal(fewer.data.details.reasonCode, 'TEXT_CLIPPED_FURTHER');
+    assert.equal(fewer.lean, undefined);
+  });
+
+  await t.test('text drawn over most of another line leans fail', async () => {
+    const [overlap] = await scan(
+      page(
+        '#box{height:20px;width:160px}',
+        `<div id="box">${TEXT}</div><div>Closed on Sundays</div>`
+      )
+    );
+    assert.equal(overlap.data.details.reasonCode, 'TEXT_OVERLAPS');
+    assert.equal(overlap.lean.toward, 'fail');
+    assert.equal(overlap.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_overlaps');
+  });
+
+  await t.test('a scroll lock behind a banner at the bottom leans pass', async () => {
+    const lines = Array.from({ length: 40 }, (_, i) => `<p style="margin:0">Line ${i}</p>`).join(
+      ''
+    );
+    const locked = (extra) =>
+      `<!doctype html><html lang="en"><head><title>t</title><style>body{font:16px/20px sans-serif;margin:0;overflow:hidden} #c{position:fixed;bottom:0;left:0;right:0;background:#fff}</style></head><body id="b">${lines}${extra}</body></html>`;
+    const small = { viewport: { width: 400, height: 300 } };
+    const [banner] = await scan(
+      locked('<div id="c">We use cookies. <button>Accept</button></div>'),
+      small
+    );
+    assert.equal(banner.data.details.reasonCode, 'VIEWPORT_SCROLL_LOCKED');
+    assert.equal(banner.lean.toward, 'pass');
+    assert.equal(banner.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_scrollLocked');
+
+    const [bare] = await scan(locked(''), small);
+    assert.equal(bare.data.details.reasonCode, 'VIEWPORT_SCROLL_LOCKED');
+    assert.equal(bare.lean, undefined);
   });
 });

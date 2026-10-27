@@ -20,8 +20,9 @@
  *   version. `partial: true`, optional, says the rules mapped to it don't
  *   check all it asks: its rollup is then cantTell
  *   (composite.rollup.cantTell.partialCoverage) where they are all
- *   notApplicable, as a WCAG criterion's is, since they only found none of
- *   the cases they look for.
+ *   notApplicable, since they only found none of the cases they look for,
+ *   and cantTell (composite.rollup.cantTell.partialCheck) where they pass,
+ *   since they checked only part of it, as a WCAG criterion's is.
  * - ruleMap[version][ruleId]: { requirements: [id, ...], reasonCodes, note },
  *   the requirements a rule checks: a core rule or one of the profile's own.
  *   `reasonCodes`, optional, sends a rule's findings of a reason code
@@ -40,7 +41,8 @@
  * criteria one for one (EN 301 549's chapter 9): a requirement's rollup is
  * notApplicable only where the WCAG rollup of its criteria would be, the
  * criteria in src/coverage/complete-applicability.js, and otherwise cantTell
- * (composite.rollup.cantTell.partialCoverage), as WCAG's own rollup is. A
+ * (composite.rollup.cantTell.partialCoverage), as WCAG's own rollup is; and
+ * it passes only where that rollup would (the same file). A
  * standard whose requirements are narrower than a criterion leaves it out.
  *
  * A standard whose mapping needs more (tests grouped into criteria, related

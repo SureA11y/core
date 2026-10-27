@@ -52,7 +52,7 @@ test("a variant resolves to its base's code, with its own id, meta, settings and
 test('the build refuses a variant it cannot resolve, saying why', () => {
   const cases = [
     [variant({ from: 'nope' }), /from names nope, which is no rule/],
-    [variant({ config: { colour: 1 } }), /base has no setting colour \(it has: ratio, minPx\)/],
+    [variant({ config: { color: 1 } }), /base has no setting color \(it has: ratio, minPx\)/],
     [
       variant({ config: { ratio: '4.5' } }),
       /setting ratio must be a finite number above 0, not "4\.5"/

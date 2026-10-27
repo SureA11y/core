@@ -13,6 +13,10 @@
  *   naming a known role, matched case-insensitively, so role="foo heading"
  *   counts). A native heading keeps its role when no token is a known
  *   role, and loses it to any other resolved role.
+ *   A native <hx> marked role="none" or "presentation" is still a heading
+ *   when it can take focus or carries a global ARIA attribute, as
+ *   WAI-ARIA's presentational roles conflict resolution has browsers
+ *   ignore that role then.
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role), with no role attribute naming another,
  *   counts as a native element with that role does.
@@ -23,11 +27,24 @@
  *   heading is announced as "heading, level N" with nothing else, which
  *   is confusing when navigating by heading.
  *   Reported at FAIL although no WCAG criterion is claimed: an empty
- *   heading is itself the barrier, as the ACT rule ffd0e9 and the engines
- *   implementing it treat it. A heading whose name may come from content
+ *   heading is itself the barrier, as the ACT rule ffd0e9 treats it. A heading whose name may come from content
  *   no script can read (a closed shadow root, content nested too deep, a
  *   custom element naming itself through ElementInternals) is asked about
  *   instead, as the *-name-present rules do.
+ * @reason-codes
+ *   - `HEADING_EMPTY` (fail): a heading exposed to assistive technology has
+ *     no accessible name.
+ *     Basis: ACT ffd0e9; WAI-ARIA 1.2 heading role (best practice).
+ *   - `name_closedContent` (cantTell): the heading may take its name from
+ *     content in a closed shadow root, which no script can read.
+ *     Basis: accname 1.2 (not settled); ACT ffd0e9 (not settled).
+ *   - `name_contentTooDeep` (cantTell): the heading's content is nested too
+ *     deeply to work out a name from it.
+ *     Basis: accname 1.2 (not settled); ACT ffd0e9 (not settled).
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: accname 1.2 (not settled).
  * @implementation-notes
  * - Not WCAG-normative: W3C publishes ACT ffd0e9 mapped to no Success
  *   Criterion, and implementations naming 1.3.1 are scored as reporting the
@@ -68,7 +85,44 @@ const meta = {
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_closedContent: {
+      steps: [
+        'Find the heading the report names and note the text or icon it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the heading, taken from its content, and the screen reader announces it.',
+      failWhen:
+        'The heading has no name in the accessibility tree, since its content gives none, which goes against the best practice that headings have content (ACT ffd0e9).'
+    },
+    name_contentTooDeep: {
+      steps: [
+        'Find the heading the report names and note the text it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the heading, taken from its nested content, and the screen reader announces it.',
+      failWhen:
+        'The heading has no name in the accessibility tree, since its content gives none, which goes against the best practice that headings have content (ACT ffd0e9).'
+    },
+    name_internals: {
+      steps: [
+        'Inspect the heading the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the heading, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The heading has no name in the accessibility tree and the screen reader announces only its role, which goes against the best practice that headings have content (ACT ffd0e9).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -89,47 +143,6 @@ function runInPage(ctx) {
     return helpers.aria.getAuthorRole(el);
   }
 
-  // Same Global States and Properties set used elsewhere in this engine
-  // (aria-required-parent.js, aria-prohibited-children.js) for the same
-  // presentational-roles-conflict-resolution concept: a native h1-h6
-  // marked role="none"/"presentation" still reverts to its native heading
-  // role when it carries a global ARIA attribute (even one with an empty
-  // value, like aria-label="" -- the attribute's presence is what
-  // triggers conflict resolution, not its value).
-  const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic',
-    'aria-braillelabel',
-    'aria-brailleroledescription',
-    'aria-busy',
-    'aria-controls',
-    'aria-current',
-    'aria-describedby',
-    'aria-description',
-    'aria-details',
-    'aria-disabled',
-    'aria-dropeffect',
-    'aria-errormessage',
-    'aria-flowto',
-    'aria-grabbed',
-    'aria-haspopup',
-    'aria-hidden',
-    'aria-invalid',
-    'aria-keyshortcuts',
-    'aria-label',
-    'aria-labelledby',
-    'aria-live',
-    'aria-owns',
-    'aria-relevant',
-    'aria-roledescription'
-  ];
-
-  function hasGlobalAriaAttr(el) {
-    for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
-    }
-    return false;
-  }
-
   function isHeading(el) {
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
@@ -138,7 +151,9 @@ function runInPage(ctx) {
     if (!explicit) return isNativeHeadingTag;
     if (explicit === 'heading') return true;
     if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
-      return hasGlobalAriaAttr(el);
+      // Kept as a heading when focusable or carrying a global ARIA
+      // attribute (presentational roles conflict resolution).
+      return helpers.isPresentationalRoleIgnored(el);
     }
     return false;
   }

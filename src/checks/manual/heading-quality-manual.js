@@ -28,6 +28,21 @@
  *   - `name`: the heading's accessible name, with whitespace collapsed.
  *   - `normalizedName`: the same name as it was matched: lower case, with
  *     trailing punctuation removed.
+ * @reason-codes
+ *   - `PLACEHOLDER_HEADING_TEXT` (cantTell): the heading's name is a
+ *     placeholder such as "heading", "lorem ipsum" or "Section 3" rather
+ *     than a description of the content it introduces.
+ *     It leans fail when the name is text only a template leaves ("lorem
+ *     ipsum", "untitled", "heading"), not a numbered slot or a word that
+ *     heads real sections.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
+ *   - `FILENAME_LIKE_HEADING` (cantTell): the heading's name is a file name
+ *     rather than a description of the content it introduces.
+ *     It leans fail when the file is an image.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
+ *   - `URL_LIKE_HEADING` (cantTell): the heading's name is a web address
+ *     rather than a description of the content it introduces.
+ *     Basis: WCAG 2.4.6 (not settled); G130; ACT b49b2e (not settled).
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang
@@ -55,7 +70,8 @@
  *   glossary section, so length carries no signal here, unlike in
  *   `page-title-patterns` where a <8-character page title is a real one.
  * - Heading resolution (native tag, explicit role, and the
- *   role="none"-plus-global-ARIA-attribute conflict-resolution case)
+ *   conflict-resolution case: role="none" on a focusable heading or
+ *   one with a global ARIA attribute)
  *   mirrors `empty-heading`, which owns the same applicability question;
  *   the two rules split the decision, one on presence, one on quality.
  */
@@ -86,7 +102,41 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.6': ['heading-text-descriptive-evidence'] } }
+  coverage: { facetsBySc: { '2.4.6': ['heading-text-descriptive-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    FILENAME_LIKE_HEADING: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        "Decide whether that file is the subject of the section (a file offered for download) or a leftover name such as an image's file name."
+      ],
+      passWhen: 'The file name is the real subject of the section, such as the document it offers.',
+      failWhen:
+        'The heading is a leftover file name (such as IMG_1234.jpg) that does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    },
+    PLACEHOLDER_HEADING_TEXT: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        'Decide whether the heading describes that content or is template text such as "Heading", "Lorem ipsum" or "Untitled".'
+      ],
+      passWhen:
+        'The heading names the topic of the content after it (a numbered "Step 1" over the first step is fine).',
+      failWhen:
+        'The heading is placeholder text that does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    },
+    URL_LIKE_HEADING: {
+      steps: [
+        'Find the heading the report names and read its text.',
+        'Read the content that follows it, up to the next heading.',
+        'Decide whether the web address is the subject of that section (a site being reviewed or listed) or stands in for a real title.'
+      ],
+      passWhen: 'The address is the topic of the section, so it describes the content after it.',
+      failWhen: 'The address does not describe the content after it, which fails WCAG 2.4.6 (G130).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -228,6 +278,116 @@ function runInPage(ctx) {
     ja: /^(?:(見出し|タイトル|セクション|章|ステップ|パート)\s*[-#:.]?\s*\d+|第\s*\d+\s*章)$/
   };
 
+  // The placeholders only a template leaves: no author means them as a
+  // heading. Numbered slots ("Step 1", "Chapter 2") and words that are real
+  // headings in context ("Content", "Example", "Title") are not here.
+  const TEMPLATE_ONLY = {
+    en: new Set([
+      'heading',
+      'headline',
+      'subheading',
+      'sub heading',
+      'sub-heading',
+      'untitled',
+      'new section',
+      'sample text',
+      'placeholder',
+      'placeholder text',
+      'lorem ipsum',
+      'insert title here',
+      'your title here',
+      'add a title',
+      'tbd',
+      'to be defined',
+      'todo',
+      'to do'
+    ]),
+    de: new Set([
+      'überschrift',
+      'zwischenüberschrift',
+      'unbenannt',
+      'ohne titel',
+      'neuer abschnitt',
+      'beispieltext',
+      'blindtext',
+      'platzhalter',
+      'platzhaltertext',
+      'titel hier eingeben'
+    ]),
+    es: new Set([
+      'encabezado',
+      'sin título',
+      'nueva sección',
+      'texto de ejemplo',
+      'marcador de posición',
+      'escriba el título aquí',
+      'su título aquí',
+      'por definir'
+    ]),
+    fr: new Set([
+      'sans titre',
+      'nouvelle section',
+      "texte d'exemple",
+      'espace réservé',
+      'insérer le titre ici',
+      'votre titre ici',
+      'à définir'
+    ]),
+    ja: new Set([
+      '見出し',
+      '小見出し',
+      '無題',
+      '新しいセクション',
+      'サンプルテキスト',
+      'ダミーテキスト',
+      'プレースホルダー',
+      'ここにタイトルを入力',
+      'タイトルを入力',
+      '未定'
+    ])
+  };
+
+  const IMAGE_EXTENSION = /\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?)$/;
+
+  // A template's placeholder and an image's file name lean fail: neither is
+  // ever written as a heading on purpose. A numbered slot, a word that heads
+  // real sections, and a document's file name (a downloads page may title a
+  // section by the file it offers) get no lean.
+  function leanFor(reasonCode, normalized, lang) {
+    if (
+      reasonCode === 'PLACEHOLDER_HEADING_TEXT' &&
+      inPhraseList(TEMPLATE_ONLY, normalized, lang)
+    ) {
+      return {
+        toward: 'fail',
+        why: 'The heading is text a template leaves in place, which describes no content.',
+        signals: [
+          { signal: 'template-only-phrase', value: true },
+          { signal: 'numbered-slot', value: false }
+        ],
+        caution: 'A design-system or documentation page can show such a heading as a sample.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_template',
+          cautionKey: 'headingQuality_lean_caution_template'
+        }
+      };
+    }
+    const image = reasonCode === 'FILENAME_LIKE_HEADING' && IMAGE_EXTENSION.exec(normalized);
+    if (image) {
+      return {
+        toward: 'fail',
+        why: "The heading is an image's file name, usually left by a content system rather than written for the section.",
+        signals: [{ signal: 'image-extension', value: image[1] }],
+        caution: 'A file listing, such as an attachment list, can use file names as real headings.',
+        i18n: {
+          whyKey: 'headingQuality_lean_why_imageFile',
+          cautionKey: 'headingQuality_lean_caution_imageFile'
+        }
+      };
+    }
+    return null;
+  }
+
   const FILENAME_LIKE =
     /^[\w\s\-.,()[\]]+\.(png|jpe?g|gif|svg|webp|avif|bmp|ico|tiff?|pdf|docx?|xlsx?|pptx?|html?|txt|csv|zip)$/;
 
@@ -291,45 +451,6 @@ function runInPage(ctx) {
     return helpers.aria.getAuthorRole(el);
   }
 
-  // The WAI-ARIA Global States and Properties set, same list and same
-  // purpose as empty-heading's copy: a native h1-h6 marked
-  // role="none"/"presentation" reverts to its heading role when it carries
-  // any of these, the attribute's presence being what triggers conflict
-  // resolution, not its value.
-  const GLOBAL_ARIA_ATTRS = [
-    'aria-atomic',
-    'aria-braillelabel',
-    'aria-brailleroledescription',
-    'aria-busy',
-    'aria-controls',
-    'aria-current',
-    'aria-describedby',
-    'aria-description',
-    'aria-details',
-    'aria-disabled',
-    'aria-dropeffect',
-    'aria-errormessage',
-    'aria-flowto',
-    'aria-grabbed',
-    'aria-haspopup',
-    'aria-hidden',
-    'aria-invalid',
-    'aria-keyshortcuts',
-    'aria-label',
-    'aria-labelledby',
-    'aria-live',
-    'aria-owns',
-    'aria-relevant',
-    'aria-roledescription'
-  ];
-
-  function hasGlobalAriaAttr(el) {
-    for (const attr of GLOBAL_ARIA_ATTRS) {
-      if (dom.get(el, 'getAttribute') && dom.getAttribute(el, attr) != null) return true;
-    }
-    return false;
-  }
-
   function isHeading(el) {
     const tag = dom.tagName(el) ? dom.tagName(el).toLowerCase() : '';
     const isNativeHeadingTag = /^h[1-6]$/.test(tag);
@@ -338,7 +459,9 @@ function runInPage(ctx) {
     if (!explicit) return isNativeHeadingTag;
     if (explicit === 'heading') return true;
     if ((explicit === 'none' || explicit === 'presentation') && isNativeHeadingTag) {
-      return hasGlobalAriaAttr(el);
+      // Kept as a heading when focusable or carrying a global ARIA
+      // attribute (presentational roles conflict resolution).
+      return helpers.isPresentationalRoleIgnored(el);
     }
     return false;
   }
@@ -441,8 +564,10 @@ function runInPage(ctx) {
 
     applicableCount += 1;
 
-    const reasonCode = classify(normalized, primaryLangOf(el));
+    const lang = primaryLangOf(el);
+    const reasonCode = classify(normalized, lang);
     if (!reasonCode) continue;
+    const lean = leanFor(reasonCode, normalized, lang);
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -463,6 +588,7 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(lean ? { lean } : {}),
         summary: summaryByReason[reasonCode],
         hint: 'Rewrite the heading so it names the topic or purpose of the content that follows it.',
         i18n: {

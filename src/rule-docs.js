@@ -117,6 +117,49 @@ function jsdocTag(source, tag) {
   return reflow(lines);
 }
 
+// A rule's @reason-codes: one item per code it can give, with the outcome,
+// what it means and the standards it rests on.
+//
+//   - `CODE` (fail): what the code means.
+//     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1.
+//
+// The outcome is fail, cantTell, pass or notApplicable, or several separated
+// by commas when the code is given with more than one. Basis items are
+// separated by semicolons; a parenthesis after one says how it applies (MUST,
+// failure F24, sufficient G18, exception, not settled, best practice).
+// Returns [{ code, outcomes: [], meaning, basis: [] }], or null when the rule has
+// no such tag. An item that doesn't fit the shape keeps its text in `error`.
+const REASON_CODE_ITEM =
+  /^- `([A-Za-z][\w.-]*)` \(((?:fail|cantTell|pass|notApplicable)(?:, (?:fail|cantTell|pass|notApplicable))*)\): (.*)$/;
+function parseReasonCodes(text) {
+  if (!text) return null;
+  // A rule that gives no reason code says so.
+  if (text.trim() === 'none') return [];
+  const out = [];
+  for (const line of text.split('\n')) {
+    if (!line.trim()) continue;
+    const m = REASON_CODE_ITEM.exec(line.trim());
+    if (!m) {
+      out.push({ error: line.trim() });
+      continue;
+    }
+    const [, code, outcomeList, rest] = m;
+    const outcomes = outcomeList.split(', ');
+    const at = rest.search(/\bBasis:/);
+    const meaning = (at === -1 ? rest : rest.slice(0, at)).trim();
+    const basis =
+      at === -1
+        ? []
+        : rest
+            .slice(at + 'Basis:'.length)
+            .split(';')
+            .map((b) => b.trim().replace(/\.$/, ''))
+            .filter(Boolean);
+    out.push({ code, outcomes, meaning, basis });
+  }
+  return out;
+}
+
 // Rule prose is hard-wrapped to fit the source file, so continuation lines are
 // joined back into the paragraph or list item they belong to. A line indented
 // past the bullet above it continues that item; one that is not ends the list.
@@ -185,7 +228,8 @@ function readRuleProse(rulesDir) {
     prose.set(mod.id, {
       applicability: jsdocTag(source, 'applicability'),
       expectation: jsdocTag(source, 'expectation'),
-      reports: jsdocTag(source, 'reports')
+      reports: jsdocTag(source, 'reports'),
+      reasonCodes: parseReasonCodes(jsdocTag(source, 'reason-codes'))
     });
   }
 
@@ -208,6 +252,7 @@ function catalogRows(catalog, ids, prose) {
       severity: r.defaultSeverity,
       applicability: (prose.get(r.ruleId) || {}).applicability || '',
       expectation: (prose.get(r.ruleId) || {}).expectation || '',
+      reasonCodes: (prose.get(r.ruleId) || {}).reasonCodes || null,
       reports: (prose.get(r.ruleId) || {}).reports || '',
       margin: r.margin || null,
       variantSettings: Array.isArray(r.variantSettings) ? r.variantSettings : []
@@ -324,13 +369,32 @@ function renderCatalog(
   function marginLine(margin) {
     if (!margin) return '';
     const limit = margin.limit === 'min' ? 'must reach' : 'must stay under';
-    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it.`;
+    const b = margin.band || {};
+    const band =
+      b.relative > 0
+        ? `, if it is within ${Math.round(b.relative * 100)}% of the threshold`
+        : b.absolute > 0
+          ? `, if it is within ${b.absolute}${margin.unit === 'px' ? ' px' : ''} of the threshold`
+          : '';
+    return `**Margin.** \`${margin.measure}\`, in ${margin.unit === 'px' ? 'CSS pixels' : 'a ratio'}: the value ${limit} the threshold, and the result's \`margin\` names the element that came closest while meeting it${band}.`;
   }
 
   // The settings a pack's variant of the rule may change (RULE_SETTINGS.md).
   function settingsBlock(list) {
     if (!list || !list.length) return '';
     return `**Settings a variant can change.** See [\`RULE_SETTINGS.md\`](${coreDocs}/RULE_SETTINGS.md).\n\n${settingsTable(list)}`;
+  }
+
+  // The codes a rule's findings carry, from its @reason-codes.
+  function reasonCodesBlock(list) {
+    if (!list || !list.length) return '';
+    const rows = list
+      .filter((c) => c.code)
+      .map(
+        (c) =>
+          `| \`${c.code}\` | ${c.outcomes.join(', ')} | ${escapePipes(escapeAngles(c.meaning.charAt(0).toUpperCase() + c.meaning.slice(1)))} | ${escapePipes(escapeAngles(c.basis.join('; ')))} |`
+      );
+    return `**Reason codes.**\n\n| Code | Outcome | Meaning | Basis |\n|---|---|---|---|\n${rows.join('\n')}`;
   }
 
   function reference(r) {
@@ -343,6 +407,7 @@ function renderCatalog(
       proseBlock('Applies to.', r.applicability),
       proseBlock('Expectation.', r.expectation),
       proseBlock('What a finding reports.', r.reports),
+      reasonCodesBlock(r.reasonCodes),
       marginLine(r.margin),
       settingsBlock(r.variantSettings)
     ].filter(Boolean);
@@ -436,7 +501,7 @@ The tables below are an index; [rule reference](#rule-reference) carries each ru
 
 A rule with a **Margin** line measures a value against a threshold, and its check result's \`margin\` says how close the closest element came while still meeting it (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#a-check-result-checksresultsi)). Unlike the fields below, it is a stable contract.
 
-Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` (and the contrast size fields [\`API_STABILITY.md\`](${coreDocs}/API_STABILITY.md) names) they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
+Under **What a finding reports**, a rule lists the fields its findings carry in \`data.details\` besides \`reasonCode\`, and what each one means. They help to read and reproduce a finding, but apart from \`reasonCode\` (and the few fields [\`API_STABILITY.md\`](${coreDocs}/API_STABILITY.md) names, such as the contrast size fields) they are not a stable contract (see [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md#an-occurrence-occurrencesi)): a field may be renamed or dropped in a minor release, so do not build on them.
 
 See [\`OUTPUT_SCHEMA.md\`](${coreDocs}/OUTPUT_SCHEMA.md) for what \`type\`/\`confidence\`/\`severity\` mean on a scan result, and [\`WCAG_CONFORMANCE.md\`](${coreDocs}/WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim.${isCore ? " For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule." : ''}
 
@@ -696,6 +761,7 @@ function reportDrift(committed, fresh, command = 'npm run rule-examples:outcomes
 }
 
 module.exports = {
+  parseReasonCodes,
   escapeAngles,
   escapeText,
   escapePipes,

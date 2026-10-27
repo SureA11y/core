@@ -20,7 +20,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -46,7 +45,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const NAME_RULE = {
   button: 'button-name-present',
@@ -173,7 +172,7 @@ for (const c of cases) {
     try {
       const p = await browser.newPage();
       await p.setContent(c.html);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const outcome = await p.evaluate(
         (ruleId) =>
           window.a11ycore

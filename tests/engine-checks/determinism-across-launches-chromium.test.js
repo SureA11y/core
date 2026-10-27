@@ -18,6 +18,7 @@
  * clock rather than waiting makes the times exact: real waits drift past a
  * window in which a result differs, and cost the seconds they wait. Each
  * rule's outcome and number of occurrences must match the first launch's.
+ * The two launches run at the same time, in browsers that share nothing.
  *
  * Skipped when Playwright or its Chromium build is not installed. Set
  * CHROMIUM_EXECUTABLE_PATH to use another Chromium build.
@@ -29,7 +30,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { chromium, executablePath, skip } = require('../helpers/chromium');
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle, bundleUrl } = require('../helpers/browserBundle');
 const DIR = path.join(__dirname, '../fixtures');
 const FIXTURES = fs
   .readdirSync(DIR)
@@ -67,9 +68,13 @@ async function launch() {
   const browser = await chromium.launch({ executablePath });
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
   // Fixtures are self-contained; a request one still makes is refused, so
-  // nothing outside the machine can change a result.
+  // nothing outside the machine can change a result. The engine's bundle
+  // comes from this process.
+  const bundle = await bundleUrl();
   await context.route('**/*', (route) =>
-    /^(data|about):/.test(route.request().url()) ? route.continue() : route.abort()
+    /^(data|about):/.test(route.request().url()) || route.request().url() === bundle
+      ? route.continue()
+      : route.abort()
   );
   return { browser, context };
 }
@@ -86,28 +91,65 @@ function advance(cdp, ms) {
   });
 }
 
+// The first launch: each fixture's summary as it loads.
+async function scanAsLoaded() {
+  const first = {};
+  const { browser, context } = await launch();
+  try {
+    for (const file of FIXTURES) {
+      const page = await context.newPage();
+      await page.setContent(html(file), { waitUntil: 'load' });
+      await addBundle(page);
+      first[file] = await page.evaluate(summary);
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return first;
+}
+
+// The second launch: each fixture's summaries under a held clock, as
+// [file, ms, summary], at 0 ms and whenever the page has moved since.
+async function scanOverTime() {
+  const scans = [];
+  const { browser, context } = await launch();
+  try {
+    for (const file of FIXTURES) {
+      const page = await context.newPage();
+      const cdp = await context.newCDPSession(page);
+      // Held once the page has loaded: a fixture's load can wait on time
+      // passing, which a held clock never lets it do.
+      await page.setContent(html(file), { waitUntil: 'load' });
+      await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
+      await addBundle(page);
+      scans.push([file, 0, await page.evaluate(summary)]);
+      let scanned = await page.evaluate(snapshot);
+      for (let at = STEP_MS; at <= UNTIL_MS; at += STEP_MS) {
+        await advance(cdp, STEP_MS);
+        const now = await page.evaluate(snapshot);
+        if (now !== scanned || at === UNTIL_MS) {
+          scans.push([file, at, await page.evaluate(summary)]);
+          scanned = now;
+        }
+      }
+      await page.close();
+    }
+  } finally {
+    await browser.close();
+  }
+  return scans;
+}
+
 test(
   'every fixture gives the same result in two launches and over time, in Chromium',
   { skip },
   async () => {
-    const first = {};
-    {
-      const { browser, context } = await launch();
-      try {
-        for (const file of FIXTURES) {
-          const page = await context.newPage();
-          await page.setContent(html(file), { waitUntil: 'load' });
-          await page.addScriptTag({ content: BUNDLE });
-          first[file] = await page.evaluate(summary);
-          await page.close();
-        }
-      } finally {
-        await browser.close();
-      }
-    }
+    // Two browsers that share nothing, so the launches run side by side.
+    const [first, scans] = await Promise.all([scanAsLoaded(), scanOverTime()]);
 
     const differences = [];
-    const compare = (file, at, result) => {
+    for (const [file, at, result] of scans) {
       for (const id of new Set([...Object.keys(first[file]), ...Object.keys(result)])) {
         if (first[file][id] !== result[id]) {
           differences.push(
@@ -115,35 +157,7 @@ test(
           );
         }
       }
-    };
-    {
-      const { browser, context } = await launch();
-      try {
-        for (const file of FIXTURES) {
-          const page = await context.newPage();
-          const cdp = await context.newCDPSession(page);
-          // Held once the page has loaded: a fixture's load can wait on time
-          // passing, which a held clock never lets it do.
-          await page.setContent(html(file), { waitUntil: 'load' });
-          await cdp.send('Emulation.setVirtualTimePolicy', { policy: 'pause' });
-          await page.addScriptTag({ content: BUNDLE });
-          compare(file, 0, await page.evaluate(summary));
-          let scanned = await page.evaluate(snapshot);
-          for (let at = STEP_MS; at <= UNTIL_MS; at += STEP_MS) {
-            await advance(cdp, STEP_MS);
-            const now = await page.evaluate(snapshot);
-            if (now !== scanned || at === UNTIL_MS) {
-              compare(file, at, await page.evaluate(summary));
-              scanned = now;
-            }
-          }
-          await page.close();
-        }
-      } finally {
-        await browser.close();
-      }
     }
-
     assert.deepEqual(differences, [], differences.join('\n'));
   }
 );

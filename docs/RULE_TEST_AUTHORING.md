@@ -51,4 +51,18 @@ function hasOccurrenceForId(rule, id) {
 }
 ```
 
+Start a new rule's test from [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js). Beyond its own
+test file, a core rule is held by tests that read every rule:
+
+- `tests/reason-codes-docs.test.js`: the header's `@reason-codes` lists exactly the rule's codes
+  in `scripts/data/finding-ids.json` (`npm run finding-ids` updates it), each with an outcome, a
+  meaning and a basis ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §10.1).
+- `tests/how-to-check.test.js`: every code the header lists as `cantTell` has steps in
+  `meta.review`, and every locale of `src/i18n/review/` has every key (§8.6).
+- `npm run fixtures:markers:check` and `npm run fixtures:check`: the scenario page's markers
+  match what the rule reports, and the fixture index is current (§11).
+
+A rule that leans tests each lean in its own file: a case that leans, its `toward` and `whyKey`,
+and for a conditional lean a case of the same code with none (§8.5).
+
 A core rule's test checks the rule, by default and under core's own profiles (`wcag22-aa`, `section508`). It names no profile's standard (its key, its profiles, its rollups): which of a standard's requirements a core rule checks is that standard's decision, tested in its profile. How core treats a profile's standard (mappings, opt-in rules, rollups, variants) is tested against the sample profile in `tests/fixtures/profiles/sample/`, built into a copy of the engine by `tests/helpers/sampleEngine.js`, in `tests/sample-profile/`. That a profile never changes a rule's outcome is checked for every rule and every profile in `tests/profile-outcomes.test.js`, so a rule's test need not loop over profiles to show it. `tests/profile-boundary.test.js` fails on a rule test that names a profile's standard.

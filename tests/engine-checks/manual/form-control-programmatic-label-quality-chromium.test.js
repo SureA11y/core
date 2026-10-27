@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'form-control-programmatic-label-quality';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -51,7 +50,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         `<!doctype html><html lang="en"><head><title>t</title>${head}</head><body>${body}</body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate((id) => {
         const r = window.a11ycore.runa11yCoreInPage(
           location.href,

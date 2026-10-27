@@ -18,7 +18,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 
@@ -46,12 +45,13 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
 
-// [name, html, script run before the scan, rule, expected outcome]
+// [name, html, script run before the scan, rule, expected outcome, and the
+// reason code of each occurrence where it matters]
 const CASES = [
   [
     'an input',
@@ -144,30 +144,112 @@ const CASES = [
     'form-control-programmatic-label-present',
     'fail'
   ],
-  ['no reference at all', '<button id="f"></button>', '', 'button-name-present', 'fail']
+  ['no reference at all', '<button id="f"></button>', '', 'button-name-present', 'fail'],
+  // Chromium reflects the misspelled aria-labeledby too, but it is no ARIA
+  // attribute and other browsers name nothing from it.
+  [
+    'a misspelled aria-labeledby, which names nothing',
+    '<button id="f" aria-labeledby="lbl"></button><span id="lbl">Save</span>',
+    '',
+    'button-name-present',
+    'fail'
+  ],
+  // Rules that follow other references read them as element references too.
+  [
+    'a hidden error message',
+    '<label for="f">Email</label><input id="f" aria-invalid="true"><span id="err" hidden>Enter an email</span>',
+    'f.ariaErrorMessageElements = [err]',
+    'invalid-field-error-message',
+    'cantTell',
+    ['ERROR_MESSAGE_HIDDEN']
+  ],
+  [
+    'a shown error message',
+    '<label for="f">Email</label><input id="f" aria-invalid="true"><span id="err">Enter an email</span>',
+    'f.ariaErrorMessageElements = [err]',
+    'invalid-field-error-message',
+    'pass'
+  ],
+  [
+    'a hidden panel aria-expanded="true" controls',
+    '<button id="f" aria-expanded="true">Menu</button><ul id="m" hidden><li>Home</li></ul>',
+    'f.ariaControlsElements = [m]',
+    'aria-expanded-state-mismatch',
+    'cantTell',
+    ['EXPANDED_TRUE_CONTROLLED_HIDDEN']
+  ],
+  [
+    'a label from visible text',
+    '<span id="lbl">Email address</span><input id="f">',
+    'f.ariaLabelledByElements = [lbl]',
+    'form-control-programmatic-label-quality',
+    'pass'
+  ],
+  [
+    'an active descendant on a host that cannot take focus',
+    '<div id="f" role="listbox" aria-label="Fruit"><div role="option" id="o">Apple</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE']
+  ],
+  [
+    'an active descendant on a host with no role that cannot take focus',
+    '<div id="f" aria-label="Fruit"><div id="o">Apple</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE']
+  ],
+  [
+    'a widget under a focusable host whose active item a script set',
+    '<div id="f" tabindex="0" aria-label="Choices"><div id="o" role="checkbox" aria-checked="false">Agree</div></div>',
+    'f.ariaActiveDescendantElement = o',
+    'widget-keyboard-focusable',
+    'pass'
+  ],
+  [
+    'a widget under a focusable host with an empty aria-activedescendant',
+    '<div id="f" tabindex="0" aria-label="Choices" aria-activedescendant=""><div id="o" role="checkbox" aria-checked="false">Agree</div></div>',
+    null,
+    'widget-keyboard-focusable',
+    'cantTell',
+    ['WIDGET_NOT_FOCUSABLE']
+  ]
 ];
 
-for (const [name, html, script, ruleId, expected] of CASES) {
-  test(`a name set as element references, in Chromium: ${name}`, { skip }, async () => {
-    const browser = await chromium.launch({ executablePath });
-    try {
+test('a name set as element references, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  for (const [name, html, script, ruleId, expected, codes] of CASES) {
+    await t.test(name, async () => {
       const p = await browser.newPage();
-      await p.setContent(page(html));
-      if (script) await p.evaluate(script);
-      await p.addScriptTag({ content: BUNDLE });
-      const got = await p.evaluate(
-        (id) =>
-          window.a11ycore
-            .runa11yCoreInPage(location.href, null, {}, { includeRuleIds: [id] })
-            .checksResults.map((c) => c.outcome)[0],
-        ruleId
-      );
-      assert.equal(got, expected);
-    } finally {
-      await browser.close();
-    }
-  });
-}
+      try {
+        await p.setContent(page(html));
+        if (script) await p.evaluate(script);
+        await addBundle(p);
+        const got = await p.evaluate((id) => {
+          const c = window.a11ycore.runa11yCoreInPage(
+            location.href,
+            null,
+            {},
+            {
+              includeRuleIds: [id]
+            }
+          ).checksResults[0];
+          return {
+            outcome: c.outcome,
+            codes: c.occurrences.map((o) => o.data.details.reasonCode)
+          };
+        }, ruleId);
+        assert.equal(got.outcome, expected);
+        if (codes) assert.deepEqual(got.codes, codes);
+      } finally {
+        await p.close();
+      }
+    });
+  }
+});
 
 test('without reflection (jsdom), an empty aria-labelledby still names nothing', () => {
   const result = runa11yCoreOnHtml(

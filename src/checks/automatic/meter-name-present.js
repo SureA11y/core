@@ -8,6 +8,12 @@
  * @summary Elements with role="meter" must have an accessible name
  * @standard WCAG 2.2
  * @sc 1.1.1
+ *   Not 4.1.2: a meter or a progress bar shows a value and takes no input,
+ *   so it is not a user interface component (WCAG's glossary: perceived as
+ *   a single control for a distinct function), and WAI-ARIA doesn't count
+ *   it as a widget. What it needs is a text alternative for what it shows.
+ *   A slider or a spinbutton, whose value the user sets, is a control:
+ *   slider-name-present and spinbutton-name-present map to 4.1.2.
  * @applicability
  *   Applies to elements whose role attribute resolves to meter (the first
  *   token naming a known role, matched case-insensitively, so
@@ -23,6 +29,14 @@
  *   role="meter" is name-from-author-only, so subtree text is never
  *   accepted: text sitting inside a custom meter widget is not reliably
  *   exposed as its name.
+ * @reason-codes
+ *   - `name_missing` (fail): the meter has no accessible name from aria-label,
+ *     aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; accname 1.2; WAI-ARIA 1.2 meter role.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 1.1.1 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'meter-name-present';
@@ -50,7 +64,22 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.1.1': ['meter-name-present'] } }
+  coverage: { facetsBySc: { '1.1.1': ['meter-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the meter the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the meter, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The meter has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 1.1.1.'
+    }
+  }
 };
 
 function runInPage(ctx) {

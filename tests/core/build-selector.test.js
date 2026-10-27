@@ -523,3 +523,22 @@ test('buildSelector: every generated selector across many repeated sibling group
     assert.equal(matches[0], target);
   }
 });
+
+// An element at the top of a shadow root has no parent element, as <html>
+// has none, but its tag alone also matches the same tag deeper in the root.
+// Its step is kept to the root's own children, so
+// shadowRoot.querySelector(selector) finds it, as OUTPUT_SCHEMA.md says.
+test('buildSelector: an element at the top of a shadow root is told from the same tag deeper in it', () => {
+  const { helpers, document } = helpersFor(
+    '<!doctype html><html><body><div id="h"></div></body></html>'
+  );
+  const root = document.getElementById('h').attachShadow({ mode: 'open' });
+  root.innerHTML =
+    '<div class="media"><img src="deep.png" alt="Deep"></div><img src="top.png"><div><button>Buy</button></div><button></button>';
+  for (const target of [root.children[1], root.children[3]]) {
+    const sel = helpers.buildSelector(target);
+    const found = root.querySelectorAll(sel);
+    assert.strictEqual(found.length, 1, sel);
+    assert.strictEqual(found[0], target, sel);
+  }
+});

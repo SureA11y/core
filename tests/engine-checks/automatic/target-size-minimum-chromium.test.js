@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'target-size-minimum';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 const SR_ONLY =
   'position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;white-space:nowrap;border:0';
@@ -64,7 +63,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         `<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0;font:16px sans-serif}</style></head><body>${body}</body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         ([id, scope]) =>
           window.a11ycore.runa11yCoreInPage(null, scope, { rules: { include: id } }, null),
@@ -183,7 +182,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         `<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0;font:16px sans-serif} button{position:absolute;padding:0;border:0}</style></head><body>${body}</body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const result = await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
         RULE_ID
@@ -194,6 +193,15 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   }
+
+  await t.test('a smallest target more than 6px over 24 gives no margin', async () => {
+    const { outcome, margin } = await marginOf(
+      '<button id="big" style="top:0;left:0;width:48px;height:48px">A</button>' +
+        '<button id="wide" style="top:100px;left:0;width:60px;height:31px">B</button>'
+    );
+    assert.equal(outcome, 'pass');
+    assert.equal(margin, undefined, '31px is outside the band (up to 30px)');
+  });
 
   await t.test('the smallest target of at least 24 by 24 is the margin', async () => {
     const { outcome, margin } = await marginOf(
@@ -215,7 +223,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   await t.test('a small target passing on spacing is not a size candidate', async () => {
     const { outcome, margin } = await marginOf(
       '<button id="tiny" style="top:0;left:0;width:16px;height:16px">A</button>' +
-        '<button id="big" style="top:200px;left:0;width:40px;height:40px">B</button>'
+        '<button id="big" style="top:200px;left:0;width:28px;height:28px">B</button>'
     );
     assert.equal(outcome, 'pass', 'the small one is far from the other');
     assert.equal(margin.selector, '#big');

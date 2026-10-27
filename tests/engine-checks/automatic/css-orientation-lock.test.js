@@ -329,3 +329,107 @@ test(`${RULE_ID}: an unreadable stylesheet does not mask a lock found in a reada
   const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 });
+
+// Leans.
+test(`${RULE_ID}: hidden content leans fail behind a rotate message, pass beside another layout`, () => {
+  const ask = (css, body) => {
+    const rule = assertRule(
+      runa11yCoreOnHtml(styled(css, body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.strictEqual(
+      rule.occurrences[0].data.details.reasonCode,
+      'ORIENTATION_MEDIA_HIDES_CONTENT'
+    );
+    return rule.occurrences[0].lean;
+  };
+  const message = ask(
+    '.msg{display:none} @media (orientation: portrait){ main{display:none} .msg{display:block} }',
+    '<p class="msg">Please turn your device to landscape.</p><main><h1>Prices</h1><p>Content</p></main>'
+  );
+  assert.strictEqual(message.toward, 'fail');
+  assert.strictEqual(message.i18n.whyKey, 'cssOrientationLock_lean_why_rotateMessage');
+
+  const other = ask(
+    '.alt{display:none} @media (orientation: portrait){ main{display:none} .alt{display:block} }',
+    '<div class="alt"><h1>Prices</h1><p>All of the content, laid out for portrait.</p></div><main><h1>Prices</h1><p>All of the content, laid out wide.</p></main>'
+  );
+  assert.strictEqual(other.toward, 'pass');
+  assert.strictEqual(other.i18n.whyKey, 'cssOrientationLock_lean_why_alternateContent');
+
+  // Hidden with nothing shown in its place: no lean.
+  assert.strictEqual(
+    ask('@media (orientation: portrait){ main{display:none} }', '<main><p>Content</p></main>'),
+    undefined
+  );
+});
+
+test(`${RULE_ID}: turning an element with no words leans pass, one with words gets no lean without layout`, () => {
+  const P = '@media (orientation: portrait)';
+  const run = (cls, text) =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html><head><style>${P} { .${cls} { transform: rotate(90deg); } }</style></head><body><main><h1>Title</h1><p>Most of the page's text sits here.</p></main><span class="${cls}">${text}</span></body></html>`,
+        { runOnly: [RULE_ID] }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const chevron = run('chevron', '›');
+  assert.strictEqual(chevron.lean.toward, 'pass');
+  assert.strictEqual(chevron.lean.i18n.whyKey, 'cssOrientationLock_lean_why_rotatesDecorative');
+  assert.strictEqual(run('label', 'Menu').lean, undefined);
+});
+
+test(`${RULE_ID}: a turned element with text covering half the viewport leans fail in Chromium`, async (t) => {
+  const { chromium, executablePath, skip } = require('../../helpers/chromium.js');
+  if (skip) return t.skip(skip);
+  const { addBundle } = require('../../helpers/browserBundle');
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const p = await browser.newPage({ viewport: { width: 1024, height: 700 } });
+  await p.setContent(
+    `<!doctype html><html lang="en"><head><title>t</title><style>@media (orientation: portrait) { .panel { transform: rotate(90deg); } } .panel{width:900px;height:600px}</style></head><body><main><h1>Title</h1><p>Main text of the page sits here in the main landmark.</p></main><div class="panel">A large panel of text</div></body></html>`
+  );
+  await addBundle(p);
+  const result = await p.evaluate(
+    (id) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+    RULE_ID
+  );
+  const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ORIENTATION_MEDIA_ROTATES_ELEMENT');
+  assert.strictEqual(occ.lean.toward, 'fail');
+  assert.strictEqual(occ.lean.i18n.whyKey, 'cssOrientationLock_lean_why_rotatesLarge');
+});
+
+test(`${RULE_ID}: style sheets unreadable only from a web-font host lean pass`, () => {
+  const scan = (href) => {
+    const dom = createDom(
+      `<!doctype html><html><head><style>p { color: #222; }</style></head><body><p>Text.</p></body></html>`
+    );
+    const readable = dom.window.document.styleSheets[0];
+    const unreadable = {
+      href,
+      get cssRules() {
+        throw new dom.window.DOMException('cross-origin', 'SecurityError');
+      }
+    };
+    Object.defineProperty(dom.window.document, 'styleSheets', {
+      configurable: true,
+      get: () => [readable, unreadable]
+    });
+    const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'STYLESHEETS_NOT_READABLE');
+    return rule.occurrences[0].lean;
+  };
+  const fonts = scan('https://fonts.googleapis.com/css2?family=Inter');
+  assert.strictEqual(fonts.toward, 'pass');
+  assert.strictEqual(fonts.i18n.whyKey, 'cssOrientationLock_lean_why_fontSheets');
+  assert.strictEqual(scan('https://cdnjs.cloudflare.com/ajax/libs/x/1.0/x.css'), undefined);
+});

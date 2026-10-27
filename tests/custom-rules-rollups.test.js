@@ -66,7 +66,8 @@ test('a custom rule counts toward the rollup of the criterion it maps to', async
   for (const [outcome, expected] of [
     ['fail', 'fail'],
     ['cantTell', 'cantTell'],
-    ['pass', 'pass'],
+    // 1.1.1's rules don't check all it asks (src/coverage/complete-applicability.js).
+    ['pass', 'cantTell'],
     ['notApplicable', 'cantTell']
   ]) {
     await t.test(`a ${outcome} makes the rollup ${expected}`, () => {

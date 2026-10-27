@@ -150,8 +150,12 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
       : null;
 
   // What the rule measures against a threshold, when it reports a margin
-  // (src/core/margin.js): { measure, unit, limit }. Malformed = no margin;
-  // scripts/validate-rule.js rejects one on a built-in rule.
+  // (src/core/margin.js): { measure, unit, limit, band? }. Malformed = no
+  // margin; scripts/validate-rule.js rejects one on a built-in rule. A band
+  // is how much room a value may have and still count as close: { relative },
+  // a fraction of the threshold above 0 and at most 1, or { absolute }, an
+  // amount in the margin's unit above 0. A malformed band is dropped, so the
+  // margin is reported without one.
   const margin = (() => {
     const g = m.margin;
     if (!g || typeof g !== 'object' || Array.isArray(g)) return null;
@@ -159,7 +163,19 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     if (!measure) return null;
     if (['px', 'ratio'].indexOf(g.unit) === -1) return null;
     if (['min', 'max'].indexOf(g.limit) === -1) return null;
-    return { measure, unit: g.unit, limit: g.limit };
+    const declared = { measure, unit: g.unit, limit: g.limit };
+    const b = g.band;
+    if (!b || typeof b !== 'object' || Array.isArray(b)) return declared;
+    const keys = Object.keys(b);
+    if (keys.length !== 1) return declared;
+    const amount = Number(b[keys[0]]);
+    if (keys[0] === 'relative' && amount > 0 && amount <= 1) {
+      return { ...declared, band: { relative: amount } };
+    }
+    if (keys[0] === 'absolute' && amount > 0 && Number.isFinite(amount)) {
+      return { ...declared, band: { absolute: amount } };
+    }
+    return declared;
   })();
 
   if (i18n) {

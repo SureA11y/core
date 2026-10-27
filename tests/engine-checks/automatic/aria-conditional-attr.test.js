@@ -76,3 +76,40 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-conditional-attr-all-sce
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans fail when the error message is shown with text`, () => {
+  const lean = leanOn('<input id="a" aria-errormessage="e"><div id="e">Enter a date.</div>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaConditionalAttr_lean_why_shown');
+});
+
+test(`${RULE_ID}: leans pass when the error message is also in aria-describedby`, () => {
+  const lean = leanOn(
+    '<input id="a" aria-errormessage="e" aria-describedby="e"><div id="e">Enter a date.</div>',
+    'a'
+  );
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaConditionalAttr_lean_why_described');
+});
+
+test(`${RULE_ID}: no lean when the error message is hidden`, () => {
+  assert.strictEqual(
+    leanOn('<input id="a" aria-errormessage="e"><div id="e" hidden>Enter a date.</div>', 'a'),
+    undefined
+  );
+});

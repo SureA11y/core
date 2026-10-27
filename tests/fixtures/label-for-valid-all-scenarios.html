@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>label-for-valid — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>label-for-valid</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>lfv_case_NN</code>.
+  </p>
+
+  <h2>A. The label names a labelable element</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: for names an input</div>
+    <label for="lfv_in_01" id="lfv_case_01">Email</label> <input id="lfv_in_01">
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: for names a select</div>
+    <label for="lfv_sel_02" id="lfv_case_02">Size</label> <select id="lfv_sel_02"><option>S</option></select>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: for names a custom element, which may be form-associated</div>
+    <label for="lfv_ce_03" id="lfv_case_03">Rating</label> <star-rating id="lfv_ce_03"></star-rating>
+  </div>
+
+  <h2>B. The label labels nothing (CANTTELL)</h2>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — CANTTELL: for names no element (LABEL_FOR_TARGET_MISSING)</div>
+    <label for="lfv_missing_04" id="lfv_case_04">Name</label> <input aria-label="Name">
+  </div>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: for names a div (LABEL_FOR_NOT_LABELABLE)</div>
+    <label for="lfv_div_05" id="lfv_case_05">Notes</label> <div id="lfv_div_05" contenteditable="true"></div>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: for names a hidden input (LABEL_FOR_NOT_LABELABLE)</div>
+    <label for="lfv_hid_06" id="lfv_case_06">Token</label> <input type="hidden" id="lfv_hid_06">
+  </div>
+
+  <h2>C. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — NEUTRAL: a label with no for, wrapping its control</div>
+    <label id="lfv_case_07">Phone <input></label>
+  </div>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: a hidden label</div>
+    <label for="lfv_gone_08" hidden id="lfv_case_08">Gone</label>
+  </div>
+</body>
+</html>

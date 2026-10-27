@@ -169,7 +169,8 @@ test(`${RULE_ID}: each suspicious alt reports its signal and its own message`, (
     assert.ok(o, id);
     assert.strictEqual(o.data.details.altSignal, signal, id);
     assert.ok(o.summary.includes(words), `${id}: ${o.summary}`);
-    assert.ok(!('reasonCode' in o.data.details), `${id} carries no reasonCode`);
+    // A signal changes the message, not the finding's identity.
+    assert.strictEqual(o.data.details.reasonCode, 'TEXT_ALTERNATIVE_REVIEW', id);
     const suffix = o.i18n.summaryKey.replace('textAlternative_summary_cantTell', '');
     assert.ok(suffix.length > 0 && suffix !== o.i18n.summaryKey, `${id} uses a signal message`);
     assert.strictEqual(o.i18n.hintKey, 'textAlternative_hint_cantTell' + suffix, id);
@@ -180,7 +181,12 @@ test(`${RULE_ID}: each suspicious alt reports its signal and its own message`, (
 test(`${RULE_ID}: too-long says how long the alt is and where the limit is`, () => {
   const o = occurrenceFor(fixtureRule(), 'img_q_21');
   const length = Array.from(o.html.match(/alt="([^"]*)"/)[1]).length;
-  assert.deepStrictEqual(o.data.details, { altSignal: 'too-long', length, limit: 150 });
+  assert.deepStrictEqual(o.data.details, {
+    altSignal: 'too-long',
+    length,
+    limit: 150,
+    reasonCode: 'TEXT_ALTERNATIVE_REVIEW'
+  });
   assert.strictEqual(o.i18n.params.length, length);
   assert.strictEqual(o.summary, `The text alternative of this <img> is ${length} characters long.`);
 
@@ -189,15 +195,19 @@ test(`${RULE_ID}: too-long says how long the alt is and where the limit is`, () 
     { runOnly: [RULE_ID] }
   );
   const rule = assertRule(at, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
-  assert.strictEqual(rule.occurrences[0].data.details, null, '150 characters is not too long');
+  assert.deepStrictEqual(
+    rule.occurrences[0].data.details,
+    { reasonCode: 'TEXT_ALTERNATIVE_REVIEW' },
+    '150 characters is not too long'
+  );
 });
 
-test(`${RULE_ID}: ordinary alt keeps the original message and no details`, () => {
+test(`${RULE_ID}: ordinary alt keeps the original message, and details with its reason code only`, () => {
   const rule = fixtureRule();
   for (const id of ['img_q_01', 'img_q_02', 'img_q_22', 'img_q_23', 'img_q_24']) {
     const o = occurrenceFor(rule, id);
     assert.ok(o, id);
-    assert.strictEqual(o.data.details, null, id);
+    assert.deepStrictEqual(o.data.details, { reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }, id);
     assert.strictEqual(o.i18n.summaryKey, 'img_altQuality_summary_cantTell', id);
     assert.strictEqual(o.i18n.hintKey, 'img_altQuality_hint_cantTell', id);
   }
@@ -239,7 +249,9 @@ test(`${RULE_ID}: a word list applies only in its own language`, () => {
   const es = assertRule(runa11yCoreOnHtml(html('es'), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
   assert.strictEqual(occurrenceFor(es, 'a').data.details.altSignal, 'redundant-prefix');
   const en = assertRule(runa11yCoreOnHtml(html('en'), { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
-  assert.strictEqual(occurrenceFor(en, 'a').data.details, null);
+  assert.deepStrictEqual(occurrenceFor(en, 'a').data.details, {
+    reasonCode: 'TEXT_ALTERNATIVE_REVIEW'
+  });
 });
 
 test(`${RULE_ID}: signal messages are translated in every shipped locale`, () => {
@@ -306,4 +318,46 @@ test('img-alt-quality: alt made only of symbols gets its own message', () => {
   assert.strictEqual(occ.data.details.altSignal, 'symbols');
   assert.match(occ.summary, /made only of symbols/);
   assert.doesNotMatch(occ.summary, /placeholder/);
+});
+
+// A file name, an address or a generic word is the page's own text and says
+// nothing of what the image shows (F30): those findings lean fail. Ordinary
+// alt, and the signals that can be right (symbols, "image of", length), get
+// no lean: whether alt describes its image is a person's call.
+test(`${RULE_ID}: leans fail on a file name, an address or a placeholder only`, () => {
+  const html = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`;
+  const run = (body) =>
+    runa11yCoreOnHtml(html(body), { runOnly: [RULE_ID] }).checksResults.find(
+      (r) => r.ruleId === RULE_ID
+    ).occurrences[0];
+  for (const [alt, signal] of [
+    ['IMG_1234.jpg', 'file-name'],
+    ['https://example.com/team', 'url'],
+    ['image', 'placeholder']
+  ]) {
+    const o = run(`<img src="a.png" alt="${alt}">`);
+    assert.strictEqual(o.lean.toward, 'fail', alt);
+    assert.strictEqual(o.lean.i18n.whyKey, 'img_altQuality_lean_why', alt);
+    assert.deepStrictEqual(o.lean.signals, [{ signal: 'alt-signal', value: signal }], alt);
+  }
+  for (const alt of ['Sales rose 20% in 2024', '★★★★☆', 'Image of a cat on a sofa']) {
+    const o = run(`<img src="a.png" alt="${alt}">`);
+    assert.strictEqual(o.lean, undefined, alt);
+  }
+});
+
+test(`${RULE_ID}: an image that is a link's only content leans fail on a file name, not an address`, () => {
+  const run = (alt) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><body><a href="/x"><img src="a.png" alt="${alt}"></a></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  const o = run('icon_home_32.png');
+  assert.strictEqual(o.data.details.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
+  assert.strictEqual(o.lean.toward, 'fail');
+  assert.strictEqual(o.lean.i18n.whyKey, 'img_altQuality_lean_why_control');
+  // An address says where the link leads.
+  assert.strictEqual(run('https://example.com/').lean, undefined);
+  assert.strictEqual(run('Home').lean, undefined);
 });

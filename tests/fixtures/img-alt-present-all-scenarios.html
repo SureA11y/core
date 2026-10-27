@@ -73,7 +73,7 @@
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%23ffcc00'/%3E%3C/svg%3E">
       <span>Visible but aria-hidden. Missing alt.</span>
     </div>
-    <div class="meta">Useful for comparing engines: some still flag missing alt even when aria-hidden.</div>
+    <div class="meta">Hidden from assistive technology, so its missing alt is not a barrier.</div>
   </div>
 
   <div class="case" id="case_05">
@@ -207,7 +207,7 @@
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <span>Hidden via CSS visibility, but focusable; missing alt.</span>
     </div>
-    <div class="meta">Useful for comparing how engines treat focusability vs visibility-hidden.</div>
+    <div class="meta">Focusable, but hidden with visibility: hidden.</div>
   </div>
 
   <div class="case" id="case_17">
@@ -218,7 +218,7 @@
            src="data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A//www.w3.org/2000/svg'%20width%3D'40'%20height%3D'24'%3E%3Crect%20width%3D'40'%20height%3D'24'%20fill%3D'%2345c46a'/%3E%3C/svg%3E">
       <span>Image is inert but has tabindex; missing alt.</span>
     </div>
-    <div class="meta">In browsers, inert usually prevents focus. Included to exercise your eligibility exception model and cross-engine behavior.</div>
+    <div class="meta">In browsers, inert usually prevents focus. Included to exercise the eligibility exceptions.</div>
   </div>
 
   <div class="case" id="case_18">

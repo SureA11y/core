@@ -11,6 +11,7 @@ const {
   createDom,
   runa11yCoreOnDom
 } = require('../../helpers/runDomRulesOnHtml.js');
+const keepsParsingPack = require('../../fixtures/packs/restating-keeps-parsing.js');
 
 const RULE_ID = 'duplicate-id';
 
@@ -73,10 +74,9 @@ test(`${RULE_ID}: ids are compared as written, not trimmed`, () => {
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
   const same = runa11yCoreOnHtml(page('<p id="a ">x</p><p id="a ">y</p>'), {
-    runOnly: [RULE_ID],
-    engineOptions: { wcagVersion: '2.1' }
+    runOnly: [RULE_ID]
   });
-  const rule = assertRule(same, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(same, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.strictEqual(rule.occurrences[0].data.details.id, 'a ');
 });
 
@@ -131,9 +131,9 @@ test(`${RULE_ID}: a duplicate in the document keeps DUPLICATE_ID beside one in a
 
   const result = runa11yCoreOnDom(dom, {
     runOnly: [RULE_ID],
-    engineOptions: { includeShadowDom: true, wcagVersion: '2.1' }
+    engineOptions: { includeShadowDom: true }
   });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
   const codes = rule.occurrences.map((o) => `${o.data.details.id}:${o.data.details.reasonCode}`);
   assert.deepStrictEqual(codes.sort(), [
     'x:DUPLICATE_ID',
@@ -201,13 +201,31 @@ test(`${RULE_ID}: a default run targets WCAG 2.2, so a duplicate id is cantTell,
   assert.ok(!rule.error);
 });
 
-test(`${RULE_ID}: engineOptions.wcagVersion 2.1 keeps the real 4.1.1 failure`, () => {
+// The 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as always satisfied for
+// content in HTML or XML, so under those versions the duplicate is asked
+// about too, for a different reason than under 2.2.
+test(`${RULE_ID}: engineOptions.wcagVersion 2.1 asks, by the 2023 errata`, () => {
   const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
     runOnly: [RULE_ID],
     engineOptions: { wcagVersion: '2.1' }
   });
   assert.strictEqual(result.engine.wcagVersion, '2.1');
 
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2 });
+  assert.deepStrictEqual(rule.wcagVersionScope, {
+    target: '2.1',
+    removedSc: ['4.1.1'],
+    coercedFrom: 'fail',
+    by: 'errata'
+  });
+  assert.match(rule.occurrences[0].uncertainty.needed, /errata/);
+});
+
+test(`${RULE_ID}: a standard's profile that keeps 4.1.1's text still fails it`, () => {
+  const result = runa11yCoreOnHtml(page('<div id="a">1</div><div id="a">2</div>'), {
+    engineOptions: { packs: [keepsParsingPack], profile: 'restating-1.0' }
+  });
+  assert.strictEqual(result.engine.wcagVersion, '2.1');
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2 });
   assert.strictEqual(rule.wcagVersionScope, undefined);
 });
@@ -217,13 +235,19 @@ test(`${RULE_ID}: a 2.0/2.1 tag set implies the version, no extra option needed`
 
   const v20 = runa11yCoreOnHtml(html, { runOnly: { tags: ['wcag2a', 'wcag2aa'] } });
   assert.strictEqual(v20.engine.wcagVersion, '2.0');
-  assertRule(v20, RULE_ID, 'fail', { minOccurrences: 2 });
+  assert.strictEqual(
+    assertRule(v20, RULE_ID, 'cantTell', { minOccurrences: 2 }).wcagVersionScope.by,
+    'errata'
+  );
 
   const v21 = runa11yCoreOnHtml(html, {
     runOnly: { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'] }
   });
   assert.strictEqual(v21.engine.wcagVersion, '2.1');
-  assertRule(v21, RULE_ID, 'fail', { minOccurrences: 2 });
+  assert.strictEqual(
+    assertRule(v21, RULE_ID, 'cantTell', { minOccurrences: 2 }).wcagVersionScope.by,
+    'errata'
+  );
 
   const v22 = runa11yCoreOnHtml(html, {
     runOnly: { tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'] }
@@ -257,7 +281,14 @@ test(`${RULE_ID}: the 4.1.1 composite follows the atomic rule down to cantTell`,
   });
   const composite21 = under21.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');
   assert.ok(composite21, 'expected the 4.1.1 composite to be present');
-  assert.strictEqual(composite21.outcome, 'fail');
+  assert.strictEqual(composite21.outcome, 'cantTell');
+
+  const underKept = runa11yCoreOnHtml(html, {
+    engineOptions: { packs: [keepsParsingPack], profile: 'restating-1.0' }
+  });
+  const compositeKept = underKept.rulesResults.find((r) => r.ruleId === 'wcag-4.1.1-parsing');
+  assert.ok(compositeKept, 'expected the 4.1.1 composite under a profile that keeps 4.1.1');
+  assert.strictEqual(compositeKept.outcome, 'fail');
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {

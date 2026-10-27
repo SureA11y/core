@@ -71,6 +71,26 @@ test('fail: <label for> whose only text is aria-hidden gives no real accessible 
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
+test('fail: a field named only by aria-placeholder, with a hint that says why', () => {
+  const html = `<!doctype html><html><body><input id="q" aria-placeholder="Search"></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.equal(occ.data.details.reasonCode, 'missing_programmatic_label');
+  assert.equal(occ.data.details.ariaPlaceholder, true);
+  assert.equal(occ.i18n.hintKey, 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder');
+  // Any other unnamed field keeps the general hint.
+  const plain = assertRule(
+    runa11yCoreOnHtml(`<!doctype html><html><body><input id="r"></body></html>`, {
+      runOnly: [RULE_ID]
+    }),
+    RULE_ID,
+    'fail'
+  );
+  assert.equal(plain.occurrences[0].i18n.hintKey, 'formControl_programmaticLabelPresent_hint_fail');
+  assert.equal(plain.occurrences[0].data.details.ariaPlaceholder, undefined);
+});
+
 test("pass: <label for> with empty content falls back to the label's own title attribute", () => {
   // Regression for a false positive: a <label for> whose own
   // content is empty still contributes a name via its title attribute per
@@ -219,7 +239,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-programmatic-lab
     'fc_case_37',
     'fc_case_40b',
     'fc_case_41',
-    'fc_case_43'
+    'fc_case_43',
+    'fc_case_45'
   ];
 
   const expectedNoOccIds = [

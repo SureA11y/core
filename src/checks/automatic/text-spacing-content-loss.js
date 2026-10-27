@@ -48,7 +48,7 @@
  *     sheet to the page cannot override it, though a user style sheet can.
  *     A value relative to the font size is read as declared, and a computed
  *     one meets the value within the rounding browsers report lengths with,
- *     so a rule setting exactly the minimum is not asked about (#108).
+ *     so a rule setting exactly the minimum is not asked about.
  *   - The spacing is applied with a <style> element, or, where the page's
  *     Content Security Policy blocks one, as a style sheet the document
  *     adopts. Where neither applies, the page is asked about
@@ -73,6 +73,8 @@
  *     no margin. Text a repeating animation moves (a ticker) is left out,
  *     since where it stands depends on the point the animation was held
  *     at, and so is a box that cuts off other text: it is a finding.
+ *     Only a line within 8px of the limit (from 6px inside the edge) counts
+ *     as close, so text deeper inside its box gives no margin.
  *     `measuredCount` counts the pairs of text and clipping box compared;
  *     like the findings, the margin covers the first 3,000 text nodes.
  * @reports
@@ -95,6 +97,44 @@
  *   - `other` (overlapping text): the text it comes to overlap.
  *   - `selector`, `property`, `value` (a style sheet rule): the rule's
  *     selector and the declaration that forces the spacing.
+ * @reason-codes
+ *   - `TEXT_CLIPPED` (fail): with the WCAG text spacing applied, a line of
+ *     text ends at least half outside the box that clips it, so it is cut
+ *     off.
+ *     Basis: WCAG 1.4.12; F104.
+ *   - `TEXT_CLIPPED_PARTLY` (cantTell): with the spacing applied, a line of
+ *     text reaches past the edge of the box that clips it by less than half;
+ *     whether it can still be read is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled); F104 (not settled).
+ *   - `TEXT_CLIPPED_MOVING` (cantTell): text moved by an animation that
+ *     repeats for ever reaches past the edge of its clipping box with the
+ *     spacing applied; whether any of it is lost is for a person to judge.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_CLIPPED_FURTHER` (cantTell): text its box already cut off shows
+ *     fewer lines in full once the spacing is applied; whether the excerpt
+ *     still serves its purpose is for a person to judge.
+ *     It leans fail when the excerpt shows no line in full with the spacing.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `TEXT_OVERLAPS` (cantTell): with the spacing applied, text comes to
+ *     overlap other text it did not overlap before.
+ *     It leans fail when the overlap covers more than half the smaller
+ *     line's height and more than an em across.
+ *     Basis: WCAG 1.4.12 (not settled); F104 (not settled).
+ *   - `VIEWPORT_SCROLL_LOCKED` (cantTell): the page is scroll-locked, and
+ *     the spacing moves text out of the viewport, where it can't be
+ *     scrolled to while the lock lasts.
+ *     It leans pass when an overlay is open: a dialog, or a fixed box at the
+ *     bottom of the viewport or covering half of it.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `SPACING_NOT_APPLIED` (cantTell): the page's Content Security Policy
+ *     kept the spacing from being applied, so the text could not be
+ *     measured with it.
+ *     Basis: WCAG 1.4.12 (not settled).
+ *   - `STYLESHEET_IMPORTANT` (cantTell): a style sheet rule sets
+ *     line-height, letter-spacing or word-spacing below the WCAG values with
+ *     !important, which a tool's own style sheet cannot override.
+ *     It leans fail when the value is resolved and the text can wrap.
+ *     Basis: WCAG 1.4.12 (not settled); CSS Cascade important declarations.
  * @implementation-notes
  * - The spacing sheet is one cascade layer declared before every other
  *   style: layered `!important` declarations beat unlayered ones and later
@@ -162,7 +202,83 @@ const meta = {
     'VIEWPORT_SCROLL_LOCKED',
     'SPACING_NOT_APPLIED'
   ],
-  margin: { measure: 'overflow-px', unit: 'px', limit: 'max' }
+  margin: { measure: 'overflow-px', unit: 'px', limit: 'max', band: { absolute: 8 } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SPACING_NOT_APPLIED: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important. Rules added in the Styles pane are not blocked by the page's security policy.",
+        'Scroll through the whole page and look for text that is cut off, overlaps other text or disappears.',
+        'Check that controls and menus still work and show all their text.'
+      ],
+      passWhen:
+        'All text stays visible and readable and nothing stops working with the spacing applied.',
+      failWhen:
+        'Some text is cut off, overlaps or is lost with the spacing applied, which fails WCAG 1.4.12.'
+    },
+    STYLESHEET_IMPORTANT: {
+      steps: [
+        'Note the rule, property and value the report gives, and find an element it styles in the Elements panel.',
+        "Add the text-spacing rules with !important in the Styles pane and check in the Computed tab whether the element's line-height, letter-spacing or word-spacing changes.",
+        "If it does not change, look at that element's text on screen with the spacing a user would apply, and check whether it stays readable."
+      ],
+      passWhen:
+        "A user's spacing still takes effect on the element, or the content reads fine without it.",
+      failWhen:
+        "The page's !important rule keeps the user's spacing from applying, which fails WCAG 1.4.12."
+    },
+    TEXT_CLIPPED_FURTHER: {
+      steps: [
+        'Find the text excerpt the report names and note how many lines it shows in full.',
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        "Count the lines it shows now, and check whether a 'read more' link or other way still reaches the full text."
+      ],
+      passWhen: 'The excerpt still does its job, and the full text can be reached another way.',
+      failWhen:
+        'The spacing cuts off content that cannot be reached any other way, which fails WCAG 1.4.12.'
+    },
+    TEXT_CLIPPED_MOVING: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the moving text the report names and watch it through at least one full cycle of its animation.',
+        'Pause it if there is a control, and check that all of its text can be read at some point.'
+      ],
+      passWhen: 'Every part of the moving text can still be read during its cycle.',
+      failWhen:
+        'Some of the text never appears in full with the spacing applied, which fails WCAG 1.4.12.'
+    },
+    TEXT_CLIPPED_PARTLY: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the text the report names and look at the edge of the box that cuts it off.',
+        'Read the text and check whether every letter can still be made out, including the tops and tails of letters.'
+      ],
+      passWhen: 'Only a sliver at the edge is cut and all the text can still be read.',
+      failWhen:
+        'Part of the text is cut off so it can no longer be read, which fails WCAG 1.4.12 (F104).'
+    },
+    TEXT_OVERLAPS: {
+      steps: [
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Find the text the report names and the text it now overlaps.',
+        'Read both and check whether either one becomes hard to read where they overlap.'
+      ],
+      passWhen: 'The overlap is only a sliver at the edges and both texts stay readable.',
+      failWhen:
+        'Text is drawn over other text so that either becomes unreadable, which fails WCAG 1.4.12 (F104).'
+    },
+    VIEWPORT_SCROLL_LOCKED: {
+      steps: [
+        'Close any banner, dialog or overlay that is open on the page, so the page can scroll.',
+        "In the developer tools' Styles pane, add a new style rule for * setting line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important, and a rule for p setting margin-bottom: 2em !important.",
+        'Scroll to the text the report names and check that it can be reached and read.'
+      ],
+      passWhen:
+        'Once the overlay is closed, the page scrolls and all of the text can be reached and read.',
+      failWhen: 'The text stays out of reach with the spacing applied, which fails WCAG 1.4.12.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -287,7 +403,13 @@ function runInPage(ctx) {
           // A value that already meets the metric leaves nothing to override.
           if (ratio == null ? false : meetsMinimum(prop, ratio)) continue;
           seen.add(el);
-          importantFindings.push({ el, prop, value, selector: String(cssRule.selectorText) });
+          importantFindings.push({
+            el,
+            prop,
+            value,
+            ratio,
+            selector: String(cssRule.selectorText)
+          });
           break;
         }
       }
@@ -682,18 +804,27 @@ function runInPage(ctx) {
         } catch {}
       }
     }
+    // The box el clips its content to, in the same units as the lines'
+    // rectangles: the bounding rectangle is what the page draws, after CSS
+    // zoom and transforms, while the borders and clientWidth/clientHeight
+    // are layout sizes, so they are scaled by how much larger el is drawn
+    // than laid out (offsetWidth/offsetHeight).
     function boxOf(el) {
       const r = dom.getBoundingClientRect(el);
       const cs = styleOf(el);
-      const bl = px(cs && cs.borderLeftWidth) || 0;
-      const bt = px(cs && cs.borderTopWidth) || 0;
+      const ow = Number(dom.get(el, 'offsetWidth')) || 0;
+      const oh = Number(dom.get(el, 'offsetHeight')) || 0;
+      const kx = ow > 0 && r.width > 0 ? r.width / ow : 1;
+      const ky = oh > 0 && r.height > 0 ? r.height / oh : 1;
+      const bl = (px(cs && cs.borderLeftWidth) || 0) * kx;
+      const bt = (px(cs && cs.borderTopWidth) || 0) * ky;
       const ox = sx();
       const oy = sy();
       return {
         left: r.left + ox + bl,
         top: r.top + oy + bt,
-        right: r.left + ox + bl + dom.get(el, 'clientWidth'),
-        bottom: r.top + oy + bt + dom.get(el, 'clientHeight')
+        right: r.left + ox + bl + dom.get(el, 'clientWidth') * kx,
+        bottom: r.top + oy + bt + dom.get(el, 'clientHeight') * ky
       };
     }
 
@@ -1125,7 +1256,18 @@ function runInPage(ctx) {
           if (reported.has(pa) || reported.has(pb)) continue;
           if (!intersects(a.l, b.l) || overlappedBefore(a.n, b.n)) continue;
           reported.add(pa);
-          overlaps.push({ el: pa, text: textOf(pa), other: textOf(pb) });
+          const w = Math.min(a.l.right, b.l.right) - Math.max(a.l.left, b.l.left);
+          const h = Math.min(a.l.bottom, b.l.bottom) - Math.max(a.l.top, b.l.top);
+          const smallerHeight = Math.min(a.l.bottom - a.l.top, b.l.bottom - b.l.top);
+          overlaps.push({
+            el: pa,
+            text: textOf(pa),
+            other: textOf(pb),
+            overlap: {
+              heightShare: smallerHeight > 0 ? round1(h / smallerHeight) : 0,
+              widthEm: round1(w / (fontSizes.get(a.n) || 16))
+            }
+          });
         }
       }
     }
@@ -1192,13 +1334,105 @@ function runInPage(ctx) {
     }
   };
 
+  // ---- Leans ----
+
+  // A resolved value below the metric, on text that can wrap: the shape ACT
+  // 78fd32, 24afc2 and 9e45ec fail in a style attribute, here in a style
+  // sheet. A value that could not be resolved, or text that can't wrap, gets
+  // no lean.
+  function importantLean(f) {
+    if (f.ratio == null) return null;
+    const cs = styleOf(f.el);
+    const whiteSpace = String((cs && cs.whiteSpace) || '').toLowerCase();
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return null;
+    if (!/\s/.test(textOf(f.el))) return null;
+    return {
+      toward: 'fail',
+      why: 'The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
+      signals: [
+        { signal: 'important-below-threshold', value: f.prop + ': ' + f.value },
+        { signal: 'value-gap', value: Math.round((f.ratio / MIN_RATIO[f.prop]) * 100) / 100 }
+      ],
+      caution:
+        "A user style sheet still wins over the page; only tools that add the spacing as the page's own style lose to it.",
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_stylesheetImportant',
+        cautionKey: 'textSpacingContentLoss_lean_caution_stylesheetImportant'
+      }
+    };
+  }
+
+  // An open overlay, which is what usually locks the page's scrolling while
+  // it shows: a dialog, or a fixed box at the bottom of the viewport (a
+  // consent banner) or covering half of it. Once it closes the page scrolls.
+  // Read once, when a scroll-locked finding needs it.
+  let overlay;
+  function openOverlay() {
+    if (overlay !== undefined) return overlay;
+    overlay = null;
+    try {
+      for (const el of helpers.queryAll(
+        'dialog[open], [aria-modal="true" i], [role~="dialog" i], [role~="alertdialog" i]'
+      ) || []) {
+        const tag = String(dom.localName(el) || '').toLowerCase();
+        const role = helpers.aria.getAuthorRole(el);
+        const isDialog =
+          tag === 'dialog' ||
+          role === 'dialog' ||
+          role === 'alertdialog' ||
+          dom.getAttribute(el, 'aria-modal') !== null;
+        if (!isDialog) continue;
+        const r = dom.getBoundingClientRect(el);
+        if (r && r.width > 0 && r.height > 0) {
+          overlay = 'dialog';
+          return overlay;
+        }
+      }
+      const vw = view && view.innerWidth;
+      const vh = view && view.innerHeight;
+      if (!vw || !vh) return overlay;
+      const all = dom.querySelectorAll(document, 'body *') || [];
+      for (let i = 0; i < all.length && i < 5000; i++) {
+        const cs = styleOf(all[i]);
+        if (!cs || cs.position !== 'fixed') continue;
+        const r = dom.getBoundingClientRect(all[i]);
+        if (!r || !(r.width > 0 && r.height > 0)) continue;
+        const atBottom = r.bottom >= vh - 1 && r.width >= vw * 0.9;
+        const covers = r.width * r.height >= vw * vh * 0.5;
+        if (atBottom || covers) {
+          overlay = covers ? 'fixed-covering' : 'fixed-bottom';
+          return overlay;
+        }
+      }
+    } catch {
+      overlay = null;
+    }
+    return overlay;
+  }
+
+  function scrollLockedLean() {
+    const kind = openOverlay();
+    if (!kind) return null;
+    return {
+      toward: 'pass',
+      why: 'An overlay is open, such as a dialog or a consent banner, which is what usually locks scrolling; once it closes the page scrolls and the text can be reached.',
+      signals: [{ signal: 'open-overlay', value: kind }],
+      caution: 'Some pages lock scrolling for good and scroll an inner pane instead.',
+      i18n: {
+        whyKey: 'textSpacingContentLoss_lean_why_scrollLocked',
+        cautionKey: 'textSpacingContentLoss_lean_caution_scrollLocked'
+      }
+    };
+  }
+
   const fails = [];
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode) {
+  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
     const msg = MESSAGES[reasonCode];
     const occ = helpers.reportOccurrence(el, {
+      ...(lean ? { lean } : {}),
       summary: msg.summary(params),
       hint: msg.hint,
       i18n: {
@@ -1228,7 +1462,15 @@ function runInPage(ctx) {
     for (const f of list) {
       const { text, metrics, container } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
-      report(reasonCode, f.el, params, { text, metrics, container, viewport }, uncertaintyCode);
+      const lean = reasonCode === 'VIEWPORT_SCROLL_LOCKED' ? scrollLockedLean() : null;
+      report(
+        reasonCode,
+        f.el,
+        params,
+        { text, metrics, container, viewport },
+        uncertaintyCode,
+        lean
+      );
     }
   }
   for (const f of clippedFurther) {
@@ -1243,17 +1485,50 @@ function runInPage(ctx) {
         ...at
       },
       { text, lines, container, viewport },
-      'judgement-required'
+      'judgement-required',
+      lines.shownAfter === 0
+        ? {
+            toward: 'fail',
+            why: 'The excerpt showed whole lines before the spacing and shows none in full with it.',
+            signals: [
+              { signal: 'lines-shown-after', value: 0 },
+              { signal: 'lines-shown-before', value: lines.shownBefore }
+            ],
+            caution: 'The full text may be offered elsewhere, such as through a "read more" link.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_clippedFurther',
+              cautionKey: 'textSpacingContentLoss_lean_caution_clippedFurther'
+            }
+          }
+        : null
     );
   }
+  // Text drawn over more than half the height of the other line and more
+  // than an em along it can't be read; a sliver at a line's edge can.
   for (const f of overlaps) {
-    const { text, other } = f;
+    const { text, other, overlap } = f;
     report(
       'TEXT_OVERLAPS',
       f.el,
       { text, other, ...at },
       { text, other, viewport },
-      'judgement-required'
+      'judgement-required',
+      overlap.heightShare > 0.5 && overlap.widthEm > 1
+        ? {
+            toward: 'fail',
+            why: 'With the spacing applied, the text is drawn over more than half the height of the other text, for more than an em along it.',
+            signals: [
+              { signal: 'overlap-height-share', value: overlap.heightShare },
+              { signal: 'overlap-width-em', value: overlap.widthEm }
+            ],
+            caution:
+              'Text overlapping a transparent or decorative text layer may still be readable.',
+            i18n: {
+              whyKey: 'textSpacingContentLoss_lean_why_overlaps',
+              cautionKey: 'textSpacingContentLoss_lean_caution_overlaps'
+            }
+          }
+        : null
     );
   }
   if (spacingNotApplied) {
@@ -1267,7 +1542,7 @@ function runInPage(ctx) {
   }
   for (const f of importantFindings) {
     const params = { selector: f.selector, property: f.prop, value: f.value };
-    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent');
+    report('STYLESHEET_IMPORTANT', f.el, params, params, 'runtime-dependent', importantLean(f));
   }
 
   // The text that came closest to being cut off while staying readable,

@@ -169,6 +169,22 @@ Without `aria-invalid` set to a non-`"false"` value, `aria-errormessage` is neve
 ```
 `role="directory"` is deprecated in WAI-ARIA in favor of `role="list"`; still valid markup, but discouraged.
 
+## aria-expanded-state-mismatch
+
+**Passed**
+```html
+<button aria-expanded="false" aria-controls="shipping">Shipping</button>
+<div id="shipping" hidden>Orders ship within two working days.</div>
+```
+The panel is hidden, as `aria-expanded="false"` says.
+
+**Flagged (cantTell)**
+```html
+<button aria-expanded="false" aria-controls="shipping">Shipping</button>
+<div id="shipping">Orders ship within two working days.</div>
+```
+`aria-expanded="false"` tells a screen reader the panel is closed, but it is shown. A person checks whether the panel is open, or whether the control only expands content that stays in view.
+
 ## aria-hidden-body
 
 **Passed**
@@ -200,6 +216,23 @@ Nothing inside the hidden subtree is focusable, so hiding it from assistive tech
 </div>
 ```
 The link stays in the tab order even though `aria-hidden` removes it from the accessibility tree.
+
+## aria-owns-valid
+
+**Passed**
+```html
+<ul role="list" aria-label="Steps" aria-owns="step-2"><li>Choose a size</li></ul>
+<div role="listitem" id="step-2">Pay</div>
+```
+The list owns one element that no other `aria-owns` names.
+
+**Failed**
+```html
+<div role="list" aria-label="Today" aria-owns="task"></div>
+<div role="list" aria-label="Tomorrow" aria-owns="task"></div>
+<div role="listitem" id="task">Call the bank</div>
+```
+Two lists claim the same item. The browser gives it to only one of them, so the other list's structure is lost.
 
 ## aria-prohibited-attr
 
@@ -545,6 +578,20 @@ About 4.6:1, above the AA 4.5:1 minimum for normal text.
 ```
 50% ancestor (group) opacity over white composites to a flat gray around 4:1, below the AA minimum.
 
+## control-name-title-only
+
+**Passed**
+```html
+<button title="Save the draft">Save</button>
+```
+The button's text names it; the `title` is a tooltip.
+
+**Flagged (cantTell)**
+```html
+<button title="Close"><svg aria-hidden="true" width="12" height="12"></svg></button>
+```
+The `title` is the button's only name, shown only on mouse hover. A person checks whether it can have visible text, or an `aria-label`.
+
 ## css-focus-indicator-suppressed
 
 **Flagged (cantTell)**
@@ -694,7 +741,7 @@ Both `dt` and `dd` are inside a `<dl>` ancestor.
 
 ## duplicate-id
 
-*A duplicate id is a real defect under WCAG 2.0/2.1 (SC 4.1.1), but that criterion was removed in 2.2, so under this engine's default 2.2 target the same defect is coerced to `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. With `engineOptions.wcagVersion: '2.0'` or `'2.1'`, the same markup is `fail`.*
+*A duplicate id maps to SC 4.1.1, which WCAG 2.2 removed and which W3C's 2023 errata to 2.0 and 2.1 count as always satisfied for HTML, so under any WCAG target the defect is `cantTell` (with a `wcagVersionScope` field) instead of `fail`, as the flagged example below shows. It fails only under a profile whose standard keeps 4.1.1, such as `en301549-v3.2.1`.*
 
 **Passed**
 ```html
@@ -868,13 +915,13 @@ The control's only name comes from `aria-label`, which is never shown on screen.
 ```
 A single wrapping label; only one labelling mechanism applies.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <label for="address">Address</label>
 <label for="address">Mailing address</label>
 <input id="address" type="text">
 ```
-Two separate `label[for]` elements both target the same control.
+Two separate `label[for]` elements both target the same control. Browsers join them into one name, "Address Mailing address", and only a person can tell whether it still reads well.
 
 ## heading-order
 
@@ -1039,6 +1086,28 @@ The image's `alt` text ("Home") duplicates the adjacent visible link text word f
 ```
 The `alt` text ("Home icon") differs from the adjacent text ("Home").
 
+## image-of-text
+
+*Manual; asks only where markup shows an image likely holds text. Text in an image's pixels is not seen.*
+
+**Flagged (cantTell)**
+```html
+<input type="image" src="send-button.png" alt="Send">
+```
+A button drawn as an image nearly always carries its label as text in the image; a `<button>` with real text could do the same.
+
+**Flagged (cantTell)**
+```html
+<img alt="WCAG Rocks" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><text x='0' y='15'>WCAG Rocks</text></svg>">
+```
+The SVG's `<text>` is drawn as part of the image, where it can't be restyled as text.
+
+**Not applicable**
+```html
+<svg xmlns="http://www.w3.org/2000/svg"><text x="0" y="15">WCAG Rocks</text></svg>
+```
+An inline SVG's text is real text.
+
 ## img-alt-decorative
 
 *Manual; flags every applicable element with a detected text alternative for review, not only the ones that look wrong.*
@@ -1136,6 +1205,48 @@ Non-empty alt is present on this image button, worth confirming "Submit order" m
 <input type="image" src="submit.png" alt="" title="Submit order">
 ```
 Empty alt on a functional control is `input-image-alt-decorative`'s question, not this rule's.
+
+## invalid-field-error-message
+
+**Passed**
+```html
+<label for="email">Email</label>
+<input id="email" aria-invalid="true" aria-errormessage="email-error">
+<p id="email-error">Enter an email address, like name@example.com.</p>
+```
+The field is marked invalid, and the message `aria-errormessage` names is shown and says what is wrong.
+
+**Flagged (cantTell)**
+```html
+<label for="email">Email</label>
+<input id="email" aria-invalid="true" aria-errormessage="email-error">
+<p id="email-error" hidden>Enter an email address, like name@example.com.</p>
+```
+The field is marked invalid, but its error message is hidden. It leans fail: the message tied to the field can't be seen or heard, though the error may still be told in the label or next to the field.
+
+**Flagged (cantTell)**
+```html
+<label for="age">Age</label>
+<input id="age" aria-invalid="true">
+<p>Age must be a number.</p>
+```
+No message is tied to the field. The text next to it may describe the error; a person checks that the user is told, in text, which field is in error and why.
+
+## label-for-valid
+
+**Passed**
+```html
+<label for="email">Email</label>
+<input id="email" type="email">
+```
+`for` names the input, so the label labels it.
+
+**Flagged (cantTell)**
+```html
+<label for="e-mail">Email</label>
+<input id="email" type="email">
+```
+`for` names no element, so the label labels nothing. A person checks which control it was meant for.
 
 ## label-in-name
 
@@ -1446,6 +1557,20 @@ No accessible name from any supported mechanism.
 ```
 `<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor.
 
+## live-region-announcements
+
+**Passed**
+```html
+<div role="status"></div>
+```
+An empty status region, in the page and reachable before any message arrives.
+
+**Flagged (cantTell)**
+```html
+<div aria-hidden="true"><div role="status"></div></div>
+```
+The region is hidden from assistive technology, so nothing it is given can be announced. A person checks whether the page uses it for status messages.
+
 ## manual-review
 
 *This rule has no `notApplicable` branch at all — it returns `cantTell` unconditionally on every page, including an empty `<body>` — so there is only one example, not a pair.*
@@ -1577,6 +1702,26 @@ The `onfocus` handler never runs: the `<div>` cannot take focus.
 ```
 Each mouse handler is paired with a keyboard-equivalent focus handler.
 
+## focus-not-removed-by-script
+
+**Failed**
+```html
+<a href="/offers" onfocus="this.blur()">Offers</a>
+```
+The link removes focus from itself as soon as it receives it, WCAG failure F55's own example: a keyboard user can't stay on it to follow it.
+
+**Flagged (cantTell)**
+```html
+<button type="button" onfocus="if (locked) this.blur(); track('focus')">Send</button>
+```
+The handler calls `blur()` among other code, so whether focus is lost depends on the script.
+
+**Not applicable**
+```html
+<span onfocus="this.blur()">Label</span>
+```
+The `<span>` cannot take focus, so its handler never runs.
+
 ## moving-content-pausable
 
 **Flagged (cantTell)**
@@ -1642,15 +1787,21 @@ No fallback content and no accessible name.
 
 **Flagged (cantTell)**
 ```html
-<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+<object data="sales-chart.png" type="image/png">Sales chart</object>
 ```
-Fallback text is present — worth confirming "Product brochure (PDF)" is genuinely equivalent to the embedded document, not just a filler caption.
+Fallback text is present — worth confirming "Sales chart" is genuinely equivalent to the image, not just a filler caption.
 
 **Not applicable**
 ```html
-<object data="brochure.pdf" type="application/pdf"></object>
+<object data="sales-chart.png" type="image/png"></object>
 ```
 No fallback content, ARIA name, or title exists to review; that's `object-text-alternative-present`'s failure instead.
+
+**Not applicable**
+```html
+<object data="brochure.pdf" type="application/pdf">Product brochure (PDF)</object>
+```
+A PDF renders text, not non-text content, so 1.1.1 asks nothing of it (ACT 8fc3b6), as `object-text-alternative-present` has it too.
 
 ## option-name-present
 
@@ -1714,11 +1865,11 @@ No `<h1>` or `role="heading" aria-level="1"` exists.
 ```
 "Home" is one of the conservative generic-title signals this rule reviews.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <title>Quarterly Sales Report — Q3 2026</title>
 ```
-The title is specific to the page's content, matching none of the low-descriptiveness patterns.
+The title matches none of the low-descriptiveness patterns, but whether it describes the page is still for a person to check (`titleReview`): a title's presence is all that page-title-present claims.
 
 ## page-title-present
 
@@ -1742,7 +1893,7 @@ No `<title>` element anywhere in the document.
 
 ## password-paste-enabled
 
-*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example.*
+*This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example; the listener hook (`listenerHookScript()`) records such listeners when the page runs it, and an early hook that saw none takes the caution off a cancel-only handler's lean.*
 
 **Flagged (cantTell)**
 ```html
@@ -1985,7 +2136,7 @@ A `<title>` inside the SVG `<image>` provides the alternative.
   <image href="logo.png"></image>
 </svg>
 ```
-The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s label doesn't transfer to it).
+The `<image>` itself has no `<title>` or ARIA name (the outer `<svg>`'s label doesn't transfer to it, and a `<desc>` would describe it, not name it).
 
 ## svg-text-alternative-present
 
@@ -1999,7 +2150,7 @@ The `<image>` itself has no `<title>`/`<desc>`/ARIA name (the outer `<svg>`'s la
 ```html
 <svg role="img"></svg>
 ```
-No `<title>`, `<desc>`, or ARIA name.
+No `<title>` or ARIA name. A `<desc>` alone wouldn't do: it describes the image, it doesn't name it.
 
 ## svg-text-alternative-quality
 
@@ -2156,13 +2307,13 @@ Every `<td>` has both an implicit row header (`<th>` earlier in its row) and col
 **Failed**
 ```html
 <table>
-  <tr><td>a</td><td>b</td><td>c</td><td>d</td></tr>
-  <tr><td>e</td><td>f</td><td>g</td><td>h</td></tr>
-  <tr><td>i</td><td>j</td><td>k</td><td>l</td></tr>
-  <tr><td>m</td><td>n</td><td>o</td><td>p</td></tr>
+  <tr><th>Name</th><th>Team</th><th>Room</th><td></td></tr>
+  <tr><td>Ana</td><td>Sales</td><td>2.01</td><td>Mon</td></tr>
+  <tr><td>Bo</td><td>Legal</td><td>2.04</td><td>Tue</td></tr>
+  <tr><td>Chen</td><td>IT</td><td>3.10</td><td>Fri</td></tr>
 </table>
 ```
-A 4x4 table with no `<th>` anywhere — no cell has a row, column, or `headers`-attribute association.
+The header row stops one column short: the last column's cells have no row, column, or `headers`-attribute association. A table with no header cell at all is asked about instead, since it may be a layout table, which needs none.
 
 ## text-spacing-content-loss
 
@@ -2245,11 +2396,11 @@ The value isn't valid BCP 47 syntax.
 ```
 No `<track>` element at all, so no evidence of captions. A video whose only track is `kind="subtitles"` is asked about too, since subtitles may translate the dialogue without the sound information captions carry.
 
-**Not applicable**
+**Flagged (cantTell)**
 ```html
 <video src="x.mp4"><track kind="captions" src="cap.vtt"></video>
 ```
-A `kind="captions"` track with a real `src` is present.
+A `kind="captions"` track with a real `src` is present, which says captions exist, not that they carry all the dialogue and the sounds that matter (F8): a person checks them.
 
 ## video-poster-text-alternative-present
 
@@ -2264,3 +2415,17 @@ A `kind="captions"` track with a real `src` is present.
 <video poster="poster.png"></video>
 ```
 No accessible name and no fallback; a poster attribute alone isn't a text alternative.
+
+## widget-keyboard-focusable
+
+**Passed**
+```html
+<div role="button" tabindex="0">Save</div>
+```
+The custom button is in the tab order.
+
+**Flagged (cantTell)**
+```html
+<div role="button">Save</div>
+```
+The element says it is a button, but Tab never reaches it. A person checks that a keyboard user can reach it, or what it does, another way.

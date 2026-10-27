@@ -12,7 +12,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'link-in-text-block';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   const browser = await chromium.launch({ executablePath });
@@ -51,7 +50,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         `<!doctype html><html lang="en"><head><title>t</title></head><body style="${bodyStyle}">${body}</body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate((id) => {
         const r = window.a11ycore.runa11yCoreInPage(
           location.href,
@@ -100,10 +99,10 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.setContent(
         '<!doctype html><html lang="en"><head><title>t</title><style>body{color:#000;background:#fff} a{text-decoration:none}</style></head><body>' +
           '<p>Read <a id="far" href="#a" style="color:#888">the guide</a> first.</p>' +
-          '<p>Then <a id="near" href="#b" style="color:#666">the notes</a> below.</p>' +
+          '<p>Then <a id="near" href="#b" style="color:#5c5c5c">the notes</a> below.</p>' +
           '<p>And <a id="low" href="#c" style="color:#444">the archive</a> too.</p></body></html>'
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const r = await p.evaluate((id) => {
         const res = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
         return res.checksResults.find((x) => x.ruleId === id);
@@ -113,7 +112,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       assert.equal(m.measure, 'contrast-ratio');
       assert.equal(m.selector, '#near');
       assert.equal(m.threshold, 3);
-      assert.ok(m.value > 3 && m.value < 4, String(m.value));
+      assert.ok(m.value > 3 && m.value < 3.3, String(m.value));
       assert.equal(m.headroom, m.value - 3);
       assert.equal(m.measuredCount, 3);
     } finally {
@@ -136,7 +135,7 @@ test(
           '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
             `<body><main><p style="color:#000">Read the ${paragraph} today.</p></main></body></html>`
         );
-        await p.addScriptTag({ content: BUNDLE });
+        await addBundle(p);
         return await p.evaluate(
           (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
           RULE_ID
@@ -169,8 +168,8 @@ test(
       ),
       'fail'
     );
-    // A background layer in the colour already behind the link shows nothing;
-    // a 1px layer in the link's colour is an underline.
+    // A background layer in the color already behind the link shows nothing;
+    // a 1px layer in the link's color is an underline.
     assert.equal(
       await outcome(`<a ${A.slice(0, -1)};background-image:linear-gradient(#fff,#fff)">guide</a>`),
       'fail'
@@ -272,7 +271,7 @@ test(
           await p.setContent(
             `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff} p{color:#000;font:16px/1.5 sans-serif} a{color:#2b5797;text-decoration:none;position:relative} ${css}</style></head><body><p>Read the <a href="/x">${inner}</a> before you start.</p></body></html>`
           );
-          await p.addScriptTag({ content: BUNDLE });
+          await addBundle(p);
           const r = await p.evaluate(
             (id) =>
               window.a11ycore
@@ -302,7 +301,7 @@ test(`${RULE_ID} in Chromium: a link that draws nothing is not applicable`, { sk
         '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
           `<body><main><p style="color:#000">Read the ${link} now and also more words here.</p></main></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
         RULE_ID

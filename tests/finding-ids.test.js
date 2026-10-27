@@ -39,13 +39,17 @@ function regenerateEach() {
     INVENTORIES.forEach((file, i) => fs.writeFileSync(file, before[i], 'utf8'));
   }
 }
-const regenerate = () => merge(regenerateEach());
+// One generation for the tests that compare against it: each replays the
+// fixtures through every rule.
+let generation = null;
+const freshEach = () => (generation === null ? (generation = regenerateEach()) : generation);
+const regenerate = () => merge(freshEach());
 
 test('each committed inventory matches a fresh generation', () => {
-  const fresh = regenerateEach();
+  const each = freshEach();
   INVENTORIES.forEach((file, i) => {
     assert.deepStrictEqual(
-      fresh[i],
+      each[i],
       committedEach[i],
       `${path.relative(ROOT, file)} is stale -- run npm run finding-ids`
     );

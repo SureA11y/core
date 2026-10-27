@@ -448,7 +448,7 @@ test('a criterion checked by several composites takes the worst outcome and thei
     .filter((c) => c.ruleId.startsWith('wcag-4.1.2-'))
     .map((c) => [c.ruleId, c.outcome]);
   assert.deepStrictEqual(parts, [
-    ['wcag-4.1.2-name', 'pass'],
+    ['wcag-4.1.2-name', 'cantTell'],
     ['wcag-4.1.2-aria-validity', 'fail']
   ]);
   const suite = renderJunitReport(result).match(

@@ -19,7 +19,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 
@@ -47,7 +46,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULES = ['link-name-present', 'img-alt-present'];
 
 const page = (body) =>
@@ -98,7 +97,7 @@ for (const [name, html, script, expected] of CASES) {
       const p = await browser.newPage();
       await p.setContent(page(html));
       if (script) await p.evaluate(script);
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       const got = await p.evaluate(
         (rules) =>
           window.a11ycore

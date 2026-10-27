@@ -8,7 +8,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -34,7 +33,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 // Reports every element inside #box; data-k says which one it was.
 const REPORT_ALL = `(ctx) => {
@@ -62,7 +61,7 @@ test('every selector names exactly its element, in Chromium', { skip }, async ()
       let k = 0;
       for (const el of box.querySelectorAll('*')) el.setAttribute('data-k', String(k++));
     });
-    await page.addScriptTag({ content: BUNDLE });
+    await addBundle(page);
     const wrong = await page.evaluate((src) => {
       const r = window.a11ycore.runa11yCoreInPage(
         null,

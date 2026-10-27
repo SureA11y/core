@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const IMG = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==';
 
 test('alt-quality symbols message and caps, in Chromium', { skip }, async (t) => {
@@ -53,7 +52,7 @@ test('alt-quality symbols message and caps, in Chromium', { skip }, async (t) =>
       await page.setContent(
         `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return await page.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0],
         ruleId

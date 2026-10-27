@@ -23,6 +23,9 @@
  *   A custom element whose ElementInternals give it one of those roles
  *   (this.attachInternals().role), with no role attribute naming another,
  *   counts as a native element with that role does.
+ *   Finding nothing to ask about, it reports notApplicable, not pass: it
+ *   applies only to what its check flags, and finding nothing there
+ *   doesn't show that all is well.
  * @expectation
  *   The visible label text (a) is not a placeholder left in the markup
  *   ("label", "field", "enter text", ...), (b) is not shared with another
@@ -36,6 +39,27 @@
  *     visible telling them apart, a count. 0 when no other field shares it.
  *   - `hiddenLabelParts`: how many parts of the field's label are hidden
  *     from sight, a count. 0 when the whole label is visible.
+ * @reason-codes
+ *   - `DUPLICATE_LABEL_TEXT` (cantTell): the field's visible label is the same
+ *     as another field's, with no visible legend, heading or row text telling
+ *     them apart, nor, for radio buttons and checkboxes, the question their
+ *     group answers.
+ *     It leans pass when each field is in a form of its own with the same
+ *     name, type and action (copies of one widget), and fail when they are
+ *     fields of one form with different names (not radio buttons or
+ *     checkboxes); otherwise no lean.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
+ *   - `PARTIALLY_HIDDEN_LABEL` (cantTell): part of the field's programmatic
+ *     label is hidden from sight, so the visible part may not identify the
+ *     field on its own.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
+ *   - `PLACEHOLDER_LABEL_TEXT` (cantTell): the field's visible label is
+ *     generic placeholder text, such as "label" or "enter text", rather than a
+ *     description of the field.
+ *     It leans fail when the label is a phrase only a template leaves
+ *     ("label", "enter text", "untitled"); words that can be a real field's
+ *     name ("text", "value", "test") have no lean.
+ *     Basis: WCAG 2.4.6 (not settled); G131; ACT cc0f0a.
  * @implementation-notes
  * - Phrase lists exist for en, de, es, fr and ja. English is always
  *   checked; the list for the element's own language (nearest lang
@@ -64,6 +88,20 @@
  *   or a list item contributes its own text too, which is what keeps a
  *   repeated "Quantity" field in a product table (differentiated by the
  *   product name in the same row) from being reported.
+ * - A radio button or checkbox also takes its group's visible question as
+ *   context, since a form of Yes/No questions often puts each question in
+ *   a plain `<p>` with no fieldset: (a) the accessible name of the nearest
+ *   enclosing role=radiogroup or role=group, and (b) the visible text of
+ *   the smallest element holding every field of its group (same name, same
+ *   form owner) and no other field, less the options' own labels. Where
+ *   that element holds only the options, the next one up is read, as long
+ *   as it still holds no other field; where no element holds the group
+ *   alone, (b) gives nothing. So "Yes" under "Do you smoke?" and "Yes"
+ *   under "Do you drink?" are not a duplicate, while two groups under the
+ *   same question still are.
+ *   Groups placed straight in one container, with no element of their
+ *   own, are still asked about: which text belongs to which group is
+ *   then a matter of layout, which a person reads and markup doesn't say.
  * - Two fields conflict only when their label text AND their context are
  *   both identical. Same label under two different visible headings is
  *   ACT's passed example 5 and is not reported.
@@ -102,7 +140,44 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } }
+  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    DUPLICATE_LABEL_TEXT: {
+      steps: [
+        'Find the field the report names and the other fields with the same visible label.',
+        'Look at the screen around each one: a legend, heading, row text or nearby text that says which is which.',
+        'Decide whether the fields ask for the same thing (a repeated search box) or different things (shipping and billing name).'
+      ],
+      passWhen:
+        'The fields serve the same purpose, or something visible near each one makes clear which is which.',
+      failWhen:
+        'Different fields share a label and nothing visible tells them apart, so a user cannot tell which to fill in, which fails WCAG 2.4.6 (G131).'
+    },
+    PARTIALLY_HIDDEN_LABEL: {
+      steps: [
+        'Find the field the report names and read its visible label on screen.',
+        'Inspect the field in the Accessibility pane and read its full computed name, including the hidden parts.',
+        'Ask whether the visible part alone tells a sighted user what to enter or choose.'
+      ],
+      passWhen:
+        'The visible part of the label describes the field on its own; the hidden part only adds detail.',
+      failWhen:
+        'The visible part does not identify the field without the hidden part (for example, only "Go" is shown), which fails WCAG 2.4.6 (ACT cc0f0a).'
+    },
+    PLACEHOLDER_LABEL_TEXT: {
+      steps: [
+        'Find the field the report names and read its visible label.',
+        'Work out from the page what the field is for.',
+        'Decide whether the label says that, or is template text such as "Label", "Field" or "Enter text".'
+      ],
+      passWhen:
+        'The label is a real name for what the field asks for in this context (for example "Value" in a key/value editor).',
+      failWhen:
+        'The label is placeholder text that does not say what the field is for, which fails WCAG 2.4.6 (G131).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -203,6 +278,73 @@ function runInPage(ctx) {
       '未定',
       'テスト',
       'サンプル'
+    ])
+  };
+
+  // The part of each list that only a template leaves behind: words no
+  // field is really called. The rest ("Text", "Value", "Test") name real
+  // fields in key/value editors, messaging and test tools.
+  const TEMPLATE_ONLY_LABEL_TEXT = {
+    en: new Set([
+      'label',
+      'field',
+      'form field',
+      'input field',
+      'text field',
+      'enter text',
+      'type here',
+      'placeholder',
+      'untitled',
+      'tbd',
+      'todo',
+      'to do',
+      'n/a'
+    ]),
+    de: new Set([
+      'beschriftung',
+      'label',
+      'feld',
+      'formularfeld',
+      'eingabefeld',
+      'textfeld',
+      'text eingeben',
+      'hier eingeben',
+      'platzhalter',
+      'unbenannt'
+    ]),
+    es: new Set([
+      'etiqueta',
+      'campo',
+      'campo de formulario',
+      'campo de entrada',
+      'campo de texto',
+      'introduzca texto',
+      'escriba aquí',
+      'marcador de posición',
+      'sin título'
+    ]),
+    fr: new Set([
+      'libellé',
+      'étiquette',
+      'champ',
+      'champ de formulaire',
+      'champ de saisie',
+      'champ de texte',
+      'saisir du texte',
+      'saisissez ici',
+      'espace réservé',
+      'sans titre'
+    ]),
+    ja: new Set([
+      'ラベル',
+      'フィールド',
+      '入力欄',
+      '入力フィールド',
+      'テキストフィールド',
+      'ここに入力',
+      'プレースホルダー',
+      '無題',
+      '未定'
     ])
   };
 
@@ -564,9 +706,147 @@ function runInPage(ctx) {
     return normalizeWs(text.split(labelText).join(' '));
   }
 
+  // A radio button's or checkbox's options ("Yes", "No") are told apart by
+  // the question their group answers, often a plain paragraph above them
+  // rather than a legend or a heading. That question is read from two
+  // places: the name of an enclosing role=radiogroup or role=group, and
+  // the visible text of the smallest element holding every field of the
+  // group (same name, same form) and no other field, less the options'
+  // own labels.
+  const CHOICE_ROLES = ['radio', 'checkbox'];
+  const CHOICE_GROUP_ROLES = ['radiogroup', 'group'];
+  const SKIPPED_TEXT_TAGS = ['script', 'style', 'template', 'noscript'];
+
+  function isChoiceField(el) {
+    if (String(dom.localName(el) || '').toLowerCase() === 'input') {
+      const type = String(dom.getAttribute(el, 'type') || '')
+        .trim()
+        .toLowerCase();
+      return type === 'radio' || type === 'checkbox';
+    }
+    return hasResolvedRole(el, CHOICE_ROLES);
+  }
+
+  function choiceGroupName(el) {
+    let cur = dom.parentElement(el);
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (let steps = 0; cur && steps < 100000; steps++) {
+      if (hasResolvedRole(cur, CHOICE_GROUP_ROLES)) {
+        try {
+          const info = helpers.getAccessibleNameInfo(cur, ctx);
+          return normalizeWs(info && info.value);
+        } catch {
+          return '';
+        }
+      }
+      cur = dom.parentElement(cur);
+    }
+    return '';
+  }
+
+  // The radio buttons and checkboxes of each tree, by form owner and name.
+  const choiceGroupsByTree = new Map();
+  function choiceGroupMembers(el) {
+    const name = normalizeWs(dom.getAttribute(el, 'name'));
+    if (!name || String(dom.localName(el) || '').toLowerCase() !== 'input') return null;
+    let tree;
+    try {
+      tree = dom.getRootNode(el);
+    } catch {
+      return null;
+    }
+    let byForm = choiceGroupsByTree.get(tree);
+    if (!byForm) {
+      byForm = new Map();
+      choiceGroupsByTree.set(tree, byForm);
+      try {
+        for (const input of dom.querySelectorAll(tree, 'input[name]')) {
+          if (!isChoiceField(input)) continue;
+          const inputName = normalizeWs(dom.getAttribute(input, 'name'));
+          if (!inputName) continue;
+          const form = dom.get(input, 'form') || null;
+          let byName = byForm.get(form);
+          if (!byName) byForm.set(form, (byName = new Map()));
+          const members = byName.get(inputName);
+          if (members) members.push(input);
+          else byName.set(inputName, [input]);
+        }
+      } catch {
+        // no groups in this tree
+      }
+    }
+    const byName = byForm.get(dom.get(el, 'form') || null);
+    return (byName && byName.get(name)) || null;
+  }
+
+  // Visible text under `root`, leaving out the subtrees in `skip`.
+  function visibleTextUnder(root, skip) {
+    const parts = [];
+    const stack = [root];
+    for (let budget = 20000; stack.length && budget > 0; budget--) {
+      const node = stack.pop();
+      const type = dom.nodeType(node);
+      if (type === 3) {
+        parts.push(String(dom.nodeValue(node) || ''));
+        continue;
+      }
+      if (type !== 1) continue;
+      if (node !== root) {
+        if (skip.has(node)) continue;
+        if (SKIPPED_TEXT_TAGS.includes(String(dom.localName(node) || '').toLowerCase())) continue;
+        if (!isVisible(node)) continue;
+      }
+      const children = [];
+      for (let c = dom.firstChild(node); c; c = dom.nextSibling(c)) children.push(c);
+      for (let i = children.length - 1; i >= 0; i--) stack.push(children[i]);
+    }
+    return normalizeWs(parts.join(' '));
+  }
+
+  const groupQuestionCache = new Map();
+  function choiceGroupContainerText(members) {
+    if (groupQuestionCache.has(members)) return groupQuestionCache.get(members);
+    let text = '';
+    try {
+      const memberSet = new Set(members);
+      const skip = new Set(members);
+      for (const m of members) {
+        for (const label of getReferencedElements(m, 'aria-labelledby')) skip.add(label);
+        for (const label of getNativeLabels(m)) skip.add(label);
+      }
+      let cur = dom.parentElement(members[0]);
+      // Bounded as a safety net only: a walk up a real tree always ends.
+      for (let steps = 0; cur && steps < 100000; steps++) {
+        if (members.every((m) => dom.contains(cur, m))) {
+          const others = Array.prototype.some.call(
+            dom.querySelectorAll(cur, FIELD_SELECTOR),
+            (f) => !memberSet.has(f) && isField(f)
+          );
+          if (others) break;
+          // An element holding nothing but the options says nothing more:
+          // the question is in the next one up.
+          text = visibleTextUnder(cur, skip);
+          if (text) break;
+        }
+        cur = dom.parentElement(cur);
+      }
+    } catch {
+      text = '';
+    }
+    groupQuestionCache.set(members, text);
+    return text;
+  }
+
+  function choiceQuestionText(el) {
+    if (!isChoiceField(el)) return '';
+    const members = choiceGroupMembers(el);
+    const own = members && members.indexOf(el) !== -1 ? choiceGroupContainerText(members) : '';
+    return normalizeWs(`${choiceGroupName(el)} ${own}`);
+  }
+
   function contextKey(el, labelText) {
     const group = fieldsetLegendText(el) || nearestVisibleHeadingText(el);
-    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}`;
+    return `${normalize(group)}##${normalize(rowContextText(el, labelText))}##${normalize(choiceQuestionText(el))}`;
   }
 
   const nodes = helpers.queryAllSmart
@@ -673,6 +953,56 @@ function runInPage(ctx) {
     else byKey.set(field.key, [field]);
   }
 
+  // A native field's form owner and shape, read from attributes (a form's
+  // `action` and `name` properties can be shadowed by its own fields).
+  function attr(el, name) {
+    try {
+      return normalizeWs(dom.getAttribute(el, name));
+    } catch {
+      return '';
+    }
+  }
+  function shapeOf(el) {
+    let form = null;
+    try {
+      form = dom.get(el, 'form') || null;
+    } catch {}
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    const type = tag === 'input' ? attr(el, 'type').toLowerCase() || 'text' : tag;
+    return { form, name: attr(el, 'name'), type, action: form ? attr(form, 'action') : '' };
+  }
+
+  // Which way a set of fields sharing a label points: copies of one widget
+  // (each in a form of its own, same name, type and action: a header and a
+  // footer search box) serve one purpose; distinct fields of one form
+  // (different names) with nothing visible apart are G131's shape. Radio
+  // buttons and checkboxes are left out: their question may be in text the
+  // context doesn't reach, such as a group with no element of its own.
+  function duplicateLean(shared) {
+    const shapes = shared.map((f) => shapeOf(f.el));
+    if (shapes.some((x) => !x.form)) return null;
+    const forms = new Set(shapes.map((x) => x.form));
+    const first = shapes[0];
+    if (
+      forms.size === shapes.length &&
+      shapes.every(
+        (x) => x.name === first.name && x.type === first.type && x.action === first.action
+      )
+    ) {
+      return { toward: 'pass', sameForm: false, sameName: true };
+    }
+    const names = shapes.map((x) => x.name);
+    if (
+      forms.size === 1 &&
+      names.every(Boolean) &&
+      new Set(names).size === names.length &&
+      shapes.every((x) => x.type !== 'radio' && x.type !== 'checkbox')
+    ) {
+      return { toward: 'fail', sameForm: true, sameName: false };
+    }
+    return null;
+  }
+
   const occurrences = [];
 
   for (const field of fields) {
@@ -692,6 +1022,45 @@ function runInPage(ctx) {
       : isDuplicate
         ? 'DUPLICATE_LABEL_TEXT'
         : 'PARTIALLY_HIDDEN_LABEL';
+
+    let lean = null;
+    if (reasonCode === 'PLACEHOLDER_LABEL_TEXT') {
+      if (inPhraseList(TEMPLATE_ONLY_LABEL_TEXT, field.normalized, primaryLangOf(field.el))) {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a phrase only a template leaves behind, which names no field’s purpose.',
+          signals: [{ signal: 'template-only-phrase', value: true }],
+          caution: 'A tool page, such as a form builder, can have a field really called "Label".',
+          i18n: {
+            whyKey: 'formControlLabelQuality_lean_why_placeholder',
+            cautionKey: 'formControlLabelQuality_lean_caution_placeholder'
+          }
+        };
+      }
+    } else if (reasonCode === 'DUPLICATE_LABEL_TEXT') {
+      const d = duplicateLean(shared);
+      if (d) {
+        lean = {
+          toward: d.toward,
+          why:
+            d.toward === 'pass'
+              ? 'The fields sharing the label are copies of one widget, each in its own form with the same name, type and action, so they serve the same purpose.'
+              : 'The fields sharing the label are different fields of one form, with different names, and nothing visible tells them apart.',
+          signals: [
+            { signal: 'same-form-owner', value: d.sameForm },
+            { signal: 'same-name-attribute', value: d.sameName }
+          ],
+          caution:
+            d.toward === 'pass'
+              ? 'Copies of a widget can still differ in purpose if their forms send different hidden values.'
+              : 'Visible text the rule does not read, such as a caption in a styled block, may tell the fields apart.',
+          i18n: {
+            whyKey: `formControlLabelQuality_lean_why_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`,
+            cautionKey: `formControlLabelQuality_lean_caution_duplicate${d.toward === 'pass' ? 'Widget' : 'Fields'}`
+          }
+        };
+      }
+    }
 
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
@@ -740,6 +1109,7 @@ function runInPage(ctx) {
             hiddenCount: String(field.hiddenParts)
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: {
             reasonCode,

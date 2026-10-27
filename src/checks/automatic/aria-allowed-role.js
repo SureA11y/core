@@ -22,6 +22,14 @@
  *   depends on the widget, not on the table.
  * @reports
  *   - `role`: the explicit role that is not permitted on the host element.
+ * @reason-codes
+ *   - `ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT` (cantTell): an explicit role that
+ *     ARIA in HTML does not permit on that element, which assistive technology
+ *     still exposes.
+ *     It leans fail when the element takes keyboard focus and the role is not
+ *     a widget role, and pass when the role is none or presentation on a
+ *     focusable element, which browsers ignore.
+ *     Basis: ARIA in HTML (MUST).
  * @implementation-notes
  * - Not WCAG-normative. ARIA-in-HTML's permitted-roles table is an author
  *   conformance requirement of that specification; no ACT rule covers it and
@@ -55,7 +63,23 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT: {
+      steps: [
+        'Inspect the element the report names and note its tag and its role attribute.',
+        "Open the Accessibility pane in the browser's developer tools and check which role is exposed.",
+        'Press Tab to see whether the element takes keyboard focus, and try operating it with Enter or Space if it is a control.',
+        'With a screen reader, move to the element and compare what is announced with what the element does on screen.'
+      ],
+      passWhen:
+        'The announced role matches how the element looks and behaves (or role none/presentation was ignored on a focusable control and its native role is kept).',
+      failWhen:
+        "The announced role contradicts the element's behaviour, such as a focusable button announced as a heading, which fails ARIA in HTML and can fail WCAG 4.1.2."
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -74,6 +98,92 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // Roles that descend from the abstract widget role in WAI-ARIA 1.2, plus
+  // separator, which is a widget when focusable: the roles a control that
+  // takes keyboard focus is expected to have.
+  const WIDGET_ROLES = new Set([
+    'button',
+    'checkbox',
+    'columnheader',
+    'combobox',
+    'grid',
+    'gridcell',
+    'link',
+    'listbox',
+    'menu',
+    'menubar',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'progressbar',
+    'radio',
+    'radiogroup',
+    'row',
+    'rowheader',
+    'scrollbar',
+    'searchbox',
+    'separator',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'tablist',
+    'textbox',
+    'tree',
+    'treegrid',
+    'treeitem'
+  ]);
+
+  function focusInfo(el) {
+    try {
+      const info = helpers.getFocusableInfo(el, ctx);
+      return { focusable: !!(info && info.focusable), tabbable: !!(info && info.tabbable) };
+    } catch {
+      return { focusable: false, tabbable: false };
+    }
+  }
+
+  // Which way the finding points: a role none or presentation on an element
+  // that takes focus is ignored by browsers (presentational role conflict
+  // resolution), so the native role is kept; a static role on an element in
+  // the tab order announces what keyboard focus lands on as something that is
+  // not a control.
+  function leanFor(el, role) {
+    const focus = focusInfo(el);
+    if (role === 'none' || role === 'presentation') {
+      if (!focus.focusable) return null;
+      return {
+        toward: 'pass',
+        why: 'Browsers ignore role none or presentation on an element that takes focus, and keep its native role.',
+        signals: [
+          { signal: 'role-is-presentational', value: true },
+          { signal: 'host-focusable', value: true }
+        ],
+        caution: 'Browsers resolve this conflict in slightly different ways.',
+        i18n: {
+          whyKey: 'ariaAllowedRole_lean_why_presentational',
+          cautionKey: 'ariaAllowedRole_lean_caution_presentational'
+        }
+      };
+    }
+    if (!focus.tabbable || WIDGET_ROLES.has(role)) return null;
+    return {
+      toward: 'fail',
+      why: 'The element is in the tab order but its role is not a control role, so keyboard users land on something announced as static.',
+      signals: [
+        { signal: 'host-tabbable', value: true },
+        { signal: 'explicit-role-is-widget', value: false }
+      ],
+      caution:
+        'A focusable element with a static role can be deliberate, such as a scrollable region.',
+      i18n: {
+        whyKey: 'ariaAllowedRole_lean_why_focusable',
+        cautionKey: 'ariaAllowedRole_lean_caution_focusable'
+      }
+    };
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
 
@@ -88,6 +198,7 @@ function runInPage(ctx) {
     if (info.allowed) continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
+    const lean = leanFor(el, role);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -108,6 +219,7 @@ function runInPage(ctx) {
             wcagSc: []
           }
         },
+        ...(lean ? { lean } : {}),
         data: {
           details: { reasonCode: 'ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT', role, element: tag }
         }

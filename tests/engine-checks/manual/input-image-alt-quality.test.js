@@ -212,7 +212,7 @@ test(`${RULE_ID}: a suspicious name reports its signal and the shared message`, 
     const o = occurrenceFor(id);
     assert.ok(o, id);
     assert.strictEqual(o.data.details.altSignal, signal, id);
-    assert.ok(!('reasonCode' in o.data.details), `${id} carries no reasonCode`);
+    assert.strictEqual(o.data.details.reasonCode, 'TEXT_ALTERNATIVE_REVIEW', id);
     assert.ok(Array.isArray(o.data.details.sources), `${id} keeps its sources`);
     assert.match(o.i18n.summaryKey, /^textAlternative_summary_cantTell[A-Z]/, id);
     assert.strictEqual(o.i18n.params.element, 'input type="image"', id);
@@ -246,4 +246,26 @@ test('input-image-alt-quality: reports at most 50 ordinary and 50 suspicious ele
   const mixed = run(many(60, (i) => (i < 55 ? `Go to page ${i}` : 'image')));
   assert.strictEqual(mixed.occurrences.length, 55);
   assert.strictEqual(mixed.data.details.suspiciousCount, 5);
+});
+
+// The name is the button's whole label: a file name, an address or a generic
+// word leans fail; ordinary text and the other signals do not.
+test(`${RULE_ID}: leans fail on a file name, an address or a placeholder only`, () => {
+  const run = (attrs) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><body><form><input type="image" src="go.png" ${attrs}></form></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+  for (const attrs of [
+    'alt="btn_submit_2x.png"',
+    'alt="https://example.com/go"',
+    'aria-label="image"'
+  ]) {
+    const o = run(attrs);
+    assert.strictEqual(o.lean.toward, 'fail', attrs);
+    assert.strictEqual(o.lean.i18n.whyKey, 'inputImage_altQuality_lean_why', attrs);
+  }
+  for (const attrs of ['alt="Search"', 'alt="→"']) {
+    assert.strictEqual(run(attrs).lean, undefined, attrs);
+  }
 });

@@ -32,6 +32,11 @@
  * @reports
  *   - `nestedElements`: the controls nested inside this one, one tag name
  *     per control.
+ * @reason-codes
+ *   - `NESTED_INTERACTIVE_CONTROL` (fail): an interactive control contains
+ *     another control that can take focus, such as a button inside a link.
+ *     Basis: WCAG 4.1.2; HTML interactive content (MUST); WAI-ARIA 1.2
+ *     presentational children.
  * @implementation-notes
  * - A descendant counts as a nested interactive control only when it is both
  *   (a) a native interactive element or an explicit ARIA widget role and
@@ -53,6 +58,12 @@
  *   control it does NOT belong to still counts: a <button> inside an <a href>,
  *   a focusable role="button" inside a link, an editable field inside a
  *   control, or an orphan role="option" with no owning listbox/combobox.
+ * - Inside the button a customizable <select> draws itself with (its first
+ *   element child), any focusable element counts, whatever its role: a
+ *   tabindex span, an editable span, a <details>' summary, a media player
+ *   with controls. That button is inert, so presentational-children-
+ *   focusable-absent leaves it alone, and HTML allows no interactive content
+ *   and no tabindex inside a button.
  * - A disabled native control (<button disabled>, <input disabled>) and an
  *   inert descendant are not focusable, so they do not nest an interactive
  *   control; a display:none or aria-hidden descendant is not exposed to AT
@@ -261,10 +272,32 @@ function runInPage(ctx) {
     return out;
   }
 
+  // The button a <select> draws its closed control with (its first element
+  // child, inert in HTML). A button may hold no interactive content and no
+  // element with a tabindex, so anything focusable an author puts in it is
+  // a nested control (DESIGN_CHALLENGES.md), whatever its role.
+  function selectButtonOf(root) {
+    if (String(dom.localName(root) || '') !== 'select') return null;
+    const first = dom.firstElementChild(root);
+    return first && String(dom.localName(first) || '') === 'button' ? first : null;
+  }
+  function focusableInSelectButton(node, button) {
+    if (!button || node === button || !dom.contains(button, node) || !isEligible(node)) {
+      return false;
+    }
+    try {
+      const info = getFocusableInfo ? getFocusableInfo(node, ctx) : null;
+      return !!(info && info.focusable);
+    } catch {
+      return false;
+    }
+  }
+
   function collectNestedOperable(root) {
     const out = [];
     const stack = flatChildren(root).reverse();
     if (!stack.length) return out;
+    const selectButton = selectButtonOf(root);
     let guard = 0;
     while (stack.length && guard++ < 200000) {
       const node = stack.pop();
@@ -278,7 +311,7 @@ function runInPage(ctx) {
         // container in the main loop), keeping the report at the nearest
         // interactive ancestor rather than bubbling up to the composite.
         if (isManagedCompositeChild(node)) continue;
-        if (isOperableInteractive(node)) {
+        if (isOperableInteractive(node) || focusableInSelectButton(node, selectButton)) {
           out.push(node);
           continue; // do not descend into a counted control
         }

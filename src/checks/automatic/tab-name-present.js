@@ -23,6 +23,22 @@
  *   role="tab" being name-from-content, from its own subtree text, where a
  *   descendant's own name (an <img alt>, aria-label or title) counts as that
  *   descendant's contribution rather than only its text nodes.
+ * @reason-codes
+ *   - `name_missing` (fail): the tab has no accessible name from aria-label,
+ *     aria-labelledby, title or its content.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2.
+ *   - `name_closedContent` (cantTell): the tab may take its name from content
+ *     inside a closed shadow root, which no script can read, so whether it has
+ *     a name could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_contentTooDeep` (cantTell): the tab's content is nested too deeply
+ *     for its name to be worked out, so whether it has a name could not be
+ *     told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'tab-name-present';
@@ -50,7 +66,44 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['tab-name-present'] } }
+  coverage: { facetsBySc: { '4.1.2': ['tab-name-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_closedContent: {
+      steps: [
+        'Find the tab the report names and note the text or icon it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from content no script can read.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the tab, taken from its content, and the screen reader announces it.',
+      failWhen:
+        'The tab has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
+    },
+    name_contentTooDeep: {
+      steps: [
+        'Find the tab the report names and note the text it shows on screen.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name, which the browser works out from all of its nested content.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the tab, taken from its nested content, and the screen reader announces it.',
+      failWhen:
+        'The tab has no name in the accessibility tree, since its content gives none, which fails WCAG 4.1.2.'
+    },
+    name_internals: {
+      steps: [
+        'Inspect the tab the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the tab, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The tab has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
+    }
+  }
 };
 
 function runInPage(ctx) {

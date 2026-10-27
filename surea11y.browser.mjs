@@ -7,9 +7,19 @@ import a11ycore from './surea11y.browser.js';
 export const {
   ENGINE_TAG,
   SCHEMA_VERSION,
+  version,
   registerMessages,
   waitForPageReady,
   getMargins,
-  runa11yCoreInPage
+  getAnnouncements,
+  preloadStyleSheets,
+  runa11yCoreInPage,
+  runa11yCoreInPageAsync,
+  run,
+  table,
+  highlight,
+  inspect,
+  clearHighlights,
+  openReport
 } = a11ycore;
 export default a11ycore;

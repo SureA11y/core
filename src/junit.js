@@ -27,20 +27,27 @@
  *
  * JUnit has no "could not tell". A cantTell rule is <skipped> by default:
  * surfaced for review, never turning a build red, the same line the SARIF
- * reporter draws with "warning". `cantTellAs: 'failure'` gates on it instead.
+ * reporter draws with "warning". `cantTellAs: 'failure'` gates on it instead,
+ * and `leanFailAs: 'failure'` gates only on the undecided findings whose
+ * evidence points to fail (their `lean`), as <failure type="leanFail">:
+ * those of every rule, best-practice ones included, or, with
+ * `leanFailWcagOnly`, of the rules mapped to a WCAG criterion.
  * notApplicable rules are left out unless `includeNotApplicable` is set, since
  * a page has hundreds of them and none says anything.
  *
  * `baselineEntries` (docs/BASELINE.md) drops fail occurrences already
  * recorded there, as SARIF does. A rule whose every failure is known is
- * <skipped> with the count, not reported as passing: it did not pass.
+ * <skipped> with the count, not reported as passing: it did not pass. Under
+ * leanFailAs, a finding that leans fail and has an entry marked
+ * `lean: 'fail'` does not gate either.
  *
  * No timings are invented. `time` is "0" throughout, so the same scan always
  * renders byte-identical XML, and `timestamp` appears only when the result
  * carries one (the engine has no clock of its own).
  */
 
-const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
+const { knownOccurrences } = require('./baseline.js');
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 const {
   framesOf,
   framePathText,
@@ -49,7 +56,9 @@ const {
   helpUrlOf,
   standardsOf,
   standardOfEntryIn,
-  wcagScopeOf
+  wcagScopeOf,
+  occurrenceOutcome,
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -99,36 +108,11 @@ function mappingsOf(result) {
   return (result && result.meta && result.meta.normativeMappings) || [];
 }
 
-function getOccurrenceOutcome(check, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
-}
-
-function buildRemainingBaselineMap(baselineEntries) {
-  const remaining = new Map();
-  for (const entry of entriesOf(baselineEntries)) {
-    if (!entry) continue;
-    const key = computeBaselineKey(
-      entry.ruleId,
-      entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : '',
-      entry.frame
-    );
-    remaining.set(key, (remaining.get(key) || 0) + 1);
-  }
-  return remaining;
-}
-
-// What one rule contributes, decided once so that a rule appearing in two
-// suites consumes its baseline entries only once.
-function classify(check, remaining, options, framePath = []) {
+// What one rule contributes, decided once for a rule that appears in two
+// suites. `baseline` holds what the baseline knows (knownOccurrences), and
+// `gating` the findings that lean fail and gate under leanFailAs
+// (leaningOccurrencesOf).
+function classify(check, baseline, gating, options) {
   const occurrences = Array.isArray(check.occurrences) ? check.occurrences.filter(Boolean) : [];
   const failing = [];
   const undecided = [];
@@ -136,13 +120,9 @@ function classify(check, remaining, options, framePath = []) {
 
   if (check.outcome === 'fail' || check.outcome === 'cantTell') {
     for (const occurrence of occurrences) {
-      const outcome = getOccurrenceOutcome(check, occurrence);
+      const outcome = occurrenceOutcome(check, occurrence);
       if (outcome === 'fail') {
-        const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-        const key = computeBaselineKey(check.ruleId, getReasonCode(occurrence), html, framePath);
-        const left = remaining.get(key) || 0;
-        if (left > 0) {
-          remaining.set(key, left - 1);
+        if (baseline.known.has(occurrence)) {
           baselined++;
           continue;
         }
@@ -153,9 +133,23 @@ function classify(check, remaining, options, framePath = []) {
     }
   }
 
+  // With leanFailAs: 'failure', an undecided occurrence whose evidence
+  // points to fail gates as a failure, unless the baseline knows it (an entry
+  // marked lean: 'fail'); the rest stay as cantTellAs says.
+  const leaning = [];
+  let leanBaselined = 0;
+  if (options.leanFailAs === 'failure') {
+    for (const o of undecided) {
+      if (!gating.has(o)) continue;
+      if (baseline.knownLeaning.has(o)) leanBaselined++;
+      else leaning.push(o);
+    }
+  }
+
   let status;
   if (ruleErrorOf(check)) status = 'error';
   else if (failing.length) status = 'failure';
+  else if (leaning.length) status = 'failure';
   else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
@@ -163,7 +157,16 @@ function classify(check, remaining, options, framePath = []) {
     status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else status = 'passed';
 
-  return { check, status, failing, undecided, baselined };
+  return {
+    check,
+    status,
+    failing,
+    undecided,
+    leaning,
+    baselined,
+    leanBaselined,
+    cantTellAs: options.cantTellAs
+  };
 }
 
 function describeOccurrence(occurrence) {
@@ -173,6 +176,25 @@ function describeOccurrence(occurrence) {
   if (occurrence.selector) lines.push(`  selector: ${locationText(occurrence)}`);
   if (typeof occurrence.html === 'string' && occurrence.html) {
     lines.push(`  html: ${occurrence.html}`);
+  }
+  return lines.join('\n');
+}
+
+// A finding that leans fail and gates as one: what any finding says, then
+// why it likely fails and what could make that wrong, and how a person
+// confirms it (howToCheck), so the build log says what to look at before
+// anyone opens the HTML report.
+function describeLeaning(occurrence) {
+  const lines = [describeOccurrence(occurrence)];
+  const lean = occurrence.lean || {};
+  if (typeof lean.why === 'string' && lean.why) lines.push(`  likely fails: ${lean.why}`);
+  if (typeof lean.caution === 'string' && lean.caution) lines.push(`  caution: ${lean.caution}`);
+  const how = occurrence.howToCheck;
+  if (how && Array.isArray(how.steps) && how.steps.length) {
+    lines.push('  how to check:');
+    how.steps.forEach((step, i) => lines.push(`    ${i + 1}. ${step}`));
+    if (typeof how.failWhen === 'string' && how.failWhen)
+      lines.push(`  fails when: ${how.failWhen}`);
   }
   return lines.join('\n');
 }
@@ -193,6 +215,7 @@ function needReview(n) {
 
 function renderTestcase(entry, classname, indent) {
   const { check, status, failing, undecided, baselined } = entry;
+  const leaning = entry.leaning || [];
   const open = `${indent}<testcase classname="${xmlText(classname)}" name="${xmlText(check.ruleId)}" time="0"`;
   const inner = [];
 
@@ -205,6 +228,11 @@ function renderTestcase(entry, classname, indent) {
     const message = `${plural(failing.length, 'failing occurrence')}: ${failing[0].summary || check.ruleId}`;
     inner.push(
       `${indent}  <failure type="fail" message="${xmlText(message)}">${xmlText([...failing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
+    );
+  } else if (status === 'failure' && leaning.length && entry.cantTellAs !== 'failure') {
+    const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
+    inner.push(
+      `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
@@ -223,6 +251,9 @@ function renderTestcase(entry, classname, indent) {
     if (undecided.length) parts.push(needReview(undecided.length));
     else if (check.outcome === 'cantTell' && !baselined) parts.push('Needs manual review');
     if (baselined) parts.push(`${plural(baselined, 'known failure')} recorded in the baseline`);
+    if (entry.leanBaselined) {
+      parts.push(`${plural(entry.leanBaselined, 'known likely failure')} recorded in the baseline`);
+    }
     inner.push(`${indent}  <skipped message="${xmlText(parts.join('; '))}"/>`);
   } else if (status === 'notApplicable') {
     inner.push(`${indent}  <skipped message="Not applicable"/>`);
@@ -292,7 +323,7 @@ function criterionOf(list) {
 // The suites of one frame's result. A child frame of a cross-frame result
 // gets suites of its own, named after it, since its criteria are met or
 // failed in its own document.
-function frameSuites(result, frame, remaining, opts, totals) {
+function frameSuites(result, frame, baseline, opts, totals) {
   const engine = (result && result.engine) || {};
   // The standards the result names besides WCAG, in registry order.
   const standards = standardsOf(result);
@@ -315,8 +346,11 @@ function frameSuites(result, frame, remaining, opts, totals) {
 
   const suites = new Map(); // criterion (or OTHER_SUITE) -> { entries, level, standards }
   const checks = ((result && result.checksResults) || []).filter((c) => c && c.ruleId);
+  const gating = new Set(
+    leaningOccurrencesOf(result, { wcagOnly: opts.leanFailWcagOnly }).map((l) => l.occurrence)
+  );
   for (const check of checks) {
-    let entry = classify(check, remaining, opts, frame.path);
+    let entry = classify(check, baseline, gating, opts);
     if (entry.status === 'notApplicable' && !opts.includeNotApplicable) continue;
 
     const mappings = mappingsOf(check);
@@ -424,7 +458,7 @@ function frameSuites(result, frame, remaining, opts, totals) {
 }
 
 function renderJunitReport(result, options = {}) {
-  const frames = framesOf(result, 'renderJunitReport');
+  let frames = framesOf(result, 'renderJunitReport');
   // cantTellAs is 'skipped' (the default) or 'failure', in any case. Another
   // value is a mistake that would quietly not gate, so it throws.
   const cantTellAs =
@@ -436,17 +470,47 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: cantTellAs must be 'skipped' or 'failure', not ${JSON.stringify(options.cantTellAs)}`
     );
   }
+  // leanFailAs is 'skipped' (the default) or 'failure': an undecided
+  // occurrence whose evidence points to fail then gates as a failure.
+  const leanFailAs =
+    options.leanFailAs === undefined || options.leanFailAs === null
+      ? 'skipped'
+      : String(options.leanFailAs).trim().toLowerCase();
+  if (leanFailAs !== 'skipped' && leanFailAs !== 'failure') {
+    throw new TypeError(
+      `renderJunitReport: leanFailAs must be 'skipped' or 'failure', not ${JSON.stringify(options.leanFailAs)}`
+    );
+  }
+  // leanFailWcagOnly: true gates only on the leans of rules mapped to a WCAG
+  // criterion, not on a best-practice rule's, whose stated facts lean fail
+  // without condition (docs/LEANS.md).
+  const leanFailWcagOnly = options.leanFailWcagOnly;
+  if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
+    throw new TypeError(
+      `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
+    );
+  }
   const opts = {
     cantTellAs,
+    leanFailAs,
+    leanFailWcagOnly: leanFailWcagOnly === true,
     includeNotApplicable: options.includeNotApplicable === true
   };
-  const remaining = buildRemainingBaselineMap(options.baselineEntries);
+  // A finding that gates as a likely failure says how to confirm it: a
+  // result that comes without the steps (a binding's) gains them, in Node.
+  // Before the baseline, which knows the occurrences it matched by identity.
+  if (leanFailAs === 'failure') {
+    frames = frames.map((f) =>
+      f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
+    );
+  }
+  const baseline = knownOccurrences(frames, options.baselineEntries);
 
   const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
   const suiteXml = [];
   for (const { frame, result: frameResult, error } of frames) {
     if (frameResult) {
-      suiteXml.push(...frameSuites(frameResult, frame, remaining, opts, totals));
+      suiteXml.push(...frameSuites(frameResult, frame, baseline, opts, totals));
       continue;
     }
     // A frame that did not answer was not checked: a skip, not a failure,

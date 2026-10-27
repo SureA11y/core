@@ -203,6 +203,7 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '1.4.2': 'audio-control',
     '1.4.3': 'contrast-minimum',
     '1.4.4': 'resize-text',
+    '1.4.5': 'images-of-text',
     '1.4.6': 'contrast-enhanced',
     '2.1.1': 'keyboard',
     '2.1.3': 'keyboard-no-exception',
@@ -221,10 +222,12 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '3.1.1': 'language-of-page',
     '3.1.2': 'language-of-parts',
     '3.2.5': 'change-on-request',
+    '3.3.1': 'error-identification',
     '3.3.2': 'labels-or-instructions',
     '3.3.8': 'accessible-authentication-minimum',
     '4.1.1': 'parsing',
-    '4.1.2': 'name-role-value'
+    '4.1.2': 'name-role-value',
+    '4.1.3': 'status-messages'
   });
 });
 

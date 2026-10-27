@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const CASES = [
   [
@@ -86,7 +85,7 @@ test('region leaves out excluded content, in Chromium', { skip }, async (t) => {
           await p.setContent(
             `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`
           );
-          await p.addScriptTag({ content: BUNDLE });
+          await addBundle(p);
           const ids = await p.evaluate(
             ({ selectors, scope }) => {
               const eo =

@@ -30,9 +30,17 @@ test('every export is classified, and nothing is classified twice', () => {
   assert.deepStrictEqual(both, [], 'a symbol cannot be both supported and internal');
 });
 
+// The supported exports that are data, not functions: frozen, so a consumer
+// can't change what every other one reads.
+const SUPPORTED_DATA = new Set(['HOOK_REASON_CODES']);
+
 test('every supported export is actually present and callable', () => {
   for (const name of supported) {
     assert.ok(name in core, `${name} is promised but not exported`);
+    if (SUPPORTED_DATA.has(name)) {
+      assert.ok(Object.isFrozen(core[name]), `${name} should be frozen`);
+      continue;
+    }
     assert.strictEqual(typeof core[name], 'function', `${name} should be a function`);
   }
 });

@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -41,7 +40,7 @@ const skip = !chromium
     : false;
 
 const RULE_ID = 'css-hidden-focus';
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../../helpers/browserBundle');
 
 const HIDE =
   'position:absolute!important;width:1px!important;height:1px!important;margin:0!important;overflow:hidden!important;clip:rect(0 0 0 0)!important;clip-path:inset(50%)!important';
@@ -56,7 +55,7 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
   async function open(html) {
     const p = await browser.newPage();
     await p.setContent(html);
-    await p.addScriptTag({ content: BUNDLE });
+    await addBundle(p);
     return p;
   }
   const scan = (p, engineOptions) =>
@@ -125,6 +124,17 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     [
       'a menu a :focus-within rule brings into view',
       '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%)}#nav:focus-within{transform:none}',
+      {}
+    ],
+    ['a menu scaled to nothing', '#nav{transform:scale(0)}', { '#in-menu': 'containerClipped' }],
+    [
+      'a menu a :has() rule brings into view',
+      '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%)}body:has(#nav a:focus) #nav{transform:none}',
+      {}
+    ],
+    [
+      'a menu a nested :focus-within rule brings into view',
+      '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%);&:focus-within{transform:none}}',
       {}
     ],
     [
@@ -202,6 +212,88 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   });
+
+  // A skip link moved out of view, with a focus rule to bring it back.
+  const SKIP = '<a id="skip" href="#m">Skip</a><main id="m"><p>Text</p></main>';
+  for (const [name, css, expected] of [
+    ['revealed by :focus', '#skip{position:absolute;top:-40px}#skip:focus{top:0}', {}],
+    ['revealed by a nested &:focus', '#skip{position:absolute;top:-40px;&:focus{top:0}}', {}],
+    [
+      'kept out of view by an !important rule its :focus rule cannot override',
+      '#skip{position:absolute!important;top:-40px!important}#skip:focus{top:0}',
+      { '#skip': 'outOfReach' }
+    ],
+    [
+      'revealed by an !important :focus rule',
+      '#skip{position:absolute;top:-40px!important}#skip:focus{top:0!important}',
+      {}
+    ]
+  ]) {
+    await t.test(`a skip link ${name}: ${JSON.stringify(expected)}`, async () => {
+      const p = await open(doc(css, SKIP));
+      try {
+        assert.deepEqual(await hintsOf(p), expected);
+      } finally {
+        await p.close();
+      }
+    });
+  }
+
+  // The :focus rule in an adopted sheet, or in the component's own shadow
+  // root; a shadow root's rule doesn't reach a link outside it.
+  const SKIP_CSS = '.skip{position:absolute;top:-40px}.skip:focus{top:0}';
+  for (const [name, body, script, expected] of [
+    [
+      'in an adopted sheet',
+      '<a class="skip" id="skip" href="#m">Skip</a><main id="m"><p>Text</p></main>',
+      `const s = new CSSStyleSheet(); s.replaceSync('${SKIP_CSS}'); document.adoptedStyleSheets = [s];`,
+      {}
+    ],
+    [
+      "in a component's shadow root",
+      '<x-skip></x-skip><main id="m"><p>Text</p></main>',
+      `document.querySelector('x-skip').attachShadow({ mode: 'open' }).innerHTML = '<style>${SKIP_CSS}</style><a class="skip" href="#m">Skip</a>';`,
+      {}
+    ],
+    [
+      "only in another root, which doesn't reach it",
+      '<a class="skip" id="skip" href="#m">Skip</a><x-other></x-other><main id="m"><p>Text</p></main>',
+      `const s = new CSSStyleSheet(); s.replaceSync('.skip{position:absolute;top:-40px}'); document.adoptedStyleSheets = [s]; document.querySelector('x-other').attachShadow({ mode: 'open' }).innerHTML = '<style>.skip:focus{top:0}</style>';`,
+      { '#skip': 'outOfReach' }
+    ]
+  ]) {
+    await t.test(
+      `a skip link revealed by a :focus rule ${name}: ${JSON.stringify(expected)}`,
+      async () => {
+        const p = await browser.newPage();
+        try {
+          await p.setContent(doc('', body));
+          await p.evaluate(script);
+          await addBundle(p);
+          assert.deepEqual(await hintsOf(p), expected);
+        } finally {
+          await p.close();
+        }
+      }
+    );
+  }
+
+  await t.test(
+    'a link past an overflow: clip box, which focus does not scroll, is asked about',
+    async () => {
+      const p = await open(
+        doc(
+          '.track{overflow-x:clip;width:300px;white-space:nowrap}.slide{display:inline-block;width:300px}',
+          '<div class="track"><div class="slide"><a id="one" href="/1">One</a></div><div class="slide"><a id="two" href="/2">Two</a></div></div>'
+        )
+      );
+      try {
+        assert.deepEqual(await hintsOf(p), { '#two': 'containerClipped' });
+      } finally {
+        await p.close();
+      }
+    }
+  );
 
   await t.test('a GOV.UK-style skip link revealed on focus is not asked about', async () => {
     const p = await open(page('.skip:not(:active):not(:focus):not(.\\:focus)'));

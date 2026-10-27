@@ -37,7 +37,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const FR = fs.readFileSync(path.join(__dirname, '../../surea11y.i18n.fr.js'), 'utf8');
 
 // Dark gray on the page's black (a fail, which forced colors measured on
@@ -107,7 +107,7 @@ test(
       t.after(() => page.close());
       await page.emulateMedia({ forcedColors });
       await page.setContent(HTML);
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return page.evaluate(
         ([rules, pageStylesSource]) => {
           const read = new Function('return (' + pageStylesSource + ')')();
@@ -142,12 +142,12 @@ test(
     assert.deepEqual(on.checks, off.checks);
     const check = (id) => on.checks.find((c) => c.ruleId === id);
     assert.equal(check('contrast-minimum').outcome, 'fail');
-    // The two spans are the shadow roots' text.
+    // The two spans are the shadow roots' text, each at the top of its root.
     assert.deepEqual(
       check('contrast-minimum')
         .occurrences.map((o) => o.selector)
         .sort(),
-      ['#dark', '#own', '#tag', 'span', 'span']
+      ['#dark', '#own', '#tag', 'span:not(* > *)', 'span:not(* > *)']
     );
     const tag = check('contrast-minimum').occurrences.find((o) => o.selector === '#tag');
     assert.equal(tag.data.details.generatedBy, '::before');
@@ -190,7 +190,7 @@ test(
           '<meta http-equiv="Content-Security-Policy" content="style-src \'none\'"></head>' +
           '<body><main><p id="grey">Opening hours</p></main></body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       if (locale === 'fr') await page.addScriptTag({ content: FR });
       return page.evaluate((locale) => {
         document.getElementById('grey').style.color = '#999';
@@ -253,7 +253,7 @@ test(
         '<!doctype html><html lang="en"><head><title>t</title><meta name="color-scheme" content="dark"></head>' +
           '<body><main><p style="color:#333">Dark grey text</p></main></body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       return page.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, [
           'contrast-minimum',
@@ -267,5 +267,29 @@ test(
     const [minimum, computable] = await scan('active');
     assert.notEqual(minimum, 'pass');
     assert.equal(computable, 'cantTell');
+
+    // A page whose own CSS reacts to forced colors (a forced-colors media
+    // query, a system color) is measured in the colors it has then, which
+    // the environment says; a page whose CSS doesn't, isn't marked.
+    const reacting = async (forcedColors, css) => {
+      const page = await browser.newPage();
+      t.after(() => page.close());
+      await page.emulateMedia({ forcedColors });
+      await page.setContent(
+        `<!doctype html><html lang="en"><head><title>t</title><style>body{background:#fff}${css}</style></head>` +
+          '<body><main><p class="b">Badge</p></main></body></html>'
+      );
+      await addBundle(page);
+      return page.evaluate(() => {
+        const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['contrast-minimum']);
+        return [r.checksResults[0].outcome, r.engine.environment.forcedColorsCss];
+      });
+    };
+    const MEDIA =
+      '.b{background:#f80;color:#fff}@media (forced-colors: active){.b{background:Canvas;color:CanvasText}}';
+    assert.deepEqual(await reacting('none', MEDIA), ['fail', undefined]);
+    assert.deepEqual(await reacting('active', MEDIA), ['pass', true]);
+    assert.deepEqual(await reacting('active', '.b{color:GrayText}'), ['pass', true]);
+    assert.deepEqual(await reacting('active', '.b{color:#777}'), ['fail', undefined]);
   }
 );

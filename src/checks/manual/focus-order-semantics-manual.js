@@ -23,6 +23,15 @@
  * @reports
  *   - `tabindex`: the element's `tabindex`, as a number (0 or greater).
  *   - `role`: the non-interactive role the element carries.
+ * @reason-codes
+ *   - `TABBABLE_WITH_NON_INTERACTIVE_ROLE` (cantTell): the element is in the
+ *     tab order but carries a non-interactive role, so a keyboard user who
+ *     reaches it is not told what it does.
+ *     It leans pass when the element scrolls (overflow auto or scroll and
+ *     content measured larger than its box) or is a document inside an
+ *     application, with no click or key handler; it leans fail when a click
+ *     or key handler is on it and neither holds.
+ *     Basis: WCAG 2.4.3 (best practice); WCAG 4.1.2 (best practice).
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule.
@@ -67,7 +76,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    TABBABLE_WITH_NON_INTERACTIVE_ROLE: {
+      steps: [
+        'Press Tab until focus reaches the element the report names and listen with a screen reader, or read its role in the Accessibility pane.',
+        'Find out why it is focusable: does it scroll (its content overflows and arrow keys scroll it), or does it do something when clicked or when Enter or Space is pressed?',
+        'If it acts as a control, compare the announced role with what it does.'
+      ],
+      passWhen:
+        'The element is focusable for a reason its role supports, such as a scrollable region a keyboard user needs to scroll, and does not act as a control.',
+      failWhen:
+        'The element acts as a control (it opens, toggles or navigates) but is announced with a non-interactive role such as heading or list, so keyboard users are not told what it does; a best-practice miss related to WCAG 4.1.2. If it does nothing and does not scroll, it is a needless tab stop.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -108,6 +132,45 @@ function runInPage(ctx) {
     'tooltip'
   ]);
 
+  // For the lean: what the element does with its tab stop.
+  const HANDLER_ATTRS = ['onclick', 'onkeydown', 'onkeyup', 'onkeypress'];
+  function hasActivationHandler(el) {
+    if (HANDLER_ATTRS.some((a) => String(dom.getAttribute(el, a) || '').trim())) return true;
+    try {
+      return (
+        typeof helpers.getEventListenerInfo === 'function' &&
+        !!helpers.getEventListenerInfo(el, ['click', 'keydown', 'keyup', 'keypress']).listens
+      );
+    } catch {
+      return false;
+    }
+  }
+  // A box that scrolls: overflow auto or scroll, and content the browser
+  // measures larger than the box. Without layout (jsdom) the sizes are 0.
+  function scrollsOverflow(el) {
+    try {
+      const cs = helpers.computedStyle(el);
+      const ov = [cs && cs.overflowX, cs && cs.overflowY].map((v) => String(v || '').toLowerCase());
+      const x =
+        (ov[0] === 'auto' || ov[0] === 'scroll') &&
+        dom.get(el, 'scrollWidth') - dom.get(el, 'clientWidth') > 2;
+      const y =
+        (ov[1] === 'auto' || ov[1] === 'scroll') &&
+        dom.get(el, 'scrollHeight') - dom.get(el, 'clientHeight') > 2;
+      return !!(x || y);
+    } catch {
+      return false;
+    }
+  }
+  function inApplication(el) {
+    for (let a = dom.parentElement(el), i = 0; a && i < 500; a = dom.parentElement(a), i++) {
+      try {
+        if (helpers.aria.getExplicitRole(a) === 'application') return true;
+      } catch {}
+    }
+    return false;
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('[tabindex][role]')
     : helpers.queryAll('[tabindex][role]');
@@ -142,7 +205,45 @@ function runInPage(ctx) {
       ? helpers.getOuterHtmlSnippet(el)
       : dom.outerHTML(el) || '';
 
+    const handler = hasActivationHandler(el);
+    const scrolls = scrollsOverflow(el);
+    const docInApp = role === 'document' && inApplication(el);
+    let lean;
+    if (!handler && (scrolls || docInApp)) {
+      lean = {
+        toward: 'pass',
+        why: scrolls
+          ? 'The element’s content overflows its box and it scrolls, so its tab stop lets keyboard users scroll it.'
+          : 'A document inside an application is made focusable so screen reader users can read it.',
+        signals: [
+          { signal: 'scrollable-overflow', value: scrolls },
+          { signal: 'document-in-application', value: docInApp },
+          { signal: 'inline-activation-handler', value: false }
+        ],
+        i18n: {
+          whyKey: scrolls
+            ? 'focusOrderSemantics_lean_why_scrolls'
+            : 'focusOrderSemantics_lean_why_documentInApplication'
+        }
+      };
+    } else if (handler && !scrolls && !docInApp) {
+      lean = {
+        toward: 'fail',
+        why: 'A click or key handler is on the element, so it acts as a control while its role says it is not one.',
+        signals: [
+          { signal: 'inline-activation-handler', value: true },
+          { signal: 'scrollable-overflow', value: false }
+        ],
+        caution: 'The handler may only track clicks, or serve something other than the element.',
+        i18n: {
+          whyKey: 'focusOrderSemantics_lean_why_handler',
+          cautionKey: 'focusOrderSemantics_lean_caution_handler'
+        }
+      };
+    }
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       selector: stableSelector,
       html,
       summary: `This element is in the tab order (tabindex="${tabindex}") but has a non-interactive role ("${role}").`,

@@ -190,13 +190,28 @@ test('the browser bundle exports its API when loaded as a module', () => {
   assert.deepEqual(Object.keys(api).sort(), [
     'ENGINE_TAG',
     'SCHEMA_VERSION',
+    'clearHighlights',
+    'getAnnouncements',
     'getMargins',
+    'highlight',
+    'inspect',
+    'openReport',
     'preloadStyleSheets',
     'registerMessages',
+    'run',
     'runa11yCoreInPage',
     'runa11yCoreInPageAsync',
+    'table',
+    'version',
     'waitForPageReady'
   ]);
+  // The ES module entry names every one of them (it had left two out).
+  const mjs = fs.readFileSync(path.join(__dirname, '..', 'surea11y.browser.mjs'), 'utf8');
+  const named = /export const \{([^}]*)\} = a11ycore;/
+    .exec(mjs)[1]
+    .split(',')
+    .map((n) => n.trim());
+  assert.deepEqual(named.filter(Boolean).sort(), Object.keys(api).sort());
   assert.equal(typeof api.runa11yCoreInPage, 'function');
   assert.equal(api.ENGINE_TAG, 'a11ycore');
   assert.equal(

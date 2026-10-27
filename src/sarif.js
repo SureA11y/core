@@ -13,21 +13,25 @@
  * "violations only" framing docs/REPORT.md's HTML report already uses.
  * fail -> SARIF level "error" (the CI-gating case); cantTell -> "warning"
  * (surfaced, non-blocking -- this engine's own cantTell/manual-review mental
- * model, docs/TROUBLESHOOTING.md).
+ * model, docs/TROUBLESHOOTING.md). A cantTell whose lean points to fail is
+ * "error" instead when `leanFailAs: 'error'` is given (with
+ * `leanFailWcagOnly`, only for a rule mapped to a WCAG criterion); every
+ * lean is in the result's properties either way.
  *
  * If `baselineEntries` is supplied (mirrors --baseline, docs/BASELINE.md),
  * fail occurrences already recorded there are omitted entirely rather than
  * downgraded -- a generic SARIF consumer has no "known, don't re-gate"
  * concept of its own, so the only faithful way to honor a baseline here is
  * to not report the occurrence at all. cantTell occurrences are never
- * baseline-filtered (the baseline mechanism only ever tracks fail
- * occurrences, matching --write-baseline).
+ * left out: one that leans fail and has an entry marked `lean: 'fail'`
+ * stays a "warning" under `leanFailAs: 'error'`, as it is without it.
  */
 
 const crypto = require('crypto');
 const path = require('path');
 const { fileURLToPath, pathToFileURL } = require('url');
-const { computeBaselineKey, getReasonCode, entriesOf } = require('./baseline.js');
+const { computeBaselineKey, getReasonCode, knownOccurrences } = require('./baseline.js');
+const { withHowToCheck } = require('./how-to-check-lazy.js');
 const {
   framesOf,
   framePathText,
@@ -36,7 +40,9 @@ const {
   helpUrlOf,
   standardsOf,
   standardOfEntryIn,
-  wcagScopeOf
+  wcagScopeOf,
+  occurrenceOutcome,
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -80,21 +86,6 @@ function artifactUriFromResult(result) {
   } catch {
     return segments(url);
   }
-}
-
-function buildRemainingBaselineMap(baselineEntries) {
-  const remaining = new Map();
-  for (const entry of entriesOf(baselineEntries)) {
-    if (!entry) continue;
-    const key = computeBaselineKey(
-      entry.ruleId,
-      entry.reasonCode || 'DEFAULT',
-      typeof entry.html === 'string' ? entry.html : '',
-      entry.frame
-    );
-    remaining.set(key, (remaining.get(key) || 0) + 1);
-  }
-  return remaining;
 }
 
 // `normativeMappings` also carries other standards (EN 301 549 clauses, say) and
@@ -168,8 +159,12 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
   const summary = typeof occurrence.summary === 'string' ? occurrence.summary.trim() : '';
   const hint = typeof occurrence.hint === 'string' ? occurrence.hint.trim() : '';
   const lead = summary || (typeof check.title === 'string' && check.title.trim()) || check.ruleId;
-  const message = hint ? `${lead} ${hint}` : lead;
+  const how = sarifHowToCheck(occurrence.howToCheck);
+  const message = [hint ? `${lead} ${hint}` : lead, ...(how ? [howToCheckText(how)] : [])].join(
+    '\n\n'
+  );
   const where = locationText(occurrence);
+  const lean = sarifLean(occurrence.lean);
 
   return {
     ruleId: check.ruleId,
@@ -199,9 +194,45 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       // In a child frame of a cross-frame result: the selectors of the
       // frame elements leading to it from the page.
       ...(framePath.length ? { frame: framePath.slice() } : {}),
-      ...(outside ? { outsideTarget: outside } : {})
+      ...(outside ? { outsideTarget: outside } : {}),
+      // An undecided finding's lean: which way its evidence points.
+      ...(lean ? { lean } : {}),
+      // How a person answers an undecided finding (docs/OUTPUT_SCHEMA.md,
+      // "How to check"), also written under its message for a reader of
+      // the alert.
+      ...(how ? { howToCheck: how } : {})
     }
   };
+}
+
+// The lean as a SARIF result carries it: which way, why, and, where the
+// engine gives them, what could make it wrong (caution) and how often it has
+// been right (measured), so a reviewer reading an alert sees the caution the
+// HTML report shows. Its signals and i18n keys stay in the scan result.
+function sarifLean(lean) {
+  if (!lean || (lean.toward !== 'fail' && lean.toward !== 'pass')) return null;
+  const out = { toward: lean.toward, why: lean.why };
+  if (typeof lean.caution === 'string' && lean.caution) out.caution = lean.caution;
+  if (lean.measured && typeof lean.measured === 'object') out.measured = { ...lean.measured };
+  return out;
+}
+
+// An undecided finding's steps, as a result carries them, or null.
+function sarifHowToCheck(how) {
+  if (!how || !Array.isArray(how.steps) || !how.steps.length) return null;
+  const text = (v) => (typeof v === 'string' ? v : '');
+  return { steps: how.steps.map(text), passWhen: text(how.passWhen), failWhen: text(how.failWhen) };
+}
+
+// The steps as plain text, for the result's message: code scanning shows
+// the message, not the properties.
+function howToCheckText(how) {
+  return [
+    'How to check:',
+    ...how.steps.map((step, i) => `${i + 1}. ${step}`),
+    ...(how.passWhen ? [`Passes when: ${how.passWhen}`] : []),
+    ...(how.failWhen ? [`Fails when: ${how.failWhen}`] : [])
+  ].join('\n');
 }
 
 // GitHub Code Scanning matches results between uploads on
@@ -225,22 +256,10 @@ function addLineHashes(results) {
   return results;
 }
 
-function getOccurrenceOutcome(check, occurrence) {
-  const occurrenceOutcome =
-    occurrence &&
-    (occurrence.occurrenceOutcome === 'fail' || occurrence.occurrenceOutcome === 'cantTell'
-      ? occurrence.occurrenceOutcome
-      : occurrence.outcome === 'fail' || occurrence.outcome === 'cantTell'
-        ? occurrence.outcome
-        : null);
-  if (occurrenceOutcome) return occurrenceOutcome;
-  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
-}
-
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
 // from a 2.2 one, and an AA one from one at every level, the opt-in rules it
 // added beyond that target, and the conditions the page was rendered under,
-// which layout-dependent results depend on. Absent on results from engines
+// which layout-dependent results depend on. Absent on results from releases
 // that predate the fields.
 function runProperties(result) {
   const engine = (result && result.engine) || {};
@@ -268,11 +287,38 @@ function automationDetails(category) {
 }
 
 function renderSarifReport(result, options = {}) {
-  const frames = framesOf(result, 'renderSarifReport');
+  // A result that comes without the steps for its undecided findings (a
+  // binding's, from runa11yCoreInPage) gains them here, in Node, as the
+  // HTML report adds them; options.packs adds a pack rule's own. Before the
+  // baseline, which knows the occurrences it matched by identity.
+  const frames = framesOf(result, 'renderSarifReport').map((f) =>
+    f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
+  );
   const top = frames[0].result;
   const { toolVersion, informationUri, baselineEntries, category } = options;
+  // leanFailAs: 'error' reports an undecided finding whose evidence points
+  // to fail at "error", so a gate on errors counts it; by default it is a
+  // "warning" like every other undecided finding.
+  const leanFailAs =
+    options.leanFailAs === undefined || options.leanFailAs === null
+      ? 'warning'
+      : String(options.leanFailAs).trim().toLowerCase();
+  if (leanFailAs !== 'warning' && leanFailAs !== 'error') {
+    throw new TypeError(
+      `renderSarifReport: leanFailAs must be 'warning' or 'error', not ${JSON.stringify(options.leanFailAs)}`
+    );
+  }
+  // leanFailWcagOnly: true raises only the leans of rules mapped to a WCAG
+  // criterion, not a best-practice rule's, whose stated facts lean fail
+  // without condition (docs/LEANS.md).
+  const { leanFailWcagOnly } = options;
+  if (leanFailWcagOnly != null && typeof leanFailWcagOnly !== 'boolean') {
+    throw new TypeError(
+      `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
+    );
+  }
   const automation = automationDetails(category);
-  const remaining = buildRemainingBaselineMap(baselineEntries);
+  const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
 
   const rules = [];
   const seenRuleIds = new Set();
@@ -295,6 +341,15 @@ function renderSarifReport(result, options = {}) {
       continue;
     }
     const artifactUri = artifactUriFromResult(frameResult);
+    // The findings that lean fail and are raised under leanFailAs: 'error',
+    // less those the baseline knows (entries marked lean: 'fail').
+    const raised = new Set(
+      leanFailAs === 'error'
+        ? leaningOccurrencesOf(frameResult, { wcagOnly: leanFailWcagOnly === true })
+            .map((l) => l.occurrence)
+            .filter((o) => !knownLeaning.has(o))
+        : []
+    );
     const standards = standardsOf(frameResult);
     const inScope = wcagScopeOf(frameResult);
     for (const check of (frameResult && frameResult.checksResults) || []) {
@@ -357,16 +412,10 @@ function renderSarifReport(result, options = {}) {
       for (const occurrence of check.occurrences) {
         if (!occurrence) continue;
 
-        const occurrenceOutcome = getOccurrenceOutcome(check, occurrence);
-        if (occurrenceOutcome === 'fail') {
-          const reasonCode = getReasonCode(occurrence);
-          const html = typeof occurrence.html === 'string' ? occurrence.html : '';
-          const key = computeBaselineKey(check.ruleId, reasonCode, html, framePath);
-          const left = remaining.get(key) || 0;
-          if (left > 0) {
-            remaining.set(key, left - 1);
-            continue; // already known via the baseline -- omit, don't re-gate
-          }
+        const outcome = occurrenceOutcome(check, occurrence);
+        if (outcome === 'fail') {
+          // Already known via the baseline: omitted, not re-gated.
+          if (known.has(occurrence)) continue;
           failResults.push(
             buildResult(
               check,
@@ -377,12 +426,12 @@ function renderSarifReport(result, options = {}) {
               outside
             )
           );
-        } else if (occurrenceOutcome === 'cantTell') {
+        } else if (outcome === 'cantTell') {
           cantTellResults.push(
             buildResult(
               check,
               occurrence,
-              outside ? 'note' : 'warning',
+              outside ? 'note' : raised.has(occurrence) ? 'error' : 'warning',
               artifactUri,
               framePath,
               outside

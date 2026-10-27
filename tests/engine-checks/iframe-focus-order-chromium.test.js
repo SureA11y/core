@@ -73,8 +73,15 @@ const CASES = [
     'an <area> of a map an <img> uses',
     `<map name="m"><area href="/x" shape="rect" coords="0,0,9,9" alt="x"></map><img src="${IMG}" usemap="#m" width="10" height="10" alt="">`,
     true
+  ],
+  [
+    'an <area> of a map whose <img> is not rendered',
+    `<map name="m"><area href="/x" shape="rect" coords="0,0,9,9" alt="x"></map><img src="${IMG}" usemap="#m" width="10" height="10" alt="" style="display:none">`,
+    false
   ]
 ];
+
+const AREA_CASE = CASES.find(([d]) => d === 'an <area> of a map an <img> uses')[1];
 
 const page = (content, tabindex) =>
   `<!doctype html><html lang="en"><head><title>Frames</title></head><body><main><button id="before">before</button><iframe id="f" title="frame" width="200" height="80"${tabindex} srcdoc="${content
@@ -120,6 +127,36 @@ test(
         await p.close();
       }
     });
+
+    // An <area> has no box of its own, and from Chrome 153 checkVisibility()
+    // is false for it: the image that uses its map decides, whatever the
+    // browser says of the area itself.
+    await t.test(
+      'an <area> counts by its image, whatever checkVisibility() says of it',
+      async () => {
+        const p = await browser.newPage();
+        try {
+          await p.setContent(page(AREA_CASE, ' tabindex="-1"'));
+          await p.waitForFunction(
+            () => document.getElementById('f').contentDocument.body.childElementCount > 0
+          );
+          await p.evaluate(() => {
+            const win = document.getElementById('f').contentWindow;
+            win.HTMLAreaElement.prototype.checkVisibility = () => false;
+          });
+          await p.evaluate(BUNDLE);
+          const outcome = await p.evaluate(
+            () =>
+              window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
+                'iframe-focusable-content'
+              ]).checksResults[0].outcome
+          );
+          assert.equal(outcome, 'fail');
+        } finally {
+          await p.close();
+        }
+      }
+    );
 
     for (const [description, content, inOrder] of CASES) {
       await t.test(description, async () => {

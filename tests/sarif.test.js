@@ -641,7 +641,7 @@ test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrence
 
 test('a notApplicable check can carry an explanatory occurrence', () => {
   const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>',
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
     { engineOptions: {} }
   );
 
@@ -653,7 +653,7 @@ test('a notApplicable check can carry an explanatory occurrence', () => {
 
 test('a rule that could not check reaches SARIF as a notice, never as an alert', () => {
   const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>Hello world</p></body></html>',
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
     { engineOptions: {} }
   );
   const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));

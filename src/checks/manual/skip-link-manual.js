@@ -56,6 +56,19 @@
  *   - `viewport.width`, `viewport.height` (a target whose geometry was
  *     measured): the viewport the page was laid out in, in CSS pixels. A
  *     target hidden at one width can be usable at another.
+ * @reason-codes
+ *   - `SKIP_LINK_TARGET_MISSING` (cantTell): a skip link's fragment matches
+ *     no element id or legacy anchor name in the document.
+ *     It leans fail when the link reads as a skip link, its fragment is not
+ *     a route, and an early listener hook saw no click listener on it, its
+ *     ancestors, the document or the window.
+ *     Basis: G1 (best practice); HTML scroll to the fragment.
+ *   - `SKIP_LINK_TARGET_UNUSABLE` (cantTell): a skip link's target exists
+ *     but is hidden from the accessibility tree, not rendered, or has no
+ *     area.
+ *     It leans fail when aria-hidden or inert hides the target and no modal
+ *     dialog is open.
+ *     Basis: G1 (best practice); HTML scroll to the fragment.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -86,7 +99,33 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    SKIP_LINK_TARGET_MISSING: {
+      steps: [
+        'Load the page, press Tab once or twice until the skip link the report names appears, and note its href.',
+        'Press Enter to follow it.',
+        'Press Tab once more and see where focus lands.'
+      ],
+      passWhen:
+        'Following the link moves to the main content and the next Tab goes to the first control in it.',
+      failWhen:
+        "Nothing happens or focus stays at the top, because no element matches the link's target, so the link does not bypass repeated content (best practice, G1)."
+    },
+    SKIP_LINK_TARGET_UNUSABLE: {
+      steps: [
+        'Load the page at the window width the report gives (if any), press Tab until the skip link appears, and press Enter.',
+        'Watch whether the page scrolls to the target and the target area is visible.',
+        'Press Tab once more and see where focus lands.'
+      ],
+      passWhen:
+        'The page moves to the visible main content and the next Tab goes to the first control in it.',
+      failWhen:
+        'The target is hidden, not shown or has no size, so focus does not move past the repeated content (best practice, G1).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -287,6 +326,81 @@ function runInPage(ctx) {
     positionalSkipLink = null;
   }
 
+  // ---- Leans ----
+
+  // Whether a script could take the click: an inline handler on the link
+  // or an ancestor, or a click listener the hook saw on them, the document
+  // or the window. null when that can't be ruled out: no listener hook, or
+  // one installed after the page's scripts ran.
+  function clickHandled(el) {
+    for (let a = el, i = 0; a && i < 100000; a = dom.parentElement(a), i++) {
+      if (dom.getAttribute(a, 'onclick') != null) return true;
+    }
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const targets = [];
+    for (let a = el, i = 0; a && i < 100000; a = dom.parentElement(a), i++) targets.push(a);
+    targets.push(document);
+    if (view) targets.push(view);
+    for (const t of targets) {
+      const info = helpers.getEventListenerInfo(t, ['click']);
+      if (!info || info.hook !== 'early') return null;
+      if (info.listens) return true;
+    }
+    return false;
+  }
+
+  // A link that says it skips, pointing at an id that doesn't exist, with
+  // no script to take the click, goes nowhere. One taken for a skip link
+  // only by its place, or whose fragment is a route ("#/home", "#!x"),
+  // gets no lean.
+  function missingTargetLean(el, name, fragment) {
+    if (!hasSkipWording(name)) return null;
+    if (/^[/!]/.test(fragment)) return null;
+    if (clickHandled(el) !== false) return null;
+    return {
+      toward: 'fail',
+      why: 'The link reads as a skip link, its target does not exist, and no script on the page listens for its click.',
+      signals: [
+        { signal: 'matched-by-wording', value: true },
+        { signal: 'click-listener', value: false },
+        { signal: 'hash-route-shape', value: false }
+      ],
+      caution:
+        'The target may still be added later by script, such as content that loads after the scan.',
+      i18n: {
+        whyKey: 'skipLink_lean_why_missing',
+        cautionKey: 'skipLink_lean_caution_missing'
+      }
+    };
+  }
+
+  // A target taken out of the accessibility tree by aria-hidden or inert,
+  // with no modal dialog open to explain it, defeats the link at any width.
+  // A target hidden by display or by its size depends on the viewport, and
+  // gets no lean.
+  function unusableTargetLean(reasons) {
+    const hiddenBy = ['ariaHidden', 'inert'].find((r) => reasons.indexOf(r) !== -1);
+    if (!hiddenBy || reasons.indexOf('displayNone') !== -1 || reasons.indexOf('hiddenAttr') !== -1)
+      return null;
+    const modalOpen = !!(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
+    if (modalOpen) return null;
+    return {
+      toward: 'fail',
+      why: 'The target is hidden from assistive technology by aria-hidden or inert, and no modal dialog is open to explain it.',
+      signals: [
+        { signal: 'unusable-reason-code', value: 'ACC_TREE_INELIGIBLE' },
+        { signal: 'acc-ineligible-reasons', value: hiddenBy },
+        { signal: 'modal-dialog-open', value: false }
+      ],
+      caution:
+        'A dialog built without the <dialog> element may make the page inert while it is open.',
+      i18n: {
+        whyKey: 'skipLink_lean_why_hiddenTarget',
+        cautionKey: 'skipLink_lean_caution_hiddenTarget'
+      }
+    };
+  }
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -362,9 +476,11 @@ function runInPage(ctx) {
       const unusableByAcc = !accEligibility.eligible;
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
+      const unusableLean = unusableByAcc ? unusableTargetLean(accEligibility.reasons) : null;
 
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(unusableLean ? { lean: unusableLean } : {}),
           summary:
             "This skip link points to an element that exists but can't be reached right now.",
           hint: 'Point it at an element that is visible and not hidden from assistive technology.',
@@ -399,8 +515,10 @@ function runInPage(ctx) {
       continue;
     }
 
+    const missingLean = missingTargetLean(el, name, fragment);
     occurrences.push(
       helpers.reportOccurrence(el, {
+        ...(missingLean ? { lean: missingLean } : {}),
         summary: "The target of this skip link doesn't exist.",
         hint: "Point the skip link's href at an id that exists in the document, or add the missing target element.",
         i18n: {

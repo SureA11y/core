@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const LOCK = 'html{transform:rotate(90deg)}';
 const PORTRAIT = '@media (orientation: portrait)';
@@ -56,7 +55,7 @@ test('CSS rules nested in at-rules and CSS nesting, in Chromium', { skip }, asyn
         `<!doctype html><html lang="en"><head><title>t</title>${head}</head>` +
           '<body><main><h1>T</h1><p>Text <a href="/">link</a></p></main></body></html>'
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]).checksResults[0].outcome,
         ruleId

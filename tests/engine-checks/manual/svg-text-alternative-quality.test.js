@@ -131,3 +131,49 @@ test(`${RULE_ID} (node runtime): role presentation is read from a fallback list,
   assert.strictEqual(rule.outcome, 'notApplicable');
   assert.strictEqual(rule.occurrences.length, 0);
 });
+
+// A name the drawing tool or the export left behind, a file name or a
+// generic word does not describe the graphic: it leans fail, on its own and
+// as a control's only content. Any other name needs a person.
+test(`${RULE_ID}: leans fail on a tool leftover, a file name or a placeholder name`, () => {
+  const run = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body><main>${body}</main></body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const svg = (inner, attrs = '') =>
+    `<svg role="img" ${attrs} viewBox="0 0 10 10">${inner}<rect width="10" height="10"/></svg>`;
+  for (const [body, value] of [
+    [svg('<title>Layer 1</title>'), 'tool-artefact'],
+    [svg('<title>Rectangle 2 copy 3</title>'), 'tool-artefact'],
+    [svg('<title>Created with Sketch.</title>'), 'tool-artefact'],
+    [svg('', 'aria-label="icon-search"'), 'tool-artefact'],
+    [svg('<title>chart-final.svg</title>'), 'file-name'],
+    [svg('<title>graphic</title>'), 'placeholder']
+  ]) {
+    const o = run(body);
+    assert.strictEqual(o.lean.toward, 'fail', body);
+    assert.strictEqual(o.lean.i18n.whyKey, 'svg_textAltQuality_lean_why', body);
+    assert.deepStrictEqual(o.lean.signals, [{ signal: 'name-signal', value }], body);
+  }
+  const control = run(`<button>${svg('<title>Group 3</title>')}</button>`);
+  assert.strictEqual(control.data.details.reasonCode, 'IMAGE_ONLY_CONTROL_CONTENT');
+  assert.strictEqual(control.lean.toward, 'fail');
+  assert.strictEqual(control.lean.i18n.whyKey, 'svg_textAltQuality_lean_why_control');
+  for (const body of [
+    svg('<title>Rainfall by month</title>'),
+    svg('<title>Rectangle</title>'),
+    `<button>${svg('<title>Search</title>')}</button>`
+  ]) {
+    assert.strictEqual(run(body).lean, undefined, body);
+  }
+  // A shape name with a long run of digits, then something else, is
+  // rejected at once: the pattern can't split the digits many ways.
+  const started = Date.now();
+  assert.strictEqual(run(svg(`<title>rect${'0'.repeat(40)}x</title>`)).lean, undefined);
+  assert.ok(Date.now() - started < 1000, `took ${Date.now() - started} ms`);
+});

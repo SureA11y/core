@@ -98,3 +98,25 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/${RULE_ID}-all-scenarios.html
   });
   assert.match(rule.occurrences[0].html, /id="tscl_case_03"/);
 });
+
+// A resolved value below the metric, on text that can wrap, leans fail; text
+// that can't wrap gets no lean.
+test(`${RULE_ID}: a forced style sheet value on text that can wrap leans fail`, () => {
+  const occ = assertRule(
+    run('p{line-height:1.2 !important}', '<p>Opening hours today and tomorrow</p>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  ).occurrences[0];
+  assert.equal(occ.data.details.reasonCode, 'STYLESHEET_IMPORTANT');
+  assert.equal(occ.lean.toward, 'fail');
+  assert.equal(occ.lean.i18n.whyKey, 'textSpacingContentLoss_lean_why_stylesheetImportant');
+
+  const nowrap = assertRule(
+    run('p{line-height:1.2 !important;white-space:nowrap}', '<p>Opening hours today</p>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  ).occurrences[0];
+  assert.equal(nowrap.lean, undefined);
+});

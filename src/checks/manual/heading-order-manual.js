@@ -13,6 +13,10 @@
  *   default level 2 per the ARIA spec when aria-level is absent/invalid).
  *   A native <hx> with a valid aria-level (a positive integer) takes that
  *   level, as browsers expose it; otherwise it takes its tag level.
+ *   A native <hx> marked role="none" or "presentation" is still a heading
+ *   when it can take focus or carries a global ARIA attribute, as
+ *   WAI-ARIA's presentational roles conflict resolution has browsers
+ *   ignore that role then.
  *   A custom element whose ElementInternals give it the heading role
  *   (this.attachInternals().role) counts as role="heading" does, at the level
  *   its aria-level attribute or its internals' ariaLevel give.
@@ -29,6 +33,12 @@
  *     <h3>).
  *   - `toLevel`: this heading's level, more than one deeper than
  *     `fromLevel`.
+ * @reason-codes
+ *   - `HEADING_ORDER_SKIPPED_LEVEL` (cantTell): a heading is more than one
+ *     level deeper than the previous heading exposed to assistive
+ *     technology, skipping a level.
+ *     It leans fail: the page states it.
+ *     Basis: G141 (best practice); WAI-ARIA 1.2 heading role.
  * @implementation-notes
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule; see landmark-banner-is-top-level's
@@ -66,7 +76,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    HEADING_ORDER_SKIPPED_LEVEL: {
+      steps: [
+        "Find the heading the report names and note its level and the previous heading's level (from the report or the Accessibility pane).",
+        "List the page's headings in order, with a screen reader's headings list or by inspecting them, and look at the section around the skip.",
+        'Decide whether the heading belongs one level below the previous heading, or whether a level is missing.'
+      ],
+      passWhen:
+        'Each heading is at most one level deeper than the heading before it, so the outline has no gap.',
+      failWhen:
+        'The heading jumps more than one level deeper than the one before it (an h2 followed by an h4), leaving a gap in the outline, a best-practice miss (G141).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -100,7 +125,14 @@ function runInPage(ctx) {
   }
 
   function getHeadingLevel(el) {
-    const explicit = getExplicitRoleToken(el);
+    let explicit = getExplicitRoleToken(el);
+    // A focusable <hx>, or one with a global ARIA attribute, stays a heading
+    // whatever role="none"/"presentation" says (conflict resolution).
+    if (
+      (explicit === 'none' || explicit === 'presentation') &&
+      helpers.isPresentationalRoleIgnored(el)
+    )
+      explicit = '';
     if (explicit) {
       if (explicit !== 'heading') return 0;
       const raw = ariaLevelOf(el);
@@ -216,6 +248,12 @@ function runInPage(ctx) {
             summaryKey: 'headingOrder_summary_cantTell',
             hintKey: 'headingOrder_hint_cantTell',
             params: { fromLevel: String(previousLevel), toLevel: String(level) }
+          },
+          lean: {
+            toward: 'fail',
+            why: 'The heading skips a level after the one before it.',
+            signals: [{ signal: 'heading-level-skipped', value: true }],
+            i18n: { whyKey: 'headingOrder_lean_why' }
           },
           data: {
             details: {

@@ -14,7 +14,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -40,7 +39,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const SHADOW = '<p style="color:#bbb">Faint text</p><button></button>';
 const PAGES = {
@@ -71,7 +70,7 @@ test('an excluded shadow host takes its shadow tree with it, in Chromium', { ski
         '<!doctype html><html lang="en"><head><title>t</title><style>html{background:#fff}</style></head>' +
           `<body><main><p>Body text</p>${body}</main></body></html>`
       );
-      await p.addScriptTag({ content: BUNDLE });
+      await addBundle(p);
       return await p.evaluate(
         ({ eo, ids }) =>
           Object.fromEntries(

@@ -23,12 +23,13 @@ npm run docs                      # docs/RULE_CATALOG.md, and the examples run i
 | `rule-map.js` | Which requirements each rule checks, core's rules and the pack's, with the reason. |
 | `rules/automatic/__NAMESPACE__-link-text-specific.js` | A rule of its own that decides: links named only "click here" or "read more" fail. Uses core's helpers to find links and compute their names. |
 | `rules/automatic/__NAMESPACE__-contrast-enhanced.js` | A variant of core's `contrast-minimum`: the same code at 7:1 instead of 4.5:1, with no code of its own. |
-| `rules/manual/__NAMESPACE__-new-window-review.js` | A manual rule: it never fails, and asks a person to check each link that opens a new window. |
+| `rules/manual/__NAMESPACE__-new-window-review.js` | A manual rule: it never fails, and asks a person to check each link that opens a new window, with the steps to answer it (`meta.review`). |
 | `i18n/en.json` | The rules' messages in English. |
 | `tests/rules/*.test.js` | A test per rule. |
 | `tests/profiles.test.js` | What each profile runs, and the result of each requirement. |
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes, checked by `npm run docs`. |
 | `eslint.config.js` | Core's lint rules for rules (`@surea11y/core/eslint-plugin`). |
+| `package.json` | The package: `private`, with core as a peer dependency, and the scripts above. |
 
 ## The requirements and the rules that check them
 
@@ -36,9 +37,10 @@ npm run docs                      # docs/RULE_CATALOG.md, and the examples run i
 
 From the two, `ruleMappedStandard()` (in `index.js`) gives the engine:
 
-- **a result per requirement**, a rollup with the id `__NAMESPACE__-<version>-<requirement>`, which fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. The HTML report shows them in a section of their own, and SARIF and JUnit tag them;
+- **a result per requirement**, a rollup with the id `__NAMESPACE__-<version>-<requirement>`, which fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. The HTML report shows them in a section of their own, and SARIF and JUnit tag them. A requirement its rules don't check in full says `partial: true` in `requirements.js`: its result is then `cantTell` where they all pass or are all not applicable, as a WCAG criterion's is. A standard whose requirements restate WCAG criteria one for one passes `applicability: 'wcag'` to `ruleMappedStandard()`, and each result agrees with WCAG's for its criteria;
 - **the requirements each result names**: a rule's result lists its requirements in `meta.normativeMappings`, under a profile of the standard or with `engineOptions.mappings: ['__NAMESPACE__']`;
-- **findings filed by reason code**: a row's `reasonCodes: { [code]: { requirements, outcome } }` sends a rule's findings of that code to other requirements (`[]` for none), or makes them questions there (`outcome: 'cantTell'`); the requirement's rollup then judges the rule by the findings that count toward it (core's [`PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md));
+- **findings filed by reason code**: a row's `reasonCodes: { [code]: { requirements, outcome } }` sends a rule's findings of that code to other requirements (`[]` for none), or makes them questions there (`outcome: 'cantTell'`); the requirement's rollup then judges the rule by the findings that count toward it (core's [`PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md#5-group-results-checklist-items-or-requirements));
+- **findings filed by what they record**: a row's `findings: [{ when, requirements, outcome }]` sends a finding whose `data.details` fields equal those `when` gives (`{ 'typography.isLargeText': true }`) to those requirements, before its reason code: a standard can file contrast failures under the test for their text size;
 - **checks of the tables**, run when the pack is prepared: a rule the engine doesn't have, a requirement the version doesn't have, or a WCAG criterion the WCAG version doesn't have makes the pack invalid, and the scan says why in `skippedPacks`.
 
 ## The profiles: which rules run
@@ -51,7 +53,8 @@ A scan runs the pack's rules only under one of the standard's profiles (or when 
 - `rules`: rules added by id, core's or the pack's, such as core's best-practice rules (`region`), which no WCAG tag selects.
 - `exclude: { rules, criteria }`: rules left out, or WCAG criteria waived (their rollups go, and each rule whose every criterion is waived; a rule that also checks a kept criterion still runs). A rule the standard maps can't be left out.
 - `severity`: another severity for a rule under the profile. Results show it, and keep the rule's own as `ruleSeverity`.
-- `wcagVersion`: the WCAG version the profile's scans are judged by. A profile with WCAG tags takes it from them; one without, such as `__NAMESPACE__-1.0`, names it, here from `requirements.js`. It matters for 4.1.1 Parsing, which WCAG 2.2 removed: judged by 2.2, `duplicate-id` asks instead of failing.
+- `wcagVersion`: the WCAG version the profile's scans are judged by. A profile with WCAG tags takes it from them; one without, such as `__NAMESPACE__-1.0`, names it, here from `requirements.js`. Judged by 2.1, a scan reports no 2.2 criterion, such as 2.5.8.
+- `keepsParsing: true`: the standard still requires 4.1.1 Parsing as written. Without it `duplicate-id` asks instead of failing, under any WCAG version: 2.2 removed 4.1.1, and the 2023 errata to 2.0 and 2.1 count it as satisfied.
 
 As generated:
 
@@ -76,6 +79,7 @@ A new version of the standard is a new entry in `VERSIONS`, its requirements and
 2. Write its header: `@applicability` (what it applies to), `@expectation` (what it checks), `@reports` (what a finding carries). `npm run docs` puts them in the catalog.
 3. Write `runInPage(ctx)`. It runs in the page, so it uses only `ctx`: `ctx.document`, and `ctx.helpers` for core's helpers ([`docs/RULE_HELPERS.md`](https://github.com/SureA11y/core/blob/main/docs/RULE_HELPERS.md)). Read DOM properties through `ctx.helpers.dom` (`npm run lint` says where). Return `pass`, `fail` (automatic rules), `cantTell` or `notApplicable`, with an occurrence per element from `helpers.reportOccurrence`.
    - For core's rule at other thresholds, write a variant instead: `from` names the core rule, `config` its settings.
+   - Give each finding a `reasonCode` in `data.details`, list the codes in `meta.reasonCodes`, and, for each code the rule asks about (`cantTell`), say in `meta.review` how a person answers it: a few `steps` from the element the finding names, then `passWhen` and `failWhen`, in English. Reports show them as "How to check", as for `__NAMESPACE__-new-window-review`.
 4. Give it the `__NAMESPACE__` tag, list it in `rules` in `index.js`, and map it to the requirements it checks in `rule-map.js`.
 5. Add its messages to `i18n/en.json`: the keys in its `meta.i18n` and its occurrences' `i18n`.
 6. Add a test in `tests/rules/` and examples in `docs/RULE_EXAMPLES.md`, then run `npm test`, `npm run lint` and `npm run docs`.
@@ -108,7 +112,7 @@ const result = await new A11yCoreBuilder({ page })
   .analyze();
 ```
 
-In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([standard])` from `@surea11y/core/pack` after core's browser bundle and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
+In Cypress, `withPacks()` takes the module name (`'__PACKAGE__'`) and the binding's plugin prepares it in Node. In a page of your own, inject `packScript([standard])` from `@surea11y/core/pack` after core's browser bundle, or, for a `<script>` tag or an extension, ship one file built with `buildBrowserBundle({ packs: [standard] })`, and name the pack in `engineOptions.packs` as `__PACKAGE__@<version>`. The script runs only with the core that wrote it: build it again when you update core or the pack. See "Packs" in core's [`docs/ENGINE_OPTIONS.md`](https://github.com/SureA11y/core/blob/main/docs/ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core).
 
 ## Publish
 

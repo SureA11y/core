@@ -16,7 +16,9 @@ implementations and supporting infrastructure remain clearly separated.
 
 ```text
 surea11y.browser.js        # Generated standalone browser bundle (English)
+surea11y.browser.mjs       # Its ES module entry (@surea11y/core/browser for import)
 surea11y.i18n.<locale>.js  # Generated per-locale side files for that bundle
+surea11y.report.js         # Generated HTML report the bundle's openReport() fetches
 
 src/
   index.js                 # Public API
@@ -33,6 +35,10 @@ src/
   testing.js               # Scanning HTML in Node for tests (@surea11y/core/testing)
   eslint-plugin.js         # Lint rules for rule code (@surea11y/core/eslint-plugin)
   profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
+  how-to-check-core.js     # Steps for undecided findings, no file system (@surea11y/core/how-to-check)
+  how-to-check.js          # The same in Node, reading the review dictionaries (addHowToCheck)
+  hook-reason-codes.js     # The reason codes each opt-in hook decides or changes (HOOK_REASON_CODES)
+  baseline-moves.json      # Reason codes moved in this minor release, for baselines written before
 
   checks/
     automatic/             # Deterministic automated rules
@@ -41,7 +47,8 @@ src/
   core/                    # Shared engine runtime
   policy/                  # Policy implementations
   i18n/                    # Localized messages (JSON, one file per locale)
-  coverage/                # WCAG coverage definitions
+    review/                # How-to-check steps per locale (@surea11y/core/review/<locale>)
+  coverage/                # WCAG coverage definitions, and which criteria rules check in full
   catalogs/                # Composite rule catalogs
 
 bin/
@@ -60,6 +67,7 @@ scripts/
   generate-*.js            # Generated docs and data tables (each supports --check)
   validate-*.js            # Rule module contract checks
   i18n-*.js                # Locale scaffolding, sync and coverage reporting
+  data/                    # Finding-identity inventories, lean measures, the public-API classification
 
 coverage/                  # Generated WCAG facet coverage report
 docs/                      # Project documentation
@@ -81,18 +89,23 @@ Follow [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) literally — it's d
 1. The module contract: `id`, `meta`, `runInPage(ctx)`, plus an optional `applicability(ctx)`. Nothing else — a helper you need inside `runInPage` goes inside it, since the function is serialized and runs with no access to this module's scope.
 2. A scenario fixture (`tests/fixtures/<rule-slug>-all-scenarios.html`) covering every branch the rule's logic distinguishes, plus a fixture-coverage test. **This is not optional polish** — see `docs/RULE_AUTHORING.md` §11. A rule shipped without one is treated the same as a rule shipped without tests.
 3. Correct `meta.wcagSc`/`normativeMappings`/`coverage.facetsBySc` if the rule maps to a WCAG Success Criterion — run `npm run coverage` afterward to confirm the facet-coverage report picks it up.
+4. An `@reason-codes` header listing every reason code the rule gives, with its outcome, meaning and basis (`docs/RULE_AUTHORING.md` §10.1), and, for each `cantTell` code, the steps a person follows to answer it in `meta.review` (§8.6). `tests/reason-codes-docs.test.js` and `tests/how-to-check.test.js` fail without them.
 
 After adding/changing a rule:
 
 ```sh
 npm run build              # regenerate src/core.js
 npm run validate:rules     # rule module contract (exports, meta, no free variables in runInPage) -- also run by `npm test`, standalone for a quicker signal
-npm test                   # full suite must be green (~1.5 min: format, build, rule contracts, then the tests)
+npm run test:files -- tests/core tests/sarif.test.js  # build, then only the tests in these files and folders: a quick signal while you work
+npm test                   # full suite must be green (~10 min on 4 cores: lint, format, build, rule contracts, then the tests)
 npm run coverage           # if the rule touches WCAG facet coverage
 npm run test:coverage      # code line/branch coverage (Node's built-in test runner) -- not the same thing as `coverage` above
 npm run fixtures:index     # if you added/changed a fixture
-npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md
+npm run finding-ids        # if the rule is new or gives a new reason code (scripts/data/finding-ids.json)
+npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md and docs/RULE_SETTINGS.md
 ```
+
+A reason code split by cause, or given to a rule that had none, also needs its move in `src/baseline-moves.json` (`tests/baseline-moves.test.js` checks it), so a baseline written by the release before keeps matching ([`docs/BASELINE.md`](./docs/BASELINE.md#upgrading)).
 
 `coverage`, `fixtures:index` and `docs:rule-catalog` write generated files that are
 committed, so run them and commit the result rather than leaving the tree stale.
@@ -111,13 +124,15 @@ npm run validate:rules               # rule module contract
 npm run coverage:check               # the WCAG coverage report matches the rules
 npm run fixtures:check               # tests/fixtures/INDEX.md matches the fixtures
 npm run fixtures:markers:check       # every fixture marker that disagrees with the engine is recorded
-npm run docs:rule-catalog:check      # docs/RULE_CATALOG.md matches the rules
+npm run docs:rule-catalog:check      # docs/RULE_CATALOG.md and docs/RULE_SETTINGS.md match the rules
 npm run rule-examples:coverage:check # every rule has a section in docs/RULE_EXAMPLES.md, or is a recorded gap
 npm run rule-examples:outcomes:check # every example whose outcome disagrees with its label is recorded
 npm run aria-tables:check            # the ARIA tables in the rules match aria-query
 npm run language-subtags:check       # the language subtag list matches the IANA registry
 git diff --quiet                     # npm test rebuilt nothing that differs from what is committed
 ```
+
+CI runs these in two kinds of job side by side: one runs lint, format, the build and every `:check` on Node 22, and the others run the whole test suite on each supported Node version, split into shards (`node scripts/run-tests.js --test-shard=1/3`, and so on), in the Playwright image that has Chromium and its system libraries installed. A last job, `tests passed`, passes only when every one of them did; branch protection requires it and `checks`.
 
 Each `:check` command has a form without `:check` that rewrites the file; run it and commit the result. The ARIA tables and the subtag list have no such npm script: `node scripts/generate-aria-tables.js` and `node scripts/generate-language-subtags.js` rewrite them. `npm run i18n:check` reports locale files that `npm run i18n:sync` would rewrite; `npm test` fails on the same thing. CI also runs every ACT test case (`node scripts/act-report.js`) and fails on a false positive; it fetches the test cases over the network, so it is optional locally.
 

@@ -13,8 +13,10 @@
  *   within a <table> whose semantic role is still table/grid/treegrid --
  *   an explicit role of anything else (role="presentation"/"none", but
  *   also role="heading" or any other real role) replaces the native table
- *   semantics, leaving no table for headers to describe. Matches ACT
- *   a25f45's applicability.
+ *   semantics, leaving no table for headers to describe. A presentational
+ *   role on a table with a global ARIA attribute or a tabindex is ignored,
+ *   as WAI-ARIA's conflict resolution has it, and the table stays one.
+ *   Matches ACT a25f45's applicability.
  * @expectation
  *   Every id token in the headers attribute resolves to an element that:
  *   (a) exists, (b) is a cell (<td> or <th>) of the same <table> as the
@@ -27,6 +29,12 @@
  *     element has that id), `self-reference` (the cell points at itself),
  *     `not-a-cell` (the element is not a <td> or <th>) or `different-table`
  *     (the cell is in another table).
+ * @reason-codes
+ *   - `TABLE_HEADERS_ATTR_INVALID` (fail): a cell's headers attribute names
+ *     an id that is missing, is the cell itself, is not a cell, or is a cell
+ *     of another table.
+ *     Basis: WCAG 1.3.1; H43; ACT a25f45; HTML table model headers
+ *     attribute (MUST).
  * @implementation-notes
  * - One occurrence per offending cell (not per bad token), listing every
  *   invalid reference.
@@ -97,8 +105,16 @@ function runInPage(ctx) {
     // the three roles that still describe a table keep the cell's headers
     // attribute meaningful; anything else (presentation/none, heading, ...)
     // takes the whole table out of scope. Unknown tokens name no role, so
-    // the native one stands.
-    const tableRole = table ? getExplicitRole(table) : '';
+    // the native one stands. A presentational role is ignored, as WAI-ARIA's
+    // conflict resolution has it, on a table with a global ARIA attribute or
+    // a tabindex: it stays a table (ACT a25f45 goes by its semantic role).
+    let tableRole = table ? getExplicitRole(table) : '';
+    if (
+      (tableRole === 'presentation' || tableRole === 'none') &&
+      ((ariaHelpers && ariaHelpers.hasGlobalAriaAttr(table)) ||
+        /^\s*[+-]?\d/.test(dom.getAttribute(table, 'tabindex') || ''))
+    )
+      tableRole = '';
     if (tableRole && tableRole !== 'table' && tableRole !== 'grid' && tableRole !== 'treegrid')
       continue;
 

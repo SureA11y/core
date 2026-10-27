@@ -16,10 +16,7 @@ function helpersFor(html) {
 
 // buildStructuralPath is a more robust element-identity mechanism than a CSS
 // selector string alone (survives some DOM changes a selector wouldn't --
-// e.g. an id/class rename), mirroring the structural-path algorithm used by
-// this project's separately-maintained cross-engine diffing tool exactly
-// (see dom-helpers.js's own comment for why that's a necessary duplication
-// rather than a shared require).
+// e.g. an id/class rename).
 
 test('buildStructuralPath: computes the sibling-index path from documentElement down to the element', () => {
   const { helpers, document } = helpersFor(`<!doctype html><html><body>

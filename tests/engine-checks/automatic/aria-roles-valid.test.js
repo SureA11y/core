@@ -145,7 +145,10 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
     'arv_case_02',
     'arv_case_05',
     'arv_case_06',
-    'arv_case_07'
+    'arv_case_07',
+    'arv_case_09',
+    'arv_case_10',
+    'arv_case_11'
   ];
 
   for (const id of expectedFailIds) {
@@ -244,4 +247,44 @@ test(`${RULE_ID}: a hidden shadow host suppresses its shadow content`, () => {
   assert.notStrictEqual(build('').outcome, 'notApplicable', 'shadow content is judged normally');
   assert.strictEqual(build('aria-hidden="true"').outcome, 'notApplicable');
   assert.strictEqual(build('inert').outcome, 'notApplicable');
+});
+
+// Leans: which way each undecided finding points.
+function leanOn(html, id, ruleId = RULE_ID) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    { runOnly: [ruleId] }
+  );
+  const rule = assertRule(result, ruleId, 'cantTell', { minOccurrences: 1 });
+  const occ = rule.occurrences.find(
+    (o) => typeof o.html === 'string' && o.html.includes(`id="${id}"`)
+  );
+  assert.ok(occ, `expected an occurrence on #${id}`);
+  assert.strictEqual(occ.occurrenceOutcome || 'cantTell', 'cantTell');
+  return occ.lean;
+}
+
+test(`${RULE_ID}: leans pass for a misspelling of the element's native role`, () => {
+  const lean = leanOn('<button id="a" role="buton">Save</button>', 'a');
+  assert.strictEqual(lean.toward, 'pass');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaRolesValid_lean_why_typoOfNative');
+});
+
+test(`${RULE_ID}: leans fail for a misspelling of another role`, () => {
+  const lean = leanOn('<a href="#" id="a" role="buton">Save</a>', 'a');
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'ariaRolesValid_lean_why_typoOfOther');
+});
+
+test(`${RULE_ID}: no lean for an unknown role near no role`, () => {
+  assert.strictEqual(leanOn('<button id="a" role="xyzzy">Save</button>', 'a'), undefined);
+});
+
+test(`${RULE_ID}: leans by whether the native role is a kind of the abstract role`, () => {
+  const kind = leanOn('<nav id="a" role="landmark"><a href="#">x</a></nav>', 'a');
+  assert.strictEqual(kind.toward, 'pass');
+  assert.strictEqual(kind.i18n.whyKey, 'ariaRolesValid_lean_why_abstractKind');
+  const other = leanOn('<button id="a" role="landmark">Save</button>', 'a');
+  assert.strictEqual(other.toward, 'fail');
+  assert.strictEqual(other.i18n.whyKey, 'ariaRolesValid_lean_why_abstractOther');
 });

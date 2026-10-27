@@ -26,6 +26,14 @@
  *   labels API, a wrapping <label>, or label[for], with at most four labels
  *   read for determinism, and any other element accepts its own subtree
  *   text, those roles being name-from-content.
+ * @reason-codes
+ *   - `name_missing` (fail): the checkbox, radio or switch has no accessible
+ *     name from aria-label, aria-labelledby, title, a label or its content.
+ *     Basis: WCAG 4.1.2; F68; accname 1.2; ACT e086e5.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'binary-control-name-present';
@@ -66,6 +74,21 @@ const meta = {
   defaultConfidence: 'high',
   coverage: {
     facetsBySc: { '4.1.2': ['checkbox-name-present', 'radio-name-present', 'switch-name-present'] }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the control the report names, a custom element, and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the control, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The control has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
+    }
   }
 };
 
@@ -108,30 +131,16 @@ function runInPage(ctx) {
     return t.replace(/\s+/g, ' ').trim();
   }
 
-  // A <label> contributes a name via its own aria-label/aria-labelledby
-  // (checked first, same ARIA-over-content precedence any element's
-  // accessible name gives, e.g. <label aria-label="Search"><svg
-  // aria-hidden="true">...</svg></label> names its control "Search" even
-  // though the label's only child content is aria-hidden) or, failing
-  // that, its rendered content (getConservativeSubtreeText).
-  function getLabelText(lab, control) {
-    if (helpers.getAriaNameInfo) {
-      try {
-        const aria = helpers.getAriaNameInfo(lab, ctx);
-        if (aria && aria.present && aria.value) return normalizeWs(aria.value);
-      } catch {}
+  // The name the control's associated <label>s give it, in document order,
+  // each read as accname reads a label (helpers.getAssociatedLabelsNameInfo).
+  function getNativeLabelText(el) {
+    if (!helpers || typeof helpers.getAssociatedLabelsNameInfo !== 'function') return '';
+    try {
+      const info = helpers.getAssociatedLabelsNameInfo(el, ctx);
+      return normalizeWs(info && info.value);
+    } catch {
+      return '';
     }
-    const content = getConservativeSubtreeText(document, lab, control);
-    if (content) return content;
-    // Final fallback per the general accname text-alternative algorithm,
-    // which applies to any element being asked for its name regardless of
-    // why (own aria-label, an aria-labelledby reference, or, here, native
-    // <label for> association): title, when nothing else yields a name.
-    // Purely additive (only fills in a name where there was none before),
-    // so it carries no false-positive risk, see dialog-name-present.js's
-    // identical <iframe>-title-fallback fix for the concrete real-world
-    // trigger this same accname step covers elsewhere.
-    return getAttr(lab, 'title');
   }
 
   function resolveAriaLabelledbyText(document, el, maxRefs) {
@@ -194,26 +203,6 @@ function runInPage(ctx) {
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart(selector, { internalsRoles: true })
     : helpers.queryAll(selector);
-
-  // helpers.getAssociatedLabelElements, as the other *-name-present rules
-  // use: the native el.labels walks the whole document on every call in
-  // jsdom, which made this rule most of a scan on a form-heavy page.
-  function getNativeLabelText(el) {
-    if (!helpers || typeof helpers.getAssociatedLabelElements !== 'function') return '';
-    let labels;
-    try {
-      labels = helpers.getAssociatedLabelElements(el) || [];
-    } catch {
-      labels = [];
-    }
-    const parts = [];
-    const max = Math.min(4, labels.length);
-    for (let i = 0; i < max; i += 1) {
-      const t = getLabelText(labels[i], el);
-      if (t) parts.push(t);
-    }
-    return normalizeWs(parts.join(' '));
-  }
 
   function evaluate(el, controlType) {
     // Programmatic mechanisms

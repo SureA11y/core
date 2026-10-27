@@ -37,6 +37,26 @@
  *     (`redirectedToTag`, `redirectedToId`) and `focusTrace`, the elements
  *     focus passed through. A hidden focus sentinel that hands focus on like
  *     this is reported for review.
+ * @reason-codes
+ *   - `ariaHiddenSelfFocusable` (fail): an element with aria-hidden="true" can
+ *     itself take keyboard focus, which screen readers then do not announce.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenContainsFocusable` (fail): an element with aria-hidden="true"
+ *     contains elements that can take keyboard focus, which screen readers then
+ *     do not announce.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenSelfAndDescendantsFocusable` (fail): an element with
+ *     aria-hidden="true" can take keyboard focus and also contains other
+ *     elements that can.
+ *     Basis: WCAG 4.1.2; ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
+ *   - `ariaHiddenFocusable_modalOpen_needsReview` (cantTell): focusable content
+ *     inside aria-hidden="true" while a modal dialog is open elsewhere; it is
+ *     fine if the dialog keeps focus inside it.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 6cfa84; WAI-ARIA 1.2 aria-modal.
+ *   - `ariaHiddenFocusable_runtimeRedirect_needsReview` (cantTell): the one
+ *     focusable element inside aria-hidden="true" passed focus straight on to
+ *     another element when focused, as a focus trap sentinel does.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 6cfa84; WAI-ARIA 1.2 aria-hidden.
  * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
@@ -85,6 +105,32 @@ const meta = {
   coverage: {
     facetsBySc: {
       '4.1.2': ['aria-hidden-focusable']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    ariaHiddenFocusable_modalOpen_needsReview: {
+      steps: [
+        'Find the element the report names, behind the modal dialog open on the page, and note what in it can take focus.',
+        'With the dialog open, press Tab repeatedly, then Shift+Tab, and watch where focus goes.',
+        'Whenever focus seems to leave the dialog, check document.activeElement in the developer tools console.'
+      ],
+      passWhen:
+        'Focus stays inside the open dialog and never reaches the hidden content behind it.',
+      failWhen:
+        'Focus reaches content behind the dialog inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
+    },
+    ariaHiddenFocusable_runtimeRedirect_needsReview: {
+      steps: [
+        'Click just before the element the report names, then press Tab until focus should reach it.',
+        'Watch where focus lands and check document.activeElement in the developer tools console.',
+        'Press Shift+Tab from the control after it and see whether focus stops on the hidden element or passes straight on.'
+      ],
+      passWhen:
+        "Focus never stays on the hidden element: it passes straight on to a visible control, as a focus trap's sentinel does.",
+      failWhen:
+        'Focus can stay on the element inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
     }
   }
 };

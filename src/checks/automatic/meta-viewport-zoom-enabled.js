@@ -13,6 +13,8 @@
  *   maximum-scale or user-scalable. Content setting neither cannot restrict
  *   zoom.
  * @expectation
+ *   In the viewport meta tag in effect, the last one with content (an
+ *   earlier one is replaced, and asked about if it restricts zoom):
  *   user-scalable is absent, yes, device-width, device-height, or a number
  *   outside the range -1 to 1; and maximum-scale is absent, device-width,
  *   device-height, negative, or 2 or more. Anything else stops the user
@@ -20,6 +22,16 @@
  * @reports
  *   - `reasons`: the settings that restrict zoom, one per item, written as
  *     in the `content` attribute (`user-scalable=no`, `maximum-scale=1`).
+ * @reason-codes
+ *   - `VIEWPORT_ZOOM_RESTRICTED` (fail): the viewport meta tag in effect,
+ *     the last one with content, disables zoom or caps it below 200%.
+ *     Basis: WCAG 1.4.4; ACT b4f0c3; CSS Viewport meta viewport.
+ *   - `VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN` (cantTell): a viewport meta tag
+ *     that a later one replaces restricts zoom; browsers apply the last,
+ *     and have not always agreed.
+ *     It leans pass when the tag in effect sets each restricted setting
+ *     again to a value that allows zoom.
+ *     Basis: WCAG 1.4.4 (not settled); CSS Viewport meta viewport.
  * @implementation-notes
  * - The content attribute is read as browsers read it (CSS Viewport):
  *   whitespace separates settings as ',' and ';' do, so
@@ -57,7 +69,22 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.4': ['meta-viewport-zoom-enabled'] } }
+  coverage: { facetsBySc: { '1.4.4': ['meta-viewport-zoom-enabled'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN: {
+      steps: [
+        'In the Elements panel, find every <meta name="viewport"> in the page\'s head and note which one is last.',
+        "Open the page on a phone or tablet, or in the developer tools' device mode with touch emulation.",
+        "Pinch to zoom (or use the browser's zoom) and try to enlarge text to 200%."
+      ],
+      passWhen:
+        'Text can be zoomed to at least 200%, so the earlier restricting tag has no effect.',
+      failWhen:
+        'Zoom is blocked or capped below 200% in the browser tested, which fails WCAG 1.4.4.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -77,7 +104,46 @@ function runInPage(ctx) {
     : [];
 
   const occurrences = [];
+  const questions = [];
   let applicableCount = 0;
+
+  // Browsers apply the last viewport meta tag that has content; an earlier
+  // one is overridden. One that restricts zoom fails; an earlier one that
+  // restricts is asked about, since browsers have differed on merging them.
+  const withContent = Array.from(nodes).filter(
+    (el) =>
+      el && dom.get(el, 'getAttribute') && String(dom.getAttribute(el, 'content') || '').trim()
+  );
+  const inEffect = withContent.length ? withContent[withContent.length - 1] : null;
+
+  // The tag in effect sets each setting this earlier one restricts, to a
+  // value that restricts nothing: a browser that merges the tags keeps the
+  // later value, and one that applies the last tag drops the earlier, so
+  // zoom is allowed either way. Where the later tag leaves one out, a
+  // merging browser would keep the restriction, and there is no lean.
+  const inEffectViewport = inEffect
+    ? helpers.readViewportContent(String(dom.getAttribute(inEffect, 'content') || ''))
+    : null;
+  function overriddenLean(viewport) {
+    if (!inEffectViewport) return null;
+    const later = inEffectViewport;
+    if (later.userScalable === false) return null;
+    if (typeof later.maximumScale === 'number' && later.maximumScale < 2) return null;
+    const resetsUserScalable = viewport.userScalable !== false || later.userScalable === true;
+    const resetsMaximumScale =
+      !(typeof viewport.maximumScale === 'number' && viewport.maximumScale < 2) ||
+      typeof later.maximumScale === 'number';
+    if (!resetsUserScalable || !resetsMaximumScale) return null;
+    return {
+      toward: 'pass',
+      why: 'The later viewport meta tag sets each restricted setting again to a value that allows zoom, so zoom is allowed whether browsers merge the tags or apply the last one.',
+      signals: [
+        { signal: 'later-tag-resets-properties', value: true },
+        { signal: 'later-tag-restricts', value: false }
+      ],
+      i18n: { whyKey: 'metaViewportZoomEnabled_lean_why_overridden' }
+    };
+  }
 
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
@@ -100,8 +166,35 @@ function runInPage(ctx) {
 
     if (!reasons.length) continue;
 
+    if (el !== inEffect) {
+      const lean = overriddenLean(viewport);
+      questions.push(
+        helpers.reportOccurrence(el, {
+          ...(lean ? { lean } : {}),
+          summary:
+            'This viewport meta tag restricts zoom, but a later viewport meta tag replaces it.',
+          hint: 'Remove the earlier viewport meta tag, or user-scalable=no and any maximum-scale below 2 from it: browsers apply the last one, and have not always agreed.',
+          occurrenceOutcome: 'cantTell',
+          i18n: {
+            summaryKey: 'metaViewportZoomEnabled_summary_cantTell_overridden',
+            hintKey: 'metaViewportZoomEnabled_hint_cantTell_overridden',
+            params: { reasons: reasons.join(', ') }
+          },
+          uncertainty: {
+            code: 'runtime-dependent',
+            needed: 'Whether the browser in use applies only the last viewport meta tag.'
+          },
+          data: {
+            details: { reasonCode: 'VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN', reasons }
+          }
+        })
+      );
+      continue;
+    }
+
     occurrences.push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: 'fail',
         summary: 'This viewport meta tag restricts the user’s ability to zoom.',
         hint: 'Remove user-scalable=no and any maximum-scale below 2 from the viewport meta content.',
         i18n: {
@@ -119,15 +212,12 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  const resolved = helpers.resolveTieredOutcome(
+    occurrences,
+    questions,
+    rule.defaultSeverity || 'serious'
+  );
+  return { ruleId: rule.ruleId, ...resolved };
 }
 
 module.exports = { id, meta, runInPage, applicability };

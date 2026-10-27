@@ -69,6 +69,18 @@ const CASES = [
       BODY +
       '<span class="icon" style="display:inline-block;width:10px;height:10px;background:#000"></span>',
     'cantTell'
+  ],
+  [
+    'a rule in an adopted sheet turning main',
+    BODY +
+      "<script>const s = new CSSStyleSheet(); s.replaceSync('@media (orientation: portrait) { main { transform: rotate(90deg) } }'); document.adoptedStyleSheets = [s];</script>",
+    'fail'
+  ],
+  [
+    "a rule in a component's shadow root turning a small box in it",
+    BODY +
+      "<x-box></x-box><script>document.querySelector('x-box').attachShadow({ mode: 'open' }).innerHTML = '<style>@media (orientation: portrait) { .b { transform: rotate(90deg) } }</style><div class=b style=width:10px;height:10px;background:#000></div>';</script>",
+    'cantTell'
   ]
 ];
 

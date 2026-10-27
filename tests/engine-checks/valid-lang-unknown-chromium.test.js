@@ -2,7 +2,7 @@
 
 /**
  * valid-lang's message for a well-formed tag that names no language (#147).
- * "qaa" (the private-use range) and "eng" fail, as decided, but they are
+ * "xx" and "eng" fail, as decided, but they are
  * well formed, so the message says they name no known language rather than
  * calling them malformed; "en_US" is malformed and is still called that.
  *
@@ -13,7 +13,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 let chromium;
 try {
@@ -39,7 +38,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 test(
   'valid-lang names a well-formed unknown tag for what it is, in Chromium',
@@ -50,10 +49,10 @@ test(
       const page = await browser.newPage();
       await page.setContent(
         '<!doctype html><html lang="fr"><head><title>t</title></head><body>' +
-          '<p id="q" lang="qaa">x</p><p id="e" lang="eng-GB">y</p><p id="m" lang="en_US">z</p>' +
+          '<p id="q" lang="xx">x</p><p id="e" lang="eng-GB">y</p><p id="m" lang="en_US">z</p>' +
           '</body></html>'
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       const summaries = await page.evaluate(() => {
         const r = window.a11ycore.runa11yCoreInPage(null, null, {}, ['valid-lang']);
         const check = r.checksResults.find((c) => c.ruleId === 'valid-lang');
@@ -64,7 +63,7 @@ test(
           ])
         );
       });
-      assert.match(summaries.q[0], /is well formed, but "qaa" names no known language/);
+      assert.match(summaries.q[0], /is well formed, but "xx" names no known language/);
       assert.match(summaries.e[0], /is well formed, but "eng" names no known language/);
       assert.match(summaries.m[0], /is not a valid language tag/);
       for (const id of ['q', 'e', 'm']) assert.equal(summaries[id][1], 'ELEMENT_LANG_INVALID');

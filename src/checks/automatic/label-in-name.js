@@ -17,7 +17,9 @@
  *   and elements whose role attribute resolves (its first known,
  *   non-abstract token, in any case) to the button, link, checkbox, radio,
  *   switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio,
- *   option, treeitem or gridcell role, minus anything hidden or disabled.
+ *   option, treeitem or gridcell role, and a <td> with no role attribute
+ *   in a grid or treegrid, a gridcell by HTML-AAM, minus anything hidden
+ *   or disabled.
  *   A button-type <input> (submit, reset, button) with a value shows that
  *   value as its label; without one it shows the browser's own default,
  *   which can't be known, and is out of scope.
@@ -70,6 +72,34 @@
  *     points at).
  *   - `nameMechanism`: what gives the accessible name: `aria-label` or
  *     `aria-labelledby`.
+ * @reason-codes
+ *   - `HYPHENATION_DIFFERS` (cantTell): the accessible name holds the visible
+ *     label's words only when hyphens are ignored, so whether it contains the
+ *     label is a judgment call.
+ *     It leans pass: the words are the same once hyphens are ignored.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_ABBREVIATION` (cantTell): the accessible name holds the
+ *     visible label only if a word ending in a period is read as an
+ *     abbreviation of a longer word.
+ *     It leans pass when each shortened word has three letters or more and
+ *     starts the word in the name; otherwise no lean.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_ICON_FONT_GLYPH` (cantTell): the visible label renders through
+ *     an icon font, so its text may show as a symbol rather than readable
+ *     words.
+ *     It leans pass when the text is a ligature name or Private Use Area
+ *     characters and the page has loaded that font; otherwise no lean.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `POSSIBLE_SYMBOLIC_CHARACTER` (cantTell): the visible label is a single
+ *     character, or symbols only ("×", "+", "»"), missing from the accessible
+ *     name, which may be a symbol rather than text.
+ *     It leans pass when the character is the letter x (a close icon), and
+ *     fail when it is a digit; other letters have no lean.
+ *     Basis: WCAG 2.5.3 (not settled); ACT 2ee8b8.
+ *   - `VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME` (fail): the accessible name from
+ *     aria-label or aria-labelledby does not contain the visible label's
+ *     words, together and in order.
+ *     Basis: WCAG 2.5.3; F96; G208; ACT 2ee8b8.
  */
 
 const id = 'label-in-name';
@@ -106,7 +136,55 @@ const meta = {
     'POSSIBLE_ABBREVIATION',
     'POSSIBLE_ICON_FONT_GLYPH',
     'POSSIBLE_SYMBOLIC_CHARACTER'
-  ]
+  ],
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    HYPHENATION_DIFFERS: {
+      steps: [
+        'Read the visible label of the control the report names.',
+        "Open the Accessibility pane and read the control's accessible name.",
+        'Compare the two: they differ only in where hyphens fall ("e-mail" against "email"); decide whether a person saying the visible label would say the same words.',
+        'If speech input software is available, say the visible label and see whether it activates the control.'
+      ],
+      passWhen:
+        'The name says the same words as the label, with only the hyphenation differing, so speaking the label reaches the control.',
+      failWhen:
+        'The hyphenation changes the words, so the name does not contain what the label shows, which fails WCAG 2.5.3.'
+    },
+    POSSIBLE_ABBREVIATION: {
+      steps: [
+        'Read the visible label of the control the report names, and note the word ending in a period.',
+        "Open the Accessibility pane and read the control's accessible name.",
+        'Decide whether the label\'s word is a common abbreviation of the word in the name ("Ave." for "Avenue") that a person would read aloud as the full word.'
+      ],
+      passWhen:
+        'The abbreviation is a conventional one read as the full word that the name contains.',
+      failWhen:
+        "The label's word is not read as the word in the name, so a person saying the label would not match the name, which fails WCAG 2.5.3."
+    },
+    POSSIBLE_ICON_FONT_GLYPH: {
+      steps: [
+        'Look at the control the report names on screen and note what it shows: readable words or an icon.',
+        "Open the Accessibility pane and read the control's accessible name.",
+        'If the control shows only an icon, decide whether the name describes it; if it shows readable words, check that the name contains them.'
+      ],
+      passWhen:
+        'The control shows an icon rather than readable text, or the readable text it shows is contained in the name.',
+      failWhen:
+        'The control shows readable words that the accessible name does not contain, which fails WCAG 2.5.3.'
+    },
+    POSSIBLE_SYMBOLIC_CHARACTER: {
+      steps: [
+        'Look at the single character the control the report names shows.',
+        "Open the Accessibility pane and read the control's accessible name.",
+        'Decide whether the character is a symbol standing for an action (an "X" for close, an arrow) or literal text a user would say, such as a digit or letter.'
+      ],
+      passWhen: 'The character is a symbol, and the name describes what it does.',
+      failWhen:
+        'The character is text a user would say (a digit or a letter) and the name does not contain it, which fails WCAG 2.5.3.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -141,7 +219,12 @@ function runInPage(ctx) {
   const roleSelectors = CONTROL_ROLES.map((r) => `[role~="${r}" i]`).join(', ');
   const CONDITIONS =
     ':not([hidden]):not([disabled]):not([aria-disabled="true"]):is([aria-label], [aria-labelledby])';
-  const selector = `:is(${NATIVE_CONTROLS}, ${roleSelectors})${CONDITIONS}`;
+  // A <td> is a gridcell in a grid or treegrid (HTML-AAM), with no role
+  // attribute to select it by. Only cells under such a table are asked
+  // for, so a page's plain tables cost nothing; isCandidate keeps those
+  // whose nearest table is the grid.
+  const GRID_CELLS = ':is(table[role~="grid" i], table[role~="treegrid" i]) td';
+  const selector = `:is(${NATIVE_CONTROLS}, ${GRID_CELLS}, ${roleSelectors})${CONDITIONS}`;
 
   // The resolved role: the role attribute's first known token, else the role
   // a custom element's internals give it.
@@ -161,7 +244,12 @@ function runInPage(ctx) {
     } catch {
       // fall through to the role check
     }
-    return CONTROL_ROLES.includes(getExplicitRole(el));
+    const role = getExplicitRole(el);
+    if (role) return CONTROL_ROLES.includes(role);
+    return (
+      String(dom.localName(el) || '').toLowerCase() === 'td' &&
+      helpers.aria.getTableCellRole(el) === 'gridcell'
+    );
   }
 
   const nodes = (
@@ -541,9 +629,14 @@ function runInPage(ctx) {
   }
 
   function isIconFontElement(node) {
-    if (!node) return false;
+    return iconFontFamilyOf(node) !== '';
+  }
+
+  // The known icon font a node's font-family names, or ''.
+  function iconFontFamilyOf(node) {
+    if (!node) return '';
     const cs = computedStyleOf(node);
-    if (!cs) return false;
+    if (!cs) return '';
     let family;
     try {
       family =
@@ -551,7 +644,7 @@ function runInPage(ctx) {
     } catch {
       family = '';
     }
-    if (!family) return false;
+    if (!family) return '';
     const names = String(family)
       .split(',')
       .map((s) =>
@@ -560,7 +653,46 @@ function runInPage(ctx) {
           .replace(/^['"]|['"]$/g, '')
           .toLowerCase()
       );
-    return names.some((n) => ICON_FONT_FAMILIES.has(n));
+    return names.find((n) => ICON_FONT_FAMILIES.has(n)) || '';
+  }
+
+  // Whether the page has loaded a font face of that family: true, false
+  // when none is loaded, null when the page does not say (no font set).
+  function iconFontLoaded(family, node) {
+    try {
+      const fonts = dom.fonts(dom.ownerDocument(node));
+      if (!fonts || typeof fonts.forEach !== 'function') return null;
+      let loaded = false;
+      fonts.forEach((face) => {
+        const f = String((face && face.family) || '')
+          .trim()
+          .replace(/^['"]|['"]$/g, '')
+          .toLowerCase();
+        if (f === family && face.status === 'loaded') loaded = true;
+      });
+      return loaded;
+    } catch {
+      return null;
+    }
+  }
+
+  // Text an icon font draws as one glyph: a ligature name ("search",
+  // "arrow_back") or characters from the Private Use Area.
+  function isLigatureOrPua(text) {
+    const t = String(text || '').trim();
+    return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(t) || /^[\uE000-\uF8FF]+$/u.test(t);
+  }
+
+  // Which way a single visible character points: the letter x (a common
+  // close icon) or a symbol stands for an icon; a digit is text a user
+  // would say. Other letters give no direction. (A symbol alone has no
+  // words to compare, so it is not reported; it is read here all the same.)
+  function symbolicCharacterKind(text) {
+    const c = Array.from(norm(text))[0] || '';
+    if (c === 'x') return 'letter-x';
+    if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
+    if (/^\p{N}$/u.test(c)) return 'digit';
+    return '';
   }
 
   // ACT 2ee8b8's own passed example `<button aria-label="close">X</button>`:
@@ -622,7 +754,11 @@ function runInPage(ctx) {
 
     const labelTokens = tokenize(visibleLabel, false);
     const nameTokens = tokenize(accName, false);
-    const contains = containsWordRun(labelTokens, nameTokens, null);
+    // A label of symbols only ("×", "+", "»") has no words to look for, and
+    // was counted as contained. One the name doesn't hold is asked about as a
+    // symbol standing for an icon, as a single "X" is.
+    const symbolsOnly = labelTokens.length === 0 && accNorm.indexOf(visibleNorm) === -1;
+    const contains = !symbolsOnly && containsWordRun(labelTokens, nameTokens, null);
 
     // An abbreviation, a word hyphenated differently, or visible text that
     // may not be literal text at all (an icon-font glyph, a single symbolic
@@ -630,7 +766,9 @@ function runInPage(ctx) {
     // either. Report without asserting a defect instead of failing or
     // staying silent.
     let uncertainReason = '';
-    if (!contains) {
+    if (symbolsOnly) {
+      uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
+    } else if (!contains) {
       if (containsWordRun(tokenize(visibleLabel, true), tokenize(accName, true), null)) {
         uncertainReason = 'HYPHENATION_DIFFERS';
       } else {
@@ -642,6 +780,93 @@ function runInPage(ctx) {
         } else if (isSingleSymbolicCharacter(visibleLabel, accNorm)) {
           uncertainReason = 'POSSIBLE_SYMBOLIC_CHARACTER';
         }
+      }
+    }
+
+    // Which way the evidence points, for the shapes where it points one way.
+    let lean = null;
+    if (uncertainReason === 'HYPHENATION_DIFFERS') {
+      lean = {
+        toward: 'pass',
+        why: 'The name holds the label’s words once hyphens are ignored, so the label’s meaning is unchanged.',
+        signals: [{ signal: 'words-equal-without-hyphens', value: true }],
+        caution:
+          'Speech input may need the hyphenated word said differently ("e mail" against "email").',
+        i18n: {
+          whyKey: 'labelInName_lean_why_hyphenation',
+          cautionKey: 'labelInName_lean_caution_hyphenation'
+        }
+      };
+    } else if (uncertainReason === 'POSSIBLE_ABBREVIATION') {
+      // A stem of one or two letters ("N.", "No.") starts too many words to
+      // stand for the one in the name; three or more ("Ave.", "Dept.") does.
+      const longStems = new Set(
+        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+      );
+      if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
+        lean = {
+          toward: 'pass',
+          why: 'Each shortened word in the label starts the matching word in the name, as a conventional abbreviation does ("Ave." for "Avenue").',
+          signals: [
+            { signal: 'abbreviation-prefix-match', value: true },
+            {
+              signal: 'shortest-abbreviation-stem',
+              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+            }
+          ],
+          caution: 'A speech user may say the abbreviation as shown rather than the full word.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_abbreviation',
+            cautionKey: 'labelInName_lean_caution_abbreviation'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH') {
+      // ACT 2ee8b8 passes a ligature drawn as an icon; only when the page
+      // has loaded the font, else the word itself is drawn.
+      const source = (labelInfo.sourceElements || []).find(isIconFontElement);
+      const family = iconFontFamilyOf(source);
+      if (isLigatureOrPua(visibleLabel) && iconFontLoaded(family, source) === true) {
+        lean = {
+          toward: 'pass',
+          why: 'The label is an icon font’s ligature or symbol code, drawn as an icon, so it shows no readable words.',
+          signals: [
+            { signal: 'icon-font-family', value: family },
+            { signal: 'ligature-or-pua-text', value: true },
+            { signal: 'icon-font-loaded', value: true }
+          ],
+          caution:
+            'If the font fails to load for a user, the word itself is drawn and becomes a visible label.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_iconFont',
+            cautionKey: 'labelInName_lean_caution_iconFont'
+          }
+        };
+      }
+    } else if (uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER') {
+      const kind = symbolicCharacterKind(visibleLabel);
+      if (kind === 'letter-x' || kind === 'symbol') {
+        lean = {
+          toward: 'pass',
+          why: 'The label is a single symbol or an "X", which stands for an icon rather than words to say.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'A user may still say the character ("X") to reach the control.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_symbol',
+            cautionKey: 'labelInName_lean_caution_symbol'
+          }
+        };
+      } else if (kind === 'digit') {
+        lean = {
+          toward: 'fail',
+          why: 'The label is a digit, text a speech user would say, and the name does not contain it.',
+          signals: [{ signal: 'character-kind', value: kind }],
+          caution: 'The name may spell the number out in words, which some speech input matches.',
+          i18n: {
+            whyKey: 'labelInName_lean_why_digit',
+            cautionKey: 'labelInName_lean_caution_digit'
+          }
+        };
       }
     }
 
@@ -681,6 +906,7 @@ function runInPage(ctx) {
           },
           ...(uncertainReason
             ? {
+                ...(lean ? { lean } : null),
                 uncertainty: {
                   code: 'equivalence-unknown',
                   needed:

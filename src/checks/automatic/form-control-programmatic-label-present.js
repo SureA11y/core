@@ -37,6 +37,12 @@
  *   placeholder. Any of the five satisfies this rule. Whether the weaker two
  *   are an appropriate primary label is a separate question, asked by
  *   form-control-programmatic-label-quality.
+ * @reason-codes
+ *   - `missing_programmatic_label` (fail): the form field has no programmatic
+ *     label from a label element, aria-labelledby, aria-label, title or
+ *     placeholder; aria-placeholder alone does not count.
+ *     Basis: WCAG 4.1.2; WCAG 1.3.1; WCAG 3.3.2; H44; F68; accname 1.2;
+ *     HTML-AAM 4.1.1; ACT e086e5.
  */
 
 const id = 'form-control-programmatic-label-present';
@@ -302,12 +308,23 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // A field named only by aria-placeholder: Chromium names it from that,
+    // other browsers don't, so the hint says why it doesn't count.
+    let ariaPlaceholder = '';
+    try {
+      ariaPlaceholder = String(dom.getAttribute(el, 'aria-placeholder') || '').trim();
+    } catch {}
+
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
-      hint: 'Provide a <label> association, aria-label, aria-labelledby, title, or placeholder.',
+      hint: ariaPlaceholder
+        ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
+        : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
-        hintKey: 'formControl_programmaticLabelPresent_hint_fail',
+        hintKey: ariaPlaceholder
+          ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
+          : 'formControl_programmaticLabelPresent_hint_fail',
         params: { element: (dom.tagName(el) || '').toLowerCase() }
       },
       data: {
@@ -317,7 +334,8 @@ function runInPage(ctx) {
         details: {
           reasonCode: 'missing_programmatic_label',
           labelMethod: 'none',
-          labelStrength: 'none'
+          labelStrength: 'none',
+          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {})
         }
       }
     };

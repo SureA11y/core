@@ -28,16 +28,33 @@
  *       <a name="id">) whose name reads as a skip link in one of the
  *       shipped languages (helpers.hasSkipLinkWording, as skip-link uses)
  *       and whose target resolves to a real element in the link's own tree
- *       (light DOM or the same shadow root). Not required to be positioned
- *       before a <nav> or be keyboard-focus-order-first;
+ *       (light DOM or the same shadow root), outside any navigation or
+ *       complementary landmark (<nav>, <aside>, or the role): a link to the
+ *       menu or a sidebar skips to no main content. Not required to be
+ *       positioned before a <nav> or be keyboard-focus-order-first;
  *   (c) at least one heading (<h1>-<h6>, or a role resolving to heading) that is both
  *       included in the accessibility tree AND visible (not off-screen,
- *       clipped, opacity:0, or zero-size-overflow-hidden), technique H69:
+ *       clipped, opacity:0, zero-size-overflow-hidden, or drawn wholly
+ *       above the top of the page or left of its start, where no scrolling
+ *       reaches), and outside any
+ *       navigation or complementary landmark, technique H69:
  *       heading navigation is itself a standards-recognized bypass
  *       mechanism (e.g. a screen reader's "jump by heading" command), but
  *       ACT 047fe0's own Expectation requires visibility too, since a
  *       screen-reader-only heading leaves sighted keyboard users with no
- *       equivalent way to locate the start of non-repeated content.
+ *       equivalent way to locate the start of non-repeated content. H69 puts
+ *       headings at the start of each section of content: one inside the
+ *       navigation heads the repeated block, and jumping to it skips
+ *       nothing (ACT 047fe0, Failed Example 4).
+ * @reason-codes
+ *   - `BYPASS_MECHANISM_ABSENT` (cantTell): no main landmark, working skip
+ *     link or visible heading was found, so a person checks whether the page
+ *     needs a way to bypass repeated content and offers one.
+ *     It leans fail when a navigation block with links comes before the
+ *     page's own text and no same-page link leads past it, and pass when
+ *     nothing focusable comes before that text and the page has no header,
+ *     navigation, sidebar or footer.
+ *     Basis: WCAG 2.4.1 (not settled); G1; ARIA11; H69; ACT cf77f2.
  * @implementation-notes
  * - Outcome model: this rule is `type: 'manual'` (cantTell-capped, never
  *   `fail`). When a recognized mechanism is found the page has nothing to
@@ -107,7 +124,22 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } }
+  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    BYPASS_MECHANISM_ABSENT: {
+      steps: [
+        'Close any dialog or overlay, then look at whether the page repeats blocks such as a header or menu that appear on other pages of the site.',
+        'Click the address bar and press Tab: check whether a skip link appears that moves focus past the repeated blocks to the main content.',
+        "Check for headings at the start of the main content, or a main landmark, in the Accessibility pane or by a screen reader's headings and landmarks lists."
+      ],
+      passWhen:
+        'The page has no repeated blocks, or offers a working skip link, a main landmark or headings that let users jump past them.',
+      failWhen:
+        'Repeated blocks have no way to skip them, so keyboard and screen reader users must go through them on every page, which fails WCAG 2.4.1.'
+    }
+  }
 };
 
 // This check is inherently whole-document (does the PAGE have this
@@ -222,6 +254,22 @@ function runInPage(ctx) {
     return helpers.getContentNameInfo(a, ctx).value || '';
   }
 
+  // Inside a navigation or complementary landmark: content a page repeats
+  // or sets beside its own, not where it starts (H69, G1). Crossing shadow
+  // roots, as the element is rendered.
+  const ASIDE_BY_TAG = { nav: 'navigation', aside: 'complementary' };
+  function isInNavigationOrAside(el) {
+    let guard = 0;
+    for (let cur = el; cur && guard++ < 500; cur = helpers.composedParent(cur)) {
+      const role =
+        helpers.aria.getAuthorRole(cur) ||
+        ASIDE_BY_TAG[String(dom.localName(cur) || '').toLowerCase()] ||
+        '';
+      if (role === 'navigation' || role === 'complementary') return true;
+    }
+    return false;
+  }
+
   function hasWorkingSkipLink() {
     let links;
     try {
@@ -261,7 +309,8 @@ function runInPage(ctx) {
       if (!target && root !== document) {
         target = resolveInRoot(document, fragment);
       }
-      if (target) return true;
+      // A link into the navigation or a sidebar skips to no main content.
+      if (target && !isInNavigationOrAside(target)) return true;
     }
     return false;
   }
@@ -274,6 +323,7 @@ function runInPage(ctx) {
   // technique (off-screen positioning, clip/clip-path, opacity:0, a
   // zero-size overflow:hidden box) fails.
   function isCssHidden(el) {
+    if (isBeyondPageStart(el)) return true;
     if (!helpers || typeof helpers.getVisibilityHintsInfo !== 'function') return false;
     try {
       const info = helpers.getVisibilityHintsInfo(el, ctx, {});
@@ -283,11 +333,34 @@ function runInPage(ctx) {
     }
   }
 
+  // Drawn wholly above the top of the page, or left of its start, where no
+  // scrolling reaches (top: -999px; ACT 047fe0, Failed Example 2): the page
+  // starts at 0, so the box is never on screen. A right-to-left page scrolls
+  // left of its start, so only the top bounds it there, as in
+  // target-size-minimum. Without layout (jsdom) a box has no size, and this
+  // says nothing.
+  function isBeyondPageStart(el) {
+    try {
+      const view = dom.defaultView(document);
+      const r = dom.getBoundingClientRect(el);
+      if (!view || !r || !(r.width > 0 || r.height > 0)) return false;
+      const scrollX = Number(view.scrollX) || 0;
+      const scrollY = Number(view.scrollY) || 0;
+      if (r.bottom + scrollY <= 0) return true;
+      const rootCs = helpers.computedStyle(dom.documentElement(document));
+      const rtl = !!rootCs && rootCs.direction === 'rtl';
+      return !rtl && r.right + scrollX <= 0;
+    } catch {
+      return false;
+    }
+  }
+
   const HEADING_TAGS = ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'];
   function hasHeading() {
     for (const el of queryAll('h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
       if (!el || !isTagOrRole(el, HEADING_TAGS, 'heading')) continue;
-      if (isExposedToAt(el) && !isCssHidden(el)) return true;
+      // A heading in the navigation heads the block to be skipped.
+      if (isExposedToAt(el) && !isCssHidden(el) && !isInNavigationOrAside(el)) return true;
     }
     return false;
   }
@@ -301,8 +374,150 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
+  // ---- Lean ----
+
+  // Repeated blocks are usually a page's header, navigation, sidebars and
+  // footer; its own content is text outside them.
+  const BLOCK_ROLE_BY_TAG = {
+    nav: 'navigation',
+    aside: 'complementary',
+    header: 'banner',
+    footer: 'contentinfo'
+  };
+  const BLOCK_ROLES = ['navigation', 'complementary', 'banner', 'contentinfo'];
+  function blockRoleOf(el) {
+    const role = helpers.aria.getAuthorRole(el);
+    if (role) return BLOCK_ROLES.indexOf(role) !== -1 ? role : '';
+    return BLOCK_ROLE_BY_TAG[String(dom.localName(el) || '').toLowerCase()] || '';
+  }
+  function inRepeatedBlock(node) {
+    let guard = 0;
+    for (
+      let cur = dom.nodeType(node) === 1 ? node : dom.parentElement(node);
+      cur && guard++ < 500;
+      cur = dom.parentElement(cur)
+    ) {
+      if (blockRoleOf(cur)) return true;
+    }
+    return false;
+  }
+
+  // The first text of the page's own: letters in a text node exposed to
+  // assistive technology and outside the blocks above. null when none.
+  const UNSHOWN = ['script', 'style', 'noscript', 'template'];
+  function firstContentText() {
+    try {
+      const walker = dom.createTreeWalker(document, body, 4);
+      for (let n = walker.nextNode(), i = 0; n && i < 20000; n = walker.nextNode(), i++) {
+        if (!/\p{L}/u.test(String(dom.nodeValue(n) || ''))) continue;
+        const parent = dom.parentElement(n);
+        if (!parent || UNSHOWN.indexOf(String(dom.localName(parent) || '').toLowerCase()) !== -1)
+          continue;
+        if (inRepeatedBlock(n) || !isExposedToAt(parent)) continue;
+        return n;
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  const FOCUSABLE =
+    'a[href], area[href], button, input, select, textarea, iframe, summary, [tabindex], [contenteditable]';
+  // 2: the element comes before the node.
+  const precedes = (el, node) => !!(dom.compareDocumentPosition(node, el) & 2);
+
+  function bypassLean() {
+    const content = firstContentText();
+    if (!content) return null;
+    let leading = 0;
+    let navWithLinks = false;
+    for (const el of queryAll(FOCUSABLE)) {
+      if (!el || !isExposedToAt(el) || !precedes(el, content)) continue;
+      const tabindex = dom.getAttribute(el, 'tabindex');
+      if (tabindex !== null && parseInt(tabindex, 10) < 0) continue;
+      leading += 1;
+      if (!navWithLinks && isInNavigationOrAside(el)) {
+        let guard = 0;
+        for (let cur = el; cur && guard++ < 500; cur = dom.parentElement(cur)) {
+          if (blockRoleOf(cur) === 'navigation') {
+            navWithLinks = true;
+            break;
+          }
+        }
+      }
+    }
+    let blockPresent = false;
+    for (const el of queryAll('nav, aside, header, footer, [role]')) {
+      if (el && blockRoleOf(el) && isExposedToAt(el)) {
+        blockPresent = true;
+        break;
+      }
+    }
+    // A same-page link, whatever its words, to something outside the
+    // navigation and sidebars may be the way past them ("Jump to recipe").
+    let otherSamePageLinks = 0;
+    for (const a of queryAll('a[href]')) {
+      const href = String(dom.getAttribute(a, 'href') || '').trim();
+      if (href.length < 2 || href.charAt(0) !== '#') continue;
+      let fragment = href.slice(1);
+      try {
+        fragment = decodeURIComponent(fragment);
+      } catch {
+        // keep the raw fragment
+      }
+      const target = resolveInRoot(document, fragment.trim());
+      if (target && !isInNavigationOrAside(target)) otherSamePageLinks += 1;
+    }
+    const signals = [
+      { signal: 'nav-or-header-present', value: blockPresent },
+      { signal: 'leading-focusable-count', value: leading },
+      { signal: 'other-same-page-links', value: otherSamePageLinks }
+    ];
+    // A navigation block with links in front of the page's own text, and
+    // nothing to move past it: the block 2.4.1 is about (ACT cf77f2).
+    if (navWithLinks && otherSamePageLinks === 0) {
+      return {
+        toward: 'fail',
+        why: "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+        signals,
+        caution:
+          'Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.',
+        i18n: {
+          whyKey: 'bypassBlocksPresent_lean_why_navBeforeContent',
+          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent'
+        }
+      };
+    }
+    // Nothing a keyboard reaches before the content, and no header,
+    // navigation, sidebar or footer: there is no block to bypass.
+    if (!blockPresent && leading === 0) {
+      return {
+        toward: 'pass',
+        why: "Nothing that takes focus comes before the page's own content, and the page has no header, navigation, sidebar or footer block to bypass.",
+        signals,
+        caution:
+          'Repeated text with no links, such as a site name, may still come before the content.',
+        i18n: {
+          whyKey: 'bypassBlocksPresent_lean_why_nothingBefore',
+          cautionKey: 'bypassBlocksPresent_lean_caution_nothingBefore'
+        }
+      };
+    }
+    return null;
+  }
+
+  // A lean is advice: a failure reading it costs the lean, not the finding.
+  let lean = null;
+  try {
+    lean = bypassLean();
+  } catch {
+    // no lean
+  }
+
   const occurrences = [
     helpers.reportOccurrence(body, {
+      ...(lean ? { lean } : {}),
       summary: 'No way to skip repeated content was found on this page.',
       hint: 'Check that the page offers one: a main landmark (<main> or role="main"), a working "skip to content" link, or headings that screen reader users can jump between. One may be hidden only for now, for example while a modal dialog makes the rest of the page inert.',
       i18n: {

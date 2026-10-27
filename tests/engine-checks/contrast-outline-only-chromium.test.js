@@ -2,19 +2,20 @@
 
 /**
  * Text drawn only by an outline or a shadow: a transparent fill, or a fill
- * the colour of the background, with a visible -webkit-text-stroke or
+ * the color of the background, with a visible -webkit-text-stroke or
  * text-shadow. Outlined headings are a common design. Under ACT's
  * definition the text is visible, since making it transparent changes the
  * pixels, and WCAG's techniques count an outline or halo in its contrast
- * (G18, G145). The engine skipped it as undrawn, or as the same colour as
+ * (G18, G145). The engine skipped it as undrawn, or as the same color as
  * its background, before looking at the stroke or shadow, so a #ccc
  * outline on white (1.61:1) passed in silence. It now gets the review a
  * stroke or shadow gets elsewhere (contrast-computable, TEXT_STROKE or
- * TEXT_SHADOW), except where every colour it is drawn in is below the
+ * TEXT_SHADOW), except where every color it is drawn in is below the
  * ratio against a flat background: no reading of it can meet the
  * criterion (ACT: "guaranteed to not be satisfied"), so the ratio rules
- * fail it by the best of those colours. Text nothing draws is still
- * skipped.
+ * fail it by the best of those colors. The same holds for a light fill
+ * with a light outline: the fill counts among the colors. Text nothing
+ * draws is still skipped.
  *
  * jsdom has no -webkit-text-stroke, so stroke cases run in Chromium, and
  * are skipped when Playwright or its Chromium build is not installed. Set
@@ -24,7 +25,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 const { runa11yCoreOnHtml } = require('../../src/testing.js');
 
@@ -52,7 +52,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 const RULES = ['contrast-minimum', 'contrast-enhanced', 'contrast-computable'];
 
 const page = (style) =>
@@ -76,7 +76,7 @@ const ASKED = (reason) => ({
   'contrast-computable': 'cantTell',
   reason
 });
-// Every colour the text is drawn in is below even AA's ratio: no reading of
+// Every color the text is drawn in is below even AA's ratio: no reading of
 // it meets the criterion, so both ratio rules fail it, and
 // contrast-computable doesn't ask about it too.
 const FAILED = {
@@ -129,36 +129,139 @@ const CASES = [
     'a transparent fill with a transparent stroke',
     'color:transparent;-webkit-text-stroke:1px transparent',
     SKIPPED
+  ],
+  ['a light fill with a light stroke', 'color:#eee;-webkit-text-stroke:1px #ccc', FAILED],
+  ['a light fill with a light shadow', 'color:#eee;text-shadow:0 0 1px #ccc,0 0 1px #ccc', FAILED],
+  [
+    'a light fill with a dark stroke',
+    'color:#eee;-webkit-text-stroke:1px #000',
+    ASKED('TEXT_STROKE')
+  ],
+  [
+    'a dark fill with a light stroke',
+    'color:#000;-webkit-text-stroke:1px #eee',
+    ASKED('TEXT_STROKE')
   ]
 ];
 
-for (const [name, style, expected] of CASES) {
-  test(`text drawn by an outline, in Chromium: ${name}`, { skip }, async () => {
-    const browser = await chromium.launch({ executablePath });
-    try {
-      const p = await browser.newPage();
-      await p.setContent(page(style));
-      await p.addScriptTag({ content: BUNDLE });
-      const got = await p.evaluate(
-        (rules) =>
-          window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
-            .checksResults,
-        RULES
-      );
-      assert.deepEqual(summarize(got), expected);
-    } finally {
-      await browser.close();
-    }
-  });
+async function scan(browser, html) {
+  const p = await browser.newPage();
+  try {
+    await p.setContent(html);
+    await addBundle(p);
+    return await p.evaluate(
+      (rules) =>
+        window.a11ycore.runa11yCoreInPage(location.href, null, {}, { includeRuleIds: rules })
+          .checksResults,
+      RULES
+    );
+  } finally {
+    await p.close();
+  }
 }
 
-test('in jsdom, a shadow on a fill the colour of the background is measured or asked about, and no shadow is skipped', () => {
+test('text drawn by an outline, in Chromium', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+
+  for (const [name, style, expected] of CASES) {
+    await t.test(name, async () => {
+      assert.deepEqual(summarize(await scan(browser, page(style))), expected);
+    });
+  }
+
+  // A placeholder is judged by whose colors it is drawn in, so a light
+  // one with a light shadow is still asked about.
+  await t.test('a light placeholder with a light shadow', async () => {
+    const got = await scan(
+      browser,
+      '<!doctype html><html lang="en"><head><title>t</title><style>' +
+        'input::placeholder{color:#eee;text-shadow:0 0 1px #ccc}</style></head>' +
+        '<body><main><label>Search <input placeholder="Type a word"></label></main></body></html>'
+    );
+    const by = Object.fromEntries(got.map((c) => [c.ruleId, c]));
+    assert.notEqual(by['contrast-minimum'].outcome, 'fail');
+    assert.equal(by['contrast-computable'].outcome, 'cantTell');
+  });
+});
+
+test('in jsdom, a shadow on a fill the color of the background or a light fill is measured or asked about, and no shadow is skipped', () => {
   const light = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #ccc'), {
     runOnly: RULES
   });
   assert.deepEqual(summarize(light.checksResults), FAILED);
   const dark = runa11yCoreOnHtml(page('color:#fff;text-shadow:1px 1px 0 #000'), { runOnly: RULES });
   assert.deepEqual(summarize(dark.checksResults), ASKED('TEXT_SHADOW'));
+  const lightFill = runa11yCoreOnHtml(page('color:#eee;text-shadow:1px 1px 0 #ccc'), {
+    runOnly: RULES
+  });
+  assert.deepEqual(summarize(lightFill.checksResults), FAILED);
   const plain = runa11yCoreOnHtml(page('color:#fff'), { runOnly: RULES });
   assert.deepEqual(summarize(plain.checksResults), SKIPPED);
+});
+
+// A variant of contrast-minimum at a lower ratio than WCAG's: an outline
+// whose best color reaches it but not WCAG's AA ratio is left by
+// contrast-computable to the ratio rules, and the variant can't decide it,
+// so it asks (TEXT_STROKE). At WCAG's ratios it still fails.
+const { definePack, packScript } = require('../../src/pack.js');
+
+const lowRatio = definePack({
+  name: 'ratios',
+  version: '1.0.0',
+  namespace: 'ratios',
+  core: '*',
+  rules: [
+    {
+      id: 'ratios-contrast',
+      from: 'contrast-minimum',
+      config: { largeTextRatio: 2.5 },
+      meta: {
+        title: 'Contrast',
+        tags: ['ratios'],
+        i18n: { titleKey: 'ratiosContrast_title', descriptionKey: 'ratiosContrast_description' }
+      }
+    }
+  ]
+});
+
+test("an outline at a variant's own ratio, in Chromium", { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  // [stroke, contrast-minimum, variant, variant's reason code]
+  for (const [stroke, minimum, variant, code] of [
+    // 2.85:1: below 3:1, above 2.5:1.
+    ['#999', 'fail', 'cantTell', 'TEXT_STROKE'],
+    // 1.61:1: below both.
+    ['#ccc', 'fail', 'fail', 'BELOW_THRESHOLD']
+  ]) {
+    await t.test(stroke, async () => {
+      const p = await browser.newPage();
+      try {
+        await p.setContent(page(`color:transparent;-webkit-text-stroke:1px ${stroke}`));
+        await addBundle(p);
+        await p.addScriptTag({ content: packScript([lowRatio]) });
+        const got = await p.evaluate(() =>
+          Object.fromEntries(
+            window.a11ycore
+              .runa11yCoreInPage(null, null, { packs: ['ratios@1.0.0'] }, [
+                'contrast-computable',
+                'contrast-minimum',
+                'ratios-contrast'
+              ])
+              .checksResults.map((c) => [
+                c.ruleId,
+                { outcome: c.outcome, code: c.occurrences[0].data.details.reasonCode }
+              ])
+          )
+        );
+        assert.equal(got['contrast-computable'].outcome, 'pass');
+        assert.equal(got['contrast-minimum'].outcome, minimum);
+        assert.equal(got['ratios-contrast'].outcome, variant);
+        assert.equal(got['ratios-contrast'].code, code);
+      } finally {
+        await p.close();
+      }
+    });
+  }
 });

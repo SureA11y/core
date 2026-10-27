@@ -323,6 +323,11 @@ const FACETS = {
                 "id": "aria-role-valid",
                 "label": "Explicit role attribute resolves to a real, non-abstract ARIA role, so the structure it conveys is programmatically determined",
                 "automation": "full"
+            },
+            {
+                "id": "aria-owns-valid",
+                "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+                "automation": "full"
             }
         ]
     },
@@ -415,7 +420,13 @@ const FACETS = {
     "1.4.5": {
         "title": "Images of Text",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "image-of-text-evidence",
+                "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.6": {
         "title": "Contrast (Enhanced)",
@@ -507,6 +518,16 @@ const FACETS = {
                 "id": "click-handler-keyboard-operable",
                 "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
                 "automation": "partial"
+            },
+            {
+                "id": "widget-keyboard-focusable-evidence",
+                "label": "An element with a widget role, or one item of a composite widget, is in the tab order (evidence only: a script may move focus in ways the markup doesn't show)",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+                "automation": "manual"
             }
         ]
     },
@@ -696,6 +717,11 @@ const FACETS = {
                 "id": "focus-indicator-not-suppressed",
                 "label": "CSS does not remove the focus indicator without drawing a replacement",
                 "automation": "manual"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+                "automation": "manual"
             }
         ]
     },
@@ -883,7 +909,13 @@ const FACETS = {
     "3.3.1": {
         "title": "Error Identification",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "invalid-field-error-message",
+                "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
+                "automation": "partial"
+            }
+        ]
     },
     "3.3.2": {
         "title": "Labels or Instructions",
@@ -1151,13 +1183,34 @@ const FACETS = {
                 "id": "aria-checked-state-mismatch",
                 "label": "Native checkbox/radio aria-checked matches its actual checked/indeterminate state (evidence only: static markup can't rule out later JS hydration)",
                 "automation": "manual"
+            },
+            {
+                "id": "aria-expanded-state-mismatch",
+                "label": "aria-expanded matches whether the content aria-controls names is shown (evidence only: static markup may catch a transition or a script that hasn't run)",
+                "automation": "manual"
+            },
+            {
+                "id": "aria-owns-valid",
+                "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
+                "automation": "full"
             }
         ]
     },
     "4.1.3": {
         "title": "Status Messages",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-region-reachable-evidence",
+                "label": "A live region is not hidden from assistive technology by aria-hidden or inert, and is not left busy (evidence only: whether the page uses it for status messages is a person's call)",
+                "automation": "manual"
+            },
+            {
+                "id": "live-region-changes-evidence",
+                "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
+                "automation": "manual"
+            }
+        ]
     }
 };
 

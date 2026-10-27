@@ -4,7 +4,7 @@ This is the full reference for `ctx.helpers`, the object every rule's `runInPage
 receives (`const { helpers } = ctx`, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §6).
 It exists because that doc's own helpers section only calls out the dozen or so most
 common ones — the underlying object (`createDomHelpers()` in `src/core/dom-helpers.js`)
-holds about 70 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
+holds about 85 helpers plus the `dom`, `contrast` and `aria` namespaces, and several of them replace logic a new rule would otherwise
 duplicate (often incorrectly — see the naming helpers below).
 
 Read [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) first for the rule contract itself
@@ -60,6 +60,15 @@ gave it (a name rule, a landmark, a heading) passes it, and resolves the role wi
 `aria.getAuthorRole`; a rule that ACT scopes to the role attribute (an _explicit_ role, as
 `aria-required-attr` and `aria-required-children` are) leaves it out. Internals are reached
 as `getCustomElementInternals(el)` reaches them, and the elements are found once per scan.
+
+`queryAllSmart(selector, { listenerTypes: ['click'] })` also returns the elements the opt-in
+listener hook (`listenerHookScript()`, see
+[`INTEGRATION.md`](./INTEGRATION.md#seeing-listeners-added-from-script-the-listener-hook))
+saw a listener of one of those types on, added with `addEventListener` or set as an `on…`
+property: a rule that selects `[onclick]` gets an element given a click listener from script
+too. Without the hook it adds nothing and costs nothing. The result stays in tree order, and
+the hidden-content policy applies as usual. The elements are found in one walk of the scope
+per scan and type list (`getListenerElements(types)` returns them directly).
 
 ```js
 const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('img') : helpers.queryAll('img');
@@ -184,7 +193,8 @@ comment on `isIncludedInAccessibilityTree` below for why.
 Whether the default hidden-content policy leaves `el` out: the same filter
 `queryAllSmart` applies to what it finds (`display:none`, `hidden`, the content of a
 closed `<details>` other than its first `<summary>`, content under
-`content-visibility:hidden` or `hidden="until-found"`, an `[inert]` subtree and the
+`content-visibility:hidden` or `hidden="until-found"` (not on an inline element, which
+`until-found` doesn't hide), an `[inert]` subtree and the
 button a customizable `<select>` draws itself with, the page behind an open modal
 dialog). `isHiddenContent(el, { inert: true })` keeps inert content, as
 `queryAllSmart` does with the same option. Inert content takes no focus and no click
@@ -303,13 +313,46 @@ have.
 ### `isModalDialogOpen()` → `boolean`
 
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
-`showModal()`), or an open `<dialog aria-modal="true">`. The rest of the document is
-inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). A rule
+`showModal()`), in the document or in an open shadow root. Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
+stands in for it; in a browser, such a dialog opened without `showModal()` is not modal. The rest of the document is
+inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). Also
+`true` while a script-made modal is shown: an element whose `role` attribute is `dialog` or
+`alertdialog`, with `aria-modal="true"`, drawn (no `display: none`, `[hidden]` or
+`visibility: hidden` on it or above it) and not inside or on `aria-hidden="true"` or
+`inert`. Only this helper counts such a dialog: `aria-modal` makes nothing inert, so the
+page behind it is not `modalInert` and every other rule keeps judging it. A rule
 about the page's own structure (a level-one heading, a main landmark, a bypass
 mechanism, content in landmarks) adds this to its `applicability(ctx)` next to
 `isWholeDocumentScope()`, since the scan saw the dialog, not the page. A rule about a
 document property a modal does not hide (`<title>`, `<html lang>`, the viewport) does
 not.
+
+### `getOpenModalDialogs()` → `Element[]`
+
+The modal `<dialog>` elements open in the document and its open shadow roots (the document's first, then each shadow root's): those that match
+`:modal` (opened with `showModal()`), or under jsdom, which has no top layer, those open with
+`aria-modal="true"`. The page outside them is what `isAccTreeEligible` leaves out with reason
+`modalInert`. A script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it
+makes nothing inert. Worked out once per run.
+
+### `getDocumentRoots()` → `(Document | ShadowRoot)[]`
+
+The document, then each open shadow root in it, nested ones included, found once per run
+and shared with the engine's own reads (the style sheets, the open modal dialogs). A rule
+that must search the whole page, shadow trees included, runs its `querySelectorAll` on each.
+A closed shadow root is not in it.
+
+### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
+
+The animations running on a time-based timeline when the scan started. The engine moves each to
+a fixed point while the rules run (a finite one to its end, so it no longer shows in
+`document.getAnimations()`), and restores it after; this is the list from before. `kind` is
+`css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
+property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
+`target` is the animated element (a pseudo-element's animation names its element and
+`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom). The
+runner adds it to `helpers` for the scan (`src/core/dom-runner.js`), so it is not in
+`createDomHelpers()`'s object; `moving-content-pausable` reads it.
 
 ### `hasTruncatedAncestorWalk` (internal)
 
@@ -367,7 +410,8 @@ with it rather than listing landmark tags yourself.
 The general-purpose accessible name: ARIA name (`aria-labelledby`, `aria-label`) → a
 native `<label>`, for labelable elements only (a `<label for>` pointing at a link or a
 `div` names nothing, as in browsers) → `alt`, for `img`, `area` and `input[type=image]`
-only → `title` (flagged `title-used` — see the policy note in the source; `title` is
+only → for an SVG element, its first child `<title>` (mechanism `svg-title`; none for a
+presentational one) → `title` (flagged `title-used` — see the policy note in the source; `title` is
 accepted per spec but is a weak mechanism in practice). It never reads the content, so for
 an element named from its content it answers whether a name exists, not which one: use
 `getNameFromContentInfo` for that. This is what almost every naming rule should call.
@@ -460,6 +504,19 @@ native `.labels`/`.control` API** — in this project's supported jsdom runtime,
 another one), which used to dominate whole-engine runtime on form-heavy pages. Use this
 whenever a rule needs the actual label element(s), not just a yes/no.
 
+### `getAssociatedLabelsNameInfo(el, ctx, opts)` → `{ present, value, mechanism, flags[] }`
+
+The name `el`'s associated labels (`getAssociatedLabelElements`) give it: each label's
+text alternative, in document order, joined by spaces, as HTML-AAM says for every
+labelable element. Each label is read as accname reads it: its `aria-labelledby` (not
+when the label is reached inside another `aria-labelledby`), then its `aria-label`, its
+content with `el` left out (`getContentNameInfo`, so an embedded control gives its
+value), then its `title`. An empty label adds nothing. `mechanism` is `'label'`;
+`flags` has `'labels-joined'` when more than one label contributed.
+`getAccessibleNameInfo` and `getNativeHostNameInfo` use it for their label step; a rule
+that checks the label step on its own (a name-from-author-only role on a labelable
+element) calls it directly rather than reading labels itself.
+
 ### `getSvgChildText(el, tag)` → `string`
 
 The text of an SVG element's first direct child `<title>` (`tag` `'title'`) or `<desc>`
@@ -536,15 +593,10 @@ Resolves refs, then computes **each target's own text alternative** recursively
 `textContent`), joins with spaces. This is what `getAriaLabelledByInfo`/
 `getAccessibleDescriptionInfo` call internally.
 
-### `animationsAtScanStart()` → `Array<{ target, pseudoElement, kind, name, currentTime, delay, duration, iterations, endTime }>`
+### `getTextFromElements(els, ctx, opts)` → `{ text, refsCount, missing[], flags[] }`
 
-The animations running on a time-based timeline when the scan started. The engine moves each to
-a fixed point while the rules run (a finite one to its end, so it no longer shows in
-`document.getAnimations()`), and restores it after; this is the list from before. `kind` is
-`css-animation`, `css-transition` or `script`; `name` the animation name or transitioned
-property; times are in milliseconds, `iterations` and `endTime` `null` for one that never ends.
-`target` is the animated element (a pseudo-element's animation names its element and
-`pseudoElement`). Each call returns fresh copies. `[]` without `getAnimations` (jsdom).
+The same, for elements already in hand: a reference set from script as an element
+(`getRefElements`) may have no id to name it by.
 
 ### `cssRulesOf(sheet)` → `CSSRuleList | null`
 
@@ -553,14 +605,32 @@ origin's, whose `cssRules` throws), the rules of the text `engineOptions.styleSh
 its URL, parsed apart from the page. `null` when neither can be had, which a rule reads as
 "could not be checked". The sheet's own `media` list can still be read and still applies.
 
+### `getStyleSheets()` → `Array<{ sheet, root }>`
+
+Every style sheet that styles the page, with the root it applies in: the document's, linked
+and adopted (`document.adoptedStyleSheets`), then those of each open shadow root, its `<style>`
+and `<link>` sheets and its adopted ones. A rule that reads the page's CSS walks these rather
+than `document.styleSheets` alone, and matches a shadow root's rules against that root's
+elements. The shadow roots are found once per run. Read each sheet's rules through
+`cssRulesOf`.
+
 ### `getReflectedRefs(el, attr)` → `Element[]`
 
 The elements a script set for an element-reference attribute through HTML's ARIA reflection
 (`el.ariaLabelledByElements = [label]` for `'aria-labelledby'`; also `aria-describedby`,
-`aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`). The content
-attribute then reads `""`, so a rule that reads only the attribute sees no reference. The
-browser's getter already leaves out elements the element can't refer to (inside a shadow root,
-or detached). `[]` where the DOM has no reflection (jsdom) or nothing was set.
+`aria-controls`, `aria-owns`, `aria-details`, `aria-errormessage`, `aria-flowto`, and
+`aria-activedescendant` through `ariaActiveDescendantElement`). The content attribute then reads
+`""`, so a rule that reads only the attribute sees no reference. The browser's getter already
+leaves out elements the element can't refer to (inside a shadow root, or detached). `[]` where
+the DOM has no reflection (jsdom), nothing was set, or the attribute is absent: Chromium also
+reflects the misspelled `aria-labeledby`, which is no ARIA attribute and names nothing.
+
+### `getRefElements(el, attr, ctx)` → `Element[]`
+
+The elements an ID-reference attribute points at: those its ids name (`resolveIdRefs`), or,
+where it gives no id, those a script set as element references (`getReflectedRefs`). A rule
+that follows `aria-controls`, `aria-errormessage` or another reference reads it through this,
+so references set either way count the same.
 
 ### `getCustomElementInternals(el)` → `{ status, internals }`
 
@@ -627,7 +697,39 @@ The explicit role, resolved as `aria.getExplicitRole` does (flags `'presentation
 `presentation`/`none`, `'multiple-roles'` if the attribute lists several tokens), else, unless
 `opts.disallowImplicit`, the role a custom element's internals give it (`source: 'internals'`,
 see `aria.getInternalsRole`), else a small, deliberately minimal implicit-role mapping
-(`a[href]`→`link`, `button`→`button`, `input[type=checkbox]`→`checkbox`, etc.).
+(`a[href]`→`link`, `button`→`button`, `input[type=checkbox]`→`checkbox`, etc.). An input's role
+is `aria.getInputRole(el)`'s, as HTML-AAM maps it: a number input is a `spinbutton`, a text,
+search, telephone, URL or email input whose `list` names a `<datalist>` a `combobox`, and the
+password, date, time, color and file inputs have no ARIA role.
+
+### `isPresentationalRoleIgnored(el)` → `boolean`
+
+Whether `el`'s `role="none"` or `role="presentation"` is ignored, as WAI-ARIA's presentational
+roles conflict resolution has browsers do when the element can take focus or carries a global
+ARIA attribute (`aria.hasGlobalAriaAttr`): it keeps its implicit role then, so an
+`<h1 role="none" aria-label="…">` is still a heading. `false` for any other role.
+
+### `getEventListenerInfo(target, types)` → `{ hook, listens }`
+
+What the opt-in listener hook (`listenerHookScript()`) knows of a target's listeners of any of
+`types` (`['keydown', 'keyup', 'keypress']`): `hook` is `'none'` without a hook, else `'early'`
+or `'late'`; `listens` is whether the hook saw such a listener on the target (an element, the
+document or the window) and it was not removed. `listens: false` proves there is none only for
+an early hook, which saw every listener. Inline handler attributes are the markup's, read by
+the rule itself. The recorded types are `click`, the key, focus and blur events (`focusin` and
+`focusout` too), the mouse events `mouse-only-event-handlers` names, and `paste`.
+
+### `getLiveRegionRecord()` → `{ early, announcements, findings, dropped } | null`
+
+What the opt-in live-region hook (`liveRegionHookScript()`, see
+[`INTEGRATION.md`](./INTEGRATION.md#seeing-what-live-regions-are-given-the-live-region-hook))
+recorded in the scanned window while the page ran, read once per scan; `null` without a hook.
+`announcements` are the texts shown live regions reachable by assistive technology were given
+(`{ text, politeness, time, element }`); `findings` are the regions given their text in a way
+that is commonly not announced (`{ code, text, time, element }`, `code` being
+`LIVE_REGION_INSERTED_WITH_CONTENT` or `LIVE_REGION_SHOWN_AND_FILLED`). `element` may no longer
+be on the page. `dropped` counts the entries past each list's limit of 500. Changes made in the
+current task are included.
 
 ### `getFocusableInfo(el, ctx, opts)` → `{ focusable, tabbable, mechanism, flags[] }`
 
@@ -671,6 +773,18 @@ BCP 47 well-formedness **plus** a real IANA subtag-registry check — shape alon
 subtag (the registry only lists a three-letter subtag when no two-letter one exists,
 so `"en"` is registered and `"eng"` is not). Use `isValidLanguageTag` for any
 `lang`/`xml:lang`-checking rule instead of a regex-only check.
+
+`isValidLanguageTag(value, { codes: 'iso639' })` checks the primary subtag with
+`isIso639LanguageCode` instead.
+
+### `isIso639LanguageCode(code)` → `boolean`
+
+Whether a two- or three-letter code is any ISO 639 language code: one the IANA
+registry lists, a three-letter ISO 639-2 or ISO 639-3 code of a language that has
+a two-letter one (`"eng"`, `"fra"`, `"fre"`, `"ger"`, `"hbs"`), which the registry
+leaves out, or a code in the `qaa` to `qtz` range that ISO 639-2 reserves for local
+use. For a standard that accepts any ISO 639 code where BCP 47 asks for the
+registry's, as RGAA's "Code de langue" does. Case is ignored.
 
 ### `getImagesUsingMap(map)` → `Element[]`
 
@@ -759,29 +873,65 @@ when `a`'s box is painted before `b`'s, positive when after, `NaN` when it can't
 one scroll position only; `target-size-minimum` uses both to find the boxes over a
 target (#105). Three read what a text field or a scaled element shows (`textStyleOf`,
 `isPlaceholderText`, `renderedTextScale`):
-`textStyleOf(el)` is the computed style that sets the colour and font of `el`'s text,
+`textStyleOf(el)` is the computed style that sets the color and font of `el`'s text,
 the `::placeholder` style while a text field shows its placeholder (its value is empty)
 and `el`'s own otherwise (jsdom computes no pseudo-element styles, so there a placeholder
 is never read); `isPlaceholderText(el)` is `true` when the text `el` shows is its
-placeholder (the contrast rules ask about such text below its ratio, reason code
-`PLACEHOLDER_BELOW_THRESHOLD`, rather than failing it); and `renderedTextScale(el)`
+placeholder (the contrast rules fail such text below its ratio when the page chose its
+colors, ask about it when that can't be told, and leave it out in the browser's own colors,
+reason code `PLACEHOLDER_BELOW_THRESHOLD`; `placeholderColourSource(el)` says whose colors
+they are); and `renderedTextScale(el, style)`
 is how much larger than its computed font size the page draws `el`'s text: by its
 viewBox and transforms for SVG text, by CSS `zoom` otherwise (not the user's browser
-zoom), and 1 where neither applies or can be read, such as in jsdom. Two read text drawn
+zoom), and by `font-size-adjust` for either, and 1 where none applies or can be read,
+such as in jsdom (`style` is the text's style when it isn't the element's own, a
+placeholder's). `renderedTextSize(el, style)` gives the same as `{ scale, by }`, `by`
+listing `'zoom'`, `'svg'` and `'font-size-adjust'` for each that changed the size, and
+`fontSizeAdjustScale(el, style)` the `font-size-adjust` part alone: the adjust value over
+the font's own aspect (x-height, cap height, `0` width or `水` width over its size, as the
+value names), read from a probe in the same font a CSS unit wide; `1` for `none` and
+`from-font`, `null` where the aspect can't be read. Two read text drawn
 only by an outline (`getOutlineColors`, `measureOutlineOnlyText`): `getOutlineColors(el)`
-is `{ colors, complete }`, the colours a visible `-webkit-text-stroke` and `text-shadow`
+is `{ colors, complete }`, the colors a visible `-webkit-text-stroke` and `text-shadow`
 draw `el`'s glyphs in, `complete` false when one can't be read; and
-`measureOutlineOnlyText(el, opts)` measures text whose fill draws nothing by the best of
-those colours against a flat background (`{ ratio, drawn, background, isLargeText,
-drawnBy, bg }`, or `null` when the fill is seen, the background isn't one opaque colour,
-or a colour can't be read). The contrast rules fail such text only below the ratio.
+`measureOutlineOnlyText(el, opts)` measures text drawn by an outline by the best of
+those colors, and of its fill when the fill is seen, against a flat background (`{ ratio,
+drawn, background, isLargeText, drawnBy, bg }`, or `null` when the background isn't one
+opaque color, a color can't be read, or the text is a placeholder whose fill is seen).
+The contrast rules fail such text only below the ratio.
+A `PSEUDO_ELEMENT_COLOR` blocker from `getComputabilityBlocker` carries the colors of
+the one `::first-line` or `::first-letter` that differs from the element's, as
+`pseudoColors` (`{ pseudo, color, background, fontSizePx, fontWeightNum }`), where
+nothing else blocks the measurement and that pseudo-element draws only colors (no
+image, shadow, outline or opacity); `measurePseudoElementText(el, opts)` then measures
+the text both ways (`{ own, pseudo }`, each `{ fg, bg, ratio, fontSizePx,
+fontWeightNum, isLargeText }`, or `null`), so a rule decides where both colors are on
+the same side of its ratio.
 `getTextScan`'s result lists, besides `elements`, `generated`: one `{ el, pseudo,
 textCount }` per `::before`, `::after` or `::marker` of `el` that draws text, read only
 in a browser; `measureGeneratedText(el, pseudo, opts)` measures it in the
-pseudo-element's colour and font (`{ ok: true, fg, bg, ratio, fontSizePx,
+pseudo-element's color and font (`{ ok: true, fg, bg, ratio, fontSizePx,
 fontWeightNum, same }`), or says what stops it (`{ ok: false, reasonCode, ... }`, the
 shape `getComputabilityBlocker` gives), and is `null` where the pseudo-element draws no
-text. That
+text. `isGeneratedNameHost(el)` says whether a style sheet gives `el`'s `::before` or `::after`
+content, and `getGeneratedNameText(el, pseudo)` is the text that pseudo-element adds to a name
+from content (`{ text, block, glyphs }`, or `null`, as under jsdom); `getContentNameInfo` reads
+them.
+The rest serve the contrast rules' own decisions. `textFillColor(el)` is the color `el`'s text
+is painted in, before opacity (`''` where it can't be told). `paintsBackgroundLayer(cs)` says
+whether any `background-image` layer of a computed style draws something, and
+`backgroundLayerKinds(cs)` describes each layer. `placeholderColourSource(el)` is `'browser'`
+when a field's placeholder colors and background are all the browser's (G148), `'page'` when
+the page changed any of them, and `''` when that can't be told; `nativeSelectField(el)` is the
+`Field` color Chromium paints a drop-down `<select>` whose background the page left to it, or
+`null`. `looksLikeLogo(el)` says whether text looks like part of a logo, and
+`contrastSwitchName(doc, helpers, ctx)` names a control that switches the page to higher contrast
+(G174), or is `''`: signs the `logoText` and `contrastSwitch` settings act on. The page's color
+schemes are `pageColorSchemes()` (`{ supported, current, declared }`, or `null`);
+`colorSchemeMeasurable(el, scheme)` says whether `el`'s text can be measured on the canvas of a
+scheme the page supports but isn't drawn in now, `colorSchemeUnread(el)` names the scheme an
+emulator can't give its colors in (`null` in a browser), and `useNamedCanvas(color)`, which
+the runner calls, sets the `contrast.rootCanvasFallback` a scan names as the canvas. That
 is the whole namespace, apart from `sharedCache`: a plain object that lives for one scan and lets the contrast
 rules reuse per-element work. Treat it as an optimisation, never as data a rule
 depends on: a key may be absent, and a rule stores only under keys of its own unless
@@ -798,7 +948,8 @@ WCAG's 14pt when it is left out, 18.5 for a standard that puts it there.
 
 ### `helpers.aria.*`
 
-ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType`,
+ARIA validity/taxonomy data and checks: `concreteRoles()` (every concrete role, as a new
+array), `isValidAriaAttrName`, `getAttrValueType`,
 `validateAttrValue`, `getExplicitRole`, `getInternalsRole`, `getAuthorRole`,
 `getAllRoleTokens`, `isAbstractRole`,
 `isDeprecatedRole`, `isAuthorDiscouragedRole`, `isAuthorProhibitedRole`,
@@ -806,7 +957,13 @@ ARIA validity/taxonomy data and checks: `isValidAriaAttrName`, `getAttrValueType
 `getRequiredAttrsForRole`, `getRequiredOwnedRoles`, `getRequiredContextRoles`,
 `isRoleAllowedOnElement`, `getContainmentRole`, `getNativeRoleForElement`,
 `getRequiredAttrImplicitValue` (the value a required ARIA attribute takes when the
-author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5).
+author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see §5),
+`getInputRole` (an `<input>`'s implicit role by its type, as HTML-AAM maps it, see
+`getRoleInfo`), `hasSuggestionsSource` (whether an input's `list` names a `<datalist>` in its
+own tree), `getTableCellRole` (a `<td>`'s role from its nearest table: `cell`, `gridcell` in a
+grid or treegrid, `''` in a presentational table; worked out once per table) and
+`hasGlobalAriaAttr` (whether an element carries any of WAI-ARIA's global states and
+properties, by presence, not value).
 
 `getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
 fallback list, and browsers use "the first token in the sequence of tokens in the role

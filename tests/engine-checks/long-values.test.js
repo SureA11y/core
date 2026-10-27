@@ -3,8 +3,8 @@
 // Some patterns retried a run of characters from every position in it, so a
 // long value cost the square of its length: at 80,000 characters,
 // page-title-patterns took 19 s on a <title>, autocomplete-valid 7 s on an
-// autocomplete value, and the alt-text helpers seconds on a file-like name
-// or trailing dots. A hostile page could stall a scan that way. They now
+// autocomplete value, link-name-quality 14 s on link text, and the alt-text
+// helpers seconds on a file-like name or trailing dots. A hostile page could stall a scan that way. They now
 // step over the run once. The limit below is far above what the fixed code
 // takes (a few milliseconds) and far below the old cost, so it doesn't
 // flake under load.
@@ -46,8 +46,23 @@ const CASES = [
     'a label ending in a long run of dots',
     'form-control-label-quality',
     page('<title>t</title>', `<label>a${'.'.repeat(N)}x <input></label>`)
+  ],
+  [
+    'link text with a long run of dots',
+    'link-name-quality',
+    page('<title>t</title>', `<a href="/x">a${'.'.repeat(N)}x</a>`)
   ]
 ];
+
+// The first scan in a process loads the engine and jsdom, about a second of
+// the first case's time; one scan of a short page first leaves each case
+// timing only its rule on the long value.
+test.before(() => {
+  runa11yCoreOnHtml(page('<title>t</title>', '<h1>x</h1>'), {
+    runOnly: ['page-title-patterns'],
+    entryPointParity: false
+  });
+});
 
 for (const [name, ruleId, html] of CASES) {
   test(`${ruleId} is quick on ${name}`, () => {
@@ -66,7 +81,11 @@ test('the patterns still match what they matched', () => {
   assert.equal(title('Acme | Home').outcome, 'cantTell');
   assert.equal(title('Acme - home').outcome, 'cantTell');
   assert.equal(title('Home: Acme').outcome, 'cantTell');
-  assert.equal(title('Annual report 2026 for shareholders').occurrences.length, 0);
+  // No signal: only the review every title gets.
+  assert.deepEqual(
+    title('Annual report 2026 for shareholders').occurrences.map((o) => o.data.details.reasonCode),
+    ['titleReview']
+  );
   const alt = (a) =>
     run('img-alt-quality', page('<title>t</title>', `<img src="a.png" alt="${a}">`));
   assert.ok(JSON.stringify(alt('IMG_20260101_1234').occurrences).includes('ileName'));
@@ -78,4 +97,8 @@ test('the patterns still match what they matched', () => {
     );
   assert.equal(auto('  email  ').outcome, 'pass');
   assert.equal(auto('emial').outcome, 'fail');
+  const link = (t) => run('link-name-quality', page('<title>t</title>', `<a href="/x">${t}</a>`));
+  assert.equal(link('Read more »').outcome, 'cantTell');
+  assert.equal(link('Read more...').outcome, 'cantTell');
+  assert.equal(link('Annual report 2026').occurrences.length, 0);
 });

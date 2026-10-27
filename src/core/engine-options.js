@@ -86,7 +86,10 @@ function engineOptionSpec() {
       expected: '{ mode, rootCanvasFallback }',
       keys: {
         mode: T.oneOf(['strictConformance', 'auditorAssist']),
-        rootCanvasFallback: T.string
+        rootCanvasFallback: T.string,
+        // Echoed on each result; read back, false says rootCanvasFallback is
+        // the engine's default, not the caller's.
+        rootCanvasFallbackSet: T.boolean
       }
     },
     visibilityMode: T.oneOf(['styleOnly', 'styleAndGeometry']),

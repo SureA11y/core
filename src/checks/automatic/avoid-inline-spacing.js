@@ -24,13 +24,34 @@
  *     text that may never wrap, they are the ones forced below the metric;
  *     on `INLINE_SPACING_NOT_RESOLVABLE`, the ones whose value could not be
  *     worked out.
+ * @reason-codes
+ *   - `INLINE_SPACING_IMPORTANT` (fail): the element's style attribute
+ *     forces line-height, letter-spacing or word-spacing with !important
+ *     below the spacing WCAG 1.4.12 lets users apply, on text that wraps.
+ *     Basis: WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec;
+ *     CSS Cascade important declarations.
+ *   - `INLINE_SPACING_NO_SOFT_WRAP` (cantTell): spacing forced below the
+ *     metric on text that does not appear able to wrap, which the criterion
+ *     may not cover.
+ *     It leans pass: the ACT rules apply only to text that can wrap.
+ *     Basis: WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec.
+ *   - `INLINE_SPACING_SHORT_TEXT` (cantTell): spacing forced below the
+ *     metric on text short enough to fit on one line, which may never wrap.
+ *     It leans fail when the text is drawn on more than one line, and pass
+ *     when it is drawn on one and estimated at under half of 320 pixels;
+ *     without layout, no lean.
+ *     Basis: WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec.
+ *   - `INLINE_SPACING_NOT_RESOLVABLE` (cantTell): spacing set with
+ *     !important whose value could not be worked out, so whether it meets
+ *     the metric is unknown.
+ *     Basis: WCAG 1.4.12 (not settled).
  * @implementation-notes
  * - A value relative to the font size (em, or unitless or a percentage for
  *   line-height) is the ratio itself, and is read as declared. Otherwise
  *   computed style resolves the cascade and the units, and the declared
  *   value is only a fallback for environments that do not lay the document
- *   out. Spacing that resolves to neither is left unreported rather than
- *   failed. Browsers report computed lengths to six significant digits, so
+ *   out. Spacing that resolves to neither is asked about
+ *   (INLINE_SPACING_NOT_RESOLVABLE) rather than failed or passed. Browsers report computed lengths to six significant digits, so
  *   a computed ratio meets the metric within that rounding (a relative
  *   1e-5): `font-size: 11pt; line-height: 22px` is 1.5 exactly (#108).
  * - Within one declaration block, importance outranks order, so the effective
@@ -75,7 +96,47 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } }
+  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    INLINE_SPACING_NOT_RESOLVABLE: {
+      steps: [
+        'Inspect the element the report names and read the !important spacing value in its style attribute.',
+        'In the Computed tab of the developer tools, read the resulting line-height, letter-spacing or word-spacing in pixels and compare with 1.5 times, 0.12 times or 0.16 times the font size.',
+        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
+        'Narrow to 320 CSS pixels and check whether the text is cut off or overlaps.'
+      ],
+      passWhen:
+        'The forced value meets the WCAG 1.4.12 metric, or the text does not wrap, or nothing is lost with the spacing applied.',
+      failWhen:
+        'The forced value is below the metric on wrapping text and the text cannot take user spacing without loss, which fails WCAG 1.4.12.'
+    },
+    INLINE_SPACING_NO_SOFT_WRAP: {
+      steps: [
+        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
+        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the text ever wraps onto a second line.',
+        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
+        'Check whether any text is cut off, overlaps or is hidden.'
+      ],
+      passWhen:
+        'The text cannot wrap (it stays on one line or scrolls) and nothing is cut off or overlaps, so the criterion does not apply.',
+      failWhen:
+        'The text does wrap and, with the forced spacing, lines overlap or text is clipped, which fails WCAG 1.4.12.'
+    },
+    INLINE_SPACING_SHORT_TEXT: {
+      steps: [
+        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
+        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the short text wraps onto two lines.',
+        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
+        'Check whether the text is cut off, overlaps or is hidden.'
+      ],
+      passWhen:
+        'The text stays on one line at every width, or wraps without lines overlapping or text being lost.',
+      failWhen:
+        'The text wraps and the forced spacing makes lines overlap or text clip, which fails WCAG 1.4.12.'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -179,12 +240,14 @@ function runInPage(ctx) {
   // break. Layout settles that; short of it, two shapes establish that no wrap
   // can happen -- text not allowed to wrap, and a fixed-width element inside a
   // horizontally scrolling ancestor, which narrowing the viewport cannot reach.
+  // Returns which shape matched ('white-space', 'fixed-width-in-scroller'), or
+  // null.
   function cannotSoftWrap(el) {
     const cs = computedStyleOf(el);
     const whiteSpace = cs ? String(cs.whiteSpace || '').toLowerCase() : '';
-    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return true;
+    if (whiteSpace === 'nowrap' || whiteSpace === 'pre') return 'white-space';
 
-    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return false;
+    if (!/(^|;)\s*width\s*:/i.test(String(dom.getAttribute(el, 'style') || ''))) return null;
 
     const chain =
       helpers && typeof helpers.ancestorsIncludingSelf === 'function'
@@ -202,9 +265,9 @@ function runInPage(ctx) {
       const acs = computedStyleOf(ancestor);
       if (!acs) continue;
       const overflowX = String(acs.overflowX || acs.overflow || '').toLowerCase();
-      if (overflowX === 'scroll' || overflowX === 'auto') return true;
+      if (overflowX === 'scroll' || overflowX === 'auto') return 'fixed-width-in-scroller';
     }
-    return false;
+    return null;
   }
 
   // Text with no break opportunity cannot take a soft wrap break: a single
@@ -225,12 +288,53 @@ function runInPage(ctx) {
   // Whether the text may fit on one line at the narrowest width WCAG 1.4.10
   // asks content to reflow to (320 CSS pixels), estimated without layout at
   // half an em per character and a full em per wide character.
+  // Returned as the estimated width over 320 pixels: 1 or less may fit.
   const REFLOW_WIDTH_PX = 320;
-  function mayFitOnOneLine(el, text) {
+  function estimatedWidthRatio(el, text) {
     const fontSize = fontSizeOf(computedStyleOf(el)) || 16;
     let ems = 0;
     for (const ch of text) ems += WIDE_CHAR.test(ch) ? 1 : 0.5;
-    return ems * fontSize <= REFLOW_WIDTH_PX;
+    return (ems * fontSize) / REFLOW_WIDTH_PX;
+  }
+
+  // How many lines the element's own text is drawn on now, where the page is
+  // laid out: the most distinct line tops of any one of its text nodes.
+  // A text node split across lines has a soft wrap break; a newline kept by
+  // white-space is a hard break, so such a node is not counted. null without
+  // layout.
+  function renderedLineCount(el) {
+    const doc = dom.ownerDocument(el);
+    if (!doc || typeof dom.get(doc, 'createRange') !== 'function') return null;
+    const cs = computedStyleOf(el);
+    const keepsNewlines = /^(pre-wrap|pre-line|break-spaces)$/.test(
+      cs ? String(cs.whiteSpace || '').toLowerCase() : ''
+    );
+    let most = 0;
+    let measured = false;
+    for (const n of Array.from(dom.childNodes(el) || [])) {
+      if (dom.nodeType(n) !== 3) continue;
+      const value = String(dom.nodeValue(n) || '');
+      if (!value.trim() || (keepsNewlines && value.includes('\n'))) continue;
+      let range = null;
+      try {
+        range = dom.createRange(doc);
+        range.selectNodeContents(n);
+        const tops = [];
+        for (const r of dom.getClientRects(range) || []) {
+          if (!(r.width >= 1 && r.height >= 1)) continue;
+          if (!tops.some((t) => Math.abs(t - r.top) < r.height / 2)) tops.push(r.top);
+        }
+        if (tops.length) measured = true;
+        most = Math.max(most, tops.length);
+      } catch {
+        // no layout for this node
+      } finally {
+        try {
+          if (range) range.detach();
+        } catch {}
+      }
+    }
+    return measured ? most : null;
   }
 
   // ACT scopes these rules to text visible on screen, and text pushed far off
@@ -364,12 +468,14 @@ function runInPage(ctx) {
     // applicability, and whether it wraps is not decidable here, so it is
     // reported for review rather than failed.
     const text = blockText(el);
-    if (cannotSoftWrap(el) || hasNoBreakOpportunity(text)) {
-      noWrap.push({ el, props: flagged.slice() });
+    const shape = cannotSoftWrap(el) || (hasNoBreakOpportunity(text) ? 'unbreakable-word' : null);
+    if (shape) {
+      noWrap.push({ el, props: flagged.slice(), shape });
       continue;
     }
-    if (mayFitOnOneLine(el, text)) {
-      shortText.push({ el, props: flagged.slice() });
+    const widthRatio = estimatedWidthRatio(el, text);
+    if (widthRatio <= 1) {
+      shortText.push({ el, props: flagged.slice(), widthRatio });
       continue;
     }
 
@@ -395,10 +501,65 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
+  // Text that can't wrap is outside ACT 78fd32/24afc2/9e45ec, whichever of
+  // the three shapes shows it.
+  const noWrapLean = (shape) => ({
+    lean: {
+      toward: 'pass',
+      why: 'The text cannot take a soft wrap break, and the ACT rules for text spacing apply only to text that can.',
+      signals: [{ signal: 'no-wrap-shape', value: shape }],
+      caution:
+        'WCAG 1.4.12 itself does not exempt text that does not wrap; the lean rests on the ACT rules.',
+      i18n: {
+        whyKey: 'avoidInlineSpacing_lean_why_noSoftWrap',
+        cautionKey: 'avoidInlineSpacing_lean_caution_noSoftWrap'
+      }
+    }
+  });
+
+  // Short text drawn on more than one line now has a soft wrap break. Text
+  // drawn on one line and estimated at under half the 320-pixel width has
+  // room to spare before it would wrap. Without layout there is no count,
+  // and no lean.
+  function shortTextLean(el, widthRatio) {
+    const lines = renderedLineCount(el);
+    const signals = [
+      { signal: 'estimated-width-ratio', value: Math.round(widthRatio * 100) / 100 },
+      { signal: 'rendered-line-count', value: lines }
+    ];
+    if (lines !== null && lines > 1) {
+      return {
+        lean: {
+          toward: 'fail',
+          why: 'The text is drawn on more than one line, so it does wrap.',
+          signals,
+          i18n: { whyKey: 'avoidInlineSpacing_lean_why_shortTextWraps' }
+        }
+      };
+    }
+    if (lines === 1 && widthRatio < 0.5) {
+      return {
+        lean: {
+          toward: 'pass',
+          why: 'The text is drawn on one line and needs less than half of a 320-pixel line, so it is unlikely to wrap.',
+          signals,
+          caution:
+            'A narrow container, such as a small button, can still make a few words wrap; the line count is taken at the scan viewport.',
+          i18n: {
+            whyKey: 'avoidInlineSpacing_lean_why_shortTextOneLine',
+            cautionKey: 'avoidInlineSpacing_lean_caution_shortTextOneLine'
+          }
+        }
+      };
+    }
+    return null;
+  }
+
   const cantTellOccurrences = noWrap
-    .map(({ el, props }) =>
+    .map(({ el, props, shape }) =>
       helpers.reportOccurrence(el, {
         occurrenceOutcome: 'cantTell',
+        ...noWrapLean(shape),
         summary: `This element's inline style forces ${props.join(', ')} with !important, but its text does not appear able to wrap, so the text-spacing criterion may not apply to it.`,
         hint: 'Confirm whether this text ever wraps. If it cannot, the criterion does not apply; if it can, remove !important or set a value that already meets the metric.',
         i18n: {
@@ -428,9 +589,10 @@ function runInPage(ctx) {
       })
     )
     .concat(
-      shortText.map(({ el, props }) =>
+      shortText.map(({ el, props, widthRatio }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
+          ...shortTextLean(el, widthRatio),
           summary: `This element's inline style forces ${props.join(', ')} with !important, but its text is short enough to fit on one line, so it may never wrap and the text-spacing criterion may not apply to it.`,
           hint: 'Confirm whether this text wraps at narrow widths. If it always fits on one line, the criterion does not apply; if it can wrap, remove !important or set a value that already meets the metric.',
           i18n: {

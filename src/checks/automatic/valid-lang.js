@@ -40,17 +40,34 @@
  *     an inherited language. Both fail 3.1.2, as ACT de46e4 does.
  *   - `value`: the lang attribute's value, with surrounding whitespace
  *     removed.
+ * @reason-codes
+ *   - `DEFAULT_LANG_INVALID` (fail): an element that sets the starting
+ *     language of its text, with no lang above it, has a lang whose primary
+ *     subtag is not a registered language subtag.
+ *     Basis: WCAG 3.1.2; ACT de46e4; HTML lang attribute (MUST); BCP 47.
+ *   - `ELEMENT_LANG_INVALID` (fail): an element that changes the inherited
+ *     language has a lang whose primary subtag is not a registered language
+ *     subtag.
+ *     Basis: WCAG 3.1.2; ACT de46e4; H58; HTML lang attribute (MUST); BCP 47.
  * @implementation-notes
  * - Distinct, atomic decision from html-lang-attr-present (that
  *   rule covers the root <html> element only, for SC 3.1.1); this rule
  *   covers every other element, for SC 3.1.2.
  * - Same primary-subtag check as html-lang-attr-present: the shared
  *   helper checks the subtag's shape and that the IANA Language Subtag
- *   Registry lists it, so unregistered tags such as "xx-ZZ", "eng" or
- *   "qaa" fail. Later subtags (region, script, variants) are not checked.
- * - A well-formed primary subtag that names no language ("eng", "qaa") is
+ *   Registry lists it, so unregistered tags such as "xx-ZZ" or "eng" fail;
+ *   the private-use range qaa to qtz, which the registry lists as one entry,
+ *   passes, as ACT de46e4 counts it. Later subtags (region, script,
+ *   variants) are not checked.
+ * - A well-formed primary subtag that names no language ("eng") is
  *   said to name no known language, not to be malformed; both keep the
  *   reason code ELEMENT_LANG_INVALID.
+ * - Its list of codes is a setting (`settings` below): a variant for a
+ *   standard that accepts any ISO 639 code sets `codes: 'iso639'`, and the
+ *   three-letter ISO 639-2 and 639-3 codes the registry leaves out (eng,
+ *   fra, fre, ger…) then pass
+ *   (helpers.isIso639LanguageCode). Without settings it is WCAG's, as ACT
+ *   de46e4 reads it.
  */
 
 const id = 'valid-lang';
@@ -87,12 +104,15 @@ function runInPage(ctx) {
   const { helpers, rule } = ctx;
 
   // Shape alone accepts unregistered tags such as "eng" and "em-US", so the
-  // primary subtag is checked against the IANA registry via the shared helper.
-  // Only the primary subtag is judged (see @expectation).
+  // primary subtag is checked against the IANA registry via the shared helper,
+  // or against every ISO 639 code when a variant sets codes: 'iso639'
+  // (`settings` below). Only the primary subtag is judged (see @expectation).
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  const codes = cfg.codes === 'iso639' ? 'iso639' : 'registry';
   const BCP47_RE = /^[a-zA-Z]{2,3}$/;
   const isValidTag =
     typeof helpers.isValidLanguageTag === 'function'
-      ? helpers.isValidLanguageTag
+      ? (v) => helpers.isValidLanguageTag(v, { codes })
       : (v) => BCP47_RE.test(String(v || ''));
 
   function isDomVisible(node) {
@@ -217,15 +237,15 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
     // A primary subtag of 2 to 8 letters is well formed (BCP 47); it fails
-    // because it names no language ("eng", or "qaa" from the private-use
-    // range), which the message says rather than calling it malformed.
+    // because it names no language ("eng"), which the message says rather
+    // than calling it malformed.
     const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
     const setsDefault = setsDefaultLanguage(el);
 
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: wellFormed
-          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry, or is reserved for private use).`
+          ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry).`
           : `This lang value ("${raw}") is not a valid language tag.`,
         hint: 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
@@ -258,4 +278,19 @@ function runInPage(ctx) {
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }
 
-module.exports = { id, meta, runInPage };
+// The list of codes a variant may change (docs/RULE_AUTHORING.md, "Rule
+// variants"), with WCAG's, the IANA registry ACT de46e4 checks, as default.
+const settings = { codes: 'registry' };
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  codes: {
+    values: ['registry', 'iso639'],
+    description:
+      'The codes a primary language subtag is checked against: registry, the IANA Language Subtag Registry, which lists a three-letter code only for a language with no two-letter one; or iso639, any ISO 639 code, which also accepts the three-letter ISO 639-2 and 639-3 codes of languages that have a two-letter one (eng, fra, fre, ger). Both accept the qaa to qtz range reserved for private use, which the registry lists.',
+    basis:
+      'BCP 47 and ACT de46e4 (registry); standards that accept any ISO 639 code, such as RGAA 4.1.2, glossary "Code de langue" (iso639)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

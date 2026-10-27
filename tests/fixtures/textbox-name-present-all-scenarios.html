@@ -175,6 +175,23 @@
     <div role="textbox" tabindex="0" placeholder="Nothing" id="textbox_case_25"></div>
   </div>
 
+  <h2>I. aria-placeholder (no accname source; only some browsers name from it)</h2>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — FAIL: named by nothing but aria-placeholder, which only some browsers read as a name</div>
+    <div role="textbox" tabindex="0" contenteditable="true" aria-placeholder="Add a date" id="textbox_case_26"></div>
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: aria-label names it; aria-placeholder is only a hint</div>
+    <div role="textbox" tabindex="0" contenteditable="true" aria-label="Date" aria-placeholder="DD/MM/YYYY" id="textbox_case_27"></div>
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — FAIL: a blank aria-placeholder names nothing</div>
+    <div role="textbox" tabindex="0" contenteditable="true" aria-placeholder="  " id="textbox_case_28"></div>
+  </div>
+
   <p class="note">End of fixture.</p>
 </body>
 </html>

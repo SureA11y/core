@@ -178,7 +178,7 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
-test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComputableText)`, () => {
+test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
   const html = `
 <!doctype html>
 <html><head><style>
@@ -186,13 +186,27 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
 </style></head>
 <body>
   <p style="color: #595959">Hello</p>
+  <p id="gray" style="color: #777777">Gray</p>
 </body></html>`;
 
-  const result = run(html, {
-    contrast: { mode: 'strictConformance', rootCanvasFallback: '#ffffff' }
+  const rule = assertRule(run(html, { contrast: { mode: 'strictConformance' } }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
   });
+  const det = rule.occurrences[0].data.details;
+  assert.match(rule.occurrences[0].html, /id="gray"/);
+  assert.strictEqual(det.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(det.colors.backgroundHex, '#ffffff');
+  assert.strictEqual(det.assumptionsApplied, null);
+});
 
-  const rule = assertRule(result, RULE_ID, 'notApplicable', {
+test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme unknown => notApplicable (noComputableText)`, () => {
+  const html = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>p { color: #595959 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
+    </head><body>
+    <p>Hello</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
@@ -200,7 +214,6 @@ test(`${RULE_ID}: strictConformance + root not opaque => notApplicable (noComput
     rule.occurrences[0].i18n.summaryKey,
     'contrastEnhanced_notApplicable_noComputableText'
   );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
   assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
 });
 
@@ -473,7 +486,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
 
   const result = run(html);
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 18, maxOccurrences: 18 });
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white', // passes AA, fails AAA
@@ -495,7 +508,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/contrast-all-scenarios.html)`
     // (see contrast-helpers.js's getTextScan).
     'eligible_submit_input_fail',
     'eligible_button_input_fail',
-    'paint_pseudo_scaled_host'
+    'paint_pseudo_scaled_host',
+    // no background brings #777777 to 7:1 (CONTRAST_UNREACHABLE_ANY_BACKGROUND)
+    'unreachable_any_background'
   ];
 
   const expectedNoOccIds = [
@@ -547,7 +562,7 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
   const rule = ruleFrom(result);
   assert.ok(rule);
   assert.strictEqual(rule.outcome, 'fail');
-  assert.strictEqual(rule.occurrences.length, 17);
+  assert.strictEqual(rule.occurrences.length, 18);
 
   const expectedFailIds = [
     'aa_pass_aaa_fail_gray_on_white',
@@ -566,7 +581,9 @@ test(`${RULE_ID} (node runtime): fixture coverage (tests/fixtures/contrast-all-s
     'eligible_enabled_button_fail',
     'eligible_submit_input_fail',
     'eligible_button_input_fail',
-    'paint_pseudo_scaled_host'
+    'paint_pseudo_scaled_host',
+    // no background brings #777777 to 7:1 (CONTRAST_UNREACHABLE_ANY_BACKGROUND)
+    'unreachable_any_background'
   ];
   const expectedNoOccIds = [
     'pass_black_on_white',
@@ -663,4 +680,78 @@ test(`${RULE_ID}: own opacity over its own background is measured as one group: 
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].i18n.params.ratio, '5.74');
+});
+
+// A background that can't be worked out, under a text color that no
+// background brings to 7:1: the best background for a color is white or
+// black, and #777777 reaches only 4.69:1 against white.
+test(`${RULE_ID}: normal text in a color no background brings to 7:1 fails though its background is unknown`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+    <div style="background-image:linear-gradient(90deg, #fff, #000)">
+      <p id="gray" style="color:#777777">Gray text on a gradient</p>
+      <p id="black" style="color:#000000">Black text on a gradient</p>
+    </div>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.match(occ.html, /id="gray"/);
+  assert.strictEqual(occ.data.details.reasonCode, 'CONTRAST_UNREACHABLE_ANY_BACKGROUND');
+  assert.strictEqual(occ.data.details.backgroundNotComputable, 'BACKGROUND_IMAGE_OR_GRADIENT');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_unreachable');
+  assert.strictEqual(occ.i18n.params.bestRatio, '4.69');
+  assert.ok(occ.data.details.metrics.bestRatio < 7);
+});
+
+test(`${RULE_ID}: on the page's canvas such a color is measured, not judged on any background`, () => {
+  const html = `<!doctype html><html><body>
+    <p style="color:#777777">Gray text on no background</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'BELOW_THRESHOLD');
+  assert.strictEqual(rule.occurrences[0].data.details.colors.backgroundHex, '#ffffff');
+  // Where the text's color itself is what can't be read, it isn't judged.
+  const unknown = `<!doctype html><html><head><meta name="color-scheme" content="dark">
+    <style>p { color: #777777 } @media (prefers-color-scheme: dark) { p { color: #ffffff } }</style>
+    </head><body>
+    <p>Gray text on no background</p>
+  </body></html>`;
+  assertRule(run(unknown), RULE_ID, 'notApplicable', { minOccurrences: 1, maxOccurrences: 1 });
+});
+
+test(`${RULE_ID}: large text, a reachable color or a filter around the text is not failed on an unknown background`, () => {
+  for (const body of [
+    // Large text needs 4.5:1, which every color reaches against white or black.
+    '<p style="color:#777777; font-size:24px">Large gray text</p>',
+    // #999999 reaches 7.36:1 against black.
+    '<p style="color:#999999">Lighter gray text</p>',
+    // A filter changes the color drawn.
+    '<div style="filter:contrast(2)"><p style="color:#777777">Filtered gray text</p></div>'
+  ]) {
+    const html = `<!doctype html><html><body style="background:#fff">
+      <div style="background-image:linear-gradient(90deg, #fff, #000)">${body}</div>
+    </body></html>`;
+    const result = run(html);
+    const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(rule.outcome, 'notApplicable', body);
+  }
+});
+
+// A page that supports light and dark: text on its canvas is measured in
+// both schemes where its colors can't change with the scheme.
+test(`${RULE_ID}: text on the canvas of a page with two color schemes is measured in each`, () => {
+  const html = `<!doctype html><html><head><style>:root{color-scheme:light dark}</style></head><body>
+    <p id="grey" style="color:#555">Fails on the dark canvas only</p>
+    <p id="plain">The scheme's own text color</p>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const det = rule.occurrences[0].data.details;
+  assert.match(rule.occurrences[0].html, /id="grey"/);
+  assert.strictEqual(det.colors.backgroundHex, '#121212');
+  assert.strictEqual(det.colorScheme, 'dark');
+  assert.strictEqual(rule.occurrences[0].i18n.hintKey, 'contrast_hint_colorScheme_dark');
+  // The same text on a page drawn in light only passes.
+  assertRule(run(html.replace('light dark', 'light')), RULE_ID, 'pass', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });

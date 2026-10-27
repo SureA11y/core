@@ -46,6 +46,10 @@
  *   only its mapped rules has no WCAG tags to imply it, and the run would
  *   default to 2.2, where 4.1.1 Parsing is gone. An explicit
  *   engineOptions.wcagVersion still wins (src/core/dom-runner.js).
+ *   A profile may also have `keepsParsing: true`: its standard requires 4.1.1
+ *   Parsing as written, so a failure of it stays a failure. Under any other
+ *   2.0 or 2.1 target the 2023 errata count 4.1.1 as satisfied for HTML and
+ *   XML, and the failure is asked about, as under 2.2.
  * - mappingsFor({ id, wcagSc, checksIds }): the entries for a rule or a
  *   composite, given its id and the WCAG criteria it maps to; a composite also
  *   passes `checksIds`, its rules. Each entry is
@@ -74,7 +78,14 @@
  * - composites(): optional; rollups of the standard's own, shaped like the
  *   entries of src/catalogs/composites.wcag.js and carrying the standard's
  *   ruleTag in meta.tags so only a run that asks for the standard produces
- *   them (one per requirement, say).
+ *   them (one per requirement, say). A rollup's meta.contributions,
+ *   optional, judges some of its rules by their findings:
+ *   { [ruleId]: { default, codes, findings } }, each act 'count', 'cantTell'
+ *   or 'ignore', or { act, requirements } naming which of the rollup's
+ *   requirements (its meta.standardMappings) such findings count toward; the
+ *   rollup then names only those for that rule (src/core/dom-runner.js,
+ *   outcomeByReasonCode). ruleMappedStandard writes them from a rule map's
+ *   reasonCodes and findings.
  * - validate(rules): optional; given every rule ([{ ruleId, wcagSc }]),
  *   returns a list of problems with the standard's own tables. The build
  *   fails on any.
@@ -230,7 +241,8 @@ function createRegistry(standards) {
               : {}),
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
-            ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {})
+            ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
+            ...(p.keepsParsing ? { keepsParsing: true } : {})
           }
         ])
       ),

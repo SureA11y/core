@@ -110,9 +110,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-sc
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
+    'searchbox_case_26',
+    'searchbox_case_28',
     'searchbox_case_25',
     'searchbox_case_22',
     'searchbox_case_23',
@@ -125,6 +127,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/searchbox-name-present-all-sc
   ];
 
   const expectedNoOccIds = [
+    'searchbox_case_27',
     'searchbox_case_24',
     'searchbox_case_12',
     'searchbox_case_13',
@@ -211,4 +214,16 @@ test(`${RULE_ID}: an upper-case role resolves too: role="SEARCHBOX" is a searchb
     { runOnly: [RULE_ID] }
   );
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test('searchbox-name-present: a searchbox named only by aria-placeholder fails, as only some browsers name it', () => {
+  const html = `<!doctype html><html><body><div role="searchbox" tabindex="0" aria-placeholder="Add a date"></div></body></html>`;
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+  assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
 });

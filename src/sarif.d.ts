@@ -8,10 +8,19 @@ export interface SarifOptions {
   toolVersion?: string;
   /** The tool's home page. */
   informationUri?: string;
-  /** Failures recorded here are left out (docs/BASELINE.md). */
+  /** Failures recorded here are left out, and under leanFailAs a finding that leans fail recorded here stays a warning (docs/BASELINE.md). */
   baselineEntries?: BaselineEntry[] | BaselineFile;
   /** runs[0].automationDetails.id, for one analysis per viewport width or page. */
   category?: string;
+  /** 'error' reports an undecided finding whose lean points to fail at "error". Default 'warning'. */
+  leanFailAs?: 'warning' | 'error';
+  /** With leanFailAs: 'error', raise only the leans of rules mapped to a WCAG criterion, not a best-practice rule's. Default false. */
+  leanFailWcagOnly?: boolean;
+  /**
+   * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
+   * undecided findings carry the steps of its meta.review.
+   */
+  packs?: readonly unknown[] | null;
 }
 
 /** A SARIF 2.1.0 log, as JSON text. A cross-frame result covers every frame. Throws a TypeError for anything else. */

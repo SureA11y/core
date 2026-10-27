@@ -77,15 +77,17 @@ function runInPage(ctx) { /* see Runtime Contract */ }
 module.exports = { id, meta, runInPage };
 ```
 
-Two optional exports go alongside them when a rule needs them:
+Three optional exports go alongside them when a rule needs them:
 
 - `applicability(ctx)`, a predicate the engine calls before `runInPage` to decide whether
   the rule is in scope for this run at all. Fourteen rules use it today (see §11.2).
-- `settings`, an object of the thresholds the rule reads from `ctx.config`, with their
-  defaults, for its variants (see "Rule variants" in §4.2).
+- `settings`, an object of the thresholds and choices the rule reads from `ctx.config`, with
+  their defaults, for its variants (see "Rule variants" in §4.2).
+- `settingsInfo`, what each of those settings changes and what it stands on, which a core
+  rule with `settings` must give (§4.2).
 
 ```js
-module.exports = { id, meta, runInPage, applicability, settings };
+module.exports = { id, meta, runInPage, applicability, settings, settingsInfo };
 ```
 
 A variant exports `id`, `from`, `config` and `meta` instead, and no code of its own
@@ -198,11 +200,25 @@ When another standard's requirement is a core rule with different thresholds (co
 
 ```js
 // src/checks/automatic/contrast-minimum.js
-const settings = { boldLargeMinPx: null, largeTextRatio: 3, normalTextRatio: 4.5 };
+const settings = {
+  boldLargeMinPx: null,
+  largeTextRatio: 3,
+  normalTextRatio: 4.5,
+  logoText: 'fail',
+  contrastSwitch: 'fail',
+  semiBold: 'normal'
+};
 const settingsInfo = {
   largeTextRatio: {
     description: 'The contrast ratio large text needs.',
     basis: 'WCAG 1.4.3: 3:1 (1.4.6: 4.5:1)'
+  },
+  logoText: {
+    values: ['fail', 'ask', 'exempt'],
+    description:
+      'Text that looks like part of a logo below its ratio: fail; ask (cantTell, LOGO_TEXT_BELOW_THRESHOLD); or exempt (not reported).',
+    basis:
+      'WCAG 1.4.3 exception: "Text that is part of a logo or brand name has no contrast requirement"'
   }
   // ...one entry per setting
 };
@@ -223,7 +239,7 @@ module.exports = {
 };
 ```
 
-The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A threshold setting, one whose default is a number, takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A choice, one whose default is a string, takes one of the `values` its `settingsInfo` lists. A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
+The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A threshold setting, one whose default is a number, takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A choice, one whose default is a string, takes one of the `values` its `settingsInfo` lists. A choice that makes the rule ask gives a reason code of its own, as `logoText: 'ask'` gives `LOGO_TEXT_BELOW_THRESHOLD`: list it in `@reason-codes` and `meta.reasonCodes` (the fixture runs at the defaults and never reaches it) and give it steps in `meta.review` (§8.6). A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
 
 Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers. Semver covers them, since a pack's variants build on them: removing or renaming one, or changing what it means, is a major (see [`API_STABILITY.md`](./API_STABILITY.md#extending-the-engine)).
 
@@ -252,7 +268,7 @@ const meta = {
 
 #### `meta.reasonCodes`
 
-Optional. The reason codes the rule builds at runtime, passed through a variable or a helper instead of written as `reasonCode: 'CODE'`, when the rule's fixture can't reach them in jsdom. `scripts/generate-finding-ids.js` finds a rule's codes by reading `reasonCode: '...'` in its source and by running its fixture in jsdom; a code that is only reached in a browser, such as one `text-spacing-content-loss` reports after measuring the layout, is in neither, and would be missing from the inventory consumers rely on (`docs/API_STABILITY.md`).
+Optional. The reason codes the rule builds at runtime, passed through a variable or a helper instead of written as `reasonCode: 'CODE'`, when the rule's fixture can't reach them in jsdom. `scripts/generate-finding-ids.js` finds a rule's codes by reading `reasonCode: '...'` in its source and by running its fixture in jsdom; a code that is only reached in a browser, such as one `text-spacing-content-loss` reports after measuring the layout, is in neither, and would be missing from the inventory consumers rely on (`docs/API_STABILITY.md`). So is a code given only under a variant's setting ("Rule variants" above).
 
 ```js
 reasonCodes: ['TEXT_CLIPPED', 'TEXT_CLIPPED_MOVING', 'TEXT_CLIPPED_PARTLY', 'TEXT_OVERLAPS']
@@ -271,10 +287,11 @@ margin: { measure: 'contrast-ratio', unit: 'ratio', limit: 'min' }
 - `measure`: what is measured, lowercase and hyphenated. Reuse an existing one when it is the same measurement (`contrast-ratio`, `overflow-px`, `target-size-px`), so a tool can compare it across rules.
 - `unit`: `px` (reported to one decimal) or `ratio` (not rounded, since WCAG does not round contrast).
 - `limit`: `min` when the value must reach the threshold, `max` when it must stay under it.
+- `band` (optional): how much room a value may have and still count as close. `{ relative }` is a fraction of each element's threshold (above 0, at most 1); `{ absolute }` an amount in `unit` (above 0). Without it, the closest element is reported however far inside it is; with it, only one within the band, and no margin when none is. Declare one: a margin far from the limit tells a reader nothing. Use `relative` when thresholds differ and room scales with them, as a ratio's does (the contrast rules use `{ relative: 0.1 }`, since a fixed amount would be wider at 3:1 than at 7:1), and `absolute` when the threshold is one size, or too small for a fraction of it to mean anything (`target-size-minimum` uses `{ absolute: 6 }`, `text-spacing-content-loss` `{ absolute: 8 }` against its 2 px).
 
 The rule then returns, beside its outcome, `marginCandidates`: one `{ el, value, threshold, context? }` per element that met the limit, with the threshold that element was judged against (it may differ per element, as large text's does), and optionally `measuredCount`, how many elements it compared. Return candidates whatever the outcome, `fail` included: the closest pass still matters on a page with other failures. The runner does the rest (`src/core/margin.js`): it keeps only candidates that really met the limit, picks the smallest headroom, gives a tie to the element first in document order, rounds, and builds the selector and structural path. A rule never builds `margin` itself; anything it puts there is dropped.
 
-`npm run validate:rules` checks the declaration (a measure, a known unit and limit) and that the rule's source returns `marginCandidates`. A variant (see "Rule variants") has a meta of its own, so it declares `meta.margin` too when its base's code reports one.
+`npm run validate:rules` checks the declaration (a measure, a known unit and limit, and a band's fraction) and that the rule's source returns `marginCandidates`. A variant (see "Rule variants") has a meta of its own, so it declares `meta.margin` too when its base's code reports one.
 
 ---
 
@@ -362,7 +379,7 @@ Rules use helpers returned by `createDomHelpers()`. The most load-bearing ones �
 `isAccTreeEligible`/`getEligibilityInfo` (visibility), `getRoleInfo`/`getFocusableInfo`
 (role/focus) — cover most rules.
 
-**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (about 70 helpers
+**See [`RULE_HELPERS.md`](./RULE_HELPERS.md) for the full reference** (about 85 helpers
 plus the `dom`, `contrast.*` and `aria.*` namespaces), with what each one does and when to reach for it
 instead of reimplementing the logic in a new rule.
 
@@ -470,7 +487,7 @@ the rule set itself ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-chec
 | `root` | The roots the scan covers: the document, or what `contextSelector` resolved to. |
 | `contextSelector` | The selector that scoped the run, if any. |
 | `rule` | The rule's resolved definition: `ruleId`, `defaultSeverity`, `defaultConfidence`, `type`, `meta`... |
-| `config` | `engineOptions.rules[ruleId]`, this rule's settings, if the caller gave any (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)). |
+| `config` | The caller's `engineOptions.rules[ruleId]` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), less any value for one of the rule's `settings`, which the runner drops, and, for a variant, its own `config` on top (§4.2). |
 | `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. |
 | `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). Read-only for a custom or pack rule. |
 | `engineTag` | The engine's tag (`"a11ycore"`), the one every rule carries in `meta.tags`. |
@@ -512,12 +529,79 @@ common component. Three such inferences were false failures found in use
   scroll position shows, or what lies where a scrolled box's content is now. A
   person scrolls; measure what they would see once they have.
 - A rule that reads the layout is run on the pattern set (§12) before it
-  changes, against the version before it and, where they check the same, other
-  engines. A new failure there has to be explained.
+  changes, against the version before it. A new failure there has to be
+  explained.
 
 When a guess is the only way to an answer, say so in the rule's
 `LIMITATIONS.md` entry, as the contrast rules do for text scrolled out of an
 `overflow: hidden` box.
+
+### 8.5 A lean: which way a cantTell points
+
+A guess never fails, but the evidence a rule has can still point one way. A
+`cantTell` occurrence says so with `lean`
+([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#leans)):
+
+```js
+lean: {
+  toward: 'fail',                       // or 'pass'
+  why: 'The heading skips a level after the one before it.',
+  signals: [{ signal: 'heading-level-skipped', value: true }],
+  caution: 'A sidebar may restart its own outline.',   // optional
+  i18n: { whyKey: 'headingOrder_lean_why', cautionKey: '...' }
+}
+```
+
+- Add one only where the rule reads real evidence: facts in the DOM, the
+  styles or the boxes that make one answer clearly more likely. Name each
+  fact in `signals`, a kebab-case name and a plain value. A coin toss gets no
+  lean, and neither does a question only a person can answer (whether alt
+  text describes its image). Its absence tells a reader that.
+- A best-practice rule that reports a fact the page states (two `main`
+  landmarks) stays `cantTell` and leans `fail` without condition: the fact is
+  proven, the rule just never fails.
+- `why` and `caution` are messages like `summary` and `hint`, with their keys
+  in every locale (`<rule>_lean_why`, `<rule>_lean_caution`, with a suffix
+  per case).
+- The engine drops a lean on a `fail`-tier occurrence and a malformed one,
+  never the finding. Don't set `measured`: the engine fills it from
+  `scripts/data/lean-measures.json` once `npm run leans:measure`
+  (`scripts/measure-leans.js`) has counted the lean against at least five ACT
+  test cases.
+- Test each lean in the rule's test file: a case that leans, its `toward` and
+  `whyKey`, and, for a conditional lean, a case of the same code with none.
+  Where the rule's fixture already has the case, say there what it leans. Say
+  in `@reason-codes` which way the code leans and when (`It leans fail: …`).
+
+### 8.6 How to check: steps for each undecided finding
+
+Every reason code that can give `cantTell` has an entry in `meta.review`,
+which the engine copies onto each such finding as `howToCheck`
+([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)):
+
+```js
+review: {
+  FOCUS_HANDLER_CALLS_BLUR: {
+    steps: ['Click just before the element, then press Tab until it is focused.', '...'],
+    passWhen: 'Focus stays on the element and the next Tab moves to the next control.',
+    failWhen: 'Focus disappears or jumps elsewhere as it arrives, which fails WCAG 2.1.1 and 2.4.7 (F55).'
+  }
+}
+```
+
+- Two to five steps, each one action, starting from the element the report
+  names (`npm run validate:rules` accepts one to six). Assume a browser, its developer tools, a keyboard and, where it
+  matters, a screen reader; name no testing product.
+- `passWhen` and `failWhen` say what the person sees, and `failWhen` names
+  the criterion or best practice that fails.
+- Each step and both results have a key in every dictionary of
+  `src/i18n/review/` (kept apart from the engine's dictionaries, so the steps
+  never enter the bundle): `<prefix>_review_<CODE>_step<n>`, `_pass` and
+  `_fail`, where `<prefix>` is the rule's `titleKey` without `_title`.
+  `npm run validate:rules` checks the English matches and that each code is
+  one the rule gives; `tests/how-to-check.test.js` that every cantTell code
+  has an entry and every locale has every key. `npm run i18n:sync` doesn't
+  cover `src/i18n/review/`: add the keys to each locale's file by hand.
 
 ---
 
@@ -541,6 +625,8 @@ What a rule supplies:
 - `hint`
 - `i18n` (`summaryKey`, `hintKey`, `params`)
 - `data` (includes `visibilityFilter`)
+- on a `cantTell`-tier occurrence of an automatic rule, `uncertainty`
+  ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#uncertainty-codes)), and `lean` where it has one (§8.5)
 
 What the engine fills in from the reported element:
 - `selector`
@@ -556,13 +642,52 @@ is the exception, not the pattern to copy.
 ## 10) Structured doc comment block
 
 Keep the structured header comment (`@check`, `@atomic`, `@summary`, `@standard`, `@sc`,
-`@applicability`, `@expectation`). The id goes on `@check` — `@rule` is not a tag this
-repo uses. `docs/RULE_TEMPLATE.js` has the full block to copy.
+`@applicability`, `@expectation`, `@reason-codes`). The id goes on `@check` — `@rule` is not
+a tag this repo uses. `docs/RULE_TEMPLATE.js` has the full block to copy. Two more tags are
+common and optional: `@reports`, the fields a finding's `data.details` carries, and
+`@implementation-notes`, for whoever changes the rule.
 
 `@applicability` and `@expectation` are consumer-facing: `scripts/generate-rule-catalog.js`
 reads them straight from the source and publishes them per rule in
 [`RULE_CATALOG.md`](./RULE_CATALOG.md#rule-reference). Write them for someone deciding
 whether a result applies to their page, and rerun `npm run docs:rule-catalog` after editing them.
+
+### 10.1) `@reason-codes` (required for every rule)
+
+One item per reason code the rule can give: its outcome, what it means, and the standards it
+rests on.
+
+```
+ * @reason-codes
+ *   - `ERROR_MESSAGE_HIDDEN` (cantTell): aria-errormessage names only
+ *     messages that are hidden. It leans fail: the message tied to the
+ *     field can't be seen or heard.
+ *     Basis: WAI-ARIA 1.2 aria-errormessage (MUST); WCAG 3.3.1 (not settled); ARIA21.
+ *   - `PLACEHOLDER_BELOW_THRESHOLD` (fail, cantTell): a field's placeholder
+ *     below its ratio.
+ *     Basis: WCAG 1.4.3; G148.
+```
+
+- **Outcome:** `fail`, `cantTell`, `pass` or `notApplicable`; several, separated by commas,
+  when the code is given with more than one.
+- **Meaning:** what the code says about the page, for someone reading a finding. It is
+  published in `RULE_CATALOG.md`.
+- **Basis:** the texts the outcome rests on, separated by semicolons: a WCAG criterion
+  (`WCAG 1.4.3`), a technique or failure (`G18`, `F24`, `ARIA21`), an ACT rule
+  (`ACT afw4f7`), or a spec section (`WAI-ARIA 1.2 aria-errormessage`, `HTML-AAM 4.1.1`). A
+  parenthesis after an item says how it applies: `MUST`, `SHOULD` or `MAY` for the spec's
+  word, `not settled` when the text applies but doesn't decide the case, `exception: <which>`
+  when one of its exceptions does, or `best practice` when no normative text requires it.
+
+A rule that gives no reason code says so: `@reason-codes none`.
+
+`tests/reason-codes-docs.test.js` checks that every rule has the tag and that the codes listed
+are exactly the rule's codes in `scripts/data/finding-ids.json`, each with a meaning and a
+basis. A new reason code goes in the list in the same change that adds it, and
+`npm run finding-ids` adds it to the inventory. The inventory reads
+codes from the rule's source (`reasonCode: '...'`, or an assignment to `reasonCode`) and from
+its fixture; a code it can't see there, such as one picked from a table or passed on from a
+helper, goes in `meta.reasonCodes` too.
 
 ---
 

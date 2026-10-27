@@ -278,7 +278,7 @@ test('hasFilter: a style whose filter getter throws degrades to false', () => {
 });
 
 // A ratio is rounded to 12 decimals (#171): past that its digits depend on
-// the order colours were composited in, which differs between jsdom and a
+// the order colors were composited in, which differs between jsdom and a
 // browser. The two-decimal thresholds are unaffected.
 test('contrastRatio: rounded to 12 decimals', () => {
   for (const [fg, bg] of [

@@ -17,11 +17,21 @@
  *   HTML page, a PDF, plain text) is excluded too: it renders no non-text
  *   content, so 1.1.1 asks nothing of it (ACT 8fc3b6's applicability). An
  *   object whose type cannot be told from markup stays in scope.
+ *   A Flash object (`type="application/x-shockwave-flash"`, or with no type
+ *   a `data` URL ending in `.swf`) is excluded too: no current browser runs Flash (support ended in 2021), so the
+ *   object draws nothing itself and the browser shows its fallback content,
+ *   ordinary HTML the other rules judge. Nothing non-text is left for 1.1.1
+ *   (ACT 8fc3b6).
  * @expectation
  *   Each applicable <object> provides a text alternative via:
  *   - fallback content (non-empty text content inside <object>), OR
  *   - an accessible name (aria-labelledby/aria-label), OR
  *   - a title attribute (best-effort fallback).
+ * @reason-codes
+ *   - `TEXT_ALTERNATIVE_MISSING` (fail): an <object> that may render
+ *     non-text content has no fallback text and no name from aria-label,
+ *     aria-labelledby or title.
+ *     Basis: WCAG 1.1.1; H53; ACT 8fc3b6.
  */
 
 const id = 'object-text-alternative-present';
@@ -71,7 +81,9 @@ function runInPage(ctx) {
     'xml',
     'json',
     'pdf',
-    'csv'
+    'csv',
+    // Flash: no current browser runs it, so only the fallback shows.
+    'swf'
   ]);
 
   function embedsNonMedia(type, data) {
@@ -262,6 +274,7 @@ function runInPage(ctx) {
         params: { element: 'object' }
       },
       data: {
+        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         fallback: fb,
         name

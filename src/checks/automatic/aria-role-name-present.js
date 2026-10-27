@@ -42,7 +42,17 @@
  *   <caption> of a <table>, and an associated <label> on a labelable
  *   element such as <progress> or <meter>.
  * @reports
- *   - `role`: the role that needs a name.
+ *   - `role`: the role that needs a name, one of `grid`, `meter`,
+ *     `progressbar`, `radiogroup` and `tree`. A stable contract,
+ *     unlike the rest of `data.details`.
+ * @reason-codes
+ *   - `name_missing` (fail): an element whose role requires an accessible name
+ *     has none from aria-label, aria-labelledby, title or its host element.
+ *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 accessible name required; accname 1.2.
+ *   - `name_internals` (cantTell): the element is a custom element that may
+ *     give itself a name through ElementInternals, which no script can read, so
+ *     whether it has one could not be told.
+ *     Basis: WCAG 4.1.2 (not settled); accname 1.2 (not settled).
  */
 
 const id = 'aria-role-name-present';
@@ -74,6 +84,21 @@ const meta = {
   coverage: {
     facetsBySc: {
       '4.1.2': ['aria-role-name-present']
+    }
+  },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    name_internals: {
+      steps: [
+        'Inspect the custom element the report names and note its role.',
+        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
+        'With a screen reader, move to the element and listen to the name announced.'
+      ],
+      passWhen:
+        'The accessibility tree shows a name for the element, set through its internals or otherwise, and the screen reader announces it.',
+      failWhen:
+        'The element has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
     }
   }
 };

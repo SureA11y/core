@@ -145,7 +145,8 @@ test("a criterion outside the run's WCAG version is not added", () => {
   assert.deepEqual(ids(scan(PAGE, { includeRuleIds: ['duplicate-id'] })), []);
   const under21 = scan(PAGE, { includeRuleIds: ['duplicate-id'] }, { wcagVersion: '2.1' });
   assert.deepEqual(ids(under21), [R411]);
-  assert.equal(rollup(under21, R411).outcome, 'fail');
+  // The 2023 errata count 4.1.1 as satisfied for HTML, so the duplicate is asked about.
+  assert.equal(rollup(under21, R411).outcome, 'cantTell');
   assert.deepEqual(ids(scan(PAGE, { includeRuleIds: ['target-size-minimum'] })), [R258]);
   assert.deepEqual(
     ids(scan(PAGE, { includeRuleIds: ['target-size-minimum'] }, { wcagVersion: '2.1' })),
@@ -318,7 +319,9 @@ test('the HTML report says a criterion was checked in part', () => {
   const partly = renderHtmlReport(scan(NAMED_LINK, { includeRuleIds: ['link-name-present'] }));
   assert.match(partly, /Partly checked: 1 of 2 checks was not selected for this scan/);
   const whole = renderHtmlReport(scan(NAMED_LINK, { wcag: { version: '2.2', level: 'AA' } }));
-  assert.doesNotMatch(whole, /Partly checked/);
+  assert.doesNotMatch(whole, /not selected for this scan/);
+  // Its rules all ran, and check only part of what 2.4.4 asks.
+  assert.match(whole, /Partly checked: its checks cover only part of this criterion/);
 });
 
 // --- engineOptions.wcagLevel ----------------------------------------------------

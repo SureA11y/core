@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>control-name-title-only — scenario fixture</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    h2 { font-size: 16px; margin: 22px 0 10px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case { border: 1px solid #ddd; border-radius: 10px; padding: 12px; margin: 10px 0; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <h1>Scenario fixture: <code>control-name-title-only</code></h1>
+
+  <p class="note">
+    Each target has a stable <code>id</code> of the form <code>cnto_case_NN</code>.
+  </p>
+
+  <h2>A. Something other than the title names the control</h2>
+
+  <div class="case" id="case_01">
+    <div class="case-title">01 — PASS: a link with text; its title is a tooltip</div>
+    <a href="/report" title="Annual report, PDF" id="cnto_case_01">Annual report</a>
+  </div>
+
+  <div class="case" id="case_02">
+    <div class="case-title">02 — PASS: an icon button with an aria-label</div>
+    <button title="Close" aria-label="Close dialog" id="cnto_case_02"><svg aria-hidden="true" width="12" height="12"></svg></button>
+  </div>
+
+  <div class="case" id="case_03">
+    <div class="case-title">03 — PASS: a link named by its image's alt</div>
+    <a href="/" title="Home" id="cnto_case_03"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Home"></a>
+  </div>
+
+  <div class="case" id="case_04">
+    <div class="case-title">04 — PASS: an input button named by its value</div>
+    <input type="button" value="Print" title="Print the page" id="cnto_case_04">
+  </div>
+
+  <h2>B. The title is the only name (CANTTELL)</h2>
+
+  <div class="case" id="case_05">
+    <div class="case-title">05 — CANTTELL: an icon button named only by its title (NAME_FROM_TITLE_ONLY)</div>
+    <button title="Close" id="cnto_case_05"><svg aria-hidden="true" width="12" height="12"></svg></button>
+  </div>
+
+  <div class="case" id="case_06">
+    <div class="case-title">06 — CANTTELL: an icon link named only by its title (NAME_FROM_TITLE_ONLY)</div>
+    <a href="/settings" title="Settings" id="cnto_case_06"><span class="icon"></span></a>
+  </div>
+
+  <div class="case" id="case_07">
+    <div class="case-title">07 — CANTTELL: an ARIA button named only by its title (NAME_FROM_TITLE_ONLY)</div>
+    <div role="button" tabindex="0" title="Menu" id="cnto_case_07"></div>
+  </div>
+
+  <h2>C. Left out (no occurrence)</h2>
+
+  <div class="case" id="case_08">
+    <div class="case-title">08 — NEUTRAL: a hidden button</div>
+    <button title="Gone" hidden id="cnto_case_08"></button>
+  </div>
+
+  <div class="case" id="case_09">
+    <div class="case-title">09 — NEUTRAL: a title on an element that is not a control</div>
+    <p title="A note" id="cnto_case_09">Text</p>
+  </div>
+</body>
+</html>

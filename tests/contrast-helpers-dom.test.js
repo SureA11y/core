@@ -150,26 +150,57 @@ test('computeEffectiveBackground: an opaque ancestor background resolves ok:true
   assert.deepStrictEqual(out.rgba, { r: 255, g: 255, b: 255, a: 1 });
 });
 
-test('computeEffectiveBackground: strictConformance mode reports BACKGROUND_NOT_OPAQUE_AT_ROOT when no ancestor is opaque', () => {
-  const { document, helpers } = makeHelpers('<span id="b">t</span>');
-  const b = document.getElementById('b');
-  const out = helpers.computeEffectiveBackground(b, { contrast: { mode: 'strictConformance' } });
-  assert.strictEqual(out.ok, false);
-  assert.strictEqual(out.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-  assert.ok(out.alpha < 1);
+test('computeEffectiveBackground: with no opaque ancestor the text sits on the page canvas, in either mode', () => {
+  for (const mode of ['strictConformance', 'auditorAssist']) {
+    const { document, helpers } = makeHelpers('<span id="b">t</span>');
+    const out = helpers.computeEffectiveBackground(document.getElementById('b'), {
+      contrast: { mode }
+    });
+    assert.strictEqual(out.ok, true, mode);
+    assert.deepStrictEqual(out.rgba, { r: 255, g: 255, b: 255, a: 1 });
+    assert.strictEqual(out.assumptionsApplied, undefined);
+    assert.deepStrictEqual(out.canvas, {
+      scheme: 'light',
+      supported: ['light'],
+      current: 'light',
+      named: false,
+      text: null
+    });
+  }
 });
 
-test('computeEffectiveBackground: auditorAssist mode applies the root canvas fallback and reports ok:true with assumptionsApplied', () => {
-  const { document, helpers } = makeHelpers('<span id="b">t</span>');
-  const b = document.getElementById('b');
-  const out = helpers.computeEffectiveBackground(b, {
+test('computeEffectiveBackground: an element outside the page the engine runs in keeps the contrast mode', () => {
+  const { document, helpers } = makeHelpers('');
+  const other = document.implementation.createHTMLDocument('');
+  other.body.innerHTML = '<span id="b">t</span>';
+  const b = other.getElementById('b');
+  const strict = helpers.computeEffectiveBackground(b, { contrast: { mode: 'strictConformance' } });
+  assert.strictEqual(strict.ok, false);
+  assert.strictEqual(strict.reasonCode, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
+  assert.ok(strict.alpha < 1);
+  const assisted = helpers.computeEffectiveBackground(b, {
     contrast: { mode: 'auditorAssist', rootCanvasFallback: '#123456' }
   });
+  assert.strictEqual(assisted.ok, true);
+  assert.deepStrictEqual(assisted.assumptionsApplied, ['ROOT_CANVAS_FALLBACK']);
+  assert.strictEqual(assisted.assumedRootCanvasColor, '#123456');
+  assert.deepStrictEqual(assisted.rgba, { r: 0x12, g: 0x34, b: 0x56, a: 1 });
+});
+
+test('computeEffectiveBackground: a canvas the caller names is the one measured on', () => {
+  const { document, helpers } = makeHelpers('<span id="b">t</span>');
+  const out = helpers.computeEffectiveBackground(document.getElementById('b'), {
+    contrast: {
+      mode: 'strictConformance',
+      rootCanvasFallback: '#123456',
+      rootCanvasFallbackSet: true
+    }
+  });
   assert.strictEqual(out.ok, true);
-  assert.strictEqual(out.alpha, 1);
   assert.deepStrictEqual(out.assumptionsApplied, ['ROOT_CANVAS_FALLBACK']);
   assert.strictEqual(out.assumedRootCanvasColor, '#123456');
   assert.deepStrictEqual(out.rgba, { r: 0x12, g: 0x34, b: 0x56, a: 1 });
+  assert.strictEqual(out.canvas.scheme, null);
 });
 
 test('computeEffectiveBackground: collectStack:true returns a per-ancestor layer stack and is not cached', () => {
@@ -247,13 +278,28 @@ test('getComputabilityBlocker: a background-image/gradient on an ancestor blocks
 
 test('getComputabilityBlocker: fractional opacity on an ancestor (not el itself) blocks computability', () => {
   const { document, helpers } = makeHelpers(
-    '<div id="a" style="opacity:0.6"><span id="b">t</span></div>'
+    '<div id="a" style="opacity:0.6;mix-blend-mode:multiply"><span id="b">t</span></div>'
   );
   const b = document.getElementById('b');
   const out = helpers.getComputabilityBlocker(b);
   assert.strictEqual(out.ok, false);
-  assert.strictEqual(out.reasonCode, 'ANCESTOR_OPACITY');
+  assert.ok(['ANCESTOR_OPACITY', 'MIX_BLEND_MODE'].includes(out.reasonCode), out.reasonCode);
   assert.strictEqual(out.blockerSelector, '#a');
+});
+
+test('getComputabilityBlocker: fractional opacity on an ancestor over the page canvas is resolved as a group', () => {
+  const { document, helpers } = makeHelpers(
+    '<div id="a" style="opacity:0.5"><span id="b" style="color:#000">t</span></div>'
+  );
+  const b = document.getElementById('b');
+  assert.strictEqual(helpers.getComputabilityBlocker(b).ok, true);
+  // Black at half opacity, drawn on the white canvas.
+  assert.deepStrictEqual(helpers.computeEffectiveForeground(b).rgba, {
+    r: 128,
+    g: 128,
+    b: 128,
+    a: 1
+  });
 });
 
 test("getComputabilityBlocker: el's OWN fractional opacity is not a blocker (only ancestors are)", () => {
@@ -733,11 +779,15 @@ test('contrast-minimum: an ancestor opacity is counted once, however the colors 
     '<!doctype html><html lang="en" style="background:#000"><head><title>t</title></head><body><main>' +
       '<div style="opacity:.5"><p style="background:#fff;color:#000">Hello world text</p></div>' +
       '</main></body></html>',
-    { runOnly: ['contrast-minimum'] }
+    { runOnly: ['contrast-minimum', 'contrast-enhanced'] }
   );
   const check = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
   assert.equal(check.outcome, 'pass');
-  assert.ok(Math.abs(check.margin.value - 5.317) < 0.01, String(check.margin.value));
+  // 5.32:1 is not close to 4.5:1, so it is read from contrast-enhanced's
+  // finding (below 7:1) rather than from a margin.
+  const enhanced = result.checksResults.find((c) => c.ruleId === 'contrast-enhanced');
+  const ratio = enhanced.occurrences[0].data.details.metrics.ratio;
+  assert.ok(Math.abs(ratio - 5.317) < 0.01, String(ratio));
 });
 
 // -------- CSS Color 4 colors --------

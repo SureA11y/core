@@ -140,6 +140,109 @@ test(`${RULE_ID}: a table row's own text differentiates a field repeated per row
 // A label split between visible and hidden parts.
 // ---------------------------------------------------------------------------
 
+function yesNo(name, idPrefix) {
+  return (
+    `<label><input type="radio" name="${name}" id="${idPrefix}y"> Yes</label>` +
+    `<label><input type="radio" name="${name}" id="${idPrefix}n"> No</label>`
+  );
+}
+
+test(`${RULE_ID}: Yes/No radio groups under different plain questions are not duplicates`, () => {
+  const result = runa11yCoreOnHtml(
+    page(
+      '<form><div><p>Do you smoke?</p>' +
+        yesNo('smoke', 'a') +
+        '</div><div><p>Do you drink?</p>' +
+        yesNo('drink', 'b') +
+        '</div></form>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: checkbox options under different plain questions are not duplicates`, () => {
+  const result = runa11yCoreOnHtml(
+    page(
+      '<form><div><p>Which do you own?</p><label><input type="checkbox" name="own"> Car</label>' +
+        '<label><input type="checkbox" name="own"> Bike</label></div>' +
+        '<div><p>Which do you rent?</p><label><input type="checkbox" name="rent"> Car</label>' +
+        '<label><input type="checkbox" name="rent"> Bike</label></div></form>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: a named radiogroup gives its options their question`, () => {
+  const result = runa11yCoreOnHtml(
+    page(
+      '<div role="radiogroup" aria-label="Do you smoke?">' +
+        yesNo('smoke', 'a') +
+        '</div><div role="radiogroup" aria-label="Do you drink?">' +
+        yesNo('drink', 'b') +
+        '</div>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+test(`${RULE_ID}: Yes/No groups under the same question are still duplicates`, () => {
+  for (const body of [
+    '<form><div><p>Do you smoke?</p>' +
+      yesNo('smoke1', 'a') +
+      '</div><div><p>Do you smoke?</p>' +
+      yesNo('smoke2', 'b') +
+      '</div></form>',
+    '<div role="radiogroup" aria-label="Do you smoke?">' +
+      yesNo('smoke1', 'a') +
+      '</div><div role="radiogroup" aria-label="Do you smoke?">' +
+      yesNo('smoke2', 'b') +
+      '</div>'
+  ]) {
+    const rule = assertRule(
+      runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 4,
+        maxOccurrences: 4
+      }
+    );
+    for (const id of ['ay', 'an', 'by', 'bn']) assert.ok(hasOccurrenceForId(rule, id), id);
+    assert.ok(rule.occurrences.every((o) => o.data.details.reasonCode === 'DUPLICATE_LABEL_TEXT'));
+  }
+});
+
+test(`${RULE_ID}: radio groups with no element holding each group alone are still duplicates`, () => {
+  // The questions sit in one block with both groups, so no element holds a
+  // group and its question alone.
+  const result = runa11yCoreOnHtml(
+    page(
+      '<form><p>Do you smoke?</p>' +
+        yesNo('smoke', 'a') +
+        '<p>Do you drink?</p>' +
+        yesNo('drink', 'b') +
+        '</form>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+});
+
+test(`${RULE_ID}: text fields take no question from the text around them`, () => {
+  const result = runa11yCoreOnHtml(
+    page(
+      '<form><div><p>Shipping</p><label>Name <input id="a" name="ship"></label></div>' +
+        '<div><p>Billing</p><label>Name <input id="b" name="bill"></label></div></form>'
+    ),
+    { runOnly: [RULE_ID] }
+  );
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  assert.ok(hasOccurrenceForId(rule, 'a') && hasOccurrenceForId(rule, 'b'));
+});
+
 test(`${RULE_ID}: cantTell when part of the label is hidden from sight`, () => {
   // ACT cc0f0a failed example 5: a screen reader announces "Go Search", a
   // sighted user reads "Go".
@@ -299,7 +402,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 7, maxOccurrences: 7 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedIds = [
     'fclq_case_07',
@@ -308,7 +411,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
     'fclq_case_09b',
     'fclq_case_10',
     'fclq_case_10b',
-    'fclq_case_11'
+    'fclq_case_11',
+    'fclq_case_14',
+    'fclq_case_14b',
+    'fclq_case_14c',
+    'fclq_case_14d'
   ];
   const expectedNoOccIds = [
     'fclq_case_01',
@@ -316,7 +423,15 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
     'fclq_case_03',
     'fclq_case_04',
     'fclq_case_05',
-    'fclq_case_06'
+    'fclq_case_06',
+    'fclq_case_12',
+    'fclq_case_12b',
+    'fclq_case_12c',
+    'fclq_case_12d',
+    'fclq_case_13',
+    'fclq_case_13b',
+    'fclq_case_13c',
+    'fclq_case_13d'
   ];
 
   for (const id of expectedIds) {
@@ -325,4 +440,54 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/form-control-label-quality-al
   for (const id of expectedNoOccIds) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+function leans(body) {
+  return assertRule(
+    runa11yCoreOnHtml(page(body), { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'cantTell'
+  ).occurrences.map((o) => [
+    o.data.details.reasonCode,
+    o.lean ? o.lean.toward : null,
+    o.lean ? o.lean.i18n.whyKey : null
+  ]);
+}
+
+test(`${RULE_ID}: a template-only placeholder label leans fail; a word that can be a real name has no lean`, () => {
+  assert.deepEqual(leans('<label>Enter text <input></label><label>Value <input></label>'), [
+    ['PLACEHOLDER_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_placeholder'],
+    ['PLACEHOLDER_LABEL_TEXT', null, null]
+  ]);
+});
+
+test(`${RULE_ID}: duplicate labels lean pass for copies of one widget, fail for distinct fields of one form`, () => {
+  const search = '<form action="/search"><label>Search <input name="q"></label></form>';
+  assert.deepEqual(leans(search + '<p>Content</p>' + search), [
+    ['DUPLICATE_LABEL_TEXT', 'pass', 'formControlLabelQuality_lean_why_duplicateWidget'],
+    ['DUPLICATE_LABEL_TEXT', 'pass', 'formControlLabelQuality_lean_why_duplicateWidget']
+  ]);
+  assert.deepEqual(
+    leans(
+      '<form><label>Name <input name="ship"></label><label>Name <input name="bill"></label></form>'
+    ),
+    [
+      ['DUPLICATE_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_duplicateFields'],
+      ['DUPLICATE_LABEL_TEXT', 'fail', 'formControlLabelQuality_lean_why_duplicateFields']
+    ]
+  );
+  // No form owner, or radio buttons: no lean.
+  assert.deepEqual(leans('<label>Phone <input></label><label>Phone <input></label>'), [
+    ['DUPLICATE_LABEL_TEXT', null, null],
+    ['DUPLICATE_LABEL_TEXT', null, null]
+  ]);
+  assert.deepEqual(
+    leans(
+      '<form><label>Yes <input type="radio" name="a"></label><label>Yes <input type="radio" name="b"></label></form>'
+    ),
+    [
+      ['DUPLICATE_LABEL_TEXT', null, null],
+      ['DUPLICATE_LABEL_TEXT', null, null]
+    ]
+  );
 });

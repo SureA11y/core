@@ -25,6 +25,20 @@
  *     its fragment. Empty (`null`) when its `src` could not be resolved
  *     (`IFRAME_RESOURCE_UNRESOLVED`).
  *   - `setSize`: how many frames share the name.
+ * @reason-codes
+ *   - `IFRAME_RESOURCE_DIFFERS` (cantTell): frames that share an accessible
+ *     name embed different resources; a person judges whether they serve
+ *     the same purpose.
+ *     It leans pass when the addresses differ only in tracking or cache-
+ *     busting parameters or a www. prefix, and fail when another frame
+ *     embeds a different video from the same video host.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled).
+ *   - `IFRAME_RESOURCE_UNRESOLVED` (cantTell): a frame shares its accessible
+ *     name with other frames, but its src could not be resolved to compare
+ *     what it embeds.
+ *     It leans as IFRAME_RESOURCE_DIFFERS does, reading the frame's data-
+ *     src, data-lazy-src or srcdoc; with none of them, no lean.
+ *     Basis: WCAG 4.1.2 (not settled); ACT 4b1c6c (not settled).
  * @implementation-notes
  * - Frames are grouped by the computed accessible name, not the title
  *   attribute, so a title that aria-label or aria-labelledby overrides does
@@ -67,7 +81,31 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['identical-iframes-same-purpose'] } }
+  coverage: { facetsBySc: { '4.1.2': ['identical-iframes-same-purpose'] } },
+  // How a person checks each undecided finding: shown with it as
+  // howToCheck (docs/OUTPUT_SCHEMA.md).
+  review: {
+    IFRAME_RESOURCE_DIFFERS: {
+      steps: [
+        'Find the frames the report names and note the shared accessible name (usually their title).',
+        'Look at what each frame shows and at its src address.',
+        'Decide whether they do the same job (the same map or widget, with only tracking parameters differing) or different ones (two different videos).'
+      ],
+      passWhen: 'The frames serve the same purpose, so sharing a name is fine.',
+      failWhen:
+        'The frames embed different content under the same name (such as two different videos both titled "YouTube video player"), so users cannot tell them apart, which fails WCAG 4.1.2 (ACT 4b1c6c).'
+    },
+    IFRAME_RESOURCE_UNRESOLVED: {
+      steps: [
+        'Find the frames the report names and note the shared accessible name.',
+        'Scroll each frame into view so any lazy-loaded content loads, then inspect it for its src, data-src or srcdoc.',
+        'Compare what each frame shows and decide whether they do the same job.'
+      ],
+      passWhen: 'The frames serve the same purpose, so sharing a name is fine.',
+      failWhen:
+        'The frames show different content under the same name, so users cannot tell them apart, which fails WCAG 4.1.2 (ACT 4b1c6c).'
+    }
+  }
 };
 
 function runInPage(ctx) {
@@ -144,6 +182,144 @@ function runInPage(ctx) {
     }
   }
 
+  // ---- Leans ----
+
+  // Query parameters that track a visit or bust a cache, and so do not
+  // change what a frame embeds. `v` and `t` are left in: on a video host they
+  // name the video and its start.
+  function isTrackingParam(key) {
+    const k = key.toLowerCase();
+    return (
+      k.indexOf('utm_') === 0 ||
+      ['gclid', 'fbclid', 'msclkid', 'ver', 'cb', 'cachebuster', 'timestamp', 'ts', '_'].indexOf(
+        k
+      ) !== -1
+    );
+  }
+
+  // Hosts that embed one video per address, where two addresses under one
+  // name are two videos under one name.
+  const VIDEO_HOSTS = [
+    'youtube.com',
+    'youtube-nocookie.com',
+    'player.vimeo.com',
+    'dailymotion.com',
+    'player.twitch.tv'
+  ];
+
+  // What a frame embeds, read from its src, else a lazy-load attribute
+  // (data-src, data-lazy-src), else its srcdoc. `from` says which.
+  function embedOf(el) {
+    const fromSrc = resourceKey(el);
+    if (fromSrc) return { key: fromSrc, from: 'src' };
+    for (const attr of ['data-src', 'data-lazy-src']) {
+      const raw = dom.getAttribute(el, attr);
+      if (raw == null || !String(raw).trim()) continue;
+      const doc = (ctx && ctx.document) || dom.ownerDocument(el);
+      try {
+        return { key: new URL(String(raw).trim(), dom.baseURI(doc)).href, from: attr };
+      } catch {
+        return null;
+      }
+    }
+    const srcdoc = dom.getAttribute(el, 'srcdoc');
+    if (srcdoc != null && String(srcdoc).trim()) return { srcdoc: String(srcdoc), from: 'srcdoc' };
+    return null;
+  }
+
+  // An address with what doesn't change the resource taken out: the scheme,
+  // a www. prefix, the fragment, a trailing slash, tracking and cache-busting
+  // parameters, and the order of the rest.
+  function comparable(embed) {
+    if (!embed) return null;
+    if (embed.srcdoc != null) return { same: 'srcdoc:' + embed.srcdoc, site: '', path: '' };
+    try {
+      const u = new URL(embed.key);
+      const site = u.hostname.toLowerCase().replace(/^www\./, '');
+      let path = u.pathname;
+      if (path.length > 1 && path.charAt(path.length - 1) === '/') path = path.slice(0, -1);
+      const params = [];
+      u.searchParams.forEach((v, k) => {
+        if (!isTrackingParam(k)) params.push(k + '=' + v);
+      });
+      params.sort();
+      return {
+        same: site + path + '?' + params.join('&'),
+        site,
+        path: path + '?' + params.join('&')
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  function isVideoHost(host) {
+    return VIDEO_HOSTS.some((h) => host === h || host.endsWith('.' + h));
+  }
+
+  // Frames of a set that embed the same thing once tracking parameters and
+  // a www. alias are set aside lean pass; one that shares a video host with
+  // another frame of the set and embeds a different video there leans fail.
+  function setLeans(name, els, keys) {
+    const embeds = els.map((el, i) =>
+      keys[i] != null ? { key: keys[i], from: 'src' } : embedOf(el)
+    );
+    const comps = embeds.map(comparable);
+    const allKnown = comps.every((c) => c != null);
+    const allSame = allKnown && comps.every((c) => c.same === comps[0].same);
+    return els.map((el, i) => {
+      const c = comps[i];
+      if (!c) return null;
+      const from = embeds[i].from;
+      const readLazily = embeds.some((e) => e && e.from !== 'src');
+      if (allSame) {
+        return readLazily
+          ? {
+              toward: 'pass',
+              why: 'Read from their lazy-load attributes or srcdoc where src is missing, the frames with this name embed the same resource.',
+              signals: [
+                { signal: 'embed-read-from', value: from },
+                { signal: 'shared-name', value: name }
+              ],
+              caution: 'A script may change the address before the frame loads.',
+              i18n: {
+                whyKey: 'identicalIframesSamePurpose_lean_why_lazySame',
+                cautionKey: 'identicalIframesSamePurpose_lean_caution_lazySame'
+              }
+            }
+          : {
+              toward: 'pass',
+              why: 'The addresses differ only in tracking or cache-busting parameters or a www. prefix, so the frames embed the same resource.',
+              signals: [
+                { signal: 'url-diff-kind', value: 'tracking-or-alias' },
+                { signal: 'shared-name', value: name }
+              ],
+              i18n: { whyKey: 'identicalIframesSamePurpose_lean_why_sameResource' }
+            };
+      }
+      if (!c.site || !isVideoHost(c.site)) return null;
+      const otherVideo = comps.some(
+        (o, j) => j !== i && o && o.site === c.site && o.path !== c.path
+      );
+      if (!otherVideo) return null;
+      return {
+        toward: 'fail',
+        why: 'Another frame with the same name embeds a different video from the same video service.',
+        signals: [
+          { signal: 'url-diff-kind', value: 'path' },
+          { signal: 'video-host', value: c.site },
+          { signal: 'embed-read-from', value: from }
+        ],
+        caution:
+          'Two addresses on a video service can still show the same video, such as a playlist and a single video.',
+        i18n: {
+          whyKey: 'identicalIframesSamePurpose_lean_why_differentVideo',
+          cautionKey: 'identicalIframesSamePurpose_lean_caution_differentVideo'
+        }
+      };
+    });
+  }
+
   const groups = new Map();
 
   for (const el of nodes) {
@@ -176,11 +352,13 @@ function runInPage(ctx) {
     const allSame = allResolved && resolved.every((k) => k === resolved[0]);
     if (allSame) continue;
 
+    const leans = setLeans(name, els, keys);
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
       const tag = dom.tagName(el).toLowerCase();
       occurrences.push(
         helpers.reportOccurrence(el, {
+          ...(leans[i] ? { lean: leans[i] } : {}),
           summary:
             'This frame shares its accessible name with another frame that embeds a different resource.',
           hint: 'If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.',

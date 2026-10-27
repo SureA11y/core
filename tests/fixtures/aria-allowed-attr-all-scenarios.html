@@ -120,10 +120,101 @@
   </div>
 
   <div class="case" id="case_18">
-    <div class="case-title">18 — NEUTRAL: an element whose implicit role depends on context is left alone</div>
+    <div class="case-title">18 — FAIL: a link (a with href) with aria-checked, which link does not support</div>
     <a href="/pricing" aria-checked="true" id="aaa_case_18">Pricing</a>
   </div>
 
   <p class="note">End of fixture.</p>
+
+  <h2>F. Elements whose role depends on their attributes</h2>
+
+  <div class="case" id="case_19">
+    <div class="case-title">19 — FAIL: a link with aria-pressed</div>
+    <a href="#case_19" aria-pressed="true" id="aaa_case_19">Bold</a>
+  </div>
+
+  <div class="case" id="case_20">
+    <div class="case-title">20 — FAIL: an img with alt text and aria-checked</div>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Logo" aria-checked="true" id="aaa_case_20">
+  </div>
+
+  <div class="case" id="case_21">
+    <div class="case-title">21 — FAIL: an img with alt="" has no role, so aria-checked is supported by nothing</div>
+    <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="" aria-checked="true" id="aaa_case_21">
+  </div>
+
+  <div class="case" id="case_22">
+    <div class="case-title">22 — FAIL: a drop-down select with aria-pressed</div>
+    <select aria-label="Size" aria-pressed="true" id="aaa_case_22"><option>S</option></select>
+  </div>
+
+  <div class="case" id="case_23">
+    <div class="case-title">23 — FAIL: a date input with aria-checked</div>
+    <input type="date" aria-label="Date" aria-checked="true" id="aaa_case_23">
+  </div>
+
+  <div class="case" id="case_24">
+    <div class="case-title">24 — FAIL: a color input with aria-required</div>
+    <input type="color" aria-label="Color" aria-required="true" id="aaa_case_24">
+  </div>
+
+  <div class="case" id="case_25">
+    <div class="case-title">25 — PASS: a drop-down select with aria-expanded and aria-required</div>
+    <select aria-label="Size" aria-expanded="false" aria-required="true" id="aaa_case_25"><option>S</option></select>
+  </div>
+
+  <div class="case" id="case_26">
+    <div class="case-title">26 — PASS: a date input with aria-readonly</div>
+    <input type="date" aria-label="Date" aria-readonly="true" id="aaa_case_26">
+  </div>
+
+  <div class="case" id="case_27">
+    <div class="case-title">27 — PASS: a file input with aria-invalid</div>
+    <input type="file" aria-label="Photo" aria-invalid="true" id="aaa_case_27">
+  </div>
+
+  <div class="case" id="case_28">
+    <div class="case-title">28 — NEUTRAL: an a without href (its role is generic or none) is left alone</div>
+    <a aria-checked="true" id="aaa_case_28">Pricing</a>
+  </div>
+  <div class="case" id="case_29">
+    <div class="case-title">29 — PASS: a text input whose list names a datalist is a combobox, which supports aria-expanded</div>
+    <input list="aaa_cities" aria-label="City" aria-expanded="false" id="aaa_case_29"><datalist id="aaa_cities"><option>Madrid</option></datalist>
+  </div>
+
+  <div class="case" id="case_30">
+    <div class="case-title">30 — FAIL: a td in a table is a cell, which does not support aria-selected</div>
+    <table><tr><th>Name</th></tr><tr><td aria-selected="true" id="aaa_case_30">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_31">
+    <div class="case-title">31 — PASS: a td in a grid is a gridcell, which supports aria-selected</div>
+    <table role="grid" aria-label="People"><tr><td aria-selected="true" tabindex="0" id="aaa_case_31">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_32">
+    <div class="case-title">32 — FAIL: a td in a presentational table has no role, so aria-colindex is not allowed</div>
+    <table role="presentation"><tr><td aria-colindex="1" id="aaa_case_32">Ana</td></tr></table>
+  </div>
+
+  <div class="case" id="case_33">
+    <div class="case-title">33 — NEUTRAL: a th is a column or a row header by its place in the table, and is left alone</div>
+    <table><tr><th aria-pressed="true" id="aaa_case_33">Name</th></tr></table>
+  </div>
+
+  <div class="case" id="case_34">
+    <div class="case-title">34 — CANTTELL: a file input has no role, and aria-errormessage, a global attribute ARIA 1.2 deprecated, is still supported on it</div>
+    <input type="file" aria-label="CV" aria-errormessage="aaa_err_34" id="aaa_case_34"><p id="aaa_err_34">The file is too large.</p>
+  </div>
+
+  <div class="case" id="case_35">
+    <div class="case-title">35 — PASS: a table whose role="none" is ignored, as it can take focus, keeps its cells, which may carry aria-colindex</div>
+    <table role="none" tabindex="0"><tr><th>Item</th><th>Price</th></tr><tr><td aria-colindex="1" id="aaa_case_35">Tea</td><td>2</td></tr></table>
+  </div>
+
+  <div class="case" id="case_36">
+    <div class="case-title">36 — FAIL: an input of a type HTML no longer defines is a text field, which can't be pressed</div>
+    <label>Start <input type="datetime" aria-pressed="true" id="aaa_case_36"></label>
+  </div>
 </body>
 </html>

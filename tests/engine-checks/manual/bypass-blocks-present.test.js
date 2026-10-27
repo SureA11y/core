@@ -203,3 +203,74 @@ test(`${RULE_ID}: a skip link named by aria-label counts`, () => {
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// H69 puts headings at the start of each section of content: a heading in the
+// navigation heads the block to be skipped (ACT 047fe0, Failed Example 4).
+test(`${RULE_ID}: a heading inside the navigation is no way past it`, () => {
+  for (const nav of [
+    '<nav><h2>Contents</h2><a href="/2">Chapter 2</a></nav>',
+    '<div role="navigation"><h2>Contents</h2><a href="/2">Chapter 2</a></div>'
+  ]) {
+    const html = `<!doctype html><html><body>${nav}<div><p>Text.</p></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+  // One that starts the content still counts, and one in a <nav> that a
+  // role makes something else does too.
+  for (const body of [
+    '<nav><h2>Contents</h2></nav><h1>Chapter 1</h1><p>Text.</p>',
+    '<nav role="region" aria-label="Intro"><h1>Chapter 1</h1></nav><p>Text.</p>'
+  ]) {
+    const result = runa11yCoreOnHtml(`<!doctype html><html><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+    assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+  }
+});
+
+// G1: a skip link goes to the main content; one whose target is in the
+// navigation or a sidebar skips to none (ACT ye5d6e, Failed Example 3).
+test(`${RULE_ID}: a skip link into the navigation or a sidebar is no way past them`, () => {
+  for (const target of [
+    '<aside><p id="c">About the book.</p></aside>',
+    '<div role="complementary"><p id="c">About the book.</p></div>',
+    '<nav id="c"><a href="/2">Chapter 2</a></nav>'
+  ]) {
+    const html = `<!doctype html><html><body><a href="#c">Skip to main content</a>${target}<div><p>Text.</p></div></body></html>`;
+    const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+    assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  }
+});
+
+// Leans, on a page with no mechanism found.
+test(`${RULE_ID}: a navigation block with links before the content leans fail`, () => {
+  const lean = (body) =>
+    assertRule(
+      runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+        runOnly: [RULE_ID]
+      }),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0].lean;
+
+  const nav = lean(
+    '<nav><a href="/a">A</a> <a href="/b">B</a></nav><div>Content of the page</div>'
+  );
+  assert.equal(nav.toward, 'fail');
+  assert.equal(nav.i18n.whyKey, 'bypassBlocksPresent_lean_why_navBeforeContent');
+
+  const nothing = lean('<div>Content of the page</div><p><a href="/x">A link after it</a></p>');
+  assert.equal(nothing.toward, 'pass');
+  assert.equal(nothing.i18n.whyKey, 'bypassBlocksPresent_lean_why_nothingBefore');
+
+  // No count of links is a threshold: a link before the content with no
+  // navigation block, a navigation block with no links, or a same-page link
+  // past the block leaves the page without a lean.
+  assert.equal(lean('<a href="/home">Home</a><div>Content</div>'), undefined);
+  assert.equal(lean('<nav>Menu</nav><div>Content</div>'), undefined);
+  assert.equal(
+    lean('<nav><a href="/a">A</a></nav><a href="#c">Recipe</a><div id="c">Content</div>'),
+    undefined
+  );
+});

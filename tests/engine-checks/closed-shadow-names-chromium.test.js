@@ -16,7 +16,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
-const path = require('node:path');
 
 const { createDom, runa11yCoreOnDom } = require('../../src/testing.js');
 
@@ -44,7 +43,7 @@ const skip = !chromium
     ? 'no Chromium build found (set CHROMIUM_EXECUTABLE_PATH)'
     : false;
 
-const BUNDLE = fs.readFileSync(path.join(__dirname, '../../surea11y.browser.js'), 'utf8');
+const { addBundle } = require('../helpers/browserBundle');
 
 const DEFINE = (mode) => `
   customElements.define('x-icon', class extends HTMLElement {
@@ -248,7 +247,7 @@ test('in Chromium, the same, where the component renders a box', { skip }, async
       await page.setContent(
         `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main><script>${script}</script></body></html>`
       );
-      await page.addScriptTag({ content: BUNDLE });
+      await addBundle(page);
       const r = await page.evaluate(
         (id) => window.a11ycore.runa11yCoreInPage(null, null, {}, [id]),
         ruleId

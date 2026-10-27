@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">133/136 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">142/145 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -82,11 +82,11 @@
       <td><a href="aria-allowed-attr-all-scenarios.html" target="_blank" rel="noopener">aria-allowed-attr</a></td>
       <td class="muted">automatic</td>
       <td>aria-* attributes must be permitted for the element’s role</td>
-      <td class="num">18</td>
-      <td class="num pass">8</td>
-      <td class="num fail">6</td>
-      <td class="num canttell">1</td>
-      <td class="num">3</td>
+      <td class="num">36</td>
+      <td class="num pass">14</td>
+      <td class="num fail">16</td>
+      <td class="num canttell">2</td>
+      <td class="num">4</td>
     </tr>
 <tr data-search="aria-allowed-role explicit role must be permitted for its host element">
       <td><a href="aria-allowed-role-all-scenarios.html" target="_blank" rel="noopener">aria-allowed-role</a></td>
@@ -138,6 +138,16 @@
       <td class="num canttell">2</td>
       <td class="num">1</td>
     </tr>
+<tr data-search="aria-expanded-state-mismatch aria-expanded should match whether the controlled content is shown">
+      <td><a href="aria-expanded-state-mismatch-all-scenarios.html" target="_blank" rel="noopener">aria-expanded-state-mismatch</a></td>
+      <td class="muted">manual</td>
+      <td>aria-expanded should match whether the controlled content is shown</td>
+      <td class="num">11</td>
+      <td class="num pass">4</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">4</td>
+    </tr>
 <tr data-search="aria-hidden-body the document &lt;body&gt; must not be aria-hidden">
       <td><a href="aria-hidden-body-all-scenarios.html" target="_blank" rel="noopener">aria-hidden-body</a></td>
       <td class="muted">automatic</td>
@@ -157,6 +167,16 @@
       <td class="num fail">21</td>
       <td class="num canttell"></td>
       <td class="num"></td>
+    </tr>
+<tr data-search="aria-owns-valid aria-owns must give each element one owner, and never an ancestor of the owner">
+      <td><a href="aria-owns-valid-all-scenarios.html" target="_blank" rel="noopener">aria-owns-valid</a></td>
+      <td class="muted">automatic</td>
+      <td>aria-owns must give each element one owner, and never an ancestor of the owner</td>
+      <td class="num">7</td>
+      <td class="num pass">2</td>
+      <td class="num fail">3</td>
+      <td class="num canttell"></td>
+      <td class="num">2</td>
     </tr>
 <tr data-search="aria-prohibited-attr aria naming attributes must not be used on roles that prohibit them">
       <td><a href="aria-prohibited-attr-all-scenarios.html" target="_blank" rel="noopener">aria-prohibited-attr</a></td>
@@ -184,18 +204,18 @@
       <td>Roles with a required ARIA state/property must carry it</td>
       <td class="num">18</td>
       <td class="num pass">5</td>
-      <td class="num fail">4</td>
+      <td class="num fail">5</td>
       <td class="num canttell">2</td>
-      <td class="num">7</td>
+      <td class="num">6</td>
     </tr>
 <tr data-search="aria-required-children container roles must own at least one required child role">
       <td><a href="aria-required-children-all-scenarios.html" target="_blank" rel="noopener">aria-required-children</a></td>
       <td class="muted">automatic</td>
       <td>Container roles must own at least one required child role</td>
-      <td class="num">9</td>
+      <td class="num">10</td>
       <td class="num pass">3</td>
-      <td class="num fail"></td>
-      <td class="num canttell">2</td>
+      <td class="num fail">2</td>
+      <td class="num canttell">1</td>
       <td class="num">4</td>
     </tr>
 <tr data-search="aria-required-parent roles requiring a specific context role must be in that context">
@@ -222,8 +242,8 @@
       <td><a href="aria-roles-valid-all-scenarios.html" target="_blank" rel="noopener">aria-roles-valid</a></td>
       <td class="muted">automatic</td>
       <td>role attribute must be a valid, non-abstract ARIA role</td>
-      <td class="num">8</td>
-      <td class="num pass">4</td>
+      <td class="num">11</td>
+      <td class="num pass">7</td>
       <td class="num fail">2</td>
       <td class="num canttell">1</td>
       <td class="num">1</td>
@@ -232,10 +252,10 @@
       <td><a href="aria-text-all-scenarios.html" target="_blank" rel="noopener">aria-text</a></td>
       <td class="muted">manual</td>
       <td>role=&quot;text&quot; elements should have no focusable descendants</td>
-      <td class="num">5</td>
+      <td class="num">6</td>
       <td class="num pass">2</td>
       <td class="num fail"></td>
-      <td class="num canttell">2</td>
+      <td class="num canttell">3</td>
       <td class="num">1</td>
     </tr>
 <tr data-search="aria-valid-attr aria-* attributes must be real, defined aria attributes">
@@ -252,10 +272,10 @@
       <td><a href="aria-valid-attr-value-all-scenarios.html" target="_blank" rel="noopener">aria-valid-attr-value</a></td>
       <td class="muted">automatic</td>
       <td>aria-* attribute values must match their declared type</td>
-      <td class="num">20</td>
-      <td class="num pass">10</td>
-      <td class="num fail">7</td>
-      <td class="num canttell">2</td>
+      <td class="num">33</td>
+      <td class="num pass">17</td>
+      <td class="num fail">11</td>
+      <td class="num canttell">4</td>
       <td class="num">1</td>
     </tr>
 <tr data-search="autocomplete-valid autocomplete attribute must be a valid autofill value">
@@ -292,8 +312,8 @@
       <td><a href="button-name-present-all-scenarios.html" target="_blank" rel="noopener">button-name-present</a></td>
       <td class="muted">automatic</td>
       <td>Buttons have an accessible name</td>
-      <td class="num">29</td>
-      <td class="num pass">11</td>
+      <td class="num">30</td>
+      <td class="num pass">12</td>
       <td class="num fail">12</td>
       <td class="num canttell"></td>
       <td class="num">6</td>
@@ -328,10 +348,10 @@
       <td class="num canttell"></td>
       <td class="num"></td>
     </tr>
-<tr data-search="click-handler-keyboard-operable inline click handlers on elements that are not native controls must work by keyboard">
+<tr data-search="click-handler-keyboard-operable click handlers on elements that are not native controls must work by keyboard">
       <td><a href="click-handler-keyboard-operable-all-scenarios.html" target="_blank" rel="noopener">click-handler-keyboard-operable</a></td>
       <td class="muted">automatic</td>
-      <td>Inline click handlers on elements that are not native controls must work by keyboard</td>
+      <td>Click handlers on elements that are not native controls must work by keyboard</td>
       <td class="num">20</td>
       <td class="num pass">2</td>
       <td class="num fail">3</td>
@@ -352,40 +372,50 @@
       <td><a href="contrast-all-scenarios.html" target="_blank" rel="noopener">contrast-computable</a></td>
       <td class="muted">automatic</td>
       <td>Color contrast is computable for rendered text</td>
-      <td class="num">42</td>
+      <td class="num">45</td>
       <td class="num pass">4</td>
       <td class="num fail">5</td>
       <td class="num canttell"></td>
-      <td class="num">33</td>
+      <td class="num">36</td>
     </tr>
 <tr data-search="contrast-enhanced text meets enhanced color contrast (aaa)">
       <td><a href="contrast-all-scenarios.html" target="_blank" rel="noopener">contrast-enhanced</a></td>
       <td class="muted">automatic</td>
       <td>Text meets enhanced color contrast (AAA)</td>
-      <td class="num">42</td>
+      <td class="num">45</td>
       <td class="num pass">4</td>
       <td class="num fail">5</td>
       <td class="num canttell"></td>
-      <td class="num">33</td>
+      <td class="num">36</td>
     </tr>
 <tr data-search="contrast-minimum text meets minimum color contrast (aa)">
       <td><a href="contrast-all-scenarios.html" target="_blank" rel="noopener">contrast-minimum</a></td>
       <td class="muted">automatic</td>
       <td>Text meets minimum color contrast (AA)</td>
-      <td class="num">42</td>
+      <td class="num">45</td>
       <td class="num pass">4</td>
       <td class="num fail">5</td>
       <td class="num canttell"></td>
-      <td class="num">33</td>
+      <td class="num">36</td>
+    </tr>
+<tr data-search="control-name-title-only a button or link should not take its name only from its title">
+      <td><a href="control-name-title-only-all-scenarios.html" target="_blank" rel="noopener">control-name-title-only</a></td>
+      <td class="muted">manual</td>
+      <td>A button or link should not take its name only from its title</td>
+      <td class="num">9</td>
+      <td class="num pass">4</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
     </tr>
 <tr data-search="css-focus-indicator-suppressed focus indicator must not be removed without a replacement">
       <td><a href="css-focus-indicator-suppressed-all-scenarios.html" target="_blank" rel="noopener">css-focus-indicator-suppressed</a></td>
       <td class="muted">manual</td>
       <td>Focus indicator must not be removed without a replacement</td>
-      <td class="num">14</td>
-      <td class="num pass">5</td>
+      <td class="num">17</td>
+      <td class="num pass">7</td>
       <td class="num fail"></td>
-      <td class="num canttell">6</td>
+      <td class="num canttell">7</td>
       <td class="num">3</td>
     </tr>
 <tr data-search="css-hidden-focus focusable elements must not be visually hidden">
@@ -492,9 +522,9 @@
       <td><a href="empty-heading-all-scenarios.html" target="_blank" rel="noopener">empty-heading</a></td>
       <td class="muted">automatic</td>
       <td>Headings must not be empty</td>
-      <td class="num">10</td>
+      <td class="num">11</td>
       <td class="num pass">5</td>
-      <td class="num fail"></td>
+      <td class="num fail">1</td>
       <td class="num canttell">3</td>
       <td class="num">2</td>
     </tr>
@@ -507,6 +537,16 @@
       <td class="num fail"></td>
       <td class="num canttell">4</td>
       <td class="num">1</td>
+    </tr>
+<tr data-search="focus-not-removed-by-script a script must not remove focus from an element as it receives it">
+      <td><a href="focus-not-removed-by-script-all-scenarios.html" target="_blank" rel="noopener">focus-not-removed-by-script</a></td>
+      <td class="muted">automatic</td>
+      <td>A script must not remove focus from an element as it receives it</td>
+      <td class="num">7</td>
+      <td class="num pass"></td>
+      <td class="num fail">2</td>
+      <td class="num canttell">2</td>
+      <td class="num">3</td>
     </tr>
 <tr data-search="focus-order-semantics elements added to the tab order should have interactive semantics">
       <td><a href="focus-order-semantics-all-scenarios.html" target="_blank" rel="noopener">focus-order-semantics</a></td>
@@ -522,19 +562,19 @@
       <td><a href="form-control-label-quality-all-scenarios.html" target="_blank" rel="noopener">form-control-label-quality</a></td>
       <td class="muted">manual</td>
       <td>Form field labels should be descriptive and distinguishable</td>
-      <td class="num">11</td>
-      <td class="num pass">5</td>
+      <td class="num">14</td>
+      <td class="num pass">7</td>
       <td class="num fail"></td>
-      <td class="num canttell">5</td>
+      <td class="num canttell">6</td>
       <td class="num">1</td>
     </tr>
 <tr data-search="form-control-programmatic-label-present form controls must have a programmatic label">
       <td><a href="form-control-programmatic-label-all-scenarios.html" target="_blank" rel="noopener">form-control-programmatic-label-present</a></td>
       <td class="muted">automatic</td>
       <td>Form controls must have a programmatic label</td>
-      <td class="num">42</td>
+      <td class="num">43</td>
       <td class="num pass">13</td>
-      <td class="num fail">11</td>
+      <td class="num fail">12</td>
       <td class="num canttell"></td>
       <td class="num">18</td>
     </tr>
@@ -548,14 +588,14 @@
       <td class="num canttell"></td>
       <td class="num">18</td>
     </tr>
-<tr data-search="form-control-single-label form controls must not have multiple labels">
+<tr data-search="form-control-single-label form controls should not have multiple labels">
       <td><a href="form-control-single-label-all-scenarios.html" target="_blank" rel="noopener">form-control-single-label</a></td>
       <td class="muted">automatic</td>
-      <td>Form controls must not have multiple labels</td>
+      <td>Form controls should not have multiple labels</td>
       <td class="num">9</td>
       <td class="num pass">5</td>
-      <td class="num fail">2</td>
-      <td class="num canttell">1</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
       <td class="num">1</td>
     </tr>
 <tr data-search="heading-order heading levels must not skip a level">
@@ -638,6 +678,16 @@
       <td class="num canttell"></td>
       <td class="num">4</td>
     </tr>
+<tr data-search="image-of-text text should be real text, not an image of text">
+      <td><a href="image-of-text-all-scenarios.html" target="_blank" rel="noopener">image-of-text</a></td>
+      <td class="muted">manual</td>
+      <td>Text should be real text, not an image of text</td>
+      <td class="num">8</td>
+      <td class="num pass"></td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">5</td>
+    </tr>
 <tr data-search="image-redundant-alt image alt text must not duplicate adjacent visible text">
       <td><a href="image-redundant-alt-all-scenarios.html" target="_blank" rel="noopener">image-redundant-alt</a></td>
       <td class="muted">manual</td>
@@ -708,15 +758,35 @@
       <td class="num canttell"></td>
       <td class="num"></td>
     </tr>
+<tr data-search="invalid-field-error-message fields marked invalid should have a shown error message">
+      <td><a href="invalid-field-error-message-all-scenarios.html" target="_blank" rel="noopener">invalid-field-error-message</a></td>
+      <td class="muted">automatic</td>
+      <td>Fields marked invalid should have a shown error message</td>
+      <td class="num">16</td>
+      <td class="num pass">4</td>
+      <td class="num fail"></td>
+      <td class="num canttell">8</td>
+      <td class="num">4</td>
+    </tr>
+<tr data-search="label-for-valid a label’s for attribute should name a control it can label">
+      <td><a href="label-for-valid-all-scenarios.html" target="_blank" rel="noopener">label-for-valid</a></td>
+      <td class="muted">manual</td>
+      <td>A label’s for attribute should name a control it can label</td>
+      <td class="num">8</td>
+      <td class="num pass">3</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
+    </tr>
 <tr data-search="label-in-name label in name: accessible name contains visible text">
       <td><a href="label-in-name-all-scenarios.html" target="_blank" rel="noopener">label-in-name</a></td>
       <td class="muted">automatic</td>
       <td>Label in Name: accessible name contains visible text</td>
-      <td class="num">26</td>
+      <td class="num">28</td>
       <td class="num pass">10</td>
-      <td class="num fail">8</td>
+      <td class="num fail">9</td>
       <td class="num canttell"></td>
-      <td class="num">8</td>
+      <td class="num">9</td>
     </tr>
 <tr data-search="landmark-banner-is-top-level banner landmark must be top-level">
       <td><a href="landmark-banner-is-top-level-all-scenarios.html" target="_blank" rel="noopener">landmark-banner-is-top-level</a></td>
@@ -822,9 +892,9 @@
       <td><a href="link-in-text-block-all-scenarios.html" target="_blank" rel="noopener">link-in-text-block</a></td>
       <td class="muted">automatic</td>
       <td>Links in text blocks must be distinguishable from surrounding text without relying on color alone</td>
-      <td class="num">10</td>
+      <td class="num">11</td>
       <td class="num pass">4</td>
-      <td class="num fail">2</td>
+      <td class="num fail">3</td>
       <td class="num canttell">2</td>
       <td class="num">2</td>
     </tr>
@@ -832,9 +902,9 @@
       <td><a href="link-name-present-all-scenarios.html" target="_blank" rel="noopener">link-name-present</a></td>
       <td class="muted">automatic</td>
       <td>Links have an accessible name</td>
-      <td class="num">19</td>
-      <td class="num pass">11</td>
-      <td class="num fail">4</td>
+      <td class="num">21</td>
+      <td class="num pass">12</td>
+      <td class="num fail">5</td>
       <td class="num canttell"></td>
       <td class="num">4</td>
     </tr>
@@ -842,11 +912,11 @@
       <td><a href="link-name-quality-all-scenarios.html" target="_blank" rel="noopener">link-name-quality</a></td>
       <td class="muted">manual</td>
       <td>Link text should be descriptive, not generic</td>
-      <td class="num">11</td>
+      <td class="num">14</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
-      <td class="num canttell">6</td>
-      <td class="num">5</td>
+      <td class="num canttell">8</td>
+      <td class="num">6</td>
     </tr>
 <tr data-search="list-children-valid lists must only directly contain list items">
       <td><a href="list-children-valid-all-scenarios.html" target="_blank" rel="noopener">list-children-valid</a></td>
@@ -877,6 +947,16 @@
       <td class="num fail">5</td>
       <td class="num canttell"></td>
       <td class="num">3</td>
+    </tr>
+<tr data-search="live-region-announcements live regions should be able to announce status messages">
+      <td><a href="live-region-announcements-all-scenarios.html" target="_blank" rel="noopener">live-region-announcements</a></td>
+      <td class="muted">manual</td>
+      <td>Live regions should be able to announce status messages</td>
+      <td class="num">9</td>
+      <td class="num pass">4</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num">2</td>
     </tr>
 <tr data-search="manual-review manual review: keyboard navigation and focus order">
       <td><a href="manual-review-all-scenarios.html" target="_blank" rel="noopener">manual-review</a></td>
@@ -958,10 +1038,10 @@
       <td class="num canttell"></td>
       <td class="num">1</td>
     </tr>
-<tr data-search="mouse-only-event-handlers pointer-only inline event handlers should have a keyboard-reachable equivalent">
+<tr data-search="mouse-only-event-handlers pointer-only event handlers should have a keyboard-reachable equivalent">
       <td><a href="mouse-only-event-handlers-all-scenarios.html" target="_blank" rel="noopener">mouse-only-event-handlers</a></td>
       <td class="muted">manual</td>
-      <td>Pointer-only inline event handlers should have a keyboard-reachable equivalent</td>
+      <td>Pointer-only event handlers should have a keyboard-reachable equivalent</td>
       <td class="num">9</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
@@ -1112,9 +1192,9 @@
       <td><a href="role-img-text-alternative-present-all-scenarios.html" target="_blank" rel="noopener">role-img-text-alternative-present</a></td>
       <td class="muted">automatic</td>
       <td>[role=&quot;img&quot;/&quot;graphics-symbol&quot;/&quot;graphics-document&quot;] must have an accessible text alternative</td>
-      <td class="num">26</td>
-      <td class="num pass">5</td>
-      <td class="num fail">10</td>
+      <td class="num">28</td>
+      <td class="num pass">6</td>
+      <td class="num fail">11</td>
       <td class="num canttell"></td>
       <td class="num">11</td>
     </tr>
@@ -1132,19 +1212,19 @@
       <td><a href="scrollable-region-focusable-all-scenarios.html" target="_blank" rel="noopener">scrollable-region-focusable</a></td>
       <td class="muted">manual</td>
       <td>Scrollable regions with no focusable content should be keyboard-focusable</td>
-      <td class="num">6</td>
+      <td class="num">8</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
-      <td class="num canttell">3</td>
+      <td class="num canttell">5</td>
       <td class="num">3</td>
     </tr>
 <tr data-search="searchbox-name-present searchboxes have an accessible name">
       <td><a href="searchbox-name-present-all-scenarios.html" target="_blank" rel="noopener">searchbox-name-present</a></td>
       <td class="muted">automatic</td>
       <td>Searchboxes have an accessible name</td>
-      <td class="num">25</td>
-      <td class="num pass">6</td>
-      <td class="num fail">8</td>
+      <td class="num">28</td>
+      <td class="num pass">7</td>
+      <td class="num fail">10</td>
       <td class="num canttell"></td>
       <td class="num">11</td>
     </tr>
@@ -1203,8 +1283,8 @@
       <td class="muted">automatic</td>
       <td>SVG &lt;image&gt; must have a text alternative</td>
       <td class="num">20</td>
-      <td class="num pass">8</td>
-      <td class="num fail">6</td>
+      <td class="num pass">5</td>
+      <td class="num fail">9</td>
       <td class="num canttell"></td>
       <td class="num">6</td>
     </tr>
@@ -1302,10 +1382,10 @@
       <td><a href="td-has-header-all-scenarios.html" target="_blank" rel="noopener">td-has-header</a></td>
       <td class="muted">automatic</td>
       <td>Data cells in large tables must have an associated header</td>
-      <td class="num">8</td>
+      <td class="num">9</td>
       <td class="num pass"></td>
       <td class="num fail">1</td>
-      <td class="num canttell"></td>
+      <td class="num canttell">1</td>
       <td class="num">7</td>
     </tr>
 <tr data-search="text-spacing-content-loss text stays readable when the user increases text spacing">
@@ -1322,9 +1402,9 @@
       <td><a href="textbox-name-present-all-scenarios.html" target="_blank" rel="noopener">textbox-name-present</a></td>
       <td class="muted">automatic</td>
       <td>Textboxes have an accessible name</td>
-      <td class="num">25</td>
-      <td class="num pass">6</td>
-      <td class="num fail">8</td>
+      <td class="num">28</td>
+      <td class="num pass">7</td>
+      <td class="num fail">10</td>
       <td class="num canttell"></td>
       <td class="num">11</td>
     </tr>
@@ -1358,15 +1438,15 @@
       <td class="num canttell"></td>
       <td class="num">1</td>
     </tr>
-<tr data-search="video-caption prerecorded video should provide a captions track">
+<tr data-search="video-caption prerecorded video should provide complete captions">
       <td><a href="video-caption-all-scenarios.html" target="_blank" rel="noopener">video-caption</a></td>
       <td class="muted">manual</td>
-      <td>Prerecorded video should provide a captions track</td>
+      <td>Prerecorded video should provide complete captions</td>
       <td class="num">5</td>
       <td class="num pass"></td>
       <td class="num fail"></td>
-      <td class="num canttell">4</td>
-      <td class="num">1</td>
+      <td class="num canttell">5</td>
+      <td class="num"></td>
     </tr>
 <tr data-search="video-poster-text-alternative-present &lt;video&gt; poster must have a text alternative">
       <td><a href="video-poster-text-alternative-present-all-scenarios.html" target="_blank" rel="noopener">video-poster-text-alternative-present</a></td>
@@ -1377,6 +1457,16 @@
       <td class="num fail">5</td>
       <td class="num canttell"></td>
       <td class="num">4</td>
+    </tr>
+<tr data-search="widget-keyboard-focusable widgets should be reachable with the keyboard">
+      <td><a href="widget-keyboard-focusable-all-scenarios.html" target="_blank" rel="noopener">widget-keyboard-focusable</a></td>
+      <td class="muted">manual</td>
+      <td>Widgets should be reachable with the keyboard</td>
+      <td class="num">24</td>
+      <td class="num pass">8</td>
+      <td class="num fail"></td>
+      <td class="num canttell">9</td>
+      <td class="num">7</td>
     </tr>
     </tbody>
   </table>

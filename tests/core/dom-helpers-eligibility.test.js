@@ -29,6 +29,23 @@ test('isAccTreeEligible: [hidden] attribute on an ancestor blocks the whole subt
   assert.deepEqual(r.reasons, ['hiddenAttr']);
 });
 
+test('isAccTreeEligible: a [hidden] element whose author CSS sets display is rendered, and so is its content', () => {
+  const { helpers, document } = helpersFor(
+    '<span id="o" hidden style="display:inline"><b id="in">x</b></span>' +
+      '<div hidden style="display:flex"><span id="flexkid">y</span></div>'
+  );
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'o')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'in')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'flexkid')).eligible, true);
+});
+
+test('isAccTreeEligible: [hidden] with display set back to none still blocks', () => {
+  const { helpers, document } = helpersFor(
+    '<div hidden style="display:none"><span id="s">x</span></div>'
+  );
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 's')).reasons, ['hiddenAttr']);
+});
+
 test('isAccTreeEligible: hidden="until-found" on the element ITSELF does not block it (content-visibility:hidden hides descendants, not the element carrying it)', () => {
   const { helpers, document } = helpersFor(
     '<div id="panel" hidden="until-found" aria-labelledby="btn"></div>'
@@ -413,6 +430,60 @@ test('isModalDialogOpen: true only while an open modal dialog is in the document
   );
 });
 
+// jsdom has no top layer: an open dialog with aria-modal="true" stands in
+// for one opened with showModal(), in a shadow root as in the document
+// (modal-dialog-chromium.test.js has the browser's own).
+test('a modal dialog in an open shadow root blocks the rest of the document', () => {
+  const { helpers, document } = helpersFor(
+    '<p id="outside">Background</p><div id="wrapper"><div id="host"><span id="slotted">Slotted</span></div></div>'
+  );
+  const outer = byId(document, 'host').attachShadow({ mode: 'open' });
+  outer.innerHTML = '<div id="inner"></div><slot></slot><p id="beside">Beside</p>';
+  // Nested: a shadow root inside a shadow root.
+  const inner = outer.getElementById('inner').attachShadow({ mode: 'open' });
+  inner.innerHTML =
+    '<dialog id="dlg" open aria-modal="true"><p id="inside">Dialog</p><slot></slot></dialog>';
+  assert.equal(helpers.isModalDialogOpen(), true);
+  assert.deepEqual(helpers.getOpenModalDialogs(), [inner.getElementById('dlg')]);
+  assert.equal(helpers.isAccTreeEligible(inner.getElementById('inside')).eligible, true);
+  // What contains the dialog by the flat tree is not what is denied.
+  for (const el of [
+    document.body,
+    byId(document, 'wrapper'),
+    byId(document, 'host'),
+    outer.getElementById('inner')
+  ]) {
+    assert.equal(helpers.isAccTreeEligible(el).eligible, true, el.id || el.localName);
+  }
+  for (const el of [byId(document, 'outside'), outer.getElementById('beside')]) {
+    assert.deepEqual(helpers.isAccTreeEligible(el).reasons, ['modalInert'], el.id);
+  }
+  // Slotted into the host, not into the dialog: behind it.
+  assert.deepEqual(helpers.isAccTreeEligible(byId(document, 'slotted')).reasons, ['modalInert']);
+});
+
+test('a dialog in a shadow root that is not modal blocks nothing', () => {
+  const { helpers, document } = helpersFor('<p id="outside">Background</p><div id="host"></div>');
+  byId(document, 'host').attachShadow({ mode: 'open' }).innerHTML =
+    '<dialog open><p>Dialog</p></dialog><dialog aria-modal="true"><p>Closed</p></dialog>';
+  assert.equal(helpers.isModalDialogOpen(), false);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'outside')).eligible, true);
+});
+
+test('isModalDialogOpen: a shown aria-modal role="dialog" in a shadow root counts; it blocks nothing', () => {
+  const { helpers, document } = helpersFor('<p id="outside">Background</p><div id="host"></div>');
+  const root = byId(document, 'host').attachShadow({ mode: 'open' });
+  root.innerHTML = '<div role="dialog" aria-modal="true" aria-label="Sign in">Dialog</div>';
+  assert.equal(helpers.isModalDialogOpen(), true);
+  assert.deepEqual(helpers.getOpenModalDialogs(), []);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'outside')).eligible, true);
+
+  const hidden = helpersFor('<div id="host"></div>');
+  byId(hidden.document, 'host').attachShadow({ mode: 'open' }).innerHTML =
+    '<div role="dialog" aria-modal="true" hidden>Dialog</div>';
+  assert.equal(hidden.helpers.isModalDialogOpen(), false);
+});
+
 // ===== isDomVisibleEligible =====
 
 test('isDomVisibleEligible: display:none ancestor blocks (styleOnly, the default mode)', () => {
@@ -619,6 +690,66 @@ test('getRoleInfo: a plain text input (default type, and an explicit non-special
   const { helpers, document } = helpersFor('<input id="a"><input id="b" type="email">');
   assert.equal(helpers.getRoleInfo(byId(document, 'a'), {}).role, 'textbox');
   assert.equal(helpers.getRoleInfo(byId(document, 'b'), {}).role, 'textbox');
+});
+
+// HTML-AAM: number is a spinbutton, a text-like input with a datalist a
+// combobox, search a searchbox, and the password, date, time, color and
+// file inputs have no ARIA role.
+test('getRoleInfo: the implicit role of an input follows its type, as HTML-AAM maps it', () => {
+  const cases = {
+    number: 'spinbutton',
+    search: 'searchbox',
+    tel: 'textbox',
+    url: 'textbox',
+    unknown: 'textbox',
+    withList: 'combobox',
+    searchList: 'combobox',
+    listMissing: 'textbox',
+    passwordList: '',
+    password: '',
+    date: '',
+    time: '',
+    'datetime-local': '',
+    month: '',
+    week: '',
+    color: '',
+    file: '',
+    hidden: ''
+  };
+  const { helpers, document } = helpersFor(
+    '<input id="number" type="number"><input id="search" type="search">' +
+      '<input id="tel" type="tel"><input id="url" type="url"><input id="unknown" type="foo">' +
+      '<input id="withList" list="dl"><input id="searchList" type="search" list="dl">' +
+      '<input id="listMissing" list="nope"><input id="passwordList" type="password" list="dl">' +
+      '<input id="password" type="password"><input id="date" type="date">' +
+      '<input id="time" type="time"><input id="datetime-local" type="datetime-local">' +
+      '<input id="month" type="month"><input id="week" type="week">' +
+      '<input id="color" type="color"><input id="file" type="file"><input id="hidden" type="hidden">' +
+      '<datalist id="dl"><option>a</option></datalist>'
+  );
+  for (const [id, role] of Object.entries(cases)) {
+    assert.equal(helpers.getRoleInfo(byId(document, id), {}).role, role, id);
+  }
+});
+
+test('getTableCellRole: a <td> is a cell in a table, a gridcell in a grid, and has no role in a presentational table', () => {
+  const { helpers, document } = helpersFor(
+    '<table><tr><td id="c">1</td></tr></table>' +
+      '<table role="grid"><tbody><tr><td id="g">1</td></tr></tbody></table>' +
+      '<table role="treegrid"><tr><td id="t">1</td></tr></table>' +
+      '<table role="presentation"><tr><td id="p">1</td></tr></table>' +
+      '<table role="list"><tr><td id="l">1</td></tr></table>' +
+      '<table role="grid"><tr><td><table><tr><td id="n">1</td></tr></table></td></tr></table>' +
+      '<td id="loose">1</td><div id="d"></div>'
+  );
+  const cell = (id) => helpers.aria.getTableCellRole(byId(document, id));
+  assert.equal(cell('c'), 'cell');
+  assert.equal(cell('g'), 'gridcell');
+  assert.equal(cell('t'), 'gridcell');
+  assert.equal(cell('p'), '');
+  assert.equal(cell('l'), '');
+  assert.equal(cell('n'), 'cell');
+  assert.equal(cell('d'), '');
 });
 
 // ===== getFocusableInfo (native-focusability branches not already covered elsewhere) =====
@@ -857,4 +988,15 @@ test('isAccTreeEligible: aria-hidden ID references that come back to the element
     ).reasons,
     ['ariaHiddenOverriddenIdref']
   );
+});
+
+test('isAccTreeEligible: hidden="until-found" on an inline element hides nothing (content-visibility has no effect on an inline box)', () => {
+  const { helpers, document } = helpersFor(
+    '<p>Price <span hidden="until-found"><a id="in" href="#">terms</a></span></p>' +
+      '<div hidden="until-found"><a id="blk" href="#">terms</a></div>' +
+      '<span hidden="until-found" style="display:block"><a id="spanblk" href="#">terms</a></span>'
+  );
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'in')).eligible, true);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'blk')).eligible, false);
+  assert.equal(helpers.isAccTreeEligible(byId(document, 'spanblk')).eligible, false);
 });
