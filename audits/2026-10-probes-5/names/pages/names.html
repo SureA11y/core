@@ -1,0 +1,151 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>p</title></head><body><main><p><label for="a1">Address</label><label for="a1">Mailing</label><input id="a1"></p>
+<p><label for="a2" aria-label="Lab AL">Visible</label><input id="a2"></p>
+<p><label for="a3" title="TT"></label><input id="a3"></p>
+<p><label for="a4" aria-labelledby="t4">Visible4</label><span id="t4">From LB</span><input id="a4"></p>
+<p><label for="a5" style="display:none">Hidden</label><label for="a5">Shown</label><input id="a5"></p>
+<p><label for="a6" hidden>OnlyHidden</label><input id="a6"></p>
+<p><label for="a7" aria-hidden="true">AriaHid</label><input id="a7"></p>
+<p><label for="a8" style="visibility:hidden">VisHid</label><input id="a8"></p>
+<p><label for="a9" class="sr" style="position:absolute;clip:rect(0 0 0 0);width:1px;height:1px;overflow:hidden">Clipped</label><input id="a9"></p>
+<p><span id="r10">Phone</span><input aria-labelledby="r10 r10"></p>
+<p><input id="a11" aria-labelledby="a11 l11" value="v11"><span id="l11">L11</span></p>
+<p><div role="button" id="a12" aria-labelledby="a12 l12">Self</div><span id="l12">L12</span></p>
+<p><label>Name <input type="text" value="Bob"> end</label></p>
+<p><label>Qty <input type="text" value="5" id="a14"></label><button aria-labelledby="a14">x</button></p>
+<p><label>Pick <select><option>One</option><option selected>Two</option></select> now</label><input type="checkbox" id="c15"><label for="c15">Choose <select><option selected>Red</option></select></label></p>
+<p><input type="checkbox" id="c16"><label for="c16">Vol <input type="range" value="30" min="0" max="100"></label></p>
+<p><input type="checkbox" id="c16b"><label for="c16b">Vol <div role="slider" aria-valuenow="7" aria-valuetext="seven"></div></label></p>
+<p><input type="checkbox" id="c16c"><label for="c16c">Spin <div role="spinbutton" aria-valuenow="4"></div></label></p>
+<p><input type="checkbox" id="c16d"><label for="c16d">Text <div role="textbox">inside tb</div></label></p>
+<p><input type="checkbox" id="c16e"><label for="c16e">LB <div role="listbox"><div role="option" aria-selected="true">Sel</div><div role="option">No</div></div></label></p>
+<p><input type="checkbox" id="c16f"><label for="c16f">CB <div role="combobox">cmb text</div></label></p>
+<p><input type="checkbox" id="c16g"><label for="c16g">TA <textarea>ta val</textarea></label></p>
+<p><input type="checkbox" id="c16h"><label for="c16h">Btn <button>inner btn</button></label></p>
+<p><label>Outer <label>Inner <input id="a17"></label></label></p>
+<p><button><span style="display:none">hid</span>Vis</button></p>
+<p><style>.b1::before{content:"Pre "}.b1::after{content:" Post"}</style><button class="b1">Mid</button></p>
+<p><style>.b2::before{content:"\2605" / "Star"}</style><button class="b2"></button></p>
+<p><style>.b3::before{content:"X" / ""}</style><button class="b3">Close</button></p>
+<p><style>.b4::after{content:url(x.png) / "Alt img"}</style><button class="b4"></button></p>
+<p><style>.b5::before{content:attr(data-x)}</style><button class="b5" data-x="FromAttr"></button></p>
+<p><style>.b6::before{content:"Hid";display:none}</style><button class="b6">Six</button></p>
+<p><style>.b7::before{content:counter(c)}.b7{counter-reset:c 4}</style><button class="b7">Seven</button></p>
+<p><style>.b8::before{content:"A";display:block}</style><button class="b8">B</button></p>
+<p><style>.b9::marker{content:"M "}</style><ul><li class="b9"><a href="#">Marker link</a></li></ul></p>
+<p><a href="#" title="Only title"></a></p>
+<p><button title="Btn title"></button></p>
+<p><a href="#" title="T" aria-label="AL">c</a></p>
+<p><div role="textbox" aria-placeholder="Ph"></div></p>
+<p><input placeholder="Plain ph"></p>
+<p><input title="Input title"></p>
+<p><input placeholder="ph" title="ti"></p>
+<p><input type="button" value="IB"></p>
+<p><input type="submit"></p>
+<p><input type="reset"></p>
+<p><input type="image" src="x.png"></p>
+<p><input type="image" src="x.png" title="imgtitle"></p>
+<p><input type="image" src="x.png" value="val"></p>
+<p><input type="submit" value=""></p>
+<p><input type="button"></p>
+<p><fieldset><legend>Leg</legend><input aria-label="x"></fieldset></p>
+<p><fieldset aria-label="FAL"><legend>Leg2</legend></fieldset></p>
+<p><fieldset><legend><span hidden>hid</span>Vleg</legend></fieldset></p>
+<p><details><summary>Sum</summary>body</details></p>
+<p><details><summary aria-label="Sum AL">Sum vis</summary>body</details></p>
+<p><details><summary></summary>body</details></p>
+<p><details>nosummary</details></p>
+<p><table><caption>Cap</caption><tr><td>x</td></tr></table></p>
+<p><table aria-label="TAL"><caption>Cap2</caption><tr><td>x</td></tr></table></p>
+<p><table title="Tt"><tr><td>x</td></tr></table></p>
+<p><table><caption><span aria-hidden="true">X</span>Real</caption><tr><td>x</td></tr></table></p>
+<p><figure><figcaption>Fig cap</figcaption><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="fa"></figure></p>
+<p><figure aria-label="FigAL"><figcaption>Fig cap2</figcaption></figure></p>
+<p><svg role="img" width=5 height=5><title>T1</title><desc>D1</desc></svg></p>
+<p><svg role="img" width=5 height=5 aria-label="AL svg"><title>T2</title></svg></p>
+<p><svg role="img" width=5 height=5><text x="0" y="5">SVGtext</text></svg></p>
+<p><svg width=5 height=5><title> </title><rect width=1 height=1 /></svg></p>
+<p><svg width=5 height=5><title lang="en">first</title><title lang="fr">second</title><rect width=1 height=1 /></svg></p>
+<p><div role="img" aria-label="RI"><span>child text</span></div></p>
+<p><div role="img">only children</div></p>
+<p><div role="img" title="ri title"></div></p>
+<p><a href="#"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="Pic"> and text</a></p>
+<p><a href="#"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""> </a></p>
+<p><a href="#"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" title="imgtitle"></a></p>
+<p><a href="#"><svg width=5 height=5><title>svgt</title></svg></a></p>
+<p><a href="#"><svg width=5 height=5 role="img" aria-label="svgal"></svg></a></p>
+<p><a href="#"><span aria-label="span al">x</span></a></p>
+<p><a href="#"><span role="img" aria-label="role img al">x</span></a></p>
+<p><a href="#"><span title="span title"></span></a></p>
+<p><button><div role="presentation" aria-label="pres al">pt</div></button></p>
+<p><button>a<br>b</button></p>
+<p><button>a<span style="display:block">b</span>c</button></p>
+<p><button>a<span style="display:inline-block">b</span>c</button></p>
+<p><button>a<span>b</span>c</button></p>
+<p><button>Hello&nbsp;World</button></p>
+<p><button>&#x200B;</button></p>
+<p><button><span style="visibility:hidden">vh</span>Vis2</button></p>
+<p><button><span style="opacity:0">op</span>Vis3</button></p>
+<p><button><span style="font-size:0">fs</span>Vis4</button></p>
+<p><button><span hidden style="display:inline">unhid</span>Vis5</button></p>
+<p><button><span hidden="until-found">uf</span>Vis6</button></p>
+<p><button><span style="content-visibility:hidden;display:block">cv</span>Vis7</button></p>
+<p><button><span style="content-visibility:hidden">cvi</span>Vis8</button></p>
+<p><div style="content-visibility:hidden"><button>InsideCV</button></div></p>
+<p><div hidden="until-found"><button>InsideUF</button></div></p>
+<p><span hidden="until-found"><a href="#">InsideUFspan</a></span></p>
+<p><div hidden style="display:block"><button>HiddenShown</button></div></p>
+<p><div hidden style="display:contents"><button>HiddenContents</button></div></p>
+<p><button aria-labelledby="h1x">x</button><span id="h1x" hidden>Hidden ref</span></p>
+<p><button aria-labelledby="h2x">x</button><span id="h2x">Ref <span hidden>inner hid</span> end</span></p>
+<p><button aria-labelledby="h3x">x</button><span id="h3x" aria-hidden="true">AH ref</span></p>
+<p><button aria-labelledby="h4x">x</button><span id="h4x" hidden><span>deep</span> <span style="display:none">deeper</span></span></p>
+<p><button aria-labelledby="h5x">x</button><div id="h5x" hidden>Name <input value="emb"></div></p>
+<p><button aria-labelledby="h6x">x</button><div id="h6x">Pick <select><option>S1</option><option selected>S2</option></select></div></p>
+<p><button aria-labelledby="h7x">x</button><div id="h7x"><input type="checkbox" aria-label="cbname"></div></p>
+<p><button aria-labelledby="h8x">x</button><div id="h8x"><button>Nested btn</button></div></p>
+<p><button aria-labelledby="h9x" aria-label="AL9">x</button><div id="h9x">LB9</div></p>
+<p><button aria-labelledby="">Content10</button></p>
+<p><button aria-labelledby="missing">Content11</button></p>
+<p><button aria-label=" ">Content12</button></p>
+<p><button aria-labelledby="h13x">x</button><div id="h13x" aria-label="AL13">content13</div></p>
+<p><button aria-labelledby="h14x">x</button><div id="h14x" title="T14"></div></p>
+<p><button aria-labelledby="h15x">x</button><div id="h15x"><span title="T15"></span></div></p>
+<p><button aria-labelledby="h16x">x</button><input id="h16x" value="IV16"></p>
+<p><button aria-labelledby="h17x">x</button><input id="h17x" value="IV17" aria-label="AL17"></p>
+<p><button aria-labelledby="h18x">x</button><img id="h18x" alt="IMG18" src="data:image/gif;base64,R0lGODlhAQABAAAAACw="></p>
+<p><button aria-labelledby="h19x">x</button><div id="h19x" role="slider" aria-valuenow="19"></div></p>
+<p><input type="range" aria-labelledby="h20x"><span id="h20x">Rng</span></p>
+<p><div role="checkbox" aria-checked="false" tabindex=0 aria-labelledby="l21">x21</div><label id="l21">Lab21</label></p>
+<p><div role="combobox" aria-label="cmbal"><input aria-label="inner"></div></p>
+<p><select aria-label="sel"><option>o1</option></select></p>
+<p><select><option selected>Only opt</option></select></p>
+<p><textarea>tav</textarea></p>
+<p><input value="vonly"></p>
+<p><input type="checkbox"></p>
+<p><div role="option">opt content</div></p>
+<p><div role="tab">tab content</div></p>
+<p><div role="treeitem">ti content<div role="group"><div role="treeitem">child ti</div></div></div></p>
+<p><div role="menuitem">mi <span role="menu"><span role="menuitem">sub</span></span></div></p>
+<p><div role="row"><div role="cell">c1</div><div role="cell">c2</div></div></p>
+<p><div role="tooltip">tt content</div></p>
+<p><div role="heading" aria-level="2">H <img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="img in h"></div></p>
+<p><h2><span aria-hidden="true">&#9733;</span> Star</h2></p>
+<p><h2 aria-label="">Empty AL heading</h2></p>
+<p><h2 title="h title"></h2></p>
+<p><div role="dialog" aria-labelledby="dlh"><h2 id="dlh">Dlg</h2></div></p>
+<p><dialog open><h2>Native dialog</h2></dialog></p>
+<p><iframe srcdoc="x" aria-label="if al"></iframe></p>
+<p><iframe srcdoc="x"></iframe></p>
+<p><iframe srcdoc="x" name="nm"></iframe></p>
+<p><object data="x.png" type="image/png">fallback text</object></p>
+<p><meter value="0.4" aria-label="m"></meter></p>
+<p><meter value="0.4">meter content</meter></p>
+<p><progress value="1" max="2">prog content</progress></p>
+<p><output>out content</output></p>
+<p><nav aria-label="N">x</nav><nav aria-labelledby="nh"><h2 id="nh">NavH</h2></nav></p>
+<p><ul aria-label="UL"><li>a</li></ul></p>
+<p><a href="#">Link <span aria-hidden="true">hid</span><span class="vh" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0)">sr only</span></a></p>
+<p><a href="#" aria-describedby="ds">L</a><span id="ds">desc</span></p>
+<p><custom-x tabindex="0" role="button">custom</custom-x></p>
+<p><button><slot>no shadow slot</slot></button></p>
+</main></body></html>

@@ -1,0 +1,15 @@
+import { launch, serve, base2 } from './probe.mjs';
+import fs from 'node:fs';
+const BUNDLE = fs.readFileSync('/home/user/core/surea11y.browser.js', 'utf8');
+const lock = '@media (orientation: portrait) { html { transform: rotate(-90deg); transform-origin: top left; } }';
+serve('/cors/lock.css', lock);
+serve('/cors/imp.css', `@import url("${base2}/cors/lock.css");`);
+const b = await launch();
+const ctx = await b.newContext({ viewport: { width: 400, height: 800 } }); const p = await ctx.newPage();
+await p.goto(serve('/imp', `<!doctype html><html lang=en><head><title>t</title><link rel=stylesheet href="${base2}/cors/imp.css"></head><body><main><p>Hello</p></main></body></html>`));
+console.log('html transform:', await p.evaluate(() => getComputedStyle(document.documentElement).transform));
+await p.addScriptTag({ content: BUNDLE });
+console.log(await p.evaluate(async () => { const pre = await window.a11ycore.preloadStyleSheets(); return JSON.stringify(pre).slice(0, 600); }));
+const r = await p.evaluate(async () => { const r = await window.a11ycore.runa11yCoreInPageAsync(location.href, null, {}, ['css-orientation-lock']); return JSON.stringify(r.checksResults[0].occurrences.map((o) => o.summary)) + ' ' + r.checksResults[0].outcome + ' ' + JSON.stringify(r.engineOptions?.styleSheetTexts?.map((s) => s.href) || r.checksResults[0].engineOptions?.styleSheetTexts?.map((s) => [s.href, s.text.slice(0, 80)])); });
+console.log(r);
+await b.close();

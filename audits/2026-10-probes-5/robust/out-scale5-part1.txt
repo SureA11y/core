@@ -1,0 +1,73 @@
+many labels for one input n=250 total=858ms contrast-computable=188 form-control-label-quality=44 nested-interactive-controls-absent=30
+many labels for one input n=1000 total=1485ms contrast-computable=288 form-control-label-quality=114 nested-interactive-controls-absent=76
+many labels for one input n=4000 total=5107ms contrast-computable=910 form-control-label-quality=330 nested-interactive-controls-absent=327
+labelledby same id repeated n=250 total=72ms label-in-name=7 contrast-computable=5 button-name-present=3
+labelledby same id repeated n=1000 total=91ms meter-name-present=14 css-hidden-focus=6 nested-interactive-controls-absent=6
+labelledby same id repeated n=4000 total=88ms form-control-label-quality=24 nested-interactive-controls-absent=5 empty-heading=4
+labelledby n distinct ids n=250 total=510ms contrast-computable=81 aria-braille-equivalent=34 form-control-label-quality=27
+labelledby n distinct ids n=1000 total=1289ms contrast-computable=206 form-control-label-quality=81 nested-interactive-controls-absent=78
+labelledby n distinct ids n=4000 total=5219ms contrast-computable=772 nested-interactive-controls-absent=354 form-control-label-quality=354
+  SUPERLINEAR labelledby n distinct ids nested-interactive-controls-absent 1ms@250 -> 354ms@4000
+labelledby chain depth n n=250 total=489ms contrast-computable=62 nested-interactive-controls-absent=36 form-control-label-quality=34
+labelledby chain depth n n=1000 total=1416ms contrast-computable=166 nested-interactive-controls-absent=101 aria-prohibited-attr=87
+labelledby chain depth n n=4000 total=5638ms contrast-computable=606 nested-interactive-controls-absent=398 form-control-label-quality=352
+n inputs each labelled by all n spans n=250 total=142ms css-hidden-focus=38 form-control-label-quality=11 label-in-name=9
+n inputs each labelled by all n spans n=1000 total=162ms form-control-label-quality=18 css-hidden-focus=18 contrast-computable=15
+n inputs each labelled by all n spans n=4000 total=287ms css-hidden-focus=34 label-in-name=33 form-control-label-quality=32
+n inputs, each with 2 labels n=250 total=1319ms form-control-label-quality=164 css-hidden-focus=163 contrast-computable=121
+n inputs, each with 2 labels n=1000 total=5208ms css-hidden-focus=636 contrast-computable=463 form-control-label-quality=399
+n inputs, each with 2 labels n=4000 total=22405ms css-hidden-focus=2306 contrast-computable=2090 form-control-label-quality=1773
+deep label nesting n=250 total=572ms contrast-computable=150 form-control-programmatic-label-present=34 identical-links-same-purpose=14
+deep label nesting n=1000 total=4854ms contrast-computable=1599 form-control-label-quality=72 nested-interactive-controls-absent=63
+deep label nesting n=4000 total=50318ms contrast-computable=4136 form-control-label-quality=620 label-in-name=606
+  SUPERLINEAR deep label nesting form-control-label-quality 1ms@250 -> 620ms@4000
+  SUPERLINEAR deep label nesting label-in-name 1ms@250 -> 606ms@4000
+  TOTAL SUPERLINEAR deep label nesting 572 -> 50318
+n lists owning their item n=250 total=1380ms aria-required-parent=316 nested-interactive-controls-absent=103 label-in-name=82
+n lists owning their item n=1000 total=7070ms aria-required-parent=3865 nested-interactive-controls-absent=224 contrast-computable=203
+n lists owning their item n=4000 total=105903ms aria-required-parent=92111 nested-interactive-controls-absent=1095 label-in-name=792
+  SUPERLINEAR n lists owning their item aria-required-parent 316ms@250 -> 92111ms@4000
+  TOTAL SUPERLINEAR n lists owning their item 1380 -> 105903
+one list owning n items n=250 total=920ms aria-required-parent=156 contrast-computable=74 form-control-label-quality=48
+one list owning n items n=1000 total=2755ms aria-required-parent=1038 contrast-computable=180 form-control-label-quality=119
+one list owning n items n=4000 total=27313ms aria-required-parent=20492 contrast-computable=749 nested-interactive-controls-absent=458
+  SUPERLINEAR one list owning n items aria-required-parent 156ms@250 -> 20492ms@4000
+  SUPERLINEAR one list owning n items nested-interactive-controls-absent 1ms@250 -> 458ms@4000
+n owners of one element n=250 total=403ms label-in-name=34 nested-interactive-controls-absent=32 form-control-label-quality=20
+n owners of one element n=1000 total=1453ms nested-interactive-controls-absent=113 aria-required-children=100 form-control-label-quality=99
+n owners of one element n=4000 total=6494ms form-control-label-quality=507 nested-interactive-controls-absent=488 aria-required-children=449
+  SUPERLINEAR n owners of one element aria-required-children 1ms@250 -> 449ms@4000
+owns ancestors chain n=250 total=899ms contrast-computable=153 aria-owns-valid=91 aria-deprecated-role=53
+owns ancestors chain n=1000 total=9175ms aria-owns-valid=2290 contrast-computable=1589 aria-deprecated-role=750
+owns ancestors chain n=4000 total=147759ms aria-owns-valid=47685 aria-roles-valid=15287 aria-deprecated-role=14713
+  SUPERLINEAR owns ancestors chain aria-owns-valid 91ms@250 -> 47685ms@4000
+  SUPERLINEAR owns ancestors chain aria-roles-valid 1ms@250 -> 15287ms@4000
+  SUPERLINEAR owns ancestors chain aria-deprecated-role 53ms@250 -> 14713ms@4000
+  TOTAL SUPERLINEAR owns ancestors chain 899 -> 147759
+n buttons controlling own panel n=250 total=1457ms css-hidden-focus=143 contrast-computable=132 nested-interactive-controls-absent=92
+n buttons controlling own panel n=1000 total=4452ms css-hidden-focus=533 nested-interactive-controls-absent=348 contrast-computable=348
+n buttons controlling own panel n=4000 total=18547ms css-hidden-focus=1861 contrast-computable=1144 aria-prohibited-attr=1124
+  SUPERLINEAR n buttons controlling own panel aria-prohibited-attr 1ms@250 -> 1124ms@4000
+n buttons controlling one panel n=250 total=619ms css-hidden-focus=127 contrast-computable=50 aria-expanded-state-mismatch=33
+n buttons controlling one panel n=1000 total=2527ms css-hidden-focus=474 form-control-label-quality=168 contrast-computable=163
+n buttons controlling one panel n=4000 total=9398ms css-hidden-focus=1857 contrast-computable=782 nested-interactive-controls-absent=550
+  SUPERLINEAR n buttons controlling one panel nested-interactive-controls-absent 1ms@250 -> 550ms@4000
+one button controlling n panels n=250 total=385ms nested-interactive-controls-absent=35 label-in-name=31 form-control-label-quality=25
+one button controlling n panels n=1000 total=1446ms nested-interactive-controls-absent=115 form-control-label-quality=92 label-in-name=88
+one button controlling n panels n=4000 total=8445ms mouse-only-event-handlers=1276 nested-interactive-controls-absent=1089 label-in-name=446
+  SUPERLINEAR one button controlling n panels mouse-only-event-handlers 1ms@250 -> 1276ms@4000
+grid table n cells n=250 total=962ms contrast-computable=233 form-control-label-quality=37 nested-interactive-controls-absent=29
+grid table n cells n=1000 total=3059ms contrast-computable=478 nested-interactive-controls-absent=188 td-has-header=128
+grid table n cells n=4000 total=12579ms form-control-label-quality=1831 contrast-computable=1203 nested-interactive-controls-absent=724
+treegrid n cells with headers n=250 total=720ms contrast-computable=98 label-in-name=50 nested-interactive-controls-absent=46
+treegrid n cells with headers n=1000 total=2597ms contrast-computable=380 label-in-name=164 nested-interactive-controls-absent=161
+treegrid n cells with headers n=4000 total=13806ms contrast-computable=4038 label-in-name=1105 form-control-label-quality=584
+  SUPERLINEAR treegrid n cells with headers form-control-label-quality 1ms@250 -> 584ms@4000
+n invalid fields with messages n=250 total=1940ms css-hidden-focus=225 form-control-label-quality=197 label-in-name=101
+n invalid fields with messages n=1000 total=10271ms css-hidden-focus=3308 form-control-label-quality=705 contrast-computable=535
+<--- Last few GCs --->
+[31400:0x1ad87000]   556914 ms: Mark-Compact 2012.4 (2080.4) -> 1996.5 (2080.6) MB, pooled: 4 MB, 1639.96 / 0.00 ms  (average mu = 0.156, current mu = 0.055) allocation failure; scavenge might not succeed
+[31400:0x1ad87000]   558651 ms: Mark-Compact 2012.2 (2080.6) -> 1996.5 (2080.3) MB, pooled: 5 MB, 1660.00 / 0.00 ms  (average mu = 0.102, current mu = 0.044) allocation failure; scavenge might not succeed
+<--- JS stacktrace --->
+FATAL ERROR: Ineffective mark-compacts near heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----

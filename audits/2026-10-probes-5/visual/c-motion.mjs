@@ -1,0 +1,28 @@
+const H = (css, body, js = '') => `<!doctype html><html lang=en><head><title>t</title><style>body{font:16px Arial} @keyframes mv{from{transform:translateX(0)}to{transform:translateX(100px)}} @keyframes fd{from{opacity:1}to{opacity:.2}} @keyframes col{from{color:#000}to{color:#333}} ${css}</style></head><body><p>Other content.</p>${body}<script>${js}</script></body></html>`;
+const R = ['moving-content-pausable', 'deprecated-elements-not-used'];
+export default [
+  { name: 'A1 infinite move', html: H('#a{animation:mv 2s infinite}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A2 6s finite', html: H('#a{animation:mv 6s 1}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A3 4s finite', html: H('#a{animation:mv 4s 1}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A4 1s after 10s delay', html: H('#a{animation:mv 1s 10s 1}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A5 paused infinite', html: H('#a{animation:mv 2s infinite paused}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A6 reduced-motion media query, scan with reduce', html: H('#a{animation:mv 2s infinite} @media (prefers-reduced-motion: reduce){#a{animation:none}}', '<div id=a>moving</div>'), rules: R, context: { reducedMotion: 'reduce' } },
+  { name: 'A7 opacity 0 element infinite', html: H('#a{animation:mv 2s infinite;opacity:0}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A8 offscreen closed menu infinite', html: H('#a{animation:mv 2s infinite;position:absolute;left:-9999px}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A9 visibility hidden infinite', html: H('#a{animation:mv 2s infinite;visibility:hidden}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A10 WAAPI infinite', html: H('', '<div id=a>moving</div>', 'a.animate([{transform:"none"},{transform:"translateX(50px)"}],{duration:1000,iterations:Infinity})'), rules: R },
+  { name: 'A11 scroll-driven', html: H('#a{animation:mv linear both;animation-timeline:scroll()} body{height:3000px}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A12 view-timeline', html: H('#a{animation:mv linear both;animation-timeline:view()} body{height:3000px}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A13 marquee', html: H('', '<marquee id=a>scrolling news</marquee>'), rules: R },
+  { name: 'A14 SVG SMIL spinner', html: H('', '<svg id=a width=40 height=40 role=img aria-label=Loading><circle cx=20 cy=20 r=15 fill=none stroke=#000 stroke-width=4 stroke-dasharray="20 80"><animateTransform attributeName=transform type=rotate from="0 20 20" to="360 20 20" dur="1s" repeatCount="indefinite"/></circle></svg>'), rules: R },
+  { name: 'A15 color-only infinite subtle', html: H('#a{animation:col 3s infinite alternate}', '<div id=a>pulsing color</div>'), rules: R },
+  { name: 'A16 playbackRate 0 WAAPI', html: H('', '<div id=a>moving</div>', 'const an=a.animate([{transform:"none"},{transform:"translateX(50px)"}],{duration:1000,iterations:Infinity});an.playbackRate=0;'), rules: R },
+  { name: 'A17 transition 10s started by script', html: H('#a{transition:transform 10s linear}', '<div id=a>moving</div>', 'requestAnimationFrame(()=>requestAnimationFrame(()=>a.style.transform="translateX(100px)"))'), rules: R },
+  { name: 'A18 infinite with animation on ::before', html: H('#a::before{content:"*";display:inline-block;animation:mv 1s infinite}', '<div id=a>x</div>'), rules: R },
+  { name: 'A19 caret blink in input (UA)', html: H('', '<input aria-label=x autofocus>'), rules: R },
+  { name: 'A20 inside closed details', html: H('#a{animation:mv 2s infinite}', '<details><summary>s</summary><div id=a>moving</div></details>'), rules: R },
+  { name: 'A21 iterations 3 of 2s (6s)', html: H('#a{animation:mv 2s 3}', '<div id=a>moving</div>'), rules: R },
+  { name: 'A22 animation of a custom property only (no visual)', html: H('@property --x{syntax:"<number>";inherits:false;initial-value:0} @keyframes v{to{--x:1}} #a{animation:v 1s infinite}', '<div id=a>static</div>'), rules: R },
+  { name: 'A23 inside content-visibility hidden', html: H('#w{content-visibility:hidden} #a{animation:mv 2s infinite}', '<div id=w><div id=a>moving</div></div>'), rules: R },
+  { name: 'A24 zero size element spin', html: H('#a{animation:mv 2s infinite;width:0;height:0;overflow:hidden}', '<div id=a>moving</div>'), rules: R },
+];

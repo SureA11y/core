@@ -1,0 +1,83 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>p</title></head><body><main><div><label>Size <input type="number" value="12"> pt <input type="checkbox" id="e1"></label></div>
+<div><label for="e2">Color <select><option>Red</option><option selected>Blue</option></select></label><input id="e2"></div>
+<div><label for="e3">Amount <input type="range" min="0" max="10" value="7"></label><input id="e3"></div>
+<div><label for="e4">Amount <input type="range" min="0" max="10" value="7" aria-valuetext="seven"></label><input id="e4"></div>
+<div><label for="e5">Opt <select multiple><option selected>A</option><option selected>B</option></select></label><input id="e5"></div>
+<div><label for="e6">Ed <div contenteditable="true">editable text</div></label><input id="e6"></div>
+<div><label for="e7">Lst <div role="listbox"><div role="option" aria-selected="true">L1</div><div role="option" aria-selected="true">L2</div></div></label><input id="e7"></div>
+<div><label for="e8">Cmb <div role="combobox" aria-label="cmbAL">ignored</div></label><input id="e8"></div>
+<div><label for="e9">Cmb2 <input role="combobox" value="typed"></label><input id="e9"></div>
+<div><label for="e10">Txt <input type="text" value="tv" aria-label="tAL"></label><input id="e10"></div>
+<div><label for="e11">Btn <input type="button" value="bv"></label><input id="e11"></div>
+<div><label for="e12">Sp <div role="spinbutton" aria-valuenow="3" aria-valuetext="three"></div></label><input id="e12"></div>
+<div><label for="e13">Sb <div role="scrollbar" aria-valuenow="44"></div></label><input id="e13"></div>
+<div><label for="e14">Pg <div role="progressbar" aria-valuenow="44"></div></label><input id="e14"></div>
+<div><label for="e15">Mt <meter value="0.3"></meter></label><input id="e15"></div>
+<div><label for="e16">Sel <select><option>First</option></select></label><input id="e16"></div>
+<div><label for="e17">Sel <select><option></option></select> end</label><input id="e17"></div>
+<div><label for="e18">Sel <select><option label="Lbl">Txt</option></select></label><input id="e18"></div>
+<div><label for="e19">Num <input type="number"></label><input id="e19"></div>
+<div><label for="e20">Pw <input type="password" value="secret"></label><input id="e20"></div>
+<div><label for="e21">Dt <input type="date" value="2020-01-02"></label><input id="e21"></div>
+<div><label for="e22">Cl <input type="color" value="#ff0000"></label><input id="e22"></div>
+<div><label for="e23">Ta <textarea>line1
+line2</textarea></label><input id="e23"></div>
+<div><label for="e24">Fl <input type="file"></label><input id="e24"></div>
+<div><label for="e25">Cb <input type="checkbox" checked></label><input id="e25"></div>
+<div><label for="e26">Out <output>42</output></label><input id="e26"></div>
+<div><input id="g1" aria-labelledby="g1l"><span id="g1l">Pre <input value="self-val" id="g1i"> post</span></div>
+<div><div id="g2" role="textbox" aria-labelledby="g2l"></div><div id="g2l">Lbl <span aria-labelledby="g2x">ignored</span></div><span id="g2x">Nested LB</span></div>
+<div><button id="g3" aria-labelledby="g3a g3b">x</button><span id="g3a" aria-labelledby="g3b">A</span><span id="g3b">B</span></div>
+<div><button aria-labelledby="g4">x</button><span id="g4" style="display:none">Hid <span style="display:inline">shown?</span></span></div>
+<div><button aria-labelledby="g5">x</button><span id="g5" aria-hidden="true">AH <span aria-hidden="false">AHF</span></span></div>
+<div><button aria-labelledby="g6">x</button><span id="g6" style="visibility:hidden">VH <span style="visibility:visible">VV</span></span></div>
+<div><button aria-labelledby="g7">x</button><span id="g7">T<span>w</span>o</span></div>
+<div><button aria-labelledby="g8">x</button><div id="g8"><p>Par1</p><p>Par2</p></div></div>
+<div><button aria-labelledby="g9">x</button><span id="g9" role="presentation">pres <b>bold</b></span></div>
+<div><button aria-labelledby="g10">x</button><span id="g10"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt="ImgAlt"><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" alt=""><img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=" title="ImgTitle"></span></div>
+<div><button aria-labelledby="g11">x</button><span id="g11"><svg width=5 height=5><title>SvgT</title></svg></span></div>
+<div><button aria-labelledby="g12">x</button><span id="g12"><span role="img" aria-label="RIAL"></span></span></div>
+<div><button aria-labelledby="g13">x</button><span id="g13" role="list"><span role="listitem">li1</span><span role="listitem">li2</span></span></div>
+<div><button aria-labelledby="g14">x</button><table id="g14"><tr><td>c1</td><td>c2</td></tr></table></div>
+<div><button aria-labelledby="g15">x</button><div id="g15">a<br>b</div></div>
+<div><button aria-labelledby="g16">x</button><div id="g16"><style>.zz{}</style><script>var q=1</script>visible</div></div>
+<div><button aria-labelledby="g17">x</button><div id="g17"><template>tmpl</template><noscript>ns</noscript>txt</div></div>
+<div><button aria-labelledby="g18">x</button><div id="g18" hidden><button>hb</button><input value="hv"></div></div>
+<div><button aria-labelledby="g19">x</button><div id="g19"><details><summary>Sum</summary>Collapsed body</details></div></div>
+<div><button aria-labelledby="g20">x</button><div id="g20"><select><option>o1</option><option>o2</option></select></div></div>
+<div><button aria-labelledby="g21 g21b">x</button><span id="g21">A</span><span id="g21b"> </span></div>
+<div><button aria-labelledby="  g22  ">x</button><span id="g22">Spaced</span></div>
+<div><button aria-labelledby="G23">x</button><span id="g23">Case</span></div>
+<div><style>.p1::before{content:"Pre" / "Alt"}</style><a href="#" class="p1">Link1</a></div>
+<div><style>.p2::after{content:"" / "AfterAlt"}</style><a href="#" class="p2">Link2</a></div>
+<div><style>.p3::before{content:"→" / ""}</style><a href="#" class="p3">Link3</a></div>
+<div><style>.p4::before{content:"X";visibility:hidden}</style><a href="#" class="p4">Link4</a></div>
+<div><style>.p5::before{content:"Y";speak:never}</style><a href="#" class="p5">Link5</a></div>
+<div><style>.p6 span::before{content:"Inner "}</style><a href="#" class="p6"><span>Link6</span></a></div>
+<div><style>.p7::before{content:"Lab: "}</style><label class="p7" for="p7i">Seven</label><input id="p7i"></div>
+<div><style>.p8::before{content:"Ref "}</style><button aria-labelledby="p8r">x</button><span id="p8r" class="p8">Eight</span></div>
+<div><style>.p9::before{content:"Inline";display:inline-block}</style><a href="#" class="p9">Link9</a></div>
+<div><style>.p10::before{content:"\201C"}.p10::after{content:"\201D"}</style><a href="#" class="p10">Quoted</a></div>
+<div><style>.p11::before{content:open-quote}.p11::after{content:close-quote}</style><a href="#" class="p11">OQ</a></div>
+<div><style>.p12::before{content:"A" "B"}</style><a href="#" class="p12">Concat</a></div>
+<div><style>.p13::before{content:"x";font-size:0}</style><a href="#" class="p13">Thirteen</a></div>
+<div><style>.p14::after{content:"Hid";opacity:0}</style><a href="#" class="p14">Fourteen</a></div>
+<div><input type="text" placeholder="ph" aria-placeholder="aph"></div>
+<div><textarea placeholder="tph"></textarea></div>
+<div><input type="search" placeholder="Search…"></div>
+<div><input type="email" title="ET" placeholder="EP"></div>
+<div><input type="checkbox" title="CT"></div>
+<div><select title="ST"><option>o</option></select></div>
+<div><button aria-label="">Content from empty AL</button></div>
+<div><a href="#" aria-labelledby="none-such" title="T fall">  </a></div>
+<div><div role="link" tabindex="0" title="RL title"></div></div>
+<div><div role="button" tabindex="0"><span title="inner title"></span></div></div>
+<div id="sh1"></div><script>(function(){var h=document.getElementById('sh1');var r=h.attachShadow({mode:'open'});r.innerHTML='<label for="si">Shadow label</label><input id="si"><button aria-labelledby="sl">x</button><span id="sl">Shadow LB</span>';})()</script>
+<div id="sh2"><span slot="s">Slotted</span> light</div><script>(function(){var h=document.getElementById('sh2');var r=h.attachShadow({mode:'open'});r.innerHTML='<button><slot name="s"></slot> btn</button>';})()</script>
+<button aria-labelledby="sh3x">x</button><div id="sh3"></div><script>(function(){var h=document.getElementById('sh3');var r=h.attachShadow({mode:'open'});r.innerHTML='<span id="sh3x">In shadow</span>';})()</script>
+<x-lab id="sh4"><span>Light content</span></x-lab><script>(function(){var h=document.getElementById('sh4');var r=h.attachShadow({mode:'open'});r.innerHTML='<a href="#">Pre <slot></slot></a>';})()</script>
+<button id="ae1">x</button><span id="ae1l">ElemRef</span><script>document.getElementById('ae1').ariaLabelledByElements=[document.getElementById('ae1l')]</script>
+<button id="ae2" aria-labelledby="ae2l">x</button><span id="ae2l">AttrWins</span><span id="ae2m">ElemLoses</span><script>document.getElementById('ae2').ariaLabelledByElements=[document.getElementById('ae2m')]</script>
+<div id="ae3h"></div><button id="ae3">x</button><script>(function(){var r=document.getElementById('ae3h').attachShadow({mode:'open'});r.innerHTML='<span id="in">ShadowElemRef</span>';document.getElementById('ae3').ariaLabelledByElements=[r.getElementById('in')];})()</script>
+<input id="ae4"><span id="ae4d">Desc el</span><script>document.getElementById('ae4').ariaLabel='PropLabel';</script>
+</main></body></html>
