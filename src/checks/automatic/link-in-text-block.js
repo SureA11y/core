@@ -622,6 +622,14 @@ function runInPage(ctx) {
     );
   }
 
+  // A sheet or a group rule whose media or @supports condition doesn't hold
+  // now (@media print on a screen scan) styles nothing the scan sees.
+  function cssConditionApplies(x) {
+    return typeof helpers.cssConditionApplies === 'function'
+      ? helpers.cssConditionApplies(x)
+      : true;
+  }
+
   function resolveUnderlineFromCssom(el) {
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function')
@@ -661,7 +669,7 @@ function runInPage(ctx) {
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -678,6 +686,7 @@ function runInPage(ctx) {
 
     try {
       for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -865,7 +874,7 @@ function runInPage(ctx) {
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -881,6 +890,7 @@ function runInPage(ctx) {
     }
     try {
       for (const sheet of (doc && dom.styleSheets(doc)) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -1630,8 +1640,8 @@ function runInPage(ctx) {
     } catch {
       out.readable = false;
     }
-    const consider = (cssRule) => {
-      for (const part of splitSelectorList(cssRule.selectorText)) {
+    const consider = (cssRule, selectorText) => {
+      for (const part of splitSelectorList(selectorText)) {
         if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
         const hover = /:hover\b/i.test(part);
         const focus = /:focus(-visible|-within)?\b/i.test(part);
@@ -1653,22 +1663,43 @@ function runInPage(ctx) {
         if (focus) out.onFocus = true;
       }
     };
-    const walk = (rules, depth) => {
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it, so
+    // `nav a { &:hover {} }` reaches only the links in a nav.
+    const nestedSelector = (selector, parent) =>
+      !parent
+        ? selector
+        : splitSelectorList(selector)
+            .map((part) =>
+              part.indexOf('&') !== -1
+                ? part.split('&').join(':is(' + parent + ')')
+                : ':is(' + parent + ') ' + part.trim()
+            )
+            .join(', ');
+    const walk = (rules, depth, parent) => {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
-        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) consider(cssRule);
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
+        let selector = parent;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          selector = nestedSelector(String(cssRule.selectorText), parent);
+          consider(cssRule, selector);
+        } else if (parent && cssRule.style && !cssRule.selectorText) {
+          // Declarations straight inside an at-rule within a style rule.
+          consider(cssRule, parent);
+        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        if (nested && nested.length) walk(nested, depth + 1);
+        if (nested && nested.length) walk(nested, depth + 1, selector);
       }
     };
     try {
       for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -1676,7 +1707,7 @@ function runInPage(ctx) {
           out.readable = false;
           continue;
         }
-        if (rules) walk(rules, 0);
+        if (rules) walk(rules, 0, '');
       }
     } catch {
       out.readable = false;

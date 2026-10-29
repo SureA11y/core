@@ -48,6 +48,26 @@ test(`${RULE_ID}: a style sheet rule forcing spacing below the metric with !impo
   }
 });
 
+test(`${RULE_ID}: a forced value only print media gets is left alone`, () => {
+  // The scan checks the screen, where an @media print rule or a print style
+  // sheet stops no one's spacing.
+  for (const html of [
+    page('@media print{p{letter-spacing:0 !important}}', '<p>Opening hours today</p>'),
+    page('@media only print, speech{p{letter-spacing:0 !important}}', '<p>Opening hours today</p>'),
+    page('', '<p>Opening hours today</p>').replace(
+      '</head>',
+      '<style media="print">p{letter-spacing:0 !important}</style></head>'
+    )
+  ]) {
+    assertRule(runa11yCoreOnHtml(html, RUN), RULE_ID, 'notApplicable', { maxOccurrences: 0 });
+  }
+  // A list that names the screen still applies.
+  assertRule(run('@media print, screen{p{letter-spacing:0 !important}}'), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
+
 test(`${RULE_ID}: forced values that meet the metric, keywords and rules without !important are left alone`, () => {
   for (const css of [
     'p{letter-spacing:0.12em !important}',

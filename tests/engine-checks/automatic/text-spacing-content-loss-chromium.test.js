@@ -113,6 +113,67 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(outcome(result), 'fail');
   });
 
+  await t.test('a forced value is asked about only where it applies on screen', async () => {
+    const forced = (sheet) =>
+      page('', `<h1 id="h">Heading</h1>`).replace('</head>', `${sheet}</head>`);
+    const ask = [['h', 'cantTell', 'STYLESHEET_IMPORTANT']];
+    for (const [sheet, want] of [
+      ['<style>h1{letter-spacing:0 !important}</style>', ask],
+      ['<style>@media screen{h1{letter-spacing:0 !important}}</style>', ask],
+      ['<style>@media (min-width:100px){h1{letter-spacing:0 !important}}</style>', ask],
+      ['<style>@supports (display:grid){h1{letter-spacing:0 !important}}</style>', ask],
+      [
+        '<style>h1{letter-spacing:-0.03em} @media print{h1{letter-spacing:0 !important}}</style>',
+        []
+      ],
+      ['<style>@media (max-width:100px){h1{letter-spacing:0 !important}}</style>', []],
+      ['<style>@supports (display:no-such-value){h1{letter-spacing:0 !important}}</style>', []],
+      ['<style>@media screen{@media print{h1{letter-spacing:0 !important}}}</style>', []],
+      ['<style media="print">h1{letter-spacing:0 !important}</style>', []],
+      ['<style>@starting-style{h1{letter-spacing:0 !important}}</style>', []]
+    ]) {
+      assert.deepEqual(findings(await scan(forced(sheet))), want, sheet);
+    }
+  });
+
+  await t.test('a nested or scoped forced value reaches only the text it styles', async () => {
+    const body =
+      '<h1 id="out">Outside</h1><div class="card"><h1 id="in">Inside</h1>' +
+      '<div class="stop"><h1 id="past">Past the limit</h1></div></div>';
+    const html = (css) => page(css, body);
+    for (const css of [
+      '.card { & h1 { letter-spacing:0 !important } }',
+      '.card { h1 { letter-spacing:0 !important } }',
+      '@scope (.card) to (.stop) { h1 { letter-spacing:0 !important } }',
+      '.card > h1 { @media screen { letter-spacing:0 !important } }'
+    ]) {
+      assert.deepEqual(
+        findings(await scan(html(css))),
+        [['in', 'cantTell', 'STYLESHEET_IMPORTANT']],
+        css
+      );
+    }
+    // The message names the selector as the author wrote it.
+    const result = await scan(html('.card { & h1 { letter-spacing:0 !important } }'));
+    const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
+    assert.equal(occ.data.details.selector, '& h1');
+  });
+
+  await t.test("an @import's forced value is asked about", async () => {
+    const sheet = 'data:text/css,' + encodeURIComponent('h1{letter-spacing:0 !important}');
+    assert.deepEqual(
+      findings(
+        await scan(
+          page('', '<h1 id="h">Heading</h1>').replace(
+            '</head>',
+            `<style>@import url("${sheet}");</style></head>`
+          )
+        )
+      ),
+      [['h', 'cantTell', 'STYLESHEET_IMPORTANT']]
+    );
+  });
+
   await t.test('a line pushed out of a clipping box fails, on either axis', async () => {
     for (const css of [
       // Wraps to a second line that sits wholly below the box.

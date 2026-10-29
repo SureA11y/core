@@ -605,6 +605,17 @@ origin's, whose `cssRules` throws), the rules of the text `engineOptions.styleSh
 its URL, parsed apart from the page. `null` when neither can be had, which a rule reads as
 "could not be checked". The sheet's own `media` list can still be read and still applies.
 
+### `cssConditionApplies(ruleOrSheet)` → `boolean`
+
+Whether a style sheet or an `@import`, `@media` or `@supports` rule applies to the page as it is
+drawn now: its media list matches (`window.matchMedia`) and its `@supports` condition holds
+(`CSS.supports`). A disabled sheet applies to nothing, and an `@starting-style` block applies only
+to the first frame of a transition, so neither does. Without `matchMedia` (jsdom), only a media
+list that names nothing but media other than the screen (`print`, `speech`) is known not to
+apply. Anything else, `@container` among them, is taken to apply. A rule that reads declarations
+from style sheets rather than from computed styles skips the sheets and rules for which this is
+`false`: an `@media print` rule changes nothing on the screen the scan checks.
+
 ### `getStyleSheets()` → `Array<{ sheet, root }>`
 
 Every style sheet that styles the page, with the root it applies in: the document's, linked
