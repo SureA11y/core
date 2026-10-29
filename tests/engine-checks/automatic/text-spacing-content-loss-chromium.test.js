@@ -159,6 +159,39 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     assert.equal(occ.data.details.selector, '& h1');
   });
 
+  await t.test('a forced value reaches only the elements of its own root', async () => {
+    // A document rule doesn't style a shadow root's elements; a shadow
+    // root's <style> or adopted sheet, and the document's adopted sheet, do.
+    const setup = (p) =>
+      p.evaluate(() => {
+        const one = document.getElementById('one').attachShadow({ mode: 'open' });
+        one.innerHTML =
+          '<h2 id="shadowH2">Shadow h2</h2><h3 id="shadowH3">Shadow h3</h3>' +
+          '<style>h3{letter-spacing:0 !important}</style>';
+        const two = document.getElementById('two').attachShadow({ mode: 'open' });
+        const sheet = new CSSStyleSheet();
+        sheet.replaceSync('h4{letter-spacing:0 !important}');
+        two.adoptedStyleSheets = [sheet];
+        two.innerHTML = '<h4 id="shadowH4">Adopted in a shadow root</h4>';
+        const doc = new CSSStyleSheet();
+        doc.replaceSync('#adopted{letter-spacing:0 !important}');
+        document.adoptedStyleSheets = [doc];
+      });
+    const result = await scan(
+      page(
+        'h2{letter-spacing:0 !important}',
+        '<div id="one"></div><div id="two"></div><h5 id="adopted">Adopted</h5>'
+      ),
+      undefined,
+      {},
+      setup
+    );
+    const ids = (result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences || [])
+      .map((o) => o.selector || '')
+      .sort();
+    assert.deepEqual(ids, ['#adopted', '#shadowH3', '#shadowH4']);
+  });
+
   await t.test("an @import's forced value is asked about", async () => {
     const sheet = 'data:text/css,' + encodeURIComponent('h1{letter-spacing:0 !important}');
     assert.deepEqual(
