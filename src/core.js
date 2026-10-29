@@ -78455,9 +78455,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // a box nobody can see -- clipped away, 1x1 px or fully transparent, as a
   // screen-reader-only span is -- is not part of it (helpers.isVisuallyHidden), and
   // neither is what a <select> or <textarea> holds.
+  // Returns { text, asShown }. asShown is the same text read as it shows on
+  // screen: a break between two boxes that sit on one line with nothing
+  // drawn between them (two touching flex items, "sure" and "a11y") joins
+  // their words, as a person reads them. It is '' when no break was joined.
   function collectVisibleTextUnder(container) {
-    if (!container) return '';
-    if (!isDomVisible(container)) return '';
+    if (!container) return { text: '', asShown: '' };
+    if (!isDomVisible(container)) return { text: '', asShown: '' };
 
     const boundaryOf = (n) =>
       typeof helpers.getTextBoundaryKind === 'function' ? helpers.getTextBoundaryKind(n) : 'inline';
@@ -78483,7 +78487,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             }
             const value = String(dom.nodeValue(n) || '');
             if (ok === 'shown' || (ok === 'ariaHidden' && !isHiddenIconText(p, value, container))) {
-              parts.push(value);
+              parts.push({ node: n, value });
             }
             continue;
           }
@@ -78493,16 +78497,109 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           const childTag = String(dom.tagName(n) || '').toLowerCase();
           if (childTag === 'select' || childTag === 'textarea') continue;
           const apart = boundaryOf(n) === 'block';
-          if (apart) parts.push(' ');
+          if (apart) parts.push(BOX_BREAK);
           walk(n);
-          if (apart) parts.push(' ');
+          if (apart) parts.push(BOX_BREAK);
         } catch {
           // no-throws
         }
       }
     };
     if (!hidden(container)) walk(container);
-    return parts.join('').replace(/\s+/g, ' ').trim();
+    const tidy = (v) => v.replace(/\s+/g, ' ').trim();
+    const text = tidy(parts.map((p) => (p === BOX_BREAK ? ' ' : p.value)).join(''));
+    if (!parts.includes(BOX_BREAK) || !hasLayout(container)) return { text, asShown: '' };
+    // Between two words a break separates, the whitespace is replaced by
+    // what the screen shows there: nothing, or a space.
+    let out = '';
+    let held = '';
+    let last = null;
+    let broken = false;
+    let anyJoined = false;
+    for (const p of parts) {
+      if (p === BOX_BREAK) {
+        broken = true;
+        continue;
+      }
+      if (!p.value.trim()) {
+        held += p.value;
+        continue;
+      }
+      let value = p.value;
+      if (broken && last && drawnTouching(last, p.node)) {
+        out = out.replace(/\s+$/, '');
+        value = value.replace(/^\s+/, '');
+        anyJoined = true;
+      } else {
+        out += broken ? ' ' : held;
+      }
+      out += value;
+      held = '';
+      broken = false;
+      last = p.node;
+    }
+    return { text, asShown: anyJoined ? tidy(out) : '' };
+  }
+
+  const BOX_BREAK = {};
+
+  // Whether the page is laid out (a browser), not jsdom's zero-size boxes.
+  let layoutKnown = null;
+  function hasLayout(node) {
+    if (layoutKnown === null) {
+      try {
+        const root = dom.documentElement(dom.ownerDocument(node));
+        const r = root && dom.getBoundingClientRect(root);
+        layoutKnown = !!r && (r.width > 0 || r.height > 0);
+      } catch {
+        layoutKnown = false;
+      }
+    }
+    return layoutKnown;
+  }
+
+  // The box drawn for one character of a text node: the first one that
+  // isn't whitespace, or the last one with fromEnd.
+  function charRect(textNode, fromEnd) {
+    const value = String(dom.nodeValue(textNode) || '');
+    let i = fromEnd ? value.length - 1 : 0;
+    while (i >= 0 && i < value.length && /\s/.test(value[i])) i += fromEnd ? -1 : 1;
+    if (i < 0 || i >= value.length) return null;
+    // A surrogate pair is measured whole.
+    let end = i + 1;
+    if (fromEnd && i > 0 && /[\uDC00-\uDFFF]/.test(value[i])) i -= 1;
+    else if (!fromEnd && /[\uD800-\uDBFF]/.test(value[i])) end += 1;
+    let range = null;
+    try {
+      range = dom.createRange(dom.ownerDocument(textNode));
+      range.setStart(textNode, i);
+      range.setEnd(textNode, Math.min(end, value.length));
+      const r = dom.getBoundingClientRect(range);
+      return r && r.width > 0 && r.height > 0 ? r : null;
+    } catch {
+      return null;
+    } finally {
+      try {
+        if (range) range.detach();
+      } catch {}
+    }
+  }
+
+  // Whether the last character of one piece of text and the first of the
+  // next are drawn side by side on one line with no space between them: no
+  // gap, margin or padding wider than a tenth of the font size (a space is
+  // about a quarter). Either order counts, for right-to-left text.
+  function drawnTouching(before, after) {
+    const a = charRect(before, true);
+    const b = charRect(after, false);
+    if (!a || !b) return false;
+    const overlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+    if (overlap < Math.min(a.height, b.height) / 2) return false;
+    const parent = dom.parentElement(after);
+    const cs = parent ? computedStyleOf(parent) : null;
+    const fontSize = parseFloat(cs && cs.fontSize) || 16;
+    const gap = Math.max(b.left - a.right, a.left - b.right);
+    return Math.abs(gap) <= Math.max(1, fontSize * 0.1);
   }
 
   // Real <label> elements associated with a native form control -- the
@@ -78524,16 +78621,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function getVisibleTextLabelInfo(el) {
-    // Returns { text, source, sourceElements } where source helps reporting
+    // Returns { text, asShown, source, sourceElements }, where asShown is
+    // as collectVisibleTextUnder gives it, source helps reporting
     // and sourceElements (the actual DOM nodes the visible text came from)
     // lets the icon-font check below look at the right element's own style.
     // Source policy (deterministic):
     // 1) <label> association for form controls
     // 2) visible text inside the element
     // 3) visible text from aria-labelledby referenced elements
-    let text;
-    let source = 'none';
-
     const tn = el && dom.tagName(el) ? String(dom.tagName(el)).toLowerCase() : '';
 
     // 1) Label association (native form controls)
@@ -78545,20 +78640,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const l of labels) {
         if (!l || !isDomVisible(l)) continue;
         const t = collectVisibleTextUnder(l);
-        if (t) {
+        if (t.text) {
           labelParts.push(t);
           contributing.push(l);
         }
       }
-      const joined = labelParts.join(' ').replace(/\s+/g, ' ').trim();
-      if (joined) return { text: joined, source: 'label', sourceElements: contributing };
+      if (labelParts.length)
+        return { ...joinTexts(labelParts), source: 'label', sourceElements: contributing };
     }
 
     // 2) Text inside the control itself. Not for <select> or <textarea>:
     //    what shows inside them is a value (the chosen option, what the
     //    user typed), not a label, and neither takes its name from content.
-    text = tn === 'select' || tn === 'textarea' ? '' : collectVisibleTextUnder(el);
-    if (text) return { text, source: 'self', sourceElements: [el] };
+    const own =
+      tn === 'select' || tn === 'textarea'
+        ? { text: '', asShown: '' }
+        : collectVisibleTextUnder(el);
+    if (own.text) return { ...own, source: 'self', sourceElements: [el] };
 
     // 2b) A button-type <input> shows its value as its label. Without a
     //     value it shows the browser's own default ("Submit", in the
@@ -78585,20 +78683,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           if (!ref || !dom.tagName(ref)) continue;
           if (!isDomVisible(ref)) continue;
           const t = collectVisibleTextUnder(ref);
-          if (t) {
+          if (t.text) {
             parts.push(t);
             contributing.push(ref);
           }
         }
-        const joined = parts.join(' ').replace(/\s+/g, ' ').trim();
-        if (joined)
-          return { text: joined, source: 'aria-labelledby', sourceElements: contributing };
+        if (parts.length)
+          return {
+            ...joinTexts(parts),
+            source: 'aria-labelledby',
+            sourceElements: contributing
+          };
       }
     } catch {
       // ignore
     }
 
-    return { text: '', source, sourceElements: [] };
+    return { text: '', asShown: '', source: 'none', sourceElements: [] };
+  }
+
+  // Several labels' texts joined in order, in both readings.
+  function joinTexts(texts) {
+    const tidy = (v) => v.join(' ').replace(/\s+/g, ' ').trim();
+    const asShown = texts.some((t) => t.asShown);
+    return {
+      text: tidy(texts.map((t) => t.text)),
+      asShown: asShown ? tidy(texts.map((t) => t.asShown || t.text)) : ''
+    };
   }
 
   // Curated real-world icon-font family names. These fonts remap ordinary
@@ -78806,7 +78917,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // was counted as contained. One the name doesn't hold is asked about as a
     // symbol standing for an icon, as a single "X" is.
     const symbolsOnly = labelTokens.length === 0 && accNorm.indexOf(visibleNorm) === -1;
-    const contains = !symbolsOnly && containsWordRun(labelTokens, nameTokens, null);
+    // The label as the screen shows it counts too: touching flex items
+    // "sure" and "a11y" read "surea11y" to a person, though the box break
+    // splits the visible text into two words.
+    const asShown = labelInfo.asShown ? String(labelInfo.asShown) : '';
+    const contains =
+      !symbolsOnly &&
+      (containsWordRun(labelTokens, nameTokens, null) ||
+        (!!asShown && containsWordRun(tokenize(asShown, false), nameTokens, null)));
 
     // An abbreviation, a word hyphenated differently, or visible text that
     // may not be literal text at all (an icon-font glyph, a single symbolic

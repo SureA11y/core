@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+
+- `label-in-name` no longer fails a label whose words are split only by a box break that shows no space on screen. The visible label put a word break between flex or grid items, floats and other block-level boxes, as `innerText` does, so `<a aria-label="surea11y core">` drawn as "sure" and "a11y" in two touching flex items read "sure a11y core" and failed. In a browser, the label is now also read as it shows: two boxes side by side on one line, with no gap, margin or padding wider than a tenth of the font size between their text, join their words, and a name that holds either reading passes. A wider gap, boxes on separate lines and a name that leaves the label out still fail. jsdom, which has no layout, reads the label as before. The findings it no longer fails were wrong, so a baseline entry or Code Scanning alert for one closes as a fixed bug does.
+
 ## [1.14.1] - 2026-10-27
 
 ### Fixed
