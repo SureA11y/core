@@ -460,10 +460,17 @@ function runInPage(ctx) {
     }
   }
 
+  function conditionApplies(x) {
+    return typeof helpers.cssConditionApplies === 'function'
+      ? helpers.cssConditionApplies(x)
+      : true;
+  }
+
   function walkRules(rules, depth, parentSelector) {
     if (!rules || depth > MAX_DEPTH) return;
     for (const cssRule of rules) {
-      if (!cssRule) continue;
+      // @media print and the like style nothing on the screen scanned.
+      if (!cssRule || !conditionApplies(cssRule)) continue;
       const nested = readRules(cssRule);
       if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
         // CSS nesting: `a { &:focus { outline: none } }`.
@@ -489,6 +496,7 @@ function runInPage(ctx) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
+      if (!conditionApplies(sheet)) continue;
       // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
       // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
       // not inspectable.

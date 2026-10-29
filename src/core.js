@@ -5486,6 +5486,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         Array.from(dom.get(root, 'adoptedStyleSheets') || [])
       );
       for (const sheet of sheets) {
+        // <style media="print"> or <link media="print">: not the screen's.
+        if (sheet && sheet.disabled === true) continue;
+        if (!mediaApplies(sheet)) continue;
         let rules;
         try {
           rules = sheet.cssRules;
@@ -13556,6 +13559,47 @@ const createDomHelpers = (function createDomHelpers(opts) {
     });
   }
 
+  // Whether a style sheet or an @import, @media or @supports rule applies to
+  // the page as it is drawn now: its media list matches (window.matchMedia)
+  // and its @supports condition holds (CSS.supports). A disabled sheet
+  // applies to nothing, and an @starting-style block applies only to the
+  // first frame of a transition, so neither does. Without matchMedia
+  // (jsdom), only a media list that names nothing but media other than the
+  // screen ("print", "speech") is known not to apply. Any other rule,
+  // @container among them (it depends on the element), is taken to apply.
+  const __OTHER_MEDIA = /^(print|speech|aural|braille|embossed|handheld|projection|tty|tv)$/;
+  function cssConditionApplies(ruleOrSheet) {
+    if (!ruleOrSheet) return true;
+    const view = window || (document && dom.defaultView(document));
+    try {
+      if (ruleOrSheet.disabled === true) return false;
+      if (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSStartingStyleRule')
+        return false;
+      const media = ruleOrSheet.media;
+      const text = media ? String(media.mediaText || '').trim() : '';
+      if (text) {
+        if (view && typeof view.matchMedia === 'function') {
+          if (!dom.get(view.matchMedia(text), 'matches')) return false;
+        } else {
+          const queries = text.split(',').map((q) => q.trim().toLowerCase());
+          if (queries.every((q) => __OTHER_MEDIA.test(q.replace(/^only\s+/, '').split(/\s/)[0])))
+            return false;
+        }
+      }
+      const isSupports =
+        ruleOrSheet.type === 12 ||
+        (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
+      const css = view && view.CSS;
+      if (isSupports && css && typeof css.supports === 'function') {
+        const condition = String(ruleOrSheet.conditionText || '').trim();
+        if (condition && !css.supports(condition)) return false;
+      }
+    } catch {
+      // unreadable: taken to apply
+    }
+    return true;
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -19859,6 +19903,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getRefElements,
     getStyleSheets,
     cssRulesOf,
+    cssConditionApplies,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -67981,10 +68026,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  function conditionApplies(x) {
+    return typeof helpers.cssConditionApplies === 'function'
+      ? helpers.cssConditionApplies(x)
+      : true;
+  }
+
   function walkRules(rules, depth, parentSelector) {
     if (!rules || depth > MAX_DEPTH) return;
     for (const cssRule of rules) {
-      if (!cssRule) continue;
+      // @media print and the like style nothing on the screen scanned.
+      if (!cssRule || !conditionApplies(cssRule)) continue;
       const nested = readRules(cssRule);
       if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
         // CSS nesting: `a { &:focus { outline: none } }`.
@@ -68010,6 +68062,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   try {
     const sheets = dom.styleSheets(document) || [];
     for (const sheet of sheets) {
+      if (!conditionApplies(sheet)) continue;
       // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
       // given (helpers.cssRulesOf), as css-hidden-focus reads it; otherwise
       // not inspectable.
@@ -68480,10 +68533,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         )
         .join(', ');
     }
+    const conditionApplies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
     function walk(rules, depth, parent) {
       if (!rules || depth > MAX_RULE_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        // @media print and the like style nothing on the screen scanned.
+        if (!cssRule || !conditionApplies(cssRule)) continue;
         let nested;
         try {
           nested = cssRule.cssRules || null;
@@ -68506,6 +68562,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getStyleSheets()
         : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
+        if (!conditionApplies(sheet)) continue;
         sheetRoot = root;
         // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
         // given (helpers.cssRulesOf); otherwise not inspectable.
@@ -80184,6 +80241,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
   }
 
+  // A sheet or a group rule whose media or @supports condition doesn't hold
+  // now (@media print on a screen scan) styles nothing the scan sees.
+  function cssConditionApplies(x) {
+    return typeof helpers.cssConditionApplies === 'function'
+      ? helpers.cssConditionApplies(x)
+      : true;
+  }
+
   function resolveUnderlineFromCssom(el) {
     const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
     if (!doc || typeof dom.get(el, 'matches') !== 'function')
@@ -80223,7 +80288,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -80240,6 +80305,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     try {
       for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -80427,7 +80493,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     function walk(rules, depth) {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
         if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
           consider(cssRule);
           continue;
@@ -80443,6 +80509,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     try {
       for (const sheet of (doc && dom.styleSheets(doc)) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -81192,8 +81259,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     } catch {
       out.readable = false;
     }
-    const consider = (cssRule) => {
-      for (const part of splitSelectorList(cssRule.selectorText)) {
+    const consider = (cssRule, selectorText) => {
+      for (const part of splitSelectorList(selectorText)) {
         if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
         const hover = /:hover\b/i.test(part);
         const focus = /:focus(-visible|-within)?\b/i.test(part);
@@ -81215,22 +81282,43 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if (focus) out.onFocus = true;
       }
     };
-    const walk = (rules, depth) => {
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it, so
+    // `nav a { &:hover {} }` reaches only the links in a nav.
+    const nestedSelector = (selector, parent) =>
+      !parent
+        ? selector
+        : splitSelectorList(selector)
+            .map((part) =>
+              part.indexOf('&') !== -1
+                ? part.split('&').join(':is(' + parent + ')')
+                : ':is(' + parent + ') ' + part.trim()
+            )
+            .join(', ');
+    const walk = (rules, depth, parent) => {
       if (!rules || depth > MAX_NESTED_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
-        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) consider(cssRule);
+        if (!cssRule || !cssConditionApplies(cssRule)) continue;
+        let selector = parent;
+        if (cssRule.type === CSS_STYLE_RULE && cssRule.selectorText) {
+          selector = nestedSelector(String(cssRule.selectorText), parent);
+          consider(cssRule, selector);
+        } else if (parent && cssRule.style && !cssRule.selectorText) {
+          // Declarations straight inside an at-rule within a style rule.
+          consider(cssRule, parent);
+        }
         let nested;
         try {
           nested = cssRule.cssRules || null;
         } catch {
           nested = null;
         }
-        if (nested && nested.length) walk(nested, depth + 1);
+        if (nested && nested.length) walk(nested, depth + 1, selector);
       }
     };
     try {
       for (const sheet of dom.styleSheets(doc) || []) {
+        if (!cssConditionApplies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
@@ -81238,7 +81326,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           out.readable = false;
           continue;
         }
-        if (rules) walk(rules, 0);
+        if (rules) walk(rules, 0, '');
       }
     } catch {
       out.readable = false;
@@ -94448,6 +94536,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SPACING_PROPS = Object.keys(MIN_RATIO);
   const MAX_TEXT_NODES = 3000;
   const CSS_STYLE_RULE = 1;
+  const CSS_IMPORT_RULE = 3;
   const LAYER = 'surea11y-text-spacing';
 
   function styleOf(el, pseudo) {
@@ -94529,8 +94618,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const importantFindings = [];
   (function readSheets() {
     const seen = new Set();
-    function check(cssRule) {
-      const style = cssRule.style;
+    // `style` is a rule's declarations, `selector` its selector resolved
+    // against the rules it is nested in, `scopes` the @scope blocks around
+    // it, whose subtrees alone it reaches, and `shown` the selector as the
+    // author wrote it, for the message.
+    function check(style, selector, scopes, shown) {
       for (const prop of SPACING_PROPS) {
         let value;
         let priority;
@@ -94546,13 +94638,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         let targets;
         try {
           targets = helpers.queryAllSmart
-            ? helpers.queryAllSmart(cssRule.selectorText, { inert: true })
-            : helpers.queryAll(cssRule.selectorText);
+            ? helpers.queryAllSmart(selector, { inert: true })
+            : helpers.queryAll(selector);
         } catch {
           targets = [];
         }
         for (const el of targets) {
-          if (!el || seen.has(el) || !textOf(el)) continue;
+          if (!el || seen.has(el) || !textOf(el) || !inScopes(el, scopes)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
           const declared = declaredRatio(prop, value);
@@ -94566,33 +94658,109 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             prop,
             value,
             ratio,
-            selector: String(cssRule.selectorText)
+            selector: String(shown)
           });
           break;
         }
       }
     }
-    function walk(rules, depth) {
+    // A sheet or a group rule whose media or @supports condition doesn't
+    // hold now (@media print on a screen scan) blocks no user's spacing.
+    const applies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
+    // The selector list's own commas, not those inside :is() and the like.
+    function splitSelectorList(text) {
+      const parts = [];
+      let depth = 0;
+      let current = '';
+      for (const ch of String(text || '')) {
+        if (ch === '(') depth += 1;
+        if (ch === ')') depth = Math.max(0, depth - 1);
+        if (depth === 0 && ch === ',') {
+          parts.push(current);
+          current = '';
+          continue;
+        }
+        current += ch;
+      }
+      parts.push(current);
+      return parts.map((x) => x.trim()).filter(Boolean);
+    }
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it
+    // (CSS Nesting), so `.card { p {} }` reaches only the p in a .card.
+    function nestedSelector(selector, parent) {
+      if (!parent) return selector;
+      return splitSelectorList(selector)
+        .map((part) =>
+          part.indexOf('&') !== -1
+            ? part.split('&').join(':is(' + parent + ')')
+            : ':is(' + parent + ') ' + part
+        )
+        .join(', ');
+    }
+    // Whether el is inside every @scope around the rule: at or below an
+    // element its start matches, and not at or below one its end matches
+    // there. A scope with no start is rooted at its <style>'s parent.
+    function inScopes(el, scopes) {
+      for (const scope of scopes) {
+        try {
+          let root = null;
+          if (scope.start) root = dom.closest(el, scope.start);
+          else if (scope.owner && dom.contains(scope.owner, el)) root = scope.owner;
+          if (!root) return false;
+          const limit = scope.end ? dom.closest(el, scope.end) : null;
+          if (limit && limit !== root && dom.contains(root, limit)) return false;
+        } catch {
+          // A scope that can't be read is taken to hold el.
+        }
+      }
+      return true;
+    }
+    function scopeOf(r) {
+      let owner = null;
+      try {
+        const node = r.parentStyleSheet && r.parentStyleSheet.ownerNode;
+        owner = node ? dom.parentElement(node) : null;
+      } catch {}
+      return { start: r.start || '', end: r.end || '', owner };
+    }
+    function walk(rules, depth, parent, scopes, parentShown) {
       if (!rules || depth > 8) return;
       for (const r of rules) {
-        if (!r) continue;
-        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) check(r);
+        if (!r || !applies(r)) continue;
+        let selector = parent;
+        let shown = parentShown;
+        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) {
+          selector = nestedSelector(String(r.selectorText), parent);
+          shown = r.selectorText;
+          check(r.style, selector, scopes, r.selectorText);
+        } else if (parent && r.style && !r.selectorText) {
+          // Declarations straight inside an at-rule within a style rule
+          // (`h1 { @media screen { letter-spacing: 0 !important } }`) belong
+          // to that rule's selector.
+          check(r.style, parent, scopes, parentShown);
+        }
+        const isScope = !!(r.constructor && r.constructor.name === 'CSSScopeRule');
         let nested = null;
         try {
-          nested = r.cssRules || null;
+          // An @import's sheet holds rules of its own.
+          nested = r.type === CSS_IMPORT_RULE ? r.styleSheet && r.styleSheet.cssRules : r.cssRules;
         } catch {}
-        if (nested) walk(nested, depth + 1);
+        if (nested)
+          walk(nested, depth + 1, selector, isScope ? scopes.concat(scopeOf(r)) : scopes, shown);
       }
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        if (!applies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet.cssRules;
         } catch {
           continue;
         }
-        walk(rules, 0);
+        walk(rules, 0, '', [], '');
       }
     } catch {}
   })();
@@ -109768,6 +109936,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         Array.from(dom.get(root, 'adoptedStyleSheets') || [])
       );
       for (const sheet of sheets) {
+        // <style media="print"> or <link media="print">: not the screen's.
+        if (sheet && sheet.disabled === true) continue;
+        if (!mediaApplies(sheet)) continue;
         let rules;
         try {
           rules = sheet.cssRules;
@@ -117838,6 +118009,47 @@ const createDomHelpers = (function createDomHelpers(opts) {
     });
   }
 
+  // Whether a style sheet or an @import, @media or @supports rule applies to
+  // the page as it is drawn now: its media list matches (window.matchMedia)
+  // and its @supports condition holds (CSS.supports). A disabled sheet
+  // applies to nothing, and an @starting-style block applies only to the
+  // first frame of a transition, so neither does. Without matchMedia
+  // (jsdom), only a media list that names nothing but media other than the
+  // screen ("print", "speech") is known not to apply. Any other rule,
+  // @container among them (it depends on the element), is taken to apply.
+  const __OTHER_MEDIA = /^(print|speech|aural|braille|embossed|handheld|projection|tty|tv)$/;
+  function cssConditionApplies(ruleOrSheet) {
+    if (!ruleOrSheet) return true;
+    const view = window || (document && dom.defaultView(document));
+    try {
+      if (ruleOrSheet.disabled === true) return false;
+      if (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSStartingStyleRule')
+        return false;
+      const media = ruleOrSheet.media;
+      const text = media ? String(media.mediaText || '').trim() : '';
+      if (text) {
+        if (view && typeof view.matchMedia === 'function') {
+          if (!dom.get(view.matchMedia(text), 'matches')) return false;
+        } else {
+          const queries = text.split(',').map((q) => q.trim().toLowerCase());
+          if (queries.every((q) => __OTHER_MEDIA.test(q.replace(/^only\s+/, '').split(/\s/)[0])))
+            return false;
+        }
+      }
+      const isSupports =
+        ruleOrSheet.type === 12 ||
+        (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
+      const css = view && view.CSS;
+      if (isSupports && css && typeof css.supports === 'function') {
+        const condition = String(ruleOrSheet.conditionText || '').trim();
+        if (condition && !css.supports(condition)) return false;
+      }
+    } catch {
+      // unreadable: taken to apply
+    }
+    return true;
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -124141,6 +124353,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getRefElements,
     getStyleSheets,
     cssRulesOf,
+    cssConditionApplies,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,

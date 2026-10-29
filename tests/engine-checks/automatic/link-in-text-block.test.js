@@ -298,6 +298,23 @@ test(`${RULE_ID}: a :hover underline does not count as the resting-state cue`, (
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
 });
 
+test(`${RULE_ID}: a print-only underline does not count under a DOM emulator`, () => {
+  // The scan checks the screen: an underline only @media print or a print
+  // style sheet draws is not a cue anyone reading the page sees.
+  for (const sheets of [
+    '<style>a { color: #2a2a2a; text-decoration: none; } @media print { a { text-decoration: underline; } }</style>',
+    '<style>a { color: #2a2a2a; text-decoration: none; }</style><style media="print">a { text-decoration: underline; }</style>'
+  ]) {
+    const html = `<!doctype html><html><head><style>
+      body { background: #ffffff; }
+      p { color: #222222; }
+    </style>${sheets}</head><body><p>Read <a href="#">this link</a> for more.</p></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1
+    });
+  }
+});
+
 test(`${RULE_ID}: inline style outranks a stylesheet declaration`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }

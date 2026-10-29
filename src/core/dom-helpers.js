@@ -1093,6 +1093,47 @@ function createDomHelpers(opts) {
     });
   }
 
+  // Whether a style sheet or an @import, @media or @supports rule applies to
+  // the page as it is drawn now: its media list matches (window.matchMedia)
+  // and its @supports condition holds (CSS.supports). A disabled sheet
+  // applies to nothing, and an @starting-style block applies only to the
+  // first frame of a transition, so neither does. Without matchMedia
+  // (jsdom), only a media list that names nothing but media other than the
+  // screen ("print", "speech") is known not to apply. Any other rule,
+  // @container among them (it depends on the element), is taken to apply.
+  const __OTHER_MEDIA = /^(print|speech|aural|braille|embossed|handheld|projection|tty|tv)$/;
+  function cssConditionApplies(ruleOrSheet) {
+    if (!ruleOrSheet) return true;
+    const view = window || (document && dom.defaultView(document));
+    try {
+      if (ruleOrSheet.disabled === true) return false;
+      if (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSStartingStyleRule')
+        return false;
+      const media = ruleOrSheet.media;
+      const text = media ? String(media.mediaText || '').trim() : '';
+      if (text) {
+        if (view && typeof view.matchMedia === 'function') {
+          if (!dom.get(view.matchMedia(text), 'matches')) return false;
+        } else {
+          const queries = text.split(',').map((q) => q.trim().toLowerCase());
+          if (queries.every((q) => __OTHER_MEDIA.test(q.replace(/^only\s+/, '').split(/\s/)[0])))
+            return false;
+        }
+      }
+      const isSupports =
+        ruleOrSheet.type === 12 ||
+        (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
+      const css = view && view.CSS;
+      if (isSupports && css && typeof css.supports === 'function') {
+        const condition = String(ruleOrSheet.conditionText || '').trim();
+        if (condition && !css.supports(condition)) return false;
+      }
+    } catch {
+      // unreadable: taken to apply
+    }
+    return true;
+  }
+
   function cssRulesOf(sheet) {
     if (!sheet) return null;
     try {
@@ -7396,6 +7437,7 @@ function createDomHelpers(opts) {
     getRefElements,
     getStyleSheets,
     cssRulesOf,
+    cssConditionApplies,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,

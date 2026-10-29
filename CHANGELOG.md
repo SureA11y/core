@@ -7,6 +7,15 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Fixed
 
 - `label-in-name` no longer fails a label whose words are split only by a box break that shows no space on screen. The visible label put a word break between flex or grid items, floats and other block-level boxes, as `innerText` does, so `<a aria-label="surea11y core">` drawn as "sure" and "a11y" in two touching flex items read "sure a11y core" and failed. In a browser, the label is now also read as it shows: two boxes side by side on one line, with no gap, margin or padding wider than a tenth of the font size between their text, join their words, and a name that holds either reading passes. A wider gap, boxes on separate lines and a name that leaves the label out still fail. jsdom, which has no layout, reads the label as before. The findings it no longer fails were wrong, so a baseline entry or Code Scanning alert for one closes as a fixed bug does.
+- Rules that read declarations from style sheets, rather than from computed styles, no longer use CSS that doesn't apply to the screen being scanned, and no longer apply a CSS rule to elements it doesn't reach:
+  - `text-spacing-content-loss` asked about an `!important` spacing rule inside `@media print`, a media query that doesn't match the viewport, an `@supports` block the browser doesn't support or `@starting-style`, and in a `<style media="print">` or `<link media="print">` sheet. These are now skipped. A rule at top level, in `@media screen` or in a matching media query is still asked about.
+  - `text-spacing-content-loss` matched a nested rule's selector on its own, so `.card { & p { letter-spacing: 0 !important } }` and `.card { p { … } }` were reported on every `p` on the page, and an `@scope (.card)` rule on elements outside `.card`. A nested selector is now resolved against its parent rule's, and an `@scope` rule reaches only its scope, up to its `to` limit. The message still names the selector as the author wrote it. The rule also now reads two places it skipped: declarations placed directly inside an at-rule within a style rule (`h1 { @media screen { … } }`), and the rules of an `@import`ed sheet.
+  - `link-in-text-block` counted a nested `&:hover` or `&:focus` rule as a cue for every link, whatever its parent selector, so a link with no hover or focus cue could lean pass. It also counted hover and focus cues that only print media get, and under a DOM emulator (jsdom) took a print-only underline as the link's own.
+  - `css-focus-indicator-suppressed-manual` and `css-hidden-focus-manual` no longer ask about focus styles that only print media or an unsupported `@supports` block get. Under a DOM emulator, the contrast rules no longer read text colors from a print-only sheet.
+
+### Added
+
+- Rule helper `cssConditionApplies(ruleOrSheet)`: whether a style sheet or an `@import`, `@media`, `@supports` or `@starting-style` rule applies to the page as it is drawn now (`docs/RULE_HELPERS.md`).
 
 ## [1.14.1] - 2026-10-27
 

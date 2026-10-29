@@ -2924,6 +2924,9 @@ function createContrastHelpers(opts, shared) {
         Array.from(dom.get(root, 'adoptedStyleSheets') || [])
       );
       for (const sheet of sheets) {
+        // <style media="print"> or <link media="print">: not the screen's.
+        if (sheet && sheet.disabled === true) continue;
+        if (!mediaApplies(sheet)) continue;
         let rules;
         try {
           rules = sheet.cssRules;

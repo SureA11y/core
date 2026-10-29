@@ -332,6 +332,7 @@ export interface RuleHelpers {
   getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;
   cssRulesOf: RuleHelper;
+  cssConditionApplies: RuleHelper;
   getStyleSheets: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;

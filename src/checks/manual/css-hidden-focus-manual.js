@@ -422,10 +422,13 @@ function runInPage(ctx) {
         )
         .join(', ');
     }
+    const conditionApplies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
     function walk(rules, depth, parent) {
       if (!rules || depth > MAX_RULE_DEPTH) return;
       for (const cssRule of rules) {
-        if (!cssRule) continue;
+        // @media print and the like style nothing on the screen scanned.
+        if (!cssRule || !conditionApplies(cssRule)) continue;
         let nested;
         try {
           nested = cssRule.cssRules || null;
@@ -448,6 +451,7 @@ function runInPage(ctx) {
         ? helpers.getStyleSheets()
         : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
+        if (!conditionApplies(sheet)) continue;
         sheetRoot = root;
         // Another origin's sheet: its text from engineOptions.styleSheetTexts, if
         // given (helpers.cssRulesOf); otherwise not inspectable.

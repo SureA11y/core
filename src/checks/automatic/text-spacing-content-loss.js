@@ -320,6 +320,7 @@ function runInPage(ctx) {
   const SPACING_PROPS = Object.keys(MIN_RATIO);
   const MAX_TEXT_NODES = 3000;
   const CSS_STYLE_RULE = 1;
+  const CSS_IMPORT_RULE = 3;
   const LAYER = 'surea11y-text-spacing';
 
   function styleOf(el, pseudo) {
@@ -401,8 +402,11 @@ function runInPage(ctx) {
   const importantFindings = [];
   (function readSheets() {
     const seen = new Set();
-    function check(cssRule) {
-      const style = cssRule.style;
+    // `style` is a rule's declarations, `selector` its selector resolved
+    // against the rules it is nested in, `scopes` the @scope blocks around
+    // it, whose subtrees alone it reaches, and `shown` the selector as the
+    // author wrote it, for the message.
+    function check(style, selector, scopes, shown) {
       for (const prop of SPACING_PROPS) {
         let value;
         let priority;
@@ -418,13 +422,13 @@ function runInPage(ctx) {
         let targets;
         try {
           targets = helpers.queryAllSmart
-            ? helpers.queryAllSmart(cssRule.selectorText, { inert: true })
-            : helpers.queryAll(cssRule.selectorText);
+            ? helpers.queryAllSmart(selector, { inert: true })
+            : helpers.queryAll(selector);
         } catch {
           targets = [];
         }
         for (const el of targets) {
-          if (!el || seen.has(el) || !textOf(el)) continue;
+          if (!el || seen.has(el) || !textOf(el) || !inScopes(el, scopes)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
           const declared = declaredRatio(prop, value);
@@ -438,33 +442,109 @@ function runInPage(ctx) {
             prop,
             value,
             ratio,
-            selector: String(cssRule.selectorText)
+            selector: String(shown)
           });
           break;
         }
       }
     }
-    function walk(rules, depth) {
+    // A sheet or a group rule whose media or @supports condition doesn't
+    // hold now (@media print on a screen scan) blocks no user's spacing.
+    const applies = (x) =>
+      typeof helpers.cssConditionApplies === 'function' ? helpers.cssConditionApplies(x) : true;
+    // The selector list's own commas, not those inside :is() and the like.
+    function splitSelectorList(text) {
+      const parts = [];
+      let depth = 0;
+      let current = '';
+      for (const ch of String(text || '')) {
+        if (ch === '(') depth += 1;
+        if (ch === ')') depth = Math.max(0, depth - 1);
+        if (depth === 0 && ch === ',') {
+          parts.push(current);
+          current = '';
+          continue;
+        }
+        current += ch;
+      }
+      parts.push(current);
+      return parts.map((x) => x.trim()).filter(Boolean);
+    }
+    // A nested rule's selector, resolved against its parent's: `&` stands
+    // for the parent, and a selector without one is a descendant of it
+    // (CSS Nesting), so `.card { p {} }` reaches only the p in a .card.
+    function nestedSelector(selector, parent) {
+      if (!parent) return selector;
+      return splitSelectorList(selector)
+        .map((part) =>
+          part.indexOf('&') !== -1
+            ? part.split('&').join(':is(' + parent + ')')
+            : ':is(' + parent + ') ' + part
+        )
+        .join(', ');
+    }
+    // Whether el is inside every @scope around the rule: at or below an
+    // element its start matches, and not at or below one its end matches
+    // there. A scope with no start is rooted at its <style>'s parent.
+    function inScopes(el, scopes) {
+      for (const scope of scopes) {
+        try {
+          let root = null;
+          if (scope.start) root = dom.closest(el, scope.start);
+          else if (scope.owner && dom.contains(scope.owner, el)) root = scope.owner;
+          if (!root) return false;
+          const limit = scope.end ? dom.closest(el, scope.end) : null;
+          if (limit && limit !== root && dom.contains(root, limit)) return false;
+        } catch {
+          // A scope that can't be read is taken to hold el.
+        }
+      }
+      return true;
+    }
+    function scopeOf(r) {
+      let owner = null;
+      try {
+        const node = r.parentStyleSheet && r.parentStyleSheet.ownerNode;
+        owner = node ? dom.parentElement(node) : null;
+      } catch {}
+      return { start: r.start || '', end: r.end || '', owner };
+    }
+    function walk(rules, depth, parent, scopes, parentShown) {
       if (!rules || depth > 8) return;
       for (const r of rules) {
-        if (!r) continue;
-        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) check(r);
+        if (!r || !applies(r)) continue;
+        let selector = parent;
+        let shown = parentShown;
+        if (r.type === CSS_STYLE_RULE && r.selectorText && r.style) {
+          selector = nestedSelector(String(r.selectorText), parent);
+          shown = r.selectorText;
+          check(r.style, selector, scopes, r.selectorText);
+        } else if (parent && r.style && !r.selectorText) {
+          // Declarations straight inside an at-rule within a style rule
+          // (`h1 { @media screen { letter-spacing: 0 !important } }`) belong
+          // to that rule's selector.
+          check(r.style, parent, scopes, parentShown);
+        }
+        const isScope = !!(r.constructor && r.constructor.name === 'CSSScopeRule');
         let nested = null;
         try {
-          nested = r.cssRules || null;
+          // An @import's sheet holds rules of its own.
+          nested = r.type === CSS_IMPORT_RULE ? r.styleSheet && r.styleSheet.cssRules : r.cssRules;
         } catch {}
-        if (nested) walk(nested, depth + 1);
+        if (nested)
+          walk(nested, depth + 1, selector, isScope ? scopes.concat(scopeOf(r)) : scopes, shown);
       }
     }
     try {
       for (const sheet of dom.styleSheets(document) || []) {
+        if (!applies(sheet)) continue;
         let rules = null;
         try {
           rules = sheet.cssRules;
         } catch {
           continue;
         }
-        walk(rules, 0);
+        walk(rules, 0, '', [], '');
       }
     } catch {}
   })();
