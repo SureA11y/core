@@ -428,7 +428,7 @@ function runInPage(ctx) {
           targets = [];
         }
         for (const el of targets) {
-          if (!el || seen.has(el) || !textOf(el) || !inScopes(el, scopes)) continue;
+          if (!el || seen.has(el) || !textOf(el) || !inRoot(el) || !inScopes(el, scopes)) continue;
           const cs = styleOf(el);
           const fontSize = px(cs && cs.fontSize) || 16;
           const declared = declaredRatio(prop, value);
@@ -483,6 +483,15 @@ function runInPage(ctx) {
         )
         .join(', ');
     }
+    // The root (document or shadow root) of the sheet being read.
+    let sheetRoot = document;
+    function inRoot(el) {
+      try {
+        return dom.getRootNode(el) === sheetRoot;
+      } catch {
+        return false;
+      }
+    }
     // Whether el is inside every @scope around the rule: at or below an
     // element its start matches, and not at or below one its end matches
     // there. A scope with no start is rooted at its <style>'s parent.
@@ -536,11 +545,20 @@ function runInPage(ctx) {
       }
     }
     try {
-      for (const sheet of dom.styleSheets(document) || []) {
+      // The document's sheets, adopted ones too, and each open shadow
+      // root's, whose rules reach only the elements of that root: the scan
+      // finds elements in shadow roots, which a document rule doesn't style.
+      const sheets = helpers.getStyleSheets
+        ? helpers.getStyleSheets()
+        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+      for (const { sheet, root } of sheets) {
         if (!applies(sheet)) continue;
+        sheetRoot = root;
+        // Another origin's sheet: its text from engineOptions.styleSheetTexts,
+        // if given (helpers.cssRulesOf); otherwise not inspectable.
         let rules = null;
         try {
-          rules = sheet.cssRules;
+          rules = helpers.cssRulesOf ? helpers.cssRulesOf(sheet) : sheet.cssRules;
         } catch {
           continue;
         }
