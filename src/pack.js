@@ -41,6 +41,7 @@ const { settingsProblems } = require('./core/rule-variants.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
 const { TOOLS } = require('./procedures/registry.js');
+const { claimsOf, ownRulesOf, prefixOfKey } = require('./pack-review.js');
 
 const PACK_KEYS = [
   'name',
@@ -444,6 +445,134 @@ function reviewProblems(rule, where) {
     }
     if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
     if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+    problems.push(...filingProblems(rule, review, code, entry, at));
+  }
+  return problems;
+}
+
+// Where a reason code's steps go in the procedures (docs/PROCEDURES.md): its
+// entry's facet, one the rule claims in meta.coverage, and criterion, the
+// criterion or requirement it claims that facet under, where it claims it
+// under several. A rule that names the facet of one code names every code's,
+// where it claims several facets; one that names none files its codes under
+// its one facet, or, claiming several, under none, as before facet existed.
+function filingProblems(rule, review, code, entry, at) {
+  const claims = claimsOf(rule);
+  const list = (keys) => keys.map((k) => JSON.stringify(k)).join(', ');
+  if (entry.facet === undefined) {
+    if (entry.criterion !== undefined) return [`${at}.criterion needs the facet it is for`];
+    const named = Object.values(review).some((e) => isObject(e) && e.facet !== undefined);
+    return named && claims.length > 1
+      ? [
+          `${at} needs facet: ${rule.id} claims several facets and names the facet of its other codes`
+        ]
+      : [];
+  }
+  const under = claims.filter((c) => c.facet === entry.facet);
+  if (typeof entry.facet !== 'string' || !under.length) {
+    return [
+      `${at}.facet ${JSON.stringify(entry.facet)} is not a facet ${rule.id} claims in meta.coverage`
+    ];
+  }
+  if (entry.criterion === undefined) {
+    return under.length > 1
+      ? [
+          `${at}.criterion must say which of ${list(under.map((c) => c.key))} the facet ${entry.facet} is under`
+        ]
+      : [];
+  }
+  return under.some((c) => c.key === entry.criterion)
+    ? []
+    : [
+        `${at}.criterion ${JSON.stringify(entry.criterion)}: ${rule.id} claims ${entry.facet} under ${list(under.map((c) => c.key))}`
+      ];
+}
+
+// meta.coverage.facetsByRequirement: the facets of its pack's own
+// requirements a rule claims, by requirement, each one of the facets that
+// requirement gives in standard.procedures (in any version).
+function requirementClaimProblems(pack, rule, where) {
+  const coverage = isObject(rule.meta) ? rule.meta.coverage : undefined;
+  const claims = isObject(coverage) ? coverage.facetsByRequirement : undefined;
+  if (claims === undefined) return [];
+  const at = `${where}: ${rule.id}'s meta.coverage.facetsByRequirement`;
+  if (!isObject(claims)) return [`${at} must be { requirement: [facet ids] }`];
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || !isObject(st.procedures)) {
+    return [
+      `${at} needs the pack's standard to give its requirements' facets in standard.procedures`
+    ];
+  }
+  const problems = [];
+  for (const [id, facets] of Object.entries(claims)) {
+    if (!Array.isArray(facets) || !facets.length || !facets.every((f) => typeof f === 'string')) {
+      problems.push(`${at}[${JSON.stringify(id)}] must list facet ids`);
+      continue;
+    }
+    const own = new Set();
+    for (const requirements of Object.values(st.procedures)) {
+      const entry = isObject(requirements) ? requirements[id] : null;
+      if (isObject(entry) && Array.isArray(entry.facets)) {
+        for (const f of entry.facets) if (isObject(f)) own.add(f.id);
+      }
+    }
+    if (!own.size) {
+      problems.push(
+        `${at}: ${JSON.stringify(id)} is no requirement with facets of its own in standard.procedures`
+      );
+      continue;
+    }
+    for (const f of facets) {
+      if (!own.has(f)) {
+        problems.push(
+          `${at}[${JSON.stringify(id)}]: ${JSON.stringify(f)} is not one of its facets`
+        );
+      }
+    }
+  }
+  return problems;
+}
+
+// A pack's dictionary may translate its rules' steps under the keys their
+// English has (`<prefix>_review_<CODE>_step<n>`, `_pass`, `_fail`): a code
+// of the rule's meta.review, and no step its English lacks. The English is
+// meta.review itself, so the English dictionary carries none.
+const REVIEW_SUFFIX = /^(step([1-9][0-9]*)|pass|fail)$/;
+function reviewKeyProblems(pack, locale, dict) {
+  const problems = [];
+  const rules = ownRulesOf(pack)
+    .map((rule) => ({
+      rule,
+      prefix: prefixOfKey(
+        isObject(rule.meta) && isObject(rule.meta.i18n) ? rule.meta.i18n.titleKey : null
+      )
+    }))
+    .filter((r) => r.prefix);
+  for (const key of Object.keys(dict)) {
+    const owner = rules.find((r) => key.startsWith(`${r.prefix}_review_`));
+    if (!owner) continue;
+    const at = `dictionaries.${locale}: ${key}`;
+    if (locale.toLowerCase() === 'en') {
+      problems.push(`${at}: a rule's English steps are its meta.review, not a dictionary's`);
+      continue;
+    }
+    const rest = key.slice(`${owner.prefix}_review_`.length);
+    const sep = rest.lastIndexOf('_');
+    const code = sep > 0 ? rest.slice(0, sep) : '';
+    const suffix = REVIEW_SUFFIX.exec(sep > 0 ? rest.slice(sep + 1) : '');
+    const review = isObject(owner.rule.meta) ? owner.rule.meta.review : null;
+    const entry =
+      isObject(review) && Object.prototype.hasOwnProperty.call(review, code) ? review[code] : null;
+    if (!suffix) {
+      problems.push(`${at}: a step's key ends in _step<n>, _pass or _fail`);
+    } else if (!isObject(entry)) {
+      problems.push(`${at}: ${owner.rule.id}'s meta.review has no ${JSON.stringify(code)}`);
+    } else if (
+      suffix[2] &&
+      Number(suffix[2]) > (Array.isArray(entry.steps) ? entry.steps.length : 0)
+    ) {
+      problems.push(`${at}: ${owner.rule.id}'s meta.review.${code} has no step ${suffix[2]}`);
+    }
   }
   return problems;
 }
@@ -647,6 +776,7 @@ function packProblems(pack, withCoreVersion) {
       }
       if (typeof rule.from === 'string') problems.push(...variantProblems(pack, rule, where));
       problems.push(...reviewProblems(rule, where));
+      problems.push(...requirementClaimProblems(pack, rule, where));
       problems.push(...pageCodeProblems(rule, where));
     });
   }
@@ -853,6 +983,8 @@ function packProblems(pack, withCoreVersion) {
           problems.push(`dictionaries: "${locale}" is not a locale`);
         } else if (!isObject(dict) || Object.values(dict).some((t) => typeof t !== 'string')) {
           problems.push(`dictionaries.${locale} must map keys to strings`);
+        } else {
+          problems.push(...reviewKeyProblems(pack, locale, dict));
         }
       }
     }

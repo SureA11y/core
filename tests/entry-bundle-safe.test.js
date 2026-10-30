@@ -77,7 +77,8 @@ test('the how-to-check entry reaches no module outside core', () => {
     [
       path.join(ROOT, 'src', 'how-to-check-core.js'),
       path.join(ROOT, 'src', 'hook-reason-codes.js'),
-      path.join(ROOT, 'src', 'occurrence-outcome.js')
+      path.join(ROOT, 'src', 'occurrence-outcome.js'),
+      path.join(ROOT, 'src', 'pack-review.js')
     ].sort()
   );
 });
@@ -94,7 +95,8 @@ test('the procedures entry reaches no module outside core', () => {
     [
       path.join(ROOT, 'src', 'procedures-core.js'),
       path.join(ROOT, 'src', 'procedures', 'registry.js'),
-      path.join(ROOT, 'src', 'coverage', 'wcag-facets.js')
+      path.join(ROOT, 'src', 'coverage', 'wcag-facets.js'),
+      path.join(ROOT, 'src', 'pack-review.js')
     ].sort()
   );
 });

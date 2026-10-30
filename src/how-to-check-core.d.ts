@@ -27,7 +27,7 @@ export type ReviewDictionaries =
  * dictionaries given. Needs no file system: for a binding whose code runs in
  * a browser. A variant's finding (variantOf) without steps of its own gets
  * its base rule's; with options.packs, a pack rule's gets its meta.review's,
- * in English. In Node, addHowToCheck from @surea11y/core does the same with
+ * in English or as its pack's dictionaries translate them. In Node, addHowToCheck from @surea11y/core does the same with
  * every dictionary core ships.
  */
 export function applyHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(

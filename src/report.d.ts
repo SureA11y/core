@@ -7,7 +7,8 @@ export interface HtmlReportOptions {
   title?: string;
   /**
    * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
-   * undecided findings show the steps of its meta.review, in English.
+   * undecided findings show the steps of its meta.review, in English or as
+   * its pack's dictionaries translate them.
    */
   packs?: readonly unknown[] | null;
 }

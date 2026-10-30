@@ -131,7 +131,30 @@ meta.review = {
 };
 ```
 
-`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, whatever the scan's locale, and stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
+`definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, and a pack's dictionary may translate them ([§6](#6-messages-and-languages)); they stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
+
+**Which facet each code tests.** A criterion's procedures ([`PROCEDURES.md`](./PROCEDURES.md#a-packs-rules)) list a rule under the facets it claims in `meta.coverage.facetsBySc`, the test objectives of each criterion in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), and its steps as variants under them, as core's are:
+
+```js
+meta.coverage = { facetsBySc: { '2.4.4': ['link-text-descriptive-evidence'] } };
+```
+
+A rule that claims one facet files every code of its `meta.review` there. One that claims several says where each code goes, with `facet`, and with `criterion` where it claims that facet under more than one criterion:
+
+```js
+meta.coverage = {
+  facetsBySc: {
+    '2.1.1': ['click-handler-keyboard-operable', 'server-side-image-map-absent'],
+    '2.1.3': ['click-handler-keyboard-operable']
+  }
+};
+meta.review = {
+  CLICK_ONLY: { steps: [/* … */], passWhen: '…', failWhen: '…', facet: 'click-handler-keyboard-operable', criterion: '2.1.1' },
+  IMAGE_MAP: { steps: [/* … */], passWhen: '…', failWhen: '…', facet: 'server-side-image-map-absent' }
+};
+```
+
+A code it doesn't file is under no facet: it still has its steps on its findings. `definePack` refuses a `facet` the rule doesn't claim, a `criterion` it doesn't claim that facet under or one without a `facet`, a `facet` claimed under several criteria with no `criterion`, and a code with no `facet` where the rule names the facet of its other codes and claims several. A standard's own requirements have facets too ([§5](#5-group-results-checklist-items-or-requirements)): a rule claims them in `meta.coverage.facetsByRequirement`, and `facet` and `criterion` name them in the same way.
 
 `reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
@@ -317,6 +340,14 @@ standard: {
 
 A standard that restates WCAG one for one gets the first kind from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`, each requirement taking the criterion it restates: pass `procedures: std.procedures` in the standard. `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` then reads a requirement, as it reads a WCAG criterion. `definePack` refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, and facets that aren't well formed. A core older than the one that reads `procedures` ignores the field.
 
+A pack's rule that tests a facet of one of its own requirements claims it, by requirement, in `meta.coverage.facetsByRequirement`; the requirement's procedures then list the rule under the facet, with its steps as variants ([§3](#3-write-its-rules)):
+
+```js
+meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version'] } };
+```
+
+`definePack` refuses it in a pack whose standard gives no `procedures`, for a requirement that has no facets of its own there, and for a facet that requirement doesn't have in any version.
+
 ## 6. Messages and languages
 
 Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:
@@ -325,7 +356,20 @@ Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and
 dictionaries: { en: require('./i18n/en.json'), fr: require('./i18n/fr.json') }
 ```
 
-A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
+A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English.
+
+A rule's steps ([§3](#3-write-its-rules)) are translated the same way, under the keys core's steps use: the rule's prefix (its `titleKey` without `_title`), `_review_`, the reason code, then `step<n>`, `pass` or `fail`:
+
+```json
+{
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_step1": "Trouvez le lien que le rapport désigne.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_step2": "Lisez le texte qui l'entoure.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_pass": "Le texte autour du lien dit où il mène.",
+  "acmeLinkTextSpecific_review_GENERIC_LINK_NAME_fail": "Rien près du lien ne dit où il mène, ce qui enfreint le critère 2.4.4 des WCAG."
+}
+```
+
+A finding's `howToCheck` and the procedures show them in that locale, and in English each text the locale lacks; English, `meta.review`, says how many steps there are. `definePack` refuses such a key in the English dictionary, for a code the rule's `meta.review` doesn't have, for a step its English doesn't have, and with an ending other than `step<n>`, `pass` or `fail`. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
 
 ## 7. Test, lint and document it
 

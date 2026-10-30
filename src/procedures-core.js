@@ -25,8 +25,16 @@
 const { PROCEDURES, TOOLS } = require('./procedures/registry.js');
 const { FACETS } = require('./coverage/wcag-facets.js');
 const RULES = require('./procedures/rules.json');
+const {
+  codesUnder,
+  claimsOf,
+  ownRulesOf,
+  prefixOfKey,
+  withPackReview
+} = require('./pack-review.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
 // 'fr-CA' reads fr-ca, then fr; English last.
 function chainOf(locales) {
@@ -101,6 +109,45 @@ function variantsOf(entry, read) {
   return out;
 }
 
+// The packs' own rules and variants, each with its prefix and the pack it
+// is in, in the packs' order.
+function packRulesOf(packs) {
+  const out = [];
+  for (const pack of Array.isArray(packs) ? packs : []) {
+    for (const rule of ownRulesOf(pack)) {
+      const meta = isObject(rule.meta) ? rule.meta : {};
+      out.push({
+        pack,
+        rule,
+        prefix: prefixOfKey(isObject(meta.i18n) ? meta.i18n.titleKey : null)
+      });
+    }
+  }
+  return out;
+}
+
+// The pack rules that claim a facet (of a WCAG criterion, or with
+// requirement, of a requirement of `pack`'s standard), and the variants
+// their codes filed under it give: exactly the howToCheck of their findings.
+function packClaims(packRules, key, facetId, requirement, read, pack) {
+  const rules = [];
+  const variants = [];
+  for (const { pack: own, rule, prefix } of packRules) {
+    if (requirement && own !== pack) continue;
+    const claimed = claimsOf(rule).some(
+      (c) => c.key === key && c.facet === facetId && c.requirement === requirement
+    );
+    if (!claimed) continue;
+    rules.push(rule.id);
+    if (!prefix) continue;
+    for (const reasonCode of codesUnder(rule, key, facetId, requirement)) {
+      const how = read.procedure(`${prefix}_review_${reasonCode}_`);
+      if (how) variants.push({ ruleId: rule.id, reasonCode, ...how });
+    }
+  }
+  return { rules, variants };
+}
+
 function facetOf(facet, entry, stem, rules, read) {
   const coveredBy = entry && typeof entry.coveredBy === 'string' ? entry.coveredBy : null;
   const procedure = coveredBy ? null : read.procedure(stem);
@@ -125,27 +172,39 @@ function isComplete(facets) {
   return facets.length > 0 && facets.every((f) => has.has(f.id) || has.has(f.coveredBy));
 }
 
-function wcagCriterion(criterion, read) {
+// A WCAG criterion's facets, with the packs' rules that claim them after
+// core's, and their variants after core's.
+function wcagCriterion(criterion, read, packRules) {
   if (!hasOwn(FACETS, criterion)) return null;
   const info = FACETS[criterion];
   const registry = PROCEDURES.wcag[criterion] || {};
   const ruleIds = Object.keys(RULES).sort(byId);
-  const facets = (info.facets || []).map((facet) =>
-    facetOf(
+  const facets = (info.facets || []).map((facet) => {
+    const out = facetOf(
       facet,
       registry[facet.id],
       `wcag_${criterion}_${facet.id}_`,
       ruleIds.filter((r) => (RULES[r].facets[criterion] || []).includes(facet.id)),
       read
-    )
-  );
+    );
+    const pack = packClaims(packRules, criterion, facet.id, false, read);
+    out.rules = out.rules.concat(pack.rules.filter((r) => !out.rules.includes(r)));
+    out.variants = out.variants.concat(pack.variants);
+    return out;
+  });
+  const rules = ruleIds.filter((r) => RULES[r].criteria.includes(criterion));
+  for (const { rule } of packRules) {
+    const sc = isObject(rule.meta) ? rule.meta.wcagSc : null;
+    if (Array.isArray(sc) && sc.includes(criterion) && !rules.includes(rule.id))
+      rules.push(rule.id);
+  }
   return {
     standard: 'wcag',
     id: criterion,
     title: info.title,
     level: info.level,
     complete: isComplete(facets),
-    rules: ruleIds.filter((r) => RULES[r].criteria.includes(criterion)),
+    rules,
     facets
   };
 }
@@ -171,22 +230,21 @@ function bestPractices(read) {
   };
 }
 
-const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-
-// A pack's own facet: its procedure is in English, as a pack rule's steps
-// are, and no core rule claims it.
-function packFacet(f, read) {
+// A pack's own facet: its procedure is in English, and no core rule claims
+// it; the pack's rules that claim it (meta.coverage.facetsByRequirement) are
+// its rules, and their codes filed under it its variants.
+function packFacet(f, read, claims) {
   const procedure = { steps: f.steps.slice(), passWhen: f.passWhen, failWhen: f.failWhen };
   return {
     id: f.id,
     label: f.label,
     automation: f.automation || 'manual',
-    rules: [],
+    rules: claims.rules,
     tools: (Array.isArray(f.tools) ? f.tools : [])
       .filter((id) => TOOLS.includes(id))
       .map((id) => ({ id, label: read.text(`tool_${id}`) || id })),
     procedure,
-    variants: []
+    variants: claims.variants
   };
 }
 
@@ -194,7 +252,7 @@ function packFacet(f, read) {
 // first pack whose standard is `standard` (its key or name; any, when
 // none is given) and has the requirement, in `version` or else the latest
 // of its versions that has it.
-function packRequirement(packs, id, standard, version, read) {
+function packRequirement(packs, id, standard, version, read, packRules) {
   for (const pack of Array.isArray(packs) ? packs : []) {
     const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
     if (!st || !isObject(st.procedures)) continue;
@@ -211,7 +269,7 @@ function packRequirement(packs, id, standard, version, read) {
       level: null
     };
     if (typeof entry.wcag === 'string') {
-      const criterion = wcagCriterion(entry.wcag, read);
+      const criterion = wcagCriterion(entry.wcag, read, packRules);
       if (!criterion) return null;
       return {
         ...head,
@@ -221,8 +279,12 @@ function packRequirement(packs, id, standard, version, read) {
         facets: criterion.facets
       };
     }
-    const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) => packFacet(f, read));
-    return { ...head, complete: facets.length > 0, rules: [], facets };
+    const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) =>
+      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack))
+    );
+    const rules = [];
+    for (const f of facets) for (const r of f.rules) if (!rules.includes(r)) rules.push(r);
+    return { ...head, complete: facets.length > 0, rules, facets };
   }
   return null;
 }
@@ -242,15 +304,17 @@ function proceduresFrom(dictionaries, requirement, options) {
   if (typeof requirement !== 'string' || !requirement.trim()) return null;
   const id = requirement.trim();
   const opts = isObject(options) ? options : {};
-  const read = reader(dictionaries, opts.locale);
+  // A pack rule's steps read as its findings' howToCheck does.
+  const read = reader(withPackReview(dictionaries, opts.packs), opts.locale);
+  const packRules = packRulesOf(opts.packs);
   const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : null;
   const core = !standard || standard === 'wcag' || standard === 'WCAG';
   if (core || standard === 'best-practice') {
-    const found = id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read);
+    const found = id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read, packRules);
     if (found || standard) return found;
   }
   const version = typeof opts.version === 'string' && opts.version ? opts.version : null;
-  return packRequirement(opts.packs, id, standard, version, read);
+  return packRequirement(opts.packs, id, standard, version, read, packRules);
 }
 
 module.exports = { proceduresFrom };

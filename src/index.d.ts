@@ -214,7 +214,34 @@ export interface CustomRuleMeta {
   deprecated?: boolean;
   /** Required with `deprecated: true`. */
   deprecation?: { reason: string; sinceVersion: string; [field: string]: unknown };
+  /** The reason codes the rule reports, which meta.review is checked against. */
+  reasonCodes?: string[];
+  /**
+   * The facets the rule tests (docs/PROCEDURES.md): a WCAG criterion's, and,
+   * for a pack's rule, a requirement of its pack's standard's.
+   */
+  coverage?: {
+    facetsBySc?: Record<string, string[]>;
+    facetsByRequirement?: Record<string, string[]>;
+    [field: string]: unknown;
+  };
+  /** A pack rule's steps for each undecided finding, by reason code (docs/PACKS.md). */
+  review?: Record<string, RuleReviewEntry>;
   [field: string]: unknown;
+}
+
+/**
+ * How a person answers a rule's undecided finding of one reason code, in
+ * English, and the facet it is filed under in the procedures: needed where
+ * the rule claims several facets, with the criterion or requirement where it
+ * claims that facet under several.
+ */
+export interface RuleReviewEntry {
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+  facet?: string;
+  criterion?: string;
 }
 
 /**
@@ -989,7 +1016,7 @@ export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingF
 
 /**
  * The packs a result was scanned with: their rules' meta.review give steps,
- * in English, and their variants are known for howToCheckFor.
+ * in English or as their dictionaries translate them, and their variants are known for howToCheckFor.
  */
 export interface HowToCheckOptions {
   packs?: readonly unknown[] | null;
@@ -1037,7 +1064,10 @@ export interface ProcedureFacet {
   automation: 'full' | 'partial' | 'manual';
   /** A facet broader than any one rule, kept for coverage reporting. */
   macro?: true;
-  /** The core rules that claim the facet (meta.coverage.facetsBySc). */
+  /**
+   * The rules that claim the facet (meta.coverage): core's, then, with
+   * options.packs, the packs' own rules and variants.
+   */
   rules: string[];
   /** What its procedure needs besides a browser; empty without a procedure. */
   tools: ProcedureTool[];
@@ -1066,7 +1096,10 @@ export interface Procedures {
   wcag?: string;
   /** Whether every facet has a procedure, its own or its coveredBy facet's. */
   complete: boolean;
-  /** The core rules that test the criterion (wcagSc), or the best practices'. */
+  /**
+   * The rules that test the criterion (wcagSc), core's then the packs'; the
+   * best practices'; or the pack rules that claim a pack requirement's facets.
+   */
   rules: string[];
   facets: ProcedureFacet[];
 }
@@ -1074,7 +1107,10 @@ export interface Procedures {
 export interface ProceduresOptions {
   /** A locale ('fr-CA') or a list of them, most wanted first; English is the fallback. */
   locale?: string | readonly string[] | null;
-  /** Packs whose standards' requirements can be read (their standard.procedures). */
+  /**
+   * Packs whose standards' requirements can be read (their standard.procedures),
+   * and whose rules are listed under the facets they claim.
+   */
   packs?: readonly object[];
   /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
   standard?: string;
