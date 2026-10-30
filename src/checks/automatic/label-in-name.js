@@ -139,55 +139,7 @@ const meta = {
     'POSSIBLE_ABBREVIATION',
     'POSSIBLE_ICON_FONT_GLYPH',
     'POSSIBLE_SYMBOLIC_CHARACTER'
-  ],
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    HYPHENATION_DIFFERS: {
-      steps: [
-        'Read the visible label of the control the report names.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Compare the two: they differ only in where hyphens fall ("e-mail" against "email"); decide whether a person saying the visible label would say the same words.',
-        'If speech input software is available, say the visible label and see whether it activates the control.'
-      ],
-      passWhen:
-        'The name says the same words as the label, with only the hyphenation differing, so speaking the label reaches the control.',
-      failWhen:
-        'The hyphenation changes the words, so the name does not contain what the label shows, which fails WCAG 2.5.3.'
-    },
-    POSSIBLE_ABBREVIATION: {
-      steps: [
-        'Read the visible label of the control the report names, and note the word ending in a period.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Decide whether the label\'s word is a common abbreviation of the word in the name ("Ave." for "Avenue") that a person would read aloud as the full word.'
-      ],
-      passWhen:
-        'The abbreviation is a conventional one read as the full word that the name contains.',
-      failWhen:
-        "The label's word is not read as the word in the name, so a person saying the label would not match the name, which fails WCAG 2.5.3."
-    },
-    POSSIBLE_ICON_FONT_GLYPH: {
-      steps: [
-        'Look at the control the report names on screen and note what it shows: readable words or an icon.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'If the control shows only an icon, decide whether the name describes it; if it shows readable words, check that the name contains them.'
-      ],
-      passWhen:
-        'The control shows an icon rather than readable text, or the readable text it shows is contained in the name.',
-      failWhen:
-        'The control shows readable words that the accessible name does not contain, which fails WCAG 2.5.3.'
-    },
-    POSSIBLE_SYMBOLIC_CHARACTER: {
-      steps: [
-        'Look at the single character the control the report names shows.',
-        "Open the Accessibility pane and read the control's accessible name.",
-        'Decide whether the character is a symbol standing for an action (an "X" for close, an arrow) or literal text a user would say, such as a digit or letter.'
-      ],
-      passWhen: 'The character is a symbol, and the name describes what it does.',
-      failWhen:
-        'The character is text a user would say (a digit or a letter) and the name does not contain it, which fails WCAG 2.5.3.'
-    }
-  }
+  ]
 };
 
 function runInPage(ctx) {

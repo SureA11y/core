@@ -6827,7 +6827,7 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 21,
+        "totalFacets": 22,
         "coveredFacets": 13,
         "uncoveredFacets": [
           "text-alternative-mechanism",
@@ -6837,11 +6837,12 @@
           "svg-text-alt-present",
           "embed-name-present",
           "alt-suspicious-patterns",
-          "acc-eligibility-filtering"
+          "acc-eligibility-filtering",
+          "captcha-alternative"
         ],
         "automationCounts": {
           "partial": 13,
-          "manual": 2,
+          "manual": 3,
           "full": 6
         },
         "missingFacetRules": [],
@@ -7006,6 +7007,12 @@
             "coveredBy": [
               "progressbar-name-present"
             ]
+          },
+          {
+            "id": "captcha-alternative",
+            "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -7034,11 +7041,13 @@
       {
         "sc": "1.2.2",
         "title": "Captions (Prerecorded)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "captions-complete"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7050,21 +7059,33 @@
             "coveredBy": [
               "video-caption"
             ]
+          },
+          {
+            "id": "captions-complete",
+            "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 17,
+        "totalFacets": 23,
         "coveredFacets": 16,
         "uncoveredFacets": [
-          "form-control-label-quality-review"
+          "form-control-label-quality-review",
+          "headings-marked-up",
+          "lists-marked-up",
+          "tables-marked-up",
+          "form-labels-associated",
+          "aria-structure-valid",
+          "visual-cues-conveyed"
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 3,
-          "partial": 1
+          "manual": 4,
+          "partial": 6
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7202,17 +7223,56 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "headings-marked-up",
+            "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "lists-marked-up",
+            "label": "Content shown as a list is marked up as a list",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "tables-marked-up",
+            "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "form-labels-associated",
+            "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-structure-valid",
+            "label": "ARIA roles and relationships give the same structure the page shows",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "visual-cues-conveyed",
+            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.4",
         "title": "Orientation",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "orientation-not-locked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7224,17 +7284,26 @@
             "coveredBy": [
               "css-orientation-lock"
             ]
+          },
+          {
+            "id": "orientation-not-locked",
+            "label": "The page works in both portrait and landscape, unless one orientation is essential",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.5",
         "title": "Identify Input Purpose",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "input-purpose-identified"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7246,17 +7315,25 @@
             "coveredBy": [
               "autocomplete-valid"
             ]
+          },
+          {
+            "id": "input-purpose-identified",
+            "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.1",
         "title": "Use of Color",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "color-not-only-means"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7268,6 +7345,12 @@
             "coveredBy": [
               "link-in-text-block"
             ]
+          },
+          {
+            "id": "color-not-only-means",
+            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7326,11 +7409,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-resizes-200"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7342,17 +7428,25 @@
             "coveredBy": [
               "meta-viewport-zoom-enabled"
             ]
+          },
+          {
+            "id": "text-resizes-200",
+            "label": "Text can be resized to 200% without losing content or function",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.5",
         "title": "Images of Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-not-as-image"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7364,6 +7458,12 @@
             "coveredBy": [
               "image-of-text"
             ]
+          },
+          {
+            "id": "text-not-as-image",
+            "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -7400,12 +7500,16 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 2,
+        "totalFacets": 4,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-spacing-functionality-kept",
+          "text-spacing-other-states"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 1,
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7425,19 +7529,33 @@
             "coveredBy": [
               "text-spacing-content-loss"
             ]
+          },
+          {
+            "id": "text-spacing-functionality-kept",
+            "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-spacing-other-states",
+            "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 7,
+        "totalFacets": 8,
         "coveredFacets": 7,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-operable-all-functionality"
+        ],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 4
+          "manual": 5
         },
         "missingFacetRules": [
           "manual-review"
@@ -7499,17 +7617,25 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "keyboard-operable-all-functionality",
+            "label": "All functionality can be operated from a keyboard alone",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-no-exception"
+        ],
         "automationCounts": {
-          "manual": 2,
+          "manual": 3,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -7538,17 +7664,26 @@
             "coveredBy": [
               "click-handler-keyboard-operable"
             ]
+          },
+          {
+            "id": "keyboard-no-exception",
+            "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.1",
         "title": "Timing Adjustable",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "time-limits-adjustable"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7560,18 +7695,26 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "time-limits-adjustable",
+            "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "auto-updating-content-controllable"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7591,17 +7734,26 @@
             "coveredBy": [
               "moving-content-pausable"
             ]
+          },
+          {
+            "id": "auto-updating-content-controllable",
+            "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "interruptions-postponable"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7621,6 +7773,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "interruptions-postponable",
+            "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7649,12 +7807,14 @@
       {
         "sc": "2.4.2",
         "title": "Page Titled",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-title-descriptive"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7674,31 +7834,65 @@
             "coveredBy": [
               "page-title-patterns"
             ]
+          },
+          {
+            "id": "page-title-descriptive",
+            "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.4.3",
         "title": "Focus Order",
-        "totalFacets": 0,
+        "totalFacets": 3,
         "coveredFacets": 0,
-        "uncoveredFacets": [],
-        "automationCounts": {},
+        "uncoveredFacets": [
+          "focus-order-preserves-meaning",
+          "focus-order-opened-content",
+          "focus-order-no-hidden-stops"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
         "missingFacetRules": [
           "manual-review"
         ],
         "unknownFacetIds": [],
-        "facets": []
+        "facets": [
+          {
+            "id": "focus-order-preserves-meaning",
+            "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-opened-content",
+            "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-no-hidden-stops",
+            "label": "Focus does not stop on content that is closed, hidden or off screen",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
       },
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-purpose-clear"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7718,6 +7912,12 @@
             "coveredBy": [
               "link-name-quality"
             ]
+          },
+          {
+            "id": "link-purpose-clear",
+            "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7754,12 +7954,15 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "focus-indicator-visible"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [
           "manual-review"
@@ -7789,18 +7992,27 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "focus-indicator-visible",
+            "label": "Every element that takes keyboard focus shows that it has it",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-text-alone-clear"
+        ],
         "automationCounts": {
           "manual": 1,
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [
@@ -7822,6 +8034,12 @@
             "coveredBy": [
               "link-name-present"
             ]
+          },
+          {
+            "id": "link-text-alone-clear",
+            "label": "Each link's purpose can be told from its text alone",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7872,11 +8090,14 @@
       {
         "sc": "3.1.1",
         "title": "Language of Page",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-language-correct"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7896,17 +8117,26 @@
             "coveredBy": [
               "html-xml-lang-mismatch"
             ]
+          },
+          {
+            "id": "page-language-correct",
+            "label": "The page's main language is given in its markup, and is the right one",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.1.2",
         "title": "Language of Parts",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "parts-language-marked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7918,17 +8148,26 @@
             "coveredBy": [
               "valid-lang"
             ]
+          },
+          {
+            "id": "parts-language-marked",
+            "label": "Passages and phrases in a language other than the page's are marked with their own language",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "changes-on-request"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7948,17 +8187,25 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "changes-on-request",
+            "label": "Changes of context happen only when the user asks for them, or can be turned off",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.1",
         "title": "Error Identification",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "errors-identified"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7970,18 +8217,27 @@
             "coveredBy": [
               "invalid-field-error-message"
             ]
+          },
+          {
+            "id": "errors-identified",
+            "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "labels-instructions-provided"
+        ],
         "automationCounts": {
           "full": 2,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8009,17 +8265,25 @@
             "coveredBy": [
               "form-control-programmatic-label-quality"
             ]
+          },
+          {
+            "id": "labels-instructions-provided",
+            "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "authentication-no-cognitive-test"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8031,6 +8295,12 @@
             "coveredBy": [
               "password-paste-enabled"
             ]
+          },
+          {
+            "id": "authentication-no-cognitive-test",
+            "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -8059,12 +8329,17 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 40,
+        "totalFacets": 44,
         "coveredFacets": 40,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "components-named",
+          "roles-match-behavior",
+          "states-values-exposed",
+          "aria-used-validly"
+        ],
         "automationCounts": {
           "full": 37,
-          "partial": 1,
+          "partial": 5,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -8389,17 +8664,43 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "components-named",
+            "label": "Every link, control, frame and dialog has a name that says what it is for",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "roles-match-behavior",
+            "label": "Every control's role says what it does, and controls aren't nested inside one another",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "states-values-exposed",
+            "label": "Every control's state and value are exposed and change with what is on screen",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-used-validly",
+            "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "4.1.3",
         "title": "Status Messages",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "status-messages-announced"
+        ],
         "automationCounts": {
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8419,6 +8720,12 @@
             "coveredBy": [
               "live-region-announcements"
             ]
+          },
+          {
+            "id": "status-messages-announced",
+            "label": "Status messages are announced by assistive technology without taking focus",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       }
@@ -8427,7 +8734,7 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 21,
+        "totalFacets": 22,
         "coveredFacets": 13,
         "uncoveredFacets": [
           "text-alternative-mechanism",
@@ -8437,11 +8744,12 @@
           "svg-text-alt-present",
           "embed-name-present",
           "alt-suspicious-patterns",
-          "acc-eligibility-filtering"
+          "acc-eligibility-filtering",
+          "captcha-alternative"
         ],
         "automationCounts": {
           "partial": 13,
-          "manual": 2,
+          "manual": 3,
           "full": 6
         },
         "missingFacetRules": [],
@@ -8606,6 +8914,12 @@
             "coveredBy": [
               "progressbar-name-present"
             ]
+          },
+          {
+            "id": "captcha-alternative",
+            "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -8634,11 +8948,13 @@
       {
         "sc": "1.2.2",
         "title": "Captions (Prerecorded)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "captions-complete"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8650,21 +8966,33 @@
             "coveredBy": [
               "video-caption"
             ]
+          },
+          {
+            "id": "captions-complete",
+            "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 17,
+        "totalFacets": 23,
         "coveredFacets": 16,
         "uncoveredFacets": [
-          "form-control-label-quality-review"
+          "form-control-label-quality-review",
+          "headings-marked-up",
+          "lists-marked-up",
+          "tables-marked-up",
+          "form-labels-associated",
+          "aria-structure-valid",
+          "visual-cues-conveyed"
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 3,
-          "partial": 1
+          "manual": 4,
+          "partial": 6
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8802,17 +9130,56 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "headings-marked-up",
+            "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "lists-marked-up",
+            "label": "Content shown as a list is marked up as a list",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "tables-marked-up",
+            "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "form-labels-associated",
+            "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-structure-valid",
+            "label": "ARIA roles and relationships give the same structure the page shows",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "visual-cues-conveyed",
+            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.4",
         "title": "Orientation",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "orientation-not-locked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8824,17 +9191,26 @@
             "coveredBy": [
               "css-orientation-lock"
             ]
+          },
+          {
+            "id": "orientation-not-locked",
+            "label": "The page works in both portrait and landscape, unless one orientation is essential",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.5",
         "title": "Identify Input Purpose",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "input-purpose-identified"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8846,17 +9222,25 @@
             "coveredBy": [
               "autocomplete-valid"
             ]
+          },
+          {
+            "id": "input-purpose-identified",
+            "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.1",
         "title": "Use of Color",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "color-not-only-means"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8868,6 +9252,12 @@
             "coveredBy": [
               "link-in-text-block"
             ]
+          },
+          {
+            "id": "color-not-only-means",
+            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -8926,11 +9316,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-resizes-200"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8942,17 +9335,25 @@
             "coveredBy": [
               "meta-viewport-zoom-enabled"
             ]
+          },
+          {
+            "id": "text-resizes-200",
+            "label": "Text can be resized to 200% without losing content or function",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.5",
         "title": "Images of Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-not-as-image"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8964,6 +9365,12 @@
             "coveredBy": [
               "image-of-text"
             ]
+          },
+          {
+            "id": "text-not-as-image",
+            "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9000,12 +9407,16 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 2,
+        "totalFacets": 4,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-spacing-functionality-kept",
+          "text-spacing-other-states"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 1,
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9025,19 +9436,33 @@
             "coveredBy": [
               "text-spacing-content-loss"
             ]
+          },
+          {
+            "id": "text-spacing-functionality-kept",
+            "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-spacing-other-states",
+            "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 7,
+        "totalFacets": 8,
         "coveredFacets": 7,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-operable-all-functionality"
+        ],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 4
+          "manual": 5
         },
         "missingFacetRules": [
           "manual-review"
@@ -9099,17 +9524,25 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "keyboard-operable-all-functionality",
+            "label": "All functionality can be operated from a keyboard alone",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-no-exception"
+        ],
         "automationCounts": {
-          "manual": 2,
+          "manual": 3,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -9138,17 +9571,26 @@
             "coveredBy": [
               "click-handler-keyboard-operable"
             ]
+          },
+          {
+            "id": "keyboard-no-exception",
+            "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.1",
         "title": "Timing Adjustable",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "time-limits-adjustable"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9160,18 +9602,26 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "time-limits-adjustable",
+            "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "auto-updating-content-controllable"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9191,17 +9641,26 @@
             "coveredBy": [
               "moving-content-pausable"
             ]
+          },
+          {
+            "id": "auto-updating-content-controllable",
+            "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "interruptions-postponable"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9221,6 +9680,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "interruptions-postponable",
+            "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9249,12 +9714,14 @@
       {
         "sc": "2.4.2",
         "title": "Page Titled",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-title-descriptive"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9274,31 +9741,65 @@
             "coveredBy": [
               "page-title-patterns"
             ]
+          },
+          {
+            "id": "page-title-descriptive",
+            "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.4.3",
         "title": "Focus Order",
-        "totalFacets": 0,
+        "totalFacets": 3,
         "coveredFacets": 0,
-        "uncoveredFacets": [],
-        "automationCounts": {},
+        "uncoveredFacets": [
+          "focus-order-preserves-meaning",
+          "focus-order-opened-content",
+          "focus-order-no-hidden-stops"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
         "missingFacetRules": [
           "manual-review"
         ],
         "unknownFacetIds": [],
-        "facets": []
+        "facets": [
+          {
+            "id": "focus-order-preserves-meaning",
+            "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-opened-content",
+            "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-no-hidden-stops",
+            "label": "Focus does not stop on content that is closed, hidden or off screen",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
       },
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-purpose-clear"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9318,6 +9819,12 @@
             "coveredBy": [
               "link-name-quality"
             ]
+          },
+          {
+            "id": "link-purpose-clear",
+            "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9354,12 +9861,15 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "focus-indicator-visible"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [
           "manual-review"
@@ -9389,18 +9899,27 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "focus-indicator-visible",
+            "label": "Every element that takes keyboard focus shows that it has it",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-text-alone-clear"
+        ],
         "automationCounts": {
           "manual": 1,
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [
@@ -9422,6 +9941,12 @@
             "coveredBy": [
               "link-name-present"
             ]
+          },
+          {
+            "id": "link-text-alone-clear",
+            "label": "Each link's purpose can be told from its text alone",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9472,11 +9997,14 @@
       {
         "sc": "3.1.1",
         "title": "Language of Page",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-language-correct"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9496,17 +10024,26 @@
             "coveredBy": [
               "html-xml-lang-mismatch"
             ]
+          },
+          {
+            "id": "page-language-correct",
+            "label": "The page's main language is given in its markup, and is the right one",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.1.2",
         "title": "Language of Parts",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "parts-language-marked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9518,17 +10055,26 @@
             "coveredBy": [
               "valid-lang"
             ]
+          },
+          {
+            "id": "parts-language-marked",
+            "label": "Passages and phrases in a language other than the page's are marked with their own language",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "changes-on-request"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9548,17 +10094,25 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "changes-on-request",
+            "label": "Changes of context happen only when the user asks for them, or can be turned off",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.1",
         "title": "Error Identification",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "errors-identified"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9570,18 +10124,27 @@
             "coveredBy": [
               "invalid-field-error-message"
             ]
+          },
+          {
+            "id": "errors-identified",
+            "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "labels-instructions-provided"
+        ],
         "automationCounts": {
           "full": 2,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9609,17 +10172,25 @@
             "coveredBy": [
               "form-control-programmatic-label-quality"
             ]
+          },
+          {
+            "id": "labels-instructions-provided",
+            "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "authentication-no-cognitive-test"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9631,6 +10202,12 @@
             "coveredBy": [
               "password-paste-enabled"
             ]
+          },
+          {
+            "id": "authentication-no-cognitive-test",
+            "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9659,12 +10236,17 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 40,
+        "totalFacets": 44,
         "coveredFacets": 40,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "components-named",
+          "roles-match-behavior",
+          "states-values-exposed",
+          "aria-used-validly"
+        ],
         "automationCounts": {
           "full": 37,
-          "partial": 1,
+          "partial": 5,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -9989,17 +10571,43 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "components-named",
+            "label": "Every link, control, frame and dialog has a name that says what it is for",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "roles-match-behavior",
+            "label": "Every control's role says what it does, and controls aren't nested inside one another",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "states-values-exposed",
+            "label": "Every control's state and value are exposed and change with what is on screen",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-used-validly",
+            "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "4.1.3",
         "title": "Status Messages",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "status-messages-announced"
+        ],
         "automationCounts": {
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -10019,6 +10627,12 @@
             "coveredBy": [
               "live-region-announcements"
             ]
+          },
+          {
+            "id": "status-messages-announced",
+            "label": "Status messages are announced by assistive technology without taking focus",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       }

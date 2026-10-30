@@ -36,8 +36,8 @@ Total rules (loaded without error): **145**
 
 ### 1.1.1
 
-Facet coverage: **13/21** facets covered.
-Automation mix: **full 6, partial 13, manual 2**.
+Facet coverage: **13/22** facets covered.
+Automation mix: **full 6, partial 13, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -62,8 +62,9 @@ Automation mix: **full 6, partial 13, manual 2**.
 | acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
+| captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -104,12 +105,15 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | video-captions-track-evidence | manual | video-caption |
+| captions-complete | manual | — |
+
+Uncovered facets: captions-complete
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -117,8 +121,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **16/17** facets covered.
-Automation mix: **full 13, partial 1, manual 3**.
+Facet coverage: **16/23** facets covered.
+Automation mix: **full 13, partial 6, manual 4**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -139,8 +143,14 @@ Automation mix: **full 13, partial 1, manual 3**.
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
 | aria-owns-valid | full | aria-owns-valid |
+| headings-marked-up | partial | — |
+| lists-marked-up | partial | — |
+| tables-marked-up | partial | — |
+| form-labels-associated | partial | — |
+| aria-structure-valid | partial | — |
+| visual-cues-conveyed | manual | — |
 
-Uncovered facets: form-control-label-quality-review
+Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-marked-up, tables-marked-up, form-labels-associated, aria-structure-valid, visual-cues-conveyed
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -163,12 +173,15 @@ Uncovered facets: form-control-label-quality-review
 
 ### 1.3.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-orientation-lock | full | css-orientation-lock |
+| orientation-not-locked | partial | — |
+
+Uncovered facets: orientation-not-locked
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -176,12 +189,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.3.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | autocomplete-valid | full | autocomplete-valid |
+| input-purpose-identified | partial | — |
+
+Uncovered facets: input-purpose-identified
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -189,12 +205,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.4.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 1, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | link-in-text-block | partial | link-in-text-block |
+| color-not-only-means | partial | — |
+
+Uncovered facets: color-not-only-means
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -230,12 +249,15 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-viewport-zoom-enabled | full | meta-viewport-zoom-enabled |
+| text-resizes-200 | partial | — |
+
+Uncovered facets: text-resizes-200
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -243,12 +265,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.4.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | image-of-text-evidence | manual | image-of-text |
+| text-not-as-image | manual | — |
+
+Uncovered facets: text-not-as-image
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -271,13 +296,17 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
+| text-spacing-functionality-kept | manual | — |
+| text-spacing-other-states | manual | — |
+
+Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -286,8 +315,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **7/7** facets covered.
-Automation mix: **full 1, partial 2, manual 4**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -299,6 +328,9 @@ Rules missing facet mapping for this SC: manual-review
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 | widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| keyboard-operable-all-functionality | manual | — |
+
+Uncovered facets: keyboard-operable-all-functionality
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -313,14 +345,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.1.3
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 0, partial 1, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 0, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| keyboard-no-exception | manual | — |
+
+Uncovered facets: keyboard-no-exception
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -330,12 +365,15 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 ### 2.2.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| time-limits-adjustable | partial | — |
+
+Uncovered facets: time-limits-adjustable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -343,13 +381,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
 | auto-moving-content-pausable | manual | moving-content-pausable |
+| auto-updating-content-controllable | manual | — |
+
+Uncovered facets: auto-updating-content-controllable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -358,13 +399,16 @@ Automation mix: **full 1, partial 0, manual 1**.
 
 ### 2.2.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| interruptions-postponable | partial | — |
+
+Uncovered facets: interruptions-postponable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -386,13 +430,16 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 2.4.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | page-title-present | full | page-title-present |
 | page-title-patterns | partial | page-title-patterns |
+| page-title-descriptive | partial | — |
+
+Uncovered facets: page-title-descriptive
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -401,12 +448,17 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.4.3
 
-Facet coverage: **0/0** facets covered.
-Automation mix: **full 0, partial 0, manual 0**.
+Facet coverage: **0/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| focus-order-preserves-meaning | manual | — |
+| focus-order-opened-content | manual | — |
+| focus-order-no-hidden-stops | manual | — |
+
+Uncovered facets: focus-order-preserves-meaning, focus-order-opened-content, focus-order-no-hidden-stops
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -414,13 +466,16 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
+| link-purpose-clear | partial | — |
+
+Uncovered facets: link-purpose-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -444,8 +499,8 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 1, partial 0, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -453,6 +508,9 @@ Rules missing facet mapping for this SC: manual-review
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| focus-indicator-visible | partial | — |
+
+Uncovered facets: focus-indicator-visible
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -463,14 +521,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.9
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
+| link-text-alone-clear | partial | — |
+
+Uncovered facets: link-text-alone-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -506,13 +567,16 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 3.1.1
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | html-lang-attr-present | full | html-lang-attr-present |
 | html-xml-lang-mismatch | full | html-xml-lang-mismatch |
+| page-language-correct | partial | — |
+
+Uncovered facets: page-language-correct
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -521,12 +585,15 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 3.1.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | element-lang-valid | full | valid-lang |
+| parts-language-marked | partial | — |
+
+Uncovered facets: parts-language-marked
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -534,13 +601,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.2.5
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| changes-on-request | partial | — |
+
+Uncovered facets: changes-on-request
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -549,12 +619,15 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 3.3.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 1, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | invalid-field-error-message | partial | invalid-field-error-message |
+| errors-identified | partial | — |
+
+Uncovered facets: errors-identified
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -562,14 +635,17 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 3.3.2
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 2, partial 0, manual 1**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 2, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-labels-or-instructions-present | full | form-control-programmatic-label-present |
 | form-control-single-label | full | form-control-single-label |
 | form-control-visible-label-quality | manual | form-control-programmatic-label-quality |
+| labels-instructions-provided | partial | — |
+
+Uncovered facets: labels-instructions-provided
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -579,12 +655,15 @@ Automation mix: **full 2, partial 0, manual 1**.
 
 ### 3.3.8
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | authentication-paste-not-blocked | manual | password-paste-enabled |
+| authentication-no-cognitive-test | manual | — |
+
+Uncovered facets: authentication-no-cognitive-test
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -605,8 +684,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/40** facets covered.
-Automation mix: **full 37, partial 1, manual 2**.
+Facet coverage: **40/44** facets covered.
+Automation mix: **full 37, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -650,6 +729,12 @@ Automation mix: **full 37, partial 1, manual 2**.
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 | aria-owns-valid | full | aria-owns-valid |
+| components-named | partial | — |
+| roles-match-behavior | partial | — |
+| states-values-exposed | partial | — |
+| aria-used-validly | partial | — |
+
+Uncovered facets: components-named, roles-match-behavior, states-values-exposed, aria-used-validly
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -695,13 +780,16 @@ Automation mix: **full 37, partial 1, manual 2**.
 
 ### 4.1.3
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 0, partial 0, manual 2**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | live-region-reachable-evidence | manual | live-region-announcements |
 | live-region-changes-evidence | manual | live-region-announcements |
+| status-messages-announced | manual | — |
+
+Uncovered facets: status-messages-announced
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -745,8 +833,8 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 1.1.1
 
-Facet coverage: **13/21** facets covered.
-Automation mix: **full 6, partial 13, manual 2**.
+Facet coverage: **13/22** facets covered.
+Automation mix: **full 6, partial 13, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -771,8 +859,9 @@ Automation mix: **full 6, partial 13, manual 2**.
 | acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
+| captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -813,12 +902,15 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | video-captions-track-evidence | manual | video-caption |
+| captions-complete | manual | — |
+
+Uncovered facets: captions-complete
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -826,8 +918,8 @@ Automation mix: **full 0, partial 0, manual 1**.
 
 ### 1.3.1
 
-Facet coverage: **16/17** facets covered.
-Automation mix: **full 13, partial 1, manual 3**.
+Facet coverage: **16/23** facets covered.
+Automation mix: **full 13, partial 6, manual 4**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -848,8 +940,14 @@ Automation mix: **full 13, partial 1, manual 3**.
 | td-has-header | full | td-has-header |
 | aria-role-valid | full | aria-roles-valid |
 | aria-owns-valid | full | aria-owns-valid |
+| headings-marked-up | partial | — |
+| lists-marked-up | partial | — |
+| tables-marked-up | partial | — |
+| form-labels-associated | partial | — |
+| aria-structure-valid | partial | — |
+| visual-cues-conveyed | manual | — |
 
-Uncovered facets: form-control-label-quality-review
+Uncovered facets: form-control-label-quality-review, headings-marked-up, lists-marked-up, tables-marked-up, form-labels-associated, aria-structure-valid, visual-cues-conveyed
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -872,12 +970,15 @@ Uncovered facets: form-control-label-quality-review
 
 ### 1.3.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | css-orientation-lock | full | css-orientation-lock |
+| orientation-not-locked | partial | — |
+
+Uncovered facets: orientation-not-locked
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -885,12 +986,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.3.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | autocomplete-valid | full | autocomplete-valid |
+| input-purpose-identified | partial | — |
+
+Uncovered facets: input-purpose-identified
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -898,12 +1002,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.4.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 1, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | link-in-text-block | partial | link-in-text-block |
+| color-not-only-means | partial | — |
+
+Uncovered facets: color-not-only-means
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -939,12 +1046,15 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.4
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-viewport-zoom-enabled | full | meta-viewport-zoom-enabled |
+| text-resizes-200 | partial | — |
+
+Uncovered facets: text-resizes-200
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -952,12 +1062,15 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 1.4.5
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | image-of-text-evidence | manual | image-of-text |
+| text-not-as-image | manual | — |
+
+Uncovered facets: text-not-as-image
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -980,13 +1093,17 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
+| text-spacing-functionality-kept | manual | — |
+| text-spacing-other-states | manual | — |
+
+Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -995,8 +1112,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **7/7** facets covered.
-Automation mix: **full 1, partial 2, manual 4**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -1008,6 +1125,9 @@ Rules missing facet mapping for this SC: manual-review
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 | widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| keyboard-operable-all-functionality | manual | — |
+
+Uncovered facets: keyboard-operable-all-functionality
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1022,14 +1142,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.1.3
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 0, partial 1, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 0, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| keyboard-no-exception | manual | — |
+
+Uncovered facets: keyboard-no-exception
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1039,12 +1162,15 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 ### 2.2.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| time-limits-adjustable | partial | — |
+
+Uncovered facets: time-limits-adjustable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1052,13 +1178,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
 | auto-moving-content-pausable | manual | moving-content-pausable |
+| auto-updating-content-controllable | manual | — |
+
+Uncovered facets: auto-updating-content-controllable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1067,13 +1196,16 @@ Automation mix: **full 1, partial 0, manual 1**.
 
 ### 2.2.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| interruptions-postponable | partial | — |
+
+Uncovered facets: interruptions-postponable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1095,13 +1227,16 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 2.4.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | page-title-present | full | page-title-present |
 | page-title-patterns | partial | page-title-patterns |
+| page-title-descriptive | partial | — |
+
+Uncovered facets: page-title-descriptive
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1110,12 +1245,17 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.4.3
 
-Facet coverage: **0/0** facets covered.
-Automation mix: **full 0, partial 0, manual 0**.
+Facet coverage: **0/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| focus-order-preserves-meaning | manual | — |
+| focus-order-opened-content | manual | — |
+| focus-order-no-hidden-stops | manual | — |
+
+Uncovered facets: focus-order-preserves-meaning, focus-order-opened-content, focus-order-no-hidden-stops
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1123,13 +1263,16 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | link-name-present | full | link-name-present |
 | link-text-descriptive-evidence | manual | link-name-quality |
+| link-purpose-clear | partial | — |
+
+Uncovered facets: link-purpose-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1153,8 +1296,8 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 2.4.7
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 1, partial 0, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -1162,6 +1305,9 @@ Rules missing facet mapping for this SC: manual-review
 | css-hidden-focusable | full | css-hidden-focus |
 | focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| focus-indicator-visible | partial | — |
+
+Uncovered facets: focus-indicator-visible
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1172,14 +1318,17 @@ Rules missing facet mapping for this SC: manual-review
 
 ### 2.4.9
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
+| link-text-alone-clear | partial | — |
+
+Uncovered facets: link-text-alone-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1215,13 +1364,16 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 3.1.1
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | html-lang-attr-present | full | html-lang-attr-present |
 | html-xml-lang-mismatch | full | html-xml-lang-mismatch |
+| page-language-correct | partial | — |
+
+Uncovered facets: page-language-correct
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1230,12 +1382,15 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 3.1.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | element-lang-valid | full | valid-lang |
+| parts-language-marked | partial | — |
+
+Uncovered facets: parts-language-marked
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1243,13 +1398,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 3.2.5
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| changes-on-request | partial | — |
+
+Uncovered facets: changes-on-request
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1258,12 +1416,15 @@ Automation mix: **full 2, partial 0, manual 0**.
 
 ### 3.3.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 1, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 2, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | invalid-field-error-message | partial | invalid-field-error-message |
+| errors-identified | partial | — |
+
+Uncovered facets: errors-identified
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1271,14 +1432,17 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 3.3.2
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 2, partial 0, manual 1**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 2, partial 1, manual 1**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | form-control-labels-or-instructions-present | full | form-control-programmatic-label-present |
 | form-control-single-label | full | form-control-single-label |
 | form-control-visible-label-quality | manual | form-control-programmatic-label-quality |
+| labels-instructions-provided | partial | — |
+
+Uncovered facets: labels-instructions-provided
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1288,12 +1452,15 @@ Automation mix: **full 2, partial 0, manual 1**.
 
 ### 3.3.8
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | authentication-paste-not-blocked | manual | password-paste-enabled |
+| authentication-no-cognitive-test | manual | — |
+
+Uncovered facets: authentication-no-cognitive-test
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1314,8 +1481,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/40** facets covered.
-Automation mix: **full 37, partial 1, manual 2**.
+Facet coverage: **40/44** facets covered.
+Automation mix: **full 37, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1359,6 +1526,12 @@ Automation mix: **full 37, partial 1, manual 2**.
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 | aria-owns-valid | full | aria-owns-valid |
+| components-named | partial | — |
+| roles-match-behavior | partial | — |
+| states-values-exposed | partial | — |
+| aria-used-validly | partial | — |
+
+Uncovered facets: components-named, roles-match-behavior, states-values-exposed, aria-used-validly
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1404,13 +1577,16 @@ Automation mix: **full 37, partial 1, manual 2**.
 
 ### 4.1.3
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 0, partial 0, manual 2**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | live-region-reachable-evidence | manual | live-region-announcements |
 | live-region-changes-evidence | manual | live-region-announcements |
+| status-messages-announced | manual | — |
+
+Uncovered facets: status-messages-announced
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

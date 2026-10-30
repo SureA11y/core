@@ -65,22 +65,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['spinbutton-name-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    name_internals: {
-      steps: [
-        'Inspect the spin button the report names, a custom element, and note its role.',
-        "Open the Accessibility pane in the browser's developer tools and read the element's accessible name.",
-        'With a screen reader, move to the element and listen to the name announced.'
-      ],
-      passWhen:
-        'The accessibility tree shows a name for the spin button, set through its internals or otherwise, and the screen reader announces it.',
-      failWhen:
-        'The spin button has no name in the accessibility tree and the screen reader announces only its role, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['spinbutton-name-present'] } }
 };
 
 function runInPage(ctx) {

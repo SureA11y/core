@@ -76,22 +76,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TABBABLE_WITH_NON_INTERACTIVE_ROLE: {
-      steps: [
-        'Press Tab until focus reaches the element the report names and listen with a screen reader, or read its role in the Accessibility pane.',
-        'Find out why it is focusable: does it scroll (its content overflows and arrow keys scroll it), or does it do something when clicked or when Enter or Space is pressed?',
-        'If it acts as a control, compare the announced role with what it does.'
-      ],
-      passWhen:
-        'The element is focusable for a reason its role supports, such as a scrollable region a keyboard user needs to scroll, and does not act as a control.',
-      failWhen:
-        'The element acts as a control (it opens, toggles or navigates) but is announced with a non-interactive role such as heading or list, so keyboard users are not told what it does; a best-practice miss related to WCAG 4.1.2. If it does nothing and does not scroll, it is a needless tab stop.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

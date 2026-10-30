@@ -48,21 +48,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TABINDEX_POSITIVE: {
-      steps: [
-        'Click just before the start of the page, then press Tab repeatedly, watching the focus outline.',
-        'Note when the element the report names gets focus, compared with where it sits on screen.',
-        'Check whether the focus order still follows the visual and reading order of the page.'
-      ],
-      passWhen: 'Focus moves through the page in an order that matches its layout and meaning.',
-      failWhen:
-        'The positive tabindex makes focus jump out of reading order, which can fail WCAG 2.4.3 (F44) and is against best practice.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

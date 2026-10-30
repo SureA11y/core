@@ -89,6 +89,38 @@ test('the how-to-check entry and every review dictionary are reachable by name',
   assert.ok(pkg.files.includes('src/i18n/review/*.json'));
 });
 
+// An app whose code runs in a browser reads how to assess each criterion
+// with the procedures entry and the procedures dictionary of each locale.
+test('the procedures entry and every procedures dictionary are reachable by name', () => {
+  const entry = consumerRequire('@surea11y/core/procedures');
+  assert.equal(typeof entry.proceduresFrom, 'function');
+  const en = consumerRequire('@surea11y/core/procedures/en');
+  assert.deepEqual(
+    entry.proceduresFrom({ en }, '1.4.13'),
+    consumerRequire('@surea11y/core').proceduresFor('1.4.13')
+  );
+  const locales = fs
+    .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'procedures'))
+    .filter((f) => f.endsWith('.json'))
+    .map((f) => f.slice(0, -'.json'.length));
+  assert.ok(locales.includes('en') && locales.length > 1);
+  for (const locale of locales) {
+    assert.deepEqual(
+      consumerRequire(`@surea11y/core/procedures/${locale}`),
+      require(path.join(ROOT_DIR, 'src', 'i18n', 'procedures', `${locale}.json`))
+    );
+  }
+  for (const file of [
+    'src/procedures.js',
+    'src/procedures-core.js',
+    'src/procedures/registry.js',
+    'src/procedures/rules.json',
+    'src/i18n/procedures/*.json'
+  ]) {
+    assert.ok(pkg.files.includes(file), file);
+  }
+});
+
 test('every locale side file the exports map can reach is also published', () => {
   const patterns = Object.keys(pkg.exports);
   assert.ok(patterns.includes('./i18n/*'), 'exports map should expose the locale side files');

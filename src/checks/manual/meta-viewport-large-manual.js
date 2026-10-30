@@ -53,22 +53,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    VIEWPORT_ZOOM_BELOW_500: {
-      steps: [
-        "Read the viewport meta tag's content in the page source; the report lists the settings that limit zoom, such as user-scalable=no or maximum-scale=2.",
-        "Open the page on a phone or in the browser's device emulation and pinch-zoom (or use the zoom gesture) as far as it will go.",
-        'Note whether it reaches 500% and whether text is still readable.'
-      ],
-      passWhen:
-        'The page can be zoomed to 500% with no user-scalable=no and no maximum-scale below 5.',
-      failWhen:
-        'Zoom is blocked or stops below 500%, which misses the best-practice target beyond WCAG 1.4.4.'
-    }
-  }
+  coverage: {}
 };
 
 // This check is inherently whole-document (does the PAGE have this

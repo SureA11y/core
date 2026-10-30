@@ -154,6 +154,37 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
   return m ? m.howToCheckFor(ruleId, reasonCode, locale, options) : null;
 }
 
+// How a person assesses a criterion by hand (src/procedures.js) reads the
+// procedures' dictionaries from disk, so it is loaded as the steps are, and
+// in a browser bundle says once where to get it instead.
+let proceduresModule;
+let warnedNoProcedures = false;
+function proceduresFor(requirement, options) {
+  if (proceduresModule === undefined) {
+    proceduresModule = null;
+    try {
+      if (typeof module === 'object' && module && typeof module.require === 'function') {
+        const id = './procedures.js';
+        proceduresModule = module.require(id);
+      }
+    } catch {
+      proceduresModule = null;
+    }
+  }
+  if (proceduresModule) return proceduresModule.proceduresFor(requirement, options);
+  if (!warnedNoProcedures) {
+    warnedNoProcedures = true;
+    try {
+      console.warn(
+        '[surea11y] proceduresFor reads the procedures from disk, in Node. In a browser bundle, ' +
+          'call proceduresFrom({ en }, requirement) from @surea11y/core/procedures with the ' +
+          'dictionaries from @surea11y/core/procedures/<locale>.'
+      );
+    } catch {}
+  }
+  return null;
+}
+
 // A result gains its undecided findings' steps here, after the scan, with
 // the packs it ran; a result that is a promise, once it settles. Without
 // Node it is returned as it is, silently.
@@ -260,6 +291,7 @@ module.exports = {
   runDomRulesInPage,
   addHowToCheck,
   howToCheckFor,
+  proceduresFor,
   flattenCrossFrameResult,
   occurrenceOutcome,
   reviewGroupOf,

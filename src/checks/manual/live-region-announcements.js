@@ -134,56 +134,6 @@ const meta = {
   ],
   coverage: {
     facetsBySc: { '4.1.3': ['live-region-reachable-evidence', 'live-region-changes-evidence'] }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LIVE_REGION_BUSY: {
-      steps: [
-        'Find the live region the report names; it had aria-busy="true" when the page was scanned.',
-        'Trigger the action that updates the region, then inspect it in the developer tools and see whether aria-busy changes to false or is removed once the update finishes.',
-        'Repeat the action with a screen reader running and listen for the message.',
-        'If you hear nothing from this region, check whether the page announces the same message another way, for example from another status area that the screen reader reads out. It only counts if you hear the whole message without moving focus.'
-      ],
-      passWhen:
-        'The screen reader announces the message without focus moving, because aria-busy is cleared when the update finishes or because the page announces the same message another way.',
-      failWhen:
-        'aria-busy stays true, the screen reader holds back or skips the message, and the page does not announce it any other way, which fails WCAG 4.1.3.'
-    },
-    LIVE_REGION_HIDDEN: {
-      steps: [
-        'Find the live region the report names and note what hides it, as the report says: aria-hidden="true" or inert on it or on an ancestor, or a modal dialog open in front of it.',
-        'Check whether a modal dialog was open when the page was scanned; if so, note whether the page writes to the region while it is open, then close it and see whether the region is still hidden.',
-        'Trigger the action that updates the region (submit a form, add to cart, run a search) with a screen reader running.',
-        'Listen for the message. If you hear nothing, check in the Accessibility pane of the developer tools whether this region, or another status area carrying the same message, is in the tree when the text changes.'
-      ],
-      passWhen:
-        'The screen reader announces the message without focus moving, because the region is not hidden when its text changes (or is never used for messages), or because another status area that is not hidden carries the same message.',
-      failWhen:
-        'The region is still hidden by aria-hidden, inert or an open modal dialog when the message arrives, and nothing else announces it, so the screen reader says nothing, which fails WCAG 4.1.3.'
-    },
-    LIVE_REGION_INSERTED_WITH_CONTENT: {
-      steps: [
-        'Find the message the report quotes and the action that shows it (the report gives the text and the region).',
-        'Start a screen reader, then perform that action.',
-        'Listen for the message without moving focus to it.',
-        'If it is not read, check in the developer tools whether the page adds the region already filled; an empty region should be on the page first, with the text written into it later.'
-      ],
-      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
-      failWhen:
-        'The message appears on screen but the screen reader does not announce it, because the region was added with its text already in it, which fails WCAG 4.1.3 (ARIA22).'
-    },
-    LIVE_REGION_SHOWN_AND_FILLED: {
-      steps: [
-        'Find the message the report quotes and the action that shows it.',
-        'Start a screen reader, then perform that action.',
-        'Listen for the message without moving focus to it.',
-        'If it is not read, check in the developer tools whether the region is hidden until the moment its text is set; it should be visible (or present and empty) before the text arrives.'
-      ],
-      passWhen: 'The screen reader announces the message when it appears, without focus moving.',
-      failWhen:
-        'The message appears but the screen reader does not announce it, because the region was shown and filled at the same moment, which fails WCAG 4.1.3 (ARIA22).'
-    }
   }
 };
 

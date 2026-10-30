@@ -99,33 +99,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    SKIP_LINK_TARGET_MISSING: {
-      steps: [
-        'Load the page, press Tab once or twice until the skip link the report names appears, and note its href.',
-        'Press Enter to follow it.',
-        'Press Tab once more and see where focus lands.'
-      ],
-      passWhen:
-        'Following the link moves to the main content and the next Tab goes to the first control in it.',
-      failWhen:
-        "Nothing happens or focus stays at the top, because no element matches the link's target, so the link does not bypass repeated content (best practice, G1)."
-    },
-    SKIP_LINK_TARGET_UNUSABLE: {
-      steps: [
-        'Load the page at the window width the report gives (if any), press Tab until the skip link appears, and press Enter.',
-        'Watch whether the page scrolls to the target and the target area is visible.',
-        'Press Tab once more and see where focus lands.'
-      ],
-      passWhen:
-        'The page moves to the visible main content and the next Tab goes to the first control in it.',
-      failWhen:
-        'The target is hidden, not shown or has no size, so focus does not move past the repeated content (best practice, G1).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

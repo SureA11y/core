@@ -74,34 +74,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['aria-role-valid'], '4.1.2': ['aria-role-valid'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ROLE_ABSTRACT: {
-      steps: [
-        'Inspect the element the report names and note the abstract role (such as landmark, widget, command) and its tag.',
-        "Open the Accessibility pane in the browser's developer tools and check the role exposed instead (the native role).",
-        'Decide whether the native role is a concrete kind of the abstract role named (a nav for landmark, a button for widget).'
-      ],
-      passWhen:
-        'The native role is a concrete form of what the author named, so the element is still exposed correctly (still remove the abstract role).',
-      failWhen:
-        'The native role does not match the intent (such as a button marked landmark), so the meant role is never exposed, which fails WCAG 4.1.2 (ACT 674b10).'
-    },
-    ARIA_ROLE_INVALID: {
-      steps: [
-        'Inspect the element the report names and note the unknown role value and its tag.',
-        'Work out which role was probably meant (for example "buton" for button).',
-        "Open the Accessibility pane in the browser's developer tools and check the role that is exposed instead (the element's native role).",
-        'Compare the exposed role with the intended one and with how the element behaves.'
-      ],
-      passWhen:
-        'The exposed native role is the one that was meant, so users get the right role (still correct the typo).',
-      failWhen:
-        'The intended role differs from the exposed one, so users get the wrong role, which fails WCAG 4.1.2 (ACT 674b10).'
-    }
-  }
+  coverage: { facetsBySc: { '1.3.1': ['aria-role-valid'], '4.1.2': ['aria-role-valid'] } }
 };
 
 function runInPage(ctx) {

@@ -82,33 +82,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    IMAGE_ONLY_CONTROL_CONTENT: {
-      steps: [
-        'Find the link or button the report names; its only content is this svg.',
-        'Activate the control and note what it does or where it goes.',
-        "Read the control's name in the Accessibility pane of the developer tools (it comes from the svg's text alternative), or Tab to it with a screen reader.",
-        'Compare: does the name say what the control does ("Search", "Close menu"), not just what the icon looks like ("magnifying glass")?'
-      ],
-      passWhen: "The control's name says what it does or where it goes.",
-      failWhen:
-        "The name describes the picture, is vague, or is wrong for the action, which fails WCAG 1.1.1 (and leaves the control's purpose unclear)."
-    },
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at the graphic the report names and note what it shows (an icon, a logo, a chart and its data).',
-        'Read its text alternative from the report (title, desc, aria-label or aria-labelledby text), or in the Accessibility pane of the developer tools.',
-        'If the text alternative only names the graphic, as is common for charts and diagrams, the details may be given elsewhere: in a caption, text or a table next to it, or a link beside it. That counts only if a screen reader user can find it from the graphic and it gives everything the graphic shows.',
-        'Compare: does the text say what the graphic shows or means? If the graphic is decorative, it should instead be hidden (aria-hidden="true").'
-      ],
-      passWhen:
-        'The text alternative conveys what the graphic shows, or names it and a description a screen reader user can reach from it gives the rest, or the decorative graphic is hidden from assistive technology.',
-      failWhen:
-        'The text alternative is wrong, vague (such as "image" or "icon") or leaves out what the graphic conveys, and no description reachable from it gives that, which fails WCAG 1.1.1.'
-    }
   }
 };
 

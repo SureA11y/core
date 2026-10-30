@@ -59,22 +59,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL: {
-      steps: [
-        'Find the complementary landmark (an aside or role="complementary") the report names and the landmark it sits inside.',
-        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where it appears.",
-        'If it sits inside main and has a name, it is the common related-content box; if it sits inside a header, footer, navigation, form or another complementary, note the odd placement.'
-      ],
-      passWhen:
-        'The complementary landmark sits at the top level, or is a named related-content box inside main.',
-      failWhen:
-        'The complementary landmark is nested in an unrelated landmark such as a footer or navigation, which confuses landmark navigation, a best-practice miss under the WAI-ARIA complementary role.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

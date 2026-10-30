@@ -60,8 +60,10 @@ function compareIds(a, b) {
 }
 
 /**
- * { mappingsFor, composites, validate, wcagTagsOf } for the registry entry of
- * a standard named `standard`, whose rules and rollups carry `tag`.
+ * { mappingsFor, composites, validate, wcagTagsOf, procedures } for the
+ * registry entry of a standard named `standard`, whose rules and rollups
+ * carry `tag`. `procedures`, with applicability 'wcag', has each requirement
+ * that restates one criterion take its procedures (standard.procedures).
  */
 function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, applicability }) {
   if (applicability !== undefined && applicability !== 'wcag') {
@@ -305,7 +307,27 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
     return wcagTags(v.wcagVersion);
   }
 
-  return { mappingsFor, composites, validate, wcagTagsOf };
+  // How a person assesses each requirement (standard.procedures,
+  // docs/PROCEDURES.md): with applicability 'wcag', a requirement restates
+  // its criterion and takes its procedures. Without it, a requirement's
+  // criteria are only related, and there are none.
+  function proceduresOf() {
+    if (applicability !== 'wcag') return undefined;
+    const out = {};
+    for (const { version } of versions) {
+      const reqs = requirements[version] || {};
+      const own = {};
+      for (const id of Object.keys(reqs).sort(compareIds)) {
+        const { title, wcagSc } = reqs[id];
+        if (!Array.isArray(wcagSc) || wcagSc.length !== 1) continue;
+        own[id] = typeof title === 'string' ? { title, wcag: wcagSc[0] } : { wcag: wcagSc[0] };
+      }
+      out[version] = own;
+    }
+    return out;
+  }
+
+  return { mappingsFor, composites, validate, wcagTagsOf, procedures: proceduresOf() };
 }
 
 module.exports = { ruleMappedStandard };

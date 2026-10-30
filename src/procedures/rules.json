@@ -1,0 +1,1492 @@
+{
+  "accesskeys": {
+    "prefix": "accesskeys",
+    "criteria": [],
+    "facets": {}
+  },
+  "area-alt-present": {
+    "prefix": "area_altPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "area-alt-attr-present"
+      ]
+    }
+  },
+  "area-alt-quality": {
+    "prefix": "area_altQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "aria-allowed-attr": {
+    "prefix": "ariaAllowedAttr",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-attr-allowed-for-role"
+      ]
+    }
+  },
+  "aria-allowed-role": {
+    "prefix": "ariaAllowedRole",
+    "criteria": [],
+    "facets": {}
+  },
+  "aria-braille-equivalent": {
+    "prefix": "ariaBrailleEquivalent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-braille-equivalent"
+      ]
+    }
+  },
+  "aria-checked-state-mismatch": {
+    "prefix": "ariaCheckedStateMismatch",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-checked-state-mismatch"
+      ]
+    }
+  },
+  "aria-conditional-attr": {
+    "prefix": "ariaConditionalAttr",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-conditional-attr"
+      ]
+    }
+  },
+  "aria-deprecated-role": {
+    "prefix": "ariaDeprecatedRole",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-role-not-deprecated"
+      ]
+    }
+  },
+  "aria-expanded-state-mismatch": {
+    "prefix": "ariaExpandedStateMismatch",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-expanded-state-mismatch"
+      ]
+    }
+  },
+  "aria-hidden-body": {
+    "prefix": "ariaHiddenBody",
+    "criteria": [
+      "1.3.1",
+      "4.1.2"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-hidden-body-absent"
+      ],
+      "4.1.2": [
+        "aria-hidden-body-absent"
+      ]
+    }
+  },
+  "aria-hidden-focus": {
+    "prefix": "ariaHidden_focus",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-hidden-focusable"
+      ]
+    }
+  },
+  "aria-owns-valid": {
+    "prefix": "ariaOwnsValid",
+    "criteria": [
+      "1.3.1",
+      "4.1.2"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-owns-valid"
+      ],
+      "4.1.2": [
+        "aria-owns-valid"
+      ]
+    }
+  },
+  "aria-prohibited-attr": {
+    "prefix": "ariaProhibitedAttr",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-attr-not-prohibited"
+      ]
+    }
+  },
+  "aria-prohibited-children": {
+    "prefix": "ariaProhibitedChildren",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-role-owned-children-allowed"
+      ]
+    }
+  },
+  "aria-required-attr": {
+    "prefix": "ariaRequiredAttr",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-attr-required-for-role"
+      ]
+    }
+  },
+  "aria-required-children": {
+    "prefix": "ariaRequiredChildren",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-role-required-owned-children"
+      ]
+    }
+  },
+  "aria-required-parent": {
+    "prefix": "ariaRequiredParent",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-role-required-context-parent"
+      ]
+    }
+  },
+  "aria-role-name-present": {
+    "prefix": "ariaRoleNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-role-name-present"
+      ]
+    }
+  },
+  "aria-roles-valid": {
+    "prefix": "ariaRolesValid",
+    "criteria": [
+      "1.3.1",
+      "4.1.2"
+    ],
+    "facets": {
+      "1.3.1": [
+        "aria-role-valid"
+      ],
+      "4.1.2": [
+        "aria-role-valid"
+      ]
+    }
+  },
+  "aria-text": {
+    "prefix": "ariaText",
+    "criteria": [],
+    "facets": {}
+  },
+  "aria-valid-attr": {
+    "prefix": "ariaValidAttr",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-attr-name-valid"
+      ]
+    }
+  },
+  "aria-valid-attr-value": {
+    "prefix": "ariaValidAttrValue",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "aria-attr-value-valid"
+      ]
+    }
+  },
+  "autocomplete-valid": {
+    "prefix": "autocompleteValid",
+    "criteria": [
+      "1.3.5"
+    ],
+    "facets": {
+      "1.3.5": [
+        "autocomplete-valid"
+      ]
+    }
+  },
+  "avoid-inline-spacing": {
+    "prefix": "avoidInlineSpacing",
+    "criteria": [
+      "1.4.12"
+    ],
+    "facets": {
+      "1.4.12": [
+        "avoid-inline-spacing"
+      ]
+    }
+  },
+  "binary-control-name-present": {
+    "prefix": "binaryControlNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "checkbox-name-present",
+        "radio-name-present",
+        "switch-name-present"
+      ]
+    }
+  },
+  "button-name-present": {
+    "prefix": "buttonNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "button-name-present"
+      ]
+    }
+  },
+  "bypass-blocks-present": {
+    "prefix": "bypassBlocksPresent",
+    "criteria": [
+      "2.4.1"
+    ],
+    "facets": {
+      "2.4.1": [
+        "bypass-blocks-present"
+      ]
+    }
+  },
+  "canvas-text-alternative-present": {
+    "prefix": "canvas_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "canvas-text-alternative-present"
+      ]
+    }
+  },
+  "canvas-text-alternative-quality": {
+    "prefix": "canvas_textAltQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "click-handler-keyboard-operable": {
+    "prefix": "clickHandlerKeyboardOperable",
+    "criteria": [
+      "2.1.1",
+      "2.1.3"
+    ],
+    "facets": {
+      "2.1.1": [
+        "click-handler-keyboard-operable"
+      ],
+      "2.1.3": [
+        "click-handler-keyboard-operable"
+      ]
+    }
+  },
+  "combobox-name-present": {
+    "prefix": "comboboxNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "combobox-name-present"
+      ]
+    }
+  },
+  "contrast-computable": {
+    "prefix": "contrastComputable",
+    "criteria": [
+      "1.4.3",
+      "1.4.6"
+    ],
+    "facets": {
+      "1.4.3": [
+        "contrast-computability-143"
+      ],
+      "1.4.6": [
+        "contrast-computability-146"
+      ]
+    }
+  },
+  "contrast-enhanced": {
+    "prefix": "contrastEnhanced",
+    "criteria": [
+      "1.4.6"
+    ],
+    "facets": {
+      "1.4.6": [
+        "contrast-enhanced-text"
+      ]
+    }
+  },
+  "contrast-minimum": {
+    "prefix": "contrastMinimum",
+    "criteria": [
+      "1.4.3"
+    ],
+    "facets": {
+      "1.4.3": [
+        "contrast-minimum-text"
+      ]
+    }
+  },
+  "control-name-title-only": {
+    "prefix": "controlNameTitleOnly",
+    "criteria": [],
+    "facets": {}
+  },
+  "css-focus-indicator-suppressed": {
+    "prefix": "cssFocusIndicatorSuppressed",
+    "criteria": [
+      "2.4.7"
+    ],
+    "facets": {
+      "2.4.7": [
+        "focus-indicator-not-suppressed"
+      ]
+    }
+  },
+  "css-hidden-focus": {
+    "prefix": "cssHidden_focus",
+    "criteria": [
+      "2.4.7"
+    ],
+    "facets": {
+      "2.4.7": [
+        "css-hidden-focusable"
+      ]
+    }
+  },
+  "css-orientation-lock": {
+    "prefix": "cssOrientationLock",
+    "criteria": [
+      "1.3.4"
+    ],
+    "facets": {
+      "1.3.4": [
+        "css-orientation-lock"
+      ]
+    }
+  },
+  "definition-list-children-valid": {
+    "prefix": "definitionListChildrenValid",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "definition-list-children-valid"
+      ]
+    }
+  },
+  "deprecated-elements-not-used": {
+    "prefix": "deprecatedElements",
+    "criteria": [
+      "2.2.2"
+    ],
+    "facets": {
+      "2.2.2": [
+        "deprecated-non-stoppable-elements-absent"
+      ]
+    }
+  },
+  "dialog-name-present": {
+    "prefix": "dialogNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "dialog-name-present"
+      ]
+    }
+  },
+  "dlitem-parent-valid": {
+    "prefix": "dlitemParentValid",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "dlitem-parent-valid"
+      ]
+    }
+  },
+  "duplicate-id": {
+    "prefix": "duplicateId",
+    "criteria": [
+      "4.1.1"
+    ],
+    "facets": {
+      "4.1.1": [
+        "id-unique-page-wide"
+      ]
+    }
+  },
+  "duplicate-id-aria": {
+    "prefix": "duplicateIdAria",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "duplicate-id-aria"
+      ]
+    }
+  },
+  "embed-text-alternative-present": {
+    "prefix": "embed_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "embed-text-alternative-present"
+      ]
+    }
+  },
+  "embed-text-alternative-quality": {
+    "prefix": "embed_textAltQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "empty-heading": {
+    "prefix": "emptyHeading",
+    "criteria": [],
+    "facets": {}
+  },
+  "empty-table-header": {
+    "prefix": "emptyTableHeader",
+    "criteria": [],
+    "facets": {}
+  },
+  "focus-not-removed-by-script": {
+    "prefix": "focusNotRemovedByScript",
+    "criteria": [
+      "2.1.1",
+      "2.4.7"
+    ],
+    "facets": {
+      "2.1.1": [
+        "focus-not-removed-by-script-evidence"
+      ],
+      "2.4.7": [
+        "focus-not-removed-by-script-evidence"
+      ]
+    }
+  },
+  "focus-order-semantics": {
+    "prefix": "focusOrderSemantics",
+    "criteria": [],
+    "facets": {}
+  },
+  "form-control-label-quality": {
+    "prefix": "formControlLabelQuality",
+    "criteria": [
+      "2.4.6"
+    ],
+    "facets": {
+      "2.4.6": [
+        "form-control-label-descriptive-evidence"
+      ]
+    }
+  },
+  "form-control-programmatic-label-present": {
+    "prefix": "formControl_programmaticLabelPresent",
+    "criteria": [
+      "1.3.1",
+      "3.3.2",
+      "4.1.2"
+    ],
+    "facets": {
+      "1.3.1": [
+        "form-control-programmatic-label-present"
+      ],
+      "3.3.2": [
+        "form-control-labels-or-instructions-present"
+      ],
+      "4.1.2": [
+        "form-control-name-present"
+      ]
+    }
+  },
+  "form-control-programmatic-label-quality": {
+    "prefix": "formControl_programmaticLabelQuality",
+    "criteria": [
+      "3.3.2"
+    ],
+    "facets": {
+      "3.3.2": [
+        "form-control-visible-label-quality"
+      ]
+    }
+  },
+  "form-control-single-label": {
+    "prefix": "formControlSingleLabel",
+    "criteria": [
+      "3.3.2"
+    ],
+    "facets": {
+      "3.3.2": [
+        "form-control-single-label"
+      ]
+    }
+  },
+  "heading-order": {
+    "prefix": "headingOrder",
+    "criteria": [],
+    "facets": {}
+  },
+  "heading-quality": {
+    "prefix": "headingQuality",
+    "criteria": [
+      "2.4.6"
+    ],
+    "facets": {
+      "2.4.6": [
+        "heading-text-descriptive-evidence"
+      ]
+    }
+  },
+  "html-lang-attr-present": {
+    "prefix": "html_lang_attr",
+    "criteria": [
+      "3.1.1"
+    ],
+    "facets": {
+      "3.1.1": [
+        "html-lang-attr-present"
+      ]
+    }
+  },
+  "html-xml-lang-mismatch": {
+    "prefix": "htmlXmlLangMismatch",
+    "criteria": [
+      "3.1.1"
+    ],
+    "facets": {
+      "3.1.1": [
+        "html-xml-lang-mismatch"
+      ]
+    }
+  },
+  "identical-iframes-same-purpose": {
+    "prefix": "identicalIframesSamePurpose",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "identical-iframes-same-purpose"
+      ]
+    }
+  },
+  "identical-links-same-purpose": {
+    "prefix": "identicalLinksSamePurpose",
+    "criteria": [
+      "2.4.9"
+    ],
+    "facets": {
+      "2.4.9": [
+        "identical-links-same-purpose-evidence"
+      ]
+    }
+  },
+  "iframe-focusable-content": {
+    "prefix": "iframeFocusableContent",
+    "criteria": [
+      "2.1.1"
+    ],
+    "facets": {
+      "2.1.1": [
+        "iframe-tabindex-negative-content-not-focusable"
+      ]
+    }
+  },
+  "iframe-name-present": {
+    "prefix": "iframeNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "iframe-name-present"
+      ]
+    }
+  },
+  "iframe-title-unique": {
+    "prefix": "iframeTitleUnique",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "identical-iframes-same-purpose"
+      ]
+    }
+  },
+  "image-of-text": {
+    "prefix": "imagesOfText",
+    "criteria": [
+      "1.4.5"
+    ],
+    "facets": {
+      "1.4.5": [
+        "image-of-text-evidence"
+      ]
+    }
+  },
+  "image-redundant-alt": {
+    "prefix": "imageRedundantAlt",
+    "criteria": [],
+    "facets": {}
+  },
+  "img-alt-decorative": {
+    "prefix": "img_altDecorative",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "img-alt-present": {
+    "prefix": "img_altPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "img-alt-attr-present"
+      ]
+    }
+  },
+  "img-alt-quality": {
+    "prefix": "img_altQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "input-image-alt-decorative": {
+    "prefix": "inputImage_altDecorative",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "input-image-alt-present": {
+    "prefix": "inputImage_altPresent",
+    "criteria": [
+      "1.1.1",
+      "4.1.2"
+    ],
+    "facets": {
+      "1.1.1": [
+        "input-image-alt-attr-present"
+      ],
+      "4.1.2": [
+        "input-image-name-present"
+      ]
+    }
+  },
+  "input-image-alt-quality": {
+    "prefix": "inputImage_altQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "invalid-field-error-message": {
+    "prefix": "invalidFieldErrorMessage",
+    "criteria": [
+      "3.3.1"
+    ],
+    "facets": {
+      "3.3.1": [
+        "invalid-field-error-message"
+      ]
+    }
+  },
+  "label-for-valid": {
+    "prefix": "labelForValid",
+    "criteria": [],
+    "facets": {}
+  },
+  "label-in-name": {
+    "prefix": "labelInName",
+    "criteria": [
+      "2.5.3"
+    ],
+    "facets": {
+      "2.5.3": [
+        "label-in-name"
+      ]
+    }
+  },
+  "label-title-only": {
+    "prefix": "labelTitleOnly",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-banner-is-top-level": {
+    "prefix": "landmarkBannerIsTopLevel",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-complementary-is-top-level": {
+    "prefix": "landmarkComplementaryIsTopLevel",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-contentinfo-is-top-level": {
+    "prefix": "landmarkContentinfoIsTopLevel",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-main-is-top-level": {
+    "prefix": "landmarkMainIsTopLevel",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-no-duplicate-banner": {
+    "prefix": "landmarkNoDuplicateBanner",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-no-duplicate-contentinfo": {
+    "prefix": "landmarkNoDuplicateContentinfo",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-no-duplicate-main": {
+    "prefix": "landmarkNoDuplicateMain",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-one-main": {
+    "prefix": "landmarkOneMain",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-role-name-present": {
+    "prefix": "landmarkRoleNamePresent",
+    "criteria": [],
+    "facets": {}
+  },
+  "landmark-unique": {
+    "prefix": "landmarkUnique",
+    "criteria": [],
+    "facets": {}
+  },
+  "link-in-text-block": {
+    "prefix": "linkInTextBlock",
+    "criteria": [
+      "1.4.1"
+    ],
+    "facets": {
+      "1.4.1": [
+        "link-in-text-block"
+      ]
+    }
+  },
+  "link-name-present": {
+    "prefix": "linkNamePresent",
+    "criteria": [
+      "2.4.4",
+      "2.4.9",
+      "4.1.2"
+    ],
+    "facets": {
+      "2.4.4": [
+        "link-name-present"
+      ],
+      "2.4.9": [
+        "link-name-present"
+      ],
+      "4.1.2": [
+        "link-name-present"
+      ]
+    }
+  },
+  "link-name-quality": {
+    "prefix": "linkNameQuality",
+    "criteria": [
+      "2.4.4",
+      "2.4.9"
+    ],
+    "facets": {
+      "2.4.4": [
+        "link-text-descriptive-evidence"
+      ],
+      "2.4.9": [
+        "link-text-descriptive-evidence"
+      ]
+    }
+  },
+  "list-children-valid": {
+    "prefix": "listChildrenValid",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "list-children-valid"
+      ]
+    }
+  },
+  "listbox-name-present": {
+    "prefix": "listboxNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "listbox-name-present"
+      ]
+    }
+  },
+  "listitem-parent-valid": {
+    "prefix": "listitemParentValid",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "listitem-parent-valid"
+      ]
+    }
+  },
+  "live-region-announcements": {
+    "prefix": "liveRegionAnnouncements",
+    "criteria": [
+      "4.1.3"
+    ],
+    "facets": {
+      "4.1.3": [
+        "live-region-reachable-evidence",
+        "live-region-changes-evidence"
+      ]
+    }
+  },
+  "manual-review": {
+    "prefix": "manualReview",
+    "criteria": [
+      "2.1.1",
+      "2.4.3",
+      "2.4.7"
+    ],
+    "facets": {}
+  },
+  "media-alternative-transcript-evidence": {
+    "prefix": "mediaTranscriptPresent",
+    "criteria": [
+      "1.2.1"
+    ],
+    "facets": {
+      "1.2.1": [
+        "transcript-evidence"
+      ]
+    }
+  },
+  "menuitem-name-present": {
+    "prefix": "menuitemNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "menuitem-name-present"
+      ]
+    }
+  },
+  "meta-refresh-no-exceptions": {
+    "prefix": "metaRefreshNoExceptions",
+    "criteria": [
+      "2.2.4",
+      "3.2.5"
+    ],
+    "facets": {
+      "2.2.4": [
+        "meta-refresh-no-exceptions"
+      ],
+      "3.2.5": [
+        "meta-refresh-no-exceptions"
+      ]
+    }
+  },
+  "meta-refresh-timing-absent": {
+    "prefix": "metaRefreshTimingAbsent",
+    "criteria": [
+      "2.2.1",
+      "2.2.4",
+      "3.2.5"
+    ],
+    "facets": {
+      "2.2.1": [
+        "meta-refresh-timing-absent"
+      ],
+      "2.2.4": [
+        "meta-refresh-timing-absent"
+      ],
+      "3.2.5": [
+        "meta-refresh-timing-absent"
+      ]
+    }
+  },
+  "meta-viewport-large": {
+    "prefix": "metaViewportLarge",
+    "criteria": [],
+    "facets": {}
+  },
+  "meta-viewport-zoom-enabled": {
+    "prefix": "metaViewportZoomEnabled",
+    "criteria": [
+      "1.4.4"
+    ],
+    "facets": {
+      "1.4.4": [
+        "meta-viewport-zoom-enabled"
+      ]
+    }
+  },
+  "meter-name-present": {
+    "prefix": "meterNamePresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "meter-name-present"
+      ]
+    }
+  },
+  "mouse-only-event-handlers": {
+    "prefix": "mouseOnlyEventHandlers",
+    "criteria": [
+      "2.1.1",
+      "2.1.3"
+    ],
+    "facets": {
+      "2.1.1": [
+        "mouse-only-event-handlers-evidence"
+      ],
+      "2.1.3": [
+        "mouse-only-event-handlers-evidence"
+      ]
+    }
+  },
+  "moving-content-pausable": {
+    "prefix": "movingContentPausable",
+    "criteria": [
+      "2.2.2"
+    ],
+    "facets": {
+      "2.2.2": [
+        "auto-moving-content-pausable"
+      ]
+    }
+  },
+  "nested-interactive-controls-absent": {
+    "prefix": "nestedInteractiveControlsAbsent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "nested-interactive-controls-absent"
+      ]
+    }
+  },
+  "no-autoplay-audio": {
+    "prefix": "noAutoplayAudio",
+    "criteria": [
+      "1.4.2"
+    ],
+    "facets": {
+      "1.4.2": [
+        "no-autoplay-audio-evidence"
+      ]
+    }
+  },
+  "object-text-alternative-present": {
+    "prefix": "object_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "object-text-alternative-present"
+      ]
+    }
+  },
+  "object-text-alternative-quality": {
+    "prefix": "object_textAltQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "option-name-present": {
+    "prefix": "optionNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "option-name-present"
+      ]
+    }
+  },
+  "p-as-heading": {
+    "prefix": "pAsHeading",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "p-as-heading-evidence"
+      ]
+    }
+  },
+  "page-has-heading-one": {
+    "prefix": "pageHasHeadingOne",
+    "criteria": [],
+    "facets": {}
+  },
+  "page-title-patterns": {
+    "prefix": "pageTitlePatterns",
+    "criteria": [
+      "2.4.2"
+    ],
+    "facets": {
+      "2.4.2": [
+        "page-title-patterns"
+      ]
+    }
+  },
+  "page-title-present": {
+    "prefix": "pageTitlePresent",
+    "criteria": [
+      "2.4.2"
+    ],
+    "facets": {
+      "2.4.2": [
+        "page-title-present"
+      ]
+    }
+  },
+  "password-paste-enabled": {
+    "prefix": "passwordPasteEnabled",
+    "criteria": [
+      "3.3.8"
+    ],
+    "facets": {
+      "3.3.8": [
+        "authentication-paste-not-blocked"
+      ]
+    }
+  },
+  "presentation-role-conflict": {
+    "prefix": "presentationRoleConflict",
+    "criteria": [],
+    "facets": {}
+  },
+  "presentational-children-focusable-absent": {
+    "prefix": "presentationalChildrenFocusableAbsent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "presentational-children-focusable-absent"
+      ]
+    }
+  },
+  "progressbar-name-present": {
+    "prefix": "progressbarNamePresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "progressbar-name-present"
+      ]
+    }
+  },
+  "region": {
+    "prefix": "region",
+    "criteria": [],
+    "facets": {}
+  },
+  "role-img-text-alternative-present": {
+    "prefix": "roleImg_textAlternativePresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "role-img-text-alternative-present"
+      ]
+    }
+  },
+  "scope-attr-valid": {
+    "prefix": "scopeAttrValid",
+    "criteria": [],
+    "facets": {}
+  },
+  "scrollable-region-focusable": {
+    "prefix": "scrollableRegionFocusable",
+    "criteria": [
+      "2.1.1",
+      "2.1.3"
+    ],
+    "facets": {
+      "2.1.1": [
+        "scrollable-region-focusable-evidence"
+      ],
+      "2.1.3": [
+        "scrollable-region-focusable-evidence"
+      ]
+    }
+  },
+  "searchbox-name-present": {
+    "prefix": "searchboxNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "searchbox-name-present"
+      ]
+    }
+  },
+  "server-side-image-map-absent": {
+    "prefix": "serverSideImageMapAbsent",
+    "criteria": [
+      "2.1.1"
+    ],
+    "facets": {
+      "2.1.1": [
+        "server-side-image-map-absent"
+      ]
+    }
+  },
+  "skip-link": {
+    "prefix": "skipLink",
+    "criteria": [],
+    "facets": {}
+  },
+  "slider-name-present": {
+    "prefix": "sliderNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "slider-name-present"
+      ]
+    }
+  },
+  "spinbutton-name-present": {
+    "prefix": "spinbuttonNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "spinbutton-name-present"
+      ]
+    }
+  },
+  "summary-name-present": {
+    "prefix": "summaryNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "summary-name-present"
+      ]
+    }
+  },
+  "svg-image-text-alternative-present": {
+    "prefix": "svgImage_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "svg-image-text-alt-present"
+      ]
+    }
+  },
+  "svg-text-alternative-present": {
+    "prefix": "svg_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "svg-text-alternative-present"
+      ]
+    }
+  },
+  "svg-text-alternative-quality": {
+    "prefix": "svg_textAltQuality",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "text-alternative-quality"
+      ]
+    }
+  },
+  "tab-name-present": {
+    "prefix": "tabNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "tab-name-present"
+      ]
+    }
+  },
+  "tabindex": {
+    "prefix": "tabindex",
+    "criteria": [],
+    "facets": {}
+  },
+  "table-duplicate-name": {
+    "prefix": "tableDuplicateName",
+    "criteria": [],
+    "facets": {}
+  },
+  "table-fake-caption": {
+    "prefix": "tableFakeCaption",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "table-fake-caption-evidence"
+      ]
+    }
+  },
+  "table-headers-attr-valid": {
+    "prefix": "tableHeadersAttrValid",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "table-headers-attr-valid"
+      ]
+    }
+  },
+  "table-th-has-data-cells": {
+    "prefix": "tableThHasDataCells",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "table-th-has-data-cells"
+      ]
+    }
+  },
+  "target-size-minimum": {
+    "prefix": "targetSizeMinimum",
+    "criteria": [
+      "2.5.8"
+    ],
+    "facets": {
+      "2.5.8": [
+        "target-size-minimum-pointer"
+      ]
+    }
+  },
+  "td-has-header": {
+    "prefix": "tdHasHeader",
+    "criteria": [
+      "1.3.1"
+    ],
+    "facets": {
+      "1.3.1": [
+        "td-has-header"
+      ]
+    }
+  },
+  "text-spacing-content-loss": {
+    "prefix": "textSpacingContentLoss",
+    "criteria": [
+      "1.4.12"
+    ],
+    "facets": {
+      "1.4.12": [
+        "text-spacing-content-loss"
+      ]
+    }
+  },
+  "textbox-name-present": {
+    "prefix": "textboxNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "textbox-name-present"
+      ]
+    }
+  },
+  "tooltip-name-present": {
+    "prefix": "tooltipNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "tooltip-name-present"
+      ]
+    }
+  },
+  "treeitem-name-present": {
+    "prefix": "treeitemNamePresent",
+    "criteria": [
+      "4.1.2"
+    ],
+    "facets": {
+      "4.1.2": [
+        "treeitem-name-present"
+      ]
+    }
+  },
+  "valid-lang": {
+    "prefix": "validLang",
+    "criteria": [
+      "3.1.2"
+    ],
+    "facets": {
+      "3.1.2": [
+        "element-lang-valid"
+      ]
+    }
+  },
+  "video-caption": {
+    "prefix": "videoCaption",
+    "criteria": [
+      "1.2.2"
+    ],
+    "facets": {
+      "1.2.2": [
+        "video-captions-track-evidence"
+      ]
+    }
+  },
+  "video-poster-text-alternative-present": {
+    "prefix": "videoPoster_textAltPresent",
+    "criteria": [
+      "1.1.1"
+    ],
+    "facets": {
+      "1.1.1": [
+        "video-poster-text-alt-present"
+      ]
+    }
+  },
+  "widget-keyboard-focusable": {
+    "prefix": "widgetKeyboardFocusable",
+    "criteria": [
+      "2.1.1"
+    ],
+    "facets": {
+      "2.1.1": [
+        "widget-keyboard-focusable-evidence"
+      ]
+    }
+  }
+}

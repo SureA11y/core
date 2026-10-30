@@ -24,7 +24,7 @@
  * The returned objects are frozen.
  */
 
-const { FACETS } = require('./coverage/wcag-facets.js');
+const { WCAG_TITLES } = require('./coverage/wcag-titles.js');
 const { WCAG_VERSIONS, WCAG_CRITERIA } = require('./coverage/wcag-criteria.js');
 
 const LEVELS = ['A', 'AA', 'AAA'];
@@ -64,7 +64,7 @@ function wcagCriteria(version, { levels } = {}) {
         const own = c.removed ? BEFORE_REMOVAL[c.sc] || {} : {};
         return Object.freeze({
           sc: c.sc,
-          title: own.title || FACETS[c.sc].title,
+          title: own.title || WCAG_TITLES[c.sc],
           level: c.levels[version],
           introduced: c.introduced
         });

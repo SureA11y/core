@@ -121,23 +121,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-allowed-for-role'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ATTR_DEPRECATED: {
-      steps: [
-        "Inspect the element the report names and note the deprecated aria-* attribute and the element's role.",
-        "Open the Accessibility pane in the browser's developer tools and check whether the attribute's state still shows on the element (for example disabled, invalid, has popup).",
-        'With a screen reader, move to the element and listen for that state being announced.',
-        'Look for a non-deprecated way to convey the same thing (a native attribute such as disabled, or a role that supports the attribute) and whether the page already uses it.'
-      ],
-      passWhen:
-        'The state is announced, or it is also conveyed by a native attribute or a supported role, so nothing depends on the deprecated attribute alone.',
-      failWhen:
-        "The state is conveyed only by the deprecated attribute and the screen reader does not announce it, so the element's state is not exposed (WCAG 4.1.2)."
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-allowed-for-role'] } }
 };
 
 function runInPage(ctx) {

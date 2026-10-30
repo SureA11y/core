@@ -1,0 +1,120 @@
+# Test procedures
+
+How a person assesses each criterion by hand, criterion by criterion: what a scan can't decide, and what no rule tests at all. Core keeps these procedures in one place and gives them to whatever needs them:
+
+- an undecided finding's `howToCheck` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)), as it always has;
+- a checklist for a manual review, made from a run;
+- the help a person needs to fill in a conformance report, criterion by criterion: what the scans covered, what is left, and how to check it;
+- the explanation of a criterion whose rules found nothing but do not cover all of it.
+
+Procedures are guidance, not part of a finding's identity: their wording may improve in any release, as a finding's steps may.
+
+## What a procedure is
+
+A criterion has **facets**, the test objectives a person checks to assess it ([`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js)). A facet a rule decides is `full`, one rules decide part of is `partial`, and one only a person can judge is `manual`.
+
+A facet has a **general procedure**: steps a person follows on a whole page, in a browser with its developer tools, a keyboard and, where it matters, a screen reader; then what they see if it passes and if it fails, naming the criterion it fails; and the **tools** it needs besides a browser:
+
+| Tool | |
+|---|---|
+| `keyboard` | A keyboard |
+| `pointer` | A mouse or other pointer |
+| `screen-reader` | A screen reader |
+| `zoom` | The browser's zoom |
+| `contrast-theme` | A high-contrast theme (forced colors) |
+| `devtools` | The browser's developer tools |
+
+Some facets are one test a rule makes on one kind of element (`img-alt-attr-present`: an `<img>` has an alt attribute). Such a **technology facet** has no procedure of its own: `coveredBy` names the broader facet of the same criterion whose procedure a person follows to assess it (`text-alternative-mechanism`). A checklist lists what a person does, once: the facets without `coveredBy`.
+
+Where a rule asks a narrower question about one element, the facet has a **variant** for that rule and reason code: the steps its undecided finding shows as `howToCheck`. A variant always wins over its facet's general procedure: a finding shows its variant, never the general text, and writing a general procedure never changes what a finding shows. Every reason code a core rule can report as `cantTell` is under exactly one facet.
+
+What no criterion requires is kept apart, under `best-practice`, so a criterion's procedures never present advice as a failure.
+
+A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`: every WCAG 2.2 criterion is ([below](#which-criteria-have-procedures)).
+
+## Reading them
+
+| Where | How |
+|---|---|
+| Node | `proceduresFor(requirement, { locale })` from `@surea11y/core`, which reads the dictionaries from disk. |
+| Code that runs in a browser | `proceduresFrom(dictionaries, requirement, { locale })` from `@surea11y/core/procedures`, with the dictionaries it imports as `@surea11y/core/procedures/<locale>` (`{ en, fr }`, or a function from a locale to its dictionary). It needs no file system and reaches none of the rules. |
+
+`requirement` is a WCAG 2.2 criterion (`'1.4.13'`) or `'best-practice'`; a requirement core doesn't know gives `null`. `locale` is a tag (`'fr-CA'` reads `fr-ca`, then `fr`) or a list of tags, most wanted first; English is the fallback for every text a locale lacks, and says how many steps a procedure has. In a browser bundle, `proceduresFor` warns once and returns `null`.
+
+```js
+const { proceduresFor } = require('@surea11y/core');
+
+proceduresFor('1.4.12', { locale: 'fr' });
+```
+
+```js
+import { proceduresFrom } from '@surea11y/core/procedures';
+import en from '@surea11y/core/procedures/en';
+import fr from '@surea11y/core/procedures/fr';
+
+proceduresFrom({ en, fr }, '1.4.12', { locale: 'fr' });
+```
+
+### A pack's standard
+
+A pack's standard can say how a person assesses its requirements ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements), `standard.procedures`). With the packs, `proceduresFor` and `proceduresFrom` read them:
+
+```js
+proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4.1.1', locale: 'fr' });
+```
+
+`standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in English.
+
+## The shape
+
+```js
+{
+  standard: 'wcag',              // or 'best-practice', or a pack's standard ('EN 301 549')
+  id: '1.4.12',                  // the criterion, 'best-practice', or a pack's requirement
+  // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement
+  title: 'Text Spacing',
+  level: 'AA',                   // null for best practices
+  complete: true,                // every facet has a general procedure
+  rules: ['avoid-inline-spacing', 'text-spacing-content-loss'], // core rules that test it (wcagSc)
+  facets: [
+    {
+      id: 'text-spacing-content-loss',
+      label: 'With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)',
+      automation: 'partial',     // 'full' | 'partial' | 'manual'
+      rules: ['text-spacing-content-loss'], // core rules that claim the facet
+      tools: [
+        { id: 'devtools', label: "The browser's developer tools" },
+        { id: 'keyboard', label: 'A keyboard' }
+      ],
+      procedure: { steps: ['…'], passWhen: '…', failWhen: '…' }, // or null
+      // coveredBy: 'text-alternative-mechanism', on a technology facet
+      variants: [
+        { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' }
+      ]
+    }
+  ]
+}
+```
+
+A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in English for now.
+
+`@surea11y/core/procedures/<locale>` is plain JSON, key to text. Its keys are covered as `proceduresFrom` reads them; its wording is not.
+
+## Which criteria have procedures
+
+Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 226 facets, 110 procedures of their own and 116 technology facets covered by one of them. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
+
+## Where they live
+
+| File | Holds |
+|---|---|
+| [`src/procedures/registry.js`](../src/procedures/registry.js) | By criterion and facet: the tools each general procedure needs, and the reason codes under it, by rule. |
+| `src/i18n/procedures/<locale>.json` | The text: a general procedure under `wcag_<criterion>_<facet>_step<n>`, `_pass` and `_fail` (`best-practice_<facet>_…`), a variant under its rule's `<prefix>_review_<CODE>_…`, a tool under `tool_<id>`. |
+| `src/i18n/review/<locale>.json` | Generated: the variants alone, the review dictionaries `howToCheck` reads (`@surea11y/core/review/<locale>`). |
+| `src/procedures/rules.json` | Generated: each core rule's prefix, criteria and facets, so the browser form needs no rule. |
+
+`npm run procedures` writes the generated files and `npm run procedures:check` fails on a stale one; `npm test` checks them too. Writing a rule's steps is [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §8.6; translating them, [`I18N.md`](./I18N.md#the-review-dictionaries).
+
+## Writing a general procedure
+
+As a variant is written (§8.6), in short imperative steps a person can follow in a browser, with what they see if it passes and if it fails, naming the criterion it fails. A general procedure is for the page ("Move the pointer over the page and note each element that shows extra content…"); a variant is for the element a finding names ("Find the text the report names…"). They must not contradict each other: where a variant is good, the general procedure starts from it. Refer to the criterion's Understanding document where it helps; don't copy it.

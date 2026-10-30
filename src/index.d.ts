@@ -1014,6 +1014,83 @@ export function howToCheckFor(
   options?: HowToCheckOptions
 ): HowToCheck | null;
 
+/** Something a procedure needs besides a browser, with its name in the locale. */
+export interface ProcedureTool {
+  id: 'keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools' | (string & {});
+  label: string;
+}
+
+/**
+ * A variant: the steps one rule's finding shows for a reason code
+ * (howToCheck), under the facet the code tests.
+ */
+export interface ProcedureVariant extends HowToCheck {
+  ruleId: string;
+  reasonCode: string;
+}
+
+/** One facet of a requirement: a test objective, and how a person assesses it. */
+export interface ProcedureFacet {
+  id: string;
+  label: string;
+  /** full: rules decide it; partial: rules decide part of it; manual: only a person can. */
+  automation: 'full' | 'partial' | 'manual';
+  /** A facet broader than any one rule, kept for coverage reporting. */
+  macro?: true;
+  /** The core rules that claim the facet (meta.coverage.facetsBySc). */
+  rules: string[];
+  /** What its procedure needs besides a browser; empty without a procedure. */
+  tools: ProcedureTool[];
+  /**
+   * How a person assesses the facet on a whole page; null where its
+   * coveredBy facet's procedure does, or where core has none yet.
+   */
+  procedure: HowToCheck | null;
+  /** The broader facet of the same criterion whose procedure assesses this one. */
+  coveredBy?: string;
+  variants: ProcedureVariant[];
+}
+
+/** How a person assesses a requirement by hand (docs/PROCEDURES.md). */
+export interface Procedures {
+  /** 'wcag', 'best-practice', or the name of a pack's standard ('EN 301 549'). */
+  standard: 'wcag' | 'best-practice' | (string & {});
+  /** The criterion ('1.4.13'), 'best-practice', or a pack's requirement ('9.1.4.3'). */
+  id: string;
+  /** A pack's requirement: the version of its standard it is read from. */
+  version?: string;
+  /** A pack's requirement: its title, or null where the pack gives none. */
+  title: string | null;
+  level: 'A' | 'AA' | 'AAA' | null;
+  /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
+  wcag?: string;
+  /** Whether every facet has a procedure, its own or its coveredBy facet's. */
+  complete: boolean;
+  /** The core rules that test the criterion (wcagSc), or the best practices'. */
+  rules: string[];
+  facets: ProcedureFacet[];
+}
+
+export interface ProceduresOptions {
+  /** A locale ('fr-CA') or a list of them, most wanted first; English is the fallback. */
+  locale?: string | readonly string[] | null;
+  /** Packs whose standards' requirements can be read (their standard.procedures). */
+  packs?: readonly object[];
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** A version of the pack's standard; the latest that has the requirement by default. */
+  version?: string;
+}
+
+/**
+ * How a person assesses a WCAG 2.2 criterion ('1.4.13'), the best practices
+ * ('best-practice'), or, with options.packs, a requirement of a pack's
+ * standard, by hand, read from disk in Node; null for a requirement none of
+ * them knows. In a browser bundle it warns once and returns null: use
+ * proceduresFrom from @surea11y/core/procedures.
+ */
+export function proceduresFor(requirement: string, options?: ProceduresOptions): Procedures | null;
+
 /**
  * The same scan from a single self-contained function, which can be
  * serialized into a page (the browser bindings inject its source).

@@ -161,46 +161,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-value-valid'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ACTIVEDESCENDANT_OUTSIDE: {
-      steps: [
-        'Inspect the element the report names and note the id in its aria-activedescendant and where that element sits.',
-        'Focus the element and use the arrow keys to move the active item.',
-        'With a screen reader running, listen whether each active item is announced as you move.',
-        'Check whether the referenced element could be moved inside the element or tied to it with aria-owns or aria-controls.'
-      ],
-      passWhen: 'Each active item is announced as the arrow keys move through it.',
-      failWhen:
-        'The screen reader announces nothing or the wrong item as the active one changes, so keyboard users cannot follow it, which fails WCAG 4.1.2.'
-    },
-    ARIA_ATTR_VALUE_TARGET_ABSENT: {
-      steps: [
-        'Inspect the element the report names and note the attribute and the ids it refers to.',
-        'Use the page as a user would (open, expand, submit) to reach the state where the referenced element should exist.',
-        "In the developer tools console, run document.getElementById('the-id') for each id and check for a near-miss id in the markup (different case, typo, or inside another shadow root).",
-        "Open the Accessibility pane in the browser's developer tools and check whether the name, description or relation it should supply appears.",
-        'If it does not appear, check in the Accessibility pane whether the element still gets that name or description another way, for example from its own text, a <label> or an aria-label.'
-      ],
-      passWhen:
-        'The referenced element exists when it matters and the name, description or relation shows in the accessibility tree, or the element gets the same name or description another way.',
-      failWhen:
-        'The id never resolves (missing, misspelled, or across a shadow boundary) and nothing else gives the label, description or relation, so it is lost, which fails WCAG 4.1.2 (ACT 6a7281).'
-    },
-    ARIA_HASPOPUP_ROLE_MISMATCH: {
-      steps: [
-        'Inspect the element the report names and note its aria-haspopup value (menu, listbox, tree, grid, dialog; true means menu).',
-        'Open the popup with the mouse and with the keyboard (Enter, Space or Down Arrow).',
-        "Inspect the popup that appears and check its role in the Accessibility pane in the browser's developer tools.",
-        "Compare the popup's role with the type aria-haspopup announces."
-      ],
-      passWhen: 'The popup that opens has the role aria-haspopup announces.',
-      failWhen:
-        'The popup that opens has another role than announced (such as a dialog announced as a menu), misleading screen reader users, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-value-valid'] } }
 };
 
 function runInPage(ctx) {

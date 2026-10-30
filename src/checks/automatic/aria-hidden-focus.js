@@ -106,32 +106,6 @@ const meta = {
     facetsBySc: {
       '4.1.2': ['aria-hidden-focusable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ariaHiddenFocusable_modalOpen_needsReview: {
-      steps: [
-        'Find the element the report names, behind the modal dialog open on the page, and note what in it can take focus.',
-        'With the dialog open, press Tab repeatedly, then Shift+Tab, and watch where focus goes.',
-        'Whenever focus seems to leave the dialog, check document.activeElement in the developer tools console.'
-      ],
-      passWhen:
-        'Focus stays inside the open dialog and never reaches the hidden content behind it.',
-      failWhen:
-        'Focus reaches content behind the dialog inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
-    },
-    ariaHiddenFocusable_runtimeRedirect_needsReview: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Watch where focus lands and check document.activeElement in the developer tools console.',
-        'Press Shift+Tab from the control after it and see whether focus stops on the hidden element or passes straight on.'
-      ],
-      passWhen:
-        "Focus never stays on the hidden element: it passes straight on to a visible control, as a focus trap's sentinel does.",
-      failWhen:
-        'Focus can stay on the element inside aria-hidden="true", where a screen reader announces nothing, which fails WCAG 4.1.2.'
-    }
   }
 };
 

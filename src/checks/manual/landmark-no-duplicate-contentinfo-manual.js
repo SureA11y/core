@@ -51,21 +51,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LANDMARK_DUPLICATE_CONTENTINFO: {
-      steps: [
-        "Open a screen reader's landmarks list, or the Accessibility pane, and count the contentinfo landmarks.",
-        'For each one the report names, decide whether it is the page-wide footer or the footer of a section, card or dialog.',
-        'Check that hidden or closed copies are really hidden from assistive technology.'
-      ],
-      passWhen: 'Assistive technology finds only one contentinfo, the page-wide footer.',
-      failWhen:
-        'More than one contentinfo is exposed, so landmark navigation offers several page footers, a best-practice miss under the WAI-ARIA contentinfo role.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

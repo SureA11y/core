@@ -63,23 +63,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT: {
-      steps: [
-        'Inspect the element the report names and note its tag and its role attribute.',
-        "Open the Accessibility pane in the browser's developer tools and check which role is exposed.",
-        'Press Tab to see whether the element takes keyboard focus, and try operating it with Enter or Space if it is a control.',
-        'With a screen reader, move to the element and compare what is announced with what the element does on screen.'
-      ],
-      passWhen:
-        'The announced role matches how the element looks and behaves (or role none/presentation was ignored on a focusable control and its native role is kept).',
-      failWhen:
-        "The announced role contradicts the element's behaviour, such as a focusable button announced as a heading, which fails ARIA in HTML and can fail WCAG 4.1.2."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

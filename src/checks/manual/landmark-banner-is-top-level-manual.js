@@ -63,21 +63,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LANDMARK_BANNER_NOT_TOP_LEVEL: {
-      steps: [
-        'Find the banner (a header or role="banner") the report names and the landmark it sits inside.',
-        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where the banner appears.",
-        'Decide whether this is the page-wide header; if it is the header of an article or section, it should not be a banner.'
-      ],
-      passWhen: 'The banner sits at the top level of the page, outside any other landmark.',
-      failWhen:
-        'A banner sits inside another landmark, which confuses landmark navigation, a best-practice miss under the WAI-ARIA banner role.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

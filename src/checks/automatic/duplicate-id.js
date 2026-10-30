@@ -98,35 +98,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.1': ['id-unique-page-wide'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    DUPLICATE_ID: {
-      steps: [
-        'Inspect the elements the report names and note the shared id.',
-        "Check whether anything refers to that id: a label's for, an aria-* attribute such as aria-labelledby, or a link to #the-id.",
-        'If something refers to it, follow the reference (click the label or link, or read the name in the Accessibility pane) and check that it reaches the intended element.',
-        'Check which WCAG version and standard the audit applies; under WCAG 2.2 or 2.0/2.1 with the 2023 errata, 4.1.1 is satisfied for HTML.'
-      ],
-      passWhen:
-        'Nothing breaks because of the duplicate (references reach the intended element) and the audit uses WCAG 2.2 or 2.0/2.1 with the errata, under which 4.1.1 is satisfied.',
-      failWhen:
-        "A label, ARIA reference or link reaches the wrong element (WCAG 1.3.1 or 4.1.2), or the audit follows a standard that keeps 4.1.1's text, such as EN 301 549 V3.2.1, where duplicate ids fail 4.1.1 (F77)."
-    },
-    DUPLICATE_ID_IN_SHADOW_TREE: {
-      steps: [
-        'Inspect the elements the report names, inside the same shadow root, and note the shared id.',
-        "Check whether anything refers to that id: a label's for, an aria-* attribute such as aria-labelledby, or a link to #the-id.",
-        'If something refers to it, follow the reference (click the label or link, or read the name in the Accessibility pane) and check that it reaches the intended element.',
-        'Check which WCAG version and standard the audit applies; under WCAG 2.2 or 2.0/2.1 with the 2023 errata, 4.1.1 is satisfied for HTML.'
-      ],
-      passWhen:
-        'Nothing breaks because of the duplicate (references reach the intended element) and the audit uses WCAG 2.2 or 2.0/2.1 with the errata, under which 4.1.1 is satisfied.',
-      failWhen:
-        "A label or ARIA reference in the component reaches the wrong element (WCAG 1.3.1 or 4.1.2), or the audit follows a standard that keeps 4.1.1's text, such as EN 301 549 V3.2.1, where duplicate ids fail 4.1.1 (F77)."
-    }
-  }
+  coverage: { facetsBySc: { '4.1.1': ['id-unique-page-wide'] } }
 };
 
 function runInPage(ctx) {

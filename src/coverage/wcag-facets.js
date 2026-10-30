@@ -179,6 +179,11 @@ const FACETS = {
                 "id": "progressbar-name-present",
                 "label": "role=\"progressbar\" elements expose an accessible name",
                 "automation": "full"
+            },
+            {
+                "id": "captcha-alternative",
+                "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+                "automation": "manual"
             }
         ]
     },
@@ -201,43 +206,90 @@ const FACETS = {
                 "id": "video-captions-track-evidence",
                 "label": "<video> declares a captions/subtitles <track> (evidence only: cannot verify audio content)",
                 "automation": "manual"
+            },
+            {
+                "id": "captions-complete",
+                "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+                "automation": "manual"
             }
         ]
     },
     "1.2.3": {
         "title": "Audio Description or Media Alternative (Prerecorded)",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "audio-description-or-alternative",
+                "label": "Prerecorded video with sound has an audio description or a full text alternative",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.4": {
         "title": "Captions (Live)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-captions",
+                "label": "Live video with sound has captions",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.5": {
         "title": "Audio Description (Prerecorded)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "audio-description",
+                "label": "Prerecorded video with sound has an audio description",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.6": {
         "title": "Sign Language (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "sign-language",
+                "label": "Prerecorded video with sound has sign language interpretation",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.7": {
         "title": "Extended Audio Description (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "extended-audio-description",
+                "label": "Where pauses are too short for audio description, the video stops to make room for it",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.8": {
         "title": "Media Alternative (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "media-text-alternative",
+                "label": "Prerecorded video has a full text alternative that gives everything it shows and says",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.9": {
         "title": "Audio-only (Live)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-audio-alternative",
+                "label": "Live audio-only content has a text alternative, such as live captions or a script",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.1": {
         "title": "Info and Relationships",
@@ -328,18 +380,66 @@ const FACETS = {
                 "id": "aria-owns-valid",
                 "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
                 "automation": "full"
+            },
+            {
+                "id": "headings-marked-up",
+                "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "lists-marked-up",
+                "label": "Content shown as a list is marked up as a list",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "tables-marked-up",
+                "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "form-labels-associated",
+                "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "aria-structure-valid",
+                "label": "ARIA roles and relationships give the same structure the page shows",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "visual-cues-conveyed",
+                "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
     "1.3.2": {
         "title": "Meaningful Sequence",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "reading-order-meaningful",
+                "label": "The order assistive technology reads the content in keeps its meaning, and spaces don't lay out text",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.3": {
         "title": "Sensory Characteristics",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "instructions-not-sensory-only",
+                "label": "Instructions don't rely only on shape, color, size, position, orientation or sound",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.4": {
         "title": "Orientation",
@@ -349,6 +449,12 @@ const FACETS = {
                 "id": "css-orientation-lock",
                 "label": "No CSS orientation media query rotates the page to lock its display orientation",
                 "automation": "full"
+            },
+            {
+                "id": "orientation-not-locked",
+                "label": "The page works in both portrait and landscape, unless one orientation is essential",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -360,13 +466,25 @@ const FACETS = {
                 "id": "autocomplete-valid",
                 "label": "A non-empty autocomplete attribute is a valid autofill value",
                 "automation": "full"
+            },
+            {
+                "id": "input-purpose-identified",
+                "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "1.3.6": {
         "title": "Identify Purpose",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "purpose-identified",
+                "label": "The purpose of regions, icons and controls is given in the markup, so tools can adapt or replace them",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.1": {
         "title": "Use of Color",
@@ -376,6 +494,12 @@ const FACETS = {
                 "id": "link-in-text-block",
                 "label": "Links inside blocks of text are distinguishable from surrounding text by non-color means (underline, weight/style difference, or >=3:1 contrast)",
                 "automation": "partial"
+            },
+            {
+                "id": "color-not-only-means",
+                "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -414,6 +538,12 @@ const FACETS = {
                 "id": "meta-viewport-zoom-enabled",
                 "label": "<meta name=\"viewport\"> does not disable or cap pinch-zoom below 200%",
                 "automation": "full"
+            },
+            {
+                "id": "text-resizes-200",
+                "label": "Text can be resized to 200% without losing content or function",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -425,6 +555,12 @@ const FACETS = {
                 "id": "image-of-text-evidence",
                 "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
                 "automation": "manual"
+            },
+            {
+                "id": "text-not-as-image",
+                "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
@@ -447,27 +583,62 @@ const FACETS = {
     "1.4.7": {
         "title": "Low or No Background Audio",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "background-audio-low",
+                "label": "Speech in prerecorded audio has no background sound, or background sound that can be turned off or is 20 dB quieter",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.8": {
         "title": "Visual Presentation",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "visual-presentation",
+                "label": "Blocks of text can be given the user's colors, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.9": {
         "title": "Images of Text (No Exception)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-images-of-text",
+                "label": "Images of text are used only for decoration or where the look is essential",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.10": {
         "title": "Reflow",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reflow-320",
+                "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.11": {
         "title": "Non-text Contrast",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "ui-component-contrast",
+                "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
+                "automation": "manual"
+            },
+            {
+                "id": "graphics-contrast",
+                "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.12": {
         "title": "Text Spacing",
@@ -482,13 +653,39 @@ const FACETS = {
                 "id": "text-spacing-content-loss",
                 "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
                 "automation": "partial"
+            },
+            {
+                "id": "text-spacing-functionality-kept",
+                "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+                "automation": "manual"
+            },
+            {
+                "id": "text-spacing-other-states",
+                "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+                "automation": "manual"
             }
         ]
     },
     "1.4.13": {
         "title": "Content on Hover or Focus",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "hover-focus-content-dismissible",
+                "label": "Extra content that appears on hover or focus can be dismissed without moving the pointer or focus",
+                "automation": "manual"
+            },
+            {
+                "id": "hover-content-hoverable",
+                "label": "The pointer can move onto extra content that appears on hover without it disappearing",
+                "automation": "manual"
+            },
+            {
+                "id": "hover-focus-content-persistent",
+                "label": "Extra content that appears on hover or focus stays until it is dismissed, the pointer or focus leaves, or it is no longer true",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.1": {
         "title": "Keyboard",
@@ -528,13 +725,24 @@ const FACETS = {
                 "id": "focus-not-removed-by-script-evidence",
                 "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "keyboard-operable-all-functionality",
+                "label": "All functionality can be operated from a keyboard alone",
+                "automation": "manual"
             }
         ]
     },
     "2.1.2": {
         "title": "No Keyboard Trap",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-keyboard-trap",
+                "label": "Focus can always be moved away from any part of the page with the keyboard",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.3": {
         "title": "Keyboard (No Exception)",
@@ -554,13 +762,25 @@ const FACETS = {
                 "id": "click-handler-keyboard-operable",
                 "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
                 "automation": "partial"
+            },
+            {
+                "id": "keyboard-no-exception",
+                "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
     "2.1.4": {
         "title": "Character Key Shortcuts",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "character-key-shortcuts",
+                "label": "Shortcuts made of a single letter, number or symbol can be turned off or remapped, or work only while their control has focus",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.1": {
         "title": "Timing Adjustable",
@@ -570,6 +790,12 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "time-limits-adjustable",
+                "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -586,13 +812,24 @@ const FACETS = {
                 "id": "auto-moving-content-pausable",
                 "label": "Animations that start by themselves and last over five seconds can be paused, stopped or hidden",
                 "automation": "manual"
+            },
+            {
+                "id": "auto-updating-content-controllable",
+                "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
+                "automation": "manual"
             }
         ]
     },
     "2.2.3": {
         "title": "No Timing",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-timing",
+                "label": "Nothing has a time limit, except real-time events and non-interactive media",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.4": {
         "title": "Interruptions",
@@ -607,33 +844,69 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "interruptions-postponable",
+                "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.2.5": {
         "title": "Re-authenticating",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reauthentication-keeps-data",
+                "label": "After a session expires, the user can sign in again and continue without losing data",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.6": {
         "title": "Timeouts",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "timeout-warning",
+                "label": "Users are told how long inactivity may lose their data, unless it is kept for over 20 hours",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.1": {
         "title": "Three Flashes or Below Threshold",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "flashing-below-threshold",
+                "label": "Nothing flashes more than three times in any one second, or the flashes are small and dim enough",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.2": {
         "title": "Three Flashes",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-flashing",
+                "label": "Nothing flashes more than three times in any one second",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.3": {
         "title": "Animation from Interactions",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "motion-animation-disableable",
+                "label": "Motion caused by interaction can be turned off, unless it is essential",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.1": {
         "title": "Bypass Blocks",
@@ -659,13 +932,35 @@ const FACETS = {
                 "id": "page-title-patterns",
                 "label": "Page title patterns review (generic / duplicated / overly templated across pages)",
                 "automation": "partial"
+            },
+            {
+                "id": "page-title-descriptive",
+                "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.3": {
         "title": "Focus Order",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-order-preserves-meaning",
+                "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-order-opened-content",
+                "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-order-no-hidden-stops",
+                "label": "Focus does not stop on content that is closed, hidden or off screen",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.4": {
         "title": "Link Purpose (In Context)",
@@ -680,13 +975,25 @@ const FACETS = {
                 "id": "link-text-descriptive-evidence",
                 "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
                 "automation": "manual"
+            },
+            {
+                "id": "link-purpose-clear",
+                "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.5": {
         "title": "Multiple Ways",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "multiple-ways",
+                "label": "There is more than one way to find a page in the site",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.6": {
         "title": "Headings and Labels",
@@ -722,13 +1029,25 @@ const FACETS = {
                 "id": "focus-not-removed-by-script-evidence",
                 "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "focus-indicator-visible",
+                "label": "Every element that takes keyboard focus shows that it has it",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.8": {
         "title": "Location",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "location-shown",
+                "label": "The page shows where it is in the site",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.9": {
         "title": "Link Purpose (Link Only)",
@@ -743,38 +1062,80 @@ const FACETS = {
                 "id": "link-name-present",
                 "label": "Links expose an accessible name (a link with no name has no purpose to determine from its text)",
                 "automation": "full"
+            },
+            {
+                "id": "link-text-alone-clear",
+                "label": "Each link's purpose can be told from its text alone",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.10": {
         "title": "Section Headings",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "section-headings",
+                "label": "Sections of content are organised with headings",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.11": {
         "title": "Focus Not Obscured (Minimum)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-not-obscured",
+                "label": "An element that receives focus is not entirely hidden by content the page puts over it",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.12": {
         "title": "Focus Not Obscured (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-fully-visible",
+                "label": "No part of an element that receives focus is hidden by content the page puts over it",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.13": {
         "title": "Focus Appearance",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-appearance",
+                "label": "The focus indicator is at least as large as a 2 CSS pixel outline around the element and changes contrast by at least 3:1",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.1": {
         "title": "Pointer Gestures",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "single-pointer-alternative",
+                "label": "What a path or multipoint gesture does can also be done with a single tap or click",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.2": {
         "title": "Pointer Cancellation",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "pointer-cancellation",
+                "label": "Actions run when the pointer is released, not pressed, or can be cancelled or undone",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.3": {
         "title": "Label in Name",
@@ -790,22 +1151,46 @@ const FACETS = {
     "2.5.4": {
         "title": "Motion Actuation",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "motion-actuation",
+                "label": "What is done by moving the device can also be done with controls, and the motion response can be turned off",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.5": {
         "title": "Target Size (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "target-size-enhanced",
+                "label": "Pointer targets are at least 44 by 44 CSS pixels",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.6": {
         "title": "Concurrent Input Mechanisms",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "concurrent-input",
+                "label": "The page doesn't limit the kinds of input that can be used, such as a mouse with a touch screen",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.7": {
         "title": "Dragging Movements",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "dragging-alternative",
+                "label": "What is done by dragging can also be done with single taps or clicks",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.8": {
         "title": "Target Size (Minimum)",
@@ -831,6 +1216,12 @@ const FACETS = {
                 "id": "html-xml-lang-mismatch",
                 "label": "lang and xml:lang on <html> declare the same primary language, when both are present",
                 "automation": "full"
+            },
+            {
+                "id": "page-language-correct",
+                "label": "The page's main language is given in its markup, and is the right one",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -842,48 +1233,102 @@ const FACETS = {
                 "id": "element-lang-valid",
                 "label": "Any element's lang attribute (when present) is a syntactically valid language tag",
                 "automation": "full"
+            },
+            {
+                "id": "parts-language-marked",
+                "label": "Passages and phrases in a language other than the page's are marked with their own language",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "3.1.3": {
         "title": "Unusual Words",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "unusual-words-defined",
+                "label": "Words used in an unusual way, idioms and jargon have their meaning given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.4": {
         "title": "Abbreviations",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "abbreviations-expanded",
+                "label": "Abbreviations have their expanded form or meaning given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.5": {
         "title": "Reading Level",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reading-level",
+                "label": "Text that needs more than lower secondary education to read has a simpler version or supplement",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.6": {
         "title": "Pronunciation",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "pronunciation-given",
+                "label": "Where meaning depends on pronunciation, the pronunciation is given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.1": {
         "title": "On Focus",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-no-change-of-context",
+                "label": "Moving focus onto an element doesn't change the context by itself",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.2": {
         "title": "On Input",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "input-no-unexpected-change",
+                "label": "Changing a setting doesn't change the context unless the user is told beforehand",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.3": {
         "title": "Consistent Navigation",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "navigation-consistent",
+                "label": "Navigation repeated on several pages comes in the same relative order each time",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.4": {
         "title": "Consistent Identification",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "identification-consistent",
+                "label": "Components that do the same thing across pages are identified the same way",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.5": {
         "title": "Change on Request",
@@ -898,13 +1343,25 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "changes-on-request",
+                "label": "Changes of context happen only when the user asks for them, or can be turned off",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "3.2.6": {
         "title": "Consistent Help",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "help-consistent",
+                "label": "Help offered on several pages is in the same relative place each time",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.1": {
         "title": "Error Identification",
@@ -914,6 +1371,12 @@ const FACETS = {
                 "id": "invalid-field-error-message",
                 "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
                 "automation": "partial"
+            },
+            {
+                "id": "errors-identified",
+                "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -935,33 +1398,69 @@ const FACETS = {
                 "id": "form-control-visible-label-quality",
                 "label": "Form controls have a label presented to all users, not only a title or placeholder",
                 "automation": "manual"
+            },
+            {
+                "id": "labels-instructions-provided",
+                "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "3.3.3": {
         "title": "Error Suggestion",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "error-suggestions",
+                "label": "When the page knows how to fix an input error, it says how",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.4": {
         "title": "Error Prevention (Legal, Financial, Data)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "submission-reversible-checked-confirmed",
+                "label": "Submissions with legal or financial effect, or that change stored data, can be reversed, checked or reviewed and confirmed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.5": {
         "title": "Help",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "context-help",
+                "label": "Help for filling in each field is available where it is needed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.6": {
         "title": "Error Prevention (All)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "all-submissions-reversible-checked-confirmed",
+                "label": "Every submission of information can be reversed, checked or reviewed and confirmed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.7": {
         "title": "Redundant Entry",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "redundant-entry",
+                "label": "Information the user already gave in a process is filled in or offered to pick, not asked for again",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.8": {
         "title": "Accessible Authentication (Minimum)",
@@ -971,13 +1470,25 @@ const FACETS = {
                 "id": "authentication-paste-not-blocked",
                 "label": "A password or one-time-code field does not cancel pasting, so a password manager or the clipboard can still fill it",
                 "automation": "manual"
+            },
+            {
+                "id": "authentication-no-cognitive-test",
+                "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
     "3.3.9": {
         "title": "Accessible Authentication (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "authentication-no-recognition-test",
+                "label": "Signing in needs no cognitive test, not even recognising objects or the user's own content, unless a way around it is offered",
+                "automation": "manual"
+            }
+        ]
     },
     "4.1.1": {
         "title": "Parsing (Obsolete and removed)",
@@ -1193,6 +1704,30 @@ const FACETS = {
                 "id": "aria-owns-valid",
                 "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
                 "automation": "full"
+            },
+            {
+                "id": "components-named",
+                "label": "Every link, control, frame and dialog has a name that says what it is for",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "roles-match-behavior",
+                "label": "Every control's role says what it does, and controls aren't nested inside one another",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "states-values-exposed",
+                "label": "Every control's state and value are exposed and change with what is on screen",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "aria-used-validly",
+                "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1209,6 +1744,12 @@ const FACETS = {
                 "id": "live-region-changes-evidence",
                 "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
                 "automation": "manual"
+            },
+            {
+                "id": "status-messages-announced",
+                "label": "Status messages are announced by assistive technology without taking focus",
+                "automation": "manual",
+                "macro": true
             }
         ]
     }

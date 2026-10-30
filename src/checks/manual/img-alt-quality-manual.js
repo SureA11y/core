@@ -108,32 +108,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    IMAGE_ONLY_CONTROL_CONTENT: {
-      steps: [
-        "Find the link or button the report names; the image is its only content, so its alt is the control's name.",
-        'Read the alt text, then activate the control or check its destination to learn what it does.',
-        'Decide whether the alt says what the control does ("Search", "Home"), not what the image looks like.'
-      ],
-      passWhen: "The alt text states the control's purpose or destination.",
-      failWhen:
-        'The alt text does not say what the control does, for example a file name, address, generic word or symbols, which fails WCAG 1.1.1 (H30, F30).'
-    },
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Find the image the report names and read its alt text (the report gives the reason it looked suspect, if any).',
-        'Look at the image and its context, and ask what it shows that matters to the page.',
-        'If the text alternative only names the image, as is common for charts and diagrams, the details may be given elsewhere: in a caption, text or a table next to it, or a link beside it. That counts only if a screen reader user can find it from the image and it gives everything the image shows.',
-        'Decide whether the alt says what matters, or names the image while that description gives the rest; a file name, web address or generic word such as "image" does neither.'
-      ],
-      passWhen:
-        'The alt text conveys what the image shows that a user needs, or it names the image and a description a screen reader user can reach from it gives the rest.',
-      failWhen:
-        "Neither the alt text nor a description reachable from the image conveys the image's content (for example the alt is a file name, address or generic word), which fails WCAG 1.1.1 (F30)."
-    }
   }
 };
 

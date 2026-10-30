@@ -82,6 +82,23 @@ test('the how-to-check entry reaches no module outside core', () => {
   );
 });
 
+// @surea11y/core/procedures is how an app whose code runs in a browser
+// reads the procedures: it reaches nothing outside core, not even Node's fs,
+// and none of the rules (their facets come from src/procedures/rules.json,
+// data the walk doesn't follow).
+test('the procedures entry reaches no module outside core', () => {
+  const { seen, outside } = reached(path.join(ROOT, 'src', 'procedures-core.js'));
+  assert.deepEqual(outside, []);
+  assert.deepEqual(
+    [...seen].sort(),
+    [
+      path.join(ROOT, 'src', 'procedures-core.js'),
+      path.join(ROOT, 'src', 'procedures', 'registry.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-facets.js')
+    ].sort()
+  );
+});
+
 // Bundled for a browser, as a Cypress spec is, the main entry builds. A scan
 // through it is silent about steps it can't add; asked for steps by name it
 // warns once that it has none, and the how-to-check entry with an imported

@@ -111,55 +111,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.3.1': ['p-as-heading-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    BOLD_LARGE_DIV: {
-      steps: [
-        'Find the bold, large block of text the report names and look at it in the page.',
-        'Decide whether it introduces the content that follows it, as a section title does, or is just emphasis, a callout or a value.',
-        "If it acts as a title, check in the Accessibility pane of the developer tools, or with a screen reader's heading list, whether it is exposed as a heading."
-      ],
-      passWhen:
-        'The text is not a section title (emphasis, a quote, a price or a statistic), or it is marked up as a heading (h1 to h6 or role="heading").',
-      failWhen:
-        'The text visually titles a section but is not a heading, so its structure is shown only by style, which fails WCAG 1.3.1 (F2).'
-    },
-    BOLD_LARGE_PARAGRAPH: {
-      steps: [
-        'Find the bold, large paragraph the report names and look at it in the page.',
-        'Decide whether it introduces the content that follows it, as a section title does, or is just emphasis, a callout or a value.',
-        "If it acts as a title, check in the Accessibility pane of the developer tools, or with a screen reader's heading list, whether it is exposed as a heading."
-      ],
-      passWhen:
-        'The text is not a section title (emphasis, a quote, a price or a statistic), or it is marked up as a heading (h1 to h6 or role="heading").',
-      failWhen:
-        'The text visually titles a section but is not a heading, so its structure is shown only by style, which fails WCAG 1.3.1 (F2).'
-    },
-    HEADING_LIKE_LINK: {
-      steps: [
-        'Find the bold, large linked text the report names and look at it in the page.',
-        'Decide whether it introduces the content that follows it, as a section title does, or is just emphasis, a callout or a value.',
-        "If it acts as a title, check in the Accessibility pane of the developer tools, or with a screen reader's heading list, whether it is exposed as a heading."
-      ],
-      passWhen:
-        'The text is not a section title (emphasis, a quote, a price or a statistic), or it is marked up as a heading (h1 to h6 or role="heading").',
-      failWhen:
-        'The text visually titles a section but is not a heading, so its structure is shown only by style, which fails WCAG 1.3.1 (F2).'
-    },
-    HEADING_LIKE_NUMBER: {
-      steps: [
-        'Find the bold, large number (such as a year) the report names and look at it in the page.',
-        'Decide whether it introduces the content that follows it, as a section title does, or is just emphasis, a callout or a value.',
-        "If it acts as a title, check in the Accessibility pane of the developer tools, or with a screen reader's heading list, whether it is exposed as a heading."
-      ],
-      passWhen:
-        'The text is not a section title (emphasis, a quote, a price or a statistic), or it is marked up as a heading (h1 to h6 or role="heading").',
-      failWhen:
-        'The text visually titles a section but is not a heading, so its structure is shown only by style, which fails WCAG 1.3.1 (F2).'
-    }
-  }
+  coverage: { facetsBySc: { '1.3.1': ['p-as-heading-evidence'] } }
 };
 
 function runInPage(ctx) {

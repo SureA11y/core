@@ -57,8 +57,9 @@ test file, a core rule is held by tests that read every rule:
 - `tests/reason-codes-docs.test.js`: the header's `@reason-codes` lists exactly the rule's codes
   in `scripts/data/finding-ids.json` (`npm run finding-ids` updates it), each with an outcome, a
   meaning and a basis ([`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §10.1).
-- `tests/how-to-check.test.js`: every code the header lists as `cantTell` has steps in
-  `meta.review`, and every locale of `src/i18n/review/` has every key (§8.6).
+- `tests/procedures.test.js`: every code the header lists as `cantTell` has steps in
+  `src/procedures`, under one facet, and every locale of `src/i18n/procedures/` has every
+  key (§8.6).
 - `npm run fixtures:markers:check` and `npm run fixtures:check`: the scenario page's markers
   match what the rule reports, and the fixture index is current (§11).
 

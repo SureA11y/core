@@ -102,22 +102,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CONTENT_OUTSIDE_LANDMARK: {
-      steps: [
-        'Find the content the report names (or the iframe) on the page.',
-        "Open the Accessibility pane of the developer tools, or a screen reader's list of landmarks, and see which landmark, if any, contains it.",
-        'Decide whether it belongs in an existing landmark (header, nav, main, footer, aside) or is outside every one.'
-      ],
-      passWhen:
-        'The content sits inside a landmark, or is something that needs none (such as a skip link or a dialog).',
-      failWhen:
-        'Real page content sits outside every landmark, so people moving by landmark can miss it (best practice, ARIA11).'
-    }
-  }
+  coverage: {}
 };
 
 // This check is inherently whole-document (does the PAGE have this

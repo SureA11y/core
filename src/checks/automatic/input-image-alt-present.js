@@ -70,21 +70,6 @@ const meta = {
       '1.1.1': ['input-image-alt-attr-present'],
       '4.1.2': ['input-image-name-present']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    default_name: {
-      steps: [
-        'Find the image button the report names and read the name the report gives ("Submit" or "Submit Query").',
-        'Look at its image and work out what the button does, for example by what happens when it is pressed.',
-        'Decide whether the name says what the button does.'
-      ],
-      passWhen:
-        'The name says what the button does, as "Submit" does on a button that sends a form.',
-      failWhen:
-        'The name does not say what the button does (such as "Submit Query" on a search button), which fails WCAG 1.1.1.'
-    }
   }
 };
 
