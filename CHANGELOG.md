@@ -25,6 +25,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Changed
 
+- The HTML report bundled for the browser (`surea11y.report.js`) reads the criteria's titles from a table of their own, no longer from the facet registry, and is 21 KB smaller (147 KB to 125 KB) though the facets grow.
 - The "How to check" steps of core rules have moved out of each rule's `meta.review` into one place, `src/procedures`, where they are filed by criterion and facet as the first part of a procedure for assessing every criterion by hand; rules that test no criterion are filed under best practices. The review dictionaries (`@surea11y/core/review/<locale>`) are now generated from it (`npm run procedures`, `procedures:check`) and are byte for byte what they were, and every finding's `howToCheck` is word for word the same, in every locale. A pack rule still writes its steps in its own `meta.review`. Contributors write a core rule's steps in `src/i18n/procedures/<locale>.json` and list its codes in `src/procedures/registry.js` (`docs/RULE_AUTHORING.md` §8.6).
 
 ## [1.14.1] - 2026-10-27

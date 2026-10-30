@@ -237,6 +237,7 @@
     "src/core/rule-variants.js",
     "src/core/rule-meta.js",
     "src/coverage/wcag-facets.js",
+    "src/coverage/wcag-titles.js",
     "src/coverage/wcag-version-map.js",
     "src/coverage/wcag-criteria.js",
     "profiles/index.js",
