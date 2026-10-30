@@ -413,6 +413,12 @@ export interface RenderingEnvironment {
    */
   animationsSettled?: number;
   /**
+   * How many elements with content-visibility: auto had their content
+   * skipped, which the scan laid out as it is near the viewport and let the
+   * browser skip again afterwards. Absent when there were none.
+   */
+  contentVisibilitySkipped?: number;
+  /**
    * Whether the page runs the internals hook (internalsHookScript) in this
    * document's realm: 'early' when it was installed before the page's
    * scripts and is still the realm's attachInternals, 'late' otherwise.
