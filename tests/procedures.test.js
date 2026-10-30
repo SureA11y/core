@@ -256,19 +256,22 @@ test('a facet with a general procedure has 1 to 8 steps and names its tools', ()
   assert.ok(procedures >= 10, `only ${procedures} procedures`);
 });
 
-// The sample criteria (one manual only, one partly automated, one only a
-// person can judge) have every facet written; the rest follow.
-test('1.4.13, 1.4.12 and 2.4.3 have a procedure for every facet', () => {
-  for (const criterion of ['1.4.13', '1.4.12', '2.4.3']) {
-    const ids = FACETS[criterion].facets.map((f) => f.id);
-    assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion]), ids, criterion);
+// Every criterion of levels A and AA (and 4.1.1, removed in 2.2) has a
+// procedure for every facet, its own or its coveredBy facet's.
+test('every A and AA criterion has a procedure for every facet', () => {
+  const incomplete = [];
+  for (const [criterion, info] of Object.entries(FACETS)) {
+    if (info.level === 'AAA') continue;
+    const ids = info.facets.map((f) => f.id);
+    assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion] || {}), ids, criterion);
     const r = proceduresFor(criterion);
-    assert.equal(r.complete, true, criterion);
+    if (!r.complete) incomplete.push(criterion);
     assert.deepEqual(
       r.facets.map((f) => f.id),
       ids
     );
   }
+  assert.deepEqual(incomplete, []);
 });
 
 test('no core rule keeps its steps in meta.review: they are in src/procedures', () => {

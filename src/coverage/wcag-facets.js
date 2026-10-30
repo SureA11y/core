@@ -1524,6 +1524,30 @@ const FACETS = {
                 "id": "aria-owns-valid",
                 "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
                 "automation": "full"
+            },
+            {
+                "id": "components-named",
+                "label": "Every link, control, frame and dialog has a name that says what it is for",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "roles-match-behavior",
+                "label": "Every control's role says what it does, and controls aren't nested inside one another",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "states-values-exposed",
+                "label": "Every control's state and value are exposed and change with what is on screen",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "aria-used-validly",
+                "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1540,6 +1564,12 @@ const FACETS = {
                 "id": "live-region-changes-evidence",
                 "label": "A live region gets its status message after it is in the accessibility tree, not added with it or shown with it (evidence only: needs the live-region hook, and screen readers differ)",
                 "automation": "manual"
+            },
+            {
+                "id": "status-messages-announced",
+                "label": "Status messages are announced by assistive technology without taking focus",
+                "automation": "manual",
+                "macro": true
             }
         ]
     }

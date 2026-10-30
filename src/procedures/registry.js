@@ -872,13 +872,18 @@ const PROCEDURES = {
     },
     '4.1.1': {
       'id-unique-page-wide': {
+        tools: ['devtools'],
         variants: {
           'duplicate-id': ['DUPLICATE_ID', 'DUPLICATE_ID_IN_SHADOW_TREE']
         }
       }
     },
     '4.1.2': {
+      'form-control-name-present': {
+        coveredBy: 'components-named'
+      },
       'aria-hidden-focusable': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'aria-hidden-focus': [
             'ariaHiddenFocusable_modalOpen_needsReview',
@@ -886,92 +891,122 @@ const PROCEDURES = {
           ]
         }
       },
+      'link-name-present': {
+        coveredBy: 'components-named'
+      },
       'button-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'button-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
+      'input-image-name-present': {
+        coveredBy: 'components-named'
+      },
       'checkbox-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'binary-control-name-present': ['name_internals']
         }
       },
+      'radio-name-present': {
+        coveredBy: 'components-named'
+      },
+      'switch-name-present': {
+        coveredBy: 'components-named'
+      },
       'combobox-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'combobox-name-present': ['name_internals']
         }
       },
       'dialog-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'dialog-name-present': ['name_internals']
         }
       },
       'menuitem-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'menuitem-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
       'tab-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'tab-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
       'slider-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'slider-name-present': ['name_internals']
         }
       },
       'textbox-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'textbox-name-present': ['name_internals']
         }
       },
       'searchbox-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'searchbox-name-present': ['name_internals']
         }
       },
       'spinbutton-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'spinbutton-name-present': ['name_internals']
         }
       },
       'listbox-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'listbox-name-present': ['name_internals']
         }
       },
       'option-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'option-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
       'treeitem-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'treeitem-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
       'aria-role-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'aria-role-name-present': ['name_internals']
         }
       },
       'aria-role-valid': {
+        coveredBy: 'roles-match-behavior',
         variants: {
           'aria-roles-valid': ['ARIA_ROLE_ABSTRACT', 'ARIA_ROLE_INVALID']
         }
       },
       'aria-role-not-deprecated': {
+        coveredBy: 'roles-match-behavior',
         variants: {
           'aria-deprecated-role': ['ARIA_ROLE_AUTHOR_DISCOURAGED', 'ARIA_ROLE_DEPRECATED']
         }
       },
       'aria-attr-name-valid': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'aria-valid-attr': ['ARIA_ATTR_INVALID']
         }
       },
       'aria-attr-value-valid': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'aria-valid-attr-value': [
             'ARIA_ACTIVEDESCENDANT_OUTSIDE',
@@ -981,21 +1016,28 @@ const PROCEDURES = {
         }
       },
       'aria-attr-allowed-for-role': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'aria-allowed-attr': ['ARIA_ATTR_DEPRECATED']
         }
       },
       'aria-attr-not-prohibited': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'aria-prohibited-attr': ['ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW']
         }
       },
       'aria-attr-required-for-role': {
+        coveredBy: 'states-values-exposed',
         variants: {
           'aria-required-attr': ['ARIA_ATTR_REQUIRED_MISSING_IMPLICIT', 'state_internals']
         }
       },
+      'iframe-name-present': {
+        coveredBy: 'components-named'
+      },
       'identical-iframes-same-purpose': {
+        coveredBy: 'components-named',
         variants: {
           'identical-iframes-same-purpose': [
             'IFRAME_RESOURCE_DIFFERS',
@@ -1003,58 +1045,94 @@ const PROCEDURES = {
           ]
         }
       },
+      'aria-hidden-body-absent': {
+        coveredBy: 'aria-used-validly'
+      },
       'duplicate-id-aria': {
+        coveredBy: 'aria-used-validly',
         variants: {
           'duplicate-id-aria': ['DUPLICATE_ID_ARIA_REFERENCED']
         }
       },
       'summary-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'summary-name-present': ['name_closedContent', 'name_contentTooDeep']
         }
       },
       'tooltip-name-present': {
+        coveredBy: 'components-named',
         variants: {
           'tooltip-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
+      'nested-interactive-controls-absent': {
+        coveredBy: 'roles-match-behavior'
+      },
+      'presentational-children-focusable-absent': {
+        coveredBy: 'roles-match-behavior'
+      },
       'aria-braille-equivalent': {
+        coveredBy: 'components-named',
         variants: {
           'aria-braille-equivalent': ['BRAILLE_ATTR_WITHOUT_EQUIVALENT']
         }
       },
       'aria-conditional-attr': {
+        coveredBy: 'states-values-exposed',
         variants: {
           'aria-conditional-attr': ['ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID']
         }
       },
       'aria-checked-state-mismatch': {
+        coveredBy: 'states-values-exposed',
         variants: {
           'aria-checked-state-mismatch': ['ARIA_CHECKED_STATE_MISMATCH']
         }
       },
       'aria-expanded-state-mismatch': {
+        coveredBy: 'states-values-exposed',
         variants: {
           'aria-expanded-state-mismatch': [
             'EXPANDED_FALSE_CONTROLLED_SHOWN',
             'EXPANDED_TRUE_CONTROLLED_HIDDEN'
           ]
         }
+      },
+      'aria-owns-valid': {
+        coveredBy: 'roles-match-behavior'
+      },
+      'components-named': {
+        tools: ['devtools', 'screen-reader']
+      },
+      'roles-match-behavior': {
+        tools: ['devtools', 'screen-reader']
+      },
+      'states-values-exposed': {
+        tools: ['devtools', 'screen-reader', 'keyboard']
+      },
+      'aria-used-validly': {
+        tools: ['devtools']
       }
     },
     '4.1.3': {
       'live-region-reachable-evidence': {
+        coveredBy: 'status-messages-announced',
         variants: {
           'live-region-announcements': ['LIVE_REGION_BUSY', 'LIVE_REGION_HIDDEN']
         }
       },
       'live-region-changes-evidence': {
+        coveredBy: 'status-messages-announced',
         variants: {
           'live-region-announcements': [
             'LIVE_REGION_INSERTED_WITH_CONTENT',
             'LIVE_REGION_SHOWN_AND_FILLED'
           ]
         }
+      },
+      'status-messages-announced': {
+        tools: ['screen-reader']
       }
     }
   },

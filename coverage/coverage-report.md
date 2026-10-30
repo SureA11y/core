@@ -672,8 +672,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/40** facets covered.
-Automation mix: **full 37, partial 1, manual 2**.
+Facet coverage: **40/44** facets covered.
+Automation mix: **full 37, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -717,6 +717,12 @@ Automation mix: **full 37, partial 1, manual 2**.
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 | aria-owns-valid | full | aria-owns-valid |
+| components-named | partial | — |
+| roles-match-behavior | partial | — |
+| states-values-exposed | partial | — |
+| aria-used-validly | partial | — |
+
+Uncovered facets: components-named, roles-match-behavior, states-values-exposed, aria-used-validly
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -762,13 +768,16 @@ Automation mix: **full 37, partial 1, manual 2**.
 
 ### 4.1.3
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 0, partial 0, manual 2**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | live-region-reachable-evidence | manual | live-region-announcements |
 | live-region-changes-evidence | manual | live-region-announcements |
+| status-messages-announced | manual | — |
+
+Uncovered facets: status-messages-announced
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1448,8 +1457,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/40** facets covered.
-Automation mix: **full 37, partial 1, manual 2**.
+Facet coverage: **40/44** facets covered.
+Automation mix: **full 37, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1493,6 +1502,12 @@ Automation mix: **full 37, partial 1, manual 2**.
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
 | aria-owns-valid | full | aria-owns-valid |
+| components-named | partial | — |
+| roles-match-behavior | partial | — |
+| states-values-exposed | partial | — |
+| aria-used-validly | partial | — |
+
+Uncovered facets: components-named, roles-match-behavior, states-values-exposed, aria-used-validly
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1538,13 +1553,16 @@ Automation mix: **full 37, partial 1, manual 2**.
 
 ### 4.1.3
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 0, partial 0, manual 2**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | live-region-reachable-evidence | manual | live-region-announcements |
 | live-region-changes-evidence | manual | live-region-announcements |
+| status-messages-announced | manual | — |
+
+Uncovered facets: status-messages-announced
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

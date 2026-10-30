@@ -8294,12 +8294,17 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 40,
+        "totalFacets": 44,
         "coveredFacets": 40,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "components-named",
+          "roles-match-behavior",
+          "states-values-exposed",
+          "aria-used-validly"
+        ],
         "automationCounts": {
           "full": 37,
-          "partial": 1,
+          "partial": 5,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -8624,17 +8629,43 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "components-named",
+            "label": "Every link, control, frame and dialog has a name that says what it is for",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "roles-match-behavior",
+            "label": "Every control's role says what it does, and controls aren't nested inside one another",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "states-values-exposed",
+            "label": "Every control's state and value are exposed and change with what is on screen",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-used-validly",
+            "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "4.1.3",
         "title": "Status Messages",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "status-messages-announced"
+        ],
         "automationCounts": {
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8654,6 +8685,12 @@
             "coveredBy": [
               "live-region-announcements"
             ]
+          },
+          {
+            "id": "status-messages-announced",
+            "label": "Status messages are announced by assistive technology without taking focus",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       }
@@ -10129,12 +10166,17 @@
       {
         "sc": "4.1.2",
         "title": "Name, Role, Value",
-        "totalFacets": 40,
+        "totalFacets": 44,
         "coveredFacets": 40,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "components-named",
+          "roles-match-behavior",
+          "states-values-exposed",
+          "aria-used-validly"
+        ],
         "automationCounts": {
           "full": 37,
-          "partial": 1,
+          "partial": 5,
           "manual": 2
         },
         "missingFacetRules": [],
@@ -10459,17 +10501,43 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "components-named",
+            "label": "Every link, control, frame and dialog has a name that says what it is for",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "roles-match-behavior",
+            "label": "Every control's role says what it does, and controls aren't nested inside one another",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "states-values-exposed",
+            "label": "Every control's state and value are exposed and change with what is on screen",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-used-validly",
+            "label": "ARIA attributes are real, valid and allowed where they are, and nothing focusable is hidden from assistive technology",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "4.1.3",
         "title": "Status Messages",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "status-messages-announced"
+        ],
         "automationCounts": {
-          "manual": 2
+          "manual": 3
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -10489,6 +10557,12 @@
             "coveredBy": [
               "live-region-announcements"
             ]
+          },
+          {
+            "id": "status-messages-announced",
+            "label": "Status messages are announced by assistive technology without taking focus",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       }
