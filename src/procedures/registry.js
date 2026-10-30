@@ -1,0 +1,754 @@
+/* SPDX-License-Identifier: MPL-2.0 */
+
+'use strict';
+
+/**
+ * How a person assesses each criterion by hand: the one source of the steps
+ * core gives, keyed by criterion and facet.
+ *
+ * WHAT IS HERE
+ * ------------
+ * `wcag` is keyed by success criterion, then by facet id, the facets of
+ * src/coverage/wcag-facets.js, which give each its label and automation.
+ * `best-practice` holds what no criterion requires, keyed by facet id, each
+ * with its own label and automation: the steps of rules that claim no
+ * criterion, so that they are never read as a criterion's.
+ *
+ * Under a facet, `variants` lists, by rule id, the reason codes whose steps
+ * that rule gives for the element a finding names: how a person answers one
+ * of its undecided findings. Each reason code a core rule can report as
+ * cantTell is under exactly one facet, the one it tests, and a variant is
+ * always what its finding shows.
+ *
+ * THE TEXT
+ * --------
+ * The words are in src/i18n/procedures/<locale>.json, English and its
+ * translations, flat: a variant's under `<prefix>_review_<CODE>_step<n>`,
+ * `_pass` and `_fail`, where `<prefix>` is the rule's i18n.titleKey without
+ * `_title`, the keys the review dictionaries have always had. The review
+ * dictionaries themselves (src/i18n/review/<locale>.json, published as
+ * @surea11y/core/review/<locale>) are made from them by
+ * scripts/generate-procedures.js; `npm run procedures:check` and the tests
+ * fail on a stale one.
+ *
+ * Like the facets, this is guidance (NON-NORMATIVE): nothing here changes an
+ * outcome, and its wording may improve in any release.
+ */
+
+const PROCEDURES = {
+  wcag: {
+    '1.1.1': {
+      'text-alternative-quality': {
+        variants: {
+          'area-alt-quality': ['TEXT_ALTERNATIVE_REVIEW'],
+          'canvas-text-alternative-quality': ['TEXT_ALTERNATIVE_REVIEW'],
+          'embed-text-alternative-quality': ['TEXT_ALTERNATIVE_REVIEW'],
+          'img-alt-decorative': ['EXCLUDED_ELEMENT_REVIEW', 'IMAGE_ONLY_CONTROL_CONTENT'],
+          'img-alt-quality': ['IMAGE_ONLY_CONTROL_CONTENT', 'TEXT_ALTERNATIVE_REVIEW'],
+          'input-image-alt-decorative': ['NAME_FROM_ELSEWHERE_REVIEW'],
+          'input-image-alt-quality': ['TEXT_ALTERNATIVE_REVIEW'],
+          'object-text-alternative-quality': ['TEXT_ALTERNATIVE_REVIEW'],
+          'svg-text-alternative-quality': ['IMAGE_ONLY_CONTROL_CONTENT', 'TEXT_ALTERNATIVE_REVIEW']
+        }
+      },
+      'role-img-text-alternative-present': {
+        variants: {
+          'role-img-text-alternative-present': ['name_internals']
+        }
+      },
+      'input-image-alt-attr-present': {
+        variants: {
+          'input-image-alt-present': ['default_name']
+        }
+      },
+      'video-poster-text-alt-present': {
+        variants: {
+          'video-poster-text-alternative-present': ['VIDEO_POSTER_FIGCAPTION_REVIEW']
+        }
+      },
+      'meter-name-present': {
+        variants: {
+          'meter-name-present': ['name_internals']
+        }
+      },
+      'progressbar-name-present': {
+        variants: {
+          'progressbar-name-present': ['name_internals']
+        }
+      }
+    },
+    '1.2.1': {
+      'transcript-evidence': {
+        variants: {
+          'media-alternative-transcript-evidence': [
+            'transcriptNotDetected',
+            'transcriptEvidenceUnverified'
+          ]
+        }
+      }
+    },
+    '1.2.2': {
+      'video-captions-track-evidence': {
+        variants: {
+          'video-caption': [
+            'CAPTIONS_REVIEW',
+            'CAPTIONS_TRACK_NOT_DETECTED',
+            'SUBTITLES_TRACK_ONLY'
+          ]
+        }
+      }
+    },
+    '1.3.1': {
+      'table-th-has-data-cells': {
+        variants: {
+          'table-th-has-data-cells': ['TABLE_TH_NO_ASSIGNED_CELL']
+        }
+      },
+      'aria-role-required-owned-children': {
+        variants: {
+          'aria-required-children': ['ARIA_REQUIRED_CHILD_MISSING']
+        }
+      },
+      'p-as-heading-evidence': {
+        variants: {
+          'p-as-heading': [
+            'BOLD_LARGE_DIV',
+            'BOLD_LARGE_PARAGRAPH',
+            'HEADING_LIKE_LINK',
+            'HEADING_LIKE_NUMBER'
+          ]
+        }
+      },
+      'table-fake-caption-evidence': {
+        variants: {
+          'table-fake-caption': ['SINGLE_CELL_FIRST_ROW_NO_CAPTION']
+        }
+      },
+      'td-has-header': {
+        variants: {
+          'td-has-header': ['TD_TABLE_NO_HEADERS']
+        }
+      }
+    },
+    '1.3.4': {
+      'css-orientation-lock': {
+        variants: {
+          'css-orientation-lock': [
+            'ORIENTATION_MEDIA_HIDES_CONTENT',
+            'ORIENTATION_MEDIA_ROTATES_ELEMENT',
+            'STYLESHEETS_NOT_READABLE'
+          ]
+        }
+      }
+    },
+    '1.4.1': {
+      'link-in-text-block': {
+        variants: {
+          'link-in-text-block': [
+            'ANCESTOR_OPACITY',
+            'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+            'BACKGROUND_IMAGE_OR_GRADIENT',
+            'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+            'BACKGROUND_OVERLAP',
+            'COLOR_NOT_COMPUTABLE',
+            'CONTRAST_HELPERS_UNAVAILABLE',
+            'ELEMENT_OPACITY',
+            'ENGINE_EXCEPTION',
+            'LINK_COLOR_CONTRAST_ONLY',
+            'MIX_BLEND_MODE',
+            'PSEUDO_ELEMENT_COLOR',
+            'SELECT_OPTION_COLOR',
+            'TEXT_DECORATION_NOT_RESOLVABLE',
+            'TEXT_SHADOW',
+            'TEXT_STROKE'
+          ]
+        }
+      }
+    },
+    '1.4.2': {
+      'no-autoplay-audio-evidence': {
+        variants: {
+          'no-autoplay-audio': [
+            'AUTOPLAY_CONTROLS_HIDDEN',
+            'AUTOPLAY_NO_CONTROLS_MECHANISM',
+            'EMBEDDED_SOUND_SOURCE'
+          ]
+        }
+      }
+    },
+    '1.4.3': {
+      'contrast-computability-143': {
+        variants: {
+          'contrast-computable': [
+            'ANCESTOR_OPACITY',
+            'BACKGROUND_FILTER_OR_BACKDROP_FILTER',
+            'BACKGROUND_IMAGE_OR_GRADIENT',
+            'BACKGROUND_NOT_COMPUTABLE',
+            'BACKGROUND_NOT_OPAQUE_AT_ROOT',
+            'BACKGROUND_OVERLAP',
+            'BACKGROUND_UNPARSABLE',
+            'COLOR_SCHEME_NOT_RENDERED',
+            'ELEMENT_OPACITY',
+            'ENGINE_EXCEPTION',
+            'FOREGROUND_UNPARSABLE',
+            'GENERATED_TEXT_POSITIONED',
+            'GENERATED_TEXT_UNREADABLE',
+            'MIX_BLEND_MODE',
+            'PSEUDO_ELEMENT_COLOR',
+            'SELECT_OPTION_COLOR',
+            'TEXT_SHADOW',
+            'TEXT_STROKE'
+          ]
+        }
+      },
+      'contrast-minimum-text': {
+        variants: {
+          'contrast-minimum': [
+            'CONTRAST_SWITCH_OFFERED',
+            'ENGINE_EXCEPTION',
+            'LOGO_TEXT_BELOW_THRESHOLD',
+            'PLACEHOLDER_BELOW_THRESHOLD',
+            'PSEUDO_ELEMENT_COLOR',
+            'SEMIBOLD_BELOW_THRESHOLD',
+            'SYMBOLIC_CHARACTER_BELOW_THRESHOLD',
+            'TEXT_SHADOW',
+            'TEXT_STROKE'
+          ]
+        }
+      }
+    },
+    '1.4.4': {
+      'meta-viewport-zoom-enabled': {
+        variants: {
+          'meta-viewport-zoom-enabled': ['VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN']
+        }
+      }
+    },
+    '1.4.5': {
+      'image-of-text-evidence': {
+        variants: {
+          'image-of-text': ['IMAGE_BUTTON_TEXT_REVIEW', 'SVG_IMAGE_TEXT_REVIEW']
+        }
+      }
+    },
+    '1.4.6': {
+      'contrast-enhanced-text': {
+        variants: {
+          'contrast-enhanced': [
+            'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
+            'ENGINE_EXCEPTION',
+            'PLACEHOLDER_BELOW_THRESHOLD',
+            'SYMBOLIC_CHARACTER_BELOW_THRESHOLD'
+          ]
+        }
+      }
+    },
+    '1.4.12': {
+      'avoid-inline-spacing': {
+        variants: {
+          'avoid-inline-spacing': [
+            'INLINE_SPACING_NOT_RESOLVABLE',
+            'INLINE_SPACING_NO_SOFT_WRAP',
+            'INLINE_SPACING_SHORT_TEXT'
+          ]
+        }
+      },
+      'text-spacing-content-loss': {
+        variants: {
+          'text-spacing-content-loss': [
+            'SPACING_NOT_APPLIED',
+            'STYLESHEET_IMPORTANT',
+            'TEXT_CLIPPED_FURTHER',
+            'TEXT_CLIPPED_MOVING',
+            'TEXT_CLIPPED_SCRIPT_SIZED',
+            'TEXT_CLIPPED_PARTLY',
+            'TEXT_OVERLAPS',
+            'VIEWPORT_SCROLL_LOCKED'
+          ]
+        }
+      }
+    },
+    '2.1.1': {
+      'iframe-tabindex-negative-content-not-focusable': {
+        variants: {
+          'iframe-focusable-content': ['IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT']
+        }
+      },
+      'server-side-image-map-absent': {
+        variants: {
+          'server-side-image-map-absent': ['SERVER_SIDE_IMAGE_MAP']
+        }
+      },
+      'scrollable-region-focusable-evidence': {
+        variants: {
+          'scrollable-region-focusable': ['SCROLLABLE_OVERFLOW_NOT_FOCUSABLE']
+        }
+      },
+      'mouse-only-event-handlers-evidence': {
+        variants: {
+          'mouse-only-event-handlers': [
+            'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE',
+            'MOUSE_ONLY_HANDLER_NO_KEYBOARD_EQUIVALENT'
+          ]
+        }
+      },
+      'click-handler-keyboard-operable': {
+        variants: {
+          'click-handler-keyboard-operable': [
+            'CLICK_HANDLER_FOCUS_LISTENER',
+            'CLICK_HANDLER_KEY_LISTENER_ABOVE',
+            'CLICK_HANDLER_NOT_FOCUSABLE',
+            'CLICK_HANDLER_NOT_IN_TAB_ORDER',
+            'CLICK_HANDLER_NO_KEY_HANDLER'
+          ]
+        }
+      },
+      'widget-keyboard-focusable-evidence': {
+        variants: {
+          'widget-keyboard-focusable': [
+            'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE',
+            'COMPOSITE_NO_TAB_STOP',
+            'WIDGET_NOT_FOCUSABLE',
+            'WIDGET_NOT_IN_TAB_ORDER'
+          ]
+        }
+      },
+      'focus-not-removed-by-script-evidence': {
+        variants: {
+          'focus-not-removed-by-script': [
+            'FOCUS_HANDLER_BLURS_SELF',
+            'FOCUS_HANDLER_CALLS_BLUR',
+            'FOCUS_HANDLER_MOVES_FOCUS'
+          ]
+        }
+      },
+      'keyboard-operable-all-functionality': {
+        variants: {
+          'manual-review': ['KEYBOARD_REVIEW']
+        }
+      }
+    },
+    '2.2.2': {
+      'deprecated-non-stoppable-elements-absent': {
+        variants: {
+          'deprecated-elements-not-used': ['MARQUEE_PAUSE_MECHANISM_UNKNOWN']
+        }
+      },
+      'auto-moving-content-pausable': {
+        variants: {
+          'moving-content-pausable': ['MOVING_CONTENT_LOOPS', 'MOVING_CONTENT_OVER_5S']
+        }
+      }
+    },
+    '2.4.1': {
+      'bypass-blocks-present': {
+        variants: {
+          'bypass-blocks-present': ['BYPASS_MECHANISM_ABSENT']
+        }
+      }
+    },
+    '2.4.2': {
+      'page-title-patterns': {
+        variants: {
+          'page-title-patterns': [
+            'genericTitle',
+            'veryShortTitle',
+            'templateLikeTitle',
+            'duplicateTitlesAcrossPages',
+            'templatedTitlesAcrossPages',
+            'titleReview'
+          ]
+        }
+      }
+    },
+    '2.4.4': {
+      'link-name-present': {
+        variants: {
+          'link-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'link-text-descriptive-evidence': {
+        variants: {
+          'link-name-quality': ['AMBIGUOUS_FORMAT_NAME', 'GENERIC_LINK_TEXT']
+        }
+      }
+    },
+    '2.4.6': {
+      'heading-text-descriptive-evidence': {
+        variants: {
+          'heading-quality': [
+            'FILENAME_LIKE_HEADING',
+            'PLACEHOLDER_HEADING_TEXT',
+            'URL_LIKE_HEADING'
+          ]
+        }
+      },
+      'form-control-label-descriptive-evidence': {
+        variants: {
+          'form-control-label-quality': [
+            'DUPLICATE_LABEL_TEXT',
+            'PARTIALLY_HIDDEN_LABEL',
+            'PLACEHOLDER_LABEL_TEXT'
+          ]
+        }
+      }
+    },
+    '2.4.7': {
+      'css-hidden-focusable': {
+        variants: {
+          'css-hidden-focus': [
+            'cssHiddenTabbable_needsFocusStateVerification',
+            'cssHiddenTabbable_runtimeRedirect_needsReview'
+          ]
+        }
+      },
+      'focus-indicator-not-suppressed': {
+        variants: {
+          'css-focus-indicator-suppressed': ['FOCUS_INDICATOR_SUPPRESSED']
+        }
+      }
+    },
+    '2.4.9': {
+      'identical-links-same-purpose-evidence': {
+        variants: {
+          'identical-links-same-purpose': ['SAME_NAME_DIFFERENT_DESTINATION']
+        }
+      }
+    },
+    '2.5.3': {
+      'label-in-name': {
+        variants: {
+          'label-in-name': [
+            'HYPHENATION_DIFFERS',
+            'POSSIBLE_ABBREVIATION',
+            'POSSIBLE_ICON_FONT_GLYPH',
+            'POSSIBLE_SYMBOLIC_CHARACTER'
+          ]
+        }
+      }
+    },
+    '3.3.1': {
+      'invalid-field-error-message': {
+        variants: {
+          'invalid-field-error-message': [
+            'ERROR_MESSAGE_ARIA_HIDDEN',
+            'ERROR_MESSAGE_EMPTY',
+            'ERROR_MESSAGE_HIDDEN',
+            'ERROR_MESSAGE_NOT_SHOWN_DESCRIBED',
+            'ERROR_MESSAGE_TARGET_MISSING',
+            'NO_ERROR_MESSAGE'
+          ]
+        }
+      }
+    },
+    '3.3.2': {
+      'form-control-single-label': {
+        variants: {
+          'form-control-single-label': [
+            'FORM_FIELD_EXTRA_EMPTY_LABEL',
+            'FORM_FIELD_MULTIPLE_LABELS'
+          ]
+        }
+      },
+      'form-control-visible-label-quality': {
+        variants: {
+          'form-control-programmatic-label-quality': [
+            'label_from_aria_label_only',
+            'label_from_hidden_labelledby',
+            'label_from_placeholder_primary',
+            'label_from_title_primary'
+          ]
+        }
+      }
+    },
+    '3.3.8': {
+      'authentication-paste-not-blocked': {
+        variants: {
+          'password-paste-enabled': ['PASTE_CANCELLED', 'PASTE_HANDLER_OPAQUE']
+        }
+      }
+    },
+    '4.1.1': {
+      'id-unique-page-wide': {
+        variants: {
+          'duplicate-id': ['DUPLICATE_ID', 'DUPLICATE_ID_IN_SHADOW_TREE']
+        }
+      }
+    },
+    '4.1.2': {
+      'aria-hidden-focusable': {
+        variants: {
+          'aria-hidden-focus': [
+            'ariaHiddenFocusable_modalOpen_needsReview',
+            'ariaHiddenFocusable_runtimeRedirect_needsReview'
+          ]
+        }
+      },
+      'button-name-present': {
+        variants: {
+          'button-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'checkbox-name-present': {
+        variants: {
+          'binary-control-name-present': ['name_internals']
+        }
+      },
+      'combobox-name-present': {
+        variants: {
+          'combobox-name-present': ['name_internals']
+        }
+      },
+      'dialog-name-present': {
+        variants: {
+          'dialog-name-present': ['name_internals']
+        }
+      },
+      'menuitem-name-present': {
+        variants: {
+          'menuitem-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'tab-name-present': {
+        variants: {
+          'tab-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'slider-name-present': {
+        variants: {
+          'slider-name-present': ['name_internals']
+        }
+      },
+      'textbox-name-present': {
+        variants: {
+          'textbox-name-present': ['name_internals']
+        }
+      },
+      'searchbox-name-present': {
+        variants: {
+          'searchbox-name-present': ['name_internals']
+        }
+      },
+      'spinbutton-name-present': {
+        variants: {
+          'spinbutton-name-present': ['name_internals']
+        }
+      },
+      'listbox-name-present': {
+        variants: {
+          'listbox-name-present': ['name_internals']
+        }
+      },
+      'option-name-present': {
+        variants: {
+          'option-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'treeitem-name-present': {
+        variants: {
+          'treeitem-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'aria-role-name-present': {
+        variants: {
+          'aria-role-name-present': ['name_internals']
+        }
+      },
+      'aria-role-valid': {
+        variants: {
+          'aria-roles-valid': ['ARIA_ROLE_ABSTRACT', 'ARIA_ROLE_INVALID']
+        }
+      },
+      'aria-role-not-deprecated': {
+        variants: {
+          'aria-deprecated-role': ['ARIA_ROLE_AUTHOR_DISCOURAGED', 'ARIA_ROLE_DEPRECATED']
+        }
+      },
+      'aria-attr-name-valid': {
+        variants: {
+          'aria-valid-attr': ['ARIA_ATTR_INVALID']
+        }
+      },
+      'aria-attr-value-valid': {
+        variants: {
+          'aria-valid-attr-value': [
+            'ARIA_ACTIVEDESCENDANT_OUTSIDE',
+            'ARIA_ATTR_VALUE_TARGET_ABSENT',
+            'ARIA_HASPOPUP_ROLE_MISMATCH'
+          ]
+        }
+      },
+      'aria-attr-allowed-for-role': {
+        variants: {
+          'aria-allowed-attr': ['ARIA_ATTR_DEPRECATED']
+        }
+      },
+      'aria-attr-not-prohibited': {
+        variants: {
+          'aria-prohibited-attr': ['ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW']
+        }
+      },
+      'aria-attr-required-for-role': {
+        variants: {
+          'aria-required-attr': ['ARIA_ATTR_REQUIRED_MISSING_IMPLICIT', 'state_internals']
+        }
+      },
+      'identical-iframes-same-purpose': {
+        variants: {
+          'identical-iframes-same-purpose': [
+            'IFRAME_RESOURCE_DIFFERS',
+            'IFRAME_RESOURCE_UNRESOLVED'
+          ]
+        }
+      },
+      'duplicate-id-aria': {
+        variants: {
+          'duplicate-id-aria': ['DUPLICATE_ID_ARIA_REFERENCED']
+        }
+      },
+      'summary-name-present': {
+        variants: {
+          'summary-name-present': ['name_closedContent', 'name_contentTooDeep']
+        }
+      },
+      'tooltip-name-present': {
+        variants: {
+          'tooltip-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+        }
+      },
+      'aria-braille-equivalent': {
+        variants: {
+          'aria-braille-equivalent': ['BRAILLE_ATTR_WITHOUT_EQUIVALENT']
+        }
+      },
+      'aria-conditional-attr': {
+        variants: {
+          'aria-conditional-attr': ['ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID']
+        }
+      },
+      'aria-checked-state-mismatch': {
+        variants: {
+          'aria-checked-state-mismatch': ['ARIA_CHECKED_STATE_MISMATCH']
+        }
+      },
+      'aria-expanded-state-mismatch': {
+        variants: {
+          'aria-expanded-state-mismatch': [
+            'EXPANDED_FALSE_CONTROLLED_SHOWN',
+            'EXPANDED_TRUE_CONTROLLED_HIDDEN'
+          ]
+        }
+      }
+    },
+    '4.1.3': {
+      'live-region-reachable-evidence': {
+        variants: {
+          'live-region-announcements': ['LIVE_REGION_BUSY', 'LIVE_REGION_HIDDEN']
+        }
+      },
+      'live-region-changes-evidence': {
+        variants: {
+          'live-region-announcements': [
+            'LIVE_REGION_INSERTED_WITH_CONTENT',
+            'LIVE_REGION_SHOWN_AND_FILLED'
+          ]
+        }
+      }
+    }
+  },
+  'best-practice': {
+    'landmark-structure': {
+      label:
+        'Landmarks are unique where they should be, at the top level where required, and named',
+      automation: 'partial',
+      variants: {
+        'landmark-banner-is-top-level': ['LANDMARK_BANNER_NOT_TOP_LEVEL'],
+        'landmark-complementary-is-top-level': ['LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL'],
+        'landmark-contentinfo-is-top-level': ['LANDMARK_CONTENTINFO_NOT_TOP_LEVEL'],
+        'landmark-main-is-top-level': ['LANDMARK_MAIN_NOT_TOP_LEVEL'],
+        'landmark-no-duplicate-banner': ['LANDMARK_DUPLICATE_BANNER'],
+        'landmark-no-duplicate-contentinfo': ['LANDMARK_DUPLICATE_CONTENTINFO'],
+        'landmark-no-duplicate-main': ['LANDMARK_DUPLICATE_MAIN'],
+        'landmark-one-main': ['LANDMARK_MAIN_MISSING'],
+        'landmark-role-name-present': ['LANDMARK_ROLE_NAME_MISSING'],
+        'landmark-unique': ['LANDMARK_NOT_UNIQUE']
+      }
+    },
+    'content-in-landmarks': {
+      label: 'All content is inside a landmark',
+      automation: 'partial',
+      variants: {
+        region: ['CONTENT_OUTSIDE_LANDMARK']
+      }
+    },
+    'heading-structure': {
+      label:
+        'The page has a main heading, and headings are not empty and go down one level at a time',
+      automation: 'partial',
+      variants: {
+        'empty-heading': ['name_closedContent', 'name_contentTooDeep', 'name_internals'],
+        'heading-order': ['HEADING_ORDER_SKIPPED_LEVEL'],
+        'page-has-heading-one': ['HEADING_ONE_MISSING']
+      }
+    },
+    'table-markup': {
+      label: 'Table headers, scope and caption are meaningful',
+      automation: 'partial',
+      variants: {
+        'empty-table-header': ['TABLE_HEADER_EMPTY', 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT'],
+        'scope-attr-valid': ['SCOPE_ATTR_INVALID'],
+        'table-duplicate-name': ['TABLE_CAPTION_SUMMARY_DUPLICATE']
+      }
+    },
+    'aria-role-usage': {
+      label: 'ARIA roles suit the elements they are on',
+      automation: 'partial',
+      variants: {
+        'aria-allowed-role': ['ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT'],
+        'aria-text': ['ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT'],
+        'presentation-role-conflict': ['PRESENTATION_ROLE_CONFLICT']
+      }
+    },
+    'keyboard-focus-order': {
+      label: 'The tab order follows the page and stops only on interactive elements',
+      automation: 'partial',
+      variants: {
+        'focus-order-semantics': ['TABBABLE_WITH_NON_INTERACTIVE_ROLE'],
+        tabindex: ['TABINDEX_POSITIVE']
+      }
+    },
+    'keyboard-shortcuts': {
+      label: 'Access keys are unique',
+      automation: 'partial',
+      variants: {
+        accesskeys: ['ACCESSKEY_DUPLICATE']
+      }
+    },
+    'skip-links': {
+      label: 'Skip links lead to a usable target',
+      automation: 'partial',
+      variants: {
+        'skip-link': ['SKIP_LINK_TARGET_MISSING', 'SKIP_LINK_TARGET_UNUSABLE']
+      }
+    },
+    'names-and-labels': {
+      label:
+        'Names and labels come from visible text, point at a control and do not repeat nearby text',
+      automation: 'partial',
+      variants: {
+        'control-name-title-only': ['NAME_FROM_TITLE_ONLY'],
+        'image-redundant-alt': ['IMAGE_ALT_REDUNDANT'],
+        'label-for-valid': ['LABEL_FOR_NOT_LABELABLE', 'LABEL_FOR_TARGET_MISSING']
+      }
+    },
+    'viewport-zoom': {
+      label: 'The viewport lets the page be zoomed well past 200%',
+      automation: 'partial',
+      variants: {
+        'meta-viewport-large': ['VIEWPORT_ZOOM_BELOW_500']
+      }
+    }
+  }
+};
+
+module.exports = { PROCEDURES };

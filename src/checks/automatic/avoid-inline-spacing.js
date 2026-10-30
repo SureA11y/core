@@ -96,47 +96,7 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    INLINE_SPACING_NOT_RESOLVABLE: {
-      steps: [
-        'Inspect the element the report names and read the !important spacing value in its style attribute.',
-        'In the Computed tab of the developer tools, read the resulting line-height, letter-spacing or word-spacing in pixels and compare with 1.5 times, 0.12 times or 0.16 times the font size.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Narrow to 320 CSS pixels and check whether the text is cut off or overlaps.'
-      ],
-      passWhen:
-        'The forced value meets the WCAG 1.4.12 metric, or the text does not wrap, or nothing is lost with the spacing applied.',
-      failWhen:
-        'The forced value is below the metric on wrapping text and the text cannot take user spacing without loss, which fails WCAG 1.4.12.'
-    },
-    INLINE_SPACING_NO_SOFT_WRAP: {
-      steps: [
-        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
-        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the text ever wraps onto a second line.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Check whether any text is cut off, overlaps or is hidden.'
-      ],
-      passWhen:
-        'The text cannot wrap (it stays on one line or scrolls) and nothing is cut off or overlaps, so the criterion does not apply.',
-      failWhen:
-        'The text does wrap and, with the forced spacing, lines overlap or text is clipped, which fails WCAG 1.4.12.'
-    },
-    INLINE_SPACING_SHORT_TEXT: {
-      steps: [
-        'Inspect the element the report names and note which spacing property its style attribute forces with !important.',
-        'Narrow the window to 320 CSS pixels wide (or zoom to 400%) and check whether the short text wraps onto two lines.',
-        "Apply the WCAG 1.4.12 text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, paragraph spacing 2em) with !important, for example through a user stylesheet or a bookmarklet; since the element's own !important inline style wins, also note the values it keeps.",
-        'Check whether the text is cut off, overlaps or is hidden.'
-      ],
-      passWhen:
-        'The text stays on one line at every width, or wraps without lines overlapping or text being lost.',
-      failWhen:
-        'The text wraps and the forced spacing makes lines overlap or text clip, which fails WCAG 1.4.12.'
-    }
-  }
+  coverage: { facetsBySc: { '1.4.12': ['avoid-inline-spacing'] } }
 };
 
 function runInPage(ctx) {

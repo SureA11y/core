@@ -96,37 +96,7 @@ const meta = {
   category: 'understandable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '3.3.8': ['authentication-paste-not-blocked'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    PASTE_CANCELLED: {
-      steps: [
-        'Copy a test password or code to the clipboard.',
-        'Click in the field the report names and paste (Ctrl+V or Cmd+V, or the context menu).',
-        'If the field is split into boxes for a one-time code, check whether the digits spread across them.',
-        "Also try filling the field with the browser's password manager.",
-        'If both are blocked, check whether the same sign-in step offers another way to log in that needs no remembering or typing, such as a passkey or a link sent by email. It only counts if it works and you can use it with the keyboard.'
-      ],
-      passWhen:
-        'The pasted or autofilled value appears in the field, or the same step offers a working way to log in that needs no remembering or typing.',
-      failWhen:
-        'Paste and password-manager filling are blocked and no other way to log in is offered, so the user must remember and type the value, which fails WCAG 3.3.8.'
-    },
-    PASTE_HANDLER_OPAQUE: {
-      steps: [
-        'Copy a test password or code to the clipboard.',
-        'Click in the field the report names and paste (Ctrl+V or Cmd+V, or the context menu).',
-        'Check the whole value arrives in the field (for split code boxes, across the boxes), and that no message says pasting is not allowed.',
-        "Also try filling the field with the browser's password manager.",
-        'If both are blocked, check whether the same sign-in step offers another way to log in that needs no remembering or typing, such as a passkey or a link sent by email. It only counts if it works and you can use it with the keyboard.'
-      ],
-      passWhen:
-        'The pasted or autofilled value appears in full in the field, or the same step offers a working way to log in that needs no remembering or typing.',
-      failWhen:
-        'Pasting or autofill is blocked or the value is cut or cleared, and no other way to log in is offered, so the user must type it from memory, which fails WCAG 3.3.8.'
-    }
-  }
+  coverage: { facetsBySc: { '3.3.8': ['authentication-paste-not-blocked'] } }
 };
 
 function runInPage(ctx) {

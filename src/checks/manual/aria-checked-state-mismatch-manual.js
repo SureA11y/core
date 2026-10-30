@@ -78,22 +78,7 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['aria-checked-state-mismatch'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_CHECKED_STATE_MISMATCH: {
-      steps: [
-        'Wait until the page has fully loaded, then find the checkbox or radio button the report names and note whether it looks checked.',
-        'Open the Accessibility pane and read its checked state.',
-        'Click it, or press Space, and check that both the look and the state in the Accessibility pane change together, or listen with a screen reader.'
-      ],
-      passWhen:
-        'The state assistive technology reports matches what the control shows, before and after it is changed.',
-      failWhen:
-        'Assistive technology reports a different state from the one shown, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-checked-state-mismatch'] } }
 };
 
 function runInPage(ctx) {

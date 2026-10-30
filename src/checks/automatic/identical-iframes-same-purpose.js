@@ -81,31 +81,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '4.1.2': ['identical-iframes-same-purpose'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    IFRAME_RESOURCE_DIFFERS: {
-      steps: [
-        'Find the frames the report names and note the shared accessible name (usually their title).',
-        'Look at what each frame shows and at its src address.',
-        'Decide whether they do the same job (the same map or widget, with only tracking parameters differing) or different ones (two different videos).'
-      ],
-      passWhen: 'The frames serve the same purpose, so sharing a name is fine.',
-      failWhen:
-        'The frames embed different content under the same name (such as two different videos both titled "YouTube video player"), so users cannot tell them apart, which fails WCAG 4.1.2 (ACT 4b1c6c).'
-    },
-    IFRAME_RESOURCE_UNRESOLVED: {
-      steps: [
-        'Find the frames the report names and note the shared accessible name.',
-        'Scroll each frame into view so any lazy-loaded content loads, then inspect it for its src, data-src or srcdoc.',
-        'Compare what each frame shows and decide whether they do the same job.'
-      ],
-      passWhen: 'The frames serve the same purpose, so sharing a name is fine.',
-      failWhen:
-        'The frames show different content under the same name, so users cannot tell them apart, which fails WCAG 4.1.2 (ACT 4b1c6c).'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['identical-iframes-same-purpose'] } }
 };
 
 function runInPage(ctx) {

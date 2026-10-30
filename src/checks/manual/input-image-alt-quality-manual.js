@@ -81,20 +81,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Find the image button the report names and read the name it gives; check each listed source (alt, aria-label, aria-labelledby, title).',
-        'Press the button or read the form to learn what it does.',
-        'Decide whether the announced name says what the button does, and that the other sources do not contradict it.'
-      ],
-      passWhen: 'The name states the button\'s action, such as "Submit order" or "Search".',
-      failWhen:
-        'The name does not say what the button does, for example a file name, address, generic word or symbols, which fails WCAG 1.1.1 (H36, F30).'
-    }
   }
 };
 

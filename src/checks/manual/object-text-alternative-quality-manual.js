@@ -79,22 +79,6 @@ const meta = {
     facetsBySc: {
       '1.1.1': ['text-alternative-quality']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TEXT_ALTERNATIVE_REVIEW: {
-      steps: [
-        'Look at the object the report names and note what it shows or does (image, chart, animation, player).',
-        'Read its text alternative from the report (fallback text, aria-label, aria-labelledby text or title), or in the Accessibility pane of the developer tools.',
-        'If the text alternative only names the object, as is common for charts and diagrams, the details may be given elsewhere: in a caption, text or a table next to it, or a link beside it. That counts only if a screen reader user can find it from the object and it gives everything the object shows.',
-        'Compare: does the text, with any such description, say what the object shows, or, for a control or player, what it is for?'
-      ],
-      passWhen:
-        "The text alternative, alone or with a description a screen reader user can reach from it, describes the object's content or purpose accurately.",
-      failWhen:
-        'The text alternative is wrong or vague (such as "object" or a file name), or misses what the object conveys and no description reachable from it gives that, which fails WCAG 1.1.1.'
-    }
   }
 };
 

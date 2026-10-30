@@ -3,8 +3,9 @@
 /**
  * howToCheck: how a person answers an undecided finding (docs/OUTPUT_SCHEMA.md,
  * "How to check"). Every reason code a rule's header lists as cantTell has
- * steps in the rule's meta.review, and the engine copies them onto each
- * cantTell finding, in the scan's locale, and onto no decided one.
+ * steps in src/procedures (tests/procedures.test.js), and a result gains
+ * them on each cantTell finding, in the scan's locale, and on no decided
+ * one.
  */
 
 const test = require('node:test');
@@ -17,32 +18,8 @@ const { renderHtmlReport } = require('../src/report.js');
 const { addHowToCheck, howToCheckFor } = require('../src/index.js');
 
 const ROOT = path.join(__dirname, '..');
-const RULE_FILES = ['automatic', 'manual']
-  .flatMap((d) =>
-    fs.readdirSync(path.join(ROOT, 'src/checks', d)).map((f) => path.join(ROOT, 'src/checks', d, f))
-  )
-  .concat([path.join(ROOT, 'src/checks/manual-review.js')])
-  .filter((f) => f.endsWith('.js'));
-
 const page = (body) =>
   `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
-
-test('every reason code a rule header lists as cantTell has steps in meta.review', () => {
-  const missing = [];
-  let codes = 0;
-  for (const file of RULE_FILES) {
-    const src = fs.readFileSync(file, 'utf8');
-    const mod = require(file);
-    const review = (mod.meta && mod.meta.review) || {};
-    for (const m of src.matchAll(/^ \* {3}- `([A-Za-z0-9_]+)` \(([^)]*)\)/gm)) {
-      if (!/cantTell/.test(m[2])) continue;
-      codes += 1;
-      if (!review[m[1]]) missing.push(`${mod.id} ${m[1]}`);
-    }
-  }
-  assert.ok(codes > 150, `only ${codes} cantTell codes found`);
-  assert.deepEqual(missing, []);
-});
 
 const NO_HEADERS = `<main><table>${'<tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>'.repeat(4)}</table></main>`;
 
@@ -121,31 +98,6 @@ test('a binding’s frames result gains the steps on every frame’s result', ()
   assert.equal(out.frames[0].url, raw.url);
   assert.deepEqual(out.frames[1], unreachable);
   assert.equal(raw.checksResults[0].occurrences[0].howToCheck, undefined);
-});
-
-// @surea11y/core/how-to-check reads the steps from the review dictionaries
-// alone, keyed by the rule's titleKey prefix and the reason code, so the
-// English dictionary has to be each rule's meta.review word for word.
-test('src/i18n/review/en.json is every rule’s meta.review, word for word, and nothing else', () => {
-  const read = (l) =>
-    JSON.parse(fs.readFileSync(path.join(ROOT, 'src/i18n/review', `${l}.json`), 'utf8'));
-  const expected = {};
-  const prefixes = new Map();
-  for (const file of RULE_FILES) {
-    const mod = require(file);
-    if (!mod.meta || !mod.meta.review) continue;
-    const prefix = mod.meta.i18n.titleKey.replace(/_title$/, '');
-    assert.ok(!prefixes.has(prefix), `${mod.id} shares its prefix with ${prefixes.get(prefix)}`);
-    prefixes.set(prefix, mod.id);
-    for (const [code, entry] of Object.entries(mod.meta.review)) {
-      const key = `${prefix}_review_${code}_`;
-      entry.steps.forEach((s, i) => (expected[`${key}step${i + 1}`] = s));
-      expected[`${key}pass`] = entry.passWhen;
-      expected[`${key}fail`] = entry.failWhen;
-    }
-  }
-  assert.ok(prefixes.size > 80);
-  assert.deepEqual(read('en'), expected);
 });
 
 const { applyHowToCheck, howToCheckFrom } = require('../src/how-to-check-core.js');

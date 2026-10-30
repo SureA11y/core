@@ -55,21 +55,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LANDMARK_MAIN_NOT_TOP_LEVEL: {
-      steps: [
-        'Find the main landmark the report names and the landmark it sits inside.',
-        "Open a screen reader's landmarks list, or the Accessibility pane, and look at where main appears.",
-        "Check whether main is the outermost container of the page's primary content."
-      ],
-      passWhen: 'The main landmark sits at the top level of the page, outside any other landmark.',
-      failWhen:
-        'The main landmark sits inside another landmark, which confuses landmark navigation, a best-practice miss under the WAI-ARIA main role.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

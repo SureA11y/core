@@ -90,22 +90,7 @@ const meta = {
   category: 'perceivable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '1.3.1': ['td-has-header'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TD_TABLE_NO_HEADERS: {
-      steps: [
-        'Look at the table the report names on screen.',
-        'Decide whether it presents data in rows and columns, with a top row or first column that labels the rest, or only lays out content side by side.',
-        'If it holds data, inspect the label row or column and check whether it uses <th> elements (or headers attributes).'
-      ],
-      passWhen:
-        'The table only lays out content (and should say so with role="presentation"), or its labelling cells are marked as headers.',
-      failWhen:
-        'The table holds data but no cell is marked as a header, so screen reader users are not told what each value means, which fails WCAG 1.3.1 (F46).'
-    }
-  }
+  coverage: { facetsBySc: { '1.3.1': ['td-has-header'] } }
 };
 
 function runInPage(ctx) {

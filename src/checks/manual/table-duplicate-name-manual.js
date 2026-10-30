@@ -46,22 +46,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    TABLE_CAPTION_SUMMARY_DUPLICATE: {
-      steps: [
-        'Find the table the report names and read its caption and its summary attribute in the page source.',
-        'Move to the table with a screen reader and listen to what is announced as it starts.',
-        'Note whether the same text is read twice.'
-      ],
-      passWhen:
-        "The table's title is announced once, and the summary (if kept) adds different information, such as how the table is laid out.",
-      failWhen:
-        'The same text is read twice because caption and summary repeat each other (best practice, H39); remove the summary or make it say something else.'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

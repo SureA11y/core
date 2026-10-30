@@ -140,45 +140,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    DUPLICATE_LABEL_TEXT: {
-      steps: [
-        'Find the field the report names and the other fields with the same visible label.',
-        'Look at the screen around each one: a legend, heading, row text or nearby text that says which is which.',
-        'Decide whether the fields ask for the same thing (a repeated search box) or different things (shipping and billing name).'
-      ],
-      passWhen:
-        'The fields serve the same purpose, or something visible near each one makes clear which is which.',
-      failWhen:
-        'Different fields share a label and nothing visible tells them apart, so a user cannot tell which to fill in, which fails WCAG 2.4.6 (G131).'
-    },
-    PARTIALLY_HIDDEN_LABEL: {
-      steps: [
-        'Find the field the report names and read its visible label on screen.',
-        'Inspect the field in the Accessibility pane and read its full computed name, including the hidden parts.',
-        'Look at what is visible around the field, such as a group title, a heading, or the row or column it sits in, which can give the hidden part its meaning.',
-        'Ask whether the visible label, read with what is visible around it, tells a sighted user what to enter or choose.'
-      ],
-      passWhen:
-        'The visible part of the label, alone or with what is visible around it, describes the field; the hidden part only adds detail.',
-      failWhen:
-        'Neither the visible part of the label nor anything visible around it identifies the field without the hidden part (for example, only "Go" is shown), which fails WCAG 2.4.6 (ACT cc0f0a).'
-    },
-    PLACEHOLDER_LABEL_TEXT: {
-      steps: [
-        'Find the field the report names and read its visible label.',
-        'Work out from the page what the field is for.',
-        'Decide whether the label says that, or is template text such as "Label", "Field" or "Enter text".'
-      ],
-      passWhen:
-        'The label is a real name for what the field asks for in this context (for example "Value" in a key/value editor).',
-      failWhen:
-        'The label is placeholder text that does not say what the field is for, which fails WCAG 2.4.6 (G131).'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.6': ['form-control-label-descriptive-evidence'] } }
 };
 
 function runInPage(ctx) {

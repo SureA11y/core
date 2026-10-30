@@ -75,43 +75,7 @@ const meta = {
   category: 'perceivable',
   type: 'manual',
   defaultConfidence: 'low',
-  coverage: { facetsBySc: { '1.2.2': ['video-captions-track-evidence'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    CAPTIONS_REVIEW: {
-      steps: [
-        'Play the video the report names and turn on its captions.',
-        'Watch with the sound on and compare the captions with what is said and heard.',
-        'Check they carry all dialogue, say who is speaking when it is not clear, and describe sounds that matter (music, alarms, laughter), and that they stay in time.'
-      ],
-      passWhen: 'The captions carry all dialogue and the important sounds, in time with the video.',
-      failWhen:
-        'Captions are missing parts of the dialogue or important sounds, or are out of sync, which fails WCAG 1.2.2 (F8).'
-    },
-    CAPTIONS_TRACK_NOT_DETECTED: {
-      steps: [
-        'Play the video the report names with the sound on and note whether it has speech or sounds that carry information.',
-        'If it is silent or only background music with no meaning, it needs no captions.',
-        "Otherwise look for captions: the player's CC button, captions burned into the picture, or a link next to the video to a captioned version of the same video. A transcript on its own does not replace captions."
-      ],
-      passWhen:
-        'The video has no meaningful audio, captions (in this video or in a captioned version linked next to it) cover the dialogue and sounds, or it is a labelled media alternative for text on the page.',
-      failWhen:
-        'The video has dialogue or important sounds and no captions, here or in a linked captioned version, even if a transcript is offered, which fails WCAG 1.2.2.'
-    },
-    SUBTITLES_TRACK_ONLY: {
-      steps: [
-        'Play the video the report names and turn on its subtitle track.',
-        'Watch with the sound on and compare the text with what is heard.',
-        'Check that besides the dialogue it says who is speaking when it is not clear and describes sounds that matter.'
-      ],
-      passWhen:
-        'The track carries the dialogue plus the speaker and sound information, so it works as captions, or the video has no audio that needs captions.',
-      failWhen:
-        'The track gives the words only, with no speaker or sound information that matters, which fails WCAG 1.2.2.'
-    }
-  }
+  coverage: { facetsBySc: { '1.2.2': ['video-captions-track-evidence'] } }
 };
 
 function runInPage(ctx) {

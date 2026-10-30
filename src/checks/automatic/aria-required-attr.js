@@ -126,35 +126,7 @@ const meta = {
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '4.1.2': ['aria-attr-required-for-role'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ARIA_ATTR_REQUIRED_MISSING_IMPLICIT: {
-      steps: [
-        'Inspect the element the report names and note its role and the missing attribute (such as aria-expanded on a combobox, aria-level on a heading).',
-        'For a combobox, open and close its popup with the keyboard (Alt+Down Arrow, Escape) and the mouse, and check whether aria-expanded is added and updated.',
-        'For a heading, compare its place in the page outline with level 2, the default it gets, and check whether a different level is meant.',
-        'With a screen reader, move to the element and listen for the state or level announced.'
-      ],
-      passWhen:
-        'The default value matches reality: the combobox reports collapsed only when its popup is closed, or the heading really is level 2.',
-      failWhen:
-        'The announced value is wrong, such as a combobox announced collapsed while its list is open or a level 2 heading that should be another level, which fails WCAG 4.1.2 (or 1.3.1 for headings).'
-    },
-    state_internals: {
-      steps: [
-        'Inspect the custom element the report names and note its role and the missing state (such as checked or value).',
-        "Open the Accessibility pane in the browser's developer tools and check whether that state shows for the element.",
-        'Operate the element (click it, press Space or the arrow keys) and check whether the state shown in the pane changes.',
-        'With a screen reader, move to the element and listen for the state.'
-      ],
-      passWhen:
-        'The state is exposed and updates as the element is used, set through its internals.',
-      failWhen:
-        'The required state is missing from the accessibility tree or does not change when the element is used, which fails WCAG 4.1.2.'
-    }
-  }
+  coverage: { facetsBySc: { '4.1.2': ['aria-attr-required-for-role'] } }
 };
 
 function runInPage(ctx) {

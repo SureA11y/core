@@ -48,7 +48,9 @@ src/
   core/                    # Shared engine runtime
   policy/                  # Policy implementations
   i18n/                    # Localized messages (JSON, one file per locale)
-    review/                # How-to-check steps per locale (@surea11y/core/review/<locale>)
+    procedures/            # The text of every assessment procedure, per locale (source)
+    review/                # Generated from procedures: how-to-check steps (@surea11y/core/review/<locale>)
+  procedures/              # How a person assesses each criterion, by facet (registry.js)
   coverage/                # WCAG coverage definitions, and which criteria rules check in full
   catalogs/                # Composite rule catalogs
 
@@ -77,6 +79,7 @@ tests/
   fixtures/                # Rule fixtures, plus the generated fixture index
   engine-checks/           # Per-rule tests
   core/ helpers/ i18n/     # Engine internals, shared test helpers, locale tests
+  snapshots/               # Recorded output that must not change (how-to-check.json)
 ```
 
 Everything under `src/` other than the entry points above is internal — see
@@ -90,7 +93,7 @@ Follow [`docs/RULE_AUTHORING.md`](./docs/RULE_AUTHORING.md) literally — it's d
 1. The module contract: `id`, `meta`, `runInPage(ctx)`, plus an optional `applicability(ctx)`. Nothing else — a helper you need inside `runInPage` goes inside it, since the function is serialized and runs with no access to this module's scope.
 2. A scenario fixture (`tests/fixtures/<rule-slug>-all-scenarios.html`) covering every branch the rule's logic distinguishes, plus a fixture-coverage test. **This is not optional polish** — see `docs/RULE_AUTHORING.md` §11. A rule shipped without one is treated the same as a rule shipped without tests.
 3. Correct `meta.wcagSc`/`normativeMappings`/`coverage.facetsBySc` if the rule maps to a WCAG Success Criterion — run `npm run coverage` afterward to confirm the facet-coverage report picks it up.
-4. An `@reason-codes` header listing every reason code the rule gives, with its outcome, meaning and basis (`docs/RULE_AUTHORING.md` §10.1), and, for each `cantTell` code, the steps a person follows to answer it in `meta.review` (§8.6). `tests/reason-codes-docs.test.js` and `tests/how-to-check.test.js` fail without them.
+4. An `@reason-codes` header listing every reason code the rule gives, with its outcome, meaning and basis (`docs/RULE_AUTHORING.md` §10.1), and, for each `cantTell` code, the steps a person follows to answer it in `src/procedures` (§8.6). `tests/reason-codes-docs.test.js` and `tests/procedures.test.js` fail without them.
 
 After adding/changing a rule:
 
@@ -108,7 +111,7 @@ npm run docs:rule-catalog  # regenerate docs/RULE_CATALOG.md and docs/RULE_SETTI
 
 A reason code split by cause, or given to a rule that had none, also needs its move in `src/baseline-moves.json` (`tests/baseline-moves.test.js` checks it), so a baseline written by the release before keeps matching ([`docs/BASELINE.md`](./docs/BASELINE.md#upgrading)).
 
-`coverage`, `fixtures:index` and `docs:rule-catalog` write generated files that are
+`coverage`, `procedures`, `fixtures:index` and `docs:rule-catalog` write generated files that are
 committed, so run them and commit the result rather than leaving the tree stale.
 Each generated file has a `:check` form that reports drift without writing.
 
@@ -123,6 +126,7 @@ npm run format:check                 # Prettier
 npm test                             # lint, format, build, rule contracts, then the tests
 npm run validate:rules               # rule module contract
 npm run coverage:check               # the WCAG coverage report matches the rules
+npm run procedures:check             # src/i18n/review/ is made from src/procedures (npm test checks it too)
 npm run fixtures:check               # tests/fixtures/INDEX.md matches the fixtures
 npm run fixtures:markers:check       # every fixture marker that disagrees with the engine is recorded
 npm run docs:rule-catalog:check      # docs/RULE_CATALOG.md and docs/RULE_SETTINGS.md match the rules

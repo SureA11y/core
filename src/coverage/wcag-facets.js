@@ -528,6 +528,11 @@ const FACETS = {
                 "id": "focus-not-removed-by-script-evidence",
                 "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "keyboard-operable-all-functionality",
+                "label": "All functionality can be operated from a keyboard alone",
+                "automation": "manual"
             }
         ]
     },

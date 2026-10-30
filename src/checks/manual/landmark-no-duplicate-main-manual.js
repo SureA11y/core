@@ -52,22 +52,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    LANDMARK_DUPLICATE_MAIN: {
-      steps: [
-        "Open a screen reader's landmarks list, or the Accessibility pane, and count the main landmarks.",
-        "For each one the report names, decide which holds the page's primary content.",
-        'Check that any other main is hidden (the hidden attribute) when it is not the current view.'
-      ],
-      passWhen:
-        "Assistive technology finds only one main landmark, around the page's primary content.",
-      failWhen:
-        "More than one main is exposed, so users cannot tell which is the primary content, a best-practice miss under the WAI-ARIA main role and HTML's rule of one visible main."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

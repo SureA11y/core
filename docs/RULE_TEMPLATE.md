@@ -20,11 +20,12 @@ template leaves out (`margin`, `reasonCodes`, `deprecated`).
    name the same criteria; facet ids come from `src/coverage/wcag-facets.js`, never a `macro`
    one, which is for coverage only.
 3. List each reason code under `@reason-codes`, with its outcome, meaning and basis
-   (`RULE_AUTHORING.md` §10.1), and give each `cantTell` code its steps in `meta.review` (§8.6).
+   (`RULE_AUTHORING.md` §10.1), and give each `cantTell` code its steps in `src/procedures` (§8.6).
 4. Add each message key and its English text to `src/i18n/en.json`, then run
    `npm run i18n:sync`. `meta.title` and `meta.description` must match the dictionary text.
-   The `meta.review` keys go in `src/i18n/review/en.json` and in each other locale there, by
-   hand: `i18n:sync` doesn't cover that folder.
+   The steps' keys go in `src/i18n/procedures/en.json` and in each other locale there, by
+   hand (`i18n:sync` doesn't cover that folder), each code under its facet in
+   `src/procedures/registry.js`; then run `npm run procedures`.
 5. Write the test and the scenario page (`RULE_AUTHORING.md` §11).
 6. Run `npx eslint <file>`, then `npm run build` and `node scripts/validate-rule.js <file>`.
    The validator runs the rule through the built engine, so it needs the build.

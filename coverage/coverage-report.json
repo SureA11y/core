@@ -7431,13 +7431,15 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 7,
+        "totalFacets": 8,
         "coveredFacets": 7,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-operable-all-functionality"
+        ],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 4
+          "manual": 5
         },
         "missingFacetRules": [
           "manual-review"
@@ -7499,6 +7501,12 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "keyboard-operable-all-functionality",
+            "label": "All functionality can be operated from a keyboard alone",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9031,13 +9039,15 @@
       {
         "sc": "2.1.1",
         "title": "Keyboard",
-        "totalFacets": 7,
+        "totalFacets": 8,
         "coveredFacets": 7,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-operable-all-functionality"
+        ],
         "automationCounts": {
           "partial": 2,
           "full": 1,
-          "manual": 4
+          "manual": 5
         },
         "missingFacetRules": [
           "manual-review"
@@ -9099,6 +9109,12 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "keyboard-operable-all-functionality",
+            "label": "All functionality can be operated from a keyboard alone",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

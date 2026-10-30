@@ -53,22 +53,7 @@ const meta = {
   category: 'robust',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT: {
-      steps: [
-        'Inspect the element the report names and find the focusable element inside it.',
-        'Press Tab until that element has focus, with a screen reader running, and listen to what is announced.',
-        'Try to activate it with Enter or Space.'
-      ],
-      passWhen:
-        "The focusable element is announced with its role and name and can be used, or it doesn't need to be focusable.",
-      failWhen:
-        "The focusable element is announced as plain text, or not at all, so users can't tell it is interactive (best practice, WAI-ARIA Authoring Practices)."
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

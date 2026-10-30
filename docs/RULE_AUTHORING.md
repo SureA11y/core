@@ -239,7 +239,7 @@ module.exports = {
 };
 ```
 
-The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A threshold setting, one whose default is a number, takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A choice, one whose default is a string, takes one of the `values` its `settingsInfo` lists. A choice that makes the rule ask gives a reason code of its own, as `logoText: 'ask'` gives `LOGO_TEXT_BELOW_THRESHOLD`: list it in `@reason-codes` and `meta.reasonCodes` (the fixture runs at the defaults and never reaches it) and give it steps in `meta.review` (§8.6). A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
+The build runs the base rule's `runInPage` and `applicability` under the variant's id and meta, with its `config` in `ctx.config`. A rule's settings are never the caller's: the runner drops a caller's value for one (`engineOptions.rules[ruleId]`), so the base rule always runs at its defaults and the variant at its `config`, while the caller's other config, such as `excludeSelectors`, still applies. A message key of the base's that starts with the base's prefix (its `meta.i18n.titleKey` without `_title`, `contrastMinimum`) is read from the variant's prefix instead (`sampleContrastEnhanced`), so the variant's dictionary has the same keys under its own prefix; the rule validator checks they exist. A pack's variant may leave them out: each it doesn't define reads the base rule's text ([`PACKS.md`](./PACKS.md)). A fix to the base reaches every variant. The build refuses a variant whose base does not exist, is itself a variant, or declares no `settings`, and a setting the base does not declare or of another type. A threshold setting, one whose default is a number, takes a finite number above 0, and one whose default is `null` (the rule's own value, as `boldLargeMinPx`) takes such a number or `null`; `NaN`, an infinity, 0 or a negative is refused, where the rule would read it as its default or fail nothing. A choice, one whose default is a string, takes one of the `values` its `settingsInfo` lists. A choice that makes the rule ask gives a reason code of its own, as `logoText: 'ask'` gives `LOGO_TEXT_BELOW_THRESHOLD`: list it in `@reason-codes` and `meta.reasonCodes` (the fixture runs at the defaults and never reaches it) and give it steps in `src/procedures` (§8.6). A pack's `definePack` and `checkPack` refuse the same. A base rule that caches verdicts depending on its settings keys those caches by them, as `contrast-minimum` does.
 
 Add a setting to a core rule when a standard needs it, with a default that keeps the rule's behaviour; the settings a rule declares are for its variants, not for callers. Semver covers them, since a pack's variants build on them: removing or renaming one, or changing what it means, is a major (see [`API_STABILITY.md`](./API_STABILITY.md#extending-the-engine)).
 
@@ -575,19 +575,47 @@ lean: {
 
 ### 8.6 How to check: steps for each undecided finding
 
-Every reason code that can give `cantTell` has an entry in `meta.review`,
-which the engine copies onto each such finding as `howToCheck`
-([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)):
+Every reason code that can give `cantTell` has steps of its own, which a
+result carries on each such finding as `howToCheck`
+([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)). They are kept in
+one place for every rule, `src/procedures`, where each criterion has its
+facets and each facet its procedures: the steps for a rule's reason code
+are a **variant** of the facet the code tests, the question asked about the
+one element a finding names. A core rule doesn't write them in its own
+module.
 
-```js
-review: {
-  FOCUS_HANDLER_CALLS_BLUR: {
-    steps: ['Click just before the element, then press Tab until it is focused.', '...'],
-    passWhen: 'Focus stays on the element and the next Tab moves to the next control.',
-    failWhen: 'Focus disappears or jumps elsewhere as it arrives, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-  }
-}
-```
+1. In `src/procedures/registry.js`, list the code under the facet it tests,
+   by rule id: under its criterion and the facet the rule claims in
+   `meta.coverage.facetsBySc`, or, for a rule that claims no criterion,
+   under a facet of `best-practice`.
+
+   ```js
+   '2.1.1': {
+     'focus-not-removed-by-script-evidence': {
+       variants: {
+         'focus-not-removed-by-script': [
+           'FOCUS_HANDLER_BLURS_SELF',
+           'FOCUS_HANDLER_CALLS_BLUR',
+           'FOCUS_HANDLER_MOVES_FOCUS'
+         ]
+       }
+     }
+   }
+   ```
+
+2. Write the text in `src/i18n/procedures/en.json`, under
+   `<prefix>_review_<CODE>_step<n>`, `_pass` and `_fail`, where `<prefix>`
+   is the rule's `titleKey` without `_title`:
+
+   ```json
+   "focusNotRemovedByScript_review_FOCUS_HANDLER_CALLS_BLUR_step1": "Read the onfocus handler the report quotes and note when it calls blur() and on which element.",
+   "focusNotRemovedByScript_review_FOCUS_HANDLER_CALLS_BLUR_pass": "In every state, focus stays on the element, its focus indicator shows, and it can be operated by keyboard.",
+   "focusNotRemovedByScript_review_FOCUS_HANDLER_CALLS_BLUR_fail": "In some state focus is removed as the element receives it, so it cannot be operated by keyboard or focus is lost from view, which fails WCAG 2.1.1 and 2.4.7 (F55)."
+   ```
+
+3. Run `npm run procedures`, which writes the review dictionaries
+   (`src/i18n/review/<locale>.json`, published as
+   `@surea11y/core/review/<locale>`) from them, and commit both.
 
 - Two to five steps, each one action, starting from the element the report
   names (`npm run validate:rules` accepts one to six). Assume a browser, its developer tools, a keyboard and, where it
@@ -615,14 +643,14 @@ review: {
   accessible, and `passWhen` and `failWhen` name it too. The contrast
   rules don't ask about a switch to higher contrast: they ask for the
   colors to be fixed.
-- Each step and both results have a key in every dictionary of
-  `src/i18n/review/` (kept apart from the engine's dictionaries, so the steps
-  never enter the bundle): `<prefix>_review_<CODE>_step<n>`, `_pass` and
-  `_fail`, where `<prefix>` is the rule's `titleKey` without `_title`.
-  `npm run validate:rules` checks the English matches and that each code is
-  one the rule gives; `tests/how-to-check.test.js` that every cantTell code
-  has an entry and every locale has every key. `npm run i18n:sync` doesn't
-  cover `src/i18n/review/`: add the keys to each locale's file by hand.
+- Each step and both results have a key in every locale of
+  `src/i18n/procedures/` (kept apart from the engine's dictionaries, so the
+  steps never enter the bundle). `npm run validate:rules` checks that each
+  code the registry lists for a rule is one the rule gives, with one to six
+  steps; `tests/procedures.test.js` that every cantTell code is under one
+  facet, that every locale has every key, and that the review dictionaries
+  are up to date (`npm run procedures:check`). `npm run i18n:sync` doesn't
+  cover `src/i18n/procedures/`: add the keys to each locale's file by hand.
 
 ---
 

@@ -286,8 +286,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **7/7** facets covered.
-Automation mix: **full 1, partial 2, manual 4**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -299,6 +299,9 @@ Rules missing facet mapping for this SC: manual-review
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 | widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| keyboard-operable-all-functionality | manual | — |
+
+Uncovered facets: keyboard-operable-all-functionality
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -995,8 +998,8 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.1.1
 
-Facet coverage: **7/7** facets covered.
-Automation mix: **full 1, partial 2, manual 4**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
@@ -1008,6 +1011,9 @@ Rules missing facet mapping for this SC: manual-review
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
 | widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
 | focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| keyboard-operable-all-functionality | manual | — |
+
+Uncovered facets: keyboard-operable-all-functionality
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

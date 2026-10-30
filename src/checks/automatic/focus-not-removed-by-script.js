@@ -117,50 +117,7 @@ const meta = {
   },
   // Picked from a table by the handler's kind, which
   // scripts/generate-finding-ids.js can't read from the source.
-  reasonCodes: [
-    'FOCUS_HANDLER_BLURS_SELF',
-    'FOCUS_HANDLER_CALLS_BLUR',
-    'FOCUS_HANDLER_MOVES_FOCUS'
-  ],
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    FOCUS_HANDLER_BLURS_SELF: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it (if it is not in the tab order, click it instead).',
-        'Watch the focus indicator and, in the developer tools console, check document.activeElement.',
-        'Press Tab once more and see where focus goes.'
-      ],
-      passWhen:
-        'Focus stays on the element, its focus indicator shows, and the next Tab moves on to the next control.',
-      failWhen:
-        'Focus disappears from the element as it arrives, so it cannot be reached or operated by keyboard, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    },
-    FOCUS_HANDLER_CALLS_BLUR: {
-      steps: [
-        'Read the onfocus handler the report quotes and note when it calls blur() and on which element.',
-        'Click just before the element, then press Tab until focus should reach it; repeat in any state the handler tests for (for example, a field filled in or empty).',
-        'Watch the focus indicator and check document.activeElement in the developer tools console.',
-        'Try to operate the element with the keyboard (type, press Enter or Space).'
-      ],
-      passWhen:
-        'In every state, focus stays on the element, its focus indicator shows, and it can be operated by keyboard.',
-      failWhen:
-        'In some state focus is removed as the element receives it, so it cannot be operated by keyboard or focus is lost from view, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    },
-    FOCUS_HANDLER_MOVES_FOCUS: {
-      steps: [
-        'Read the onfocus handler the report quotes and note which element it sends focus to.',
-        'Click just before the element, then press Tab until focus should reach it, and see where focus lands (check document.activeElement in the console).',
-        'If the element is an invisible, unnamed sentinel at the edge of a dialog that wraps focus back inside, note that this is a focus trap for a modal and expected.',
-        'Otherwise, try to operate the element with the keyboard and press Shift+Tab to see whether you can go back.'
-      ],
-      passWhen:
-        "Focus goes to a sensible place (a dialog's focus wrap) or stays on the element, and every control can still be reached and operated by keyboard.",
-      failWhen:
-        'A visible control sends focus elsewhere as it arrives, so it cannot be reached or operated by keyboard, which fails WCAG 2.1.1 and 2.4.7 (F55).'
-    }
-  }
+  reasonCodes: ['FOCUS_HANDLER_BLURS_SELF', 'FOCUS_HANDLER_CALLS_BLUR', 'FOCUS_HANDLER_MOVES_FOCUS']
 };
 
 function runInPage(ctx) {

@@ -49,22 +49,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {},
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    ACCESSKEY_DUPLICATE: {
-      steps: [
-        'Note the access key the report names and find the other elements sharing it.',
-        "Press the browser's access key combination with that key (for example Alt, or Alt+Shift, plus the key) and note which element is focused or activated.",
-        'Press it again and check whether each element sharing the key can be reached.'
-      ],
-      passWhen:
-        'Each element with that key can be reached by it, or the duplicates are intended and harmless.',
-      failWhen:
-        'Only one of the elements responds to the key, so the others cannot be reached by their shortcut (best practice, related to WCAG 2.1.1).'
-    }
-  }
+  coverage: {}
 };
 
 function runInPage(ctx) {

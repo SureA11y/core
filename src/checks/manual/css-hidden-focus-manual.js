@@ -105,31 +105,6 @@ const meta = {
     facetsBySc: {
       '2.4.7': ['css-hidden-focusable']
     }
-  },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    cssHiddenTabbable_needsFocusStateVerification: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Check document.activeElement in the developer tools console to be sure focus is on it.',
-        'Look for the element and its focus indicator on screen.'
-      ],
-      passWhen: 'The element comes into view with a visible focus indicator while it has focus.',
-      failWhen:
-        'Focus lands on the element while it stays hidden, so a keyboard user cannot see where focus is, which fails WCAG 2.4.7.'
-    },
-    cssHiddenTabbable_runtimeRedirect_needsReview: {
-      steps: [
-        'Click just before the element the report names, then press Tab until focus should reach it.',
-        'Watch where focus lands and check document.activeElement in the developer tools console.',
-        'Press Shift+Tab from the control after it and see whether focus stops on the hidden element or passes straight on.'
-      ],
-      passWhen:
-        "Focus never stays on the hidden element: it passes straight on to a visible control, as a focus trap's sentinel does.",
-      failWhen:
-        'Focus can stay on the hidden element, so a keyboard user cannot see where focus is, which fails WCAG 2.4.7.'
-    }
   }
 };
 

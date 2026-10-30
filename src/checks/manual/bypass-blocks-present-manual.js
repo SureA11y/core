@@ -124,22 +124,7 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } },
-  // How a person checks each undecided finding: shown with it as
-  // howToCheck (docs/OUTPUT_SCHEMA.md).
-  review: {
-    BYPASS_MECHANISM_ABSENT: {
-      steps: [
-        'Close any dialog or overlay, then look at whether the page repeats blocks such as a header or menu that appear on other pages of the site.',
-        'Click the address bar and press Tab: check whether a skip link appears that moves focus past the repeated blocks to the main content.',
-        "Check for headings at the start of the main content, or a main landmark, in the Accessibility pane or by a screen reader's headings and landmarks lists."
-      ],
-      passWhen:
-        'The page has no repeated blocks, or offers a working skip link, a main landmark or headings that let users jump past them.',
-      failWhen:
-        'Repeated blocks have no way to skip them, so keyboard and screen reader users must go through them on every page, which fails WCAG 2.4.1.'
-    }
-  }
+  coverage: { facetsBySc: { '2.4.1': ['bypass-blocks-present'] } }
 };
 
 // This check is inherently whole-document (does the PAGE have this
