@@ -362,12 +362,15 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 ### 2.2.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| time-limits-adjustable | partial | — |
+
+Uncovered facets: time-limits-adjustable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -375,13 +378,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
 | auto-moving-content-pausable | manual | moving-content-pausable |
+| auto-updating-content-controllable | manual | — |
+
+Uncovered facets: auto-updating-content-controllable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1108,12 +1114,15 @@ Automation mix: **full 0, partial 1, manual 2**.
 
 ### 2.2.1
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 1, partial 0, manual 0**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 1, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| time-limits-adjustable | partial | — |
+
+Uncovered facets: time-limits-adjustable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1121,13 +1130,16 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 2.2.2
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | deprecated-non-stoppable-elements-absent | full | deprecated-elements-not-used |
 | auto-moving-content-pausable | manual | moving-content-pausable |
+| auto-updating-content-controllable | manual | — |
+
+Uncovered facets: auto-updating-content-controllable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

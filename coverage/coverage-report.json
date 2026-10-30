@@ -7668,11 +7668,14 @@
       {
         "sc": "2.2.1",
         "title": "Timing Adjustable",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "time-limits-adjustable"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7684,18 +7687,26 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "time-limits-adjustable",
+            "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "auto-updating-content-controllable"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7715,6 +7726,12 @@
             "coveredBy": [
               "moving-content-pausable"
             ]
+          },
+          {
+            "id": "auto-updating-content-controllable",
+            "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9417,11 +9434,14 @@
       {
         "sc": "2.2.1",
         "title": "Timing Adjustable",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "time-limits-adjustable"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9433,18 +9453,26 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "time-limits-adjustable",
+            "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "2.2.2",
         "title": "Pause, Stop, Hide",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "auto-updating-content-controllable"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9464,6 +9492,12 @@
             "coveredBy": [
               "moving-content-pausable"
             ]
+          },
+          {
+            "id": "auto-updating-content-controllable",
+            "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

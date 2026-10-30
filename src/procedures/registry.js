@@ -491,21 +491,25 @@ const PROCEDURES = {
     },
     '2.1.1': {
       'iframe-tabindex-negative-content-not-focusable': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'iframe-focusable-content': ['IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT']
         }
       },
       'server-side-image-map-absent': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'server-side-image-map-absent': ['SERVER_SIDE_IMAGE_MAP']
         }
       },
       'scrollable-region-focusable-evidence': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'scrollable-region-focusable': ['SCROLLABLE_OVERFLOW_NOT_FOCUSABLE']
         }
       },
       'mouse-only-event-handlers-evidence': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'mouse-only-event-handlers': [
             'MOUSE_ONLY_HANDLER_KEYBOARD_EQUIVALENT_NOT_FOCUSABLE',
@@ -514,6 +518,7 @@ const PROCEDURES = {
         }
       },
       'click-handler-keyboard-operable': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'click-handler-keyboard-operable': [
             'CLICK_HANDLER_FOCUS_LISTENER',
@@ -525,6 +530,7 @@ const PROCEDURES = {
         }
       },
       'widget-keyboard-focusable-evidence': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'widget-keyboard-focusable': [
             'ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE',
@@ -535,6 +541,7 @@ const PROCEDURES = {
         }
       },
       'focus-not-removed-by-script-evidence': {
+        coveredBy: 'keyboard-operable-all-functionality',
         variants: {
           'focus-not-removed-by-script': [
             'FOCUS_HANDLER_BLURS_SELF',
@@ -544,21 +551,50 @@ const PROCEDURES = {
         }
       },
       'keyboard-operable-all-functionality': {
+        tools: ['keyboard'],
         variants: {
           'manual-review': ['KEYBOARD_REVIEW']
         }
       }
     },
+    '2.1.2': {
+      'no-keyboard-trap': {
+        tools: ['keyboard']
+      }
+    },
+    '2.1.4': {
+      'character-key-shortcuts': {
+        tools: ['keyboard']
+      }
+    },
+    '2.2.1': {
+      'meta-refresh-timing-absent': {
+        coveredBy: 'time-limits-adjustable'
+      },
+      'time-limits-adjustable': {
+        tools: []
+      }
+    },
     '2.2.2': {
       'deprecated-non-stoppable-elements-absent': {
+        coveredBy: 'auto-moving-content-pausable',
         variants: {
           'deprecated-elements-not-used': ['MARQUEE_PAUSE_MECHANISM_UNKNOWN']
         }
       },
       'auto-moving-content-pausable': {
+        tools: ['keyboard'],
         variants: {
           'moving-content-pausable': ['MOVING_CONTENT_LOOPS', 'MOVING_CONTENT_OVER_5S']
         }
+      },
+      'auto-updating-content-controllable': {
+        tools: ['keyboard']
+      }
+    },
+    '2.3.1': {
+      'flashing-below-threshold': {
+        tools: []
       }
     },
     '2.4.1': {

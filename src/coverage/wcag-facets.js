@@ -688,7 +688,13 @@ const FACETS = {
     "2.1.2": {
         "title": "No Keyboard Trap",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-keyboard-trap",
+                "label": "Focus can always be moved away from any part of the page with the keyboard",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.3": {
         "title": "Keyboard (No Exception)",
@@ -714,7 +720,13 @@ const FACETS = {
     "2.1.4": {
         "title": "Character Key Shortcuts",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "character-key-shortcuts",
+                "label": "Shortcuts made of a single letter, number or symbol can be turned off or remapped, or work only while their control has focus",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.1": {
         "title": "Timing Adjustable",
@@ -724,6 +736,12 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "time-limits-adjustable",
+                "label": "Each time limit can be turned off, adjusted or extended, unless it is real-time, essential or over 20 hours",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -739,6 +757,11 @@ const FACETS = {
             {
                 "id": "auto-moving-content-pausable",
                 "label": "Animations that start by themselves and last over five seconds can be paused, stopped or hidden",
+                "automation": "manual"
+            },
+            {
+                "id": "auto-updating-content-controllable",
+                "label": "Content that updates by itself can be paused, stopped, hidden or set to update less often",
                 "automation": "manual"
             }
         ]
@@ -777,7 +800,13 @@ const FACETS = {
     "2.3.1": {
         "title": "Three Flashes or Below Threshold",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "flashing-below-threshold",
+                "label": "Nothing flashes more than three times in any one second, or the flashes are small and dim enough",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.2": {
         "title": "Three Flashes",
