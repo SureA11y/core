@@ -18,10 +18,14 @@ const {
   reviewDictionaries,
   variants,
   prefixOf,
+  rulesIndex,
   PROCEDURES_DIR,
-  REVIEW_DIR
+  REVIEW_DIR,
+  RULES_FILE
 } = require('../scripts/generate-procedures.js');
-const { PROCEDURES } = require('../src/procedures/registry.js');
+const { PROCEDURES, TOOLS } = require('../src/procedures/registry.js');
+const { proceduresFor, howToCheckFor } = require('../src/index.js');
+const { proceduresFrom } = require('../src/procedures-core.js');
 const { FACETS } = require('../src/coverage/wcag-facets.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -52,6 +56,10 @@ test('the review dictionaries are made from the procedures (npm run procedures)'
       `src/i18n/review/${locale}.json is stale: run npm run procedures`
     );
   }
+});
+
+test('src/procedures/rules.json is made from the rules (npm run procedures)', () => {
+  assert.equal(fs.readFileSync(RULES_FILE, 'utf8'), rulesIndex());
 });
 
 test('each reason code is under one facet, and is one its rule gives', () => {
@@ -133,18 +141,101 @@ test('every variant has 1 to 6 steps, a pass and a fail, in English', () => {
   }
 });
 
-test('the text has no key the registry doesn’t list, and every locale has every key', () => {
-  const stems = new Set(ALL.map(stemOf));
+// A facet's general procedure: `<group>_<criterion>_<facet>_`, or, for a
+// best practice, which has no criterion, `best-practice_<facet>_`.
+const PROCEDURE_STEMS = [
+  ...Object.entries(PROCEDURES.wcag).flatMap(([criterion, facets]) =>
+    Object.keys(facets).map((facet) => `wcag_${criterion}_${facet}_`)
+  ),
+  ...Object.keys(PROCEDURES['best-practice']).map((facet) => `best-practice_${facet}_`)
+];
+const isTextOf = (stem, key) =>
+  key.startsWith(stem) && /^(step\d+|pass|fail)$/.test(key.slice(stem.length));
+
+test('the text has no key the registry doesn’t list', () => {
+  const stems = [...new Set(ALL.map(stemOf)), ...PROCEDURE_STEMS];
+  const tools = new Set(TOOLS.map((t) => `tool_${t}`));
   const en = read(PROCEDURES_DIR, 'en');
   const orphans = Object.keys(en).filter(
-    (key) =>
-      ![...stems].some(
-        (stem) => key.startsWith(stem) && /^(step\d+|pass|fail)$/.test(key.slice(stem.length))
-      )
+    (key) => !tools.has(key) && !stems.some((stem) => isTextOf(stem, key))
   );
   assert.deepEqual(orphans, []);
-  const keys = Object.keys(en).sort();
-  for (const l of LOCALES) assert.deepEqual(Object.keys(read(PROCEDURES_DIR, l)).sort(), keys, l);
+  for (const t of tools) assert.ok(typeof en[t] === 'string' && en[t].trim(), `${t} missing`);
+});
+
+// The variants' text came with its translations and keeps them; a general
+// procedure is written in English first, and a locale without it reads it
+// in English.
+test('every locale has every variant’s text, and no key English lacks', () => {
+  const en = read(PROCEDURES_DIR, 'en');
+  const stems = [...new Set(ALL.map(stemOf))];
+  const variantKeys = Object.keys(en)
+    .filter((key) => stems.some((stem) => isTextOf(stem, key)))
+    .sort();
+  for (const l of LOCALES) {
+    const keys = Object.keys(read(PROCEDURES_DIR, l));
+    assert.deepEqual(
+      keys.filter((key) => stems.some((stem) => isTextOf(stem, key))).sort(),
+      variantKeys,
+      l
+    );
+    assert.deepEqual(
+      keys.filter((key) => !(key in en)),
+      [],
+      `${l} has keys English doesn’t`
+    );
+  }
+});
+
+test('a facet with a general procedure has 1 to 8 steps and names its tools', () => {
+  const en = read(PROCEDURES_DIR, 'en');
+  const entries = [
+    ...Object.entries(PROCEDURES.wcag).flatMap(([criterion, facets]) =>
+      Object.entries(facets).map(([facet, entry]) => [`wcag_${criterion}_${facet}_`, entry])
+    ),
+    ...Object.entries(PROCEDURES['best-practice']).map(([facet, entry]) => [
+      `best-practice_${facet}_`,
+      entry
+    ])
+  ];
+  let procedures = 0;
+  for (const [stem, entry] of entries) {
+    const has = typeof en[`${stem}step1`] === 'string';
+    if (!has) {
+      assert.equal(entry.tools, undefined, `${stem}: tools without a procedure`);
+      continue;
+    }
+    procedures += 1;
+    let n = 0;
+    while (typeof en[`${stem}step${n + 1}`] === 'string') n++;
+    assert.ok(n >= 1 && n <= 8, `${stem}: ${n} steps`);
+    for (const key of [`${stem}pass`, `${stem}fail`]) {
+      assert.ok(typeof en[key] === 'string' && en[key].trim(), `${key} missing`);
+    }
+    assert.match(
+      en[`${stem}fail`],
+      /\bfails WCAG \d|best practice/,
+      `${stem}fail names no criterion`
+    );
+    assert.ok(Array.isArray(entry.tools), `${stem}: no tools`);
+    for (const tool of entry.tools) assert.ok(TOOLS.includes(tool), `${stem}: tool ${tool}`);
+  }
+  assert.ok(procedures >= 10, `only ${procedures} procedures`);
+});
+
+// The sample criteria (one manual only, one partly automated, one only a
+// person can judge) have every facet written; the rest follow.
+test('1.4.13, 1.4.12 and 2.4.3 have a procedure for every facet', () => {
+  for (const criterion of ['1.4.13', '1.4.12', '2.4.3']) {
+    const ids = FACETS[criterion].facets.map((f) => f.id);
+    assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion]), ids, criterion);
+    const r = proceduresFor(criterion);
+    assert.equal(r.complete, true, criterion);
+    assert.deepEqual(
+      r.facets.map((f) => f.id),
+      ids
+    );
+  }
 });
 
 test('no core rule keeps its steps in meta.review: they are in src/procedures', () => {
@@ -153,4 +244,92 @@ test('no core rule keeps its steps in meta.review: they are in src/procedures', 
     kept.map(([id]) => id),
     []
   );
+});
+
+// The API by criterion (docs/PROCEDURES.md).
+
+test('proceduresFor gives a criterion’s facets, rules, procedures and tools', () => {
+  const r = proceduresFor('1.4.12');
+  assert.deepEqual(
+    { standard: r.standard, id: r.id, title: r.title, level: r.level, complete: r.complete },
+    { standard: 'wcag', id: '1.4.12', title: 'Text Spacing', level: 'AA', complete: true }
+  );
+  assert.deepEqual(r.rules, ['avoid-inline-spacing', 'text-spacing-content-loss']);
+  const loss = r.facets.find((f) => f.id === 'text-spacing-content-loss');
+  assert.equal(loss.automation, 'partial');
+  assert.deepEqual(loss.rules, ['text-spacing-content-loss']);
+  assert.deepEqual(
+    loss.tools.map((t) => t.id),
+    ['devtools', 'keyboard']
+  );
+  assert.equal(loss.tools[0].label, "The browser's developer tools");
+  assert.match(loss.procedure.steps[0], /Styles pane/);
+  assert.match(loss.procedure.failWhen, /fails WCAG 1\.4\.12/);
+  assert.equal(loss.variants.length, 8);
+  const manual = r.facets.find((f) => f.id === 'text-spacing-other-states');
+  assert.deepEqual(manual.rules, []);
+  assert.deepEqual(manual.variants, []);
+
+  // A criterion core has no procedures for yet: its facets, without them.
+  const partial = proceduresFor('1.4.3');
+  assert.equal(partial.complete, false);
+  assert.ok(partial.facets.every((f) => f.procedure === null && f.tools.length === 0));
+  assert.ok(partial.facets.some((f) => f.variants.length > 0));
+
+  assert.equal(proceduresFor('9.9.9'), null);
+  assert.equal(proceduresFor(''), null);
+  const bp = proceduresFor('best-practice');
+  assert.equal(bp.standard, 'best-practice');
+  assert.equal(bp.level, null);
+  assert.ok(bp.rules.includes('heading-order'));
+});
+
+test('a variant read by criterion is exactly the finding’s howToCheck, in every locale', () => {
+  let n = 0;
+  for (const locale of ['en', 'de', 'es', 'fr', 'ja', 'fr-CA', 'pt']) {
+    const requirements = [...Object.keys(PROCEDURES.wcag), 'best-practice'];
+    for (const requirement of requirements) {
+      for (const facet of proceduresFor(requirement, { locale }).facets) {
+        for (const v of facet.variants) {
+          const { steps, passWhen, failWhen } = v;
+          assert.deepEqual(
+            { steps, passWhen, failWhen },
+            howToCheckFor(v.ruleId, v.reasonCode, locale),
+            `${v.ruleId} ${v.reasonCode} ${locale}`
+          );
+          n++;
+        }
+      }
+    }
+  }
+  assert.equal(n, ALL.length * 7);
+});
+
+test('a locale without a procedure reads it in English; one with it, its own', () => {
+  const en = proceduresFor('1.4.13').facets[0].procedure;
+  assert.deepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
+  const dicts = {
+    en: read(PROCEDURES_DIR, 'en'),
+    fr: { 'wcag_1.4.13_hover-focus-content-dismissible_step1': 'Survolez la page.' }
+  };
+  const fr = proceduresFrom(dicts, '1.4.13', { locale: 'fr-CA' }).facets[0].procedure;
+  assert.equal(fr.steps[0], 'Survolez la page.');
+  assert.equal(fr.steps[1], en.steps[1]);
+  assert.equal(fr.steps.length, en.steps.length);
+});
+
+test('proceduresFrom gives what proceduresFor gives, from the dictionaries passed', () => {
+  const dicts = Object.fromEntries(LOCALES.map((l) => [l, read(PROCEDURES_DIR, l)]));
+  for (const requirement of ['1.4.12', '2.4.3', '4.1.2', 'best-practice']) {
+    for (const locale of ['en', 'fr', ['de', 'es']]) {
+      assert.deepEqual(
+        proceduresFrom(dicts, requirement, { locale }),
+        proceduresFor(requirement, { locale })
+      );
+      assert.deepEqual(
+        proceduresFrom((l) => dicts[l], requirement, { locale }),
+        proceduresFor(requirement, { locale })
+      );
+    }
+  }
 });

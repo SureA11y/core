@@ -1,16 +1,20 @@
 'use strict';
 
 /**
- * Generate the review dictionaries (src/i18n/review/<locale>.json, published
- * as @surea11y/core/review/<locale>) from the procedures
- * (src/procedures/registry.js and the text in
- * src/i18n/procedures/<locale>.json): each holds the steps of every variant
- * the registry lists, in the order the text has them, so that a result's
- * howToCheck reads them by its rule's prefix and reason code, in Node or in
- * a browser.
+ * Generate, from the procedures (src/procedures/registry.js and the text in
+ * src/i18n/procedures/<locale>.json):
+ *
+ * - the review dictionaries (src/i18n/review/<locale>.json, published as
+ *   @surea11y/core/review/<locale>): each holds the steps of every variant
+ *   the registry lists, in the order the text has them, so that a result's
+ *   howToCheck reads them by its rule's prefix and reason code, in Node or
+ *   in a browser;
+ * - src/procedures/rules.json: each core rule's prefix, the criteria it
+ *   tests and the facets it claims, which @surea11y/core/procedures reads
+ *   without the rules (src/procedures-core.js).
  *
  * Usage:
- *   npm run procedures          write src/i18n/review/<locale>.json
+ *   npm run procedures          write them
  *   npm run procedures:check    exit 1 if any of them is out of date
  */
 
@@ -20,6 +24,7 @@ const path = require('node:path');
 const ROOT = path.join(__dirname, '..');
 const PROCEDURES_DIR = path.join(ROOT, 'src', 'i18n', 'procedures');
 const REVIEW_DIR = path.join(ROOT, 'src', 'i18n', 'review');
+const RULES_FILE = path.join(ROOT, 'src', 'procedures', 'rules.json');
 
 const { PROCEDURES } = require('../src/procedures/registry.js');
 
@@ -109,9 +114,30 @@ function reviewDictionaries() {
   return out;
 }
 
+// rules.json: by rule id, in id order, the rule's prefix, the criteria it
+// tests (wcagSc) and the facets it claims (meta.coverage.facetsBySc).
+function rulesIndex() {
+  const out = {};
+  const catalog = require('../src/core.js')
+    .getChecksCatalog()
+    .slice()
+    .sort((a, b) => (a.ruleId < b.ruleId ? -1 : a.ruleId > b.ruleId ? 1 : 0));
+  for (const rule of catalog) {
+    const titleKey = rule.i18n && rule.i18n.titleKey;
+    const facetsBySc = (rule.coverage && rule.coverage.facetsBySc) || {};
+    out[rule.ruleId] = {
+      prefix: typeof titleKey === 'string' ? titleKey.replace(/_title$/, '') : null,
+      criteria: Array.isArray(rule.wcagSc) ? rule.wcagSc.slice() : [],
+      facets: facetsBySc
+    };
+  }
+  return serialize(out);
+}
+
 function main(argv) {
   const check = argv.includes('--check');
   const want = reviewDictionaries();
+  const rules = rulesIndex();
   const have = fs
     .readdirSync(REVIEW_DIR)
     .filter((f) => f.endsWith('.json'))
@@ -124,6 +150,11 @@ function main(argv) {
     stale.push(path.relative(ROOT, file));
     if (!check) fs.writeFileSync(file, text);
   }
+  const currentRules = fs.existsSync(RULES_FILE) ? fs.readFileSync(RULES_FILE, 'utf8') : null;
+  if (currentRules !== rules) {
+    stale.push(path.relative(ROOT, RULES_FILE));
+    if (!check) fs.writeFileSync(RULES_FILE, rules);
+  }
   for (const locale of have.filter((l) => !(l in want))) {
     const file = path.join(REVIEW_DIR, `${locale}.json`);
     stale.push(path.relative(ROOT, file));
@@ -131,16 +162,27 @@ function main(argv) {
   }
   if (check && stale.length) {
     console.error(
-      `Out of date: ${stale.join(', ')}. They are made from src/procedures: run \`npm run procedures\`.`
+      `Out of date: ${stale.join(', ')}. They are made from src/procedures and the rules: run \`npm run procedures\`.`
     );
     return 1;
   }
   console.log(
-    stale.length ? `Wrote ${stale.join(', ')}` : 'The review dictionaries are up to date.'
+    stale.length
+      ? `Wrote ${stale.join(', ')}`
+      : 'The review dictionaries and src/procedures/rules.json are up to date.'
   );
   return 0;
 }
 
-module.exports = { reviewDictionaries, variants, prefixOf, serialize, PROCEDURES_DIR, REVIEW_DIR };
+module.exports = {
+  reviewDictionaries,
+  rulesIndex,
+  variants,
+  prefixOf,
+  serialize,
+  PROCEDURES_DIR,
+  REVIEW_DIR,
+  RULES_FILE
+};
 
 if (require.main === module) process.exitCode = main(process.argv.slice(2));

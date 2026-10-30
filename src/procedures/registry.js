@@ -14,11 +14,21 @@
  * with its own label and automation: the steps of rules that claim no
  * criterion, so that they are never read as a criterion's.
  *
+ * A facet with a general procedure, how a person assesses it on a whole
+ * page, names the `tools` it needs, from TOOLS (an empty list: a browser
+ * alone). Its text is in the procedures under
+ * `<group>_<criterion>_<facet>_step<n>`, `_pass` and `_fail`
+ * (`wcag_1.4.13_hover-content-hoverable_step1`; a best practice has no
+ * criterion: `best-practice_<facet>_step1`), and a tool's name under
+ * `tool_<id>`.
+ *
  * Under a facet, `variants` lists, by rule id, the reason codes whose steps
  * that rule gives for the element a finding names: how a person answers one
  * of its undecided findings. Each reason code a core rule can report as
  * cantTell is under exactly one facet, the one it tests, and a variant is
- * always what its finding shows.
+ * always what its finding shows, never the facet's general procedure: the
+ * two say the same for a page and for one element, and must not contradict
+ * each other.
  *
  * THE TEXT
  * --------
@@ -34,6 +44,9 @@
  * Like the facets, this is guidance (NON-NORMATIVE): nothing here changes an
  * outcome, and its wording may improve in any release.
  */
+
+// What a procedure may need besides a browser.
+const TOOLS = ['keyboard', 'pointer', 'screen-reader', 'zoom', 'contrast-theme', 'devtools'];
 
 const PROCEDURES = {
   wcag: {
@@ -245,6 +258,7 @@ const PROCEDURES = {
     },
     '1.4.12': {
       'avoid-inline-spacing': {
+        tools: ['devtools'],
         variants: {
           'avoid-inline-spacing': [
             'INLINE_SPACING_NOT_RESOLVABLE',
@@ -254,6 +268,7 @@ const PROCEDURES = {
         }
       },
       'text-spacing-content-loss': {
+        tools: ['devtools', 'keyboard'],
         variants: {
           'text-spacing-content-loss': [
             'SPACING_NOT_APPLIED',
@@ -266,7 +281,14 @@ const PROCEDURES = {
             'VIEWPORT_SCROLL_LOCKED'
           ]
         }
-      }
+      },
+      'text-spacing-functionality-kept': { tools: ['devtools', 'keyboard', 'pointer'] },
+      'text-spacing-other-states': { tools: ['devtools', 'keyboard', 'pointer'] }
+    },
+    '1.4.13': {
+      'hover-focus-content-dismissible': { tools: ['pointer', 'keyboard'] },
+      'hover-content-hoverable': { tools: ['pointer'] },
+      'hover-focus-content-persistent': { tools: ['pointer', 'keyboard'] }
     },
     '2.1.1': {
       'iframe-tabindex-negative-content-not-focusable': {
@@ -360,6 +382,11 @@ const PROCEDURES = {
           ]
         }
       }
+    },
+    '2.4.3': {
+      'focus-order-preserves-meaning': { tools: ['keyboard'] },
+      'focus-order-opened-content': { tools: ['keyboard'] },
+      'focus-order-no-hidden-stops': { tools: ['keyboard', 'devtools'] }
     },
     '2.4.4': {
       'link-name-present': {
@@ -751,4 +778,4 @@ const PROCEDURES = {
   }
 };
 
-module.exports = { PROCEDURES };
+module.exports = { PROCEDURES, TOOLS };

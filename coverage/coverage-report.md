@@ -271,13 +271,17 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
+| text-spacing-functionality-kept | manual | — |
+| text-spacing-other-states | manual | — |
+
+Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -404,12 +408,17 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.4.3
 
-Facet coverage: **0/0** facets covered.
-Automation mix: **full 0, partial 0, manual 0**.
+Facet coverage: **0/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| focus-order-preserves-meaning | manual | — |
+| focus-order-opened-content | manual | — |
+| focus-order-no-hidden-stops | manual | — |
+
+Uncovered facets: focus-order-preserves-meaning, focus-order-opened-content, focus-order-no-hidden-stops
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -983,13 +992,17 @@ Automation mix: **full 0, partial 2, manual 0**.
 
 ### 1.4.12
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 1, manual 0**.
+Facet coverage: **2/4** facets covered.
+Automation mix: **full 1, partial 1, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | avoid-inline-spacing | full | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
+| text-spacing-functionality-kept | manual | — |
+| text-spacing-other-states | manual | — |
+
+Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1116,12 +1129,17 @@ Automation mix: **full 1, partial 1, manual 0**.
 
 ### 2.4.3
 
-Facet coverage: **0/0** facets covered.
-Automation mix: **full 0, partial 0, manual 0**.
+Facet coverage: **0/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
 Rules missing facet mapping for this SC: manual-review
 
 | Facet | Automation | Covered by |
 |---|---|---|
+| focus-order-preserves-meaning | manual | — |
+| focus-order-opened-content | manual | — |
+| focus-order-no-hidden-stops | manual | — |
+
+Uncovered facets: focus-order-preserves-meaning, focus-order-opened-content, focus-order-no-hidden-stops
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

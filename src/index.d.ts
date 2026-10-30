@@ -1014,6 +1014,65 @@ export function howToCheckFor(
   options?: HowToCheckOptions
 ): HowToCheck | null;
 
+/** Something a procedure needs besides a browser, with its name in the locale. */
+export interface ProcedureTool {
+  id: 'keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools' | (string & {});
+  label: string;
+}
+
+/**
+ * A variant: the steps one rule's finding shows for a reason code
+ * (howToCheck), under the facet the code tests.
+ */
+export interface ProcedureVariant extends HowToCheck {
+  ruleId: string;
+  reasonCode: string;
+}
+
+/** One facet of a requirement: a test objective, and how a person assesses it. */
+export interface ProcedureFacet {
+  id: string;
+  label: string;
+  /** full: rules decide it; partial: rules decide part of it; manual: only a person can. */
+  automation: 'full' | 'partial' | 'manual';
+  /** A facet broader than any one rule, kept for coverage reporting. */
+  macro?: true;
+  /** The core rules that claim the facet (meta.coverage.facetsBySc). */
+  rules: string[];
+  /** What its procedure needs besides a browser; empty without a procedure. */
+  tools: ProcedureTool[];
+  /** How a person assesses the facet on a whole page, or null where core has none yet. */
+  procedure: HowToCheck | null;
+  variants: ProcedureVariant[];
+}
+
+/** How a person assesses a requirement by hand (docs/PROCEDURES.md). */
+export interface Procedures {
+  standard: 'wcag' | 'best-practice';
+  /** The criterion ('1.4.13'), or 'best-practice'. */
+  id: string;
+  title: string;
+  level: 'A' | 'AA' | 'AAA' | null;
+  /** Whether every facet has a procedure. */
+  complete: boolean;
+  /** The core rules that test the criterion (wcagSc), or the best practices'. */
+  rules: string[];
+  facets: ProcedureFacet[];
+}
+
+export interface ProceduresOptions {
+  /** A locale ('fr-CA') or a list of them, most wanted first; English is the fallback. */
+  locale?: string | readonly string[] | null;
+}
+
+/**
+ * How a person assesses a WCAG 2.2 criterion ('1.4.13'), or the best
+ * practices ('best-practice'), by hand, read from disk in Node; null for a
+ * requirement core doesn't know. In a browser bundle it warns once and
+ * returns null: use proceduresFrom from @surea11y/core/procedures.
+ */
+export function proceduresFor(requirement: string, options?: ProceduresOptions): Procedures | null;
+
 /**
  * The same scan from a single self-contained function, which can be
  * serialized into a page (the browser bindings inject its source).

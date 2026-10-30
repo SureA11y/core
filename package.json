@@ -71,6 +71,12 @@
       "review/*": [
         "src/review-dictionary.d.ts"
       ],
+      "procedures": [
+        "src/procedures-core.d.ts"
+      ],
+      "procedures/*": [
+        "src/procedures-dictionary.d.ts"
+      ],
       "browser": [
         "surea11y.browser.d.ts"
       ]
@@ -134,6 +140,14 @@
       "types": "./src/review-dictionary.d.ts",
       "default": "./src/i18n/review/*.json"
     },
+    "./procedures": {
+      "types": "./src/procedures-core.d.ts",
+      "default": "./src/procedures-core.js"
+    },
+    "./procedures/*": {
+      "types": "./src/procedures-dictionary.d.ts",
+      "default": "./src/i18n/procedures/*.json"
+    },
     "./browser": {
       "types": "./surea11y.browser.d.ts",
       "import": "./surea11y.browser.mjs",
@@ -166,6 +180,13 @@
     "src/how-to-check-core.d.ts",
     "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",
+    "src/procedures.js",
+    "src/procedures-core.js",
+    "src/procedures-core.d.ts",
+    "src/procedures-dictionary.d.ts",
+    "src/procedures/registry.js",
+    "src/procedures/rules.json",
+    "src/i18n/procedures/*.json",
     "src/index.d.ts",
     "src/baseline.d.ts",
     "src/report.d.ts",

@@ -38,6 +38,8 @@ src/
   profile-kit.js           # Mapping for a profile made with profile:new (internal, not exported)
   how-to-check-core.js     # Steps for undecided findings, no file system (@surea11y/core/how-to-check)
   how-to-check.js          # The same in Node, reading the review dictionaries (addHowToCheck)
+  procedures-core.js       # How to assess each criterion by hand, no file system (@surea11y/core/procedures)
+  procedures.js            # The same in Node, reading the procedures from disk (proceduresFor)
   hook-reason-codes.js     # The reason codes each opt-in hook decides or changes (HOOK_REASON_CODES)
   baseline-moves.json      # Reason codes moved in this minor release, for baselines written before
 
@@ -50,7 +52,7 @@ src/
   i18n/                    # Localized messages (JSON, one file per locale)
     procedures/            # The text of every assessment procedure, per locale (source)
     review/                # Generated from procedures: how-to-check steps (@surea11y/core/review/<locale>)
-  procedures/              # How a person assesses each criterion, by facet (registry.js)
+  procedures/              # How a person assesses each criterion, by facet (registry.js; rules.json generated)
   coverage/                # WCAG coverage definitions, and which criteria rules check in full
   catalogs/                # Composite rule catalogs
 

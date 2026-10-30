@@ -482,13 +482,39 @@ const FACETS = {
                 "id": "text-spacing-content-loss",
                 "label": "With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)",
                 "automation": "partial"
+            },
+            {
+                "id": "text-spacing-functionality-kept",
+                "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+                "automation": "manual"
+            },
+            {
+                "id": "text-spacing-other-states",
+                "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+                "automation": "manual"
             }
         ]
     },
     "1.4.13": {
         "title": "Content on Hover or Focus",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "hover-focus-content-dismissible",
+                "label": "Extra content that appears on hover or focus can be dismissed without moving the pointer or focus",
+                "automation": "manual"
+            },
+            {
+                "id": "hover-content-hoverable",
+                "label": "The pointer can move onto extra content that appears on hover without it disappearing",
+                "automation": "manual"
+            },
+            {
+                "id": "hover-focus-content-persistent",
+                "label": "Extra content that appears on hover or focus stays until it is dismissed, the pointer or focus leaves, or it is no longer true",
+                "automation": "manual"
+            }
+        ]
     },
     "2.1.1": {
         "title": "Keyboard",
@@ -670,7 +696,23 @@ const FACETS = {
     "2.4.3": {
         "title": "Focus Order",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-order-preserves-meaning",
+                "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-order-opened-content",
+                "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-order-no-hidden-stops",
+                "label": "Focus does not stop on content that is closed, hidden or off screen",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.4": {
         "title": "Link Purpose (In Context)",

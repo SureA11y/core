@@ -7400,12 +7400,16 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 2,
+        "totalFacets": 4,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-spacing-functionality-kept",
+          "text-spacing-other-states"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 1,
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7425,6 +7429,18 @@
             "coveredBy": [
               "text-spacing-content-loss"
             ]
+          },
+          {
+            "id": "text-spacing-functionality-kept",
+            "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-spacing-other-states",
+            "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -7688,15 +7704,40 @@
       {
         "sc": "2.4.3",
         "title": "Focus Order",
-        "totalFacets": 0,
+        "totalFacets": 3,
         "coveredFacets": 0,
-        "uncoveredFacets": [],
-        "automationCounts": {},
+        "uncoveredFacets": [
+          "focus-order-preserves-meaning",
+          "focus-order-opened-content",
+          "focus-order-no-hidden-stops"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
         "missingFacetRules": [
           "manual-review"
         ],
         "unknownFacetIds": [],
-        "facets": []
+        "facets": [
+          {
+            "id": "focus-order-preserves-meaning",
+            "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-opened-content",
+            "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-no-hidden-stops",
+            "label": "Focus does not stop on content that is closed, hidden or off screen",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
       },
       {
         "sc": "2.4.4",
@@ -9008,12 +9049,16 @@
       {
         "sc": "1.4.12",
         "title": "Text Spacing",
-        "totalFacets": 2,
+        "totalFacets": 4,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-spacing-functionality-kept",
+          "text-spacing-other-states"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 1,
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9033,6 +9078,18 @@
             "coveredBy": [
               "text-spacing-content-loss"
             ]
+          },
+          {
+            "id": "text-spacing-functionality-kept",
+            "label": "With the 1.4.12 spacing applied, controls, menus and forms keep working and show all their text",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "text-spacing-other-states",
+            "label": "With the 1.4.12 spacing applied, content shown only after interaction (menus, dialogs, tabs, messages) keeps all its text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9296,15 +9353,40 @@
       {
         "sc": "2.4.3",
         "title": "Focus Order",
-        "totalFacets": 0,
+        "totalFacets": 3,
         "coveredFacets": 0,
-        "uncoveredFacets": [],
-        "automationCounts": {},
+        "uncoveredFacets": [
+          "focus-order-preserves-meaning",
+          "focus-order-opened-content",
+          "focus-order-no-hidden-stops"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
         "missingFacetRules": [
           "manual-review"
         ],
         "unknownFacetIds": [],
-        "facets": []
+        "facets": [
+          {
+            "id": "focus-order-preserves-meaning",
+            "label": "Moving focus with Tab and Shift+Tab follows an order that keeps the page's meaning and lets it be used",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-opened-content",
+            "label": "Focus moves into a dialog, menu or section that opens, stays in a dialog while it covers the page, and comes back when it closes",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "focus-order-no-hidden-stops",
+            "label": "Focus does not stop on content that is closed, hidden or off screen",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
       },
       {
         "sc": "2.4.4",
