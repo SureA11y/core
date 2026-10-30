@@ -48,7 +48,13 @@ const CORE_TARGETS = [
   { file: 'src/core/contrast-helpers.js', functions: ['createContrastHelpers'] },
   {
     file: 'src/core/dom-runner.js',
-    functions: ['readRenderingEnvironment', 'settleAnimations', 'runCore', 'runCoreSettled']
+    functions: [
+      'readRenderingEnvironment',
+      'settleAnimations',
+      'layOutSkippedContent',
+      'runCore',
+      'runCoreSettled'
+    ]
   },
   {
     file: 'src/core/frame-scan.js',

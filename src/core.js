@@ -21631,6 +21631,94 @@ const holdPageColors = (function holdPageColors(doc) {
     }
   };
 });
+const layOutSkippedContent = (function layOutSkippedContent(doc) {
+  const dom = createSafeDom();
+  const nothing = { count: 0, restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.getComputedStyle !== 'function') return nothing;
+    // A browser that knows content-visibility computes it on the root.
+    const rootStyle = view.getComputedStyle(dom.documentElement(doc));
+    if (typeof rootStyle.contentVisibility !== 'string') return nothing;
+  } catch {
+    return nothing;
+  }
+  // Every element with content-visibility: auto, read before any is changed,
+  // so laying out one doesn't make the next read update the page's layout.
+  const found = [];
+  try {
+    const docEl = dom.documentElement(doc);
+    const roots = docEl ? [docEl] : [];
+    for (let i = 0; i < roots.length; i++) {
+      const walker = dom.createTreeWalker(doc, roots[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (dom.nodeType(el) !== 1) continue;
+        const shadow = dom.shadowRoot(el);
+        if (shadow) roots.push(shadow);
+        let cs;
+        try {
+          cs = view.getComputedStyle(el);
+        } catch {
+          continue;
+        }
+        if (!cs || cs.contentVisibility !== 'auto') continue;
+        found.push({ el, contain: String(cs.contain || 'none') });
+      }
+    }
+  } catch {}
+  if (!found.length) return nothing;
+  // Whether an element's content is skipped: a child the browser renders
+  // that checkVisibility counts as hidden only once skipped content counts.
+  let count = 0;
+  for (const { el } of found) {
+    try {
+      const child = dom.firstElementChild(el);
+      if (
+        child &&
+        typeof dom.get(child, 'checkVisibility') === 'function' &&
+        dom.checkVisibility(child) &&
+        !dom.checkVisibility(child, { contentVisibilityAuto: true })
+      )
+        count++;
+    } catch {}
+  }
+  // Its own containment, with what content-visibility: auto adds to it.
+  // (`content` is layout, paint and style; `strict` adds size.)
+  const containOf = (contain) => {
+    const words = contain.trim().split(/\s+/);
+    if (words.includes('strict')) return 'strict';
+    const kept = words.filter((w) => w && w !== 'none' && w !== 'content');
+    return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
+  };
+  const changed = [];
+  for (const { el, contain } of found) {
+    try {
+      const had = dom.hasAttribute(el, 'style');
+      const text = had ? dom.getAttribute(el, 'style') : null;
+      const style = el.style;
+      if (!style || typeof style.setProperty !== 'function') continue;
+      changed.push({ el, had, text });
+      style.setProperty('content-visibility', 'visible', 'important');
+      style.setProperty('contain', containOf(contain), 'important');
+    } catch {}
+  }
+  return {
+    count,
+    restore() {
+      for (const { el, had, text } of changed) {
+        try {
+          // Chromium writes a style changed through el.style into the
+          // attribute only when the attribute is next read; removed before
+          // that, the attribute came back empty (style="").
+          dom.getAttribute(el, 'style');
+          if (had) dom.setAttribute(el, 'style', text);
+          else dom.removeAttribute(el, 'style');
+        } catch {}
+      }
+    }
+  };
+});
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
   // No prototype: a rule with the id "__proto__" is a rule like any other.
@@ -23490,6 +23578,8 @@ const runCore = (function runCore(
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
+    // Content content-visibility: auto skips, laid out as a reader sees it.
+    const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -23504,10 +23594,14 @@ const runCore = (function runCore(
       );
       try {
         const env = result && result.engine && result.engine.environment;
-        if (env && env.layout) env.animationsSettled = settled.count;
+        if (env && env.layout) {
+          env.animationsSettled = settled.count;
+          if (laidOut.count) env.contentVisibilitySkipped = laidOut.count;
+        }
       } catch {}
       return result;
     } finally {
+      laidOut.restore();
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];
@@ -126099,6 +126193,94 @@ const holdPageColors = (function holdPageColors(doc) {
     }
   };
 });
+const layOutSkippedContent = (function layOutSkippedContent(doc) {
+  const dom = createSafeDom();
+  const nothing = { count: 0, restore() {} };
+  let view;
+  try {
+    view = doc ? dom.defaultView(doc) : null;
+    if (!view || typeof view.getComputedStyle !== 'function') return nothing;
+    // A browser that knows content-visibility computes it on the root.
+    const rootStyle = view.getComputedStyle(dom.documentElement(doc));
+    if (typeof rootStyle.contentVisibility !== 'string') return nothing;
+  } catch {
+    return nothing;
+  }
+  // Every element with content-visibility: auto, read before any is changed,
+  // so laying out one doesn't make the next read update the page's layout.
+  const found = [];
+  try {
+    const docEl = dom.documentElement(doc);
+    const roots = docEl ? [docEl] : [];
+    for (let i = 0; i < roots.length; i++) {
+      const walker = dom.createTreeWalker(doc, roots[i], 1);
+      for (let el = walker.currentNode; el; el = walker.nextNode()) {
+        if (dom.nodeType(el) !== 1) continue;
+        const shadow = dom.shadowRoot(el);
+        if (shadow) roots.push(shadow);
+        let cs;
+        try {
+          cs = view.getComputedStyle(el);
+        } catch {
+          continue;
+        }
+        if (!cs || cs.contentVisibility !== 'auto') continue;
+        found.push({ el, contain: String(cs.contain || 'none') });
+      }
+    }
+  } catch {}
+  if (!found.length) return nothing;
+  // Whether an element's content is skipped: a child the browser renders
+  // that checkVisibility counts as hidden only once skipped content counts.
+  let count = 0;
+  for (const { el } of found) {
+    try {
+      const child = dom.firstElementChild(el);
+      if (
+        child &&
+        typeof dom.get(child, 'checkVisibility') === 'function' &&
+        dom.checkVisibility(child) &&
+        !dom.checkVisibility(child, { contentVisibilityAuto: true })
+      )
+        count++;
+    } catch {}
+  }
+  // Its own containment, with what content-visibility: auto adds to it.
+  // (`content` is layout, paint and style; `strict` adds size.)
+  const containOf = (contain) => {
+    const words = contain.trim().split(/\s+/);
+    if (words.includes('strict')) return 'strict';
+    const kept = words.filter((w) => w && w !== 'none' && w !== 'content');
+    return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
+  };
+  const changed = [];
+  for (const { el, contain } of found) {
+    try {
+      const had = dom.hasAttribute(el, 'style');
+      const text = had ? dom.getAttribute(el, 'style') : null;
+      const style = el.style;
+      if (!style || typeof style.setProperty !== 'function') continue;
+      changed.push({ el, had, text });
+      style.setProperty('content-visibility', 'visible', 'important');
+      style.setProperty('contain', containOf(contain), 'important');
+    } catch {}
+  }
+  return {
+    count,
+    restore() {
+      for (const { el, had, text } of changed) {
+        try {
+          // Chromium writes a style changed through el.style into the
+          // attribute only when the attribute is next read; removed before
+          // that, the attribute came back empty (style="").
+          dom.getAttribute(el, 'style');
+          if (had) dom.setAttribute(el, 'style', text);
+          else dom.removeAttribute(el, 'style');
+        } catch {}
+      }
+    }
+  };
+});
 const resolveCustomRules = (function resolveCustomRules(customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG) {
   const defs = new Map();
   // No prototype: a rule with the id "__proto__" is a rule like any other.
@@ -127958,6 +128140,8 @@ const runCore = (function runCore(
     settleAnimations.atScanStart = settled.running;
     // Under forced colors, the page's own colors, which the rules measure.
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
+    // Content content-visibility: auto skips, laid out as a reader sees it.
+    const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -127972,10 +128156,14 @@ const runCore = (function runCore(
       );
       try {
         const env = result && result.engine && result.engine.environment;
-        if (env && env.layout) env.animationsSettled = settled.count;
+        if (env && env.layout) {
+          env.animationsSettled = settled.count;
+          if (laidOut.count) env.contentVisibilitySkipped = laidOut.count;
+        }
       } catch {}
       return result;
     } finally {
+      laidOut.restore();
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];

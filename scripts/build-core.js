@@ -55,6 +55,7 @@ const {
   runCoreSettled,
   settleAnimations,
   holdPageColors,
+  layOutSkippedContent,
   rollupCompositeResults,
   noteEmptySelection,
   rollupMembers,
@@ -2268,6 +2269,7 @@ ${inlineConstFunction('readRenderingEnvironment', readRenderingEnvironment)}
 
 ${inlineConstFunction('settleAnimations', settleAnimations)}
 ${inlineConstFunction('holdPageColors', holdPageColors)}
+${inlineConstFunction('layOutSkippedContent', layOutSkippedContent)}
 ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
