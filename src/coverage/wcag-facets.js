@@ -356,18 +356,66 @@ const FACETS = {
                 "id": "aria-owns-valid",
                 "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
                 "automation": "full"
+            },
+            {
+                "id": "headings-marked-up",
+                "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "lists-marked-up",
+                "label": "Content shown as a list is marked up as a list",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "tables-marked-up",
+                "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "form-labels-associated",
+                "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "aria-structure-valid",
+                "label": "ARIA roles and relationships give the same structure the page shows",
+                "automation": "partial",
+                "macro": true
+            },
+            {
+                "id": "visual-cues-conveyed",
+                "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
     "1.3.2": {
         "title": "Meaningful Sequence",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "reading-order-meaningful",
+                "label": "The order assistive technology reads the content in keeps its meaning, and spaces don't lay out text",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.3": {
         "title": "Sensory Characteristics",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "instructions-not-sensory-only",
+                "label": "Instructions don't rely only on shape, color, size, position, orientation or sound",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.4": {
         "title": "Orientation",
@@ -377,6 +425,12 @@ const FACETS = {
                 "id": "css-orientation-lock",
                 "label": "No CSS orientation media query rotates the page to lock its display orientation",
                 "automation": "full"
+            },
+            {
+                "id": "orientation-not-locked",
+                "label": "The page works in both portrait and landscape, unless one orientation is essential",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -388,6 +442,12 @@ const FACETS = {
                 "id": "autocomplete-valid",
                 "label": "A non-empty autocomplete attribute is a valid autofill value",
                 "automation": "full"
+            },
+            {
+                "id": "input-purpose-identified",
+                "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -404,6 +464,12 @@ const FACETS = {
                 "id": "link-in-text-block",
                 "label": "Links inside blocks of text are distinguishable from surrounding text by non-color means (underline, weight/style difference, or >=3:1 contrast)",
                 "automation": "partial"
+            },
+            {
+                "id": "color-not-only-means",
+                "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -442,6 +508,12 @@ const FACETS = {
                 "id": "meta-viewport-zoom-enabled",
                 "label": "<meta name=\"viewport\"> does not disable or cap pinch-zoom below 200%",
                 "automation": "full"
+            },
+            {
+                "id": "text-resizes-200",
+                "label": "Text can be resized to 200% without losing content or function",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -453,6 +525,12 @@ const FACETS = {
                 "id": "image-of-text-evidence",
                 "label": "Images markup shows likely to hold text (<input type=\"image\">, an <img> of an SVG with <text>) are asked about (evidence only: text in an image's pixels is not seen)",
                 "automation": "manual"
+            },
+            {
+                "id": "text-not-as-image",
+                "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
@@ -490,12 +568,29 @@ const FACETS = {
     "1.4.10": {
         "title": "Reflow",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reflow-320",
+                "label": "At 320 CSS pixels wide, content needs no scrolling in two directions and nothing is lost",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.11": {
         "title": "Non-text Contrast",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "ui-component-contrast",
+                "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
+                "automation": "manual"
+            },
+            {
+                "id": "graphics-contrast",
+                "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.12": {
         "title": "Text Spacing",

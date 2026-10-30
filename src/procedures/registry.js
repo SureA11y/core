@@ -192,17 +192,50 @@ const PROCEDURES = {
       }
     },
     '1.3.1': {
+      'form-control-programmatic-label-present': {
+        coveredBy: 'form-labels-associated'
+      },
+      'form-control-label-quality-review': {
+        coveredBy: 'form-labels-associated'
+      },
+      'table-headers-attr-valid': {
+        coveredBy: 'tables-marked-up'
+      },
       'table-th-has-data-cells': {
+        coveredBy: 'tables-marked-up',
         variants: {
           'table-th-has-data-cells': ['TABLE_TH_NO_ASSIGNED_CELL']
         }
       },
+      'aria-hidden-body-absent': {
+        coveredBy: 'aria-structure-valid'
+      },
+      'list-children-valid': {
+        coveredBy: 'lists-marked-up'
+      },
+      'listitem-parent-valid': {
+        coveredBy: 'lists-marked-up'
+      },
+      'definition-list-children-valid': {
+        coveredBy: 'lists-marked-up'
+      },
+      'dlitem-parent-valid': {
+        coveredBy: 'lists-marked-up'
+      },
       'aria-role-required-owned-children': {
+        coveredBy: 'aria-structure-valid',
         variants: {
           'aria-required-children': ['ARIA_REQUIRED_CHILD_MISSING']
         }
       },
+      'aria-role-owned-children-allowed': {
+        coveredBy: 'aria-structure-valid'
+      },
+      'aria-role-required-context-parent': {
+        coveredBy: 'aria-structure-valid'
+      },
       'p-as-heading-evidence': {
+        coveredBy: 'headings-marked-up',
         variants: {
           'p-as-heading': [
             'BOLD_LARGE_DIV',
@@ -213,18 +246,55 @@ const PROCEDURES = {
         }
       },
       'table-fake-caption-evidence': {
+        coveredBy: 'tables-marked-up',
         variants: {
           'table-fake-caption': ['SINGLE_CELL_FIRST_ROW_NO_CAPTION']
         }
       },
       'td-has-header': {
+        coveredBy: 'tables-marked-up',
         variants: {
           'td-has-header': ['TD_TABLE_NO_HEADERS']
         }
+      },
+      'aria-role-valid': {
+        coveredBy: 'aria-structure-valid'
+      },
+      'aria-owns-valid': {
+        coveredBy: 'aria-structure-valid'
+      },
+      'headings-marked-up': {
+        tools: ['devtools', 'screen-reader']
+      },
+      'lists-marked-up': {
+        tools: ['devtools']
+      },
+      'tables-marked-up': {
+        tools: ['devtools', 'screen-reader']
+      },
+      'form-labels-associated': {
+        tools: ['devtools', 'screen-reader']
+      },
+      'aria-structure-valid': {
+        tools: ['devtools']
+      },
+      'visual-cues-conveyed': {
+        tools: ['devtools', 'screen-reader']
+      }
+    },
+    '1.3.2': {
+      'reading-order-meaningful': {
+        tools: ['screen-reader', 'devtools']
+      }
+    },
+    '1.3.3': {
+      'instructions-not-sensory-only': {
+        tools: []
       }
     },
     '1.3.4': {
       'css-orientation-lock': {
+        coveredBy: 'orientation-not-locked',
         variants: {
           'css-orientation-lock': [
             'ORIENTATION_MEDIA_HIDES_CONTENT',
@@ -232,10 +302,22 @@ const PROCEDURES = {
             'STYLESHEETS_NOT_READABLE'
           ]
         }
+      },
+      'orientation-not-locked': {
+        tools: ['devtools']
+      }
+    },
+    '1.3.5': {
+      'autocomplete-valid': {
+        coveredBy: 'input-purpose-identified'
+      },
+      'input-purpose-identified': {
+        tools: ['devtools']
       }
     },
     '1.4.1': {
       'link-in-text-block': {
+        coveredBy: 'color-not-only-means',
         variants: {
           'link-in-text-block': [
             'ANCESTOR_OPACITY',
@@ -256,10 +338,14 @@ const PROCEDURES = {
             'TEXT_STROKE'
           ]
         }
+      },
+      'color-not-only-means': {
+        tools: ['devtools']
       }
     },
     '1.4.2': {
       'no-autoplay-audio-evidence': {
+        tools: ['keyboard'],
         variants: {
           'no-autoplay-audio': [
             'AUTOPLAY_CONTROLS_HIDDEN',
@@ -271,6 +357,7 @@ const PROCEDURES = {
     },
     '1.4.3': {
       'contrast-computability-143': {
+        coveredBy: 'contrast-minimum-text',
         variants: {
           'contrast-computable': [
             'ANCESTOR_OPACITY',
@@ -295,6 +382,7 @@ const PROCEDURES = {
         }
       },
       'contrast-minimum-text': {
+        tools: ['devtools'],
         variants: {
           'contrast-minimum': [
             'CONTRAST_SWITCH_OFFERED',
@@ -312,16 +400,24 @@ const PROCEDURES = {
     },
     '1.4.4': {
       'meta-viewport-zoom-enabled': {
+        coveredBy: 'text-resizes-200',
         variants: {
           'meta-viewport-zoom-enabled': ['VIEWPORT_ZOOM_RESTRICTED_OVERRIDDEN']
         }
+      },
+      'text-resizes-200': {
+        tools: ['zoom']
       }
     },
     '1.4.5': {
       'image-of-text-evidence': {
+        coveredBy: 'text-not-as-image',
         variants: {
           'image-of-text': ['IMAGE_BUTTON_TEXT_REVIEW', 'SVG_IMAGE_TEXT_REVIEW']
         }
+      },
+      'text-not-as-image': {
+        tools: ['devtools']
       }
     },
     '1.4.6': {
@@ -334,6 +430,19 @@ const PROCEDURES = {
             'SYMBOLIC_CHARACTER_BELOW_THRESHOLD'
           ]
         }
+      }
+    },
+    '1.4.10': {
+      'reflow-320': {
+        tools: ['devtools', 'zoom']
+      }
+    },
+    '1.4.11': {
+      'ui-component-contrast': {
+        tools: ['devtools', 'keyboard']
+      },
+      'graphics-contrast': {
+        tools: ['devtools']
       }
     },
     '1.4.12': {

@@ -7071,15 +7071,21 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 17,
+        "totalFacets": 23,
         "coveredFacets": 16,
         "uncoveredFacets": [
-          "form-control-label-quality-review"
+          "form-control-label-quality-review",
+          "headings-marked-up",
+          "lists-marked-up",
+          "tables-marked-up",
+          "form-labels-associated",
+          "aria-structure-valid",
+          "visual-cues-conveyed"
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 3,
-          "partial": 1
+          "manual": 4,
+          "partial": 6
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7217,17 +7223,56 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "headings-marked-up",
+            "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "lists-marked-up",
+            "label": "Content shown as a list is marked up as a list",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "tables-marked-up",
+            "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "form-labels-associated",
+            "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-structure-valid",
+            "label": "ARIA roles and relationships give the same structure the page shows",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "visual-cues-conveyed",
+            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.4",
         "title": "Orientation",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "orientation-not-locked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7239,17 +7284,26 @@
             "coveredBy": [
               "css-orientation-lock"
             ]
+          },
+          {
+            "id": "orientation-not-locked",
+            "label": "The page works in both portrait and landscape, unless one orientation is essential",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.5",
         "title": "Identify Input Purpose",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "input-purpose-identified"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7261,17 +7315,25 @@
             "coveredBy": [
               "autocomplete-valid"
             ]
+          },
+          {
+            "id": "input-purpose-identified",
+            "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.1",
         "title": "Use of Color",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "color-not-only-means"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7283,6 +7345,12 @@
             "coveredBy": [
               "link-in-text-block"
             ]
+          },
+          {
+            "id": "color-not-only-means",
+            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7341,11 +7409,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-resizes-200"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7357,17 +7428,25 @@
             "coveredBy": [
               "meta-viewport-zoom-enabled"
             ]
+          },
+          {
+            "id": "text-resizes-200",
+            "label": "Text can be resized to 200% without losing content or function",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.5",
         "title": "Images of Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-not-as-image"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7379,6 +7458,12 @@
             "coveredBy": [
               "image-of-text"
             ]
+          },
+          {
+            "id": "text-not-as-image",
+            "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -8735,15 +8820,21 @@
       {
         "sc": "1.3.1",
         "title": "Info and Relationships",
-        "totalFacets": 17,
+        "totalFacets": 23,
         "coveredFacets": 16,
         "uncoveredFacets": [
-          "form-control-label-quality-review"
+          "form-control-label-quality-review",
+          "headings-marked-up",
+          "lists-marked-up",
+          "tables-marked-up",
+          "form-labels-associated",
+          "aria-structure-valid",
+          "visual-cues-conveyed"
         ],
         "automationCounts": {
           "full": 13,
-          "manual": 3,
-          "partial": 1
+          "manual": 4,
+          "partial": 6
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8881,17 +8972,56 @@
             "coveredBy": [
               "aria-owns-valid"
             ]
+          },
+          {
+            "id": "headings-marked-up",
+            "label": "Text that looks like a heading is marked up as one, at a level that matches the page's outline",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "lists-marked-up",
+            "label": "Content shown as a list is marked up as a list",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "tables-marked-up",
+            "label": "Data tables mark up their headers and caption, and tables used only for layout carry no header markup",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "form-labels-associated",
+            "label": "Form fields are tied to their visible labels, and groups of fields to the text that names the group",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "aria-structure-valid",
+            "label": "ARIA roles and relationships give the same structure the page shows",
+            "automation": "partial",
+            "coveredBy": []
+          },
+          {
+            "id": "visual-cues-conveyed",
+            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.4",
         "title": "Orientation",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "orientation-not-locked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8903,17 +9033,26 @@
             "coveredBy": [
               "css-orientation-lock"
             ]
+          },
+          {
+            "id": "orientation-not-locked",
+            "label": "The page works in both portrait and landscape, unless one orientation is essential",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.3.5",
         "title": "Identify Input Purpose",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "input-purpose-identified"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8925,17 +9064,25 @@
             "coveredBy": [
               "autocomplete-valid"
             ]
+          },
+          {
+            "id": "input-purpose-identified",
+            "label": "Fields that ask for information about the user name its purpose with the right autocomplete value",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.1",
         "title": "Use of Color",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "color-not-only-means"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8947,6 +9094,12 @@
             "coveredBy": [
               "link-in-text-block"
             ]
+          },
+          {
+            "id": "color-not-only-means",
+            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9005,11 +9158,14 @@
       {
         "sc": "1.4.4",
         "title": "Resize Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-resizes-200"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9021,17 +9177,25 @@
             "coveredBy": [
               "meta-viewport-zoom-enabled"
             ]
+          },
+          {
+            "id": "text-resizes-200",
+            "label": "Text can be resized to 200% without losing content or function",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "1.4.5",
         "title": "Images of Text",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "text-not-as-image"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9043,6 +9207,12 @@
             "coveredBy": [
               "image-of-text"
             ]
+          },
+          {
+            "id": "text-not-as-image",
+            "label": "Text is shown as text, not in an image, unless its look is essential, as in a logo",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

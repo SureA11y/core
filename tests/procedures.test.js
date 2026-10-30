@@ -303,8 +303,13 @@ test('proceduresFor gives a criterion’s facets, rules, procedures and tools', 
   assert.deepEqual(manual.rules, []);
   assert.deepEqual(manual.variants, []);
 
-  // A criterion core has no procedures for yet: its facets, without them.
-  const partial = proceduresFor('1.4.3');
+  // A criterion without procedures (here, read without them): its facets,
+  // and their variants.
+  const en = read(PROCEDURES_DIR, 'en');
+  const variantsOnly = Object.fromEntries(
+    Object.entries(en).filter(([key]) => !key.startsWith('wcag_'))
+  );
+  const partial = proceduresFrom({ en: variantsOnly }, '1.4.3');
   assert.equal(partial.complete, false);
   assert.ok(partial.facets.every((f) => f.procedure === null && f.tools.length === 0));
   assert.ok(partial.facets.some((f) => f.variants.length > 0));
