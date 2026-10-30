@@ -354,6 +354,17 @@ property; times are in milliseconds, `iterations` and `endTime` `null` for one t
 runner adds it to `helpers` for the scan (`src/core/dom-runner.js`), so it is not in
 `createDomHelpers()`'s object; `moving-content-pausable` reads it.
 
+### `paintContainedByContentVisibility(el)` → `boolean`
+
+Whether `el` clips what overflows it only for its `content-visibility: auto`. Such an element
+has paint containment, on screen or off, so it clips its content as `contain: paint` does, yet
+its computed `contain` says `none`. For the scan, the engine lays each one out as it renders
+near the viewport, `content-visibility: visible` with that containment set in its style
+attribute, so its computed style during the scan no longer names `auto`; this says which
+elements those are. `false` for one whose own `contain` already had paint containment, and
+everywhere without a layout (jsdom). The runner adds it to `helpers` for the scan
+(`src/core/dom-runner.js`); `text-spacing-content-loss` reads it to say what cuts the text off.
+
 ### `hasTruncatedAncestorWalk` (internal)
 
 Backs confidence scoring during result normalization when a 200-step ancestor walk

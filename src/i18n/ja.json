@@ -901,6 +901,8 @@
   "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
   "textSpacingContentLoss_summary_fail_clipped": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。",
   "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
+  "textSpacingContentLoss_summary_fail_clippedContentVisibility": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。この要素の content-visibility: auto が、overflow: clip と同じように端からはみ出す部分を切り取ります。",
+  "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto は、画面内でも画面外でも、要素の内容をそのボックスで切り取ります。テキストが折り返すかボックスがテキストに合わせて広がるようにするか、この要素から content-visibility: auto を外してください（WCAG 1.4.12）。",
   "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
   "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔（line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em、段落の後に 2em）を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
   "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",

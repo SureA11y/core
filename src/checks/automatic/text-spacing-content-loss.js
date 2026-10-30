@@ -19,7 +19,8 @@
  *     the page's own (inline `!important` aside, which avoid-inline-spacing
  *     reports), and each line of text is measured before and after against
  *     the boxes that clip it: those on its containing block chain with
- *     `overflow: hidden` or `clip`, or `contain: paint`, and the viewport
+ *     `overflow: hidden` or `clip`, or `contain: paint` (which
+ *     `content-visibility: auto` gives), and the viewport
  *     on an axis the page keeps from scrolling, or for text in a fixed box,
  *     which doesn't scroll with the page. A
  *     line that was inside and ends at least half outside (half its
@@ -91,6 +92,10 @@
  *     past the top or bottom.
  *   - `container.widthPx`, `container.heightPx` (cut-off text): the size of
  *     the clipping box with the spacing applied.
+ *   - `clippedBy` (cut-off text): `content-visibility` when the box clips
+ *     only for its `content-visibility: auto`, which clips what overflows
+ *     it, on screen as well as off it, as `contain: paint` does, though its
+ *     computed `contain` doesn't say so. The finding names it.
  *   - `viewport.width`, `viewport.height` (cut-off or overlapping text): the
  *     viewport the page was laid out in, in CSS pixels. Text that fits at
  *     one width can be cut off at another.
@@ -797,6 +802,19 @@ function runInPage(ctx) {
     // A viewport clipper set by a fixed box has a key of its own, as the box
     // may clip its own content too.
     const keyOf = (c) => c.key || c.el;
+    // Whether a box clips on its axes only for its content-visibility: auto,
+    // which clips what overflows it, on screen or off, as contain: paint
+    // does. The scan lays such a box out as visible (computed so here), with
+    // the containment auto gives it, so the runner says which boxes those are.
+    const cvClips =
+      typeof helpers.paintContainedByContentVisibility === 'function'
+        ? helpers.paintContainedByContentVisibility
+        : () => false;
+    function byContentVisibility(a, cs, x, y) {
+      if (!cvClips(a)) return false;
+      const hides = (v) => v === 'hidden' || v === 'clip';
+      return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -825,7 +843,7 @@ function runInPage(ctx) {
             !(scrolls & 1) && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
-          if (x || y) own = { el: a, x, y };
+          if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -1306,6 +1324,7 @@ function runInPage(ctx) {
           list.push({
             el: c.el,
             ...(sizing ? { sizing } : {}),
+            ...(c.contentVisibility ? { clippedBy: 'content-visibility' } : {}),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -1487,6 +1506,14 @@ function runInPage(ctx) {
       hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
       key: 'fail_clipped'
     },
+    // TEXT_CLIPPED by a box that clips only for its content-visibility: auto,
+    // which nothing in its overflow or contain shows.
+    TEXT_CLIPPED_CONTENT_VISIBILITY: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.`,
+      hint: 'content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element (WCAG 1.4.12).',
+      key: 'fail_clippedContentVisibility'
+    },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
@@ -1666,8 +1693,8 @@ function runInPage(ctx) {
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
-    const msg = MESSAGES[reasonCode];
+  function report(reasonCode, el, params, details, uncertaintyCode, lean, message) {
+    const msg = MESSAGES[message || reasonCode];
     const occ = helpers.reportOccurrence(el, {
       ...(lean ? { lean } : {}),
       summary: msg.summary(params),
@@ -1698,7 +1725,7 @@ function runInPage(ctx) {
     ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container, sizing } = f;
+      const { text, metrics, container, sizing, clippedBy } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
       const lean =
         reasonCode === 'VIEWPORT_SCROLL_LOCKED'
@@ -1714,9 +1741,17 @@ function runInPage(ctx) {
         reasonCode,
         f.el,
         params,
-        { text, metrics, container, viewport, ...(sizedBy ? { sizedBy } : {}) },
+        {
+          text,
+          metrics,
+          container,
+          viewport,
+          ...(sizedBy ? { sizedBy } : {}),
+          ...(clippedBy ? { clippedBy } : {})
+        },
         uncertaintyCode,
-        lean
+        lean,
+        reasonCode === 'TEXT_CLIPPED' && clippedBy ? 'TEXT_CLIPPED_CONTENT_VISIBILITY' : null
       );
     }
   }
