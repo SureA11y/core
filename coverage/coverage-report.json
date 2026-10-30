@@ -8064,11 +8064,14 @@
       {
         "sc": "3.1.1",
         "title": "Language of Page",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-language-correct"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8088,17 +8091,26 @@
             "coveredBy": [
               "html-xml-lang-mismatch"
             ]
+          },
+          {
+            "id": "page-language-correct",
+            "label": "The page's main language is given in its markup, and is the right one",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.1.2",
         "title": "Language of Parts",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "parts-language-marked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8110,6 +8122,12 @@
             "coveredBy": [
               "valid-lang"
             ]
+          },
+          {
+            "id": "parts-language-marked",
+            "label": "Passages and phrases in a language other than the page's are marked with their own language",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -8146,11 +8164,13 @@
       {
         "sc": "3.3.1",
         "title": "Error Identification",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "errors-identified"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8162,18 +8182,27 @@
             "coveredBy": [
               "invalid-field-error-message"
             ]
+          },
+          {
+            "id": "errors-identified",
+            "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "labels-instructions-provided"
+        ],
         "automationCounts": {
           "full": 2,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8201,17 +8230,25 @@
             "coveredBy": [
               "form-control-programmatic-label-quality"
             ]
+          },
+          {
+            "id": "labels-instructions-provided",
+            "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "authentication-no-cognitive-test"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8223,6 +8260,12 @@
             "coveredBy": [
               "password-paste-enabled"
             ]
+          },
+          {
+            "id": "authentication-no-cognitive-test",
+            "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9856,11 +9899,14 @@
       {
         "sc": "3.1.1",
         "title": "Language of Page",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-language-correct"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9880,17 +9926,26 @@
             "coveredBy": [
               "html-xml-lang-mismatch"
             ]
+          },
+          {
+            "id": "page-language-correct",
+            "label": "The page's main language is given in its markup, and is the right one",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.1.2",
         "title": "Language of Parts",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "parts-language-marked"
+        ],
         "automationCounts": {
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9902,6 +9957,12 @@
             "coveredBy": [
               "valid-lang"
             ]
+          },
+          {
+            "id": "parts-language-marked",
+            "label": "Passages and phrases in a language other than the page's are marked with their own language",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9938,11 +9999,13 @@
       {
         "sc": "3.3.1",
         "title": "Error Identification",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "errors-identified"
+        ],
         "automationCounts": {
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9954,18 +10017,27 @@
             "coveredBy": [
               "invalid-field-error-message"
             ]
+          },
+          {
+            "id": "errors-identified",
+            "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.2",
         "title": "Labels or Instructions",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "labels-instructions-provided"
+        ],
         "automationCounts": {
           "full": 2,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9993,17 +10065,25 @@
             "coveredBy": [
               "form-control-programmatic-label-quality"
             ]
+          },
+          {
+            "id": "labels-instructions-provided",
+            "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
       {
         "sc": "3.3.8",
         "title": "Accessible Authentication (Minimum)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "authentication-no-cognitive-test"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -10015,6 +10095,12 @@
             "coveredBy": [
               "password-paste-enabled"
             ]
+          },
+          {
+            "id": "authentication-no-cognitive-test",
+            "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

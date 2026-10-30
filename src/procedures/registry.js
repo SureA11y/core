@@ -754,8 +754,53 @@ const PROCEDURES = {
         tools: ['devtools']
       }
     },
+    '3.1.1': {
+      'html-lang-attr-present': {
+        coveredBy: 'page-language-correct'
+      },
+      'html-xml-lang-mismatch': {
+        coveredBy: 'page-language-correct'
+      },
+      'page-language-correct': {
+        tools: ['devtools']
+      }
+    },
+    '3.1.2': {
+      'element-lang-valid': {
+        coveredBy: 'parts-language-marked'
+      },
+      'parts-language-marked': {
+        tools: ['devtools', 'screen-reader']
+      }
+    },
+    '3.2.1': {
+      'focus-no-change-of-context': {
+        tools: ['keyboard']
+      }
+    },
+    '3.2.2': {
+      'input-no-unexpected-change': {
+        tools: ['keyboard']
+      }
+    },
+    '3.2.3': {
+      'navigation-consistent': {
+        tools: []
+      }
+    },
+    '3.2.4': {
+      'identification-consistent': {
+        tools: ['devtools']
+      }
+    },
+    '3.2.6': {
+      'help-consistent': {
+        tools: []
+      }
+    },
     '3.3.1': {
       'invalid-field-error-message': {
+        coveredBy: 'errors-identified',
         variants: {
           'invalid-field-error-message': [
             'ERROR_MESSAGE_ARIA_HIDDEN',
@@ -766,10 +811,17 @@ const PROCEDURES = {
             'NO_ERROR_MESSAGE'
           ]
         }
+      },
+      'errors-identified': {
+        tools: ['keyboard', 'screen-reader']
       }
     },
     '3.3.2': {
+      'form-control-labels-or-instructions-present': {
+        coveredBy: 'labels-instructions-provided'
+      },
       'form-control-single-label': {
+        coveredBy: 'labels-instructions-provided',
         variants: {
           'form-control-single-label': [
             'FORM_FIELD_EXTRA_EMPTY_LABEL',
@@ -778,6 +830,7 @@ const PROCEDURES = {
         }
       },
       'form-control-visible-label-quality': {
+        coveredBy: 'labels-instructions-provided',
         variants: {
           'form-control-programmatic-label-quality': [
             'label_from_aria_label_only',
@@ -786,13 +839,35 @@ const PROCEDURES = {
             'label_from_title_primary'
           ]
         }
+      },
+      'labels-instructions-provided': {
+        tools: ['devtools']
+      }
+    },
+    '3.3.3': {
+      'error-suggestions': {
+        tools: []
+      }
+    },
+    '3.3.4': {
+      'submission-reversible-checked-confirmed': {
+        tools: []
+      }
+    },
+    '3.3.7': {
+      'redundant-entry': {
+        tools: []
       }
     },
     '3.3.8': {
       'authentication-paste-not-blocked': {
+        coveredBy: 'authentication-no-cognitive-test',
         variants: {
           'password-paste-enabled': ['PASTE_CANCELLED', 'PASTE_HANDLER_OPAQUE']
         }
+      },
+      'authentication-no-cognitive-test': {
+        tools: []
       }
     },
     '4.1.1': {

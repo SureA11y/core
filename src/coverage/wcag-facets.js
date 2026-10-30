@@ -1084,6 +1084,12 @@ const FACETS = {
                 "id": "html-xml-lang-mismatch",
                 "label": "lang and xml:lang on <html> declare the same primary language, when both are present",
                 "automation": "full"
+            },
+            {
+                "id": "page-language-correct",
+                "label": "The page's main language is given in its markup, and is the right one",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1095,6 +1101,12 @@ const FACETS = {
                 "id": "element-lang-valid",
                 "label": "Any element's lang attribute (when present) is a syntactically valid language tag",
                 "automation": "full"
+            },
+            {
+                "id": "parts-language-marked",
+                "label": "Passages and phrases in a language other than the page's are marked with their own language",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1121,22 +1133,46 @@ const FACETS = {
     "3.2.1": {
         "title": "On Focus",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-no-change-of-context",
+                "label": "Moving focus onto an element doesn't change the context by itself",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.2": {
         "title": "On Input",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "input-no-unexpected-change",
+                "label": "Changing a setting doesn't change the context unless the user is told beforehand",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.3": {
         "title": "Consistent Navigation",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "navigation-consistent",
+                "label": "Navigation repeated on several pages comes in the same relative order each time",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.4": {
         "title": "Consistent Identification",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "identification-consistent",
+                "label": "Components that do the same thing across pages are identified the same way",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.5": {
         "title": "Change on Request",
@@ -1157,7 +1193,13 @@ const FACETS = {
     "3.2.6": {
         "title": "Consistent Help",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "help-consistent",
+                "label": "Help offered on several pages is in the same relative place each time",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.1": {
         "title": "Error Identification",
@@ -1167,6 +1209,12 @@ const FACETS = {
                 "id": "invalid-field-error-message",
                 "label": "A field marked invalid with aria-invalid has a shown error message in text tied to it",
                 "automation": "partial"
+            },
+            {
+                "id": "errors-identified",
+                "label": "An input error the page detects is shown in text that says which field is wrong and what is wrong",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1188,18 +1236,36 @@ const FACETS = {
                 "id": "form-control-visible-label-quality",
                 "label": "Form controls have a label presented to all users, not only a title or placeholder",
                 "automation": "manual"
+            },
+            {
+                "id": "labels-instructions-provided",
+                "label": "Fields that ask for input have a visible label, and instructions where the input needs them",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "3.3.3": {
         "title": "Error Suggestion",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "error-suggestions",
+                "label": "When the page knows how to fix an input error, it says how",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.4": {
         "title": "Error Prevention (Legal, Financial, Data)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "submission-reversible-checked-confirmed",
+                "label": "Submissions with legal or financial effect, or that change stored data, can be reversed, checked or reviewed and confirmed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.5": {
         "title": "Help",
@@ -1214,7 +1280,13 @@ const FACETS = {
     "3.3.7": {
         "title": "Redundant Entry",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "redundant-entry",
+                "label": "Information the user already gave in a process is filled in or offered to pick, not asked for again",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.8": {
         "title": "Accessible Authentication (Minimum)",
@@ -1224,6 +1296,12 @@ const FACETS = {
                 "id": "authentication-paste-not-blocked",
                 "label": "A password or one-time-code field does not cancel pasting, so a password manager or the clipboard can still fill it",
                 "automation": "manual"
+            },
+            {
+                "id": "authentication-no-cognitive-test",
+                "label": "Signing in doesn't require remembering, transcribing or solving something, unless a way around it is offered",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
