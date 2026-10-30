@@ -250,22 +250,46 @@ const FACETS = {
     "1.2.6": {
         "title": "Sign Language (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "sign-language",
+                "label": "Prerecorded video with sound has sign language interpretation",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.7": {
         "title": "Extended Audio Description (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "extended-audio-description",
+                "label": "Where pauses are too short for audio description, the video stops to make room for it",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.8": {
         "title": "Media Alternative (Prerecorded)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "media-text-alternative",
+                "label": "Prerecorded video has a full text alternative that gives everything it shows and says",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.9": {
         "title": "Audio-only (Live)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-audio-alternative",
+                "label": "Live audio-only content has a text alternative, such as live captions or a script",
+                "automation": "manual"
+            }
+        ]
     },
     "1.3.1": {
         "title": "Info and Relationships",
@@ -454,7 +478,13 @@ const FACETS = {
     "1.3.6": {
         "title": "Identify Purpose",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "purpose-identified",
+                "label": "The purpose of regions, icons and controls is given in the markup, so tools can adapt or replace them",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.1": {
         "title": "Use of Color",
@@ -553,17 +583,35 @@ const FACETS = {
     "1.4.7": {
         "title": "Low or No Background Audio",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "background-audio-low",
+                "label": "Speech in prerecorded audio has no background sound, or background sound that can be turned off or is 20 dB quieter",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.8": {
         "title": "Visual Presentation",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "visual-presentation",
+                "label": "Blocks of text can be given the user's colors, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.9": {
         "title": "Images of Text (No Exception)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-images-of-text",
+                "label": "Images of text are used only for decoration or where the look is essential",
+                "automation": "manual"
+            }
+        ]
     },
     "1.4.10": {
         "title": "Reflow",
@@ -714,6 +762,12 @@ const FACETS = {
                 "id": "click-handler-keyboard-operable",
                 "label": "An inline click handler on an element that is not a native control can be reached and run by keyboard",
                 "automation": "partial"
+            },
+            {
+                "id": "keyboard-no-exception",
+                "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+                "automation": "manual",
+                "macro": true
             }
         ]
     },
@@ -769,7 +823,13 @@ const FACETS = {
     "2.2.3": {
         "title": "No Timing",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-timing",
+                "label": "Nothing has a time limit, except real-time events and non-interactive media",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.4": {
         "title": "Interruptions",
@@ -784,18 +844,36 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "interruptions-postponable",
+                "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.2.5": {
         "title": "Re-authenticating",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reauthentication-keeps-data",
+                "label": "After a session expires, the user can sign in again and continue without losing data",
+                "automation": "manual"
+            }
+        ]
     },
     "2.2.6": {
         "title": "Timeouts",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "timeout-warning",
+                "label": "Users are told how long inactivity may lose their data, unless it is kept for over 20 hours",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.1": {
         "title": "Three Flashes or Below Threshold",
@@ -811,12 +889,24 @@ const FACETS = {
     "2.3.2": {
         "title": "Three Flashes",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "no-flashing",
+                "label": "Nothing flashes more than three times in any one second",
+                "automation": "manual"
+            }
+        ]
     },
     "2.3.3": {
         "title": "Animation from Interactions",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "motion-animation-disableable",
+                "label": "Motion caused by interaction can be turned off, unless it is essential",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.1": {
         "title": "Bypass Blocks",

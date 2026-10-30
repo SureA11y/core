@@ -345,14 +345,17 @@ Uncovered facets: keyboard-operable-all-functionality
 
 ### 2.1.3
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 0, partial 1, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 0, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| keyboard-no-exception | manual | — |
+
+Uncovered facets: keyboard-no-exception
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -396,13 +399,16 @@ Uncovered facets: auto-updating-content-controllable
 
 ### 2.2.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| interruptions-postponable | partial | — |
+
+Uncovered facets: interruptions-postponable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1130,14 +1136,17 @@ Uncovered facets: keyboard-operable-all-functionality
 
 ### 2.1.3
 
-Facet coverage: **3/3** facets covered.
-Automation mix: **full 0, partial 1, manual 2**.
+Facet coverage: **3/4** facets covered.
+Automation mix: **full 0, partial 1, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| keyboard-no-exception | manual | — |
+
+Uncovered facets: keyboard-no-exception
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1181,13 +1190,16 @@ Uncovered facets: auto-updating-content-controllable
 
 ### 2.2.4
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| interruptions-postponable | partial | — |
+
+Uncovered facets: interruptions-postponable
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

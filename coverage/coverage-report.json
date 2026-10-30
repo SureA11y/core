@@ -7629,11 +7629,13 @@
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-no-exception"
+        ],
         "automationCounts": {
-          "manual": 2,
+          "manual": 3,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -7662,6 +7664,12 @@
             "coveredBy": [
               "click-handler-keyboard-operable"
             ]
+          },
+          {
+            "id": "keyboard-no-exception",
+            "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -7738,11 +7746,14 @@
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "interruptions-postponable"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7762,6 +7773,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "interruptions-postponable",
+            "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9501,11 +9518,13 @@
       {
         "sc": "2.1.3",
         "title": "Keyboard (No Exception)",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "keyboard-no-exception"
+        ],
         "automationCounts": {
-          "manual": 2,
+          "manual": 3,
           "partial": 1
         },
         "missingFacetRules": [],
@@ -9534,6 +9553,12 @@
             "coveredBy": [
               "click-handler-keyboard-operable"
             ]
+          },
+          {
+            "id": "keyboard-no-exception",
+            "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -9610,11 +9635,14 @@
       {
         "sc": "2.2.4",
         "title": "Interruptions",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "interruptions-postponable"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9634,6 +9662,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "interruptions-postponable",
+            "label": "Interruptions, such as updates, alerts and refreshes, can be postponed or turned off, except in an emergency",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },

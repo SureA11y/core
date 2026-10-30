@@ -191,6 +191,26 @@ const PROCEDURES = {
         tools: []
       }
     },
+    '1.2.6': {
+      'sign-language': {
+        tools: []
+      }
+    },
+    '1.2.7': {
+      'extended-audio-description': {
+        tools: []
+      }
+    },
+    '1.2.8': {
+      'media-text-alternative': {
+        tools: []
+      }
+    },
+    '1.2.9': {
+      'live-audio-alternative': {
+        tools: []
+      }
+    },
     '1.3.1': {
       'form-control-programmatic-label-present': {
         coveredBy: 'form-labels-associated'
@@ -315,6 +335,11 @@ const PROCEDURES = {
         tools: ['devtools']
       }
     },
+    '1.3.6': {
+      'purpose-identified': {
+        tools: ['devtools']
+      }
+    },
     '1.4.1': {
       'link-in-text-block': {
         coveredBy: 'color-not-only-means',
@@ -421,7 +446,11 @@ const PROCEDURES = {
       }
     },
     '1.4.6': {
+      'contrast-computability-146': {
+        coveredBy: 'contrast-enhanced-text'
+      },
       'contrast-enhanced-text': {
+        tools: ['devtools'],
         variants: {
           'contrast-enhanced': [
             'CONTRAST_UNREACHABLE_ANY_BACKGROUND',
@@ -430,6 +459,21 @@ const PROCEDURES = {
             'SYMBOLIC_CHARACTER_BELOW_THRESHOLD'
           ]
         }
+      }
+    },
+    '1.4.7': {
+      'background-audio-low': {
+        tools: []
+      }
+    },
+    '1.4.8': {
+      'visual-presentation': {
+        tools: ['zoom', 'contrast-theme']
+      }
+    },
+    '1.4.9': {
+      'no-images-of-text': {
+        tools: ['devtools']
       }
     },
     '1.4.10': {
@@ -562,6 +606,20 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
+    '2.1.3': {
+      'scrollable-region-focusable-evidence': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'mouse-only-event-handlers-evidence': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'click-handler-keyboard-operable': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'keyboard-no-exception': {
+        tools: ['keyboard']
+      }
+    },
     '2.1.4': {
       'character-key-shortcuts': {
         tools: ['keyboard']
@@ -592,9 +650,45 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
+    '2.2.3': {
+      'no-timing': {
+        tools: []
+      }
+    },
+    '2.2.4': {
+      'meta-refresh-no-exceptions': {
+        coveredBy: 'interruptions-postponable'
+      },
+      'meta-refresh-timing-absent': {
+        coveredBy: 'interruptions-postponable'
+      },
+      'interruptions-postponable': {
+        tools: []
+      }
+    },
+    '2.2.5': {
+      'reauthentication-keeps-data': {
+        tools: []
+      }
+    },
+    '2.2.6': {
+      'timeout-warning': {
+        tools: []
+      }
+    },
     '2.3.1': {
       'flashing-below-threshold': {
         tools: []
+      }
+    },
+    '2.3.2': {
+      'no-flashing': {
+        tools: []
+      }
+    },
+    '2.3.3': {
+      'motion-animation-disableable': {
+        tools: ['devtools']
       }
     },
     '2.4.1': {
