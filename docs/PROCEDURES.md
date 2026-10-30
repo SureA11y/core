@@ -55,12 +55,23 @@ import fr from '@surea11y/core/procedures/fr';
 proceduresFrom({ en, fr }, '1.4.12', { locale: 'fr' });
 ```
 
+### A pack's standard
+
+A pack's standard can say how a person assesses its requirements ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements), `standard.procedures`). With the packs, `proceduresFor` and `proceduresFrom` read them:
+
+```js
+proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4.1.1', locale: 'fr' });
+```
+
+`standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in English.
+
 ## The shape
 
 ```js
 {
-  standard: 'wcag',              // or 'best-practice'
-  id: '1.4.12',                  // the criterion, or 'best-practice'
+  standard: 'wcag',              // or 'best-practice', or a pack's standard ('EN 301 549')
+  id: '1.4.12',                  // the criterion, 'best-practice', or a pack's requirement
+  // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement
   title: 'Text Spacing',
   level: 'AA',                   // null for best practices
   complete: true,                // every facet has a general procedure
@@ -91,7 +102,7 @@ A facet broader than any one rule has `macro: true`. A facet with `coveredBy` ha
 
 ## Which criteria have procedures
 
-Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 226 facets, 110 procedures of their own and 116 technology facets covered by one of them. `complete` says so for each; a test keeps it so. EN 301 549's clauses follow.
+Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 226 facets, 110 procedures of their own and 116 technology facets covered by one of them. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
 
 ## Where they live
 

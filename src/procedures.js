@@ -32,13 +32,20 @@ function dictionary(locale) {
 }
 
 /**
- * How a person assesses a WCAG 2.2 criterion ('1.4.13'), or the best
- * practices ('best-practice'), by hand, in options.locale (English where it
- * has no translation); null for a requirement core doesn't know.
+ * How a person assesses a WCAG 2.2 criterion ('1.4.13'), the best practices
+ * ('best-practice'), or, with options.packs, a requirement of a pack's
+ * standard (options.standard, options.version), by hand, in options.locale
+ * (English where it has no translation); null for a requirement none of
+ * them knows.
  */
 function proceduresFor(requirement, options) {
   const opts = options && typeof options === 'object' ? options : {};
-  return proceduresFrom(dictionary, requirement, { locale: opts.locale });
+  return proceduresFrom(dictionary, requirement, {
+    locale: opts.locale,
+    packs: opts.packs,
+    standard: opts.standard,
+    version: opts.version
+  });
 }
 
 module.exports = { proceduresFor };

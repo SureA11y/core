@@ -40,6 +40,7 @@ const {
 const { settingsProblems } = require('./core/rule-variants.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
+const { TOOLS } = require('./procedures/registry.js');
 
 const PACK_KEYS = [
   'name',
@@ -447,6 +448,89 @@ function reviewProblems(rule, where) {
   return problems;
 }
 
+// standard.procedures: how a person assesses each requirement by hand
+// (docs/PROCEDURES.md), by version and requirement. A requirement takes a
+// WCAG criterion's procedures ({ wcag: '1.4.3' }) or gives its own facets,
+// in English ({ title, facets: [{ id, label, automation, tools, steps,
+// passWhen, failWhen }] }).
+const AUTOMATION = ['full', 'partial', 'manual'];
+function proceduresProblems(procedures, versions) {
+  if (procedures === undefined) return [];
+  const shape =
+    "standard.procedures must be { version: { requirement: { wcag: '<criterion>' } or { facets } } }";
+  if (!isObject(procedures)) return [shape];
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [version, requirements] of Object.entries(procedures)) {
+    const at = `standard.procedures.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+      continue;
+    }
+    if (!isObject(requirements)) {
+      problems.push(shape);
+      continue;
+    }
+    for (const [id, entry] of Object.entries(requirements)) {
+      const where = `${at}[${JSON.stringify(id)}]`;
+      if (!isObject(entry)) {
+        problems.push(`${where} must be { wcag } or { facets }`);
+        continue;
+      }
+      if (entry.title !== undefined && !text(entry.title)) {
+        problems.push(`${where}.title must be a non-empty string`);
+      }
+      if ((entry.wcag === undefined) === (entry.facets === undefined)) {
+        problems.push(`${where} must give either wcag or facets`);
+        continue;
+      }
+      if (entry.wcag !== undefined) {
+        if (!WCAG_SC.has(entry.wcag)) {
+          problems.push(`${where}.wcag names no WCAG criterion: ${JSON.stringify(entry.wcag)}`);
+        }
+        continue;
+      }
+      if (!Array.isArray(entry.facets) || !entry.facets.length) {
+        problems.push(`${where}.facets must list its facets`);
+        continue;
+      }
+      const ids = new Set();
+      entry.facets.forEach((f, i) => {
+        const fa = `${where}.facets[${i}]`;
+        if (!isObject(f)) {
+          problems.push(`${fa} must be { id, label, steps, passWhen, failWhen }`);
+          return;
+        }
+        if (!text(f.id) || !ID.test(f.id) || ids.has(f.id)) {
+          problems.push(`${fa}.id must be a lower-case id, unique in the requirement`);
+        }
+        ids.add(f.id);
+        if (!text(f.label)) problems.push(`${fa}.label must be a non-empty string`);
+        if (f.automation !== undefined && !AUTOMATION.includes(f.automation)) {
+          problems.push(`${fa}.automation must be one of ${AUTOMATION.join(', ')}`);
+        }
+        if (
+          f.tools !== undefined &&
+          (!Array.isArray(f.tools) || !f.tools.every((t) => TOOLS.includes(t)))
+        ) {
+          problems.push(`${fa}.tools must list tools of ${TOOLS.join(', ')}`);
+        }
+        if (
+          !Array.isArray(f.steps) ||
+          f.steps.length < 1 ||
+          f.steps.length > 8 ||
+          !f.steps.every(text)
+        ) {
+          problems.push(`${fa}.steps must list 1 to 8 steps, each a non-empty string`);
+        }
+        if (!text(f.passWhen)) problems.push(`${fa}.passWhen must be a non-empty string`);
+        if (!text(f.failWhen)) problems.push(`${fa}.failWhen must be a non-empty string`);
+      });
+    }
+  }
+  return problems;
+}
+
 // What is wrong with a variant's config, against the settings of its base:
 // the pack's own rule of that id, or core's. A base that is not there or
 // declares no settings is left to preparing the pack, which says so.
@@ -598,6 +682,7 @@ function packProblems(pack, withCoreVersion) {
       problems.push(`standard.ruleTag must be the namespace "${ns}"`);
     }
     const versions = Array.isArray(st.versions) ? st.versions : [];
+    problems.push(...proceduresProblems(st.procedures, versions));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);

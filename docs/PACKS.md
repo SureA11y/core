@@ -290,6 +290,33 @@ A standard whose requirements restate WCAG criteria one for one (EN 301 549's ch
 }
 ```
 
+**How a person assesses each requirement by hand** goes in the standard's `procedures`, by version and requirement ([`PROCEDURES.md`](./PROCEDURES.md)). A requirement that restates a WCAG criterion takes that criterion's facets and procedures as they are, in every locale core has them; one of its own gives its facets, each with a procedure in English, as a rule's `meta.review` is:
+
+```js
+standard: {
+  // ...
+  procedures: {
+    '1.0': {
+      '4.2': { title: 'Images have a text alternative', wcag: '1.1.1' },
+      '7.1': {
+        title: 'Every form has a text version',
+        facets: [{
+          id: 'text-version',
+          label: 'Each form can be had as a text document',
+          automation: 'manual',              // full, partial or manual (the default)
+          tools: ['keyboard'],               // keyboard, pointer, screen-reader, zoom, contrast-theme, devtools
+          steps: ['Find each form on the page.', 'Look next to it for a link to a text version.'],
+          passWhen: 'Every form has a text version.',
+          failWhen: 'A form has no text version, which fails requirement 7.1.'
+        }]
+      }
+    }
+  }
+}
+```
+
+A standard that restates WCAG one for one gets the first kind from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`, each requirement taking the criterion it restates: pass `procedures: std.procedures` in the standard. `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` then reads a requirement, as it reads a WCAG criterion. `definePack` refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, and facets that aren't well formed. A core older than the one that reads `procedures` ignores the field.
+
 ## 6. Messages and languages
 
 Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:

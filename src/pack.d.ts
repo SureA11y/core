@@ -61,7 +61,29 @@ export interface PackStandard {
   composites?: () => object[];
   validate?: (rules: { ruleId: string; wcagSc: string[] }[]) => string[];
   report?: { noteKey?: string; titleLang?: string };
+  /**
+   * How a person assesses each requirement by hand (docs/PROCEDURES.md), by
+   * version and requirement: a WCAG criterion's procedures, or its own
+   * facets, in English.
+   */
+  procedures?: Record<string, Record<string, PackRequirementProcedures>>;
 }
+
+/** One requirement's procedures: a WCAG criterion's, or facets of its own. */
+export type PackRequirementProcedures =
+  | { title?: string; wcag: string }
+  | {
+      title?: string;
+      facets: {
+        id: string;
+        label: string;
+        automation?: 'full' | 'partial' | 'manual';
+        tools?: ('keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools')[];
+        steps: string[];
+        passWhen: string;
+        failWhen: string;
+      }[];
+    };
 
 /**
  * What a rollup does with a finding: count it, make a failing one a
@@ -275,6 +297,11 @@ export function ruleMappedStandard(options: {
   composites: NonNullable<PackStandard['composites']>;
   validate: NonNullable<PackStandard['validate']>;
   wcagTagsOf: (version: string) => string[];
+  /**
+   * With applicability 'wcag', each requirement that restates one criterion
+   * taking its procedures, for standard.procedures; undefined otherwise.
+   */
+  procedures: PackStandard['procedures'];
 };
 
 /**

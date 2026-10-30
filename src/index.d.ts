@@ -1053,11 +1053,17 @@ export interface ProcedureFacet {
 
 /** How a person assesses a requirement by hand (docs/PROCEDURES.md). */
 export interface Procedures {
-  standard: 'wcag' | 'best-practice';
-  /** The criterion ('1.4.13'), or 'best-practice'. */
+  /** 'wcag', 'best-practice', or the name of a pack's standard ('EN 301 549'). */
+  standard: 'wcag' | 'best-practice' | (string & {});
+  /** The criterion ('1.4.13'), 'best-practice', or a pack's requirement ('9.1.4.3'). */
   id: string;
-  title: string;
+  /** A pack's requirement: the version of its standard it is read from. */
+  version?: string;
+  /** A pack's requirement: its title, or null where the pack gives none. */
+  title: string | null;
   level: 'A' | 'AA' | 'AAA' | null;
+  /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
+  wcag?: string;
   /** Whether every facet has a procedure, its own or its coveredBy facet's. */
   complete: boolean;
   /** The core rules that test the criterion (wcagSc), or the best practices'. */
@@ -1068,13 +1074,20 @@ export interface Procedures {
 export interface ProceduresOptions {
   /** A locale ('fr-CA') or a list of them, most wanted first; English is the fallback. */
   locale?: string | readonly string[] | null;
+  /** Packs whose standards' requirements can be read (their standard.procedures). */
+  packs?: readonly object[];
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** A version of the pack's standard; the latest that has the requirement by default. */
+  version?: string;
 }
 
 /**
- * How a person assesses a WCAG 2.2 criterion ('1.4.13'), or the best
- * practices ('best-practice'), by hand, read from disk in Node; null for a
- * requirement core doesn't know. In a browser bundle it warns once and
- * returns null: use proceduresFrom from @surea11y/core/procedures.
+ * How a person assesses a WCAG 2.2 criterion ('1.4.13'), the best practices
+ * ('best-practice'), or, with options.packs, a requirement of a pack's
+ * standard, by hand, read from disk in Node; null for a requirement none of
+ * them knows. In a browser bundle it warns once and returns null: use
+ * proceduresFrom from @surea11y/core/procedures.
  */
 export function proceduresFor(requirement: string, options?: ProceduresOptions): Procedures | null;
 

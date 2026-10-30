@@ -171,19 +171,86 @@ function bestPractices(read) {
   };
 }
 
+const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// A pack's own facet: its procedure is in English, as a pack rule's steps
+// are, and no core rule claims it.
+function packFacet(f, read) {
+  const procedure = { steps: f.steps.slice(), passWhen: f.passWhen, failWhen: f.failWhen };
+  return {
+    id: f.id,
+    label: f.label,
+    automation: f.automation || 'manual',
+    rules: [],
+    tools: (Array.isArray(f.tools) ? f.tools : [])
+      .filter((id) => TOOLS.includes(id))
+      .map((id) => ({ id, label: read.text(`tool_${id}`) || id })),
+    procedure,
+    variants: []
+  };
+}
+
+// A requirement of a pack's standard (standard.procedures, by version): the
+// first pack whose standard is `standard` (its key or name; any, when
+// none is given) and has the requirement, in `version` or else the latest
+// of its versions that has it.
+function packRequirement(packs, id, standard, version, read) {
+  for (const pack of Array.isArray(packs) ? packs : []) {
+    const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
+    if (!st || !isObject(st.procedures)) continue;
+    if (standard && standard !== st.key && standard !== st.standard) continue;
+    const versions = (Array.isArray(st.versions) ? st.versions : []).slice().reverse();
+    const v = version || versions.find((x) => isObject(st.procedures[x]) && st.procedures[x][id]);
+    const entry = v && isObject(st.procedures[v]) ? st.procedures[v][id] : null;
+    if (!isObject(entry)) continue;
+    const head = {
+      standard: st.standard,
+      id,
+      version: v,
+      title: typeof entry.title === 'string' ? entry.title : null,
+      level: null
+    };
+    if (typeof entry.wcag === 'string') {
+      const criterion = wcagCriterion(entry.wcag, read);
+      if (!criterion) return null;
+      return {
+        ...head,
+        wcag: entry.wcag,
+        complete: criterion.complete,
+        rules: criterion.rules,
+        facets: criterion.facets
+      };
+    }
+    const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) => packFacet(f, read));
+    return { ...head, complete: facets.length > 0, rules: [], facets };
+  }
+  return null;
+}
+
 /**
  * How a person assesses a requirement by hand: a WCAG 2.2 criterion
- * ('1.4.13'), or 'best-practice' for what no criterion requires, with each
- * of its facets, in `options.locale` (a tag, or a list of tags, most wanted
- * first; English is the fallback for every text a locale lacks). null for a
- * requirement core doesn't know. See docs/PROCEDURES.md for the shape.
+ * ('1.4.13'), 'best-practice' for what no criterion requires, or, with
+ * `options.packs`, a requirement of a pack's standard ('9.1.4.3', with
+ * `options.standard` its key or name and `options.version` one of its
+ * versions, the latest by default), with each of its facets, in
+ * `options.locale` (a tag, or a list of tags, most wanted first; English is
+ * the fallback for every text a locale lacks, and a pack's own text is in
+ * English). null for a requirement none of them knows. See
+ * docs/PROCEDURES.md for the shape.
  */
 function proceduresFrom(dictionaries, requirement, options) {
   if (typeof requirement !== 'string' || !requirement.trim()) return null;
   const id = requirement.trim();
-  const locale = options && typeof options === 'object' ? options.locale : null;
-  const read = reader(dictionaries, locale);
-  return id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read);
+  const opts = isObject(options) ? options : {};
+  const read = reader(dictionaries, opts.locale);
+  const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : null;
+  const core = !standard || standard === 'wcag' || standard === 'WCAG';
+  if (core || standard === 'best-practice') {
+    const found = id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read);
+    if (found || standard) return found;
+  }
+  const version = typeof opts.version === 'string' && opts.version ? opts.version : null;
+  return packRequirement(opts.packs, id, standard, version, read);
 }
 
 module.exports = { proceduresFrom };
