@@ -798,16 +798,43 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
+    '2.4.8': {
+      'location-shown': {
+        tools: []
+      }
+    },
     '2.4.9': {
       'identical-links-same-purpose-evidence': {
+        coveredBy: 'link-text-alone-clear',
         variants: {
           'identical-links-same-purpose': ['SAME_NAME_DIFFERENT_DESTINATION']
         }
+      },
+      'link-name-present': {
+        coveredBy: 'link-text-alone-clear'
+      },
+      'link-text-alone-clear': {
+        tools: ['devtools', 'screen-reader']
+      }
+    },
+    '2.4.10': {
+      'section-headings': {
+        tools: ['screen-reader']
       }
     },
     '2.4.11': {
       'focus-not-obscured': {
         tools: ['keyboard']
+      }
+    },
+    '2.4.12': {
+      'focus-fully-visible': {
+        tools: ['keyboard']
+      }
+    },
+    '2.4.13': {
+      'focus-appearance': {
+        tools: ['keyboard', 'devtools']
       }
     },
     '2.5.1': {
@@ -836,6 +863,16 @@ const PROCEDURES = {
     '2.5.4': {
       'motion-actuation': {
         tools: []
+      }
+    },
+    '2.5.5': {
+      'target-size-enhanced': {
+        tools: ['devtools']
+      }
+    },
+    '2.5.6': {
+      'concurrent-input': {
+        tools: ['keyboard', 'pointer']
       }
     },
     '2.5.7': {
@@ -867,6 +904,26 @@ const PROCEDURES = {
         tools: ['devtools', 'screen-reader']
       }
     },
+    '3.1.3': {
+      'unusual-words-defined': {
+        tools: []
+      }
+    },
+    '3.1.4': {
+      'abbreviations-expanded': {
+        tools: []
+      }
+    },
+    '3.1.5': {
+      'reading-level': {
+        tools: []
+      }
+    },
+    '3.1.6': {
+      'pronunciation-given': {
+        tools: []
+      }
+    },
     '3.2.1': {
       'focus-no-change-of-context': {
         tools: ['keyboard']
@@ -885,6 +942,17 @@ const PROCEDURES = {
     '3.2.4': {
       'identification-consistent': {
         tools: ['devtools']
+      }
+    },
+    '3.2.5': {
+      'meta-refresh-no-exceptions': {
+        coveredBy: 'changes-on-request'
+      },
+      'meta-refresh-timing-absent': {
+        coveredBy: 'changes-on-request'
+      },
+      'changes-on-request': {
+        tools: ['keyboard']
       }
     },
     '3.2.6': {
@@ -948,6 +1016,16 @@ const PROCEDURES = {
         tools: []
       }
     },
+    '3.3.5': {
+      'context-help': {
+        tools: []
+      }
+    },
+    '3.3.6': {
+      'all-submissions-reversible-checked-confirmed': {
+        tools: []
+      }
+    },
     '3.3.7': {
       'redundant-entry': {
         tools: []
@@ -961,6 +1039,11 @@ const PROCEDURES = {
         }
       },
       'authentication-no-cognitive-test': {
+        tools: []
+      }
+    },
+    '3.3.9': {
+      'authentication-no-recognition-test': {
         tools: []
       }
     },

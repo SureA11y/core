@@ -1041,7 +1041,13 @@ const FACETS = {
     "2.4.8": {
         "title": "Location",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "location-shown",
+                "label": "The page shows where it is in the site",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.9": {
         "title": "Link Purpose (Link Only)",
@@ -1056,13 +1062,25 @@ const FACETS = {
                 "id": "link-name-present",
                 "label": "Links expose an accessible name (a link with no name has no purpose to determine from its text)",
                 "automation": "full"
+            },
+            {
+                "id": "link-text-alone-clear",
+                "label": "Each link's purpose can be told from its text alone",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.10": {
         "title": "Section Headings",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "section-headings",
+                "label": "Sections of content are organised with headings",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.11": {
         "title": "Focus Not Obscured (Minimum)",
@@ -1078,12 +1096,24 @@ const FACETS = {
     "2.4.12": {
         "title": "Focus Not Obscured (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-fully-visible",
+                "label": "No part of an element that receives focus is hidden by content the page puts over it",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.13": {
         "title": "Focus Appearance",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-appearance",
+                "label": "The focus indicator is at least as large as a 2 CSS pixel outline around the element and changes contrast by at least 3:1",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.1": {
         "title": "Pointer Gestures",
@@ -1132,12 +1162,24 @@ const FACETS = {
     "2.5.5": {
         "title": "Target Size (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "target-size-enhanced",
+                "label": "Pointer targets are at least 44 by 44 CSS pixels",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.6": {
         "title": "Concurrent Input Mechanisms",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "concurrent-input",
+                "label": "The page doesn't limit the kinds of input that can be used, such as a mouse with a touch screen",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.7": {
         "title": "Dragging Movements",
@@ -1203,22 +1245,46 @@ const FACETS = {
     "3.1.3": {
         "title": "Unusual Words",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "unusual-words-defined",
+                "label": "Words used in an unusual way, idioms and jargon have their meaning given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.4": {
         "title": "Abbreviations",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "abbreviations-expanded",
+                "label": "Abbreviations have their expanded form or meaning given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.5": {
         "title": "Reading Level",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "reading-level",
+                "label": "Text that needs more than lower secondary education to read has a simpler version or supplement",
+                "automation": "manual"
+            }
+        ]
     },
     "3.1.6": {
         "title": "Pronunciation",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "pronunciation-given",
+                "label": "Where meaning depends on pronunciation, the pronunciation is given",
+                "automation": "manual"
+            }
+        ]
     },
     "3.2.1": {
         "title": "On Focus",
@@ -1277,6 +1343,12 @@ const FACETS = {
                 "id": "meta-refresh-timing-absent",
                 "label": "<meta http-equiv=\"refresh\"> does not impose a delayed page refresh",
                 "automation": "full"
+            },
+            {
+                "id": "changes-on-request",
+                "label": "Changes of context happen only when the user asks for them, or can be turned off",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -1360,12 +1432,24 @@ const FACETS = {
     "3.3.5": {
         "title": "Help",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "context-help",
+                "label": "Help for filling in each field is available where it is needed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.6": {
         "title": "Error Prevention (All)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "all-submissions-reversible-checked-confirmed",
+                "label": "Every submission of information can be reversed, checked or reviewed and confirmed",
+                "automation": "manual"
+            }
+        ]
     },
     "3.3.7": {
         "title": "Redundant Entry",
@@ -1398,7 +1482,13 @@ const FACETS = {
     "3.3.9": {
         "title": "Accessible Authentication (Enhanced)",
         "level": "AAA",
-        "facets": []
+        "facets": [
+            {
+                "id": "authentication-no-recognition-test",
+                "label": "Signing in needs no cognitive test, not even recognising objects or the user's own content, unless a way around it is offered",
+                "automation": "manual"
+            }
+        ]
     },
     "4.1.1": {
         "title": "Parsing (Obsolete and removed)",

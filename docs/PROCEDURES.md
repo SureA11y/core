@@ -30,7 +30,7 @@ Where a rule asks a narrower question about one element, the facet has a **varia
 
 What no criterion requires is kept apart, under `best-practice`, so a criterion's procedures never present advice as a failure.
 
-A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`; core is writing the rest ([below](#which-criteria-have-procedures)).
+A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`: every WCAG 2.2 criterion is ([below](#which-criteria-have-procedures)).
 
 ## Reading them
 
@@ -91,7 +91,7 @@ A facet broader than any one rule has `macro: true`. A facet with `coveredBy` ha
 
 ## Which criteria have procedures
 
-`complete` says, for each criterion. Core is writing them criterion by criterion, levels A and AA first, then AAA; a criterion without them still gives its facets and variants, with `complete: false`.
+Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 226 facets, 110 procedures of their own and 116 technology facets covered by one of them. `complete` says so for each; a test keeps it so. EN 301 549's clauses follow.
 
 ## Where they live
 

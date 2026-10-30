@@ -8004,12 +8004,15 @@
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-text-alone-clear"
+        ],
         "automationCounts": {
           "manual": 1,
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [
@@ -8031,6 +8034,12 @@
             "coveredBy": [
               "link-name-present"
             ]
+          },
+          {
+            "id": "link-text-alone-clear",
+            "label": "Each link's purpose can be told from its text alone",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -8151,11 +8160,14 @@
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "changes-on-request"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8175,6 +8187,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "changes-on-request",
+            "label": "Changes of context happen only when the user asks for them, or can be turned off",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9893,12 +9911,15 @@
       {
         "sc": "2.4.9",
         "title": "Link Purpose (Link Only)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-text-alone-clear"
+        ],
         "automationCounts": {
           "manual": 1,
-          "full": 1
+          "full": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [
@@ -9920,6 +9941,12 @@
             "coveredBy": [
               "link-name-present"
             ]
+          },
+          {
+            "id": "link-text-alone-clear",
+            "label": "Each link's purpose can be told from its text alone",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -10040,11 +10067,14 @@
       {
         "sc": "3.2.5",
         "title": "Change on Request",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "changes-on-request"
+        ],
         "automationCounts": {
-          "full": 2
+          "full": 2,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -10064,6 +10094,12 @@
             "coveredBy": [
               "meta-refresh-timing-absent"
             ]
+          },
+          {
+            "id": "changes-on-request",
+            "label": "Changes of context happen only when the user asks for them, or can be turned off",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },

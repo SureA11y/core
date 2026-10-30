@@ -521,14 +521,17 @@ Uncovered facets: focus-indicator-visible
 
 ### 2.4.9
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
+| link-text-alone-clear | partial | — |
+
+Uncovered facets: link-text-alone-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -598,13 +601,16 @@ Uncovered facets: parts-language-marked
 
 ### 3.2.5
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| changes-on-request | partial | — |
+
+Uncovered facets: changes-on-request
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1312,14 +1318,17 @@ Uncovered facets: focus-indicator-visible
 
 ### 2.4.9
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 1, partial 0, manual 1**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 1, partial 1, manual 1**.
 Unknown facet ids referenced by rules: link-text-descriptive-evidence
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | identical-links-same-purpose-evidence | manual | identical-links-same-purpose |
 | link-name-present | full | link-name-present |
+| link-text-alone-clear | partial | — |
+
+Uncovered facets: link-text-alone-clear
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1389,13 +1398,16 @@ Uncovered facets: parts-language-marked
 
 ### 3.2.5
 
-Facet coverage: **2/2** facets covered.
-Automation mix: **full 2, partial 0, manual 0**.
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 2, partial 1, manual 0**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | meta-refresh-no-exceptions | full | meta-refresh-no-exceptions |
 | meta-refresh-timing-absent | full | meta-refresh-timing-absent |
+| changes-on-request | partial | — |
+
+Uncovered facets: changes-on-request
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

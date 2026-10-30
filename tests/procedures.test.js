@@ -256,12 +256,11 @@ test('a facet with a general procedure has 1 to 8 steps and names its tools', ()
   assert.ok(procedures >= 10, `only ${procedures} procedures`);
 });
 
-// Every criterion of levels A and AA (and 4.1.1, removed in 2.2) has a
-// procedure for every facet, its own or its coveredBy facet's.
-test('every A and AA criterion has a procedure for every facet', () => {
+// Every WCAG 2.2 criterion (and 4.1.1, removed in 2.2) has a procedure for
+// every facet, its own or its coveredBy facet's.
+test('every criterion has a procedure for every facet', () => {
   const incomplete = [];
   for (const [criterion, info] of Object.entries(FACETS)) {
-    if (info.level === 'AAA') continue;
     const ids = info.facets.map((f) => f.id);
     assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion] || {}), ids, criterion);
     const r = proceduresFor(criterion);
