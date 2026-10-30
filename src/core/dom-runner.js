@@ -1336,7 +1336,7 @@ function holdPageColors(doc) {
  *
  * `count` is how many of them had their content skipped, where the browser
  * can say (checkVisibility with contentVisibilityAuto). Without a layout
- * (jsdom), no element has `content-visibility` and nothing is done.
+ * (jsdom) nothing is read or done.
  */
 function layOutSkippedContent(doc) {
   const dom = createSafeDom();
@@ -1345,35 +1345,90 @@ function layOutSkippedContent(doc) {
   try {
     view = doc ? dom.defaultView(doc) : null;
     if (!view || typeof view.getComputedStyle !== 'function') return nothing;
-    // A browser that knows content-visibility computes it on the root.
-    const rootStyle = view.getComputedStyle(dom.documentElement(doc));
-    if (typeof rootStyle.contentVisibility !== 'string') return nothing;
+    // Only with a layout, as readRenderingEnvironment tells one. jsdom
+    // computes content-visibility too, but reading any computed style
+    // before the rules changes what it computes later: the text-shadow of
+    // an inline style read as transparent, and a shadowed text that
+    // contrast-minimum asks about was failed.
+    const root = dom.documentElement(doc);
+    const rects =
+      root && typeof dom.get(root, 'getClientRects') === 'function'
+        ? dom.getClientRects(root)
+        : null;
+    if (!rects || !rects.length) return nothing;
+    if (typeof view.getComputedStyle(root).contentVisibility !== 'string') return nothing;
   } catch {
     return nothing;
   }
-  // Every element with content-visibility: auto, read before any is changed,
-  // so laying out one doesn't make the next read update the page's layout.
-  const found = [];
+  // The document and its open shadow roots, and whether a style attribute
+  // or a style sheet of theirs names content-visibility. Computed styles
+  // are read only where one does, or a sheet can't be read (another
+  // origin's): most pages never set it, and reading every element's
+  // computed style cost about 50 ms on a page of 40,000.
+  const elements = [];
+  const roots = [doc];
+  let named = false;
+  const NAME = /content-visibility/i;
   try {
     const docEl = dom.documentElement(doc);
-    const roots = docEl ? [docEl] : [];
-    for (let i = 0; i < roots.length; i++) {
-      const walker = dom.createTreeWalker(doc, roots[i], 1);
+    const tops = docEl ? [docEl] : [];
+    for (let i = 0; i < tops.length; i++) {
+      const walker = dom.createTreeWalker(doc, tops[i], 1);
       for (let el = walker.currentNode; el; el = walker.nextNode()) {
         if (dom.nodeType(el) !== 1) continue;
+        elements.push(el);
+        if (!named && NAME.test(String(dom.getAttribute(el, 'style') || ''))) named = true;
         const shadow = dom.shadowRoot(el);
-        if (shadow) roots.push(shadow);
-        let cs;
-        try {
-          cs = view.getComputedStyle(el);
-        } catch {
-          continue;
+        if (shadow) {
+          tops.push(shadow);
+          roots.push(shadow);
         }
-        if (!cs || cs.contentVisibility !== 'auto') continue;
-        found.push({ el, contain: String(cs.contain || 'none') });
       }
     }
   } catch {}
+  const sheetNames = (sheet, depth) => {
+    let rules;
+    try {
+      rules = sheet.cssRules;
+    } catch {
+      return true;
+    }
+    if (!rules) return true;
+    for (let i = 0; i < rules.length; i++) {
+      const rule = rules[i];
+      if (NAME.test(String(rule.cssText || ''))) return true;
+      if (rule.styleSheet && depth < 10 && sheetNames(rule.styleSheet, depth + 1)) return true;
+    }
+    return false;
+  };
+  for (let i = 0; !named && i < roots.length; i++) {
+    try {
+      const own = Array.from(dom.styleSheets(roots[i]) || []);
+      const adopted = Array.from(dom.get(roots[i], 'adoptedStyleSheets') || []);
+      for (const sheet of own.concat(adopted)) {
+        if (sheetNames(sheet, 0)) {
+          named = true;
+          break;
+        }
+      }
+    } catch {
+      named = true;
+    }
+  }
+  if (!named) return nothing;
+  // Every element with content-visibility: auto, read before any is changed,
+  // so laying out one doesn't make the next read update the page's layout.
+  const found = [];
+  for (const el of elements) {
+    let cs;
+    try {
+      cs = view.getComputedStyle(el);
+    } catch {
+      continue;
+    }
+    if (!cs || cs.contentVisibility !== 'auto') continue;
+    found.push({ el, contain: String(cs.contain || 'none') });
+  }
   if (!found.length) return nothing;
   // Whether an element's content is skipped: a child the browser renders
   // that checkVisibility counts as hidden only once skipped content counts.
