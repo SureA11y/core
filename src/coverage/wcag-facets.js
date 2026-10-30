@@ -842,6 +842,12 @@ const FACETS = {
                 "id": "page-title-patterns",
                 "label": "Page title patterns review (generic / duplicated / overly templated across pages)",
                 "automation": "partial"
+            },
+            {
+                "id": "page-title-descriptive",
+                "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -879,13 +885,25 @@ const FACETS = {
                 "id": "link-text-descriptive-evidence",
                 "label": "Link text is not a known non-descriptive/generic phrase (evidence only: surrounding-context sufficiency not verified)",
                 "automation": "manual"
+            },
+            {
+                "id": "link-purpose-clear",
+                "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
     "2.4.5": {
         "title": "Multiple Ways",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "multiple-ways",
+                "label": "There is more than one way to find a page in the site",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.6": {
         "title": "Headings and Labels",
@@ -921,6 +939,12 @@ const FACETS = {
                 "id": "focus-not-removed-by-script-evidence",
                 "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
                 "automation": "manual"
+            },
+            {
+                "id": "focus-indicator-visible",
+                "label": "Every element that takes keyboard focus shows that it has it",
+                "automation": "partial",
+                "macro": true
             }
         ]
     },
@@ -953,7 +977,13 @@ const FACETS = {
     "2.4.11": {
         "title": "Focus Not Obscured (Minimum)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "focus-not-obscured",
+                "label": "An element that receives focus is not entirely hidden by content the page puts over it",
+                "automation": "manual"
+            }
+        ]
     },
     "2.4.12": {
         "title": "Focus Not Obscured (Enhanced)",
@@ -968,12 +998,24 @@ const FACETS = {
     "2.5.1": {
         "title": "Pointer Gestures",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "single-pointer-alternative",
+                "label": "What a path or multipoint gesture does can also be done with a single tap or click",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.2": {
         "title": "Pointer Cancellation",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "pointer-cancellation",
+                "label": "Actions run when the pointer is released, not pressed, or can be cancelled or undone",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.3": {
         "title": "Label in Name",
@@ -989,7 +1031,13 @@ const FACETS = {
     "2.5.4": {
         "title": "Motion Actuation",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "motion-actuation",
+                "label": "What is done by moving the device can also be done with controls, and the motion response can be turned off",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.5": {
         "title": "Target Size (Enhanced)",
@@ -1004,7 +1052,13 @@ const FACETS = {
     "2.5.7": {
         "title": "Dragging Movements",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "dragging-alternative",
+                "label": "What is done by dragging can also be done with single taps or clicks",
+                "automation": "manual"
+            }
+        ]
     },
     "2.5.8": {
         "title": "Target Size (Minimum)",

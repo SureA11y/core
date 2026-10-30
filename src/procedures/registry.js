@@ -599,13 +599,18 @@ const PROCEDURES = {
     },
     '2.4.1': {
       'bypass-blocks-present': {
+        tools: ['keyboard', 'screen-reader', 'devtools'],
         variants: {
           'bypass-blocks-present': ['BYPASS_MECHANISM_ABSENT']
         }
       }
     },
     '2.4.2': {
+      'page-title-present': {
+        coveredBy: 'page-title-descriptive'
+      },
       'page-title-patterns': {
+        coveredBy: 'page-title-descriptive',
         variants: {
           'page-title-patterns': [
             'genericTitle',
@@ -616,6 +621,9 @@ const PROCEDURES = {
             'titleReview'
           ]
         }
+      },
+      'page-title-descriptive': {
+        tools: []
       }
     },
     '2.4.3': {
@@ -631,18 +639,29 @@ const PROCEDURES = {
     },
     '2.4.4': {
       'link-name-present': {
+        coveredBy: 'link-purpose-clear',
         variants: {
           'link-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
         }
       },
       'link-text-descriptive-evidence': {
+        coveredBy: 'link-purpose-clear',
         variants: {
           'link-name-quality': ['AMBIGUOUS_FORMAT_NAME', 'GENERIC_LINK_TEXT']
         }
+      },
+      'link-purpose-clear': {
+        tools: ['devtools', 'screen-reader']
+      }
+    },
+    '2.4.5': {
+      'multiple-ways': {
+        tools: []
       }
     },
     '2.4.6': {
       'heading-text-descriptive-evidence': {
+        tools: ['screen-reader'],
         variants: {
           'heading-quality': [
             'FILENAME_LIKE_HEADING',
@@ -652,6 +671,7 @@ const PROCEDURES = {
         }
       },
       'form-control-label-descriptive-evidence': {
+        tools: [],
         variants: {
           'form-control-label-quality': [
             'DUPLICATE_LABEL_TEXT',
@@ -663,6 +683,7 @@ const PROCEDURES = {
     },
     '2.4.7': {
       'css-hidden-focusable': {
+        coveredBy: 'focus-indicator-visible',
         variants: {
           'css-hidden-focus': [
             'cssHiddenTabbable_needsFocusStateVerification',
@@ -671,9 +692,16 @@ const PROCEDURES = {
         }
       },
       'focus-indicator-not-suppressed': {
+        coveredBy: 'focus-indicator-visible',
         variants: {
           'css-focus-indicator-suppressed': ['FOCUS_INDICATOR_SUPPRESSED']
         }
+      },
+      'focus-not-removed-by-script-evidence': {
+        coveredBy: 'focus-indicator-visible'
+      },
+      'focus-indicator-visible': {
+        tools: ['keyboard']
       }
     },
     '2.4.9': {
@@ -683,8 +711,24 @@ const PROCEDURES = {
         }
       }
     },
+    '2.4.11': {
+      'focus-not-obscured': {
+        tools: ['keyboard']
+      }
+    },
+    '2.5.1': {
+      'single-pointer-alternative': {
+        tools: ['pointer']
+      }
+    },
+    '2.5.2': {
+      'pointer-cancellation': {
+        tools: ['pointer']
+      }
+    },
     '2.5.3': {
       'label-in-name': {
+        tools: ['devtools'],
         variants: {
           'label-in-name': [
             'HYPHENATION_DIFFERS',
@@ -693,6 +737,21 @@ const PROCEDURES = {
             'POSSIBLE_SYMBOLIC_CHARACTER'
           ]
         }
+      }
+    },
+    '2.5.4': {
+      'motion-actuation': {
+        tools: []
+      }
+    },
+    '2.5.7': {
+      'dragging-alternative': {
+        tools: ['pointer']
+      }
+    },
+    '2.5.8': {
+      'target-size-minimum-pointer': {
+        tools: ['devtools']
       }
     },
     '3.3.1': {

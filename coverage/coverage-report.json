@@ -7790,12 +7790,14 @@
       {
         "sc": "2.4.2",
         "title": "Page Titled",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-title-descriptive"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7815,6 +7817,12 @@
             "coveredBy": [
               "page-title-patterns"
             ]
+          },
+          {
+            "id": "page-title-descriptive",
+            "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7859,12 +7867,15 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-purpose-clear"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7884,6 +7895,12 @@
             "coveredBy": [
               "link-name-quality"
             ]
+          },
+          {
+            "id": "link-purpose-clear",
+            "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -7920,12 +7937,15 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "focus-indicator-visible"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [
           "manual-review"
@@ -7955,6 +7975,12 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "focus-indicator-visible",
+            "label": "Every element that takes keyboard focus shows that it has it",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9556,12 +9582,14 @@
       {
         "sc": "2.4.2",
         "title": "Page Titled",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "page-title-descriptive"
+        ],
         "automationCounts": {
           "full": 1,
-          "partial": 1
+          "partial": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9581,6 +9609,12 @@
             "coveredBy": [
               "page-title-patterns"
             ]
+          },
+          {
+            "id": "page-title-descriptive",
+            "label": "The page has a title that says what it is about or for, and tells it apart from the site's other pages",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9625,12 +9659,15 @@
       {
         "sc": "2.4.4",
         "title": "Link Purpose (In Context)",
-        "totalFacets": 2,
+        "totalFacets": 3,
         "coveredFacets": 2,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "link-purpose-clear"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 1
+          "manual": 1,
+          "partial": 1
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -9650,6 +9687,12 @@
             "coveredBy": [
               "link-name-quality"
             ]
+          },
+          {
+            "id": "link-purpose-clear",
+            "label": "Each link's purpose can be told from its text, or from its text with the sentence, paragraph, list item or table cell it is in",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
@@ -9686,12 +9729,15 @@
       {
         "sc": "2.4.7",
         "title": "Focus Visible",
-        "totalFacets": 3,
+        "totalFacets": 4,
         "coveredFacets": 3,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "focus-indicator-visible"
+        ],
         "automationCounts": {
           "full": 1,
-          "manual": 2
+          "manual": 2,
+          "partial": 1
         },
         "missingFacetRules": [
           "manual-review"
@@ -9721,6 +9767,12 @@
             "coveredBy": [
               "focus-not-removed-by-script"
             ]
+          },
+          {
+            "id": "focus-indicator-visible",
+            "label": "Every element that takes keyboard focus shows that it has it",
+            "automation": "partial",
+            "coveredBy": []
           }
         ]
       },
