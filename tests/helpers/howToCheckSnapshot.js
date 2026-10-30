@@ -1,9 +1,9 @@
 'use strict';
 
 /**
- * What a person is told today about every undecided finding of a core rule,
- * so that moving the steps (into src/procedures) can be shown to change
- * none of it: for every rule, every reason code it gives steps for or lists
+ * What a person is told today about every undecided finding of a core rule
+ * (or an in-repo profile's), so that moving the steps (into src/procedures)
+ * can be shown to change none of it: for every rule, every reason code it gives steps for or lists
  * as cantTell, and every locale, a digest of what howToCheckFor returns;
  * a digest of every rule's steps by reason code; and a digest of each review
  * dictionary file, byte for byte.
@@ -30,13 +30,12 @@ const DICTIONARY_LOCALES = ['de', 'en', 'es', 'fr', 'ja'];
 const digest = (value) =>
   crypto.createHash('sha256').update(JSON.stringify(value)).digest('hex').slice(0, 16);
 
+// Core's rules and an in-repo profile's (profiles/<key>/rules).
 function ruleFiles() {
+  const { ruleTypeDirs } = require(path.join(ROOT, 'scripts', 'lib', 'rule-dirs.js'));
   return ['automatic', 'manual']
-    .flatMap((d) =>
-      fs
-        .readdirSync(path.join(ROOT, 'src/checks', d))
-        .map((f) => path.join(ROOT, 'src/checks', d, f))
-    )
+    .flatMap((type) => ruleTypeDirs(type))
+    .flatMap((dir) => fs.readdirSync(dir).map((f) => path.join(dir, f)))
     .concat([path.join(ROOT, 'src/checks/manual-review.js')])
     .filter((f) => f.endsWith('.js'))
     .sort();

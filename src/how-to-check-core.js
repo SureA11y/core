@@ -24,6 +24,7 @@
 
 const { occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
+const { withPackReview } = require('./pack-review.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 
@@ -67,7 +68,8 @@ function dictionaryFor(dictionaries, locale) {
  * The steps for one finding: { steps, passWhen, failWhen }, or null when the
  * dictionaries have none for that rule prefix and reason code. `locales` is a
  * locale ('fr-CA') or a list of them, most wanted first. With
- * `options.packs`, a pack rule's prefix reads its meta.review, in English.
+ * `options.packs`, a pack rule's prefix reads its meta.review, in English,
+ * or in a locale its pack's dictionary translates it to.
  */
 function howToCheckFrom(dictionaries, prefix, code, locales, options) {
   if (typeof prefix !== 'string' || !prefix || typeof code !== 'string' || !code) return null;
@@ -117,66 +119,6 @@ function prefixesOf(check) {
   const own = prefixOfKey(i18n.titleKey);
   const base = typeof check.variantOf === 'string' ? prefixOfKey(i18n.variantOfTitleKey) : null;
   return [own, base].filter((p, i, all) => p && all.indexOf(p) === i);
-}
-
-const isText = (v) => typeof v === 'string' && v.trim() !== '';
-function wellFormedReview(entry) {
-  return (
-    !!entry &&
-    typeof entry === 'object' &&
-    Array.isArray(entry.steps) &&
-    entry.steps.length > 0 &&
-    entry.steps.every(isText) &&
-    isText(entry.passWhen) &&
-    isText(entry.failWhen)
-  );
-}
-
-/**
- * The English review dictionary of packs' rules: each pack rule's and
- * variant's meta.review, under the keys core's dictionaries use. A pack's
- * steps are in English: a scan in another locale shows them in English. A
- * rule that overrides a core rule gives none, as a custom one doesn't.
- */
-function packReviewDictionary(packs) {
-  const dict = {};
-  for (const pack of Array.isArray(packs) ? packs : []) {
-    if (!pack || typeof pack !== 'object') continue;
-    const overrides = Array.isArray(pack.overrides) ? pack.overrides : [];
-    const rules = [].concat(
-      Array.isArray(pack.rules) ? pack.rules : [],
-      Array.isArray(pack.variants) ? pack.variants : []
-    );
-    for (const rule of rules) {
-      if (!rule || typeof rule !== 'object' || overrides.includes(rule.id)) continue;
-      const meta = rule.meta && typeof rule.meta === 'object' ? rule.meta : {};
-      const prefix = prefixOfKey(meta.i18n && meta.i18n.titleKey);
-      const review = meta.review;
-      if (!prefix || !review || typeof review !== 'object' || Array.isArray(review)) continue;
-      for (const code of Object.keys(review)) {
-        const entry = review[code];
-        if (!/^[A-Za-z0-9_]+$/.test(code) || !wellFormedReview(entry)) continue;
-        const key = `${prefix}_review_${code}_`;
-        entry.steps.forEach((step, i) => (dict[`${key}step${i + 1}`] = step));
-        dict[`${key}pass`] = entry.passWhen;
-        dict[`${key}fail`] = entry.failWhen;
-      }
-    }
-  }
-  return dict;
-}
-
-// The dictionaries with the packs' steps added to English, where core's
-// English has no such key.
-function withPackReview(dictionaries, packs) {
-  const extra = packReviewDictionary(packs);
-  if (!Object.keys(extra).length) return dictionaries;
-  let en;
-  return (locale) => {
-    if (locale !== 'en') return dictionaryFor(dictionaries, locale);
-    if (!en) en = { ...extra, ...(dictionaryFor(dictionaries, 'en') || {}) };
-    return en;
-  };
 }
 
 // engine.locale says which dictionary the scan used: { requested, resolved,
@@ -265,7 +207,8 @@ function wantedLocale(options) {
  * in which each undecided finding of a core rule carries howToCheck, in the
  * scan's locale, from the dictionaries given; a variant's finding without
  * steps of its own gets its base rule's. With `options.packs`, the packs the
- * scan ran, their rules' and variants' meta.review give theirs, in English.
+ * scan ran, their rules' and variants' meta.review give theirs, in English,
+ * or in the scan's locale where the pack's dictionary for it translates them.
  * Findings that already have one, and decided ones, are left as they are.
  * With `options.locale` (a tag, or a list of tags, most wanted first), the
  * steps are in that locale instead of the scan's, and a finding that already

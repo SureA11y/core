@@ -65,6 +65,17 @@ proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4
 
 `standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in English.
 
+### A pack's rules
+
+With the packs, a criterion's facets also list the packs' own rules and variants ([`PACKS.md`](./PACKS.md#3-write-its-rules)), after core's:
+
+- a rule that claims a facet, in `meta.coverage.facetsBySc` (`{ '2.4.4': ['link-text-descriptive-evidence'] }`), is in that facet's `rules`, and one whose `meta.wcagSc` names the criterion in the criterion's `rules`;
+- the reason codes of its `meta.review` filed under the facet are variants there, with its `ruleId`, each exactly the `howToCheck` of its finding for that code. A rule that claims one facet files every code under it. One that claims several says where each code goes, with `facet` in the code's entry, and `criterion` where it claims that facet under more than one criterion; a code it doesn't file is under none.
+
+A requirement of the pack's own standard lists, in the same way, the pack's rules that claim its facets in `meta.coverage.facetsByRequirement` (`{ '7.1': ['text-version'] }`), and the requirement's `rules` lists them all. A variant of a core rule (`from`) adds only the codes it writes steps for: the others show its base rule's, already listed under the base. An override is the core rule it replaces, listed as core has it.
+
+A pack rule's steps are in English, or in a locale its pack's dictionary translates them to ([`PACKS.md`](./PACKS.md#6-messages-and-languages)), as its findings show them.
+
 ## The shape
 
 ```js
@@ -75,13 +86,13 @@ proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4
   title: 'Text Spacing',
   level: 'AA',                   // null for best practices
   complete: true,                // every facet has a general procedure
-  rules: ['avoid-inline-spacing', 'text-spacing-content-loss'], // core rules that test it (wcagSc)
+  rules: ['avoid-inline-spacing', 'text-spacing-content-loss'], // the rules that test it (wcagSc)
   facets: [
     {
       id: 'text-spacing-content-loss',
       label: 'With the 1.4.12 spacing applied, no text is cut off or made to overlap (measured in a browser)',
       automation: 'partial',     // 'full' | 'partial' | 'manual'
-      rules: ['text-spacing-content-loss'], // core rules that claim the facet
+      rules: ['text-spacing-content-loss'], // the rules that claim the facet, core's then the packs'
       tools: [
         { id: 'devtools', label: "The browser's developer tools" },
         { id: 'keyboard', label: 'A keyboard' }

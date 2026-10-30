@@ -24,8 +24,10 @@ export type ProceduresDictionaries =
 
 /**
  * How a person assesses a WCAG 2.2 criterion ('1.4.13'), or the best
- * practices ('best-practice'), by hand, from the dictionaries given; null
- * for a requirement core doesn't know. Needs no file system: for code that
+ * practices ('best-practice'), by hand, from the dictionaries given, or,
+ * with options.packs, a requirement of a pack's standard, with the packs'
+ * rules under the facets they claim; null for a requirement none of them
+ * knows. Needs no file system: for code that
  * runs in a browser. In Node, proceduresFor from @surea11y/core does the
  * same with every dictionary core ships.
  */

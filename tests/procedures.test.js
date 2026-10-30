@@ -28,11 +28,14 @@ const { proceduresFor, howToCheckFor } = require('../src/index.js');
 const { proceduresFrom } = require('../src/procedures-core.js');
 const { FACETS } = require('../src/coverage/wcag-facets.js');
 
+const { ruleTypeDirs } = require('../scripts/lib/rule-dirs.js');
+
 const ROOT = path.join(__dirname, '..');
+// Core's rules and an in-repo profile's (profiles/<key>/rules), held to the
+// same rules.
 const RULE_FILES = ['automatic', 'manual']
-  .flatMap((d) =>
-    fs.readdirSync(path.join(ROOT, 'src/checks', d)).map((f) => path.join(ROOT, 'src/checks', d, f))
-  )
+  .flatMap((type) => ruleTypeDirs(type))
+  .flatMap((dir) => fs.readdirSync(dir).map((f) => path.join(dir, f)))
   .concat([path.join(ROOT, 'src/checks/manual-review.js')])
   .filter((f) => f.endsWith('.js'));
 const RULES = new Map(RULE_FILES.map((file) => [require(file).id, file]));

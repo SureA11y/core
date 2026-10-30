@@ -18,6 +18,7 @@ const { ESLint } = require('eslint');
 const { scaffoldPack, namespaceOf, KINDS } = require('../../src/pack-scaffold.js');
 const { checkPack, describePacks } = require('../../src/pack.js');
 const { packDocs } = require('../../src/pack-docs.js');
+const { proceduresFor } = require('../../src/index.js');
 
 const ROOT = path.join(__dirname, '..', '..');
 const BIN = path.join(ROOT, 'bin', 'surea11y-pack.js');
@@ -93,6 +94,23 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
   for (const file of written) {
     assert.doesNotMatch(fs.readFileSync(path.join(dir, file), 'utf8'), /__[A-Z]+__/, file);
   }
+  // Its requirements have procedures once they restate WCAG: with
+  // applicability: 'wcag', each takes its criterion's.
+  assert.equal(pack.standard.procedures, undefined);
+  const index = path.join(dir, 'index.js');
+  const text = fs.readFileSync(index, 'utf8');
+  const restating = text.replace(
+    'ruleMap: RULE_REQUIREMENTS\n});',
+    "ruleMap: RULE_REQUIREMENTS,\n  applicability: 'wcag'\n});"
+  );
+  assert.notEqual(restating, text);
+  fs.writeFileSync(index, restating);
+  delete require.cache[require.resolve(dir)];
+  const wcagPack = require(dir);
+  assert.deepEqual(checkPack(wcagPack), []);
+  const r = proceduresFor('1', { packs: [wcagPack], standard: 'city-web' });
+  assert.equal(r.wcag, '1.1.1');
+  assert.deepEqual(r.facets, proceduresFor('1.1.1').facets);
 });
 
 // The generated tests, per kind: a standard also checks the WCAG version its

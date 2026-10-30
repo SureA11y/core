@@ -22,7 +22,7 @@ const STANDARD = '__TITLE__';
 // The WCAG version a version of the standard is built on (requirements.js).
 const wcagVersionOf = (v) => VERSIONS.find((x) => x.version === v).wcagVersion;
 
-const { mappingsFor, composites, validate, wcagTagsOf } = ruleMappedStandard({
+const { mappingsFor, composites, validate, wcagTagsOf, procedures } = ruleMappedStandard({
   standard: STANDARD,
   tag: NAMESPACE,
   versions: VERSIONS,
@@ -79,6 +79,10 @@ module.exports = definePack({
     mappingsFor,
     composites,
     validate,
+    // How a person assesses each requirement by hand (proceduresFor): with
+    // applicability: 'wcag', each requirement takes the procedures of the
+    // criterion it restates; otherwise none.
+    procedures,
     // The note above the standard's results in the HTML report.
     report: { noteKey: '__KEY___report_note' }
   },

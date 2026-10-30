@@ -178,6 +178,7 @@
     "src/how-to-check-lazy.js",
     "src/how-to-check-core.js",
     "src/how-to-check-core.d.ts",
+    "src/pack-review.js",
     "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",
     "src/procedures.js",

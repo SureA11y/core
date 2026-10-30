@@ -75,7 +75,8 @@ function ruleOf(ruleId, packs) {
  * (English where it has no translation), or null when the rule gives none
  * for that reason code. A variant without steps of its own for the code has
  * its base rule's. With options.packs, a pack's rules and variants are
- * known too, their own steps in English.
+ * known too, their own steps in English, or in the locale where the pack's
+ * dictionary translates them.
  */
 function howToCheckFor(ruleId, reasonCode, locale, options) {
   const packs = options && typeof options === 'object' ? options.packs : null;
@@ -95,7 +96,8 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
  * in which each undecided finding of a core rule carries howToCheck, in the
  * scan's locale; a variant's, its base rule's where it has none of its own.
  * With options.packs, the packs the scan ran, a pack rule's finding gets the
- * steps of its meta.review, in English. Findings that already have one, and
+ * steps of its meta.review, in English, or in the locale where the pack's
+ * dictionary translates them. Findings that already have one, and
  * decided ones, are left as they are. With options.locale, the steps are in
  * that locale instead, those a finding already has included.
  */
