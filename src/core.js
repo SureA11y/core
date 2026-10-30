@@ -21633,7 +21633,7 @@ const holdPageColors = (function holdPageColors(doc) {
 });
 const layOutSkippedContent = (function layOutSkippedContent(doc) {
   const dom = createSafeDom();
-  const nothing = { count: 0, restore() {} };
+  const nothing = { count: 0, paintContained: new Set(), restore() {} };
   let view;
   try {
     view = doc ? dom.defaultView(doc) : null;
@@ -21747,6 +21747,7 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
     return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
   };
   const changed = [];
+  const paintContained = new Set();
   for (const { el, contain } of found) {
     try {
       const had = dom.hasAttribute(el, 'style');
@@ -21756,10 +21757,12 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
       changed.push({ el, had, text });
       style.setProperty('content-visibility', 'visible', 'important');
       style.setProperty('contain', containOf(contain), 'important');
+      if (!/\b(paint|strict|content)\b/.test(contain)) paintContained.add(el);
     } catch {}
   }
   return {
     count,
+    paintContained,
     restore() {
       for (const { el, had, text } of changed) {
         try {
@@ -22178,6 +22181,15 @@ const runCoreSettled = (function runCoreSettled(
       ? settleAnimations.atScanStart
       : [];
     sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
+  // The elements whose box clips its content only for content-visibility:
+  // auto, as the scan lays them out (layOutSkippedContent).
+  {
+    const paintContained =
+      layOutSkippedContent.paintContained instanceof Set
+        ? layOutSkippedContent.paintContained
+        : new Set();
+    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -23635,6 +23647,8 @@ const runCore = (function runCore(
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
+    // For helpers.paintContainedByContentVisibility.
+    layOutSkippedContent.paintContained = laidOut.paintContained;
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -23657,6 +23671,7 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
+      layOutSkippedContent.paintContained = null;
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];
@@ -37001,6 +37016,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
       "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus).",
       "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus): Sein content-visibility: auto schneidet ab, was über seinen Rand hinausgeht, wie overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto schneidet den Inhalt eines Elements an seiner Box ab, auf dem Bildschirm wie außerhalb. Lassen Sie den Text umbrechen oder die Box mit ihm wachsen, oder entfernen Sie content-visibility: auto von diesem Element (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em nach Absätzen), dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Mit den Textabständen nach WCAG 1.4.12 zeigt dieses Element bei einem {{viewportWidth}} px breiten Viewport nur noch {{linesAfter}} der {{linesBefore}} Zeilen des Texts „{{text}}“, die es vorher vollständig zeigte.",
@@ -38337,6 +38354,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
       "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge).",
       "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element shows {{linesAfter}} of the {{linesBefore}} lines of the text \"{{text}}\" it showed in full before.",
@@ -39673,6 +39692,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
       "textSpacingContentLoss_hint_fail_clipped": "Dejar que el contenedor crezca con su texto: evitar alturas y anchuras fijas con overflow: hidden en texto, o permitir que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde): su content-visibility: auto recorta lo que sobrepasa su borde, como hace overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto recorta el contenido de un elemento a su caja, tanto en pantalla como fuera de ella. Dejar que el texto pase a otra línea o que la caja crezca con él, o quitar content-visibility: auto de este elemento (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Comprobar con el espaciado (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em tras los párrafos) aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
@@ -41009,6 +41030,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord).",
       "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord) : son content-visibility: auto rogne ce qui dépasse de son bord, comme le fait overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto rogne le contenu d’un élément à sa boîte, qu’il soit à l’écran ou non. Laissez le texte passer à la ligne ou la boîte s’agrandir avec lui, ou retirez content-visibility: auto de cet élément (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em après les paragraphes) appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément montre {{linesAfter}} des {{linesBefore}} lignes du texte « {{text}} » qu’il montrait en entier auparavant.",
@@ -42345,6 +42368,8 @@ const RUNTIME_CATALOG = {
       "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
       "textSpacingContentLoss_summary_fail_clipped": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。",
       "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。この要素の content-visibility: auto が、overflow: clip と同じように端からはみ出す部分を切り取ります。",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto は、画面内でも画面外でも、要素の内容をそのボックスで切り取ります。テキストが折り返すかボックスがテキストに合わせて広がるようにするか、この要素から content-visibility: auto を外してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔（line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em、段落の後に 2em）を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",
@@ -95162,6 +95187,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // A viewport clipper set by a fixed box has a key of its own, as the box
     // may clip its own content too.
     const keyOf = (c) => c.key || c.el;
+    // Whether a box clips on its axes only for its content-visibility: auto,
+    // which clips what overflows it, on screen or off, as contain: paint
+    // does. The scan lays such a box out as visible (computed so here), with
+    // the containment auto gives it, so the runner says which boxes those are.
+    const cvClips =
+      typeof helpers.paintContainedByContentVisibility === 'function'
+        ? helpers.paintContainedByContentVisibility
+        : () => false;
+    function byContentVisibility(a, cs, x, y) {
+      if (!cvClips(a)) return false;
+      const hides = (v) => v === 'hidden' || v === 'clip';
+      return !(x && hides(cs.overflowX)) && !(y && hides(cs.overflowY));
+    }
     function clippersOf(el) {
       if (clipCache.has(el)) return clipCache.get(el);
       const path = [];
@@ -95190,7 +95228,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             !(scrolls & 1) && (paint || cs.overflowX === 'hidden' || cs.overflowX === 'clip');
           const y =
             !(scrolls & 2) && (paint || cs.overflowY === 'hidden' || cs.overflowY === 'clip');
-          if (x || y) own = { el: a, x, y };
+          if (x || y) own = { el: a, x, y, contentVisibility: byContentVisibility(a, cs, x, y) };
           if (cs.overflowX === 'auto' || cs.overflowX === 'scroll') after |= 1;
           if (cs.overflowY === 'auto' || cs.overflowY === 'scroll') after |= 2;
         }
@@ -95671,6 +95709,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           list.push({
             el: c.el,
             ...(sizing ? { sizing } : {}),
+            ...(c.contentVisibility ? { clippedBy: 'content-visibility' } : {}),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -95852,6 +95891,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
       key: 'fail_clipped'
     },
+    // TEXT_CLIPPED by a box that clips only for its content-visibility: auto,
+    // which nothing in its overflow or contain shows.
+    TEXT_CLIPPED_CONTENT_VISIBILITY: {
+      summary: (p) =>
+        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.`,
+      hint: 'content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element (WCAG 1.4.12).',
+      key: 'fail_clippedContentVisibility'
+    },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
         `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
@@ -96031,8 +96078,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const questions = [];
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
-  function report(reasonCode, el, params, details, uncertaintyCode, lean) {
-    const msg = MESSAGES[reasonCode];
+  function report(reasonCode, el, params, details, uncertaintyCode, lean, message) {
+    const msg = MESSAGES[message || reasonCode];
     const occ = helpers.reportOccurrence(el, {
       ...(lean ? { lean } : {}),
       summary: msg.summary(params),
@@ -96063,7 +96110,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container, sizing } = f;
+      const { text, metrics, container, sizing, clippedBy } = f;
       const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
       const lean =
         reasonCode === 'VIEWPORT_SCROLL_LOCKED'
@@ -96079,9 +96126,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         reasonCode,
         f.el,
         params,
-        { text, metrics, container, viewport, ...(sizedBy ? { sizedBy } : {}) },
+        {
+          text,
+          metrics,
+          container,
+          viewport,
+          ...(sizedBy ? { sizedBy } : {}),
+          ...(clippedBy ? { clippedBy } : {})
+        },
         uncertaintyCode,
-        lean
+        lean,
+        reasonCode === 'TEXT_CLIPPED' && clippedBy ? 'TEXT_CLIPPED_CONTENT_VISIBILITY' : null
       );
     }
   }
@@ -98685,6 +98740,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_description": "Wendet im Browser die Textabstände nach WCAG 1.4.12 an und prüft, dass kein Text abgeschnitten wird oder sich überlagert, und fragt bei Stylesheet-Regeln nach, die Abstände mit !important erzwingen.",
       "textSpacingContentLoss_summary_fail_clipped": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus).",
       "textSpacingContentLoss_hint_fail_clipped": "Lassen Sie den Container mit seinem Text wachsen: Vermeiden Sie feste Höhen und Breiten mit overflow: hidden bei Text, oder lassen Sie ihn scrollen (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Mit den Textabständen nach WCAG 1.4.12 schneidet dieses Element bei einem {{viewportWidth}} px breiten Viewport den Text „{{text}}“ ab ({{overflowPx}} px über seinen Rand hinaus): Sein content-visibility: auto schneidet ab, was über seinen Rand hinausgeht, wie overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto schneidet den Inhalt eines Elements an seiner Box ab, auf dem Bildschirm wie außerhalb. Lassen Sie den Text umbrechen oder die Box mit ihm wachsen, oder entfernen Sie content-visibility: auto von diesem Element (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Mit den Textabständen nach WCAG 1.4.12 reicht der Text „{{text}}“ bei einem {{viewportWidth}} px breiten Viewport {{overflowPx}} px über den Rand dieses Elements hinaus, das den überstehenden Teil verbirgt.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Prüfen Sie mit den angewendeten Abständen (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em nach Absätzen), dass dieser Text noch vollständig lesbar ist (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Mit den Textabständen nach WCAG 1.4.12 zeigt dieses Element bei einem {{viewportWidth}} px breiten Viewport nur noch {{linesAfter}} der {{linesBefore}} Zeilen des Texts „{{text}}“, die es vorher vollständig zeigte.",
@@ -100021,6 +100078,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_description": "Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.",
       "textSpacingContentLoss_summary_fail_clipped": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge).",
       "textSpacingContentLoss_hint_fail_clipped": "Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element cuts off the text \"{{text}}\" ({{overflowPx}}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, the text \"{{text}}\" reaches {{overflowPx}}px past the edge of this element, which hides what goes past it.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "With the text spacing of WCAG 1.4.12 applied at a {{viewportWidth}}px-wide viewport, this element shows {{linesAfter}} of the {{linesBefore}} lines of the text \"{{text}}\" it showed in full before.",
@@ -101357,6 +101416,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_description": "Aplica en el navegador el espaciado de texto de WCAG 1.4.12 y comprueba que ningún texto queda recortado ni se superpone, y pregunta por las reglas de hoja de estilo que fuerzan el espaciado con !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde).",
       "textSpacingContentLoss_hint_fail_clipped": "Dejar que el contenedor crezca con su texto: evitar alturas y anchuras fijas con overflow: hidden en texto, o permitir que se desplace (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento recorta el texto «{{text}}» ({{overflowPx}} px más allá de su borde): su content-visibility: auto recorta lo que sobrepasa su borde, como hace overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto recorta el contenido de un elemento a su caja, tanto en pantalla como fuera de ella. Dejar que el texto pase a otra línea o que la caja crezca con él, o quitar content-visibility: auto de este elemento (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, el texto «{{text}}» sobrepasa en {{overflowPx}} px el borde de este elemento, que oculta lo que sobresale.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Comprobar con el espaciado (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em tras los párrafos) aplicado que este texto aún se puede leer completo (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Con el espaciado de texto de WCAG 1.4.12 aplicado en una ventana de {{viewportWidth}} px de ancho, este elemento muestra {{linesAfter}} de las {{linesBefore}} líneas del texto «{{text}}» que antes mostraba completas.",
@@ -102693,6 +102754,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_description": "Applique dans le navigateur l’espacement du texte de WCAG 1.4.12 et vérifie qu’aucun texte n’est rogné ni ne se superpose, et pose la question pour les règles de feuille de style qui imposent l’espacement avec !important.",
       "textSpacingContentLoss_summary_fail_clipped": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord).",
       "textSpacingContentLoss_hint_fail_clipped": "Laissez le conteneur s’agrandir avec son texte : évitez les hauteurs et largeurs fixes avec overflow: hidden sur du texte, ou laissez-le défiler (WCAG 1.4.12).",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément rogne le texte « {{text}} » ({{overflowPx}} px au-delà de son bord) : son content-visibility: auto rogne ce qui dépasse de son bord, comme le fait overflow: clip.",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto rogne le contenu d’un élément à sa boîte, qu’il soit à l’écran ou non. Laissez le texte passer à la ligne ou la boîte s’agrandir avec lui, ou retirez content-visibility: auto de cet élément (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, le texte « {{text}} » dépasse de {{overflowPx}} px le bord de cet élément, qui masque ce qui dépasse.",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "Vérifiez avec l’espacement (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em après les paragraphes) appliqué que ce texte peut encore être lu en entier (WCAG 1.4.12).",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "Avec l’espacement du texte de WCAG 1.4.12 appliqué dans une zone d’affichage de {{viewportWidth}} px de large, cet élément montre {{linesAfter}} des {{linesBefore}} lignes du texte « {{text}} » qu’il montrait en entier auparavant.",
@@ -104029,6 +104092,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "textSpacingContentLoss_description": "ブラウザーで WCAG 1.4.12 のテキスト間隔を適用し、テキストが切れたり重なったりしないかを確認します。また、!important で間隔を強制するスタイルシートの規則について確認を求めます。",
       "textSpacingContentLoss_summary_fail_clipped": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。",
       "textSpacingContentLoss_hint_fail_clipped": "コンテナーがテキストに合わせて広がるようにしてください。テキストに overflow: hidden と固定の高さや幅を組み合わせないか、スクロールできるようにしてください（WCAG 1.4.12）。",
+      "textSpacingContentLoss_summary_fail_clippedContentVisibility": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」を切り取ります（端から {{overflowPx}}px はみ出します）。この要素の content-visibility: auto が、overflow: clip と同じように端からはみ出す部分を切り取ります。",
+      "textSpacingContentLoss_hint_fail_clippedContentVisibility": "content-visibility: auto は、画面内でも画面外でも、要素の内容をそのボックスで切り取ります。テキストが折り返すかボックスがテキストに合わせて広がるようにするか、この要素から content-visibility: auto を外してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedPartly": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、テキスト「{{text}}」がこの要素の端から {{overflowPx}}px はみ出し、はみ出した部分が隠れます。",
       "textSpacingContentLoss_hint_cantTell_clippedPartly": "間隔（line-height 1.5、letter-spacing 0.12em、word-spacing 0.16em、段落の後に 2em）を適用した状態で、このテキストがまだすべて読めることを確認してください（WCAG 1.4.12）。",
       "textSpacingContentLoss_summary_cantTell_clippedFurther": "幅 {{viewportWidth}}px のビューポートで WCAG 1.4.12 のテキスト間隔を適用すると、この要素はテキスト「{{text}}」の行のうち、以前はすべて表示していた {{linesBefore}} 行のうち {{linesAfter}} 行しか表示しません。",
@@ -126250,7 +126315,7 @@ const holdPageColors = (function holdPageColors(doc) {
 });
 const layOutSkippedContent = (function layOutSkippedContent(doc) {
   const dom = createSafeDom();
-  const nothing = { count: 0, restore() {} };
+  const nothing = { count: 0, paintContained: new Set(), restore() {} };
   let view;
   try {
     view = doc ? dom.defaultView(doc) : null;
@@ -126364,6 +126429,7 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
     return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
   };
   const changed = [];
+  const paintContained = new Set();
   for (const { el, contain } of found) {
     try {
       const had = dom.hasAttribute(el, 'style');
@@ -126373,10 +126439,12 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
       changed.push({ el, had, text });
       style.setProperty('content-visibility', 'visible', 'important');
       style.setProperty('contain', containOf(contain), 'important');
+      if (!/\b(paint|strict|content)\b/.test(contain)) paintContained.add(el);
     } catch {}
   }
   return {
     count,
+    paintContained,
     restore() {
       for (const { el, had, text } of changed) {
         try {
@@ -126795,6 +126863,15 @@ const runCoreSettled = (function runCoreSettled(
       ? settleAnimations.atScanStart
       : [];
     sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
+  // The elements whose box clips its content only for content-visibility:
+  // auto, as the scan lays them out (layOutSkippedContent).
+  {
+    const paintContained =
+      layOutSkippedContent.paintContained instanceof Set
+        ? layOutSkippedContent.paintContained
+        : new Set();
+    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints
@@ -128252,6 +128329,8 @@ const runCore = (function runCore(
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
+    // For helpers.paintContainedByContentVisibility.
+    layOutSkippedContent.paintContained = laidOut.paintContained;
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -128274,6 +128353,7 @@ const runCore = (function runCore(
       return result;
     } finally {
       laidOut.restore();
+      layOutSkippedContent.paintContained = null;
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];

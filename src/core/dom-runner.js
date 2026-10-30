@@ -1335,12 +1335,15 @@ function holdPageColors(doc) {
  * Elements in open shadow roots are reached; those in closed ones are not.
  *
  * `count` is how many of them had their content skipped, where the browser
- * can say (checkVisibility with contentVisibilityAuto). Without a layout
+ * can say (checkVisibility with contentVisibilityAuto). `paintContained` is
+ * those whose own `contain` had no paint containment: what they clip, they
+ * clip for `content-visibility: auto`, which a rule reading their computed
+ * style during the scan, `visible` by then, can't tell. Without a layout
  * (jsdom) nothing is read or done.
  */
 function layOutSkippedContent(doc) {
   const dom = createSafeDom();
-  const nothing = { count: 0, restore() {} };
+  const nothing = { count: 0, paintContained: new Set(), restore() {} };
   let view;
   try {
     view = doc ? dom.defaultView(doc) : null;
@@ -1454,6 +1457,7 @@ function layOutSkippedContent(doc) {
     return kept.concat(['layout', 'style', 'paint'].filter((w) => !kept.includes(w))).join(' ');
   };
   const changed = [];
+  const paintContained = new Set();
   for (const { el, contain } of found) {
     try {
       const had = dom.hasAttribute(el, 'style');
@@ -1463,10 +1467,12 @@ function layOutSkippedContent(doc) {
       changed.push({ el, had, text });
       style.setProperty('content-visibility', 'visible', 'important');
       style.setProperty('contain', containOf(contain), 'important');
+      if (!/\b(paint|strict|content)\b/.test(contain)) paintContained.add(el);
     } catch {}
   }
   return {
     count,
+    paintContained,
     restore() {
       for (const { el, had, text } of changed) {
         try {
@@ -1810,6 +1816,8 @@ function runCore(
     const colorsHeld = holdPageColors(typeof document !== 'undefined' ? document : null);
     // Content content-visibility: auto skips, laid out as a reader sees it.
     const laidOut = layOutSkippedContent(typeof document !== 'undefined' ? document : null);
+    // For helpers.paintContainedByContentVisibility.
+    layOutSkippedContent.paintContained = laidOut.paintContained;
     try {
       const result = runCoreSettled(
         pageUrl,
@@ -1832,6 +1840,7 @@ function runCore(
       return result;
     } finally {
       laidOut.restore();
+      layOutSkippedContent.paintContained = null;
       colorsHeld.restore();
       settled.restore();
       settleAnimations.atScanStart = [];
@@ -2030,6 +2039,15 @@ function runCoreSettled(
       ? settleAnimations.atScanStart
       : [];
     sharedHelpers.animationsAtScanStart = () => startedWith.map((a) => ({ ...a }));
+  }
+  // The elements whose box clips its content only for content-visibility:
+  // auto, as the scan lays them out (layOutSkippedContent).
+  {
+    const paintContained =
+      layOutSkippedContent.paintContained instanceof Set
+        ? layOutSkippedContent.paintContained
+        : new Set();
+    sharedHelpers.paintContainedByContentVisibility = (el) => paintContained.has(el);
   }
 
   // contrast.rootCanvasFallback is the color behind a page that paints

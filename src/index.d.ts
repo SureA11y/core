@@ -331,6 +331,7 @@ export interface RuleHelpers {
   getReflectedRefs: RuleHelper;
   getRefElements: RuleHelper;
   animationsAtScanStart: RuleHelper;
+  paintContainedByContentVisibility: RuleHelper;
   cssRulesOf: RuleHelper;
   cssConditionApplies: RuleHelper;
   getStyleSheets: RuleHelper;
