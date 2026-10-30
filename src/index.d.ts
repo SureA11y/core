@@ -1041,8 +1041,13 @@ export interface ProcedureFacet {
   rules: string[];
   /** What its procedure needs besides a browser; empty without a procedure. */
   tools: ProcedureTool[];
-  /** How a person assesses the facet on a whole page, or null where core has none yet. */
+  /**
+   * How a person assesses the facet on a whole page; null where its
+   * coveredBy facet's procedure does, or where core has none yet.
+   */
   procedure: HowToCheck | null;
+  /** The broader facet of the same criterion whose procedure assesses this one. */
+  coveredBy?: string;
   variants: ProcedureVariant[];
 }
 
@@ -1053,7 +1058,7 @@ export interface Procedures {
   id: string;
   title: string;
   level: 'A' | 'AA' | 'AAA' | null;
-  /** Whether every facet has a procedure. */
+  /** Whether every facet has a procedure, its own or its coveredBy facet's. */
   complete: boolean;
   /** The core rules that test the criterion (wcagSc), or the best practices'. */
   rules: string[];

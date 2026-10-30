@@ -24,11 +24,13 @@ A facet has a **general procedure**: steps a person follows on a whole page, in 
 | `contrast-theme` | A high-contrast theme (forced colors) |
 | `devtools` | The browser's developer tools |
 
+Some facets are one test a rule makes on one kind of element (`img-alt-attr-present`: an `<img>` has an alt attribute). Such a **technology facet** has no procedure of its own: `coveredBy` names the broader facet of the same criterion whose procedure a person follows to assess it (`text-alternative-mechanism`). A checklist lists what a person does, once: the facets without `coveredBy`.
+
 Where a rule asks a narrower question about one element, the facet has a **variant** for that rule and reason code: the steps its undecided finding shows as `howToCheck`. A variant always wins over its facet's general procedure: a finding shows its variant, never the general text, and writing a general procedure never changes what a finding shows. Every reason code a core rule can report as `cantTell` is under exactly one facet.
 
 What no criterion requires is kept apart, under `best-practice`, so a criterion's procedures never present advice as a failure.
 
-Core has general procedures for some criteria so far; [the rest](#which-criteria-have-procedures) follow. A facet without one has `procedure: null`.
+A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`; core is writing the rest ([below](#which-criteria-have-procedures)).
 
 ## Reading them
 
@@ -74,6 +76,7 @@ proceduresFrom({ en, fr }, '1.4.12', { locale: 'fr' });
         { id: 'keyboard', label: 'A keyboard' }
       ],
       procedure: { steps: ['…'], passWhen: '…', failWhen: '…' }, // or null
+      // coveredBy: 'text-alternative-mechanism', on a technology facet
       variants: [
         { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' }
       ]
@@ -82,13 +85,13 @@ proceduresFrom({ en, fr }, '1.4.12', { locale: 'fr' });
 }
 ```
 
-A facet broader than any one rule, kept for coverage reporting, has `macro: true`. A facet's `tools` is empty while it has no procedure. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in English for now.
+A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in English for now.
 
 `@surea11y/core/procedures/<locale>` is plain JSON, key to text. Its keys are covered as `proceduresFrom` reads them; its wording is not.
 
 ## Which criteria have procedures
 
-Every facet has a general procedure in: 1.4.12 Text Spacing, 1.4.13 Content on Hover or Focus, 2.4.3 Focus Order. Every other criterion has its facets and variants, without general procedures yet (`complete: false`).
+`complete` says, for each criterion. Core is writing them criterion by criterion, levels A and AA first, then AAA; a criterion without them still gives its facets and variants, with `complete: false`.
 
 ## Where they live
 

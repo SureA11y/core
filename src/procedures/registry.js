@@ -22,6 +22,12 @@
  * criterion: `best-practice_<facet>_step1`), and a tool's name under
  * `tool_<id>`.
  *
+ * A technology facet, one test a rule makes (`img-alt-attr-present`), has
+ * no procedure of its own: `coveredBy` names the facet of the same
+ * criterion, broader, whose procedure a person follows to assess it
+ * (`text-alternative-mechanism`), so a checklist lists what a person does,
+ * once.
+ *
  * Under a facet, `variants` lists, by rule id, the reason codes whose steps
  * that rule gives for the element a finding names: how a person answers one
  * of its undecided findings. Each reason code a core rule can report as
@@ -51,7 +57,20 @@ const TOOLS = ['keyboard', 'pointer', 'screen-reader', 'zoom', 'contrast-theme',
 const PROCEDURES = {
   wcag: {
     '1.1.1': {
+      'text-alternative-mechanism': {
+        tools: ['devtools']
+      },
+      'functional-nontext-name': {
+        tools: ['devtools']
+      },
+      'decorative-null': {
+        tools: ['devtools']
+      },
+      'text-alt-quality-review': {
+        coveredBy: 'text-alternative-quality'
+      },
       'text-alternative-quality': {
+        tools: ['devtools'],
         variants: {
           'area-alt-quality': ['TEXT_ALTERNATIVE_REVIEW'],
           'canvas-text-alternative-quality': ['TEXT_ALTERNATIVE_REVIEW'],
@@ -64,34 +83,76 @@ const PROCEDURES = {
           'svg-text-alternative-quality': ['IMAGE_ONLY_CONTROL_CONTENT', 'TEXT_ALTERNATIVE_REVIEW']
         }
       },
+      'img-alt-attr-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
       'role-img-text-alternative-present': {
+        coveredBy: 'text-alternative-mechanism',
         variants: {
           'role-img-text-alternative-present': ['name_internals']
         }
       },
       'input-image-alt-attr-present': {
+        coveredBy: 'functional-nontext-name',
         variants: {
           'input-image-alt-present': ['default_name']
         }
       },
+      'area-alt-attr-present': {
+        coveredBy: 'functional-nontext-name'
+      },
+      'canvas-text-alternative-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'embed-text-alternative-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'svg-text-alt-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'svg-text-alternative-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'svg-image-text-alt-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'object-text-alternative-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
+      'embed-name-present': {
+        coveredBy: 'text-alternative-mechanism'
+      },
       'video-poster-text-alt-present': {
+        coveredBy: 'text-alternative-mechanism',
         variants: {
           'video-poster-text-alternative-present': ['VIDEO_POSTER_FIGCAPTION_REVIEW']
         }
       },
+      'alt-suspicious-patterns': {
+        coveredBy: 'text-alternative-quality'
+      },
+      'acc-eligibility-filtering': {
+        coveredBy: 'decorative-null'
+      },
       'meter-name-present': {
+        coveredBy: 'text-alternative-mechanism',
         variants: {
           'meter-name-present': ['name_internals']
         }
       },
       'progressbar-name-present': {
+        coveredBy: 'text-alternative-mechanism',
         variants: {
           'progressbar-name-present': ['name_internals']
         }
+      },
+      'captcha-alternative': {
+        tools: ['screen-reader']
       }
     },
     '1.2.1': {
       'transcript-evidence': {
+        tools: [],
         variants: {
           'media-alternative-transcript-evidence': [
             'transcriptNotDetected',
@@ -102,6 +163,7 @@ const PROCEDURES = {
     },
     '1.2.2': {
       'video-captions-track-evidence': {
+        tools: [],
         variants: {
           'video-caption': [
             'CAPTIONS_REVIEW',
@@ -109,6 +171,24 @@ const PROCEDURES = {
             'SUBTITLES_TRACK_ONLY'
           ]
         }
+      },
+      'captions-complete': {
+        tools: []
+      }
+    },
+    '1.2.3': {
+      'audio-description-or-alternative': {
+        tools: []
+      }
+    },
+    '1.2.4': {
+      'live-captions': {
+        tools: []
+      }
+    },
+    '1.2.5': {
+      'audio-description': {
+        tools: []
       }
     },
     '1.3.1': {
@@ -282,13 +362,23 @@ const PROCEDURES = {
           ]
         }
       },
-      'text-spacing-functionality-kept': { tools: ['devtools', 'keyboard', 'pointer'] },
-      'text-spacing-other-states': { tools: ['devtools', 'keyboard', 'pointer'] }
+      'text-spacing-functionality-kept': {
+        tools: ['devtools', 'keyboard', 'pointer']
+      },
+      'text-spacing-other-states': {
+        tools: ['devtools', 'keyboard', 'pointer']
+      }
     },
     '1.4.13': {
-      'hover-focus-content-dismissible': { tools: ['pointer', 'keyboard'] },
-      'hover-content-hoverable': { tools: ['pointer'] },
-      'hover-focus-content-persistent': { tools: ['pointer', 'keyboard'] }
+      'hover-focus-content-dismissible': {
+        tools: ['pointer', 'keyboard']
+      },
+      'hover-content-hoverable': {
+        tools: ['pointer']
+      },
+      'hover-focus-content-persistent': {
+        tools: ['pointer', 'keyboard']
+      }
     },
     '2.1.1': {
       'iframe-tabindex-negative-content-not-focusable': {
@@ -384,9 +474,15 @@ const PROCEDURES = {
       }
     },
     '2.4.3': {
-      'focus-order-preserves-meaning': { tools: ['keyboard'] },
-      'focus-order-opened-content': { tools: ['keyboard'] },
-      'focus-order-no-hidden-stops': { tools: ['keyboard', 'devtools'] }
+      'focus-order-preserves-meaning': {
+        tools: ['keyboard']
+      },
+      'focus-order-opened-content': {
+        tools: ['keyboard']
+      },
+      'focus-order-no-hidden-stops': {
+        tools: ['keyboard', 'devtools']
+      }
     },
     '2.4.4': {
       'link-name-present': {

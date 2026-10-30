@@ -6827,7 +6827,7 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 21,
+        "totalFacets": 22,
         "coveredFacets": 13,
         "uncoveredFacets": [
           "text-alternative-mechanism",
@@ -6837,11 +6837,12 @@
           "svg-text-alt-present",
           "embed-name-present",
           "alt-suspicious-patterns",
-          "acc-eligibility-filtering"
+          "acc-eligibility-filtering",
+          "captcha-alternative"
         ],
         "automationCounts": {
           "partial": 13,
-          "manual": 2,
+          "manual": 3,
           "full": 6
         },
         "missingFacetRules": [],
@@ -7006,6 +7007,12 @@
             "coveredBy": [
               "progressbar-name-present"
             ]
+          },
+          {
+            "id": "captcha-alternative",
+            "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -7034,11 +7041,13 @@
       {
         "sc": "1.2.2",
         "title": "Captions (Prerecorded)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "captions-complete"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -7050,6 +7059,12 @@
             "coveredBy": [
               "video-caption"
             ]
+          },
+          {
+            "id": "captions-complete",
+            "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -8476,7 +8491,7 @@
       {
         "sc": "1.1.1",
         "title": "Non-text Content",
-        "totalFacets": 21,
+        "totalFacets": 22,
         "coveredFacets": 13,
         "uncoveredFacets": [
           "text-alternative-mechanism",
@@ -8486,11 +8501,12 @@
           "svg-text-alt-present",
           "embed-name-present",
           "alt-suspicious-patterns",
-          "acc-eligibility-filtering"
+          "acc-eligibility-filtering",
+          "captcha-alternative"
         ],
         "automationCounts": {
           "partial": 13,
-          "manual": 2,
+          "manual": 3,
           "full": 6
         },
         "missingFacetRules": [],
@@ -8655,6 +8671,12 @@
             "coveredBy": [
               "progressbar-name-present"
             ]
+          },
+          {
+            "id": "captcha-alternative",
+            "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },
@@ -8683,11 +8705,13 @@
       {
         "sc": "1.2.2",
         "title": "Captions (Prerecorded)",
-        "totalFacets": 1,
+        "totalFacets": 2,
         "coveredFacets": 1,
-        "uncoveredFacets": [],
+        "uncoveredFacets": [
+          "captions-complete"
+        ],
         "automationCounts": {
-          "manual": 1
+          "manual": 2
         },
         "missingFacetRules": [],
         "unknownFacetIds": [],
@@ -8699,6 +8723,12 @@
             "coveredBy": [
               "video-caption"
             ]
+          },
+          {
+            "id": "captions-complete",
+            "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

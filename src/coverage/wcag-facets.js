@@ -179,6 +179,11 @@ const FACETS = {
                 "id": "progressbar-name-present",
                 "label": "role=\"progressbar\" elements expose an accessible name",
                 "automation": "full"
+            },
+            {
+                "id": "captcha-alternative",
+                "label": "A CAPTCHA says what it is for and offers another form that uses a different sense",
+                "automation": "manual"
             }
         ]
     },
@@ -201,23 +206,46 @@ const FACETS = {
                 "id": "video-captions-track-evidence",
                 "label": "<video> declares a captions/subtitles <track> (evidence only: cannot verify audio content)",
                 "automation": "manual"
+            },
+            {
+                "id": "captions-complete",
+                "label": "Captions give all the dialogue, who is speaking, and the sounds that matter, in time with the video",
+                "automation": "manual"
             }
         ]
     },
     "1.2.3": {
         "title": "Audio Description or Media Alternative (Prerecorded)",
         "level": "A",
-        "facets": []
+        "facets": [
+            {
+                "id": "audio-description-or-alternative",
+                "label": "Prerecorded video with sound has an audio description or a full text alternative",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.4": {
         "title": "Captions (Live)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "live-captions",
+                "label": "Live video with sound has captions",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.5": {
         "title": "Audio Description (Prerecorded)",
         "level": "AA",
-        "facets": []
+        "facets": [
+            {
+                "id": "audio-description",
+                "label": "Prerecorded video with sound has an audio description",
+                "automation": "manual"
+            }
+        ]
     },
     "1.2.6": {
         "title": "Sign Language (Prerecorded)",

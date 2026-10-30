@@ -102,7 +102,8 @@ function variantsOf(entry, read) {
 }
 
 function facetOf(facet, entry, stem, rules, read) {
-  const procedure = read.procedure(stem);
+  const coveredBy = entry && typeof entry.coveredBy === 'string' ? entry.coveredBy : null;
+  const procedure = coveredBy ? null : read.procedure(stem);
   const tools = procedure && entry && Array.isArray(entry.tools) ? entry.tools : [];
   const out = { id: facet.id, label: facet.label, automation: facet.automation };
   if (facet.macro) out.macro = true;
@@ -111,8 +112,17 @@ function facetOf(facet, entry, stem, rules, read) {
     .filter((id) => TOOLS.includes(id))
     .map((id) => ({ id, label: read.text(`tool_${id}`) || id }));
   out.procedure = procedure;
+  // A technology facet a broader facet's procedure assesses: that facet's id.
+  if (coveredBy) out.coveredBy = coveredBy;
   out.variants = variantsOf(entry, read);
   return out;
+}
+
+// Every facet has a procedure, its own or the one of the facet it is
+// covered by.
+function isComplete(facets) {
+  const has = new Set(facets.filter((f) => f.procedure !== null).map((f) => f.id));
+  return facets.length > 0 && facets.every((f) => has.has(f.id) || has.has(f.coveredBy));
 }
 
 function wcagCriterion(criterion, read) {
@@ -134,7 +144,7 @@ function wcagCriterion(criterion, read) {
     id: criterion,
     title: info.title,
     level: info.level,
-    complete: facets.length > 0 && facets.every((f) => f.procedure !== null),
+    complete: isComplete(facets),
     rules: ruleIds.filter((r) => RULES[r].criteria.includes(criterion)),
     facets
   };
@@ -155,7 +165,7 @@ function bestPractices(read) {
     id: 'best-practice',
     title: 'Best practices',
     level: null,
-    complete: facets.every((f) => f.procedure !== null),
+    complete: isComplete(facets),
     rules: [...new Set(facets.flatMap((f) => f.rules))].sort(byId),
     facets
   };

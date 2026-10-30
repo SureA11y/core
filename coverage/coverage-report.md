@@ -36,8 +36,8 @@ Total rules (loaded without error): **145**
 
 ### 1.1.1
 
-Facet coverage: **13/21** facets covered.
-Automation mix: **full 6, partial 13, manual 2**.
+Facet coverage: **13/22** facets covered.
+Automation mix: **full 6, partial 13, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -62,8 +62,9 @@ Automation mix: **full 6, partial 13, manual 2**.
 | acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
+| captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -104,12 +105,15 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | video-captions-track-evidence | manual | video-caption |
+| captions-complete | manual | — |
+
+Uncovered facets: captions-complete
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -757,8 +761,8 @@ Automation mix: **full 0, partial 0, manual 2**.
 
 ### 1.1.1
 
-Facet coverage: **13/21** facets covered.
-Automation mix: **full 6, partial 13, manual 2**.
+Facet coverage: **13/22** facets covered.
+Automation mix: **full 6, partial 13, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -783,8 +787,9 @@ Automation mix: **full 6, partial 13, manual 2**.
 | acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
+| captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -825,12 +830,15 @@ Automation mix: **full 0, partial 1, manual 0**.
 
 ### 1.2.2
 
-Facet coverage: **1/1** facets covered.
-Automation mix: **full 0, partial 0, manual 1**.
+Facet coverage: **1/2** facets covered.
+Automation mix: **full 0, partial 0, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | video-captions-track-evidence | manual | video-caption |
+| captions-complete | manual | — |
+
+Uncovered facets: captions-complete
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|

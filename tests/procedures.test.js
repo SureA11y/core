@@ -187,6 +187,39 @@ test('every locale has every variant’s text, and no key English lacks', () => 
   }
 });
 
+test('a facet covered by another names one of its criterion with a procedure of its own', () => {
+  const en = read(PROCEDURES_DIR, 'en');
+  let covered = 0;
+  for (const [criterion, facets] of Object.entries(PROCEDURES.wcag)) {
+    for (const [facet, entry] of Object.entries(facets)) {
+      if (entry.coveredBy === undefined) continue;
+      covered += 1;
+      const at = `${criterion} ${facet}`;
+      const target = facets[entry.coveredBy];
+      assert.ok(
+        target && target.coveredBy === undefined,
+        `${at}: ${entry.coveredBy} can't cover it`
+      );
+      assert.ok(
+        typeof en[`wcag_${criterion}_${entry.coveredBy}_step1`] === 'string',
+        `${at}: ${entry.coveredBy} has no procedure`
+      );
+      assert.equal(entry.tools, undefined, `${at}: tools of its own`);
+      assert.equal(
+        en[`wcag_${criterion}_${facet}_step1`],
+        undefined,
+        `${at}: a procedure of its own`
+      );
+    }
+  }
+  const r = proceduresFor('1.1.1');
+  for (const f of r.facets.filter((x) => x.coveredBy)) {
+    assert.equal(f.procedure, null);
+    assert.ok(r.facets.find((x) => x.id === f.coveredBy).procedure, f.id);
+  }
+  assert.ok(covered === 0 || r.facets.some((f) => f.coveredBy));
+});
+
 test('a facet with a general procedure has 1 to 8 steps and names its tools', () => {
   const en = read(PROCEDURES_DIR, 'en');
   const entries = [
