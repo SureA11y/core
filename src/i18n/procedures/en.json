@@ -1692,7 +1692,7 @@
   "wcag_2.4.7_focus-indicator-visible_step3": "Use the keyboard, not the mouse, to move focus. Browsers show the focus of an element clicked with the mouse differently from one reached with Tab, so a mouse test proves nothing here.",
   "wcag_2.4.7_focus-indicator-visible_step4": "Note each stop where you can't tell where focus is, and each time focus seems to disappear for a press or more.",
   "wcag_2.4.7_focus-indicator-visible_step5": "Do the same inside menus, dialogs and widgets that use the arrow keys.",
-  "wcag_2.4.7_focus-indicator-visible_step6": "Turn on a contrast theme in Windows and repeat a few stops. A focus style drawn only with box-shadow or a background colour disappears in that mode. WCAG doesn't require it to show there, but record it as a best practice issue, and under EN 301 549 9.7 where that applies.",
+  "wcag_2.4.7_focus-indicator-visible_step6": "Turn on a contrast theme in Windows and repeat a few stops. A focus style drawn only with box-shadow or a background colour disappears in that mode. WCAG doesn't require it to show there, but record it as a best practice issue.",
   "wcag_2.4.7_focus-indicator-visible_pass": "At every stop you can see which element has focus.",
   "wcag_2.4.7_focus-indicator-visible_fail": "Focus reaches an element with no visible change, or lands on something hidden or off screen, so keyboard users lose track of where they are, which fails {{requirement}}.",
   "wcag_2.4.11_focus-not-obscured_step1": "Note what the page draws over its content: a sticky header or footer, a cookie banner, a chat button, a non-modal dialog.",
