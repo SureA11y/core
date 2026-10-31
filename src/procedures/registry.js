@@ -1318,6 +1318,7 @@ const PROCEDURES = {
       label:
         'Landmarks are unique where they should be, at the top level where required, and named',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         'landmark-banner-is-top-level': ['LANDMARK_BANNER_NOT_TOP_LEVEL'],
         'landmark-complementary-is-top-level': ['LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL'],
@@ -1334,6 +1335,7 @@ const PROCEDURES = {
     'content-in-landmarks': {
       label: 'All content is inside a landmark',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         region: ['CONTENT_OUTSIDE_LANDMARK']
       }
@@ -1342,6 +1344,7 @@ const PROCEDURES = {
       label:
         'The page has a main heading, and headings are not empty and go down one level at a time',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         'empty-heading': ['name_closedContent', 'name_contentTooDeep', 'name_internals'],
         'heading-order': ['HEADING_ORDER_SKIPPED_LEVEL'],
@@ -1351,6 +1354,7 @@ const PROCEDURES = {
     'table-markup': {
       label: 'Table headers, scope and caption are meaningful',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         'empty-table-header': ['TABLE_HEADER_EMPTY', 'TABLE_HEADER_NAME_NOT_VISIBLE_TEXT'],
         'scope-attr-valid': ['SCOPE_ATTR_INVALID'],
@@ -1360,6 +1364,7 @@ const PROCEDURES = {
     'aria-role-usage': {
       label: 'ARIA roles suit the elements they are on',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         'aria-allowed-role': ['ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT'],
         'aria-text': ['ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT'],
@@ -1369,6 +1374,7 @@ const PROCEDURES = {
     'keyboard-focus-order': {
       label: 'The tab order follows the page and stops only on interactive elements',
       automation: 'partial',
+      tools: ['keyboard', 'devtools'],
       variants: {
         'focus-order-semantics': ['TABBABLE_WITH_NON_INTERACTIVE_ROLE'],
         tabindex: ['TABINDEX_POSITIVE']
@@ -1377,6 +1383,7 @@ const PROCEDURES = {
     'keyboard-shortcuts': {
       label: 'Access keys are unique',
       automation: 'partial',
+      tools: ['keyboard', 'devtools'],
       variants: {
         accesskeys: ['ACCESSKEY_DUPLICATE']
       }
@@ -1384,6 +1391,7 @@ const PROCEDURES = {
     'skip-links': {
       label: 'Skip links lead to a usable target',
       automation: 'partial',
+      tools: ['keyboard'],
       variants: {
         'skip-link': ['SKIP_LINK_TARGET_MISSING', 'SKIP_LINK_TARGET_UNUSABLE']
       }
@@ -1392,6 +1400,7 @@ const PROCEDURES = {
       label:
         'Names and labels come from visible text, point at a control and do not repeat nearby text',
       automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
       variants: {
         'control-name-title-only': ['NAME_FROM_TITLE_ONLY'],
         'image-redundant-alt': ['IMAGE_ALT_REDUNDANT'],
@@ -1401,6 +1410,7 @@ const PROCEDURES = {
     'viewport-zoom': {
       label: 'The viewport lets the page be zoomed well past 200%',
       automation: 'partial',
+      tools: ['zoom', 'devtools'],
       variants: {
         'meta-viewport-large': ['VIEWPORT_ZOOM_BELOW_500']
       }
