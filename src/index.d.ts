@@ -1076,6 +1076,12 @@ export interface ProcedureFacet {
    * coveredBy facet's procedure does, or where core has none yet.
    */
   procedure: HowToCheck | null;
+  /**
+   * A pack's requirement that replaces this WCAG facet's general procedure
+   * (standard.procedures, replace): the pack's name. The procedure and tools
+   * are then the pack's, in English; rules and variants stay core's.
+   */
+  procedureFrom?: string;
   /** The broader facet of the same criterion whose procedure assesses this one. */
   coveredBy?: string;
   variants: ProcedureVariant[];

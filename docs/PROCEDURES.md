@@ -57,13 +57,17 @@ proceduresFrom({ en, fr }, '1.4.12', { locale: 'fr' });
 
 ### A pack's standard
 
-A pack's standard can say how a person assesses its requirements ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements), `standard.procedures`). With the packs, `proceduresFor` and `proceduresFrom` read them:
+A pack's standard can say how a person assesses its requirements ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures), `standard.procedures`). With the packs, `proceduresFor` and `proceduresFrom` read them:
 
 ```js
 proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4.1.1', locale: 'fr' });
 ```
 
 `standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in English.
+
+A requirement that restates a criterion may replace the general procedure of some of its facets with the pack's own, in English (`replace`, [`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)). Read as the requirement, such a facet has the pack's `procedure` and `tools`, and `procedureFrom` names the pack; its `rules` and `variants` are core's and the packs', as they are by criterion. Read as the WCAG criterion, it is core's: a pack never changes what `proceduresFor('1.4.3')` gives.
+
+Read as a pack's requirement, the procedures carry the pack's identity: `standard` is the pack's standard's name, `id` the requirement as the standard numbers it, and `version` the standard's version; `wcag` names the criterion it restates, as a cross-reference. The text of core's procedures still names the WCAG criterion a facet fails ("which fails WCAG 1.4.3").
 
 ### A pack's rules
 
@@ -98,6 +102,7 @@ A pack rule's steps are in English, or in a locale its pack's dictionary transla
         { id: 'keyboard', label: 'A keyboard' }
       ],
       procedure: { steps: ['…'], passWhen: '…', failWhen: '…' }, // or null
+      // procedureFrom: '@acme/pack-city', where a pack's requirement replaces it
       // coveredBy: 'text-alternative-mechanism', on a technology facet
       variants: [
         { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' }

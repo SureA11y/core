@@ -40,7 +40,8 @@ const {
 const { settingsProblems } = require('./core/rule-variants.js');
 const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
-const { TOOLS } = require('./procedures/registry.js');
+const { PROCEDURES, TOOLS } = require('./procedures/registry.js');
+const { FACETS } = require('./coverage/wcag-facets.js');
 const { claimsOf, ownRulesOf, prefixOfKey } = require('./pack-review.js');
 
 const PACK_KEYS = [
@@ -579,10 +580,66 @@ function reviewKeyProblems(pack, locale, dict) {
 
 // standard.procedures: how a person assesses each requirement by hand
 // (docs/PROCEDURES.md), by version and requirement. A requirement takes a
-// WCAG criterion's procedures ({ wcag: '1.4.3' }) or gives its own facets,
-// in English ({ title, facets: [{ id, label, automation, tools, steps,
-// passWhen, failWhen }] }).
+// WCAG criterion's procedures ({ wcag: '1.4.3' }), and may replace the
+// general procedure of some of its facets with its own ({ wcag, replace:
+// { facet: { tools, steps, passWhen, failWhen } } }), or gives its own
+// facets, in English ({ title, facets: [{ id, label, automation, tools,
+// steps, passWhen, failWhen }] }).
 const AUTOMATION = ['full', 'partial', 'manual'];
+
+// A procedure a pack writes: its tools, steps, passWhen and failWhen.
+function packProcedureProblems(f, at) {
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  if (
+    f.tools !== undefined &&
+    (!Array.isArray(f.tools) || !f.tools.every((t) => TOOLS.includes(t)))
+  ) {
+    problems.push(`${at}.tools must list tools of ${TOOLS.join(', ')}`);
+  }
+  if (!Array.isArray(f.steps) || f.steps.length < 1 || f.steps.length > 8 || !f.steps.every(text)) {
+    problems.push(`${at}.steps must list 1 to 8 steps, each a non-empty string`);
+  }
+  if (!text(f.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+  if (!text(f.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+  return problems;
+}
+
+// A requirement's replace: general procedures of its criterion's facets, by
+// facet. A technology facet has none to replace: its coveredBy facet's
+// procedure assesses it.
+function replaceProblems(replace, criterion, where) {
+  if (replace === undefined) return [];
+  const at = `${where}.replace`;
+  if (!isObject(replace) || !Object.keys(replace).length) {
+    return [`${at} must be { facet: { steps, passWhen, failWhen } }`];
+  }
+  if (!WCAG_SC.has(criterion)) return [];
+  const facets = (FACETS[criterion] && FACETS[criterion].facets) || [];
+  const registry = PROCEDURES.wcag[criterion] || {};
+  const problems = [];
+  for (const [id, entry] of Object.entries(replace)) {
+    const fa = `${at}[${JSON.stringify(id)}]`;
+    if (!facets.some((f) => f.id === id)) {
+      problems.push(`${fa}: ${criterion} has no facet ${JSON.stringify(id)}`);
+      continue;
+    }
+    const coveredBy = registry[id] && registry[id].coveredBy;
+    if (typeof coveredBy === 'string') {
+      problems.push(
+        `${fa}: ${JSON.stringify(id)} has no procedure of its own; replace ${JSON.stringify(coveredBy)}'s, which assesses it`
+      );
+      continue;
+    }
+    if (!isObject(entry)) {
+      problems.push(`${fa} must be { steps, passWhen, failWhen }`);
+      continue;
+    }
+    problems.push(...packProcedureProblems(entry, fa));
+  }
+  return problems;
+}
+
 function proceduresProblems(procedures, versions) {
   if (procedures === undefined) return [];
   const shape =
@@ -617,7 +674,11 @@ function proceduresProblems(procedures, versions) {
         if (!WCAG_SC.has(entry.wcag)) {
           problems.push(`${where}.wcag names no WCAG criterion: ${JSON.stringify(entry.wcag)}`);
         }
+        problems.push(...replaceProblems(entry.replace, entry.wcag, where));
         continue;
+      }
+      if (entry.replace !== undefined) {
+        problems.push(`${where}.replace goes with wcag: its own facets give their procedures`);
       }
       if (!Array.isArray(entry.facets) || !entry.facets.length) {
         problems.push(`${where}.facets must list its facets`);
@@ -638,22 +699,7 @@ function proceduresProblems(procedures, versions) {
         if (f.automation !== undefined && !AUTOMATION.includes(f.automation)) {
           problems.push(`${fa}.automation must be one of ${AUTOMATION.join(', ')}`);
         }
-        if (
-          f.tools !== undefined &&
-          (!Array.isArray(f.tools) || !f.tools.every((t) => TOOLS.includes(t)))
-        ) {
-          problems.push(`${fa}.tools must list tools of ${TOOLS.join(', ')}`);
-        }
-        if (
-          !Array.isArray(f.steps) ||
-          f.steps.length < 1 ||
-          f.steps.length > 8 ||
-          !f.steps.every(text)
-        ) {
-          problems.push(`${fa}.steps must list 1 to 8 steps, each a non-empty string`);
-        }
-        if (!text(f.passWhen)) problems.push(`${fa}.passWhen must be a non-empty string`);
-        if (!text(f.failWhen)) problems.push(`${fa}.failWhen must be a non-empty string`);
+        problems.push(...packProcedureProblems(f, fa));
       });
     }
   }

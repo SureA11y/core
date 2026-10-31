@@ -248,6 +248,26 @@ function packFacet(f, read, claims) {
   };
 }
 
+// A WCAG facet whose general procedure a pack's requirement replaces
+// (standard.procedures, replace): the pack's, in English, with its tools, or
+// the facet's where it names none, and procedureFrom the pack's name. Its
+// rules and variants stay: a finding still shows its own steps.
+function replaced(facet, own, read, pack) {
+  const tools = Array.isArray(own.tools)
+    ? own.tools
+        .filter((id) => TOOLS.includes(id))
+        .map((id) => ({ id, label: read.text(`tool_${id}`) || id }))
+    : facet.tools;
+  const { variants, ...rest } = facet;
+  return {
+    ...rest,
+    tools,
+    procedure: { steps: own.steps.slice(), passWhen: own.passWhen, failWhen: own.failWhen },
+    procedureFrom: pack.name,
+    variants
+  };
+}
+
 // A requirement of a pack's standard (standard.procedures, by version): the
 // first pack whose standard is `standard` (its key or name; any, when
 // none is given) and has the requirement, in `version` or else the latest
@@ -271,12 +291,16 @@ function packRequirement(packs, id, standard, version, read, packRules) {
     if (typeof entry.wcag === 'string') {
       const criterion = wcagCriterion(entry.wcag, read, packRules);
       if (!criterion) return null;
+      const replace = isObject(entry.replace) ? entry.replace : {};
+      const facets = criterion.facets.map((f) =>
+        hasOwn(replace, f.id) && !f.coveredBy ? replaced(f, replace[f.id], read, pack) : f
+      );
       return {
         ...head,
         wcag: entry.wcag,
-        complete: criterion.complete,
+        complete: isComplete(facets),
         rules: criterion.rules,
-        facets: criterion.facets
+        facets
       };
     }
     const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) =>
