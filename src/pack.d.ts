@@ -95,7 +95,9 @@ export interface PackProcedure {
 /**
  * One requirement's procedures: a WCAG criterion's, some of whose facets'
  * general procedures it may replace (by facet id; not a facet with
- * coveredBy), or facets of its own.
+ * coveredBy), or facets of its own. `title` names the requirement in a list,
+ * a checklist and a page of procedures; without it, the title the standard's
+ * rollups give the requirement, or only its number where none does.
  */
 export type PackRequirementProcedures =
   | { title?: string; wcag: string; replace?: Record<string, PackProcedure> }
