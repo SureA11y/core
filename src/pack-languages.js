@@ -29,8 +29,13 @@ const isText = (v) => typeof v === 'string' && v.trim() !== '';
 // A language tag, as a locale file is named: 'fr', 'pt-BR', 'zh-Hant'.
 const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 
-// The language the standard's own text is in, lower case.
-const sourceOf = (st) => (isObject(st) && isText(st.lang) ? st.lang.trim().toLowerCase() : 'en');
+// The language the standard's own text is in, lower case: a language tag,
+// or 'en' where it gives none (definePack refuses anything else, and a tag
+// can't name a property of Object.prototype).
+const sourceOf = (st) =>
+  isObject(st) && typeof st.lang === 'string' && TAG.test(st.lang.trim())
+    ? st.lang.trim().toLowerCase()
+    : 'en';
 
 // The standard's translations, by lower-case locale: { locale: { text: text } }.
 function translationsOf(st) {
