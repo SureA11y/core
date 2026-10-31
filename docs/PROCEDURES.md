@@ -124,6 +124,27 @@ It gives `null` for a standard or version it doesn't know, and otherwise:
 
 WCAG's criteria are those the version has, at its levels: 2.0 and 2.1 list 4.1.1 as a Level A criterion titled "Parsing", 2.2 doesn't list it. Each requirement is what `proceduresFor` gives for it, with the title and level of the version listed. A pack's requirements are those its standard's `procedures` give for the version, in number order (`1.9` before `1.10`).
 
+### Their languages
+
+`procedureLanguages` says which languages a standard's procedures can be read in, its own first, so an app's language picker offers only those, and says which are complete:
+
+```js
+const { procedureLanguages } = require('@surea11y/core');
+
+procedureLanguages();                                     // WCAG 2.2
+// [{ locale: 'en', complete: true, missing: 0 }, { locale: 'de', complete: true, missing: 0 }, …]
+procedureLanguages({ packs: [city], standard: 'city' });  // a pack's standard
+// [{ locale: 'en', complete: true, missing: 0 }, { locale: 'fr', complete: false, missing: 3 }]
+```
+
+It takes `listProcedures`' `standard`, `version` and `packs`, and gives `null` for a standard or version it doesn't know. Each language is one `listProcedures` reads the standard in: asked for it, `locale` is that language. `complete` is `true` where everything of the standard and version is in it, with nothing left in another language: core's procedures and the steps of its rules' findings, the tools' names, a page's words (`render_*`), and a pack's standard's own text. `missing` counts the texts that would be shown in another language, `0` where it is complete.
+
+- **WCAG and the best practices** can be read in each locale core ships procedures for, read from its dictionaries, English first. An earlier WCAG version's own title, such as 2.1's "Parsing" for 4.1.1, stays English, so 2.0 and 2.1 are complete only in English.
+- **A pack's standard that declares its languages** (`lang` or `translations`, [`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)) can be read in those alone, its own first: asked for another, it reads in its own. Each is complete where its translation gives every text of the version, a facet as a whole, and core's text it uses is in that locale too. For a locale core doesn't ship (`ca`), that is the pack's dictionary for it giving core's keys.
+- **A pack's standard that declares none** is English (its titles, `report.titleLang`), and core's text follows the locale asked for: English is complete, and core's other locales aren't, with `missing` counting the standard's own texts, which stay English.
+
+The packs' dictionaries add the locales they give core's procedures in. In a browser, `procedureLanguagesFrom(dictionaries, options)` from `@surea11y/core/procedures` reads the locales from the dictionaries passed in: an object's keys, or, for a function, `options.locales`.
+
 ### Groups
 
 WCAG's criteria are grouped under their principles and guidelines, as WCAG numbers them; a group of a pack's standard is one its `standard.groups` gives for the version, such as a theme or a chapter ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)). Each group has the ids of its own requirements, in the standard's order, and the groups under it. A group with no requirement listed, and none under it with any, is left out. A pack's requirement that no group names is still in `requirements`.
@@ -182,7 +203,7 @@ For a WCAG criterion, it gives each requirement of a pack's standard that restat
 
 ### In a browser
 
-`@surea11y/core/procedures` has the same, with the dictionaries passed in, as `proceduresFrom` takes them: `listProceduresFrom(dictionaries, options)`, `procedureChecklistFrom(dictionaries, options)`, `renderProceduresFrom(dictionaries, input, options)` ([below](#rendering-them)), and `relatedRequirements(requirement, options)`, which reads no dictionary.
+`@surea11y/core/procedures` has the same, with the dictionaries passed in, as `proceduresFrom` takes them: `listProceduresFrom(dictionaries, options)`, `procedureChecklistFrom(dictionaries, options)`, `procedureLanguagesFrom(dictionaries, options)` ([above](#their-languages)), `renderProceduresFrom(dictionaries, input, options)` ([below](#rendering-them)), and `relatedRequirements(requirement, options)`, which reads no dictionary.
 
 ### A pack with no procedures
 

@@ -36,10 +36,13 @@ const {
 } = require('./pack-review.js');
 
 const { reader } = require('./procedures-text.js');
-const { localeFor, translator } = require('./pack-languages.js');
+const { dictionaryFor } = require('./procedures-text.js');
+const { languagesOf, localeFor, translator } = require('./pack-languages.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+const isText = (v) => typeof v === 'string' && v.trim() !== '';
+const same = (read) => read;
 
 const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -296,15 +299,16 @@ const titleOf = (st, version, id, entry) =>
 // first of `locales` it has or else its own: its text, translated or as
 // written, and core's it uses, read in that locale. Where it declares none,
 // as it always was: its text as written, in English, and core's in
-// `locales`. { read, tr, locale }, once per standard.
-function readingFor(dictionaries, packs, locales) {
+// `locales`. { read, tr, locale }, once per standard; `wrap` takes each
+// reader made (procedureLanguagesFrom notes what they read).
+function readingFor(dictionaries, packs, locales, wrap = same) {
   const cache = new Map();
   return (st) => {
     if (!cache.has(st)) {
       const declared = st.lang !== undefined || st.translations !== undefined;
       const locale = declared ? localeFor(st, locales) : null;
       cache.set(st, {
-        read: reader(withPackReview(dictionaries, packs), declared ? locale : locales),
+        read: wrap(reader(withPackReview(dictionaries, packs), declared ? locale : locales)),
         tr: { ...translator(st, locale), declared },
         locale
       });
@@ -534,11 +538,12 @@ function filtered(requirement, f) {
 }
 
 // Every requirement of a standard, in its order, and its groups: the shared
-// work of listProceduresFrom and procedureChecklistFrom. null for a standard
-// or version none of them has.
-function listing(dictionaries, options) {
+// work of listProceduresFrom, procedureChecklistFrom and
+// procedureLanguagesFrom, whose `wrap` takes each reader made. null for a
+// standard or version none of them has.
+function listing(dictionaries, options, wrap = same) {
   const opts = isObject(options) ? options : {};
-  const read = reader(withPackReview(dictionaries, opts.packs), opts.locale);
+  const read = wrap(reader(withPackReview(dictionaries, opts.packs), opts.locale));
   const packRules = packRulesOf(opts.packs);
   const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : 'wcag';
   const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
@@ -586,7 +591,7 @@ function listing(dictionaries, options) {
   const version = versionOf(st, asked);
   if (!version) return null;
   // The standard in its one language, where it declares its languages.
-  const reading = readingFor(dictionaries, opts.packs, opts.locale)(st);
+  const reading = readingFor(dictionaries, opts.packs, opts.locale, wrap)(st);
   const requirements = keep(
     Object.keys(st.procedures[version])
       .sort(compareIds)
@@ -691,6 +696,180 @@ function procedureChecklistFrom(dictionaries, options) {
   return { ...head, items: [...items.values()], groups };
 }
 
+// A reader that notes each key whose text it gives, with itself, so the
+// locale that text comes from can be asked of it after.
+function noting(read, seen) {
+  const note = (key) => seen.push([read, key]);
+  return {
+    ...read,
+    text(key) {
+      note(key);
+      return read.text(key);
+    },
+    procedure(stem) {
+      const p = read.procedure(stem);
+      if (p) {
+        p.steps.forEach((_, i) => note(`${stem}step${i + 1}`));
+        note(`${stem}pass`);
+        note(`${stem}fail`);
+      }
+      return p;
+    }
+  };
+}
+
+// The locales the dictionaries hold, lower case: those of options.locales
+// where it is given (a function's dictionaries can't be listed), the keys
+// of an object's otherwise; and those the packs' dictionaries give.
+function dictionaryLocales(dictionaries, opts) {
+  const out = [];
+  const add = (tag) => {
+    const l = typeof tag === 'string' ? tag.trim().toLowerCase() : '';
+    if (l && !out.includes(l)) out.push(l);
+  };
+  if (opts.locales !== undefined) listOf(opts.locales).forEach(add);
+  else if (isObject(dictionaries)) Object.keys(dictionaries).forEach(add);
+  for (const pack of Array.isArray(opts.packs) ? opts.packs : []) {
+    if (isObject(pack) && isObject(pack.dictionaries)) Object.keys(pack.dictionaries).forEach(add);
+  }
+  return out;
+}
+
+// A pack's standard's own texts for a version, as they are shown, each
+// unit in one language or the other as a whole: its requirements' titles
+// and notes, its own facets and replacements, its groups' titles, its notes
+// and the titles of its rollups for the version. `title` marks the titles,
+// which report.titleLang says the language of where it declares none.
+function ownUnits(st, version) {
+  const units = [];
+  const add = (texts, title) => {
+    if (texts.length && texts.every(isText)) units.push({ texts, title });
+  };
+  const procedure = (p) =>
+    isObject(p) ? [...(Array.isArray(p.steps) ? p.steps : []), p.passWhen, p.failWhen] : [];
+  const entries = st.procedures[version];
+  for (const id of Object.keys(entries)) {
+    const entry = entries[id];
+    if (!isObject(entry)) continue;
+    const title = titleOf(st, version, id, entry);
+    if (isText(title)) add([title], true);
+    if (isText(entry.note)) add([entry.note], false);
+    if (typeof entry.wcag === 'string') {
+      for (const own of Object.values(isObject(entry.replace) ? entry.replace : {})) {
+        add(procedure(own), false);
+      }
+    } else {
+      for (const f of Array.isArray(entry.facets) ? entry.facets : []) {
+        if (isObject(f)) add([f.label, ...procedure(f)], false);
+      }
+    }
+  }
+  const walk = (groups) => {
+    for (const g of Array.isArray(groups) ? groups : []) {
+      if (!isObject(g)) continue;
+      add([g.title], true);
+      walk(g.groups);
+    }
+  };
+  walk(isObject(st.groups) ? st.groups[version] : null);
+  const notes = (isObject(st.notes) && Array.isArray(st.notes[version]) ? st.notes[version] : [])
+    .filter(isText)
+    .map((n) => n.trim());
+  add(notes, false);
+  let rollups;
+  try {
+    rollups = typeof st.composites === 'function' ? st.composites() : [];
+  } catch {
+    rollups = [];
+  }
+  for (const r of Array.isArray(rollups) ? rollups : []) {
+    const meta = isObject(r) && isObject(r.meta) ? r.meta : null;
+    if (!meta || !isText(meta.title)) continue;
+    const versions = (Array.isArray(meta.standardMappings) ? meta.standardMappings : [])
+      .filter((m) => isObject(m) && m.standard === st.standard && typeof m.version === 'string')
+      .map((m) => m.version);
+    if (!versions.length || versions.includes(version)) add([meta.title], true);
+  }
+  return units;
+}
+
+// The own texts of a pack's standard shown in another language than
+// `locale`, for a version.
+function ownMissing(st, version, locale) {
+  const declared = st.lang !== undefined || st.translations !== undefined;
+  const tr = translator(st, locale);
+  const titleLang =
+    isObject(st.report) && isText(st.report.titleLang)
+      ? st.report.titleLang.trim().toLowerCase()
+      : 'en';
+  const missing = new Set();
+  for (const { texts, title } of ownUnits(st, version)) {
+    const lang = declared ? tr.all(texts).lang : title ? titleLang : 'en';
+    if (lang !== locale) texts.forEach((t) => missing.add(t));
+  }
+  return missing.size;
+}
+
+/**
+ * The languages a standard's procedures can be read in, its own first
+ * (docs/PROCEDURES.md#their-languages): [{ locale, complete, missing }],
+ * exactly the locales listProceduresFrom honours for it, so asked for one
+ * it gives that `locale`. complete where everything of the standard and
+ * version is in that locale: core's procedures and tools' names, the page's
+ * words (render_*) and a pack's standard's own text; missing counts the
+ * texts that would be shown in another language. WCAG and the best
+ * practices, and a pack's standard that declares no languages, can be read
+ * in each locale the dictionaries hold (options.locales, where they are a
+ * function); a pack's standard that declares its languages in those, as
+ * docs/PACKS.md, "Languages", says. Takes listProceduresFrom's standard,
+ * version and packs; null for a standard or version none of them has.
+ */
+function procedureLanguagesFrom(dictionaries, options) {
+  const opts = isObject(options) ? options : {};
+  const base = {
+    standard: typeof opts.standard === 'string' && opts.standard ? opts.standard : 'wcag',
+    version: opts.version,
+    packs: opts.packs
+  };
+  const english = listing(dictionaries, { ...base, locale: 'en' });
+  if (!english) return null;
+  const { head } = english;
+  const core = head.standard === 'wcag' || head.standard === 'best-practice';
+  const [match] = core ? [] : packStandards(opts.packs, base.standard);
+  const st = match ? match.st : null;
+  const declared = !!st && (st.lang !== undefined || st.translations !== undefined);
+  // Its own language first: the standard's, or English.
+  const own = declared ? languagesOf(st)[0] : 'en';
+  const candidates = declared ? languagesOf(st) : dictionaryLocales(dictionaries, opts);
+  const locales = [own].concat(candidates.filter((l) => l !== own).sort(byId));
+  const renderKeys = Object.keys(dictionaryFor(dictionaries, 'en') || {}).filter((k) =>
+    k.startsWith('render_')
+  );
+  const out = [];
+  for (const locale of locales) {
+    const seen = [];
+    const found = listing(dictionaries, { ...base, locale }, (read) => noting(read, seen));
+    // Only a locale it is read in: one asked for that it would read in
+    // another is no choice.
+    if (!found || found.head.locale !== locale) continue;
+    const missing = new Set();
+    const langOf = (read, key) => read.localeOf(key) || 'en';
+    for (const [read, key] of seen) if (langOf(read, key) !== locale) missing.add(key);
+    for (const key of renderKeys) if (langOf(found.read, key) !== locale) missing.add(key);
+    let count = missing.size;
+    // An earlier WCAG version's own title, such as 2.1's "Parsing" for
+    // 4.1.1, stays English.
+    if (head.standard === 'wcag' && locale !== 'en') {
+      count += wcagCriteria(head.version).filter(
+        (c) => hasOwn(FACETS, c.sc) && FACETS[c.sc].title !== c.title
+      ).length;
+    }
+    if (st) count += ownMissing(st, head.version, locale);
+    out.push({ locale, complete: count === 0, missing: count });
+  }
+  return out;
+}
+
 /**
  * The requirements related to one, across WCAG and the packs' standards
  * (docs/PROCEDURES.md): for a WCAG criterion, each requirement of a pack's
@@ -758,6 +937,7 @@ const { renderProceduresFrom } = require('./procedures-render.js');
 module.exports = {
   listProceduresFrom,
   procedureChecklistFrom,
+  procedureLanguagesFrom,
   proceduresFrom,
   relatedRequirements,
   renderProceduresFrom

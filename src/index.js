@@ -178,7 +178,7 @@ function procedures(name, fallback) {
       console.warn(
         `[surea11y] ${name} reads the procedures from disk, in Node. In a browser bundle, ` +
           'use @surea11y/core/procedures (proceduresFrom, listProceduresFrom, ' +
-          'procedureChecklistFrom, relatedRequirements, renderProceduresFrom) with the dictionaries from ' +
+          'procedureChecklistFrom, procedureLanguagesFrom, relatedRequirements, renderProceduresFrom) with the dictionaries from ' +
           '@surea11y/core/procedures/<locale>.'
       );
     } catch {}
@@ -196,6 +196,10 @@ function listProcedures(options) {
 
 function procedureChecklist(options) {
   return procedures('procedureChecklist', null)(options);
+}
+
+function procedureLanguages(options) {
+  return procedures('procedureLanguages', null)(options);
 }
 
 function relatedRequirements(requirement, options) {
@@ -315,6 +319,7 @@ module.exports = {
   proceduresFor,
   listProcedures,
   procedureChecklist,
+  procedureLanguages,
   relatedRequirements,
   renderProcedures,
   flattenCrossFrameResult,
