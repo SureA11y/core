@@ -3,7 +3,7 @@
 How a person assesses each criterion by hand, criterion by criterion: what a scan can't decide, and what no rule tests at all. Core keeps these procedures in one place and gives them to whatever needs them:
 
 - an undecided finding's `howToCheck` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)), as it always has;
-- a manual assessment with no scan at all: every criterion's procedures, the whole standard at once ([below](#listing-them)), or a checklist of what to do ([below](#a-checklist));
+- a manual assessment with no scan at all: every criterion's procedures, the whole standard at once ([below](#listing-them)), or a checklist of what to do ([below](#a-checklist)), as a page or a document to work through ([below](#rendering-them));
 - a checklist for a manual review, made from a run;
 - the help a person needs to fill in a conformance report, criterion by criterion: what the scans covered, what is left, and how to check it;
 - the explanation of a criterion whose rules found nothing but do not cover all of it.
@@ -109,6 +109,8 @@ It gives `null` for a standard or version it doesn't know, and otherwise:
   standard: 'wcag',          // or 'best-practice', or a pack's standard's name ('EN 301 549')
   // key: 'en301549',        a pack's standard's key
   version: '2.2',            // null for the best practices
+  locale: 'en',              // the locale the text was read in
+  scope: { levels: ['A', 'AA'], tools: null, automation: null, rules: null }, // what shaped it
   requirements: [ /* each as proceduresFor gives it */ ],
   groups: [
     {
@@ -179,11 +181,174 @@ For a WCAG criterion, it gives each requirement of a pack's standard that restat
 
 ### In a browser
 
-`@surea11y/core/procedures` has the same, with the dictionaries passed in, as `proceduresFrom` takes them: `listProceduresFrom(dictionaries, options)`, `procedureChecklistFrom(dictionaries, options)`, and `relatedRequirements(requirement, options)`, which reads no dictionary.
+`@surea11y/core/procedures` has the same, with the dictionaries passed in, as `proceduresFrom` takes them: `listProceduresFrom(dictionaries, options)`, `procedureChecklistFrom(dictionaries, options)`, `renderProceduresFrom(dictionaries, input, options)` ([below](#rendering-them)), and `relatedRequirements(requirement, options)`, which reads no dictionary.
 
 ### A pack with no procedures
 
 A pack whose standard gives no `procedures` (one made for a core older than the procedures) changes nothing: `listProcedures` and `procedureChecklist` give `null` for its standard, `relatedRequirements` gives `[]`, and WCAG's procedures are the same with it as without it.
+
+## Rendering them
+
+`renderProcedures` turns what `listProcedures`, `procedureChecklist` or `proceduresFor` gives into a document a person reads or works through: one self-contained HTML page, which opens from disk with no server, network, font or script from elsewhere, or Markdown.
+
+```js
+const { listProcedures, procedureChecklist, renderProcedures } = require('@surea11y/core');
+const fs = require('node:fs');
+
+// A reference: how to assess every WCAG 2.2 A and AA criterion.
+fs.writeFileSync('wcag-22-aa.html', renderProcedures(listProcedures({ levels: ['A', 'AA'] })));
+
+// A worksheet: each check once, with a result and notes to record.
+fs.writeFileSync('wcag-22-aa-checklist.html', renderProcedures(procedureChecklist({ levels: ['A', 'AA'] })));
+
+// The same in Markdown, for a repository or a wiki.
+fs.writeFileSync('wcag-22-aa.md', renderProcedures(listProcedures({ levels: ['A', 'AA'] }), { format: 'markdown' }));
+```
+
+| Option | |
+|---|---|
+| `format` | `'html'` (the default) or `'markdown'`. Anything else throws a `TypeError`, as does an input none of the three calls gives. |
+| `locale` | The language of the page's words; by default, the one the procedures were read in (their `locale`). A single requirement from `proceduresFor` carries none, so pass it the locale you read it in. |
+| `title` | The page's title and heading; by default one naming the standard ("WCAG 2.2: manual checklist"). |
+| `variants` | `true` adds, under each facet of a list, the steps a scan's undecided finding gives for it, in a closed disclosure. |
+| `record` | `false` leaves out a checklist page's results and its script. |
+| `fragment` | `true` gives the page's content alone, with no document, style, script or `main` region, to put in a page of your own (see [below](#in-a-page-of-your-own)). |
+| `packs` | The packs the procedures were read with: their rules' translated steps, and the language their standard titles its requirements in (`standard.report.titleLang`). |
+
+The same input and options always give the same page: nothing in it depends on the time, the machine or the order of anything but the input.
+
+### A list
+
+A list's page is a reference for the standard: its title and scope (the levels and filters it was listed with), a table of contents of its groups (WCAG's principles and guidelines, or the groups of a pack's standard), and each requirement in its group with its level and what it restates or relates to. Each facet with a procedure of its own follows: what it checks, how much of it rules decide, the tools it needs, the steps, what passes and what fails, the rules that test it, and the technology facets its procedure also assesses. A single requirement from `proceduresFor` is a page of its own, with no contents.
+
+### A checklist: a worksheet
+
+A checklist's page is a worksheet. Each item is a procedure to follow once, in the group of its first requirement, with the requirements it serves; the rules and facets behind it, which only matter to someone joining it to a scan, are in a closed "Rules and facets" disclosure. Under each item, a person records a result (*Not checked*, *Passes*, *Fails*, *Does not apply*) and notes. The page:
+
+- counts the results as they are recorded, in a status message a screen reader announces;
+- keeps them in the browser (`localStorage`, keyed by the standard, version and title), so closing the page loses nothing, and says so; where the browser keeps nothing, it still works for the visit;
+- downloads them as JSON or CSV; and clears them, after asking a second time.
+
+The JSON has each item's result and notes, and each requirement's result rolled up from its items: it fails where one of its items fails, is `open` where one is not checked yet, is `notApplicable` where none applies, and passes otherwise.
+
+```json
+{
+  "title": "WCAG 2.2: manual checklist",
+  "standard": "wcag",
+  "key": null,
+  "version": "2.2",
+  "exportedAt": "2026-11-02T10:30:00.000Z",
+  "items": [
+    {
+      "key": "1.1.1/text-alternative-mechanism",
+      "facet": "text-alternative-mechanism",
+      "label": "Text alternative mechanism present",
+      "requirements": ["1.1.1"],
+      "outcome": "fail",
+      "notes": "The logo has no alt."
+    }
+  ],
+  "requirements": [{ "id": "1.1.1", "outcome": "fail" }]
+}
+```
+
+The CSV has one row per item (`key`, `facet`, `label`, `requirements`, `outcome`, `notes`), in UTF-8 with a byte order mark, so a spreadsheet opens it with its accents.
+
+### Language
+
+The page's own words (headings, labels, the worksheet) are in the procedures dictionaries, under `render_*`, in every locale core ships. What only English has is marked `lang="en"` on a page in another language, as WCAG 3.1.2 asks: the facets' labels, WCAG's criteria and guidelines' titles, a pack's own procedures, and a general procedure not yet translated. A pack's titles are marked with the language its standard gives (`report.titleLang`), when the packs are passed. A screen reader then reads each part in its language.
+
+### The page itself
+
+The page is held to core's own rules, in jsdom and in Chromium, in light and dark mode: its tests scan it with the `wcag22-aa` profile and find nothing failing. It has a link to skip to the procedures, one heading level at a time, labelled regions, real lists and fieldsets, visible focus, and no information in color alone. It follows the reader's light or dark preference and a forced-colors (high-contrast) theme, fits a phone's width, and prints without its contents, buttons and disclosures.
+
+### In a page of your own
+
+`fragment: true` gives the content alone, in a `<div class="surea11y-procedures" lang="…">`, with no style or script, for a page that brings its own. It keeps the page's classes (`header.page`, `nav.toc`, `section.group`, `article.req`, `article.item`, `section.facet`, `ol.steps`, `dl.verdict`, `.badge`, `.badges`, `.meta`, `.rules`, `.covers`, `.note`), and its headings start at `h1`; it records no results.
+
+### In a browser
+
+`renderProceduresFrom(dictionaries, input, options)` from `@surea11y/core/procedures` does the same with the dictionaries passed in, as the other calls there take them. Pass the locales the page may speak:
+
+```js
+import { procedureChecklistFrom, renderProceduresFrom } from '@surea11y/core/procedures';
+import en from '@surea11y/core/procedures/en';
+import fr from '@surea11y/core/procedures/fr';
+
+const dictionaries = { en, fr };
+const checklist = procedureChecklistFrom(dictionaries, { levels: ['A', 'AA'], locale: 'fr' });
+const html = renderProceduresFrom(dictionaries, checklist);
+window.open(URL.createObjectURL(new Blob([html], { type: 'text/html' })));
+```
+
+### Uses
+
+**A manual audit, with no scan.** An auditor works through the worksheet of the standard the audit is against, records each result and note, and downloads the JSON for the report: each requirement's result is already rolled up.
+
+```js
+const checklist = procedureChecklist({ version: '2.2', levels: ['A', 'AA'] });
+fs.writeFileSync('audit-worksheet.html', renderProcedures(checklist, { title: 'Accessibility audit: example.com' }));
+```
+
+**What a scan leaves to a person.** Next to a scan's HTML report, the checks no rule decides in full, for the team to do by hand:
+
+```js
+const left = procedureChecklist({ levels: ['A', 'AA'], automation: ['manual', 'partial'] });
+fs.writeFileSync('reports/manual-checks.html', renderProcedures(left, { title: 'What the scan leaves to you' }));
+```
+
+In CI, publish it with the scan's reports, as an artifact:
+
+```yaml
+- run: node scripts/manual-checks.js
+- uses: actions/upload-artifact@v4
+  with:
+    name: accessibility
+    path: reports/
+```
+
+**A test run's attachment.** A Playwright test that scans a page can attach the checks its rules don't decide, so they sit next to the scan in the test report:
+
+```js
+test('home page', async ({ page }, testInfo) => {
+  // ... scan the page ...
+  const left = procedureChecklist({ levels: ['A', 'AA'], automation: ['manual', 'partial'] });
+  await testInfo.attach('manual-checks.html', {
+    body: renderProcedures(left, { record: false }),
+    contentType: 'text/html'
+  });
+});
+```
+
+**A standard other than WCAG, in its language.** A pack's standard renders in its own numbering and groups, its text in the reader's language where it has it:
+
+```js
+const en301549 = require('@surea11y/pack-en301549');
+const options = { packs: [en301549], standard: 'en301549', version: 'V4.1.1', locale: 'fr' };
+fs.writeFileSync('en-301-549.html', renderProcedures(procedureChecklist(options), { packs: [en301549] }));
+```
+
+**A session with a screen reader user.** Only what needs a screen reader, for a session with a person who uses one every day:
+
+```js
+const sr = listProcedures({ levels: ['A', 'AA'], tools: 'screen-reader' });
+fs.writeFileSync('screen-reader-session.html', renderProcedures(sr, { title: 'Screen reader session' }));
+```
+
+**Documentation.** One Markdown file per standard in a documentation site or a repository, regenerated when core is updated, so a team reads the same procedures its tools use:
+
+```js
+for (const version of ['2.1', '2.2']) {
+  const md = renderProcedures(listProcedures({ version, levels: ['A', 'AA'] }), { format: 'markdown' });
+  fs.writeFileSync(`docs/accessibility/wcag-${version}.md`, md);
+}
+```
+
+**One criterion, where it is needed.** A tool that shows a finding can link to, or show, how to assess its whole criterion:
+
+```js
+const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { locale: 'de', fragment: true });
+```
 
 ## The shape
 
@@ -231,7 +396,8 @@ Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), h
 | File | Holds |
 |---|---|
 | [`src/procedures/registry.js`](../src/procedures/registry.js) | By criterion and facet: the tools each general procedure needs, and the reason codes under it, by rule. |
-| `src/i18n/procedures/<locale>.json` | The text: a general procedure under `wcag_<criterion>_<facet>_step<n>`, `_pass` and `_fail` (`best-practice_<facet>_…`), a variant under its rule's `<prefix>_review_<CODE>_…`, a tool under `tool_<id>`. |
+| `src/i18n/procedures/<locale>.json` | The text: a general procedure under `wcag_<criterion>_<facet>_step<n>`, `_pass` and `_fail` (`best-practice_<facet>_…`), a variant under its rule's `<prefix>_review_<CODE>_…`, a tool under `tool_<id>`, and the words of a page made from them under `render_*`. Every locale has every tool and every page word. |
+| [`src/procedures-render.js`](../src/procedures-render.js) | Rendering them, as HTML or Markdown. |
 | `src/i18n/review/<locale>.json` | Generated: the variants alone, the review dictionaries `howToCheck` reads (`@surea11y/core/review/<locale>`). |
 | `src/procedures/rules.json` | Generated: each core rule's prefix, criteria and facets, so the browser form needs no rule. |
 

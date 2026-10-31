@@ -12,7 +12,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`LEANS.md`](./LEANS.md) | Which way an undecided finding points: reading, using and trusting a lean. |
 | [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) | How rule results roll up to WCAG criteria, and why a criterion whose rules all pass is still `cantTell`. |
 | [`LIMITATIONS.md`](./LIMITATIONS.md) | What a scan can't establish, and what to do about it. |
-| [`PROCEDURES.md`](./PROCEDURES.md) | How a person assesses each criterion by hand: its facets, procedures, tools and the rules that cover it. |
+| [`PROCEDURES.md`](./PROCEDURES.md) | How a person assesses each criterion by hand: its facets, procedures, tools and the rules that cover it; a whole standard listed, a checklist, and either rendered as a page or a worksheet to work through. |
 | [`LAYOUT_MEASUREMENT.md`](./LAYOUT_MEASUREMENT.md) | How the contrast and target-size rules measure a rendered page. |
 | [`I18N.md`](./I18N.md) | Results in another language, and adding a language. |
 | [`TROUBLESHOOTING.md`](./TROUBLESHOOTING.md) | Common questions and errors. |

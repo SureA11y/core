@@ -23,6 +23,7 @@ const {
   occurrenceOutcome,
   reviewGroupOf
 } = require('./scan-result.js');
+const { esc, jsonForScript } = require('./html-text.js');
 
 // One status palette, mapped 1:1 onto this engine's own 4 outcomes. Each
 // color is also the text of a chip or a tile on its own bg, so each meets
@@ -131,47 +132,9 @@ function createUi(engine) {
   return { tr, trStrong, num, pct, outcomeInfo, severity, uiLocale, contentLocale, english };
 }
 
-// Text for the page: HTML's special characters as entities, and control
-// characters (U+0000 and the like) and the bidi controls that reorder what
-// follows (U+202A-U+202E, U+2066-U+2069) left out, so a rule's or a pack's
-// text shows as written.
-function esc(s) {
-  return withoutControls(String(s == null ? '' : s)).replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]
-  );
-}
-
 // A rollup's rules as a list, whatever a stored result holds there.
 function idList(value) {
   return Array.isArray(value) ? value.map(String) : typeof value === 'string' ? [value] : [];
-}
-
-// Neutralizes '<' so embedded JSON can never break out of its <script> tag,
-// even if an occurrence's own html snippet literally contains "</script>".
-// Strings lose the characters esc leaves out, as the page shows them too.
-function jsonForScript(value) {
-  return JSON.stringify(value, (key, v) =>
-    typeof v === 'string' ? withoutControls(v) : v
-  ).replace(/</g, '\\u003c');
-}
-
-// Text without control characters (newlines and tabs kept) and bidi controls.
-function withoutControls(s) {
-  let out = '';
-  for (const ch of s) {
-    const code = ch.codePointAt(0);
-    if (
-      (code < 0x20 && ch !== '\n' && ch !== '\t' && ch !== '\r') ||
-      code === 0x7f ||
-      (code >= 0x202a && code <= 0x202e) ||
-      (code >= 0x2066 && code <= 0x2069)
-    ) {
-      continue;
-    }
-    out += ch;
-  }
-  return out;
 }
 
 function fmtPct(n, total, ui) {

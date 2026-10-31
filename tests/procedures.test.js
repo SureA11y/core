@@ -159,8 +159,11 @@ test('the text has no key the registry doesn’t list', () => {
   const stems = [...new Set(ALL.map(stemOf)), ...PROCEDURE_STEMS];
   const tools = new Set(TOOLS.map((t) => `tool_${t}`));
   const en = read(PROCEDURES_DIR, 'en');
+  // Besides the procedures: the tools' names and the words of a page made
+  // from them (src/procedures-render.js), render_*.
   const orphans = Object.keys(en).filter(
-    (key) => !tools.has(key) && !stems.some((stem) => isTextOf(stem, key))
+    (key) =>
+      !tools.has(key) && !key.startsWith('render_') && !stems.some((stem) => isTextOf(stem, key))
   );
   assert.deepEqual(orphans, []);
   for (const t of tools) assert.ok(typeof en[t] === 'string' && en[t].trim(), `${t} missing`);
@@ -187,6 +190,25 @@ test('every locale has every variant’s text, and no key English lacks', () => 
       [],
       `${l} has keys English doesn’t`
     );
+  }
+});
+
+// A page made from the procedures speaks the reader's language throughout:
+// every locale has the tools' names and every word of the page.
+test('every locale has the tools’ names and the words of a page', () => {
+  const en = read(PROCEDURES_DIR, 'en');
+  const keys = Object.keys(en).filter(
+    (key) => key.startsWith('render_') || key.startsWith('tool_')
+  );
+  assert.ok(keys.length > 40);
+  for (const l of LOCALES) {
+    const dict = read(PROCEDURES_DIR, l);
+    for (const key of keys) {
+      assert.ok(typeof dict[key] === 'string' && dict[key].trim(), `${l}: ${key}`);
+      // The same placeholders as English, so nothing is left unfilled.
+      const names = (text) => (text.match(/\{\{\w+\}\}/g) || []).sort();
+      assert.deepEqual(names(dict[key]), names(en[key]), `${l}: ${key}`);
+    }
   }
 });
 

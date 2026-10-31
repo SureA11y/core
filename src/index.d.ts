@@ -1170,6 +1170,15 @@ export interface ProcedureList {
   key?: string;
   /** The version listed; null for the best practices. */
   version: string | null;
+  /** The locale the text was read in: the first of options.locale a dictionary was given for, or 'en'. */
+  locale: string;
+  /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
+  scope: {
+    levels: string[] | null;
+    tools: string[] | null;
+    automation: string[] | null;
+    rules: string[] | null;
+  };
   /**
    * Each requirement as proceduresFor gives it; with filters, only the
    * matching facets (a technology facet keeps the one it is covered by), and
@@ -1205,6 +1214,15 @@ export interface ProcedureChecklist {
   standard: string;
   key?: string;
   version: string | null;
+  /** The locale the text was read in: the first of options.locale a dictionary was given for, or 'en'. */
+  locale: string;
+  /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
+  scope: {
+    levels: string[] | null;
+    tools: string[] | null;
+    automation: string[] | null;
+    rules: string[] | null;
+  };
   items: ProcedureChecklistItem[];
   groups: ProcedureGroup[];
 }
@@ -1232,6 +1250,36 @@ export interface RelatedRequirementsOptions {
   /** For a pack's requirement: a version of its standard; the latest that has it by default. */
   version?: string;
 }
+
+export interface RenderProceduresOptions {
+  /** 'html' (the default): one self-contained page; or 'markdown'. */
+  format?: 'html' | 'markdown';
+  /** The page's words in this locale; by default the one the procedures were read in. */
+  locale?: string | readonly string[] | null;
+  /** The page's title; by default one naming the standard. */
+  title?: string;
+  /** A list: under each facet, the steps a scan's undecided finding gives (its variants). */
+  variants?: boolean;
+  /** A checklist in HTML: false for a page without results to record. */
+  record?: boolean;
+  /** HTML: the page's content alone, with no document, style or script, to put in a page of one's own. */
+  fragment?: boolean;
+  /** The packs the procedures were read with: their rules' steps and their titles' language. */
+  packs?: readonly object[];
+}
+
+/**
+ * Procedures as a document (docs/PROCEDURES.md#rendering-them): what
+ * listProcedures, procedureChecklist or proceduresFor gives, as one
+ * self-contained HTML page or as Markdown. A checklist page records a result
+ * and notes per item, kept in the browser and downloaded as JSON or CSV.
+ * Throws a TypeError for anything else. In a browser bundle it warns once
+ * and returns null: use renderProceduresFrom from @surea11y/core/procedures.
+ */
+export function renderProcedures(
+  input: ProcedureList | ProcedureChecklist | Procedures,
+  options?: RenderProceduresOptions
+): string;
 
 /**
  * Every requirement of a standard, in its order and groups (docs/PROCEDURES.md),
