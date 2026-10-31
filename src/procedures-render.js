@@ -299,6 +299,7 @@ const STYLE = `
   dl.verdict dt { font-weight: 600; }
   dl.verdict dd { margin: 0; }
   .rules, .covers, .note { font-size: 13.5px; color: var(--muted); margin: 6px 0 0; }
+  .req-note { margin: 6px 0 0; }
   .rules code, .covers code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--soft); padding: 1px 5px; border-radius: 4px; color: var(--fg); }
   details.variants { margin-top: 10px; font-size: 14px; }
   details.variants summary { cursor: pointer; color: var(--accent); }
@@ -576,7 +577,7 @@ ${extra.join('\n')}${variantsHtml(f)}
       r.title ? `<span${langAttr(m.titleLang)}>${esc(r.title)}</span>` : ''
     }</${heading(level)}>
 ${meta.length ? `<p class="meta">${meta.join('')}</p>` : ''}
-${facets.join('\n')}
+${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${facets.join('\n')}
 </article>`;
   };
 
@@ -877,6 +878,7 @@ function renderMarkdown(m, options) {
       meta.push(t('render_relatesTo', { criteria: r.relatesTo.join(', ') }));
     }
     if (meta.length) lines.push(`*${meta.map(md).join(' · ')}*`, '');
+    if (r.note) lines.push(md(r.note), '');
     for (const f of r.facets) {
       if (f.coveredBy && r.facets.some((x) => x.id === f.coveredBy)) continue;
       const covered = r.facets.filter((x) => x.coveredBy === f.id);

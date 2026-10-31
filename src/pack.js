@@ -742,8 +742,19 @@ function proceduresProblems(procedures, versions) {
       if (entry.title !== undefined && !text(entry.title)) {
         problems.push(`${where}.title must be a non-empty string`);
       }
+      if (entry.note !== undefined && !text(entry.note)) {
+        problems.push(`${where}.note must be a non-empty string`);
+      }
+      // A requirement with nothing to assess, such as a clause the version
+      // leaves void, says so in its note, with no wcag or facets.
+      if (entry.wcag === undefined && entry.facets === undefined && text(entry.note)) {
+        if (entry.relatesTo !== undefined || entry.replace !== undefined) {
+          problems.push(`${where}: a requirement with only a note has no relatesTo or replace`);
+        }
+        continue;
+      }
       if ((entry.wcag === undefined) === (entry.facets === undefined)) {
-        problems.push(`${where} must give either wcag or facets`);
+        problems.push(`${where} must give either wcag or facets, or only a note`);
         continue;
       }
       if (entry.wcag !== undefined) {

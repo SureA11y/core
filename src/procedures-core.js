@@ -288,8 +288,14 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       id,
       version: v,
       title: titleOf(st, v, id, entry),
-      level: null
+      level: null,
+      // What the standard's procedures say of the requirement, in English.
+      ...(typeof entry.note === 'string' && entry.note.trim() ? { note: entry.note.trim() } : {})
     };
+    // A requirement with only a note, such as a void clause: nothing to assess.
+    if (typeof entry.wcag !== 'string' && !Array.isArray(entry.facets)) {
+      return head.note ? { ...head, complete: true, rules: [], facets: [] } : null;
+    }
     // What its procedures say it fails: the standard's name and the
     // requirement ('EN 301 549 9.1.4.3').
     const label = `${st.standard} ${id}`;

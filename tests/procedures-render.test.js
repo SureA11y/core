@@ -583,3 +583,68 @@ test("a pack's standard notes are in its list, checklist and page header", () =>
     /standard\.notes\.2\.0/
   );
 });
+
+test('a requirement with only a note, such as a void clause, is listed with its note', () => {
+  const voided = definePack({
+    name: 'stdv-pack',
+    version: '1.0.0',
+    namespace: 'stdv',
+    core: '*',
+    standard: {
+      key: 'stdv',
+      standard: 'Std V',
+      versions: ['1.0'],
+      ruleTag: 'stdv',
+      mappingsFor: () => [],
+      procedures: {
+        '1.0': {
+          1.1: { title: 'Images', wcag: '1.1.1' },
+          1.2: { title: 'Parsing', note: 'This clause is void: do not test it.' }
+        }
+      }
+    }
+  });
+  const opts = { packs: [voided], standard: 'stdv' };
+  const r = proceduresFor('1.2', opts);
+  assert.equal(r.note, 'This clause is void: do not test it.');
+  assert.deepEqual(r.facets, []);
+  assert.equal(r.complete, true);
+  const list = listProcedures(opts);
+  assert.deepEqual(
+    list.requirements.map((x) => x.id),
+    ['1.1', '1.2']
+  );
+  const d = doc(renderProcedures(list));
+  assert.equal(
+    d.querySelector('article#r-1-2 .req-note').textContent,
+    'This clause is void: do not test it.'
+  );
+  assert.ok(
+    renderProcedures(list, { format: 'markdown' })
+      .split('\n')
+      .includes('This clause is void: do not test it.')
+  );
+  // A checklist has nothing to do for it, and a filter leaves it out.
+  assert.ok(procedureChecklist(opts).items.every((i) => !i.requirements.includes('1.2')));
+  assert.ok(
+    !listProcedures({ ...opts, tools: 'keyboard' }).requirements.some((x) => x.id === '1.2')
+  );
+  const bad = (entry) => () =>
+    definePack({
+      name: 'stdw-pack',
+      version: '1.0.0',
+      namespace: 'stdw',
+      core: '*',
+      standard: {
+        key: 'stdw',
+        standard: 'Std W',
+        versions: ['1.0'],
+        ruleTag: 'stdw',
+        mappingsFor: () => [],
+        procedures: { '1.0': { 1.1: entry } }
+      }
+    });
+  assert.throws(bad({ title: 'Parsing' }), /either wcag or facets, or only a note/);
+  assert.throws(bad({ title: 'Parsing', note: ' ' }), /note must be a non-empty string/);
+  assert.throws(bad({ title: 'Parsing', note: 'Void.', relatesTo: ['4.1.2'] }), /only a note/);
+});
