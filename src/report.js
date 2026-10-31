@@ -503,10 +503,18 @@ function scanOutcomes(rollups, left) {
 function renderManualChecks(left, rollups, standard, ui) {
   if (!left || !left.requirements.length) return '';
   const OUTCOME_INFO = ui.outcomeInfo;
-  const pageIsEnglish = /^en(-|$)/i.test(ui.uiLocale);
-  const en = (isEnglish) => (isEnglish && !pageIsEnglish ? ' lang="en"' : '');
-  const titleLang = left.standard === 'wcag' ? 'en' : (standard && standard.titleLang) || null;
-  const titleAttr = titleLang && titleLang !== ui.uiLocale ? ` lang="${esc(titleLang)}"` : '';
+  // Each text says its language: marked where it isn't the report's (a text
+  // the locale lacks, or a pack's standard read in its own language).
+  const base = (tag) =>
+    String(tag || '')
+      .toLowerCase()
+      .split('-')[0];
+  const langAttr = (lang) =>
+    lang && base(lang) !== base(ui.uiLocale) ? ` lang="${esc(lang)}"` : '';
+  // A pack's titles are in the language its standard reads in, or else the
+  // one its report.titleLang gives.
+  const titleLang = (standard && standard.titleLang) || null;
+  const titleAttr = (r) => langAttr(r.titleLang || (left.standard === 'wcag' ? null : titleLang));
   const outcomes = scanOutcomes(rollups, left);
   const checks = left.requirements.reduce((n, r) => n + r.facets.length, 0);
   const name =
@@ -537,25 +545,21 @@ function renderManualChecks(left, rollups, standard, ui) {
         )}</span>`;
     const facets = r.facets.map((f) => {
       const tools = f.tools.length
-        ? f.tools.map((t) => `<span${en(t.lang === 'en')}>${esc(t.label)}</span>`).join(', ')
+        ? f.tools.map((t) => `<span${langAttr(t.lang)}>${esc(t.label)}</span>`).join(', ')
         : esc(ui.tr('report_manualChecks_toolsBrowser'));
       const steps = f.procedure.steps.map((x) => `<li>${esc(x)}</li>`).join('');
       return `<div class="manual-facet">
-          <p class="manual-label"><strong${en(true)}>${esc(f.label)}</strong></p>
+          <p class="manual-label"><strong${langAttr(f.labelLang)}>${esc(f.label)}</strong></p>
           <p class="manual-meta">${esc(ui.tr(`report_manualChecks_automation_${f.automation}`))} · ${esc(
             ui.tr('report_manualChecks_tools', { tools: '' })
           ).replace('', tools)}</p>
-          <ol${en(f.procedureLang === 'en')}>${steps}</ol>
-          <p><strong>${esc(ui.tr('report_manualChecks_passWhen'))}</strong> <span${en(
-            f.procedureLang === 'en'
-          )}>${esc(f.procedure.passWhen)}</span></p>
-          <p><strong>${esc(ui.tr('report_manualChecks_failWhen'))}</strong> <span${en(
-            f.procedureLang === 'en'
-          )}>${esc(f.procedure.failWhen)}</span></p>
+          <ol${langAttr(f.procedureLang)}>${steps}</ol>
+          <p><strong>${esc(ui.tr('report_manualChecks_passWhen'))}</strong> <span${langAttr(f.procedureLang)}>${esc(f.procedure.passWhen)}</span></p>
+          <p><strong>${esc(ui.tr('report_manualChecks_failWhen'))}</strong> <span${langAttr(f.procedureLang)}>${esc(f.procedure.failWhen)}</span></p>
         </div>`;
     });
     return `<details class="manual-req">
-      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr}>${esc(
+      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr(r)}>${esc(
         r.title || ''
       )}</span> ${scan} <span class="card-count">${esc(
         ui.tr('report_manualChecks_count', { count: ui.num(r.facets.length) })

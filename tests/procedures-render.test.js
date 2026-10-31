@@ -167,9 +167,16 @@ test('in another language, its words are the locale’s and the English text say
   assert.equal(d.title, 'WCAG 2.2 : liste de vérification manuelle');
   assert.equal(d.querySelector('.skip').textContent, 'Aller aux procédures');
   const item = d.querySelector('article.item');
-  // The facet's label and its general procedure are in English only.
-  assert.equal(item.querySelector('h3, h4, h5').getAttribute('lang'), 'en');
-  assert.equal(item.querySelector('ol.steps').getAttribute('lang'), 'en');
+  // The facet's label and its general procedure are French, with no mark.
+  assert.equal(item.querySelector('h3, h4, h5').getAttribute('lang'), null);
+  assert.equal(item.querySelector('ol.steps').getAttribute('lang'), null);
+  assert.equal(d.querySelector('.surea11y-procedures [lang="en"]'), null);
+  // A title only English has is marked: 4.1.1 as WCAG 2.1 names it.
+  const v21 = doc(renderProcedures(listProcedures({ version: '2.1', levels: 'A', locale: 'fr' })));
+  const parsing = [...v21.querySelectorAll('article.req h4 span[lang]')].find(
+    (s) => s.textContent === 'Parsing'
+  );
+  assert.equal(parsing && parsing.getAttribute('lang'), 'en');
   // The page's own words and the tools' names are French, with no mark.
   assert.match(item.querySelector('.badges').textContent, /Outils : Les outils de développement/);
   assert.equal(item.querySelector('.badges [lang]'), null);
@@ -405,10 +412,10 @@ test('one requirement is a page of its own, with no groups', () => {
   // One requirement doesn't say the locale it was read in: the page is told.
   const d = doc(renderProcedures(proceduresFor('1.4.12', { locale: 'es' }), { locale: 'es' }));
   assert.equal(d.documentElement.lang, 'es');
-  assert.equal(d.title, 'Cómo evaluar WCAG 1.4.12 Text Spacing');
+  assert.equal(d.title, 'Cómo evaluar WCAG 1.4.12 Espaciado del texto');
   assert.equal(d.querySelector('nav.toc'), null);
   assert.equal(d.querySelectorAll('article.req').length, 1);
-  assert.equal(d.querySelector('article.req > h2').textContent, '1.4.12 Text Spacing');
+  assert.equal(d.querySelector('article.req > h2').textContent, '1.4.12 Espaciado del texto');
 });
 
 test('the best practices are headed by their title, with no number', () => {
@@ -521,9 +528,10 @@ test('a list or checklist starts with "Before you start"; one requirement does n
   assert.equal(doc(renderProcedures(proceduresFor('1.4.3'))).querySelector('section.before'), null);
   const md = renderProcedures(listProcedures(AA), { format: 'markdown' }).split('\n');
   assert.ok(md.includes('## Before you start'));
-  // English first: a French page marks it as English.
+  // On a French page, it is French.
   const fr = doc(renderProcedures(listProcedures({ ...AA, locale: 'fr' })));
-  assert.equal(fr.querySelector('section.before h2').lang, 'en');
+  assert.equal(fr.querySelector('section.before h2').textContent, 'Avant de commencer');
+  assert.equal(fr.querySelector('section.before [lang]'), null);
 });
 
 test('the header says Level AAA is advisory, and the best practices count against nothing', () => {

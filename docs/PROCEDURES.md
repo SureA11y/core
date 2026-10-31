@@ -64,9 +64,9 @@ A pack's standard can say how a person assesses its requirements ([`PACKS.md`](.
 proceduresFor('9.1.4.3', { packs: [en301549], standard: 'en301549', version: 'V4.1.1', locale: 'fr' });
 ```
 
-`standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in English.
+`standard` is the pack's standard by key or name (`'en301549'` or `'EN 301 549'`); without it, a WCAG criterion of that number wins, then the first pack that has the requirement. `version` defaults to the latest that has it. A requirement that restates a WCAG criterion gives that criterion's facets, with `wcag` naming it; one of the pack's own gives its facets, in its standard's language. A standard that declares its languages is read in one of them, core's procedures included ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures), "Languages").
 
-A requirement that restates a criterion may replace the general procedure of some of its facets with the pack's own, in English (`replace`, [`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)). Read as the requirement, such a facet has the pack's `procedure` and `tools`, and `procedureFrom` names the pack; its `rules` and `variants` are core's and the packs', as they are by criterion. Read as the WCAG criterion, it is core's: a pack never changes what `proceduresFor('1.4.3')` gives.
+A requirement that restates a criterion may replace the general procedure of some of its facets with the pack's own (`replace`, [`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)). Read as the requirement, such a facet has the pack's `procedure` and `tools`, and `procedureFrom` names the pack; its `rules` and `variants` are core's and the packs', as they are by criterion. Read as the WCAG criterion, it is core's: a pack never changes what `proceduresFor('1.4.3')` gives.
 
 Read as a pack's requirement, the procedures carry the pack's identity: `standard` is the pack's standard's name, `id` the requirement as the standard numbers it, `version` the standard's version, and `title` the requirement's wording; `wcag` names the criterion it restates, as a cross-reference. The title is the one the requirement's entry in `standard.procedures` gives, which a pack is expected to write; without it, the one the standard's rollups name the requirement by (`composites()`), and otherwise `null`: a list, a checklist and a page then show the requirement by its number alone. A general procedure says what fails as the requirement it is read as: "which fails WCAG 1.4.3" read as the criterion, "which fails EN 301 549 9.1.4.3" read as the clause that restates it. A variant, the steps of one rule's finding, keeps naming WCAG, as the finding does.
 
@@ -258,7 +258,7 @@ The CSV has one row per item (`key`, `facet`, `label`, `requirements`, `outcome`
 
 ### Language
 
-The page's own words (headings, labels, the worksheet) are in the procedures dictionaries, under `render_*`, in every locale core ships. What only English has is marked `lang="en"` on a page in another language, as WCAG 3.1.2 asks: the facets' labels, WCAG's criteria and guidelines' titles, a pack's own procedures, and a general procedure not yet translated. A pack's titles are marked with the language its standard gives (`report.titleLang`), when the packs are passed. A screen reader then reads each part in its language.
+The page's own words (headings, labels, the worksheet) are in the procedures dictionaries, under `render_*`, in every locale core ships. Core's procedures, the facets' labels and WCAG's principles, guidelines and criteria are in every locale core ships too, the names as each language's published translation of WCAG gives them. What is in another language than the page's is marked with it (`lang`), as WCAG 3.1.2 asks: a criterion's title as an earlier WCAG gives it ("Parsing" for 4.1.1 in WCAG 2.1), any text a locale lacks, and a pack's own text that its standard doesn't give in the page's language (in its `lang`, English where it declares none). A pack's titles in a standard that declares no language are marked with the one its `report.titleLang` gives, when the packs are passed. A pack's standard that declares its languages is read in one of them, and the page is in that language ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures), "Languages"). A screen reader then reads each part in its language.
 
 ### The page itself
 
@@ -361,6 +361,7 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
   // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement that restates a criterion,
   // relatesTo: ['1.3.1'] on one of its own that relates to some
   title: 'Text Spacing',
+  // titleLang, note and noteLang on a pack's requirement: their language
   level: 'AA',                   // null for best practices
   complete: true,                // every facet has a general procedure
   rules: ['avoid-inline-spacing', 'text-spacing-content-loss'], // the rules that test it (wcagSc)
@@ -375,7 +376,9 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
         { id: 'keyboard', label: 'A keyboard' }
       ],
       procedure: { steps: ['…'], passWhen: '…', failWhen: '…' }, // or null
-      // procedureFrom: '@acme/pack-city', where a pack's requirement replaces it
+      // procedureFrom: '@acme/pack-city', where a pack's requirement replaces it,
+      //   with procedureLang the language its procedure is in
+      // lang: 'fr', on a pack's own facet: the language of its label and procedure
       // coveredBy: 'text-alternative-mechanism', on a technology facet
       variants: [
         { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' }
@@ -385,7 +388,7 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
 }
 ```
 
-A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in English for now.
+A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in the locale read, like the procedures: a facet's `label`, a criterion's `title`, and the titles of WCAG's principles and guidelines in a list's `groups`. A criterion's title as WCAG 2.0 or 2.1 gives it, where it differs from 2.2's, stays English. A pack's requirement, own facet, replacement, group and notes say the language their text is in (`titleLang`, `noteLang`, `lang`, `procedureLang`, a group's `titleLang`, a list's `notesLang`) where the pack's standard declares its languages.
 
 `@surea11y/core/procedures/<locale>` is plain JSON, key to text. Its keys are covered as `proceduresFrom` reads them; its wording is not.
 

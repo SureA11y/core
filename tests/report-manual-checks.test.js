@@ -93,15 +93,17 @@ test('manualChecks: false leaves it out', () => {
   assert.ok(!html.includes('manual-checks-heading'));
 });
 
-test('in another language, its words are the report’s, and English text says so', () => {
+test('in another language, its words and the checks are the report’s', () => {
   const d = doc(renderHtmlReport(scan({ locale: 'fr', profile: 'wcag22-aa' })));
   assert.equal(
     d.getElementById('manual-checks-heading').textContent,
     'Ce qui reste à vérifier par une personne'
   );
   const facet = d.querySelector('.manual-facet');
-  assert.equal(facet.querySelector('.manual-label strong').getAttribute('lang'), 'en');
-  assert.equal(facet.querySelector('ol').getAttribute('lang'), 'en');
+  // Core's checks are French too, so nothing is marked as English.
+  assert.equal(facet.querySelector('.manual-label strong').getAttribute('lang'), null);
+  assert.equal(facet.querySelector('ol').getAttribute('lang'), null);
+  assert.equal(d.querySelector('.manual-list [lang]'), null);
   assert.match(
     facet.querySelector('.manual-meta').textContent,
     /Outils : Les outils de développement/

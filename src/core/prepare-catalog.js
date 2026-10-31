@@ -18,6 +18,7 @@
 const { normalizeRuleMeta } = require('./rule-meta');
 const { resolveVariants, describeSettings } = require('./rule-variants');
 const { wcagTags } = require('../wcag');
+const { languagesOf, sourceOf } = require('../pack-languages');
 
 // The WCAG profiles core defines itself, by tag set; a standard's profiles
 // come from the registry.
@@ -112,10 +113,14 @@ function prepareStandards(registry, { where = '' } = {}) {
     // without the registry.
     standardReports: registry.standards.map((s) => {
       const report = (s && s.report) || {};
+      // A standard that declares its languages (docs/PACKS.md) has its
+      // rollups' titles in each of them: the scan works out which it shows.
+      const declared = s && (s.lang !== undefined || s.translations !== undefined);
       return {
         key: s.key,
         standard: s.standard,
         ...(report.titleLang ? { titleLang: String(report.titleLang) } : {}),
+        ...(declared ? { lang: sourceOf(s), locales: languagesOf(s) } : {}),
         ...(report.noteKey ? { noteKey: String(report.noteKey) } : {})
       };
     }),

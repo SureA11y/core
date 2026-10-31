@@ -73,6 +73,17 @@ export interface PackStandard {
    * version's procedures in one group at most.
    */
   groups?: Record<string, PackRequirementGroup[]>;
+  /**
+   * The language the standard's own text is written in (its procedures,
+   * titles, notes and rollups' titles): a language tag, 'en' by default.
+   */
+  lang?: string;
+  /**
+   * The standard's own text in other languages, by locale, keyed by the text
+   * it translates. A standard that declares lang or translations is read in
+   * one of its languages, core's procedures included (docs/PACKS.md).
+   */
+  translations?: Record<string, Record<string, string>>;
 }
 
 /** A group of a standard's requirements, such as a theme or a chapter. */
@@ -83,7 +94,7 @@ export interface PackRequirementGroup {
   groups?: PackRequirementGroup[];
 }
 
-/** A general procedure a pack writes, in English. */
+/** A general procedure a pack writes, in its standard's language. */
 export interface PackProcedure {
   /** What it needs besides a browser; by default, for a replaced facet, what core's needs. */
   tools?: ('keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools')[];
@@ -263,6 +274,19 @@ export function describePacks(
 
 /** What is wrong with a pack's shape; empty when it can be prepared. */
 export function checkPack(pack: unknown): string[];
+
+/** How far one translation of a pack's standard covers its texts. */
+export interface PackTranslationCoverage {
+  locale: string;
+  /** The standard's texts a translation can give. */
+  total: number;
+  translated: number;
+  /** The texts it doesn't translate yet. */
+  missing: string[];
+}
+
+/** How far each translation of a pack's standard covers its texts; empty without any. */
+export function packTranslationCoverage(pack: unknown): PackTranslationCoverage[];
 
 /**
  * Whether a version is in a range, as npm reads it ('^1.2.0', '~1.2', '1.x', '>=1.2.0 <2', '1.0.0 - 2.x', a || b),

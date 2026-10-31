@@ -3322,14 +3322,28 @@ function runCoreSettled(
     nameStandards(r.meta.normativeMappings);
     if (r.meta.standard) named.add(r.meta.standard);
   }
+  // A standard that declares its languages shows its rollups' titles in the
+  // scan's locale where it has that locale, and in its own otherwise: its
+  // titleLang then says which, where it isn't the scan's.
+  const scanLocale = String(resolveLocale(engineOptionsResolved).resolved || 'en').toLowerCase();
+  const baseOf = (tag) => String(tag).toLowerCase().split('-')[0];
+  const titleLangOf = (s) => {
+    if (!Array.isArray(s.locales)) return s.titleLang;
+    if (s.locales.includes(scanLocale) || s.locales.includes(baseOf(scanLocale))) return null;
+    // Another locale reads the English dictionary: the standard's English
+    // translation, where it has one, or else its own text.
+    const shown = s.locales.includes('en') ? 'en' : s.lang;
+    return baseOf(shown) === baseOf(scanLocale) ? null : shown;
+  };
   const standards = (Array.isArray(STANDARD_REPORTS) ? STANDARD_REPORTS : [])
     .filter((s) => named.has(s.standard))
     .map((s) => {
       const note = s.noteKey ? t(s.noteKey, '', null, engineOptionsResolved) : '';
+      const titleLang = titleLangOf(s);
       return {
         key: s.key,
         standard: s.standard,
-        ...(s.titleLang ? { titleLang: s.titleLang } : {}),
+        ...(titleLang ? { titleLang } : {}),
         ...(note ? { note } : {})
       };
     });

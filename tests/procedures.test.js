@@ -27,6 +27,7 @@ const { PROCEDURES, TOOLS } = require('../src/procedures/registry.js');
 const { proceduresFor, howToCheckFor } = require('../src/index.js');
 const { proceduresFrom } = require('../src/procedures-core.js');
 const { FACETS } = require('../src/coverage/wcag-facets.js');
+const { WCAG_PRINCIPLES, WCAG_GUIDELINES } = require('../src/coverage/wcag-guidelines.js');
 
 const { ruleTypeDirs } = require('../scripts/lib/rule-dirs.js');
 
@@ -155,15 +156,46 @@ const PROCEDURE_STEMS = [
 const isTextOf = (stem, key) =>
   key.startsWith(stem) && /^(step\d+|pass|fail)$/.test(key.slice(stem.length));
 
+// The names a list of procedures gives, as their sources give them in
+// English: WCAG's principles, guidelines and criteria, each facet's label,
+// and each best practice's.
+const NAMES = {
+  ...Object.fromEntries(
+    Object.entries(WCAG_PRINCIPLES).map(([id, title]) => [`wcag_principle_${id}`, title])
+  ),
+  ...Object.fromEntries(
+    Object.entries(WCAG_GUIDELINES).map(([id, title]) => [`wcag_guideline_${id}`, title])
+  ),
+  ...Object.fromEntries(
+    Object.entries(FACETS).flatMap(([criterion, info]) => [
+      [`wcag_${criterion}_title`, info.title],
+      ...(info.facets || []).map((f) => [`wcag_${criterion}_${f.id}_label`, f.label])
+    ])
+  ),
+  ...Object.fromEntries(
+    Object.entries(PROCEDURES['best-practice']).map(([facet, entry]) => [
+      `best-practice_${facet}_label`,
+      entry.label
+    ])
+  )
+};
+
+test('the English names are their sources’, word for word', () => {
+  const en = read(PROCEDURES_DIR, 'en');
+  for (const [key, name] of Object.entries(NAMES)) assert.equal(en[key], name, key);
+});
+
 test('the text has no key the registry doesn’t list', () => {
   const stems = [...new Set(ALL.map(stemOf)), ...PROCEDURE_STEMS];
   const tools = new Set(TOOLS.map((t) => `tool_${t}`));
   const en = read(PROCEDURES_DIR, 'en');
-  // Besides the procedures: the tools' names, the words of a page made from
-  // them (src/procedures-render.js), render_*, and its guidance, guide_*.
+  // Besides the procedures: the names, the tools' names, the words of a page
+  // made from them (src/procedures-render.js), render_*, and its guidance,
+  // guide_*.
   const orphans = Object.keys(en).filter(
     (key) =>
       !tools.has(key) &&
+      !Object.prototype.hasOwnProperty.call(NAMES, key) &&
       !key.startsWith('render_') &&
       !key.startsWith('guide_') &&
       !stems.some((stem) => isTextOf(stem, key))
@@ -172,45 +204,18 @@ test('the text has no key the registry doesn’t list', () => {
   for (const t of tools) assert.ok(typeof en[t] === 'string' && en[t].trim(), `${t} missing`);
 });
 
-// The variants' text came with its translations and keeps them; a general
-// procedure is written in English first, and a locale without it reads it
-// in English.
-test('every locale has every variant’s text, and no key English lacks', () => {
+// Every locale has every text: the procedures, the names, the tools' names
+// and the words of a page, with the same {{placeholders}} as English, so
+// nothing is left unfilled, and no key English lacks.
+test('every locale has every key English has, and no other', () => {
   const en = read(PROCEDURES_DIR, 'en');
-  const stems = [...new Set(ALL.map(stemOf))];
-  const variantKeys = Object.keys(en)
-    .filter((key) => stems.some((stem) => isTextOf(stem, key)))
-    .sort();
-  for (const l of LOCALES) {
-    const keys = Object.keys(read(PROCEDURES_DIR, l));
-    assert.deepEqual(
-      keys.filter((key) => stems.some((stem) => isTextOf(stem, key))).sort(),
-      variantKeys,
-      l
-    );
-    assert.deepEqual(
-      keys.filter((key) => !(key in en)),
-      [],
-      `${l} has keys English doesn’t`
-    );
-  }
-});
-
-// A page made from the procedures speaks the reader's language throughout:
-// every locale has the tools' names and every word of the page.
-test('every locale has the tools’ names and the words of a page', () => {
-  const en = read(PROCEDURES_DIR, 'en');
-  const keys = Object.keys(en).filter(
-    (key) => key.startsWith('render_') || key.startsWith('tool_')
-  );
-  assert.ok(keys.length > 40);
+  const names = (text) => (text.match(/\{\{\w+\}\}/g) || []).sort();
   for (const l of LOCALES) {
     const dict = read(PROCEDURES_DIR, l);
-    for (const key of keys) {
+    assert.deepEqual(Object.keys(dict), Object.keys(en), `${l}: not English's keys, in order`);
+    for (const [key, text] of Object.entries(en)) {
       assert.ok(typeof dict[key] === 'string' && dict[key].trim(), `${l}: ${key}`);
-      // The same placeholders as English, so nothing is left unfilled.
-      const names = (text) => (text.match(/\{\{\w+\}\}/g) || []).sort();
-      assert.deepEqual(names(dict[key]), names(en[key]), `${l}: ${key}`);
+      assert.deepEqual(names(dict[key]), names(text), `${l}: ${key}`);
     }
   }
 });
@@ -392,7 +397,8 @@ test('a variant read by criterion is exactly the finding’s howToCheck, in ever
 
 test('a locale without a procedure reads it in English; one with it, its own', () => {
   const en = proceduresFor('1.4.13').facets[0].procedure;
-  assert.deepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
+  assert.deepEqual(proceduresFor('1.4.13', { locale: 'pt' }).facets[0].procedure, en);
+  assert.notDeepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
   const dicts = {
     en: read(PROCEDURES_DIR, 'en'),
     fr: { 'wcag_1.4.13_hover-focus-content-dismissible_step1': 'Survolez la page.' }

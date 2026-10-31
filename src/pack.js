@@ -25,6 +25,7 @@
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
+const { languageProblems, packTranslationCoverage, withTitleKeys } = require('./pack-languages.js');
 const {
   prepareStandards,
   prepareRules,
@@ -957,6 +958,7 @@ function packProblems(pack, withCoreVersion) {
     problems.push(...proceduresProblems(st.procedures, versions));
     problems.push(...groupsProblems(st.groups, st.procedures, versions));
     problems.push(...notesProblems(st.notes, versions));
+    problems.push(...languageProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
@@ -1409,7 +1411,16 @@ function prepareCatalog(packs) {
     }
     names.set(st.standard, p.name);
   }
-  const registry = createRegistry(builtIn.concat(packs.map(standardOf).filter(Boolean)));
+  // A standard whose translations give its rollups' titles names them by
+  // keys, with the titles under them in each locale (docs/PACKS.md).
+  const titled = new Map(
+    packs.map((p) => [p, p.standard ? withTitleKeys(p.standard, p.namespace) : null])
+  );
+  const registry = createRegistry(
+    builtIn.concat(
+      packs.map((p) => (titled.get(p) ? titled.get(p).standard : standardOf(p))).filter(Boolean)
+    )
+  );
   // A rule a pack lists in `overrides` takes the core rule's place: the meta
   // fields it doesn't give are the core rule's, so it runs where that rule
   // would, until its own meta says otherwise.
@@ -1490,11 +1501,13 @@ function prepareCatalog(packs) {
       .map(([locale, dict]) => ({ locale, label: `core ${locale}`, dict }))
       .concat(
         packs.flatMap((p) =>
-          Object.entries(p.dictionaries || {}).map(([locale, dict]) => ({
-            locale,
-            label: `${p.name} ${locale}`,
-            dict
-          }))
+          Object.entries(p.dictionaries || {})
+            .map(([locale, dict]) => ({ locale, label: `${p.name} ${locale}`, dict }))
+            .concat(
+              Object.entries(titled.get(p) ? titled.get(p).dictionaries : {}).map(
+                ([locale, dict]) => ({ locale, label: `${p.name} titles ${locale}`, dict })
+              )
+            )
         )
       )
   );
@@ -1518,12 +1531,13 @@ function prepareCatalog(packs) {
   // the pack's choice: they don't count as missing from that locale.
   const i18nLeftOut = JSON.parse(JSON.stringify(built.i18nLeftOut || {}));
   for (const p of packs) {
-    const own = p.dictionaries || {};
-    const english = Object.keys(own.en || {});
-    for (const locale of Object.keys(i18n)) {
-      if (locale === 'en' || own[locale] || !english.length) continue;
-      const left = (i18nLeftOut[locale] = i18nLeftOut[locale] || {});
-      for (const key of english) left[key] = true;
+    for (const own of [p.dictionaries || {}, titled.get(p) ? titled.get(p).dictionaries : {}]) {
+      const english = Object.keys(own.en || {});
+      for (const locale of Object.keys(i18n)) {
+        if (locale === 'en' || own[locale] || !english.length) continue;
+        const left = (i18nLeftOut[locale] = i18nLeftOut[locale] || {});
+        for (const key of english) left[key] = true;
+      }
     }
   }
   const knownLocales = Array.from(new Set(built.knownLocales.concat(Object.keys(i18n)))).sort();
@@ -1854,6 +1868,7 @@ module.exports = {
   checkPack,
   describePacks,
   packScript,
+  packTranslationCoverage,
   buildBrowserBundle,
   preparePacks,
   satisfiesRange,
