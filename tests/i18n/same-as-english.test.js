@@ -46,6 +46,7 @@ test('sameAsEnglishFor gives a locale its entries, and nothing for others', () =
   assert.deepEqual(sameAsEnglishFor('de'), {
     report_frame_heading: 'Frame {{path}}',
     report_heading_frames: 'Frames',
+    report_manualChecks_scan: 'Scan: {{outcome}}',
     report_margins_col_element: 'Element'
   });
   assert.deepEqual(sameAsEnglishFor('ja'), {});

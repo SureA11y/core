@@ -150,9 +150,14 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
   assert.match(report, /<b>ja<\/b>ロケール/);
   assert.match(report, /\(不合格、重大度: 重大\)/);
   assert.match(report, /<div class="card-snippet">この &lt;img&gt; には alt 属性がありません。/);
-  assert.doesNotMatch(report, /<span lang=|<td lang=/);
+  // Nothing of the report's own is marked as another language. What's left
+  // for a person is, where its procedures are only in English.
+  const [own, manual] = report.split('<h2 id="manual-checks-heading">');
+  assert.doesNotMatch(own, /<span lang=|<td lang=/);
+  assert.match(manual, /<ol lang="en">/);
 
-  // Every label of the English page, none of which may survive.
+  // Every label of the English page, none of which may survive in the
+  // report's own text (a procedure only in English may say "prevent").
   for (const english of [
     'Worth reviewing',
     'WCAG rollup',
@@ -168,7 +173,7 @@ test('renderHtmlReport: a report for a shipped locale is written entirely in tha
     'Contributing rules',
     'surea11y scan report'
   ]) {
-    assert.ok(!report.includes(english), `English label left in a Japanese report: ${english}`);
+    assert.ok(!own.includes(english), `English label left in a Japanese report: ${english}`);
   }
 });
 

@@ -290,7 +290,7 @@ const checklist = procedureChecklist({ version: '2.2', levels: ['A', 'AA'] });
 fs.writeFileSync('audit-worksheet.html', renderProcedures(checklist, { title: 'Accessibility audit: example.com' }));
 ```
 
-**What a scan leaves to a person.** Next to a scan's HTML report, the checks no rule decides in full, for the team to do by hand:
+**What a scan leaves to a person.** The HTML report already lists these checks, under "What's left for a person" ([`REPORT.md`](./REPORT.md)). As a worksheet next to it, to record a result for each:
 
 ```js
 const left = procedureChecklist({ levels: ['A', 'AA'], automation: ['manual', 'partial'] });

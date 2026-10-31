@@ -65,6 +65,10 @@ function getTranslator() {
 // report in a browser, shows the steps a result already carries.
 const { withHowToCheck } = require('./how-to-check-lazy.js');
 
+// What the scan leaves to a person: the standard's procedures for what no
+// rule decides in full, read in Node only, as the steps are.
+const { leftToAPerson } = require('./manual-checks-lazy.js');
+
 // The page speaks the locale the scan resolved to when the engine carries
 // it. A dictionary the caller supplied at scan time is not in the result, so
 // such a report falls back to English labels and marks the findings with
@@ -460,6 +464,111 @@ function scrollingTable(headingId, table) {
 // A standard's own rollups (one per requirement, say), present only when the
 // scan produced them. The standard (standardsOf) gives the note above the
 // table and the language of the titles when it is not the scan's.
+// The WCAG levels the scan reported: A and AA, and AAA where a criterion of
+// that level is among its results.
+function reportedLevels(rulesResults) {
+  const aaa = rulesResults.some((r) =>
+    ((r.meta && r.meta.normativeMappings) || []).some(
+      (m) => isWcagCriterion(m) && m.level === 'AAA'
+    )
+  );
+  return aaa ? ['A', 'AA', 'AAA'] : ['A', 'AA'];
+}
+
+// Each requirement's outcome in the scan, by standard: WCAG's from its
+// rollups, a pack's from the rollups its standard defines.
+function scanOutcomes(rollups, left) {
+  const out = new Map();
+  for (const r of rollups) {
+    const mappings = (r.meta && r.meta.normativeMappings) || [];
+    const own = left.standard === 'wcag' ? mappings.find(isWcagCriterion) : null;
+    const theirs =
+      left.standard !== 'wcag' && r.meta && r.meta.standard === left.name
+        ? mappings.find(
+            (m) => m && m.standard === left.name && (!m.version || m.version === left.version)
+          )
+        : null;
+    const m = own || theirs;
+    if (m && m.requirement && !out.has(String(m.requirement))) {
+      out.set(String(m.requirement), getCardOutcome(r));
+    }
+  }
+  return out;
+}
+
+// "What's left for a person": for each requirement of the standard scanned,
+// the checks no rule decides in full, with their steps, closed until asked
+// for, and the requirement's outcome in the scan beside it. A requirement
+// whose rules all pass is not met until these are done.
+function renderManualChecks(left, rollups, standard, ui) {
+  if (!left || !left.requirements.length) return '';
+  const OUTCOME_INFO = ui.outcomeInfo;
+  const pageIsEnglish = /^en(-|$)/i.test(ui.uiLocale);
+  const en = (isEnglish) => (isEnglish && !pageIsEnglish ? ' lang="en"' : '');
+  const titleLang = left.standard === 'wcag' ? 'en' : (standard && standard.titleLang) || null;
+  const titleAttr = titleLang && titleLang !== ui.uiLocale ? ` lang="${esc(titleLang)}"` : '';
+  const outcomes = scanOutcomes(rollups, left);
+  const checks = left.requirements.reduce((n, r) => n + r.facets.length, 0);
+  const name =
+    left.standard === 'wcag'
+      ? `WCAG ${left.version}${left.levels ? ` (${left.levels.join(', ')})` : ''}`
+      : `${left.name} ${left.version}`;
+  // The sentence's numbers in bold and the standard's name, put in after
+  // it is escaped: dictionaries hold plain text.
+  const intro = esc(
+    ui.tr('report_manualChecks_intro', {
+      checks: '\uE000c',
+      requirements: '\uE000r',
+      standard: '\uE000s'
+    })
+  )
+    .replace('\uE000c', `<strong>${ui.num(checks)}</strong>`)
+    .replace('\uE000r', `<strong>${ui.num(left.requirements.length)}</strong>`)
+    .replace('\uE000s', esc(name));
+  const items = left.requirements.map((r) => {
+    const outcome = outcomes.get(r.id);
+    const info = outcome ? OUTCOME_INFO[outcome] || OUTCOME_INFO.notApplicable : null;
+    const scan = info
+      ? `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(
+          ui.tr('report_manualChecks_scan', { outcome: info.label })
+        )}</span>`
+      : `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">${esc(
+          ui.tr('report_manualChecks_notScanned')
+        )}</span>`;
+    const facets = r.facets.map((f) => {
+      const tools = f.tools.length
+        ? f.tools.map((t) => `<span${en(t.lang === 'en')}>${esc(t.label)}</span>`).join(', ')
+        : esc(ui.tr('report_manualChecks_toolsBrowser'));
+      const steps = f.procedure.steps.map((x) => `<li>${esc(x)}</li>`).join('');
+      return `<div class="manual-facet">
+          <p class="manual-label"><strong${en(true)}>${esc(f.label)}</strong></p>
+          <p class="manual-meta">${esc(ui.tr(`report_manualChecks_automation_${f.automation}`))} · ${esc(
+            ui.tr('report_manualChecks_tools', { tools: '' })
+          ).replace('', tools)}</p>
+          <ol${en(f.procedureLang === 'en')}>${steps}</ol>
+          <p><strong>${esc(ui.tr('report_manualChecks_passWhen'))}</strong> <span${en(
+            f.procedureLang === 'en'
+          )}>${esc(f.procedure.passWhen)}</span></p>
+          <p><strong>${esc(ui.tr('report_manualChecks_failWhen'))}</strong> <span${en(
+            f.procedureLang === 'en'
+          )}>${esc(f.procedure.failWhen)}</span></p>
+        </div>`;
+    });
+    return `<details class="manual-req">
+      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr}>${esc(
+        r.title || ''
+      )}</span> ${scan} <span class="card-count">${esc(
+        ui.tr('report_manualChecks_count', { count: ui.num(r.facets.length) })
+      )}</span></summary>
+      <div class="manual-body">${facets.join('')}</div>
+    </details>`;
+  });
+  return `<h2 id="manual-checks-heading">${esc(ui.tr('report_heading_manualChecks'))}</h2>
+  <p class="manual-intro">${intro}</p>
+  <div class="manual-list">${items.join('')}</div>
+  <p class="note">${esc(ui.tr('report_manualChecks_worksheet'))}</p>`;
+}
+
 function renderStandardRollup(standard, results, ui, headingId) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const titleLang = standard.titleLang ? ` lang="${esc(standard.titleLang)}"` : '';
@@ -842,6 +951,16 @@ function renderHtmlReport(input, options = {}) {
     }))
     .filter((s) => s.results.length);
   const OUTCOME_INFO = ui.outcomeInfo;
+  // What the scan leaves to a person, in Node, unless asked not to.
+  const left =
+    options && options.manualChecks === false
+      ? null
+      : leftToAPerson(result, {
+          packs: options && options.packs,
+          locale: ui.uiLocale,
+          levels: reportedLevels(allRollups)
+        });
+  const leftStandard = left ? standards.find((s) => s.key === left.standard) || null : null;
   // The scan's own timestamp when it has one (engineOptions.timestamp), so
   // the same result always renders the same page; the time of rendering
   // only for a result without one. In UTC either way, so the page does not
@@ -939,6 +1058,20 @@ function renderHtmlReport(input, options = {}) {
   .card-how p { margin: 2px 0; }
   .card-help { font-size: 12.5px; margin: 6px 0 0; }
 
+  .manual-intro { margin: 0 0 12px; line-height: 1.5; }
+  .manual-list { display: grid; gap: 8px; margin-bottom: 8px; }
+  details.manual-req { border: 1px solid #e0e0e0; border-radius: 8px; background: #fff; }
+  details.manual-req > summary { padding: 10px 14px; cursor: pointer; font-size: 13.5px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; list-style: none; }
+  details.manual-req > summary::-webkit-details-marker { display: none; }
+  details.manual-req > summary::before { content: '▶'; font-size: 11px; transition: transform 0.15s; }
+  details.manual-req[open] > summary::before { transform: rotate(90deg); }
+  details.manual-req .manual-body { padding: 0 14px 12px; }
+  .manual-facet { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; font-size: 13px; line-height: 1.5; }
+  .manual-facet p { margin: 4px 0; }
+  .manual-facet ol { margin: 4px 0 6px 20px; padding: 0; }
+  .manual-meta { opacity: 0.8; font-size: 12.5px; }
+  @media (prefers-color-scheme: dark) { details.manual-req { background: #1f2227 !important; border-color: #3a3d44 !important; } .manual-facet { border-color: #3a3d44; } }
+
   details.tech-details { border: 1px solid #e0e0e0; border-radius: 8px; margin-top: 8px; }
   details.tech-details summary { padding: 14px 18px; cursor: pointer; font-weight: 600; font-size: 14px; color: #333; list-style: none; }
   details.tech-details summary::-webkit-details-marker { display: none; }
@@ -1006,6 +1139,7 @@ ${standardRollups
 `
   )
   .join('')}
+  ${renderManualChecks(left, allRollups, leftStandard, ui)}
   <details class="tech-details">
     <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">
