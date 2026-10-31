@@ -189,18 +189,49 @@ function packReviewDictionaries(packs) {
   return out;
 }
 
+// A pack's dictionaries for the locales core's procedures have none for:
+// { locale: [dict] }, in the packs' order. Such a dictionary may give core's
+// procedures in that locale, under core's keys, as it may give core's
+// messages (docs/PACKS.md, "Languages").
+function packLocaleDictionaries(packs) {
+  const out = {};
+  for (const pack of Array.isArray(packs) ? packs : []) {
+    if (!isObject(pack) || !isObject(pack.dictionaries)) continue;
+    for (const [tag, dict] of Object.entries(pack.dictionaries)) {
+      const locale = tag.toLowerCase();
+      if (locale === 'en' || !isObject(dict)) continue;
+      (out[locale] = out[locale] || []).push(dict);
+    }
+  }
+  return out;
+}
+
 /**
  * The dictionaries with the packs' steps added, each locale's to that
  * locale's, where core's has no such key; a locale only a pack has steps in
- * is added too. Without packs that give steps, the dictionaries as given.
+ * is added too. For a locale core has no dictionary for, a pack's
+ * dictionary may also give core's procedures, the keys English has. Without
+ * packs that give either, the dictionaries as given.
  */
 function withPackReview(dictionaries, packs) {
   const extra = packReviewDictionaries(packs);
-  if (!Object.keys(extra.en).length) return dictionaries;
+  const locales = packLocaleDictionaries(packs);
+  if (!Object.keys(extra.en).length && !Object.keys(locales).length) return dictionaries;
   const merged = new Map();
   return (locale) => {
     if (!merged.has(locale)) {
-      const own = dictionaryFor(dictionaries, locale);
+      let own = dictionaryFor(dictionaries, locale);
+      if (!own && hasOwn(locales, locale)) {
+        // Core's keys only: a pack's messages are no procedures.
+        const english = dictionaryFor(dictionaries, 'en') || {};
+        own = {};
+        for (const dict of locales[locale]) {
+          for (const [key, text] of Object.entries(dict)) {
+            if (hasOwn(english, key) && !hasOwn(own, key) && isText(text)) own[key] = text;
+          }
+        }
+        if (!Object.keys(own).length) own = null;
+      }
       const added = hasOwn(extra, locale) ? extra[locale] : null;
       merged.set(locale, added ? { ...added, ...(own || {}) } : own);
     }

@@ -179,6 +179,7 @@
     "src/manual-checks-lazy.js",
     "src/how-to-check-core.js",
     "src/how-to-check-core.d.ts",
+    "src/pack-languages.js",
     "src/pack-review.js",
     "src/review-dictionary.d.ts",
     "src/i18n/review/*.json",

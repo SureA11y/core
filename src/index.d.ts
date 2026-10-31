@@ -1082,6 +1082,13 @@ export interface ProcedureFacet {
    * are then the pack's, in English; rules and variants stay core's.
    */
   procedureFrom?: string;
+  /** A replaced procedure's language, where the pack's standard declares its languages. */
+  procedureLang?: string;
+  /**
+   * A pack's own facet: the language its label and procedure are in, where
+   * its standard declares its languages (docs/PACKS.md).
+   */
+  lang?: string;
   /** The broader facet of the same criterion whose procedure assesses this one. */
   coveredBy?: string;
   variants: ProcedureVariant[];
@@ -1100,6 +1107,12 @@ export interface Procedures {
    * standard's rollups name it by; null where neither gives one.
    */
   title: string | null;
+  /** A pack's requirement: its title's language, where its standard declares its languages. */
+  titleLang?: string;
+  /** A pack's requirement: what its standard's procedures say of it. */
+  note?: string;
+  /** The note's language, where the standard declares its languages. */
+  noteLang?: string;
   level: 'A' | 'AA' | 'AAA' | null;
   /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
   wcag?: string;
@@ -1142,6 +1155,8 @@ export function proceduresFor(requirement: string, options?: ProceduresOptions):
 export interface ProcedureGroup {
   id: string;
   title: string;
+  /** A pack's group: its title's language, where its standard declares its languages. */
+  titleLang?: string;
   /** The requirements in this group itself, in the standard's order. */
   requirements: string[];
   /** The groups under it: a principle's guidelines. */
@@ -1173,8 +1188,16 @@ export interface ProcedureList {
   key?: string;
   /** The version listed; null for the best practices. */
   version: string | null;
-  /** The locale the text was read in: the first of options.locale a dictionary was given for, or 'en'. */
+  /**
+   * The locale the text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in (docs/PACKS.md).
+   */
   locale: string;
+  /** A pack's standard: what it says of itself for the version (standard.notes). */
+  notes?: string[];
+  /** The notes' language, where the standard declares its languages. */
+  notesLang?: string;
   /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
   scope: {
     levels: string[] | null;
@@ -1211,14 +1234,26 @@ export interface ProcedureChecklistItem {
   procedure: HowToCheck;
   /** A pack's procedure in place of core's: the pack's name. */
   procedureFrom?: string;
+  /** A pack's own facet: the language of its label and procedure (ProcedureFacet.lang). */
+  lang?: string;
+  /** A replaced procedure's language (ProcedureFacet.procedureLang). */
+  procedureLang?: string;
 }
 
 export interface ProcedureChecklist {
   standard: string;
   key?: string;
   version: string | null;
-  /** The locale the text was read in: the first of options.locale a dictionary was given for, or 'en'. */
+  /**
+   * The locale the text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in (docs/PACKS.md).
+   */
   locale: string;
+  /** A pack's standard: what it says of itself for the version (standard.notes). */
+  notes?: string[];
+  /** The notes' language, where the standard declares its languages. */
+  notesLang?: string;
   /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
   scope: {
     levels: string[] | null;
