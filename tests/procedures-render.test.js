@@ -428,7 +428,7 @@ test('Markdown: headings for the groups, task items for a checklist', () => {
   assert.equal(lines[0], '# WCAG 2.2: manual checklist');
   assert.ok(lines.includes('## 1 Perceivable'));
   assert.ok(lines.includes('### 1.1 Text Alternatives'));
-  assert.ok(lines.includes('- [ ] **Text alternative mechanism present**'));
+  assert.ok(lines.includes('- [ ] **Non-text content that conveys something has a text alternative**'));
   assert.ok(md.endsWith('\n') && !md.endsWith('\n\n'));
   const list = renderProcedures(listProcedures({ levels: 'A' }), { format: 'markdown' });
   assert.ok(list.split('\n').includes('#### 1.1.1 Non-text Content'));

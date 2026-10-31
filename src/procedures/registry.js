@@ -119,9 +119,6 @@ const PROCEDURES = {
       'object-text-alternative-present': {
         coveredBy: 'text-alternative-mechanism'
       },
-      'embed-name-present': {
-        coveredBy: 'text-alternative-mechanism'
-      },
       'video-poster-text-alt-present': {
         coveredBy: 'text-alternative-mechanism',
         variants: {
@@ -130,9 +127,6 @@ const PROCEDURES = {
       },
       'alt-suspicious-patterns': {
         coveredBy: 'text-alternative-quality'
-      },
-      'acc-eligibility-filtering': {
-        coveredBy: 'decorative-null'
       },
       'meter-name-present': {
         coveredBy: 'text-alternative-mechanism',
