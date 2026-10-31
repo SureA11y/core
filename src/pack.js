@@ -640,6 +640,64 @@ function replaceProblems(replace, criterion, where) {
   return problems;
 }
 
+// standard.groups: how the standard groups its requirements, by version, as
+// a list or a table of contents shows them ({ version: [{ id, title,
+// requirements, groups }] }). Each requirement is one of the version's
+// procedures, in one group at most.
+function groupsProblems(groups, procedures, versions) {
+  if (groups === undefined) return [];
+  const shape = 'standard.groups must be { version: [{ id, title, requirements, groups }] }';
+  if (!isObject(groups)) return [shape];
+  if (!isObject(procedures)) return ['standard.groups needs standard.procedures, which it groups'];
+  const problems = [];
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [version, list] of Object.entries(groups)) {
+    const at = `standard.groups.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+      continue;
+    }
+    if (!Array.isArray(list)) {
+      problems.push(shape);
+      continue;
+    }
+    const known = isObject(procedures[version]) ? procedures[version] : {};
+    const ids = new Set();
+    const placed = new Set();
+    const walk = (items, where) => {
+      items.forEach((g, i) => {
+        const ga = `${where}[${i}]`;
+        if (!isObject(g)) {
+          problems.push(`${ga} must be { id, title, requirements, groups }`);
+          return;
+        }
+        if (!text(g.id) || ids.has(g.id))
+          problems.push(`${ga}.id must be a non-empty string, unique in the version`);
+        ids.add(g.id);
+        if (!text(g.title)) problems.push(`${ga}.title must be a non-empty string`);
+        if (g.requirements !== undefined && !Array.isArray(g.requirements)) {
+          problems.push(`${ga}.requirements must list requirements`);
+        }
+        for (const id of Array.isArray(g.requirements) ? g.requirements : []) {
+          if (!Object.prototype.hasOwnProperty.call(known, id)) {
+            problems.push(
+              `${ga}: ${JSON.stringify(id)} is no requirement of standard.procedures.${version}`
+            );
+          } else if (placed.has(id)) {
+            problems.push(`${ga}: ${JSON.stringify(id)} is in another group already`);
+          }
+          placed.add(id);
+        }
+        if (g.groups !== undefined && !Array.isArray(g.groups)) {
+          problems.push(`${ga}.groups must list groups`);
+        } else if (g.groups) walk(g.groups, `${ga}.groups`);
+      });
+    };
+    walk(list, at);
+  }
+  return problems;
+}
+
 function proceduresProblems(procedures, versions) {
   if (procedures === undefined) return [];
   const shape =
@@ -671,6 +729,9 @@ function proceduresProblems(procedures, versions) {
         continue;
       }
       if (entry.wcag !== undefined) {
+        if (entry.relatesTo !== undefined) {
+          problems.push(`${where}.relatesTo goes with facets: a requirement with wcag restates it`);
+        }
         if (!WCAG_SC.has(entry.wcag)) {
           problems.push(`${where}.wcag names no WCAG criterion: ${JSON.stringify(entry.wcag)}`);
         }
@@ -679,6 +740,12 @@ function proceduresProblems(procedures, versions) {
       }
       if (entry.replace !== undefined) {
         problems.push(`${where}.replace goes with wcag: its own facets give their procedures`);
+      }
+      if (
+        entry.relatesTo !== undefined &&
+        (!Array.isArray(entry.relatesTo) || !entry.relatesTo.every((sc) => WCAG_SC.has(sc)))
+      ) {
+        problems.push(`${where}.relatesTo must list WCAG criteria ('1.3.1')`);
       }
       if (!Array.isArray(entry.facets) || !entry.facets.length) {
         problems.push(`${where}.facets must list its facets`);
@@ -859,6 +926,7 @@ function packProblems(pack, withCoreVersion) {
     }
     const versions = Array.isArray(st.versions) ? st.versions : [];
     problems.push(...proceduresProblems(st.procedures, versions));
+    problems.push(...groupsProblems(st.groups, st.procedures, versions));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);

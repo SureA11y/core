@@ -11,7 +11,12 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
-const { proceduresFrom } = require('./procedures-core.js');
+const {
+  listProceduresFrom,
+  procedureChecklistFrom,
+  proceduresFrom,
+  relatedRequirements
+} = require('./procedures-core.js');
 
 const PROCEDURES_DIR = path.join(__dirname, 'i18n', 'procedures');
 
@@ -48,4 +53,25 @@ function proceduresFor(requirement, options) {
   });
 }
 
-module.exports = { proceduresFor };
+/**
+ * Every requirement of a standard, in its order and groups, as
+ * proceduresFor gives each: WCAG's criteria (options.standard 'wcag', the
+ * default) in options.version at options.levels, the best practices, or a
+ * pack's standard (options.packs); options.tools, options.automation and
+ * options.rules keep only the facets that match. null for a standard or
+ * version none of them has.
+ */
+function listProcedures(options) {
+  return listProceduresFrom(dictionary, options);
+}
+
+/**
+ * What a person does to assess a standard by hand, once each: one item per
+ * general procedure, with the requirements it serves and the facets it
+ * covers. Takes listProcedures' options.
+ */
+function procedureChecklist(options) {
+  return procedureChecklistFrom(dictionary, options);
+}
+
+module.exports = { listProcedures, procedureChecklist, proceduresFor, relatedRequirements };

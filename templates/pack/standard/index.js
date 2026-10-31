@@ -16,7 +16,7 @@ const { definePack, ruleMappedStandard } = require('@surea11y/core/pack');
 const { name, version } = require('./package.json');
 const { VERSIONS, REQUIREMENTS } = require('./requirements');
 const { RULE_REQUIREMENTS } = require('./rule-map');
-const { PROCEDURES } = require('./procedures');
+const { PROCEDURES, GROUPS } = require('./procedures');
 
 const NAMESPACE = '__NAMESPACE__';
 const STANDARD = '__TITLE__';
@@ -86,6 +86,9 @@ module.exports = definePack({
     // one for one can pass applicability: 'wcag' to ruleMappedStandard and
     // use the procedures it returns instead.
     procedures: PROCEDURES,
+    // How the standard groups its requirements, as a list of their procedures
+    // shows them (listProcedures).
+    groups: GROUPS,
     // The note above the standard's results in the HTML report.
     report: { noteKey: '__KEY___report_note' }
   },

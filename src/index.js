@@ -159,7 +159,7 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
 // in a browser bundle says once where to get it instead.
 let proceduresModule;
 let warnedNoProcedures = false;
-function proceduresFor(requirement, options) {
+function procedures(name, fallback) {
   if (proceduresModule === undefined) {
     proceduresModule = null;
     try {
@@ -171,18 +171,35 @@ function proceduresFor(requirement, options) {
       proceduresModule = null;
     }
   }
-  if (proceduresModule) return proceduresModule.proceduresFor(requirement, options);
+  if (proceduresModule) return proceduresModule[name];
   if (!warnedNoProcedures) {
     warnedNoProcedures = true;
     try {
       console.warn(
-        '[surea11y] proceduresFor reads the procedures from disk, in Node. In a browser bundle, ' +
-          'call proceduresFrom({ en }, requirement) from @surea11y/core/procedures with the ' +
-          'dictionaries from @surea11y/core/procedures/<locale>.'
+        `[surea11y] ${name} reads the procedures from disk, in Node. In a browser bundle, ` +
+          'use @surea11y/core/procedures (proceduresFrom, listProceduresFrom, ' +
+          'procedureChecklistFrom, relatedRequirements) with the dictionaries from ' +
+          '@surea11y/core/procedures/<locale>.'
       );
     } catch {}
   }
-  return null;
+  return () => fallback;
+}
+
+function proceduresFor(requirement, options) {
+  return procedures('proceduresFor', null)(requirement, options);
+}
+
+function listProcedures(options) {
+  return procedures('listProcedures', null)(options);
+}
+
+function procedureChecklist(options) {
+  return procedures('procedureChecklist', null)(options);
+}
+
+function relatedRequirements(requirement, options) {
+  return procedures('relatedRequirements', [])(requirement, options);
 }
 
 // A result gains its undecided findings' steps here, after the scan, with
@@ -292,6 +309,9 @@ module.exports = {
   addHowToCheck,
   howToCheckFor,
   proceduresFor,
+  listProcedures,
+  procedureChecklist,
+  relatedRequirements,
   flattenCrossFrameResult,
   occurrenceOutcome,
   reviewGroupOf,

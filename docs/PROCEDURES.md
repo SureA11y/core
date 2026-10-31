@@ -3,6 +3,7 @@
 How a person assesses each criterion by hand, criterion by criterion: what a scan can't decide, and what no rule tests at all. Core keeps these procedures in one place and gives them to whatever needs them:
 
 - an undecided finding's `howToCheck` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)), as it always has;
+- a manual assessment with no scan at all: every criterion's procedures, the whole standard at once ([below](#listing-them)), or a checklist of what to do ([below](#a-checklist));
 - a checklist for a manual review, made from a run;
 - the help a person needs to fill in a conformance report, criterion by criterion: what the scans covered, what is left, and how to check it;
 - the explanation of a criterion whose rules found nothing but do not cover all of it.
@@ -80,13 +81,118 @@ A requirement of the pack's own standard lists, in the same way, the pack's rule
 
 A pack rule's steps are in English, or in a locale its pack's dictionary translates them to ([`PACKS.md`](./PACKS.md#6-messages-and-languages)), as its findings show them.
 
+## Listing them
+
+`proceduresFor` reads one requirement. `listProcedures` reads every requirement of a standard, in the standard's order, with the groups it puts them in:
+
+```js
+const { listProcedures } = require('@surea11y/core');
+
+listProcedures();                                         // WCAG 2.2, every level
+listProcedures({ version: '2.1', levels: ['A', 'AA'] });  // WCAG 2.1 A and AA
+listProcedures({ standard: 'best-practice' });
+listProcedures({ packs: [rgaa], standard: 'rgaa', locale: 'fr' }); // a pack's standard
+```
+
+| Option | |
+|---|---|
+| `standard` | `'wcag'` (the default), `'best-practice'`, or a pack's standard by key or name. |
+| `version` | WCAG's (`'2.0'`, `'2.1'`, `'2.2'`, the default), or the pack's standard's (the latest that gives procedures, by default). |
+| `levels` | WCAG only: `'A'`, `'AA'`, `'AAA'` or a list of them; every level by default. An unknown level throws. |
+| `locale`, `packs` | As for `proceduresFor`. |
+| `tools`, `automation`, `rules` | Filters ([below](#filters)). |
+
+It gives `null` for a standard or version it doesn't know, and otherwise:
+
+```js
+{
+  standard: 'wcag',          // or 'best-practice', or a pack's standard's name ('EN 301 549')
+  // key: 'en301549',        a pack's standard's key
+  version: '2.2',            // null for the best practices
+  requirements: [ /* each as proceduresFor gives it */ ],
+  groups: [
+    {
+      id: '1', title: 'Perceivable', requirements: [],
+      groups: [{ id: '1.1', title: 'Text Alternatives', requirements: ['1.1.1'], groups: [] }]
+    }
+  ]
+}
+```
+
+WCAG's criteria are those the version has, at its levels: 2.0 and 2.1 list 4.1.1 as a Level A criterion titled "Parsing", 2.2 doesn't list it. Each requirement is what `proceduresFor` gives for it, with the title and level of the version listed. A pack's requirements are those its standard's `procedures` give for the version, in number order (`1.9` before `1.10`).
+
+### Groups
+
+WCAG's criteria are grouped under their principles and guidelines, as WCAG numbers them; a group of a pack's standard is one its `standard.groups` gives for the version, such as a theme or a chapter ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)). Each group has the ids of its own requirements, in the standard's order, and the groups under it. A group with no requirement listed, and none under it with any, is left out. A pack's requirement that no group names is still in `requirements`.
+
+### Filters
+
+`tools`, `automation` and `rules` each take one value or a list of them, and keep only the facets that match, and the requirements left with any:
+
+| Filter | Keeps a facet |
+|---|---|
+| `tools: 'screen-reader'` | whose procedure needs one of these tools; a technology facet by the tools of the facet it is covered by |
+| `automation: ['manual', 'partial']` | with one of these automation levels: what is left for a person after a scan |
+| `rules: 'img-alt-present'` | that one of these rules claims |
+
+Given several filters, a facet must match each. A technology facet that matches keeps the facet it is covered by, whose procedure assesses it. A requirement's `complete` stays its own: whether every facet has a procedure, not only those listed.
+
+## A checklist
+
+`procedureChecklist` takes `listProcedures`' options and gives what a person does to assess the standard, once each: an item per general procedure, with no technology facet of its own, as these are assessed by the procedure of the facet they are covered by.
+
+```js
+const { procedureChecklist } = require('@surea11y/core');
+
+procedureChecklist({ levels: ['A', 'AA'] }).items[0];
+// {
+//   key: '1.1.1/text-alternative-mechanism',
+//   facet: 'text-alternative-mechanism',
+//   label: 'Text alternative mechanism present',
+//   automation: 'partial',
+//   wcag: '1.1.1',
+//   requirements: ['1.1.1'],
+//   covers: ['img-alt-attr-present', 'role-img-text-alternative-present', …],
+//   rules: ['img-alt-present', …],
+//   tools: [{ id: 'devtools', label: "The browser's developer tools" }],
+//   procedure: { steps: ['…'], passWhen: '…', failWhen: '… which fails WCAG 1.1.1.' }
+// }
+```
+
+`covers` lists the technology facets the item assesses, and `rules` the rules that claim it or one of them. Core's procedure for a WCAG facet is one item however many of a pack's requirements restate that criterion: `requirements` lists them all, and its text names each ("which fails EN 301 549 9.1.4.3, 9.1.4.4"). A pack's own facet, or a facet whose procedure a requirement replaces, is an item of that requirement, keyed by it (`'7.1/text-version'`), with `procedureFrom` where it replaces core's. `groups` is the list's, so the items can be shown under them through their `requirements`.
+
+## Related requirements
+
+`relatedRequirements` goes between WCAG and the packs' standards:
+
+```js
+const { relatedRequirements } = require('@surea11y/core');
+
+relatedRequirements('1.4.3', { packs: [en301549] });
+// [{ standard: 'EN 301 549', key: 'en301549', id: '9.1.4.3', version: 'V4.1.1', title: '…', relation: 'restates' }]
+
+relatedRequirements('9.1.4.3', { packs: [en301549], standard: 'en301549' });
+// [{ standard: 'wcag', id: '1.4.3', title: 'Contrast (Minimum)', level: 'AA', relation: 'restates' }]
+```
+
+For a WCAG criterion, it gives each requirement of a pack's standard that restates it (`relation: 'restates'`, its `wcag`) or relates to it without restating it (`'relatesTo'`, its `relatesTo`), in the latest version of each standard that gives procedures. For a pack's requirement, with `standard` (and `version`, the latest that has it by default), it gives the WCAG criteria it restates or relates to. It is `[]` where there are none, and for a pack that gives no procedures.
+
+### In a browser
+
+`@surea11y/core/procedures` has the same, with the dictionaries passed in, as `proceduresFrom` takes them: `listProceduresFrom(dictionaries, options)`, `procedureChecklistFrom(dictionaries, options)`, and `relatedRequirements(requirement, options)`, which reads no dictionary.
+
+### A pack with no procedures
+
+A pack whose standard gives no `procedures` (one made for a core older than the procedures) changes nothing: `listProcedures` and `procedureChecklist` give `null` for its standard, `relatedRequirements` gives `[]`, and WCAG's procedures are the same with it as without it.
+
 ## The shape
 
 ```js
 {
   standard: 'wcag',              // or 'best-practice', or a pack's standard ('EN 301 549')
   id: '1.4.12',                  // the criterion, 'best-practice', or a pack's requirement
-  // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement
+  // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement that restates a criterion,
+  // relatesTo: ['1.3.1'] on one of its own that relates to some
   title: 'Text Spacing',
   level: 'AA',                   // null for best practices
   complete: true,                // every facet has a general procedure

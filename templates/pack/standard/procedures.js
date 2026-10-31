@@ -15,6 +15,8 @@
  *   when the requirement is read; read as WCAG, the criterion stays core's.
  * - { facets: [{ id, label, automation, tools, steps, passWhen, failWhen }] }:
  *   a requirement of its own, with the test objectives a person checks.
+ *   relatesTo may name the WCAG criteria it relates to without restating
+ *   any, which relatedRequirements reads both ways.
  *
  * Steps are short, in English, for someone without accessibility training,
  * from a whole page in a browser; passWhen and failWhen say what they see,
@@ -23,6 +25,9 @@
  * ("__TITLE__ 6"), as core's procedures do. tools lists what they need
  * besides a browser: keyboard, pointer, screen-reader, zoom, contrast-theme,
  * devtools.
+ *
+ * GROUPS puts the requirements of each version in groups, such as themes or
+ * chapters, as listProcedures and procedureChecklist show them.
  */
 
 const PROCEDURES = {
@@ -47,6 +52,9 @@ const PROCEDURES = {
     },
     4: { wcag: '1.4.6' },
     5: {
+      // WCAG doesn't ask for it (requirements.js maps it to no criterion), but
+      // it is about the same structure as 1.3.1.
+      relatesTo: ['1.3.1'],
       facets: [
         {
           id: 'heading-levels-in-order',
@@ -80,4 +88,11 @@ const PROCEDURES = {
   }
 };
 
-module.exports = { PROCEDURES };
+const GROUPS = {
+  '1.0': [
+    { id: 'content', title: 'Content', requirements: ['1', '4', '5', '6'] },
+    { id: 'links', title: 'Links', requirements: ['2', '3'] }
+  ]
+};
+
+module.exports = { PROCEDURES, GROUPS };

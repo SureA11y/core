@@ -123,7 +123,7 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
 
 // The generated tests, per kind: a standard also checks the WCAG version its
 // profile is judged by.
-const TEST_COUNT = { checklist: 12, standard: 17 };
+const TEST_COUNT = { checklist: 12, standard: 18 };
 
 for (const kind of KINDS) {
   test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {

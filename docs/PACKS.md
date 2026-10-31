@@ -323,7 +323,8 @@ Core says how a person assesses every WCAG criterion by hand, facet by facet ([`
 |---|---|---|
 | How a person answers a finding of one of its rules | The rule's `meta.review`, by reason code ([§3](#3-write-its-rules)) | The finding's `howToCheck`, and a variant under each facet the rule claims (`meta.coverage`) |
 | How a person assesses each requirement of its standard | The standard's `procedures`, by version and requirement (below) | `proceduresFor('<requirement>', { packs, standard })` |
-| Their text in other languages | The pack's dictionaries ([§6](#6-messages-and-languages)) | Both, in the reader's locale |
+| How the standard groups its requirements, and the WCAG criteria they relate to | The standard's `groups`, and `relatesTo` on a requirement (below) | `listProcedures` and `procedureChecklist` in those groups, `relatedRequirements` |
+| Their text in other languages | The pack's dictionaries ([§6](#6-messages-and-languages)) | A rule's steps, in the reader's locale |
 
 A checklist has no requirements of its own: its rules' steps join the WCAG criteria they claim, and `proceduresFor('2.4.4', { packs })` lists them there. A standard gives `procedures` for each of its requirements, so a person can assess it requirement by requirement, as the standard numbers them; `surea11y-pack new --kind standard` writes them in `procedures.js`, with an example of each kind, and a test that every requirement of every version has a procedure for each of its facets.
 
@@ -378,11 +379,30 @@ standard: {
 meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version'] } };
 ```
 
+**Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
+
+**Groups.** A standard that groups its requirements, in themes or chapters, says so in `standard.groups`, by version; a list of its procedures shows them in these groups, and in number order within each:
+
+```js
+standard: {
+  // ...
+  procedures: { '1.0': { /* … */ } },
+  groups: {
+    '1.0': [
+      { id: '4', title: 'Images and colour', requirements: ['4.2', '4.3'] },
+      { id: '7', title: 'Forms', requirements: ['7.1'], groups: [ /* groups under it, the same way */ ] }
+    ]
+  }
+}
+```
+
+Each group has an `id`, unique in the version, a `title`, and `requirements`, `groups` or both. A requirement is in one group at most; one in none is still listed.
+
 **From `ruleMappedStandard`.** A standard that restates WCAG one for one gets the first kind for every requirement from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`: pass `procedures: std.procedures` in the standard, and add `replace` to a requirement there where the standard tests it its own way. Any other standard writes them, as `procedures.js` does.
 
-**Reading them.** `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` reads a requirement as it reads a WCAG criterion: `standard` and `id` are the pack's (`'City Standard'`, `'4.2'`), `version` the standard's version, and `wcag` names the criterion a restating requirement takes its facets from. The general procedures say what fails as the requirement ("which fails City Standard 4.2"), core's included. `standard` is the standard's key or name; `version` defaults to the latest that has the requirement. In a browser, `proceduresFrom` from `@surea11y/core/procedures` does the same.
+**Reading them.** `listProcedures({ packs: [pack], standard: 'city' })` reads every requirement of the standard, in its groups, `procedureChecklist` what a person does to assess it, once each, and `relatedRequirements` the WCAG criteria a requirement restates or relates to ([`PROCEDURES.md`](./PROCEDURES.md#listing-them)). `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` reads one requirement as it reads a WCAG criterion: `standard` and `id` are the pack's (`'City Standard'`, `'4.2'`), `version` the standard's version, and `wcag` names the criterion a restating requirement takes its facets from. The general procedures say what fails as the requirement ("which fails City Standard 4.2"), core's included. `standard` is the standard's key or name; `version` defaults to the latest that has the requirement. In a browser, `proceduresFrom` from `@surea11y/core/procedures` does the same.
 
-**What `definePack` checks.** It refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, `replace` without `wcag`, a facet the criterion doesn't have or a technology facet in `replace`, facets that aren't well formed, and, in `facetsByRequirement`, a pack whose standard gives no `procedures`, a requirement with no facets of its own there and a facet that requirement doesn't have in any version. A core older than the one that reads `procedures` ignores the field.
+**What `definePack` checks.** It refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, `replace` without `wcag`, a facet the criterion doesn't have or a technology facet in `replace`, `relatesTo` with `wcag` or naming no WCAG criterion, groups without `procedures`, for a version the standard doesn't have, with an id used twice, without a title, or naming a requirement the version's procedures don't have or another group has, facets that aren't well formed, and, in `facetsByRequirement`, a pack whose standard gives no `procedures`, a requirement with no facets of its own there and a facet that requirement doesn't have in any version. A core older than the one that reads `procedures` ignores these fields.
 
 **What stays English.** A pack's procedures, those of its own facets and its replacements, are in English, as are facet labels and titles; core's procedures and a pack rule's steps are read in the reader's locale where a dictionary has them. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
 
