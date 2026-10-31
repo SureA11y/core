@@ -6,7 +6,8 @@
  * requirements.js holds the standard's requirements and rule-map.js the rules
  * that check each one; ruleMappedStandard turns them into what the engine
  * needs: the requirements each result names, a rollup per requirement, and
- * checks of the two tables. Pass the pack to a scan and name a profile:
+ * checks of the two tables. procedures.js says how a person assesses each
+ * requirement by hand. Pass the pack to a scan and name a profile:
  *
  *   runDomRulesInPage(url, null, { packs: [pack], profile: '__NAMESPACE__-1.0' })
  */
@@ -15,6 +16,7 @@ const { definePack, ruleMappedStandard } = require('@surea11y/core/pack');
 const { name, version } = require('./package.json');
 const { VERSIONS, REQUIREMENTS } = require('./requirements');
 const { RULE_REQUIREMENTS } = require('./rule-map');
+const { PROCEDURES, GROUPS } = require('./procedures');
 
 const NAMESPACE = '__NAMESPACE__';
 const STANDARD = '__TITLE__';
@@ -22,7 +24,7 @@ const STANDARD = '__TITLE__';
 // The WCAG version a version of the standard is built on (requirements.js).
 const wcagVersionOf = (v) => VERSIONS.find((x) => x.version === v).wcagVersion;
 
-const { mappingsFor, composites, validate, wcagTagsOf, procedures } = ruleMappedStandard({
+const { mappingsFor, composites, validate, wcagTagsOf } = ruleMappedStandard({
   standard: STANDARD,
   tag: NAMESPACE,
   versions: VERSIONS,
@@ -79,10 +81,14 @@ module.exports = definePack({
     mappingsFor,
     composites,
     validate,
-    // How a person assesses each requirement by hand (proceduresFor): with
-    // applicability: 'wcag', each requirement takes the procedures of the
-    // criterion it restates; otherwise none.
-    procedures,
+    // How a person assesses each requirement by hand (proceduresFor), from
+    // procedures.js. A standard whose requirements all restate WCAG criteria
+    // one for one can pass applicability: 'wcag' to ruleMappedStandard and
+    // use the procedures it returns instead.
+    procedures: PROCEDURES,
+    // How the standard groups its requirements, as a list of their procedures
+    // shows them (listProcedures).
+    groups: GROUPS,
     // The note above the standard's results in the HTML report.
     report: { noteKey: '__KEY___report_note' }
   },

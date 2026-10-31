@@ -67,13 +67,42 @@ export interface PackStandard {
    * facets, in English.
    */
   procedures?: Record<string, Record<string, PackRequirementProcedures>>;
+  /**
+   * How the standard groups its requirements, by version, as a list of its
+   * procedures shows them (listProcedures): each requirement of the
+   * version's procedures in one group at most.
+   */
+  groups?: Record<string, PackRequirementGroup[]>;
 }
 
-/** One requirement's procedures: a WCAG criterion's, or facets of its own. */
+/** A group of a standard's requirements, such as a theme or a chapter. */
+export interface PackRequirementGroup {
+  id: string;
+  title: string;
+  requirements?: string[];
+  groups?: PackRequirementGroup[];
+}
+
+/** A general procedure a pack writes, in English. */
+export interface PackProcedure {
+  /** What it needs besides a browser; by default, for a replaced facet, what core's needs. */
+  tools?: ('keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools')[];
+  steps: string[];
+  passWhen: string;
+  failWhen: string;
+}
+
+/**
+ * One requirement's procedures: a WCAG criterion's, some of whose facets'
+ * general procedures it may replace (by facet id; not a facet with
+ * coveredBy), or facets of its own.
+ */
 export type PackRequirementProcedures =
-  | { title?: string; wcag: string }
+  | { title?: string; wcag: string; replace?: Record<string, PackProcedure> }
   | {
       title?: string;
+      /** The WCAG criteria it relates to, without restating any (relatedRequirements). */
+      relatesTo?: string[];
       facets: {
         id: string;
         label: string;

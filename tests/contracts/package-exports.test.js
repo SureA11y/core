@@ -99,6 +99,14 @@ test('the procedures entry and every procedures dictionary are reachable by name
     entry.proceduresFrom({ en }, '1.4.13'),
     consumerRequire('@surea11y/core').proceduresFor('1.4.13')
   );
+  const core = consumerRequire('@surea11y/core');
+  assert.deepEqual(
+    entry.listProceduresFrom({ en }, { levels: 'A' }),
+    core.listProcedures({ levels: 'A' })
+  );
+  assert.deepEqual(entry.procedureChecklistFrom({ en }), core.procedureChecklist());
+  assert.equal(typeof entry.relatedRequirements, 'function');
+  assert.deepEqual(entry.relatedRequirements('1.4.3'), core.relatedRequirements('1.4.3'));
   const locales = fs
     .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'procedures'))
     .filter((f) => f.endsWith('.json'))

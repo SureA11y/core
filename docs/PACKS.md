@@ -10,6 +10,7 @@ This guide goes from an empty folder to a published pack. [`ENGINE_OPTIONS.md`, 
 - [3. Write its rules](#3-write-its-rules)
 - [4. Choose what runs: profiles](#4-choose-what-runs-profiles)
 - [5. Group results: checklist items or requirements](#5-group-results-checklist-items-or-requirements)
+  - [How a person assesses it: procedures](#how-a-person-assesses-it-procedures)
 - [6. Messages and languages](#6-messages-and-languages)
 - [7. Test, lint and document it](#7-test-lint-and-document-it)
 - [8. Use it](#8-use-it)
@@ -51,6 +52,7 @@ The pack works as generated: its tests pass, its rules lint clean, its examples 
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes. |
 | `eslint.config.js` | Core's lint rules for rules. |
 | `requirements.js`, `rule-map.js` | Standard only: the requirements and the rules that check each. |
+| `procedures.js`, `tests/procedures.test.js` | Standard only: how a person assesses each requirement by hand, and a test that every requirement has a procedure for each of its facets. |
 | `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^1.14.0`), and eslint, jsdom and Playwright as development dependencies. |
 | `README.md`, `.gitignore` | The pack's own guide to these files, and what git leaves out. |
 
@@ -154,7 +156,7 @@ meta.review = {
 };
 ```
 
-A code it doesn't file is under no facet: it still has its steps on its findings. `definePack` refuses a `facet` the rule doesn't claim, a `criterion` it doesn't claim that facet under or one without a `facet`, a `facet` claimed under several criteria with no `criterion`, and a code with no `facet` where the rule names the facet of its other codes and claims several. A standard's own requirements have facets too ([§5](#5-group-results-checklist-items-or-requirements)): a rule claims them in `meta.coverage.facetsByRequirement`, and `facet` and `criterion` name them in the same way.
+A code it doesn't file is under no facet: it still has its steps on its findings. `definePack` refuses a `facet` the rule doesn't claim, a `criterion` it doesn't claim that facet under or one without a `facet`, a `facet` claimed under several criteria with no `criterion`, and a code with no `facet` where the rule names the facet of its other codes and claims several. A standard's own requirements have facets too ([§5](#how-a-person-assesses-it-procedures)): a rule claims them in `meta.coverage.facetsByRequirement`, and `facet` and `criterion` name them in the same way.
 
 `reportOccurrence` returns the occurrence; the rule lists it in `occurrences` itself. A `fail` that lists none is reported on the whole page, "failed for the page without naming an element". The engine fills in the element's selector, HTML and path. `reasonCode` is part of a finding's identity in baselines and SARIF: keep it stable once the pack is released.
 
@@ -313,7 +315,24 @@ A standard whose requirements restate WCAG criteria one for one (EN 301 549's ch
 }
 ```
 
-**How a person assesses each requirement by hand** goes in the standard's `procedures`, by version and requirement ([`PROCEDURES.md`](./PROCEDURES.md)). A requirement that restates a WCAG criterion takes that criterion's facets and procedures as they are, in every locale core has them; one of its own gives its facets, each with a procedure in English, as a rule's `meta.review` is:
+### How a person assesses it: procedures
+
+Core says how a person assesses every WCAG criterion by hand, facet by facet ([`PROCEDURES.md`](./PROCEDURES.md)): a manual review, a conformance report or a finding left undecided reads it. A pack adds its own to the same procedures, in three places:
+
+| What | Where | Read as |
+|---|---|---|
+| How a person answers a finding of one of its rules | The rule's `meta.review`, by reason code ([§3](#3-write-its-rules)) | The finding's `howToCheck`, and a variant under each facet the rule claims (`meta.coverage`) |
+| How a person assesses each requirement of its standard | The standard's `procedures`, by version and requirement (below) | `proceduresFor('<requirement>', { packs, standard })` |
+| How the standard groups its requirements, and the WCAG criteria they relate to | The standard's `groups`, and `relatesTo` on a requirement (below) | `listProcedures` and `procedureChecklist` in those groups, `relatedRequirements` |
+| Their text in other languages | The pack's dictionaries ([§6](#6-messages-and-languages)) | A rule's steps, in the reader's locale |
+
+A checklist has no requirements of its own: its rules' steps join the WCAG criteria they claim, and `proceduresFor('2.4.4', { packs })` lists them there. A standard gives `procedures` for each of its requirements, so a person can assess it requirement by requirement, as the standard numbers them; `surea11y-pack new --kind standard` writes them in `procedures.js`, with an example of each kind, and a test that every requirement of every version has a procedure for each of its facets.
+
+Each requirement takes one of three forms:
+
+- **It restates a WCAG criterion**: `{ wcag: '1.1.1' }`. It takes that criterion's facets, rules and procedures as they are, in every locale core has them.
+- **It restates a criterion, but tests some of it its own way**: `{ wcag: '1.4.3', replace: { <facet>: { ... } } }`. It takes the criterion's facets, and the facets it names show its procedure instead of core's.
+- **It is its own**: `{ facets: [ ... ] }`. It gives the test objectives a person checks, each with its procedure.
 
 ```js
 standard: {
@@ -321,6 +340,18 @@ standard: {
   procedures: {
     '1.0': {
       '4.2': { title: 'Images have a text alternative', wcag: '1.1.1' },
+      '4.3': {
+        title: 'Text has enough contrast',
+        wcag: '1.4.3',
+        replace: {
+          'contrast-minimum-text': {
+            tools: ['devtools'],               // core's for the facet, when left out
+            steps: ['Measure the contrast of each text with the method of annex B.'],
+            passWhen: 'Every text meets the ratio annex B gives.',
+            failWhen: 'A text falls below that ratio, which fails requirement 4.3.'
+          }
+        }
+      },
       '7.1': {
         title: 'Every form has a text version',
         facets: [{
@@ -338,15 +369,42 @@ standard: {
 }
 ```
 
-A standard that restates WCAG one for one gets the first kind from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`, each requirement taking the criterion it restates: pass `procedures: std.procedures` in the standard. `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` then reads a requirement, as it reads a WCAG criterion. `definePack` refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, and facets that aren't well formed. A core older than the one that reads `procedures` ignores the field.
+**Writing a procedure.** Write it for the whole page, as core's general procedures are, and for someone without accessibility training: one to eight short steps a person follows in a browser, with its developer tools, a keyboard and, where it matters, a screen reader; then what they see if it passes and if it fails, naming the requirement it fails. `{{requirement}}` in its text is filled in with the standard's name and the requirement it is read as (`City Standard 4.3`), as core's procedures are, so a text shared by several requirements can name each. `automation` says how much of the facet the pack's rules decide: `manual` (the default) where only a person can, `partial` where rules decide part of it, `full` where they decide all of it. `tools` lists what it needs besides a browser. [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §8.6 has the style core's steps follow.
 
-A pack's rule that tests a facet of one of its own requirements claims it, by requirement, in `meta.coverage.facetsByRequirement`; the requirement's procedures then list the rule under the facet, with its steps as variants ([§3](#3-write-its-rules)):
+**Replacing a WCAG facet's procedure.** The facets of each criterion, with their ids, are in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), or `proceduresFor('1.4.3').facets`. Only a facet with a procedure of its own can be replaced: a technology facet (one with `coveredBy`) is assessed by the procedure of the facet it names, so replace that one. Only reading the requirement shows the replacement: `proceduresFor('4.3', { packs: [pack], standard: 'city' })` gives the pack's procedure for that facet, with `procedureFrom` the pack's name, and its tools, or core's where it names none; the other facets are core's. `proceduresFor('1.4.3')` stays core's, with the pack or without, so two packs never change each other's. The facet's rules and variants stay: a finding still shows its own steps.
+
+**A requirement of its own** can have rules of the pack that test its facets: a rule claims them, by requirement, in `meta.coverage.facetsByRequirement`, and the requirement's procedures list it under the facet, with its steps as variants ([§3](#3-write-its-rules)):
 
 ```js
 meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version'] } };
 ```
 
-`definePack` refuses it in a pack whose standard gives no `procedures`, for a requirement that has no facets of its own there, and for a facet that requirement doesn't have in any version.
+**Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
+
+**Groups.** A standard that groups its requirements, in themes or chapters, says so in `standard.groups`, by version; a list of its procedures shows them in these groups, and in number order within each:
+
+```js
+standard: {
+  // ...
+  procedures: { '1.0': { /* … */ } },
+  groups: {
+    '1.0': [
+      { id: '4', title: 'Images and colour', requirements: ['4.2', '4.3'] },
+      { id: '7', title: 'Forms', requirements: ['7.1'], groups: [ /* groups under it, the same way */ ] }
+    ]
+  }
+}
+```
+
+Each group has an `id`, unique in the version, a `title`, and `requirements`, `groups` or both. A requirement is in one group at most; one in none is still listed.
+
+**From `ruleMappedStandard`.** A standard that restates WCAG one for one gets the first kind for every requirement from `ruleMappedStandard` with `applicability: 'wcag'`, which returns them as `procedures`: pass `procedures: std.procedures` in the standard, and add `replace` to a requirement there where the standard tests it its own way. Any other standard writes them, as `procedures.js` does.
+
+**Reading them.** `listProcedures({ packs: [pack], standard: 'city' })` reads every requirement of the standard, in its groups, `procedureChecklist` what a person does to assess it, once each, and `relatedRequirements` the WCAG criteria a requirement restates or relates to ([`PROCEDURES.md`](./PROCEDURES.md#listing-them)). `proceduresFor('4.2', { packs: [pack], standard: 'city', version: '1.0' })` reads one requirement as it reads a WCAG criterion: `standard` and `id` are the pack's (`'City Standard'`, `'4.2'`), `version` the standard's version, and `wcag` names the criterion a restating requirement takes its facets from. The general procedures say what fails as the requirement ("which fails City Standard 4.2"), core's included. `standard` is the standard's key or name; `version` defaults to the latest that has the requirement. In a browser, `proceduresFrom` from `@surea11y/core/procedures` does the same.
+
+**What `definePack` checks.** It refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, `replace` without `wcag`, a facet the criterion doesn't have or a technology facet in `replace`, `relatesTo` with `wcag` or naming no WCAG criterion, groups without `procedures`, for a version the standard doesn't have, with an id used twice, without a title, or naming a requirement the version's procedures don't have or another group has, facets that aren't well formed, and, in `facetsByRequirement`, a pack whose standard gives no `procedures`, a requirement with no facets of its own there and a facet that requirement doesn't have in any version. A core older than the one that reads `procedures` ignores these fields.
+
+**What stays English.** A pack's procedures, those of its own facets and its replacements, are in English, as are facet labels and titles; core's procedures and a pack rule's steps are read in the reader's locale where a dictionary has them. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
 
 ## 6. Messages and languages
 

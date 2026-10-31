@@ -248,10 +248,12 @@ test('a facet with a general procedure has 1 to 8 steps and names its tools', ()
     for (const key of [`${stem}pass`, `${stem}fail`]) {
       assert.ok(typeof en[key] === 'string' && en[key].trim(), `${key} missing`);
     }
+    // It says what fails as {{requirement}}, filled in as it is read: the
+    // criterion, or a pack's requirement that restates it.
     assert.match(
       en[`${stem}fail`],
-      /\bfails WCAG \d|best practice/,
-      `${stem}fail names no criterion`
+      stem.startsWith('wcag_') ? /\bfails \{\{requirement\}\}/ : /best practice/,
+      `${stem}fail names no requirement`
     );
     assert.ok(Array.isArray(entry.tools), `${stem}: no tools`);
     for (const tool of entry.tools) assert.ok(TOOLS.includes(tool), `${stem}: tool ${tool}`);
@@ -373,6 +375,23 @@ test('proceduresFrom gives what proceduresFor gives, from the dictionaries passe
         proceduresFrom((l) => dicts[l], requirement, { locale }),
         proceduresFor(requirement, { locale })
       );
+    }
+  }
+});
+
+// Read as the criterion, a general procedure names it where its text says
+// {{requirement}}; no placeholder is left in what a reader gets.
+test('a general procedure names the criterion it is read as', () => {
+  for (const criterion of Object.keys(FACETS)) {
+    for (const locale of ['en', 'fr']) {
+      const p = proceduresFor(criterion, { locale });
+      assert.doesNotMatch(JSON.stringify(p), /\{\{requirement\}\}/, criterion);
+      for (const f of p.facets.filter((x) => x.procedure)) {
+        assert.ok(
+          f.procedure.failWhen.includes(`WCAG ${criterion}`),
+          `${criterion} ${f.id}: ${f.procedure.failWhen}`
+        );
+      }
     }
   }
 });

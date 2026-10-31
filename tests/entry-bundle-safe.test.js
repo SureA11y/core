@@ -96,6 +96,11 @@ test('the procedures entry reaches no module outside core', () => {
       path.join(ROOT, 'src', 'procedures-core.js'),
       path.join(ROOT, 'src', 'procedures', 'registry.js'),
       path.join(ROOT, 'src', 'coverage', 'wcag-facets.js'),
+      // WCAG's versions, levels, titles and guidelines, for listing criteria.
+      path.join(ROOT, 'src', 'wcag.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-criteria.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-titles.js'),
+      path.join(ROOT, 'src', 'coverage', 'wcag-guidelines.js'),
       path.join(ROOT, 'src', 'pack-review.js')
     ].sort()
   );

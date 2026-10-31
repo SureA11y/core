@@ -21,12 +21,14 @@ npm run docs                      # docs/RULE_CATALOG.md, and the examples run i
 | `index.js` | The pack: its name, namespace, rules, the standard (its profiles and report note) and messages. |
 | `requirements.js` | The standard's versions and requirements: each one's number, wording and the WCAG criteria it corresponds to. |
 | `rule-map.js` | Which requirements each rule checks, core's rules and the pack's, with the reason. |
+| `procedures.js` | How a person assesses each requirement by hand: the WCAG criterion it restates, or its own test objectives and steps; and the groups the requirements are in. |
 | `rules/automatic/__NAMESPACE__-link-text-specific.js` | A rule of its own that decides: links named only "click here" or "read more" fail. Uses core's helpers to find links and compute their names. |
 | `rules/automatic/__NAMESPACE__-contrast-enhanced.js` | A variant of core's `contrast-minimum`: the same code at 7:1 instead of 4.5:1, with no code of its own. |
 | `rules/manual/__NAMESPACE__-new-window-review.js` | A manual rule: it never fails, and asks a person to check each link that opens a new window, with the steps to answer it (`meta.review`). |
 | `i18n/en.json` | The rules' messages in English. |
 | `tests/rules/*.test.js` | A test per rule. |
 | `tests/profiles.test.js` | What each profile runs, and the result of each requirement. |
+| `tests/procedures.test.js` | That every requirement, in every version, has a procedure for each of its facets, and how the standard is listed. |
 | `docs/RULE_EXAMPLES.md` | Examples of each rule's outcomes, checked by `npm run docs`. |
 | `eslint.config.js` | Core's lint rules for rules (`@surea11y/core/eslint-plugin`). |
 | `package.json` | The package: `private`, with core as a peer dependency, and the scripts above. |
@@ -37,11 +39,33 @@ npm run docs                      # docs/RULE_CATALOG.md, and the examples run i
 
 From the two, `ruleMappedStandard()` (in `index.js`) gives the engine:
 
-- **a result per requirement**, a rollup with the id `__NAMESPACE__-<version>-<requirement>`, which fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. The HTML report shows them in a section of their own, and SARIF and JUnit tag them. A requirement its rules don't check in full says `partial: true` in `requirements.js`: its result is then `cantTell` where they all pass or are all not applicable, as a WCAG criterion's is. A standard whose requirements restate WCAG criteria one for one passes `applicability: 'wcag'` to `ruleMappedStandard()`, and each result agrees with WCAG's for its criteria, and each requirement takes the procedures of the criterion it restates (`proceduresFor`, core's [`PROCEDURES.md`](https://github.com/SureA11y/core/blob/main/docs/PROCEDURES.md));
+- **a result per requirement**, a rollup with the id `__NAMESPACE__-<version>-<requirement>`, which fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. The HTML report shows them in a section of their own, and SARIF and JUnit tag them. A requirement its rules don't check in full says `partial: true` in `requirements.js`: its result is then `cantTell` where they all pass or are all not applicable, as a WCAG criterion's is. A standard whose requirements restate WCAG criteria one for one passes `applicability: 'wcag'` to `ruleMappedStandard()`, and each result agrees with WCAG's for its criteria ([below](#how-a-person-assesses-each-requirement) for their procedures);
 - **the requirements each result names**: a rule's result lists its requirements in `meta.normativeMappings`, under a profile of the standard or with `engineOptions.mappings: ['__NAMESPACE__']`;
 - **findings filed by reason code**: a row's `reasonCodes: { [code]: { requirements, outcome } }` sends a rule's findings of that code to other requirements (`[]` for none), or makes them questions there (`outcome: 'cantTell'`); the requirement's rollup then judges the rule by the findings that count toward it (core's [`PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md#5-group-results-checklist-items-or-requirements));
 - **findings filed by what they record**: a row's `findings: [{ when, requirements, outcome }]` sends a finding whose `data.details` fields equal those `when` gives (`{ 'typography.isLargeText': true }`) to those requirements, before its reason code: a standard can file contrast failures under the test for their text size;
 - **checks of the tables**, run when the pack is prepared: a rule the engine doesn't have, a requirement the version doesn't have, or a WCAG criterion the WCAG version doesn't have makes the pack invalid, and the scan says why in `skippedPacks`.
+
+## How a person assesses each requirement
+
+`procedures.js` says, for each requirement of each version, how a person assesses it by hand, with no scan or after one: `proceduresFor('3', { packs: [pack], standard: '__NAMESPACE__' })` gives it, with the requirement's number and the standard's name, for a manual review, a conformance report or the requirements the rules leave open. Each requirement takes one of three forms, all in the generated file:
+
+- `{ wcag: '1.1.1' }` (requirements 1, 2 and 4): it restates a WCAG criterion and takes that criterion's procedures from core, in every language core has them.
+- `{ wcag: '2.4.2', replace: { 'page-title-descriptive': { ... } } }` (requirement 6): it restates a criterion but tests some of it its own way. The facet named shows the pack's steps instead of core's when the requirement is read; read as WCAG 2.4.2, the criterion stays core's. A criterion's facets and their ids are in `proceduresFor('2.4.2').facets`.
+- `{ facets: [{ id, label, automation, tools, steps, passWhen, failWhen }] }` (requirements 3 and 5): a requirement of its own, with the test objectives a person checks.
+
+Write the steps for the whole page, for someone without accessibility training, in English: one to eight short steps in a browser, then what they see if it passes (`passWhen`) and if it fails (`failWhen`, naming the requirement). `tools` lists what they need besides a browser: `keyboard`, `pointer`, `screen-reader`, `zoom`, `contrast-theme`, `devtools`.
+
+`GROUPS`, in the same file, puts each version's requirements in groups, such as the standard's themes or chapters, and a requirement of its own can name in `relatesTo` the WCAG criteria it relates to without restating any (requirement 5). With them, a person can read the whole standard as it is organised, or follow it from WCAG and back:
+
+```js
+const { listProcedures, procedureChecklist, relatedRequirements } = require('@surea11y/core');
+
+listProcedures({ packs: [pack], standard: '__NAMESPACE__' });      // every requirement, in its groups
+procedureChecklist({ packs: [pack], standard: '__NAMESPACE__' });  // what a person does, once each
+relatedRequirements('1.3.1', { packs: [pack] });                    // requirement 5
+```
+
+A rule of the pack that tests a facet of a requirement of its own can claim it in `meta.coverage.facetsByRequirement` (`{ '3': ['new-window-warned'] }`); the requirement's procedures then list the rule, and its `meta.review` steps, under that facet. A standard whose requirements all restate WCAG criteria one for one can instead pass `applicability: 'wcag'` to `ruleMappedStandard()` and use the `procedures` it returns. Core's [`docs/PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md#how-a-person-assesses-it-procedures) explains each form, and what `definePack` checks.
 
 ## The profiles: which rules run
 
@@ -69,9 +93,10 @@ After `npm run docs`, this pack's `docs/RULE_CATALOG.md` lists its rules, profil
 
 1. Add it to `requirements.js` under each version that has it, with its WCAG criteria.
 2. Map the rules that check it in `rule-map.js`: a core rule, or one of the pack's (see below).
-3. Run `npm test`: the pack is checked as it is prepared, and `tests/profiles.test.js` lists the requirements' results.
+3. Say how a person assesses it in `procedures.js`, under each version that has it, and put it in a group in `GROUPS`.
+4. Run `npm test`: the pack is checked as it is prepared, and `tests/profiles.test.js` lists the requirements' results.
 
-A new version of the standard is a new entry in `VERSIONS`, its requirements and its rule map, and a profile for it.
+A new version of the standard is a new entry in `VERSIONS`, its requirements, its rule map and its procedures, and a profile for it.
 
 ## Add a rule
 

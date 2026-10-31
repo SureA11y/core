@@ -72,7 +72,23 @@ const pack = definePack(
   })
 );
 
-test('a requirement that restates a criterion takes its procedures', () => {
+// A criterion's facets as a requirement restating it reads them: their
+// general procedures say the requirement fails, where core's say WCAG's.
+// Variants, a finding's steps, keep naming WCAG.
+const under = (facets, criterion, label) =>
+  facets.map((f) =>
+    f.procedure
+      ? {
+          ...f,
+          procedure: {
+            ...f.procedure,
+            failWhen: f.procedure.failWhen.replace(`WCAG ${criterion}`, label)
+          }
+        }
+      : f
+  );
+
+test('a requirement that restates a criterion takes its procedures, naming the requirement', () => {
   const r = proceduresFor('R-1.4.3', { packs: [pack], standard: 'stdp' });
   const wcag = proceduresFor('1.4.3');
   assert.deepEqual(
@@ -93,7 +109,9 @@ test('a requirement that restates a criterion takes its procedures', () => {
       wcag: '1.4.3'
     }
   );
-  assert.deepEqual(r.facets, wcag.facets);
+  assert.deepEqual(r.facets, under(wcag.facets, '1.4.3', 'Std P R-1.4.3'));
+  assert.match(r.facets[1].procedure.failWhen, /fails Std P R-1\.4\.3\.$/);
+  assert.match(r.facets[1].variants[0].failWhen, /WCAG 1\.4\.3/);
   assert.deepEqual(r.rules, wcag.rules);
   assert.equal(r.complete, true);
   // An earlier version, by name.
@@ -104,7 +122,7 @@ test('a requirement that restates a criterion takes its procedures', () => {
   // In another locale, the criterion's procedures in it.
   assert.deepEqual(
     proceduresFor('R-1.4.3', { packs: [pack], locale: 'fr' }).facets,
-    proceduresFor('1.4.3', { locale: 'fr' }).facets
+    under(proceduresFor('1.4.3', { locale: 'fr' }).facets, '1.4.3', 'Std P R-1.4.3')
   );
 });
 
@@ -172,6 +190,120 @@ test('checkPack refuses procedures it can’t read', () => {
   assert.match(found, /steps must list 1 to 8 steps/);
   assert.match(found, /automation must be one of/);
   assert.throws(() => definePack(packWith({ '1.0': 'x' })), /standard\.procedures/);
+});
+
+const REPLACE = {
+  'contrast-minimum-text': {
+    tools: ['devtools', 'zoom'],
+    steps: ['Measure the contrast of each text with the method of Std P, annex B.'],
+    passWhen: 'Every text meets the ratio annex B gives.',
+    failWhen: 'A text falls below the ratio, which fails requirement R-1.4.3.'
+  }
+};
+
+test('a requirement that restates a criterion can replace its facets’ general procedures', () => {
+  const own = definePack(packWith({ '1.0': { 'R-1.4.3': { wcag: '1.4.3', replace: REPLACE } } }));
+  const r = proceduresFor('R-1.4.3', { packs: [own], locale: 'fr' });
+  const wcag = proceduresFor('1.4.3', { packs: [own], locale: 'fr' });
+  const [covered, text] = r.facets;
+  // The technology facet and the criterion's rules are as WCAG's.
+  assert.deepEqual(covered, wcag.facets[0]);
+  assert.deepEqual(r.rules, wcag.rules);
+  assert.equal(r.complete, true);
+  const core = wcag.facets[1];
+  assert.deepEqual(text, {
+    ...core,
+    tools: [
+      { id: 'devtools', label: core.tools[0].label },
+      {
+        id: 'zoom',
+        label: proceduresFor('1.4.4', { locale: 'fr' })
+          .facets.flatMap((f) => f.tools)
+          .find((t) => t.id === 'zoom').label
+      }
+    ],
+    procedure: {
+      steps: REPLACE['contrast-minimum-text'].steps,
+      passWhen: REPLACE['contrast-minimum-text'].passWhen,
+      failWhen: REPLACE['contrast-minimum-text'].failWhen
+    },
+    procedureFrom: 'stdp-pack'
+  });
+  // The variants stay: a finding shows its own steps.
+  assert.ok(text.variants.length > 0);
+  assert.deepEqual(text.variants, core.variants);
+  // WCAG read by criterion keeps core's, with the pack or without.
+  assert.deepEqual(wcag, proceduresFor('1.4.3', { locale: 'fr' }));
+  // Without tools of its own, the facet's.
+  const noTools = { ...REPLACE['contrast-minimum-text'] };
+  delete noTools.tools;
+  const plain = definePack(
+    packWith({
+      '1.0': { 'R-1.4.3': { wcag: '1.4.3', replace: { 'contrast-minimum-text': noTools } } }
+    })
+  );
+  assert.deepEqual(
+    proceduresFor('R-1.4.3', { packs: [plain] }).facets[1].tools,
+    proceduresFor('1.4.3').facets[1].tools
+  );
+  const en = require('../../src/i18n/procedures/en.json');
+  assert.deepEqual(
+    proceduresFrom({ en }, 'R-1.4.3', { packs: [own] }),
+    proceduresFor('R-1.4.3', { packs: [own] })
+  );
+});
+
+test('a pack’s own procedures may name the requirement as core’s do', () => {
+  const named = (failWhen) => ({ ...REPLACE['contrast-minimum-text'], failWhen });
+  const own = definePack(
+    packWith({
+      '1.0': {
+        'R-1.4.3': {
+          wcag: '1.4.3',
+          replace: {
+            'contrast-minimum-text': named('A text is too faint, which fails {{requirement}}.')
+          }
+        },
+        'R-9': {
+          facets: [{ ...OWN.facets[0], failWhen: 'No text version: {{requirement}} fails.' }]
+        }
+      }
+    })
+  );
+  assert.equal(
+    proceduresFor('R-1.4.3', { packs: [own] }).facets[1].procedure.failWhen,
+    'A text is too faint, which fails Std P R-1.4.3.'
+  );
+  assert.equal(
+    proceduresFor('R-9', { packs: [own] }).facets[0].procedure.failWhen,
+    'No text version: Std P R-9 fails.'
+  );
+});
+
+test('checkPack refuses a replace it can’t read', () => {
+  const problems = (entry) => checkPack(packWith({ '1.0': { 'R-1.4.3': entry } })).join('\n');
+  assert.equal(problems({ wcag: '1.4.3', replace: REPLACE }), '');
+  assert.match(problems({ wcag: '1.4.3', replace: {} }), /replace must be \{ facet/);
+  assert.match(
+    problems({ wcag: '1.4.3', replace: { 'link-text': REPLACE['contrast-minimum-text'] } }),
+    /1\.4\.3 has no facet "link-text"/
+  );
+  assert.match(
+    problems({
+      wcag: '1.4.3',
+      replace: { 'contrast-computability-143': REPLACE['contrast-minimum-text'] }
+    }),
+    /no procedure of its own; replace "contrast-minimum-text"'s/
+  );
+  const found = problems({
+    wcag: '1.4.3',
+    replace: { 'contrast-minimum-text': { tools: ['telescope'], steps: [], passWhen: '' } }
+  });
+  assert.match(found, /tools must list tools of/);
+  assert.match(found, /steps must list 1 to 8 steps/);
+  assert.match(found, /passWhen must be a non-empty string/);
+  assert.match(found, /failWhen must be a non-empty string/);
+  assert.match(problems({ ...OWN, replace: REPLACE }), /replace goes with wcag/);
 });
 
 test('ruleMappedStandard gives procedures for a standard that restates WCAG', () => {

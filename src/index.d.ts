@@ -1076,6 +1076,12 @@ export interface ProcedureFacet {
    * coveredBy facet's procedure does, or where core has none yet.
    */
   procedure: HowToCheck | null;
+  /**
+   * A pack's requirement that replaces this WCAG facet's general procedure
+   * (standard.procedures, replace): the pack's name. The procedure and tools
+   * are then the pack's, in English; rules and variants stay core's.
+   */
+  procedureFrom?: string;
   /** The broader facet of the same criterion whose procedure assesses this one. */
   coveredBy?: string;
   variants: ProcedureVariant[];
@@ -1094,6 +1100,8 @@ export interface Procedures {
   level: 'A' | 'AA' | 'AAA' | null;
   /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
   wcag?: string;
+  /** A pack's requirement of its own: the WCAG criteria it relates to, without restating any. */
+  relatesTo?: string[];
   /** Whether every facet has a procedure, its own or its coveredBy facet's. */
   complete: boolean;
   /**
@@ -1126,6 +1134,128 @@ export interface ProceduresOptions {
  * proceduresFrom from @surea11y/core/procedures.
  */
 export function proceduresFor(requirement: string, options?: ProceduresOptions): Procedures | null;
+
+/** A group of a standard's requirements: a WCAG principle or guideline, or a pack's own group. */
+export interface ProcedureGroup {
+  id: string;
+  title: string;
+  /** The requirements in this group itself, in the standard's order. */
+  requirements: string[];
+  /** The groups under it: a principle's guidelines. */
+  groups: ProcedureGroup[];
+}
+
+export interface ProcedureListOptions {
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** WCAG's version ('2.2', the default), or the pack's standard's (the latest that gives procedures). */
+  version?: string;
+  /** WCAG only: the levels to list; all by default. */
+  levels?: 'A' | 'AA' | 'AAA' | readonly ('A' | 'AA' | 'AAA')[];
+  locale?: string | readonly string[] | null;
+  packs?: readonly object[];
+  /** Keep only the facets whose procedure needs one of these tools. */
+  tools?: ProcedureTool['id'] | readonly ProcedureTool['id'][];
+  /** Keep only the facets with one of these automation levels. */
+  automation?: ProcedureFacet['automation'] | readonly ProcedureFacet['automation'][];
+  /** Keep only the facets one of these rules claims. */
+  rules?: string | readonly string[];
+}
+
+/** Every requirement of a standard, in its order, and the groups it puts them in. */
+export interface ProcedureList {
+  /** 'wcag', 'best-practice', or the name of a pack's standard. */
+  standard: string;
+  /** A pack's standard: its key. */
+  key?: string;
+  /** The version listed; null for the best practices. */
+  version: string | null;
+  /**
+   * Each requirement as proceduresFor gives it; with filters, only the
+   * matching facets (a technology facet keeps the one it is covered by), and
+   * only the requirements left with any. complete is the requirement's own.
+   */
+  requirements: Procedures[];
+  groups: ProcedureGroup[];
+}
+
+/** One thing a person does to assess a standard: a general procedure, once. */
+export interface ProcedureChecklistItem {
+  /** '<criterion>/<facet>' for core's procedure; '<requirement>/<facet>' for a pack's own or replaced one. */
+  key: string;
+  facet: string;
+  label: string;
+  automation: ProcedureFacet['automation'];
+  /** The WCAG criterion the facet is of, or null for a pack's own requirement. */
+  wcag: string | null;
+  /** The requirements it serves, in the standard's order. */
+  requirements: string[];
+  /** The technology facets it assesses (their coveredBy). */
+  covers: string[];
+  /** The rules that claim it or a facet it covers. */
+  rules: string[];
+  tools: ProcedureTool[];
+  /** Naming every requirement it serves where it says what fails. */
+  procedure: HowToCheck;
+  /** A pack's procedure in place of core's: the pack's name. */
+  procedureFrom?: string;
+}
+
+export interface ProcedureChecklist {
+  standard: string;
+  key?: string;
+  version: string | null;
+  items: ProcedureChecklistItem[];
+  groups: ProcedureGroup[];
+}
+
+/** A requirement related to another: a pack's to a WCAG criterion, or a WCAG criterion to a pack's. */
+export interface RelatedRequirement {
+  /** 'wcag', or the name of a pack's standard. */
+  standard: string;
+  /** A pack's standard: its key. */
+  key?: string;
+  id: string;
+  /** A pack's standard: the version read. */
+  version?: string;
+  title: string | null;
+  /** A WCAG criterion: its level. */
+  level?: 'A' | 'AA' | 'AAA' | null;
+  /** The pack's requirement restates the criterion, or relates to it without restating it. */
+  relation: 'restates' | 'relatesTo';
+}
+
+export interface RelatedRequirementsOptions {
+  packs?: readonly object[];
+  /** For a pack's requirement: its standard, by key or name. */
+  standard?: string;
+  /** For a pack's requirement: a version of its standard; the latest that has it by default. */
+  version?: string;
+}
+
+/**
+ * Every requirement of a standard, in its order and groups (docs/PROCEDURES.md),
+ * read from disk, in Node; null for a standard or version it doesn't know. In a
+ * browser bundle it warns once and returns null: use listProceduresFrom from
+ * @surea11y/core/procedures.
+ */
+export function listProcedures(options?: ProcedureListOptions): ProcedureList | null;
+
+/**
+ * What a person does to assess a standard by hand, once each: one item per
+ * general procedure. Takes listProcedures' options. In a browser bundle it
+ * warns once and returns null: use procedureChecklistFrom.
+ */
+export function procedureChecklist(options?: ProcedureListOptions): ProcedureChecklist | null;
+
+/**
+ * For a WCAG criterion, the packs' requirements that restate or relate to it;
+ * for a pack's requirement, the WCAG criteria it restates or relates to.
+ */
+export function relatedRequirements(
+  requirement: string,
+  options?: RelatedRequirementsOptions
+): RelatedRequirement[];
 
 /**
  * The same scan from a single self-contained function, which can be

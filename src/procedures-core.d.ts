@@ -1,8 +1,23 @@
 // Types for @surea11y/core/procedures (docs/PROCEDURES.md).
 
-import type { Procedures, ProceduresOptions } from './index';
+import type {
+  ProcedureChecklist,
+  ProcedureList,
+  ProcedureListOptions,
+  Procedures,
+  ProceduresOptions
+} from './index';
+
+export { relatedRequirements } from './index';
 
 export type {
+  ProcedureChecklist,
+  ProcedureChecklistItem,
+  ProcedureGroup,
+  ProcedureList,
+  ProcedureListOptions,
+  RelatedRequirement,
+  RelatedRequirementsOptions,
   Procedures,
   ProcedureFacet,
   ProcedureTool,
@@ -36,3 +51,15 @@ export function proceduresFrom(
   requirement: string,
   options?: ProceduresOptions
 ): Procedures | null;
+
+/** Every requirement of a standard, in its order and groups, from the dictionaries given. */
+export function listProceduresFrom(
+  dictionaries: ProceduresDictionaries,
+  options?: ProcedureListOptions
+): ProcedureList | null;
+
+/** What a person does to assess a standard by hand, once each, from the dictionaries given. */
+export function procedureChecklistFrom(
+  dictionaries: ProceduresDictionaries,
+  options?: ProcedureListOptions
+): ProcedureChecklist | null;
