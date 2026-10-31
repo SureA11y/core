@@ -176,6 +176,7 @@
     "src/index.js",
     "src/how-to-check.js",
     "src/how-to-check-lazy.js",
+    "src/manual-checks-lazy.js",
     "src/how-to-check-core.js",
     "src/how-to-check-core.d.ts",
     "src/pack-review.js",
