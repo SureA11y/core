@@ -389,7 +389,7 @@ A facet broader than any one rule has `macro: true`. A facet with `coveredBy` ha
 
 ## Which criteria have procedures
 
-Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 224 facets, 110 procedures of their own and 114 technology facets covered by one of them. The best practices have one for each of their 10 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, and zoom. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
+Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 224 facets, 110 procedures of their own and 114 technology facets covered by one of them. The best practices have one for each of their 13 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, zoom, repeated names, new windows and downloads, and reduced motion. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
 
 ## Where they live
 

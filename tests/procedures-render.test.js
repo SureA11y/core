@@ -414,7 +414,7 @@ test('one requirement is a page of its own, with no groups', () => {
 test('the best practices are headed by their title, with no number', () => {
   const d = doc(renderProcedures(proceduresFor('best-practice')));
   assert.equal(d.querySelector('article.req > h2').textContent, 'Best practices');
-  assert.equal(d.querySelectorAll('section.facet').length, 10);
+  assert.equal(d.querySelectorAll('section.facet').length, 13);
   assert.equal(d.querySelector('p.empty'), null);
   const md = renderProcedures(listProcedures({ standard: 'best-practice' }), {
     format: 'markdown'
