@@ -72,7 +72,23 @@ const pack = definePack(
   })
 );
 
-test('a requirement that restates a criterion takes its procedures', () => {
+// A criterion's facets as a requirement restating it reads them: their
+// general procedures say the requirement fails, where core's say WCAG's.
+// Variants, a finding's steps, keep naming WCAG.
+const under = (facets, criterion, label) =>
+  facets.map((f) =>
+    f.procedure
+      ? {
+          ...f,
+          procedure: {
+            ...f.procedure,
+            failWhen: f.procedure.failWhen.replace(`WCAG ${criterion}`, label)
+          }
+        }
+      : f
+  );
+
+test('a requirement that restates a criterion takes its procedures, naming the requirement', () => {
   const r = proceduresFor('R-1.4.3', { packs: [pack], standard: 'stdp' });
   const wcag = proceduresFor('1.4.3');
   assert.deepEqual(
@@ -93,7 +109,9 @@ test('a requirement that restates a criterion takes its procedures', () => {
       wcag: '1.4.3'
     }
   );
-  assert.deepEqual(r.facets, wcag.facets);
+  assert.deepEqual(r.facets, under(wcag.facets, '1.4.3', 'Std P R-1.4.3'));
+  assert.match(r.facets[1].procedure.failWhen, /fails Std P R-1\.4\.3\.$/);
+  assert.match(r.facets[1].variants[0].failWhen, /WCAG 1\.4\.3/);
   assert.deepEqual(r.rules, wcag.rules);
   assert.equal(r.complete, true);
   // An earlier version, by name.
@@ -104,7 +122,7 @@ test('a requirement that restates a criterion takes its procedures', () => {
   // In another locale, the criterion's procedures in it.
   assert.deepEqual(
     proceduresFor('R-1.4.3', { packs: [pack], locale: 'fr' }).facets,
-    proceduresFor('1.4.3', { locale: 'fr' }).facets
+    under(proceduresFor('1.4.3', { locale: 'fr' }).facets, '1.4.3', 'Std P R-1.4.3')
   );
 });
 
@@ -232,6 +250,33 @@ test('a requirement that restates a criterion can replace its facets’ general 
   assert.deepEqual(
     proceduresFrom({ en }, 'R-1.4.3', { packs: [own] }),
     proceduresFor('R-1.4.3', { packs: [own] })
+  );
+});
+
+test('a pack’s own procedures may name the requirement as core’s do', () => {
+  const named = (failWhen) => ({ ...REPLACE['contrast-minimum-text'], failWhen });
+  const own = definePack(
+    packWith({
+      '1.0': {
+        'R-1.4.3': {
+          wcag: '1.4.3',
+          replace: {
+            'contrast-minimum-text': named('A text is too faint, which fails {{requirement}}.')
+          }
+        },
+        'R-9': {
+          facets: [{ ...OWN.facets[0], failWhen: 'No text version: {{requirement}} fails.' }]
+        }
+      }
+    })
+  );
+  assert.equal(
+    proceduresFor('R-1.4.3', { packs: [own] }).facets[1].procedure.failWhen,
+    'A text is too faint, which fails Std P R-1.4.3.'
+  );
+  assert.equal(
+    proceduresFor('R-9', { packs: [own] }).facets[0].procedure.failWhen,
+    'No text version: Std P R-9 fails.'
   );
 });
 

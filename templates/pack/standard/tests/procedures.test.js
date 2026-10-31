@@ -19,10 +19,18 @@ test('every requirement says how a person assesses it, in every version', () => 
   }
 });
 
-test('a requirement that restates WCAG takes the criterion’s procedures', () => {
+test('a requirement that restates WCAG takes the criterion’s procedures, naming the requirement', () => {
   const r = read('1');
   assert.equal(r.wcag, '1.1.1');
-  assert.deepEqual(r.facets, proceduresFor('1.1.1', { packs: [pack] }).facets);
+  const wcag = proceduresFor('1.1.1', { packs: [pack] });
+  assert.deepEqual(
+    r.facets.map((f) => f.id),
+    wcag.facets.map((f) => f.id)
+  );
+  // Core's text says what fails: this requirement here, the criterion there.
+  const [facet] = r.facets.filter((f) => f.procedure);
+  assert.ok(facet.procedure.failWhen.includes(`fails ${pack.standard.standard} 1.`));
+  assert.match(wcag.facets.find((f) => f.id === facet.id).procedure.failWhen, /fails WCAG 1\.1\.1/);
 });
 
 test('a requirement that tests a facet its own way shows its steps there', () => {

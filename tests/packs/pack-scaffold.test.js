@@ -101,7 +101,14 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
   const read = (id) => proceduresFor(id, { packs: [pack], standard: 'city-web' });
   for (const id of ['1', '2', '3', '4', '5', '6']) assert.equal(read(id).complete, true, id);
   assert.equal(read('1').wcag, '1.1.1');
-  assert.deepEqual(read('1').facets, proceduresFor('1.1.1').facets);
+  assert.deepEqual(
+    read('1').facets.map((f) => f.id),
+    proceduresFor('1.1.1').facets.map((f) => f.id)
+  );
+  assert.match(
+    read('1').facets.find((f) => f.procedure).procedure.failWhen,
+    /fails City-web Standard 1\b/
+  );
   assert.deepEqual(
     read('6')
       .facets.filter((f) => f.procedureFrom)

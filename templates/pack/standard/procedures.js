@@ -18,7 +18,9 @@
  *
  * Steps are short, in English, for someone without accessibility training,
  * from a whole page in a browser; passWhen and failWhen say what they see,
- * and failWhen names the requirement it fails. tools lists what they need
+ * and failWhen names the requirement it fails: as written here, or as
+ * {{requirement}}, which reads as the standard's name and the requirement
+ * ("__TITLE__ 6"), as core's procedures do. tools lists what they need
  * besides a browser: keyboard, pointer, screen-reader, zoom, contrast-theme,
  * devtools.
  */

@@ -148,9 +148,22 @@ function packClaims(packRules, key, facetId, requirement, read, pack) {
   return { rules, variants };
 }
 
-function facetOf(facet, entry, stem, rules, read) {
+// A general procedure names the requirement it is read under where its text
+// says {{requirement}}: 'WCAG 1.4.3' read as the criterion, 'EN 301 549
+// 9.1.4.3' read as a pack's requirement that restates it.
+function naming(procedure, requirement) {
+  if (!procedure || !requirement) return procedure;
+  const fill = (text) => text.split('{{requirement}}').join(requirement);
+  return {
+    steps: procedure.steps.map(fill),
+    passWhen: fill(procedure.passWhen),
+    failWhen: fill(procedure.failWhen)
+  };
+}
+
+function facetOf(facet, entry, stem, rules, read, requirement) {
   const coveredBy = entry && typeof entry.coveredBy === 'string' ? entry.coveredBy : null;
-  const procedure = coveredBy ? null : read.procedure(stem);
+  const procedure = coveredBy ? null : naming(read.procedure(stem), requirement);
   const tools = procedure && entry && Array.isArray(entry.tools) ? entry.tools : [];
   const out = { id: facet.id, label: facet.label, automation: facet.automation };
   if (facet.macro) out.macro = true;
@@ -173,8 +186,9 @@ function isComplete(facets) {
 }
 
 // A WCAG criterion's facets, with the packs' rules that claim them after
-// core's, and their variants after core's.
-function wcagCriterion(criterion, read, packRules) {
+// core's, and their variants after core's; its general procedures name
+// `requirement`, the criterion itself by default.
+function wcagCriterion(criterion, read, packRules, requirement) {
   if (!hasOwn(FACETS, criterion)) return null;
   const info = FACETS[criterion];
   const registry = PROCEDURES.wcag[criterion] || {};
@@ -185,7 +199,8 @@ function wcagCriterion(criterion, read, packRules) {
       registry[facet.id],
       `wcag_${criterion}_${facet.id}_`,
       ruleIds.filter((r) => (RULES[r].facets[criterion] || []).includes(facet.id)),
-      read
+      read,
+      requirement || `WCAG ${criterion}`
     );
     const pack = packClaims(packRules, criterion, facet.id, false, read);
     out.rules = out.rules.concat(pack.rules.filter((r) => !out.rules.includes(r)));
@@ -233,8 +248,11 @@ function bestPractices(read) {
 // A pack's own facet: its procedure is in English, and no core rule claims
 // it; the pack's rules that claim it (meta.coverage.facetsByRequirement) are
 // its rules, and their codes filed under it its variants.
-function packFacet(f, read, claims) {
-  const procedure = { steps: f.steps.slice(), passWhen: f.passWhen, failWhen: f.failWhen };
+function packFacet(f, read, claims, requirement) {
+  const procedure = naming(
+    { steps: f.steps.slice(), passWhen: f.passWhen, failWhen: f.failWhen },
+    requirement
+  );
   return {
     id: f.id,
     label: f.label,
@@ -252,7 +270,7 @@ function packFacet(f, read, claims) {
 // (standard.procedures, replace): the pack's, in English, with its tools, or
 // the facet's where it names none, and procedureFrom the pack's name. Its
 // rules and variants stay: a finding still shows its own steps.
-function replaced(facet, own, read, pack) {
+function replaced(facet, own, read, pack, requirement) {
   const tools = Array.isArray(own.tools)
     ? own.tools
         .filter((id) => TOOLS.includes(id))
@@ -262,7 +280,10 @@ function replaced(facet, own, read, pack) {
   return {
     ...rest,
     tools,
-    procedure: { steps: own.steps.slice(), passWhen: own.passWhen, failWhen: own.failWhen },
+    procedure: naming(
+      { steps: own.steps.slice(), passWhen: own.passWhen, failWhen: own.failWhen },
+      requirement
+    ),
     procedureFrom: pack.name,
     variants
   };
@@ -288,12 +309,15 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       title: typeof entry.title === 'string' ? entry.title : null,
       level: null
     };
+    // What its procedures say it fails: the standard's name and the
+    // requirement ('EN 301 549 9.1.4.3').
+    const label = `${st.standard} ${id}`;
     if (typeof entry.wcag === 'string') {
-      const criterion = wcagCriterion(entry.wcag, read, packRules);
+      const criterion = wcagCriterion(entry.wcag, read, packRules, label);
       if (!criterion) return null;
       const replace = isObject(entry.replace) ? entry.replace : {};
       const facets = criterion.facets.map((f) =>
-        hasOwn(replace, f.id) && !f.coveredBy ? replaced(f, replace[f.id], read, pack) : f
+        hasOwn(replace, f.id) && !f.coveredBy ? replaced(f, replace[f.id], read, pack, label) : f
       );
       return {
         ...head,
@@ -304,7 +328,7 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       };
     }
     const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) =>
-      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack))
+      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack), label)
     );
     const rules = [];
     for (const f of facets) for (const r of f.rules) if (!rules.includes(r)) rules.push(r);
