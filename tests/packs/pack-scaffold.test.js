@@ -94,28 +94,29 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
   for (const file of written) {
     assert.doesNotMatch(fs.readFileSync(path.join(dir, file), 'utf8'), /__[A-Z]+__/, file);
   }
-  // Its requirements have procedures once they restate WCAG: with
-  // applicability: 'wcag', each takes its criterion's.
-  assert.equal(pack.standard.procedures, undefined);
-  const index = path.join(dir, 'index.js');
-  const text = fs.readFileSync(index, 'utf8');
-  const restating = text.replace(
-    'ruleMap: RULE_REQUIREMENTS\n});',
-    "ruleMap: RULE_REQUIREMENTS,\n  applicability: 'wcag'\n});"
+  // Every requirement says how a person assesses it (procedures.js): one
+  // restating a criterion takes its procedures, one replaces a facet's with
+  // its own, and two give facets of their own.
+  assert.ok(written.includes('procedures.js'));
+  const read = (id) => proceduresFor(id, { packs: [pack], standard: 'city-web' });
+  for (const id of ['1', '2', '3', '4', '5', '6']) assert.equal(read(id).complete, true, id);
+  assert.equal(read('1').wcag, '1.1.1');
+  assert.deepEqual(read('1').facets, proceduresFor('1.1.1').facets);
+  assert.deepEqual(
+    read('6')
+      .facets.filter((f) => f.procedureFrom)
+      .map((f) => [f.id, f.procedureFrom]),
+    [['page-title-descriptive', 'city-rules']]
   );
-  assert.notEqual(restating, text);
-  fs.writeFileSync(index, restating);
-  delete require.cache[require.resolve(dir)];
-  const wcagPack = require(dir);
-  assert.deepEqual(checkPack(wcagPack), []);
-  const r = proceduresFor('1', { packs: [wcagPack], standard: 'city-web' });
-  assert.equal(r.wcag, '1.1.1');
-  assert.deepEqual(r.facets, proceduresFor('1.1.1').facets);
+  assert.deepEqual(
+    read('5').facets.map((f) => f.id),
+    ['heading-levels-in-order']
+  );
 });
 
 // The generated tests, per kind: a standard also checks the WCAG version its
 // profile is judged by.
-const TEST_COUNT = { checklist: 12, standard: 13 };
+const TEST_COUNT = { checklist: 12, standard: 17 };
 
 for (const kind of KINDS) {
   test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {

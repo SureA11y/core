@@ -51,6 +51,10 @@ Core's rules, with their ids, tags and what each checks, are in core's [`docs/RU
 
 `rollups` in `index.js` are the items: each groups rules, core's or the pack's, into one result (its id starts with the namespace). An item fails when one of its rules fails, asks (`cantTell`) when one asks, and passes when they pass. Under a profile, results list the items in `rulesResults`, the HTML report shows them under the checklist's title, SARIF tags each rule with the items it belongs to, and JUnit lists them as properties of each rule's criterion.
 
+## How a person checks it
+
+A rule's `meta.review` says how a person answers each question it asks (`cantTell`): reports show the steps as "How to check" on its findings. A rule that tests part of a WCAG criterion can also say which of the criterion's facets, its test objectives, it tests, in `meta.coverage.facetsBySc` (`{ '2.4.4': ['link-text-descriptive-evidence'] }`; a criterion's facets are in `proceduresFor('2.4.4').facets`). Its steps then join core's procedures for that criterion: `proceduresFor('2.4.4', { packs: [pack] })` lists the rule under the facet, with its steps, next to core's procedure for assessing the whole page. A checklist has no requirements of its own; a standard pack (`surea11y-pack new --kind standard`) can give procedures for its own. Core's [`docs/PACKS.md`](https://github.com/SureA11y/core/blob/main/docs/PACKS.md#how-a-person-assesses-it-procedures) explains both.
+
 ## Add a rule
 
 1. Copy the rule closest to what you need, in `rules/automatic/` (it can fail) or `rules/manual/` (it asks a person). Name the file and the `id` `__NAMESPACE__-<what it checks>`.
