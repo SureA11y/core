@@ -19,6 +19,16 @@ test('every requirement says how a person assesses it, in every version', () => 
   }
 });
 
+test('every requirement is named by its title, as requirements.js gives it', () => {
+  for (const [version, requirements] of Object.entries(REQUIREMENTS)) {
+    const list = listProcedures({ packs: [pack], standard: '__NAMESPACE__', version });
+    for (const r of list.requirements) {
+      assert.ok(r.title, `${version} ${r.id} has a title`);
+      assert.equal(r.title, requirements[r.id] && requirements[r.id].title, `${version} ${r.id}`);
+    }
+  }
+});
+
 test('a requirement that restates WCAG takes the criterion’s procedures, naming the requirement', () => {
   const r = read('1');
   assert.equal(r.wcag, '1.1.1');
