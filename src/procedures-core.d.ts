@@ -3,6 +3,8 @@
 import type {
   RenderProceduresOptions,
   ProcedureChecklist,
+  ProcedureLanguage,
+  ProcedureLanguagesOptions,
   ProcedureList,
   ProcedureListOptions,
   Procedures,
@@ -15,6 +17,8 @@ export type {
   ProcedureChecklist,
   ProcedureChecklistItem,
   ProcedureGroup,
+  ProcedureLanguage,
+  ProcedureLanguagesOptions,
   ProcedureList,
   ProcedureListOptions,
   RelatedRequirement,
@@ -65,6 +69,19 @@ export function procedureChecklistFrom(
   dictionaries: ProceduresDictionaries,
   options?: ProcedureListOptions
 ): ProcedureChecklist | null;
+
+/**
+ * The languages a standard's procedures can be read in, its own first, from
+ * the dictionaries given and the packs': the locales of an object's keys,
+ * or, for a function, of options.locales.
+ */
+export function procedureLanguagesFrom(
+  dictionaries: ProceduresDictionaries,
+  options?: ProcedureLanguagesOptions & {
+    /** The locales the dictionaries hold, where they are a function; an object's keys by default. */
+    locales?: string | readonly string[];
+  }
+): ProcedureLanguage[] | null;
 
 /** Procedures as a document, HTML or Markdown, its words from the dictionaries given. */
 export function renderProceduresFrom(

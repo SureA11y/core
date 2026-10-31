@@ -922,7 +922,8 @@ export interface FramePosition {
 
 /** One frame of a flattened cross-frame result: its result, or why it has none. */
 export type FlatFrame =
-  { frame: FramePosition; result: ScanResult } | { frame: FramePosition; error: string };
+  | { frame: FramePosition; result: ScanResult }
+  | { frame: FramePosition; error: string };
 
 /**
  * Lists every frame of a cross-frame result, the top frame first, then each
@@ -1043,7 +1044,14 @@ export function howToCheckFor(
 
 /** Something a procedure needs besides a browser, with its name in the locale. */
 export interface ProcedureTool {
-  id: 'keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools' | (string & {});
+  id:
+    | 'keyboard'
+    | 'pointer'
+    | 'screen-reader'
+    | 'zoom'
+    | 'contrast-theme'
+    | 'devtools'
+    | (string & {});
   label: string;
 }
 
@@ -1333,6 +1341,38 @@ export function listProcedures(options?: ProcedureListOptions): ProcedureList | 
  * warns once and returns null: use procedureChecklistFrom.
  */
 export function procedureChecklist(options?: ProcedureListOptions): ProcedureChecklist | null;
+
+export interface ProcedureLanguagesOptions {
+  /** 'wcag' (the default), 'best-practice', or a pack's standard by key or name. */
+  standard?: string;
+  /** WCAG's version ('2.2', the default), or the pack's standard's (the latest that gives procedures). */
+  version?: string;
+  packs?: readonly object[];
+}
+
+/** A language a standard's procedures can be read in (docs/PROCEDURES.md#their-languages). */
+export interface ProcedureLanguage {
+  /** Lower case: listProcedures with this locale reads the standard in it. */
+  locale: string;
+  /**
+   * Everything of the standard and version is in this locale: core's
+   * procedures, the tools' names, a page's words and a pack's standard's
+   * own text.
+   */
+  complete: boolean;
+  /** The texts that would be shown in another language; 0 where complete. */
+  missing: number;
+}
+
+/**
+ * The languages a standard's procedures can be read in, its own first, so a
+ * language picker offers only those (docs/PROCEDURES.md#their-languages):
+ * WCAG's and the best practices' in each locale core ships, a pack's
+ * standard's in those it declares (docs/PACKS.md, "Languages"); null for a
+ * standard or version it doesn't know. In a browser bundle it warns once
+ * and returns null: use procedureLanguagesFrom from @surea11y/core/procedures.
+ */
+export function procedureLanguages(options?: ProcedureLanguagesOptions): ProcedureLanguage[] | null;
 
 /**
  * For a WCAG criterion, the packs' requirements that restate or relate to it;

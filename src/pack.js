@@ -25,7 +25,12 @@
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
-const { languageProblems, packTranslationCoverage, withTitleKeys } = require('./pack-languages.js');
+const {
+  languageProblems,
+  languagesOf,
+  packTranslationCoverage,
+  withTitleKeys
+} = require('./pack-languages.js');
 const {
   prepareStandards,
   prepareRules,
@@ -1868,6 +1873,7 @@ module.exports = {
   checkPack,
   describePacks,
   packScript,
+  languagesOf,
   packTranslationCoverage,
   buildBrowserBundle,
   preparePacks,

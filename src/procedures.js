@@ -14,6 +14,7 @@ const path = require('node:path');
 const {
   listProceduresFrom,
   procedureChecklistFrom,
+  procedureLanguagesFrom,
   proceduresFrom,
   relatedRequirements,
   renderProceduresFrom
@@ -76,6 +77,39 @@ function procedureChecklist(options) {
 }
 
 /**
+ * The languages a standard's procedures can be read in, its own first:
+ * [{ locale, complete, missing }], from the dictionaries core ships and the
+ * packs'. Takes listProcedures' standard, version and packs.
+ */
+function procedureLanguages(options) {
+  const opts = options && typeof options === 'object' ? options : {};
+  return procedureLanguagesFrom(dictionary, {
+    standard: opts.standard,
+    version: opts.version,
+    packs: opts.packs,
+    locales: shippedLocales()
+  });
+}
+
+// The locales core ships procedures for: the dictionaries on disk.
+let shipped;
+function shippedLocales() {
+  if (!shipped) {
+    let files;
+    try {
+      files = fs.readdirSync(PROCEDURES_DIR);
+    } catch {
+      files = [];
+    }
+    shipped = files
+      .filter((f) => f.endsWith('.json'))
+      .map((f) => f.slice(0, -'.json'.length))
+      .sort();
+  }
+  return shipped;
+}
+
+/**
  * Procedures as a document: what listProcedures, procedureChecklist or
  * proceduresFor gives, as an HTML page or Markdown (options.format), in
  * the locale the procedures were read in (docs/PROCEDURES.md#rendering-them).
@@ -87,6 +121,7 @@ function renderProcedures(input, options) {
 module.exports = {
   listProcedures,
   procedureChecklist,
+  procedureLanguages,
   proceduresFor,
   relatedRequirements,
   renderProcedures

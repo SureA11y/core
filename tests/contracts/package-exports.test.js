@@ -116,6 +116,11 @@ test('the procedures entry and every procedures dictionary are reachable by name
     .filter((f) => f.endsWith('.json'))
     .map((f) => f.slice(0, -'.json'.length));
   assert.ok(locales.includes('en') && locales.length > 1);
+  // Its languages, from every dictionary core ships, as in Node.
+  const dictionaries = Object.fromEntries(
+    locales.map((l) => [l, consumerRequire(`@surea11y/core/procedures/${l}`)])
+  );
+  assert.deepEqual(entry.procedureLanguagesFrom(dictionaries), core.procedureLanguages());
   for (const locale of locales) {
     assert.deepEqual(
       consumerRequire(`@surea11y/core/procedures/${locale}`),

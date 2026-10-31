@@ -120,7 +120,14 @@ export type PackRequirementProcedures =
         id: string;
         label: string;
         automation?: 'full' | 'partial' | 'manual';
-        tools?: ('keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools')[];
+        tools?: (
+          | 'keyboard'
+          | 'pointer'
+          | 'screen-reader'
+          | 'zoom'
+          | 'contrast-theme'
+          | 'devtools'
+        )[];
         steps: string[];
         passWhen: string;
         failWhen: string;
@@ -284,6 +291,14 @@ export interface PackTranslationCoverage {
   /** The texts it doesn't translate yet. */
   missing: string[];
 }
+
+/**
+ * The languages of a pack's standard (docs/PACKS.md, "Languages"): the one
+ * its own text is written in, standard.lang ('en' where it gives none),
+ * first, then those standard.translations gives, lower case. Takes the
+ * standard, pack.standard.
+ */
+export function languagesOf(standard: unknown): string[];
 
 /** How far each translation of a pack's standard covers its texts; empty without any. */
 export function packTranslationCoverage(pack: unknown): PackTranslationCoverage[];
