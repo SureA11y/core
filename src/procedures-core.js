@@ -107,11 +107,20 @@ function naming(procedure, requirement) {
   };
 }
 
+// A criterion's title in the locale read, where `title` is the one the
+// dictionaries translate (wcag-facets.js's, WCAG 2.2's): an earlier
+// version's own title, such as 2.1's "Parsing" for 4.1.1, stays English.
+function criterionTitle(criterion, title, read) {
+  const info = FACETS[criterion];
+  return (info && title === info.title && read.text(`wcag_${criterion}_title`)) || title;
+}
+
 function facetOf(facet, entry, stem, rules, read, requirement) {
   const coveredBy = entry && typeof entry.coveredBy === 'string' ? entry.coveredBy : null;
   const procedure = coveredBy ? null : naming(read.procedure(stem), requirement);
   const tools = procedure && entry && Array.isArray(entry.tools) ? entry.tools : [];
-  const out = { id: facet.id, label: facet.label, automation: facet.automation };
+  const label = read.text(`${stem}label`) || facet.label;
+  const out = { id: facet.id, label, automation: facet.automation };
   if (facet.macro) out.macro = true;
   out.rules = rules;
   out.tools = tools
@@ -162,7 +171,7 @@ function wcagCriterion(criterion, read, packRules, requirement) {
   return {
     standard: 'wcag',
     id: criterion,
-    title: info.title,
+    title: criterionTitle(criterion, info.title, read),
     level: info.level,
     complete: isComplete(facets),
     rules,
@@ -183,7 +192,8 @@ function bestPractices(read) {
   return {
     standard: 'best-practice',
     id: 'best-practice',
-    title: 'Best practices',
+    // The page's name for them (render_*) is theirs too.
+    title: read.text('render_standard_bestPractice') || 'Best practices',
     level: null,
     complete: isComplete(facets),
     rules: [...new Set(facets.flatMap((f) => f.rules))].sort(byId),
@@ -398,15 +408,16 @@ function versionOf(st, version) {
 }
 
 // WCAG's principles and guidelines, each with the criteria of `ids` under
-// it, in order; a guideline or principle with none is left out.
-function wcagGroups(ids) {
+// it, in order, titled in the locale read; a guideline or principle with
+// none is left out.
+function wcagGroups(ids, read) {
   const out = [];
   for (const principle of Object.keys(WCAG_PRINCIPLES)) {
     const guidelines = Object.keys(WCAG_GUIDELINES)
       .filter((g) => g.split('.')[0] === principle)
       .map((g) => ({
         id: g,
-        title: WCAG_GUIDELINES[g],
+        title: read.text(`wcag_guideline_${g}`) || WCAG_GUIDELINES[g],
         requirements: ids.filter((id) => id.split('.').slice(0, 2).join('.') === g),
         groups: []
       }))
@@ -414,7 +425,7 @@ function wcagGroups(ids) {
     if (guidelines.length) {
       out.push({
         id: principle,
-        title: WCAG_PRINCIPLES[principle],
+        title: read.text(`wcag_principle_${principle}`) || WCAG_PRINCIPLES[principle],
         requirements: [],
         groups: guidelines
       });
@@ -499,7 +510,7 @@ function listing(dictionaries, options) {
       wcagCriteria(version, { levels })
         .map((c) => {
           const r = wcagCriterion(c.sc, read, packRules);
-          return r && { ...r, title: c.title, level: c.level };
+          return r && { ...r, title: criterionTitle(c.sc, c.title, read), level: c.level };
         })
         .filter(Boolean)
     );
@@ -507,7 +518,7 @@ function listing(dictionaries, options) {
     return {
       head: { standard: 'wcag', version, ...shaped(levels) },
       requirements,
-      groups: wcagGroups(ids),
+      groups: wcagGroups(ids, read),
       read
     };
   }

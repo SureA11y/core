@@ -68,8 +68,9 @@ function leftToAPerson(result, { packs, locale, levels } = {}) {
   if (!list) return null;
   const english = locale && locale !== 'en' ? read('en') : list;
   const facetsIn = (r) => r.facets.filter((f) => !f.coveredBy && f.procedure);
+  const enRequirement = (r) => english.requirements.find((x) => x.id === r.id) || null;
   const enFacet = (r, f) => {
-    const er = english.requirements.find((x) => x.id === r.id);
+    const er = enRequirement(r);
     return er ? er.facets.find((x) => x.id === f.id) : null;
   };
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
@@ -77,6 +78,7 @@ function leftToAPerson(result, { packs, locale, levels } = {}) {
     .map((r) => ({
       id: r.id,
       title: r.title,
+      titleLang: enRequirement(r) && enRequirement(r).title === r.title ? 'en' : null,
       level: r.level,
       wcag: r.wcag || null,
       facets: facetsIn(r).map((f) => {
@@ -84,6 +86,7 @@ function leftToAPerson(result, { packs, locale, levels } = {}) {
         return {
           id: f.id,
           label: f.label,
+          labelLang: en && en.label === f.label ? 'en' : null,
           automation: f.automation,
           procedure: f.procedure,
           procedureLang: en && same(en.procedure, f.procedure) ? 'en' : null,

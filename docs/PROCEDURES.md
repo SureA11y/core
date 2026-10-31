@@ -258,7 +258,7 @@ The CSV has one row per item (`key`, `facet`, `label`, `requirements`, `outcome`
 
 ### Language
 
-The page's own words (headings, labels, the worksheet) are in the procedures dictionaries, under `render_*`, in every locale core ships. What only English has is marked `lang="en"` on a page in another language, as WCAG 3.1.2 asks: the facets' labels, WCAG's criteria and guidelines' titles, a pack's own procedures, and a general procedure not yet translated. A pack's titles are marked with the language its standard gives (`report.titleLang`), when the packs are passed. A screen reader then reads each part in its language.
+The page's own words (headings, labels, the worksheet) are in the procedures dictionaries, under `render_*`, in every locale core ships. Core's procedures, the facets' labels and WCAG's principles, guidelines and criteria are in every locale core ships too, the names as each language's published translation of WCAG gives them. What only English has is marked `lang="en"` on a page in another language, as WCAG 3.1.2 asks: a pack's own labels and procedures, a criterion's title as an earlier WCAG gives it ("Parsing" for 4.1.1 in WCAG 2.1), and any text a locale lacks. A pack's titles are marked with the language its standard gives (`report.titleLang`), when the packs are passed. A screen reader then reads each part in its language.
 
 ### The page itself
 
@@ -385,7 +385,7 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
 }
 ```
 
-A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in English for now.
+A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in the locale read, like the procedures: a facet's `label`, a criterion's `title`, and the titles of WCAG's principles and guidelines in a list's `groups`. A criterion's title as WCAG 2.0 or 2.1 gives it, where it differs from 2.2's, stays English.
 
 `@surea11y/core/procedures/<locale>` is plain JSON, key to text. Its keys are covered as `proceduresFrom` reads them; its wording is not.
 

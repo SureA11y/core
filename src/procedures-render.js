@@ -16,9 +16,9 @@
  *   JSON or CSV, with each requirement's result rolled up from its items.
  *
  * The page's own words are the procedures dictionaries' render_* keys, in
- * the locale the procedures were read in. Text only English has (facet
- * labels, criteria's titles, a pack's own procedures, a general procedure
- * not yet translated) is marked lang="en" on a page in another language, as
+ * the locale the procedures were read in. Text only English has (a pack's
+ * own labels and procedures, or a text a locale lacks) is marked lang="en"
+ * on a page in another language, as
  * WCAG 3.1.2 asks. The same input always gives the same page: nothing in it
  * depends on the time or the machine.
  *
@@ -154,6 +154,25 @@ function model(dictionaries, input, options) {
     const stem = best ? `best-practice_${facet}_` : `wcag_${criterion}_${facet}_`;
     return read.localeOf(`${stem}step1`) || 'en';
   };
+  // The language of a name the dictionaries translate (a facet's label, a
+  // criterion's, guideline's or principle's title): the locale it was read
+  // in where it is that text, English otherwise (a pack's own label, or a
+  // title an earlier WCAG gives in its own words).
+  const nameLang = (key, text) => (read.text(key) === text && read.localeOf(key)) || 'en';
+  const labelLang = (criterion, facet, label, packOwn) =>
+    packOwn
+      ? 'en'
+      : nameLang(best ? `best-practice_${facet}_label` : `wcag_${criterion}_${facet}_label`, label);
+  const requirementTitleLang = (r) =>
+    wcagData
+      ? nameLang(`wcag_${r.id}_title`, r.title)
+      : best
+        ? nameLang('render_standard_bestPractice', r.title)
+        : titleLang;
+  const groupTitleLang = (g) =>
+    wcagData
+      ? nameLang(`wcag_${g.id.includes('.') ? 'guideline' : 'principle'}_${g.id}`, g.title)
+      : titleLang;
   const variantLang = (v) => {
     const prefix = prefixes[v.ruleId];
     return (prefix && read.localeOf(`${prefix}_review_${v.reasonCode}_step1`)) || 'en';
@@ -183,8 +202,7 @@ function model(dictionaries, input, options) {
     scopeLines.push(t('render_scope_rules', { rules: scope.rules.join(', ') }));
   }
 
-  // A text of the page's guidance, written in English first as the
-  // procedures are, with the language it was read in.
+  // A text of the page's guidance, with the language it was read in.
   const guide = (key) => {
     const text = read.text(key);
     return text ? { text, lang: read.localeOf(key) || 'en' } : null;
@@ -223,6 +241,9 @@ function model(dictionaries, input, options) {
     wcagData,
     best,
     procedureLang,
+    labelLang,
+    requirementTitleLang,
+    groupTitleLang,
     variantLang,
     toolsOf,
     scopeLines,
@@ -541,12 +562,13 @@ function renderHtml(m, options) {
     if (Array.isArray(r.relatesTo) && r.relatesTo.length) {
       meta.push(`<span>${esc(t('render_relatesTo', { criteria: r.relatesTo.join(', ') }))}</span>`);
     }
+    const criterion = r.wcag || r.id;
     const facets = r.facets
       .filter((f) => !f.coveredBy || !r.facets.some((x) => x.id === f.coveredBy))
       .map((f) => {
         const fid = id('facet', `${r.id}-${f.id}`);
         const covered = r.facets.filter((x) => x.coveredBy === f.id);
-        const lang = m.procedureLang(r.wcag || r.id, f.id, own || !!f.procedureFrom);
+        const lang = m.procedureLang(criterion, f.id, own || !!f.procedureFrom);
         const extra = [];
         if (f.procedureFrom) {
           extra.push(
@@ -560,13 +582,18 @@ function renderHtml(m, options) {
           extra.push(`<p class="rules">${labelled('render_rules', codeList(rules))}</p>`);
         if (covered.length) {
           extra.push(
-            `<div class="covers"><p>${esc(t('render_covers'))}</p><ul${langAttr('en')}>${covered
-              .map((x) => `<li>${esc(x.label)}</li>`)
+            `<div class="covers"><p>${esc(t('render_covers'))}</p><ul>${covered
+              .map(
+                (x) =>
+                  `<li${langAttr(m.labelLang(criterion, x.id, x.label, own))}>${esc(x.label)}</li>`
+              )
               .join('')}</ul></div>`
           );
         }
         return `<section class="facet" aria-labelledby="${fid}">
-<${heading(level + 1)} id="${fid}"${langAttr('en')}>${esc(f.label)}</${heading(level + 1)}>
+<${heading(level + 1)} id="${fid}"${langAttr(m.labelLang(criterion, f.id, f.label, own))}>${esc(
+          f.label
+        )}</${heading(level + 1)}>
 <ul class="badges">${automationBadge(f.automation)}${f.procedure ? toolsBadges(f.tools) : ''}</ul>
 ${procedureHtml(f.procedure, lang)}
 ${extra.join('\n')}${variantsHtml(f)}
@@ -574,7 +601,7 @@ ${extra.join('\n')}${variantsHtml(f)}
       });
     return `<article class="req" id="${id('r', r.id)}" aria-labelledby="${hid}">
 <${heading(level)} id="${hid}">${m.best ? '' : `<span class="num">${esc(r.id)}</span> `}${
-      r.title ? `<span${langAttr(m.titleLang)}>${esc(r.title)}</span>` : ''
+      r.title ? `<span${langAttr(m.requirementTitleLang(r))}>${esc(r.title)}</span>` : ''
     }</${heading(level)}>
 ${meta.length ? `<p class="meta">${meta.join('')}</p>` : ''}
 ${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${facets.join('\n')}
@@ -588,6 +615,7 @@ ${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${fa
     const hid = id('item', item.key);
     const own = !item.wcag && !m.best;
     const lang = m.procedureLang(item.wcag, item.facet, own || !!item.procedureFrom);
+    const labelLang = langAttr(m.labelLang(item.wcag, item.facet, item.label, own));
     const meta = [
       `<span>${esc(t('render_serves', { requirements: item.requirements.join(', ') }))}</span>`
     ];
@@ -614,18 +642,14 @@ ${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${fa
       );
     }
     const recordHtml = record
-      ? `<fieldset class="record"><legend>${esc(t('render_result'))}<span class="vh">: </span><span class="vh"${langAttr(
-          'en'
-        )}>${esc(item.label)}</span></legend>
+      ? `<fieldset class="record"><legend>${esc(t('render_result'))}<span class="vh">: </span><span class="vh"${labelLang}>${esc(item.label)}</span></legend>
 <div class="choices">${OUTCOMES.map(
           (o) =>
             `<label><input type="radio" name="o-${n}" value="${o}"${o === 'open' ? ' checked' : ''}> ${esc(
               t(`render_outcome_${o}`)
             )}</label>`
         ).join('')}</div>
-<label class="notes" for="notes-${n}">${esc(t('render_notes'))}<span class="vh">: </span><span class="vh"${langAttr(
-          'en'
-        )}>${esc(item.label)}</span></label>
+<label class="notes" for="notes-${n}">${esc(t('render_notes'))}<span class="vh">: </span><span class="vh"${labelLang}>${esc(item.label)}</span></label>
 <textarea id="notes-${n}" rows="2"></textarea>
 </fieldset>`
       : '';
@@ -634,7 +658,7 @@ ${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${fa
     )}" data-facet="${esc(item.facet)}" data-label="${esc(item.label)}" data-requirements="${esc(
       JSON.stringify(item.requirements)
     )}">
-<${heading(level)} id="${hid}"${langAttr('en')}>${esc(item.label)}</${heading(level)}>
+<${heading(level)} id="${hid}"${labelLang}>${esc(item.label)}</${heading(level)}>
 <p class="meta">${meta.join('')}</p>
 <ul class="badges">${automationBadge(item.automation)}${toolsBadges(item.tools)}</ul>
 ${procedureHtml(item.procedure, lang)}
@@ -668,7 +692,7 @@ ${recordHtml}
       .join('\n');
     return `<section class="group" aria-labelledby="${gid}">
 <${heading(level)} id="${gid}">${g.other ? '' : `<span class="num">${esc(g.id)}</span> `}<span${
-      g.other ? '' : langAttr(m.titleLang)
+      g.other ? '' : langAttr(m.groupTitleLang(g))
     }>${esc(g.title)}</span></${heading(level)}>
 ${inner}
 </section>`;
@@ -678,7 +702,7 @@ ${inner}
       .map(
         (g) =>
           `<li><a href="#${g.hid}">${g.other ? '' : `${esc(g.id)} `}<span${
-            g.other ? '' : langAttr(m.titleLang)
+            g.other ? '' : langAttr(m.groupTitleLang(g))
           }>${esc(g.title)}</span></a>${g.groups.length ? tocOf(g.groups) : ''}</li>`
       )
       .join('')}</ol>`;

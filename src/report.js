@@ -505,8 +505,15 @@ function renderManualChecks(left, rollups, standard, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const pageIsEnglish = /^en(-|$)/i.test(ui.uiLocale);
   const en = (isEnglish) => (isEnglish && !pageIsEnglish ? ' lang="en"' : '');
-  const titleLang = left.standard === 'wcag' ? 'en' : (standard && standard.titleLang) || null;
-  const titleAttr = titleLang && titleLang !== ui.uiLocale ? ` lang="${esc(titleLang)}"` : '';
+  // A criterion's title is English where the locale has none; a pack's
+  // standard says the language of its titles.
+  const titleLang = (standard && standard.titleLang) || null;
+  const titleAttr = (r) =>
+    left.standard === 'wcag'
+      ? en(r.titleLang === 'en')
+      : titleLang && titleLang !== ui.uiLocale
+        ? ` lang="${esc(titleLang)}"`
+        : '';
   const outcomes = scanOutcomes(rollups, left);
   const checks = left.requirements.reduce((n, r) => n + r.facets.length, 0);
   const name =
@@ -541,7 +548,7 @@ function renderManualChecks(left, rollups, standard, ui) {
         : esc(ui.tr('report_manualChecks_toolsBrowser'));
       const steps = f.procedure.steps.map((x) => `<li>${esc(x)}</li>`).join('');
       return `<div class="manual-facet">
-          <p class="manual-label"><strong${en(true)}>${esc(f.label)}</strong></p>
+          <p class="manual-label"><strong${en(f.labelLang === 'en')}>${esc(f.label)}</strong></p>
           <p class="manual-meta">${esc(ui.tr(`report_manualChecks_automation_${f.automation}`))} · ${esc(
             ui.tr('report_manualChecks_tools', { tools: '' })
           ).replace('', tools)}</p>
@@ -555,7 +562,7 @@ function renderManualChecks(left, rollups, standard, ui) {
         </div>`;
     });
     return `<details class="manual-req">
-      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr}>${esc(
+      <summary><span class="sc-cell">${esc(r.id)}</span> <span${titleAttr(r)}>${esc(
         r.title || ''
       )}</span> ${scan} <span class="card-count">${esc(
         ui.tr('report_manualChecks_count', { count: ui.num(r.facets.length) })
