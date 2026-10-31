@@ -536,7 +536,7 @@ ${extra.join('\n')}${variantsHtml(f)}
 </section>`;
       });
     return `<article class="req" id="${id('r', r.id)}" aria-labelledby="${hid}">
-<${heading(level)} id="${hid}"><span class="num">${esc(r.id)}</span> ${
+<${heading(level)} id="${hid}">${m.best ? '' : `<span class="num">${esc(r.id)}</span> `}${
       r.title ? `<span${langAttr(m.titleLang)}>${esc(r.title)}</span>` : ''
     }</${heading(level)}>
 ${meta.length ? `<p class="meta">${meta.join('')}</p>` : ''}
@@ -814,7 +814,9 @@ function renderMarkdown(m, options) {
   const around = (key, inner) => md(t(key, { value: '\uE000' })).replace('\uE000', inner);
 
   const requirementMd = (r, level) => {
-    const lines = [h(level, `${md(r.id)}${r.title ? ` ${md(r.title)}` : ''}`), ''];
+    // The best practices have a title and no number of their own.
+    const name = [m.best ? null : md(r.id), r.title ? md(r.title) : null].filter(Boolean).join(' ');
+    const lines = [h(level, name), ''];
     const meta = [];
     if (r.level) meta.push(t('render_level', { level: r.level }));
     if (r.wcag) meta.push(t('render_restates', { criterion: r.wcag }));
