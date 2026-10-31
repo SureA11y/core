@@ -7242,7 +7242,7 @@
           },
           {
             "id": "visual-cues-conveyed",
-            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "label": "Meaning shown by styling or layout, such as bold, colour, position or an asterisk, is also given in the markup or the text",
             "automation": "manual",
             "coveredBy": []
           }
@@ -7334,7 +7334,7 @@
           },
           {
             "id": "color-not-only-means",
-            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "label": "Colour is not the only way information is shown, a choice is asked for or an element is set apart",
             "automation": "partial",
             "coveredBy": []
           }
@@ -8516,7 +8516,7 @@
           },
           {
             "id": "aria-attr-value-valid",
-            "label": "Every recognized aria-* attribute has a value matching its declared type",
+            "label": "Every recognised aria-* attribute has a value matching its declared type",
             "automation": "full",
             "coveredBy": [
               "aria-valid-attr-value"
@@ -9134,7 +9134,7 @@
           },
           {
             "id": "visual-cues-conveyed",
-            "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+            "label": "Meaning shown by styling or layout, such as bold, colour, position or an asterisk, is also given in the markup or the text",
             "automation": "manual",
             "coveredBy": []
           }
@@ -9226,7 +9226,7 @@
           },
           {
             "id": "color-not-only-means",
-            "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+            "label": "Colour is not the only way information is shown, a choice is asked for or an element is set apart",
             "automation": "partial",
             "coveredBy": []
           }
@@ -10408,7 +10408,7 @@
           },
           {
             "id": "aria-attr-value-valid",
-            "label": "Every recognized aria-* attribute has a value matching its declared type",
+            "label": "Every recognised aria-* attribute has a value matching its declared type",
             "automation": "full",
             "coveredBy": [
               "aria-valid-attr-value"

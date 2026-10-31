@@ -402,7 +402,7 @@ const FACETS = {
             },
             {
                 "id": "visual-cues-conveyed",
-                "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+                "label": "Meaning shown by styling or layout, such as bold, colour, position or an asterisk, is also given in the markup or the text",
                 "automation": "manual",
                 "macro": true
             }
@@ -425,7 +425,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "instructions-not-sensory-only",
-                "label": "Instructions don't rely only on shape, color, size, position, orientation or sound",
+                "label": "Instructions don't rely only on shape, colour, size, position, orientation or sound",
                 "automation": "manual"
             }
         ]
@@ -486,7 +486,7 @@ const FACETS = {
             },
             {
                 "id": "color-not-only-means",
-                "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+                "label": "Colour is not the only way information is shown, a choice is asked for or an element is set apart",
                 "automation": "partial",
                 "macro": true
             }
@@ -586,7 +586,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "visual-presentation",
-                "label": "Blocks of text can be given the user's colors, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
+                "label": "Blocks of text can be given the user's colours, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
                 "automation": "manual"
             }
         ]
@@ -1611,7 +1611,7 @@ const FACETS = {
             },
             {
                 "id": "aria-attr-value-valid",
-                "label": "Every recognized aria-* attribute has a value matching its declared type",
+                "label": "Every recognised aria-* attribute has a value matching its declared type",
                 "automation": "full"
             },
             {
