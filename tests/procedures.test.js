@@ -300,6 +300,21 @@ test('every criterion has a procedure for every facet', () => {
   assert.deepEqual(incomplete, []);
 });
 
+// What no criterion requires has a procedure for every facet too, so a page
+// or a worksheet of the best practices says how to check each.
+test('the best practices have a procedure for every facet', () => {
+  const r = proceduresFor('best-practice');
+  assert.deepEqual(
+    r.facets.map((f) => f.id),
+    Object.keys(PROCEDURES['best-practice'])
+  );
+  assert.deepEqual(
+    r.facets.filter((f) => !f.procedure).map((f) => f.id),
+    []
+  );
+  assert.equal(r.complete, true);
+});
+
 test('no core rule keeps its steps in meta.review: they are in src/procedures', () => {
   const kept = [...RULES].filter(([, file]) => require(file).meta.review !== undefined);
   assert.deepEqual(

@@ -411,6 +411,17 @@ test('one requirement is a page of its own, with no groups', () => {
   assert.equal(d.querySelector('article.req > h2').textContent, '1.4.12 Text Spacing');
 });
 
+test('the best practices are headed by their title, with no number', () => {
+  const d = doc(renderProcedures(proceduresFor('best-practice')));
+  assert.equal(d.querySelector('article.req > h2').textContent, 'Best practices');
+  assert.equal(d.querySelectorAll('section.facet').length, 10);
+  assert.equal(d.querySelector('p.empty'), null);
+  const md = renderProcedures(listProcedures({ standard: 'best-practice' }), {
+    format: 'markdown'
+  });
+  assert.ok(md.split('\n').includes('## Best practices'));
+});
+
 test('Markdown: headings for the groups, task items for a checklist', () => {
   const md = renderProcedures(procedureChecklist({ levels: 'A' }), { format: 'markdown' });
   const lines = md.split('\n');
