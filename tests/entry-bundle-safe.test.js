@@ -101,7 +101,11 @@ test('the procedures entry reaches no module outside core', () => {
       path.join(ROOT, 'src', 'coverage', 'wcag-criteria.js'),
       path.join(ROOT, 'src', 'coverage', 'wcag-titles.js'),
       path.join(ROOT, 'src', 'coverage', 'wcag-guidelines.js'),
-      path.join(ROOT, 'src', 'pack-review.js')
+      path.join(ROOT, 'src', 'pack-review.js'),
+      // Reading the dictionaries, and writing a page from the procedures.
+      path.join(ROOT, 'src', 'procedures-text.js'),
+      path.join(ROOT, 'src', 'procedures-render.js'),
+      path.join(ROOT, 'src', 'html-text.js')
     ].sort()
   );
 });

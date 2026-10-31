@@ -106,6 +106,10 @@ test('the procedures entry and every procedures dictionary are reachable by name
   );
   assert.deepEqual(entry.procedureChecklistFrom({ en }), core.procedureChecklist());
   assert.equal(typeof entry.relatedRequirements, 'function');
+  assert.equal(
+    entry.renderProceduresFrom({ en }, core.procedureChecklist({ levels: 'A' })),
+    core.renderProcedures(core.procedureChecklist({ levels: 'A' }))
+  );
   assert.deepEqual(entry.relatedRequirements('1.4.3'), core.relatedRequirements('1.4.3'));
   const locales = fs
     .readdirSync(path.join(ROOT_DIR, 'src', 'i18n', 'procedures'))

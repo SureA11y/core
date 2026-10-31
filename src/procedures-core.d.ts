@@ -1,6 +1,7 @@
 // Types for @surea11y/core/procedures (docs/PROCEDURES.md).
 
 import type {
+  RenderProceduresOptions,
   ProcedureChecklist,
   ProcedureList,
   ProcedureListOptions,
@@ -18,6 +19,7 @@ export type {
   ProcedureListOptions,
   RelatedRequirement,
   RelatedRequirementsOptions,
+  RenderProceduresOptions,
   Procedures,
   ProcedureFacet,
   ProcedureTool,
@@ -63,3 +65,10 @@ export function procedureChecklistFrom(
   dictionaries: ProceduresDictionaries,
   options?: ProcedureListOptions
 ): ProcedureChecklist | null;
+
+/** Procedures as a document, HTML or Markdown, its words from the dictionaries given. */
+export function renderProceduresFrom(
+  dictionaries: ProceduresDictionaries,
+  input: ProcedureList | ProcedureChecklist | Procedures,
+  options?: RenderProceduresOptions
+): string;

@@ -15,7 +15,8 @@ const {
   listProceduresFrom,
   procedureChecklistFrom,
   proceduresFrom,
-  relatedRequirements
+  relatedRequirements,
+  renderProceduresFrom
 } = require('./procedures-core.js');
 
 const PROCEDURES_DIR = path.join(__dirname, 'i18n', 'procedures');
@@ -74,4 +75,19 @@ function procedureChecklist(options) {
   return procedureChecklistFrom(dictionary, options);
 }
 
-module.exports = { listProcedures, procedureChecklist, proceduresFor, relatedRequirements };
+/**
+ * Procedures as a document: what listProcedures, procedureChecklist or
+ * proceduresFor gives, as an HTML page or Markdown (options.format), in
+ * the locale the procedures were read in (docs/PROCEDURES.md#rendering-them).
+ */
+function renderProcedures(input, options) {
+  return renderProceduresFrom(dictionary, input, options);
+}
+
+module.exports = {
+  listProcedures,
+  procedureChecklist,
+  proceduresFor,
+  relatedRequirements,
+  renderProcedures
+};

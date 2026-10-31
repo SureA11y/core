@@ -126,7 +126,7 @@ test('a requirement that restates a criterion takes its procedures, naming the r
   );
 });
 
-test('a requirement of its own gives its facets, in English', () => {
+test('a requirement of its own gives its facets, its text in English', () => {
   const r = proceduresFor('R-9', { packs: [pack], locale: 'de' });
   assert.equal(r.title, 'A text version of every form');
   assert.equal(r.complete, true);
@@ -137,7 +137,8 @@ test('a requirement of its own gives its facets, in English', () => {
       label: 'Each form can be had as a text document',
       automation: 'manual',
       rules: [],
-      tools: [{ id: 'keyboard', label: 'A keyboard' }],
+      // The tools' names are core's, in the reader's language.
+      tools: [{ id: 'keyboard', label: 'Eine Tastatur' }],
       procedure: {
         steps: ['Find each form on the page.', 'Look next to it for a link to a text version.'],
         passWhen: 'Every form has a text version.',

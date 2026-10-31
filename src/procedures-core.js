@@ -35,66 +35,10 @@ const {
   withPackReview
 } = require('./pack-review.js');
 
+const { reader } = require('./procedures-text.js');
+
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
-
-// 'fr-CA' reads fr-ca, then fr; English last.
-function chainOf(locales) {
-  const chain = [];
-  const add = (locale) => {
-    const tag = typeof locale === 'string' ? locale.trim().toLowerCase() : '';
-    if (!tag || tag === 'en' || tag.startsWith('en-')) return;
-    const base = tag.split('-')[0];
-    for (const t of base === tag ? [tag] : [tag, base]) if (!chain.includes(t)) chain.push(t);
-  };
-  if (Array.isArray(locales)) locales.forEach(add);
-  else add(locales);
-  chain.push('en');
-  return chain;
-}
-
-function dictionaryFor(dictionaries, locale) {
-  let dict = null;
-  if (typeof dictionaries === 'function') dict = dictionaries(locale);
-  else if (dictionaries && typeof dictionaries === 'object') {
-    if (hasOwn(dictionaries, locale)) dict = dictionaries[locale];
-    else {
-      for (const key of Object.keys(dictionaries)) {
-        if (key.toLowerCase() === locale) {
-          dict = dictionaries[key];
-          break;
-        }
-      }
-    }
-  }
-  return dict && typeof dict === 'object' ? dict : null;
-}
-
-// The text of the dictionaries for a locale chain: a key's, from the first
-// that has it, and a procedure's, { steps, passWhen, failWhen } or null.
-function reader(dictionaries, locales) {
-  const dicts = chainOf(locales)
-    .map((l) => dictionaryFor(dictionaries, l))
-    .filter(Boolean);
-  const text = (key) => {
-    for (const d of dicts) if (typeof d[key] === 'string') return d[key];
-    return null;
-  };
-  const procedure = (stem) => {
-    const hasSteps = (d) => typeof d[`${stem}step1`] === 'string';
-    const last = dicts[dicts.length - 1]; // English, when it was given
-    const counter = last && hasSteps(last) ? last : dicts.find(hasSteps);
-    if (!counter) return null;
-    const steps = [];
-    for (let n = 1; typeof counter[`${stem}step${n}`] === 'string'; n++) {
-      steps.push(text(`${stem}step${n}`));
-    }
-    const passWhen = text(`${stem}pass`);
-    const failWhen = text(`${stem}fail`);
-    return passWhen === null || failWhen === null ? null : { steps, passWhen, failWhen };
-  };
-  return { text, procedure };
-}
 
 const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
@@ -499,6 +443,12 @@ function listing(dictionaries, options) {
   const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
   const f = filtersOf(opts);
   const keep = (list) => list.map((r) => filtered(r, f)).filter(Boolean);
+  // What shaped the list, so a page made from it can say so: the locale its
+  // text was read in, the WCAG levels asked for and the filters.
+  const shaped = (levels) => ({
+    locale: read.locale,
+    scope: { levels: levels || null, tools: f.tools, automation: f.automation, rules: f.rules }
+  });
 
   if (standard === 'wcag' || standard === 'WCAG') {
     const version = asked || WCAG_VERSIONS[WCAG_VERSIONS.length - 1];
@@ -513,11 +463,21 @@ function listing(dictionaries, options) {
         .filter(Boolean)
     );
     const ids = requirements.map((r) => r.id);
-    return { head: { standard: 'wcag', version }, requirements, groups: wcagGroups(ids), read };
+    return {
+      head: { standard: 'wcag', version, ...shaped(levels) },
+      requirements,
+      groups: wcagGroups(ids),
+      read
+    };
   }
   if (standard === 'best-practice') {
     const requirements = keep([bestPractices(read)]);
-    return { head: { standard: 'best-practice', version: null }, requirements, groups: [], read };
+    return {
+      head: { standard: 'best-practice', version: null, ...shaped() },
+      requirements,
+      groups: [],
+      read
+    };
   }
   const [found] = packStandards(opts.packs, standard);
   if (!found) return null;
@@ -533,7 +493,7 @@ function listing(dictionaries, options) {
   const ids = requirements.map((r) => r.id);
   const groups = isObject(st.groups) ? packGroups(st.groups[version], ids) : [];
   return {
-    head: { standard: st.standard, key: st.key, version },
+    head: { standard: st.standard, key: st.key, version, ...shaped() },
     requirements,
     groups,
     read
@@ -674,9 +634,13 @@ function relatedRequirements(requirement, options) {
   return [];
 }
 
+// Procedures as a document, HTML or Markdown (src/procedures-render.js).
+const { renderProceduresFrom } = require('./procedures-render.js');
+
 module.exports = {
   listProceduresFrom,
   procedureChecklistFrom,
   proceduresFrom,
-  relatedRequirements
+  relatedRequirements,
+  renderProceduresFrom
 };
