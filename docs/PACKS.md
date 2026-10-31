@@ -334,6 +334,8 @@ Each requirement takes one of three forms:
 - **It restates a criterion, but tests some of it its own way**: `{ wcag: '1.4.3', replace: { <facet>: { ... } } }`. It takes the criterion's facets, and the facets it names show its procedure instead of core's.
 - **It is its own**: `{ facets: [ ... ] }`. It gives the test objectives a person checks, each with its procedure.
 
+Each also gives the requirement's `title`, its wording in the standard: a list, a checklist, a page of procedures and `relatedRequirements` name the requirement by it ("4.2 Images have a text alternative"). Take it from where the standard's requirements are written, so the two can't drift: the generated `procedures.js` adds each title from `requirements.js`, and its tests fail on a requirement without one; `ruleMappedStandard`'s `procedures` (`applicability: 'wcag'`) carry them too. An entry without a `title` is accepted, as packs written before titles were read are: it takes the title the standard's rollups name the requirement by (`composites()`, in their `meta.standardMappings`, as `ruleMappedStandard` writes them), and where no rollup names it (no rule checks it) or two name it differently, it has `title: null` and is shown by its number alone (`7.1`).
+
 ```js
 standard: {
   // ...

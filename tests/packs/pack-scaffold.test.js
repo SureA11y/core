@@ -100,6 +100,11 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
   assert.ok(written.includes('procedures.js'));
   const read = (id) => proceduresFor(id, { packs: [pack], standard: 'city-web' });
   for (const id of ['1', '2', '3', '4', '5', '6']) assert.equal(read(id).complete, true, id);
+  // Each is named by its title in requirements.js, whatever its form.
+  assert.deepEqual(
+    ['1', '3', '6'].map((id) => read(id).title),
+    ['Images have a text alternative', 'Links that open a new window say so', 'Pages have a title']
+  );
   assert.equal(read('1').wcag, '1.1.1');
   assert.deepEqual(
     read('1').facets.map((f) => f.id),
@@ -123,7 +128,7 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
 
 // The generated tests, per kind: a standard also checks the WCAG version its
 // profile is judged by.
-const TEST_COUNT = { checklist: 12, standard: 18 };
+const TEST_COUNT = { checklist: 12, standard: 19 };
 
 for (const kind of KINDS) {
   test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {

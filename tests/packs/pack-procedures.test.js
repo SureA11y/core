@@ -10,7 +10,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 
 const { checkPack, definePack, ruleMappedStandard } = require('../../src/pack.js');
-const { proceduresFor } = require('../../src/index.js');
+const { listProcedures, proceduresFor, relatedRequirements } = require('../../src/index.js');
 const { proceduresFrom } = require('../../src/procedures-core.js');
 
 const requirements = {
@@ -321,4 +321,57 @@ test('ruleMappedStandard gives procedures for a standard that restates WCAG', ()
     '1.0': { 'R-1.4.3': { title: 'Contrast', wcag: '1.4.3' } }
   });
   assert.equal(kit().procedures, undefined);
+});
+
+test('a requirement whose procedures give no title takes the one its rollups name it by', () => {
+  const { title, ...own } = OWN;
+  assert.ok(title);
+  const untitled = definePack(
+    packWith({
+      '1.0': { 'R-1.4.3': { wcag: '1.4.3' } },
+      '2.0': { 'R-1.4.3': { wcag: '1.4.3' }, 'R-9': own }
+    })
+  );
+  const opts = (version) => ({ packs: [untitled], standard: 'stdp', version });
+  // Each version's own title, as its rollup gives it.
+  assert.equal(proceduresFor('R-1.4.3', opts('1.0')).title, 'Contrast');
+  assert.equal(proceduresFor('R-1.4.3', opts('2.0')).title, 'Contrast of text');
+  assert.deepEqual(
+    listProcedures(opts('2.0')).requirements.map((r) => [r.id, r.title]),
+    [
+      ['R-1.4.3', 'Contrast of text'],
+      // No rule checks R-9, so no rollup names it: no title to take.
+      ['R-9', null]
+    ]
+  );
+  assert.deepEqual(
+    relatedRequirements('1.4.3', { packs: [untitled] }).map((r) => [r.id, r.title]),
+    [['R-1.4.3', 'Contrast of text']]
+  );
+  // A title in the procedures comes first.
+  assert.equal(
+    proceduresFor('R-1.4.3', { packs: [pack], standard: 'stdp' }).title,
+    'Contrast of text'
+  );
+});
+
+test('a requirement its rollups name by two titles takes neither', () => {
+  const base = packWith({ '1.0': { 'R-1.4.3': { wcag: '1.4.3' } } });
+  const rollup = (n, title) => ({
+    id: `stdp-r${n}`,
+    checksIds: ['contrast-minimum'],
+    meta: {
+      title,
+      tags: ['stdp'],
+      standardMappings: [{ standard: 'Std P', version: '1.0', requirement: 'R-1.4.3', title }]
+    }
+  });
+  const twice = (a, b) =>
+    definePack({
+      ...base,
+      standard: { ...base.standard, composites: () => [rollup(1, a), rollup(2, b)] }
+    });
+  const read = (p) => proceduresFor('R-1.4.3', { packs: [p], standard: 'stdp', version: '1.0' });
+  assert.equal(read(twice('Contrast', 'Contrast')).title, 'Contrast');
+  assert.equal(read(twice('Contrast', 'Text contrast')).title, null);
 });

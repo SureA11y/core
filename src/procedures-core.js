@@ -235,6 +235,41 @@ function replaced(facet, own, read, pack, requirement) {
   };
 }
 
+// A requirement's title where its entry in standard.procedures gives none:
+// the one the standard's rollups (standard.composites()) name it by, in
+// their meta.standardMappings, for this standard, version and requirement.
+// null where none does (no rule checks it, or the standard writes no
+// rollups), or where two name it differently. Read once per standard.
+const MAPPED_TITLES = new WeakMap();
+function mappedTitle(st, version, id) {
+  let titles = MAPPED_TITLES.get(st);
+  if (!titles) {
+    titles = new Map();
+    let rollups;
+    try {
+      rollups = typeof st.composites === 'function' ? st.composites() : [];
+    } catch {
+      rollups = [];
+    }
+    for (const r of Array.isArray(rollups) ? rollups : []) {
+      const mappings = isObject(r) && isObject(r.meta) ? r.meta.standardMappings : null;
+      for (const m of Array.isArray(mappings) ? mappings : []) {
+        if (!isObject(m) || m.standard !== st.standard) continue;
+        if (typeof m.version !== 'string' || typeof m.requirement !== 'string') continue;
+        if (typeof m.title !== 'string' || !m.title.trim()) continue;
+        const key = `${m.version}\u0000${m.requirement}`;
+        titles.set(key, titles.has(key) && titles.get(key) !== m.title ? null : m.title);
+      }
+    }
+    MAPPED_TITLES.set(st, titles);
+  }
+  return titles.get(`${version}\u0000${id}`) || null;
+}
+
+// A requirement's title: its entry's, or else the one its rollups give.
+const titleOf = (st, version, id, entry) =>
+  typeof entry.title === 'string' ? entry.title : mappedTitle(st, version, id);
+
 // A requirement of a pack's standard (standard.procedures, by version): the
 // first pack whose standard is `standard` (its key or name; any, when
 // none is given) and has the requirement, in `version` or else the latest
@@ -252,7 +287,7 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       standard: st.standard,
       id,
       version: v,
-      title: typeof entry.title === 'string' ? entry.title : null,
+      title: titleOf(st, v, id, entry),
       level: null
     };
     // What its procedures say it fails: the standard's name and the
@@ -607,7 +642,7 @@ function relatedRequirements(requirement, options) {
           key: st.key,
           id: rid,
           version,
-          title: typeof entry.title === 'string' ? entry.title : null,
+          title: titleOf(st, version, rid, entry),
           relation
         });
       }

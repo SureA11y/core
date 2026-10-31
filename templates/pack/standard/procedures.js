@@ -26,11 +26,17 @@
  * besides a browser: keyboard, pointer, screen-reader, zoom, contrast-theme,
  * devtools.
  *
+ * Each requirement's title comes from requirements.js (titled, below), so the
+ * two tables can't drift: a list, a checklist or a page of procedures names
+ * the requirement by it, and shows only its number where it has none.
+ *
  * GROUPS puts the requirements of each version in groups, such as themes or
  * chapters, as listProcedures and procedureChecklist show them.
  */
 
-const PROCEDURES = {
+const { REQUIREMENTS } = require('./requirements');
+
+const HOW = {
   '1.0': {
     1: { wcag: '1.1.1' },
     2: { wcag: '2.4.4' },
@@ -87,6 +93,24 @@ const PROCEDURES = {
     }
   }
 };
+
+// Each version's procedures, with each requirement's title from
+// requirements.js. A requirement it doesn't list has none, which the tests
+// report.
+const titled = (byVersion) =>
+  Object.fromEntries(
+    Object.entries(byVersion).map(([version, entries]) => [
+      version,
+      Object.fromEntries(
+        Object.entries(entries).map(([id, entry]) => {
+          const req = (REQUIREMENTS[version] || {})[id];
+          return [id, req ? { title: req.title, ...entry } : entry];
+        })
+      )
+    ])
+  );
+
+const PROCEDURES = titled(HOW);
 
 const GROUPS = {
   '1.0': [

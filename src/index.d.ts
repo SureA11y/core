@@ -1095,7 +1095,10 @@ export interface Procedures {
   id: string;
   /** A pack's requirement: the version of its standard it is read from. */
   version?: string;
-  /** A pack's requirement: its title, or null where the pack gives none. */
+  /**
+   * A pack's requirement: its title in standard.procedures, else the one the
+   * standard's rollups name it by; null where neither gives one.
+   */
   title: string | null;
   level: 'A' | 'AA' | 'AAA' | null;
   /** A pack's requirement that restates a WCAG criterion: that criterion, whose facets it has. */
