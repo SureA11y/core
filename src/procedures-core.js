@@ -36,6 +36,7 @@ const {
 } = require('./pack-review.js');
 
 const { reader } = require('./procedures-text.js');
+const { localeFor, translator } = require('./pack-languages.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -204,14 +205,18 @@ function bestPractices(read) {
 // A pack's own facet: its procedure is in English, and no core rule claims
 // it; the pack's rules that claim it (meta.coverage.facetsByRequirement) are
 // its rules, and their codes filed under it its variants.
-function packFacet(f, read, claims, requirement) {
+function packFacet(f, read, claims, requirement, tr) {
+  // Its label and procedure, translated as a whole or not at all.
+  const { texts, lang } = tr.all([f.label, ...f.steps, f.passWhen, f.failWhen]);
+  const steps = texts.slice(1, -2);
   const procedure = naming(
-    { steps: f.steps.slice(), passWhen: f.passWhen, failWhen: f.failWhen },
+    { steps, passWhen: texts[texts.length - 2], failWhen: texts[texts.length - 1] },
     requirement
   );
   return {
     id: f.id,
-    label: f.label,
+    label: texts[0],
+    ...(tr.declared ? { lang } : {}),
     automation: f.automation || 'manual',
     rules: claims.rules,
     tools: (Array.isArray(f.tools) ? f.tools : [])
@@ -226,20 +231,26 @@ function packFacet(f, read, claims, requirement) {
 // (standard.procedures, replace): the pack's, in English, with its tools, or
 // the facet's where it names none, and procedureFrom the pack's name. Its
 // rules and variants stay: a finding still shows its own steps.
-function replaced(facet, own, read, pack, requirement) {
+function replaced(facet, own, read, pack, requirement, tr) {
   const tools = Array.isArray(own.tools)
     ? own.tools
         .filter((id) => TOOLS.includes(id))
         .map((id) => ({ id, label: read.text(`tool_${id}`) || id }))
     : facet.tools;
   const { variants, ...rest } = facet;
+  const { texts, lang } = tr.all([...own.steps, own.passWhen, own.failWhen]);
   return {
     ...rest,
     tools,
     procedure: naming(
-      { steps: own.steps.slice(), passWhen: own.passWhen, failWhen: own.failWhen },
+      {
+        steps: texts.slice(0, -2),
+        passWhen: texts[texts.length - 2],
+        failWhen: texts[texts.length - 1]
+      },
       requirement
     ),
+    ...(tr.declared ? { procedureLang: lang } : {}),
     procedureFrom: pack.name,
     variants
   };
@@ -280,27 +291,55 @@ function mappedTitle(st, version, id) {
 const titleOf = (st, version, id, entry) =>
   typeof entry.title === 'string' ? entry.title : mappedTitle(st, version, id);
 
+// How a pack's standard is read, asked for `locales`. Where it declares its
+// languages (standard.lang or standard.translations), in one language, the
+// first of `locales` it has or else its own: its text, translated or as
+// written, and core's it uses, read in that locale. Where it declares none,
+// as it always was: its text as written, in English, and core's in
+// `locales`. { read, tr, locale }, once per standard.
+function readingFor(dictionaries, packs, locales) {
+  const cache = new Map();
+  return (st) => {
+    if (!cache.has(st)) {
+      const declared = st.lang !== undefined || st.translations !== undefined;
+      const locale = declared ? localeFor(st, locales) : null;
+      cache.set(st, {
+        read: reader(withPackReview(dictionaries, packs), declared ? locale : locales),
+        tr: { ...translator(st, locale), declared },
+        locale
+      });
+    }
+    return cache.get(st);
+  };
+}
+
 // A requirement of a pack's standard (standard.procedures, by version): the
 // first pack whose standard is `standard` (its key or name; any, when
 // none is given) and has the requirement, in `version` or else the latest
 // of its versions that has it.
-function packRequirement(packs, id, standard, version, read, packRules) {
+function packRequirement(packs, id, standard, version, readingOf, packRules) {
   for (const pack of Array.isArray(packs) ? packs : []) {
     const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
     if (!st || !isObject(st.procedures)) continue;
     if (standard && standard !== st.key && standard !== st.standard) continue;
+    const { read, tr } = readingOf(st);
     const versions = (Array.isArray(st.versions) ? st.versions : []).slice().reverse();
     const v = version || versions.find((x) => isObject(st.procedures[x]) && st.procedures[x][id]);
     const entry = v && isObject(st.procedures[v]) ? st.procedures[v][id] : null;
     if (!isObject(entry)) continue;
+    // Its title, and what the standard's procedures say of it, in the
+    // standard's language or translated.
+    const title = titleOf(st, v, id, entry);
+    const t = typeof title === 'string' ? tr.text(title) : null;
+    const n = typeof entry.note === 'string' && entry.note.trim() ? tr.text(entry.note) : null;
     const head = {
       standard: st.standard,
       id,
       version: v,
-      title: titleOf(st, v, id, entry),
+      title: t ? t.text : title,
+      ...(t && tr.declared ? { titleLang: t.lang } : {}),
       level: null,
-      // What the standard's procedures say of the requirement, in English.
-      ...(typeof entry.note === 'string' && entry.note.trim() ? { note: entry.note.trim() } : {})
+      ...(n ? { note: n.text.trim(), ...(tr.declared ? { noteLang: n.lang } : {}) } : {})
     };
     // A requirement with only a note, such as a void clause: nothing to assess.
     if (typeof entry.wcag !== 'string' && !Array.isArray(entry.facets)) {
@@ -314,7 +353,9 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       if (!criterion) return null;
       const replace = isObject(entry.replace) ? entry.replace : {};
       const facets = criterion.facets.map((f) =>
-        hasOwn(replace, f.id) && !f.coveredBy ? replaced(f, replace[f.id], read, pack, label) : f
+        hasOwn(replace, f.id) && !f.coveredBy
+          ? replaced(f, replace[f.id], read, pack, label, tr)
+          : f
       );
       return {
         ...head,
@@ -325,7 +366,7 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       };
     }
     const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) =>
-      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack), label)
+      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack), label, tr)
     );
     const rules = [];
     for (const f of facets) for (const r of f.rules) if (!rules.includes(r)) rules.push(r);
@@ -361,7 +402,8 @@ function proceduresFrom(dictionaries, requirement, options) {
     if (found || standard) return found;
   }
   const version = typeof opts.version === 'string' && opts.version ? opts.version : null;
-  return packRequirement(opts.packs, id, standard, version, read, packRules);
+  const readingOf = readingFor(dictionaries, opts.packs, opts.locale);
+  return packRequirement(opts.packs, id, standard, version, readingOf, packRules);
 }
 
 // Requirement ids in a standard's order: their dot-separated parts compared
@@ -437,14 +479,21 @@ function wcagGroups(ids, read) {
 // A pack's groups for a version (standard.groups), with only the
 // requirements of `ids` in each; a group left with none, and no group under
 // it with any, is left out.
-function packGroups(groups, ids) {
+function packGroups(groups, ids, tr) {
   const out = [];
   for (const g of Array.isArray(groups) ? groups : []) {
     if (!isObject(g)) continue;
     const requirements = listOf(g.requirements).filter((id) => ids.includes(id));
-    const inner = packGroups(g.groups, ids);
+    const inner = packGroups(g.groups, ids, tr);
     if (!requirements.length && !inner.length) continue;
-    out.push({ id: String(g.id), title: g.title, requirements, groups: inner });
+    const t = tr.text(g.title);
+    out.push({
+      id: String(g.id),
+      title: t.text,
+      ...(tr.declared ? { titleLang: t.lang } : {}),
+      requirements,
+      groups: inner
+    });
   }
   return out;
 }
@@ -536,31 +585,34 @@ function listing(dictionaries, options) {
   const { pack, st } = found;
   const version = versionOf(st, asked);
   if (!version) return null;
+  // The standard in its one language, where it declares its languages.
+  const reading = readingFor(dictionaries, opts.packs, opts.locale)(st);
   const requirements = keep(
     Object.keys(st.procedures[version])
       .sort(compareIds)
-      .map((id) => packRequirement([pack], id, st.key, version, read, packRules))
+      .map((id) => packRequirement([pack], id, st.key, version, () => reading, packRules))
       .filter(Boolean)
   );
   const ids = requirements.map((r) => r.id);
-  const groups = isObject(st.groups) ? packGroups(st.groups[version], ids) : [];
+  const groups = isObject(st.groups) ? packGroups(st.groups[version], ids, reading.tr) : [];
   // What the standard says of itself for the version, for a page's header
-  // (standard.notes, in English): its status, say, or how its results read.
-  const notes = (isObject(st.notes) && Array.isArray(st.notes[version]) ? st.notes[version] : [])
+  // (standard.notes): its status, say, or how its results read. Translated
+  // as a whole or not at all.
+  const given = (isObject(st.notes) && Array.isArray(st.notes[version]) ? st.notes[version] : [])
     .filter((n) => typeof n === 'string' && n.trim())
     .map((n) => n.trim());
-  return {
-    head: {
-      standard: st.standard,
-      key: st.key,
-      version,
-      ...(notes.length ? { notes } : {}),
-      ...shaped()
-    },
-    requirements,
-    groups,
-    read
+  const notes = given.length ? reading.tr.all(given) : null;
+  const head = {
+    standard: st.standard,
+    key: st.key,
+    version,
+    ...(notes ? { notes: notes.texts } : {}),
+    ...(notes && reading.tr.declared ? { notesLang: notes.lang } : {}),
+    ...shaped()
   };
+  // A standard read in one language says which.
+  if (reading.locale) head.locale = reading.locale;
+  return { head, requirements, groups, read: reading.read };
 }
 
 /**
@@ -618,6 +670,9 @@ function procedureChecklistFrom(dictionaries, options) {
           procedure: facet.procedure
         };
         if (facet.procedureFrom) item.procedureFrom = facet.procedureFrom;
+        // The language of a pack's own text, where its standard declares it.
+        if (facet.lang) item.lang = facet.lang;
+        if (facet.procedureLang) item.procedureLang = facet.procedureLang;
         items.set(key, item);
       }
       if (!item.requirements.includes(r.id)) item.requirements.push(r.id);

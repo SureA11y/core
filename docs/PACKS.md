@@ -416,7 +416,32 @@ Each group has an `id`, unique in the version, a `title`, and `requirements`, `g
 
 **What `definePack` checks.** It refuses a version the standard doesn't have, a criterion WCAG doesn't, a requirement with both `wcag` and `facets` or neither, `replace` without `wcag`, a facet the criterion doesn't have or a technology facet in `replace`, `relatesTo` with `wcag` or naming no WCAG criterion, groups without `procedures`, for a version the standard doesn't have, with an id used twice, without a title, or naming a requirement the version's procedures don't have or another group has, facets that aren't well formed, and, in `facetsByRequirement`, a pack whose standard gives no `procedures`, a requirement with no facets of its own there and a facet that requirement doesn't have in any version. A core older than the one that reads `procedures` ignores these fields.
 
-**What stays English.** A pack's procedures, those of its own facets and its replacements, are in English, as are its own facets' labels and its titles; core's procedures, the labels of WCAG's facets and a pack rule's steps are read in the reader's locale where a dictionary has them. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
+**Languages.** A standard's own text (its own facets' labels and procedures, its replacements, its requirements' titles and notes, its groups' titles, its notes and its rollups' titles) is written in one language, `lang`, English where it gives none. `translations` gives it in others, keyed by the text it translates:
+
+```js
+standard: {
+  // ...
+  lang: 'en',
+  translations: {
+    fr: require('./i18n/standard.fr.json'), // { "Check that every form…": "Vérifiez que chaque formulaire…" }
+    es: require('./i18n/standard.es.json')
+  }
+}
+```
+
+Keyed by its text, a translation follows it. A text two versions share is translated once. A text whose source changes is no longer translated: it shows as written until it is translated again, never as the translation of what it used to say, and `definePack` refuses the translation of a text the standard no longer has, so the old one can't linger. A standard written in French says `lang: 'fr'`, and its translations are keyed by the French.
+
+A standard that declares its languages, `lang` or `translations`, is read in one of them: the first the reader asks for that it has (`fr-CA` tries `fr-ca`, then `fr`), or else its own. Everything about it is then in that language: its own text, and core's that it uses, the procedures of the WCAG criteria its requirements restate and the tools' names, read in that locale as if asked for it. A standard written in French and translated into English, read in Spanish, is all French, core's procedures included, rather than French beside Spanish. `listProcedures` and `procedureChecklist` say which language in `locale`.
+
+A facet is translated as a whole, its label, steps, `passWhen` and `failWhen`, or shown as written, so a person never meets one step in another language; a title, a note or a group's title, on its own; the notes of a version, together. Where a text is shown as written in a page or a report in another language, it says so (`lang`, `titleLang`, `noteLang`, `procedureLang`, `notesLang` on what `listProcedures` gives, [`PROCEDURES.md`](./PROCEDURES.md#the-shape)) and is marked `lang` there, as WCAG 3.1.2 asks.
+
+A scan shows the standard's rollups by the titles its translations give, in the scan's locale where the standard has it; core makes their keys. In another locale they show as written, or as the standard's English translation where it has one, and `result.standards[].titleLang` says in which language.
+
+A standard that declares neither is read as it always was: its own text as written, taken to be English (or `report.titleLang` for its titles), and core's in the locale asked for.
+
+For a locale core doesn't ship (`ca`), the pack's dictionary for it may give core's procedures as well, under core's keys (`wcag_2.4.7_focus-visible_step1`), as it may give core's messages ([§6](#6-messages-and-languages)): with the standard translated into it too, a page of the standard in that locale is in that language throughout. A text it doesn't give is English, as any text a locale lacks.
+
+`packTranslationCoverage(pack)` from `@surea11y/core/pack` says how far each translation goes: `[{ locale, total, translated, missing }]`, `missing` the texts it doesn't translate yet. `definePack` and `checkPack` refuse a `lang` that isn't a language tag, a translation into the standard's own language, a key that is no text of the standard, an empty translation, and one that loses or adds a `{{placeholder}}`. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
 
 ## 6. Messages and languages
 
@@ -426,7 +451,7 @@ Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and
 dictionaries: { en: require('./i18n/en.json'), fr: require('./i18n/fr.json') }
 ```
 
-A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English.
+A scan with `engineOptions.locale: 'fr'` shows the French ones; a locale with no dictionary shows English. A standard's own text, its procedures and titles, is translated in `standard.translations` instead, keyed by its text ([Languages](#how-a-person-assesses-it-procedures)).
 
 A rule's steps ([§3](#3-write-its-rules)) are translated the same way, under the keys core's steps use: the rule's prefix (its `titleKey` without `_title`), `_review_`, the reason code, then `step<n>`, `pass` or `fail`:
 

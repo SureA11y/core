@@ -30,11 +30,12 @@ function procedures() {
   return proceduresModule;
 }
 
-// The language of a name the procedures dictionaries translate (a facet's
-// label, a criterion's title), read in `locale`: 'en' where English is what
-// gives it, null where the locale's dictionary does. A name can read the
-// same in both ("Orientation"), so the text alone can't tell.
-function nameLangs(locale) {
+// The language a text of core's procedures dictionaries is read in, for
+// `locale`: textLang(key, text) gives the locale whose dictionary gives
+// that text under that key, or 'en' where English does or none gives it. A
+// text can read the same in two languages ("Orientation"), so the text
+// alone can't tell.
+function textLangs(locale) {
   let read = null;
   try {
     // Paths in variables, as above, so a bundler doesn't follow them.
@@ -53,7 +54,7 @@ function nameLangs(locale) {
     read = null;
   }
   return (key, text) =>
-    read && read.text(key) === text && read.localeOf(key) !== 'en' ? null : 'en';
+    (read && (text === undefined || read.text(key) === text) && read.localeOf(key)) || 'en';
 }
 
 // The standard scanned: a pack's, where the scan ran one of its profiles
@@ -74,57 +75,60 @@ function scopeOf(result, packs, levels) {
 /**
  * The facets left to a person, by requirement, in `locale`, or null where
  * the procedures can't be read here (a browser bundle, or a standard core
- * has none for). A text only English has is marked with lang 'en': the
- * same reading in English gives the same text.
+ * has none for). Each text says the language it is in (`lang`, `titleLang`,
+ * `labelLang`, `procedureLang`), so the report marks what isn't in its own:
+ * a text a locale lacks, or a pack's standard read in another language than
+ * the report's (docs/PACKS.md, "Languages"). A pack's titles are left to
+ * the standard's report.titleLang where its standard declares no language.
  */
 function leftToAPerson(result, { packs, locale, levels } = {}) {
   const mod = procedures();
   if (!mod) return null;
   const scope = scopeOf(result, packs, levels);
-  const read = (l) =>
-    mod.listProcedures({
-      standard: scope.standard,
-      version: scope.version,
-      ...(scope.levels ? { levels: scope.levels } : {}),
-      automation: LEFT_TO_A_PERSON,
-      packs,
-      locale: l
-    });
-  const list = read(locale);
+  const list = mod.listProcedures({
+    standard: scope.standard,
+    version: scope.version,
+    ...(scope.levels ? { levels: scope.levels } : {}),
+    automation: LEFT_TO_A_PERSON,
+    packs,
+    locale
+  });
   if (!list) return null;
-  const english = locale && locale !== 'en' ? read('en') : list;
+  // Core's text is read in the list's locale: the one asked for, or the one
+  // a pack's standard is read in.
+  const textLang = textLangs(list.locale || locale);
   const facetsIn = (r) => r.facets.filter((f) => !f.coveredBy && f.procedure);
-  const enFacet = (r, f) => {
-    const er = english.requirements.find((x) => x.id === r.id);
-    return er ? er.facets.find((x) => x.id === f.id) : null;
-  };
-  const nameLang = nameLangs(locale);
   const wcag = scope.standard === 'wcag';
-  const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const requirements = list.requirements
-    .map((r) => ({
-      id: r.id,
-      title: r.title,
-      titleLang: wcag ? nameLang(`wcag_${r.id}_title`, r.title) : null,
-      level: r.level,
-      wcag: r.wcag || null,
-      facets: facetsIn(r).map((f) => {
-        const en = enFacet(r, f);
-        return {
+    .map((r) => {
+      const criterion = wcag ? r.id : r.wcag || null;
+      return {
+        id: r.id,
+        title: r.title,
+        titleLang: wcag ? textLang(`wcag_${r.id}_title`, r.title) : r.titleLang || null,
+        level: r.level,
+        wcag: r.wcag || null,
+        facets: facetsIn(r).map((f) => ({
           id: f.id,
           label: f.label,
-          labelLang:
-            wcag || r.wcag ? nameLang(`wcag_${r.wcag || r.id}_${f.id}_label`, f.label) : 'en',
+          // A pack's own facet is in its standard's language, English where
+          // it declares none; a replaced one keeps core's label.
+          labelLang: criterion
+            ? textLang(`wcag_${criterion}_${f.id}_label`, f.label)
+            : f.lang || 'en',
           automation: f.automation,
           procedure: f.procedure,
-          procedureLang: en && same(en.procedure, f.procedure) ? 'en' : null,
-          tools: f.tools.map((t) => {
-            const enTool = en ? en.tools.find((x) => x.id === t.id) : null;
-            return { label: t.label, lang: enTool && enTool.label === t.label ? 'en' : null };
-          })
-        };
-      })
-    }))
+          procedureLang:
+            criterion && !f.procedureFrom
+              ? textLang(`wcag_${criterion}_${f.id}_step1`)
+              : f.procedureLang || f.lang || 'en',
+          tools: f.tools.map((t) => ({
+            label: t.label,
+            lang: textLang(`tool_${t.id}`, t.label)
+          }))
+        }))
+      };
+    })
     .filter((r) => r.facets.length);
   return {
     standard: scope.standard,

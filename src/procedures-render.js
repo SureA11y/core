@@ -149,8 +149,8 @@ function model(dictionaries, input, options) {
 
   // The language of a general procedure's text: the dictionary it was read
   // from for core's, English for a pack's own or a replacement.
-  const procedureLang = (criterion, facet, packOwn) => {
-    if (packOwn) return 'en';
+  const procedureLang = (criterion, facet, packOwn, given) => {
+    if (packOwn) return given || 'en';
     const stem = best ? `best-practice_${facet}_` : `wcag_${criterion}_${facet}_`;
     return read.localeOf(`${stem}step1`) || 'en';
   };
@@ -159,20 +159,22 @@ function model(dictionaries, input, options) {
   // in where it is that text, English otherwise (a pack's own label, or a
   // title an earlier WCAG gives in its own words).
   const nameLang = (key, text) => (read.text(key) === text && read.localeOf(key)) || 'en';
-  const labelLang = (criterion, facet, label, packOwn) =>
+  // A pack's own text is in the language its standard says (lang, on what
+  // it gives), or in English where it says none.
+  const labelLang = (criterion, facet, label, packOwn, given) =>
     packOwn
-      ? 'en'
+      ? given || 'en'
       : nameLang(best ? `best-practice_${facet}_label` : `wcag_${criterion}_${facet}_label`, label);
   const requirementTitleLang = (r) =>
     wcagData
       ? nameLang(`wcag_${r.id}_title`, r.title)
       : best
         ? nameLang('render_standard_bestPractice', r.title)
-        : titleLang;
+        : r.titleLang || titleLang;
   const groupTitleLang = (g) =>
     wcagData
       ? nameLang(`wcag_${g.id.includes('.') ? 'guideline' : 'principle'}_${g.id}`, g.title)
-      : titleLang;
+      : g.titleLang || titleLang;
   const variantLang = (v) => {
     const prefix = prefixes[v.ruleId];
     return (prefix && read.localeOf(`${prefix}_review_${v.reasonCode}_step1`)) || 'en';
@@ -220,7 +222,9 @@ function model(dictionaries, input, options) {
       notes.push(guide('guide_levels_aaa'));
     }
     for (const note of Array.isArray(data.notes) ? data.notes : []) {
-      if (typeof note === 'string' && note.trim()) notes.push({ text: note.trim(), lang: 'en' });
+      if (typeof note === 'string' && note.trim()) {
+        notes.push({ text: note.trim(), lang: data.notesLang || 'en' });
+      }
     }
     const items = [];
     for (let n = 1; guide(`guide_before_item${n}`); n++) items.push(guide(`guide_before_item${n}`));
@@ -262,7 +266,13 @@ function placed(groups, ids, otherTitle) {
         ids.includes(id)
       );
       own.forEach((id) => seen.add(id));
-      return { id: String(g.id), title: g.title, own, groups: walk(g.groups) };
+      return {
+        id: String(g.id),
+        title: g.title,
+        ...(g.titleLang ? { titleLang: g.titleLang } : {}),
+        own,
+        groups: walk(g.groups)
+      };
     });
   const tree = walk(groups);
   const rest = ids.filter((id) => !seen.has(id));
@@ -568,7 +578,12 @@ function renderHtml(m, options) {
       .map((f) => {
         const fid = id('facet', `${r.id}-${f.id}`);
         const covered = r.facets.filter((x) => x.coveredBy === f.id);
-        const lang = m.procedureLang(criterion, f.id, own || !!f.procedureFrom);
+        const lang = m.procedureLang(
+          criterion,
+          f.id,
+          own || !!f.procedureFrom,
+          f.procedureLang || f.lang
+        );
         const extra = [];
         if (f.procedureFrom) {
           extra.push(
@@ -585,13 +600,13 @@ function renderHtml(m, options) {
             `<div class="covers"><p>${esc(t('render_covers'))}</p><ul>${covered
               .map(
                 (x) =>
-                  `<li${langAttr(m.labelLang(criterion, x.id, x.label, own))}>${esc(x.label)}</li>`
+                  `<li${langAttr(m.labelLang(criterion, x.id, x.label, own, x.lang))}>${esc(x.label)}</li>`
               )
               .join('')}</ul></div>`
           );
         }
         return `<section class="facet" aria-labelledby="${fid}">
-<${heading(level + 1)} id="${fid}"${langAttr(m.labelLang(criterion, f.id, f.label, own))}>${esc(
+<${heading(level + 1)} id="${fid}"${langAttr(m.labelLang(criterion, f.id, f.label, own, f.lang))}>${esc(
           f.label
         )}</${heading(level + 1)}>
 <ul class="badges">${automationBadge(f.automation)}${f.procedure ? toolsBadges(f.tools) : ''}</ul>
@@ -604,7 +619,7 @@ ${extra.join('\n')}${variantsHtml(f)}
       r.title ? `<span${langAttr(m.requirementTitleLang(r))}>${esc(r.title)}</span>` : ''
     }</${heading(level)}>
 ${meta.length ? `<p class="meta">${meta.join('')}</p>` : ''}
-${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${facets.join('\n')}
+${r.note ? `<p class="req-note"${langAttr(r.noteLang || 'en')}>${esc(r.note)}</p>\n` : ''}${facets.join('\n')}
 </article>`;
   };
 
@@ -614,8 +629,13 @@ ${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${fa
     n += 1;
     const hid = id('item', item.key);
     const own = !item.wcag && !m.best;
-    const lang = m.procedureLang(item.wcag, item.facet, own || !!item.procedureFrom);
-    const labelLang = langAttr(m.labelLang(item.wcag, item.facet, item.label, own));
+    const lang = m.procedureLang(
+      item.wcag,
+      item.facet,
+      own || !!item.procedureFrom,
+      item.procedureLang || item.lang
+    );
+    const labelLang = langAttr(m.labelLang(item.wcag, item.facet, item.label, own, item.lang));
     const meta = [
       `<span>${esc(t('render_serves', { requirements: item.requirements.join(', ') }))}</span>`
     ];
