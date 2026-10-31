@@ -108,6 +108,7 @@ It gives `null` for a standard or version it doesn't know, and otherwise:
 {
   standard: 'wcag',          // or 'best-practice', or a pack's standard's name ('EN 301 549')
   // key: 'en301549',        a pack's standard's key
+  // notes: ['…'],          what a pack's standard says of itself for the version (standard.notes), where it says anything
   version: '2.2',            // null for the best practices
   locale: 'en',              // the locale the text was read in
   scope: { levels: ['A', 'AA'], tools: null, automation: null, rules: null }, // what shaped it
@@ -150,7 +151,7 @@ procedureChecklist({ levels: ['A', 'AA'] }).items[0];
 // {
 //   key: '1.1.1/text-alternative-mechanism',
 //   facet: 'text-alternative-mechanism',
-//   label: 'Text alternative mechanism present',
+//   label: 'Non-text content that conveys something has a text alternative',
 //   automation: 'partial',
 //   wcag: '1.1.1',
 //   requirements: ['1.1.1'],
@@ -212,6 +213,7 @@ fs.writeFileSync('wcag-22-aa.md', renderProcedures(listProcedures({ levels: ['A'
 | `title` | The page's title and heading; by default one naming the standard ("WCAG 2.2: manual checklist"). |
 | `variants` | `true` adds, under each facet of a list, the steps a scan's undecided finding gives for it, in a closed disclosure. |
 | `record` | `false` leaves out a checklist page's results and its script. |
+| `before` | `false` leaves out "Before you start", the habits that make a result reliable, which a list's or a checklist's page shows ahead of the requirements. |
 | `fragment` | `true` gives the page's content alone, with no document, style, script or `main` region, to put in a page of your own (see [below](#in-a-page-of-your-own)). |
 | `packs` | The packs the procedures were read with: their rules' translated steps, and the language their standard titles its requirements in (`standard.report.titleLang`). |
 
@@ -219,7 +221,7 @@ The same input and options always give the same page: nothing in it depends on t
 
 ### A list
 
-A list's page is a reference for the standard: its title and scope (the levels and filters it was listed with), a table of contents of its groups (WCAG's principles and guidelines, or the groups of a pack's standard), and each requirement in its group with its level and what it restates or relates to. Each facet with a procedure of its own follows: what it checks, how much of it rules decide, the tools it needs, the steps, what passes and what fails, the rules that test it, and the technology facets its procedure also assesses. A single requirement from `proceduresFor` is a page of its own, with no contents.
+A list's page is a reference for the standard: its title and scope (the levels and filters it was listed with), what its results mean (that the best practices count against no conformance, that WCAG's Level AAA is advisory where the list has it, and a pack's standard's `notes` for the version), "Before you start", a table of contents of its groups (WCAG's principles and guidelines, or the groups of a pack's standard), and each requirement in its group with its level and what it restates or relates to. Each facet with a procedure of its own follows: what it checks, how much of it rules decide, the tools it needs, the steps, what passes and what fails, the rules that test it, and the technology facets its procedure also assesses. A single requirement from `proceduresFor` is a page of its own, with no contents.
 
 ### A checklist: a worksheet
 
@@ -242,7 +244,7 @@ The JSON has each item's result and notes, and each requirement's result rolled 
     {
       "key": "1.1.1/text-alternative-mechanism",
       "facet": "text-alternative-mechanism",
-      "label": "Text alternative mechanism present",
+      "label": "Non-text content that conveys something has a text alternative",
       "requirements": ["1.1.1"],
       "outcome": "fail",
       "notes": "The logo has no alt."
@@ -389,7 +391,7 @@ A facet broader than any one rule has `macro: true`. A facet with `coveredBy` ha
 
 ## Which criteria have procedures
 
-Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 226 facets, 110 procedures of their own and 116 technology facets covered by one of them. The best practices have one for each of their 10 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, and zoom. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
+Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 224 facets, 110 procedures of their own and 114 technology facets covered by one of them. The best practices have one for each of their 13 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, zoom, repeated names, new windows and downloads, and reduced motion. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
 
 ## Where they live
 

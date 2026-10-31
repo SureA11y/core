@@ -36,8 +36,8 @@ Total rules (loaded without error): **145**
 
 ### 1.1.1
 
-Facet coverage: **13/22** facets covered.
-Automation mix: **full 6, partial 13, manual 3**.
+Facet coverage: **13/20** facets covered.
+Automation mix: **full 6, partial 11, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -56,15 +56,13 @@ Automation mix: **full 6, partial 13, manual 3**.
 | svg-text-alternative-present | partial | svg-text-alternative-present |
 | svg-image-text-alt-present | partial | svg-image-text-alternative-present |
 | object-text-alternative-present | partial | object-text-alternative-present |
-| embed-name-present | partial | — |
 | video-poster-text-alt-present | partial | video-poster-text-alternative-present |
 | alt-suspicious-patterns | partial | — |
-| acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
 | captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, alt-suspicious-patterns, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -297,11 +295,11 @@ Automation mix: **full 0, partial 2, manual 0**.
 ### 1.4.12
 
 Facet coverage: **2/4** facets covered.
-Automation mix: **full 1, partial 1, manual 2**.
+Automation mix: **full 0, partial 2, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
-| avoid-inline-spacing | full | avoid-inline-spacing |
+| avoid-inline-spacing | partial | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
 | text-spacing-functionality-kept | manual | — |
 | text-spacing-other-states | manual | — |
@@ -833,8 +831,8 @@ Uncovered facets: status-messages-announced
 
 ### 1.1.1
 
-Facet coverage: **13/22** facets covered.
-Automation mix: **full 6, partial 13, manual 3**.
+Facet coverage: **13/20** facets covered.
+Automation mix: **full 6, partial 11, manual 3**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -853,15 +851,13 @@ Automation mix: **full 6, partial 13, manual 3**.
 | svg-text-alternative-present | partial | svg-text-alternative-present |
 | svg-image-text-alt-present | partial | svg-image-text-alternative-present |
 | object-text-alternative-present | partial | object-text-alternative-present |
-| embed-name-present | partial | — |
 | video-poster-text-alt-present | partial | video-poster-text-alternative-present |
 | alt-suspicious-patterns | partial | — |
-| acc-eligibility-filtering | partial | — |
 | meter-name-present | full | meter-name-present |
 | progressbar-name-present | full | progressbar-name-present |
 | captcha-alternative | manual | — |
 
-Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, embed-name-present, alt-suspicious-patterns, acc-eligibility-filtering, captcha-alternative
+Uncovered facets: text-alternative-mechanism, functional-nontext-name, decorative-null, text-alt-quality-review, svg-text-alt-present, alt-suspicious-patterns, captcha-alternative
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
@@ -1094,11 +1090,11 @@ Automation mix: **full 0, partial 2, manual 0**.
 ### 1.4.12
 
 Facet coverage: **2/4** facets covered.
-Automation mix: **full 1, partial 1, manual 2**.
+Automation mix: **full 0, partial 2, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
-| avoid-inline-spacing | full | avoid-inline-spacing |
+| avoid-inline-spacing | partial | avoid-inline-spacing |
 | text-spacing-content-loss | partial | text-spacing-content-loss |
 | text-spacing-functionality-kept | manual | — |
 | text-spacing-other-states | manual | — |

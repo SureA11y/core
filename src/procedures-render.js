@@ -183,6 +183,35 @@ function model(dictionaries, input, options) {
     scopeLines.push(t('render_scope_rules', { rules: scope.rules.join(', ') }));
   }
 
+  // A text of the page's guidance, written in English first as the
+  // procedures are, with the language it was read in.
+  const guide = (key) => {
+    const text = read.text(key);
+    return text ? { text, lang: read.localeOf(key) || 'en' } : null;
+  };
+  // What the header says about reading the results: that the best practices
+  // count against no conformance, that WCAG's Level AAA is advisory, and
+  // what a pack's standard says of itself for the version (in English).
+  const notes = [];
+  // "Before you start": the habits that make any procedure's result
+  // reliable, ahead of the requirements.
+  let before = null;
+  if (kind !== 'requirement') {
+    if (best) notes.push(guide('guide_bestPractice'));
+    if (wcagData && (!Array.isArray(scope.levels) || scope.levels.includes('AAA'))) {
+      notes.push(guide('guide_levels_aaa'));
+    }
+    for (const note of Array.isArray(data.notes) ? data.notes : []) {
+      if (typeof note === 'string' && note.trim()) notes.push({ text: note.trim(), lang: 'en' });
+    }
+    const items = [];
+    for (let n = 1; guide(`guide_before_item${n}`); n++) items.push(guide(`guide_before_item${n}`));
+    const heading = guide('guide_before_title');
+    if (options.before !== false && heading && items.length) {
+      before = { title: heading, intro: guide('guide_before_intro'), items };
+    }
+  }
+
   return {
     kind,
     data,
@@ -196,7 +225,9 @@ function model(dictionaries, input, options) {
     procedureLang,
     variantLang,
     toolsOf,
-    scopeLines
+    scopeLines,
+    notes: notes.filter(Boolean),
+    before
   };
 }
 
@@ -268,6 +299,7 @@ const STYLE = `
   dl.verdict dt { font-weight: 600; }
   dl.verdict dd { margin: 0; }
   .rules, .covers, .note { font-size: 13.5px; color: var(--muted); margin: 6px 0 0; }
+  .req-note { margin: 6px 0 0; }
   .rules code, .covers code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; background: var(--soft); padding: 1px 5px; border-radius: 4px; color: var(--fg); }
   details.variants { margin-top: 10px; font-size: 14px; }
   details.variants summary { cursor: pointer; color: var(--accent); }
@@ -277,6 +309,11 @@ const STYLE = `
   details.technical summary { cursor: pointer; color: var(--accent); }
   .results h2 { margin: 0 0 4px; font-size: 16px; }
   .results p { margin: 2px 0; }
+  .before { margin: 24px 0; padding: 14px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+  .before h2 { margin: 0 0 6px; font-size: 17px; }
+  .before p { margin: 0 0 6px; }
+  .before ul { margin: 0; padding-left: 20px; }
+  .before li { margin: 4px 0; }
   .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
   button { font: inherit; font-size: 14px; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--soft); color: var(--fg); cursor: pointer; }
   button[data-armed] { border-color: #b0441f; color: #b0441f; }
@@ -292,7 +329,7 @@ const STYLE = `
   .item[data-outcome="notApplicable"] { border-left: 6px solid #5f6368; }
   .empty { font-style: italic; }
   @media (forced-colors: active) {
-    .badge, .req, .item, nav.toc, .results, fieldset.record { border: 1px solid CanvasText; }
+    .badge, .req, .item, nav.toc, .results, .before, fieldset.record { border: 1px solid CanvasText; }
     .item[data-outcome] { border-left-width: 6px; }
   }
   @media print {
@@ -540,7 +577,7 @@ ${extra.join('\n')}${variantsHtml(f)}
       r.title ? `<span${langAttr(m.titleLang)}>${esc(r.title)}</span>` : ''
     }</${heading(level)}>
 ${meta.length ? `<p class="meta">${meta.join('')}</p>` : ''}
-${facets.join('\n')}
+${r.note ? `<p class="req-note"${langAttr('en')}>${esc(r.note)}</p>\n` : ''}${facets.join('\n')}
 </article>`;
   };
 
@@ -680,7 +717,17 @@ ${inner}
 <h1>${esc(m.title)}</h1>
 <p>${esc(summary)}</p>
 ${m.scopeLines.length ? `<ul>${m.scopeLines.map((l) => `<li>${esc(l)}</li>`).join('')}</ul>` : ''}
+${m.notes.map((n) => `<p${langAttr(n.lang)}>${esc(n.text)}</p>`).join('\n')}
 </header>`;
+
+  const b = m.before;
+  const beforeHtml = b
+    ? `<section class="before" aria-labelledby="before-h">
+<h2 id="before-h"${langAttr(b.title.lang)}>${esc(b.title.text)}</h2>
+${b.intro ? `<p${langAttr(b.intro.lang)}>${esc(b.intro.text)}</p>` : ''}
+<ul>${b.items.map((x) => `<li${langAttr(x.lang)}>${esc(x.text)}</li>`).join('')}</ul>
+</section>`
+    : '';
 
   const recordKey = [data.key || data.standard, data.version, m.title].join('|');
   const resultsHtml = record
@@ -713,6 +760,7 @@ ${m.scopeLines.length ? `<ul>${m.scopeLines.map((l) => `<li>${esc(l)}</li>`).joi
 <div class="layout">
 ${toc}
 ${open}
+${beforeHtml}
 ${resultsHtml}
 ${body}
 ${close}
@@ -791,6 +839,12 @@ function renderMarkdown(m, options) {
         });
   out.push(md(summary), '');
   if (m.scopeLines.length) out.push(...m.scopeLines.map((l) => `- ${md(l)}`), '');
+  for (const n of m.notes) out.push(md(n.text), '');
+  if (m.before) {
+    out.push(h(2, md(m.before.title.text)), '');
+    if (m.before.intro) out.push(md(m.before.intro.text), '');
+    out.push(...m.before.items.map((x) => `- ${md(x.text)}`), '');
+  }
 
   const tools = (list) => {
     const labels = m.toolsOf(list).map((x) => x.label);
@@ -824,6 +878,7 @@ function renderMarkdown(m, options) {
       meta.push(t('render_relatesTo', { criteria: r.relatesTo.join(', ') }));
     }
     if (meta.length) lines.push(`*${meta.map(md).join(' · ')}*`, '');
+    if (r.note) lines.push(md(r.note), '');
     for (const f of r.facets) {
       if (f.coveredBy && r.facets.some((x) => x.id === f.coveredBy)) continue;
       const covered = r.facets.filter((x) => x.coveredBy === f.id);

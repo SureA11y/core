@@ -119,9 +119,6 @@ const PROCEDURES = {
       'object-text-alternative-present': {
         coveredBy: 'text-alternative-mechanism'
       },
-      'embed-name-present': {
-        coveredBy: 'text-alternative-mechanism'
-      },
       'video-poster-text-alt-present': {
         coveredBy: 'text-alternative-mechanism',
         variants: {
@@ -130,9 +127,6 @@ const PROCEDURES = {
       },
       'alt-suspicious-patterns': {
         coveredBy: 'text-alternative-quality'
-      },
-      'acc-eligibility-filtering': {
-        coveredBy: 'decorative-null'
       },
       'meter-name-present': {
         coveredBy: 'text-alternative-mechanism',
@@ -1414,6 +1408,21 @@ const PROCEDURES = {
       variants: {
         'meta-viewport-large': ['VIEWPORT_ZOOM_BELOW_500']
       }
+    },
+    'unique-names': {
+      label: 'Controls that do different things can be told apart by their names',
+      automation: 'manual',
+      tools: ['screen-reader', 'devtools']
+    },
+    'new-window-download': {
+      label: 'Links that open a new window or download a file say so',
+      automation: 'manual',
+      tools: ['screen-reader', 'devtools']
+    },
+    'reduced-motion': {
+      label: "Animation follows the user's reduced motion setting",
+      automation: 'manual',
+      tools: ['devtools']
     }
   }
 };

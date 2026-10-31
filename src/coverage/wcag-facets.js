@@ -71,19 +71,19 @@ const FACETS = {
         "facets": [
             {
                 "id": "text-alternative-mechanism",
-                "label": "Text alternative mechanism present",
+                "label": "Non-text content that conveys something has a text alternative",
                 "automation": "partial",
                 "macro": true
             },
             {
                 "id": "functional-nontext-name",
-                "label": "Functional non-text has accessible name",
+                "label": "Images and icons used as controls are named by what they do",
                 "automation": "partial",
                 "macro": true
             },
             {
                 "id": "decorative-null",
-                "label": "Decorative content correctly null",
+                "label": "Decorative images are hidden from assistive technology, and only those",
                 "automation": "manual",
                 "macro": true
             },
@@ -95,7 +95,7 @@ const FACETS = {
             },
             {
                 "id": "text-alternative-quality",
-                "label": "Text alternatives are appropriate and equivalent",
+                "label": "Each text alternative gives what its image gives",
                 "automation": "partial",
                 "macro": true
             },
@@ -136,7 +136,7 @@ const FACETS = {
             },
             {
                 "id": "svg-text-alternative-present",
-                "label": "SVG <image> has a text alternative mechanism",
+                "label": "Inline <svg> has a <title> or an accessible name",
                 "automation": "partial"
             },
             {
@@ -150,11 +150,6 @@ const FACETS = {
                 "automation": "partial"
             },
             {
-                "id": "embed-name-present",
-                "label": "<embed> has accessible name",
-                "automation": "partial"
-            },
-            {
                 "id": "video-poster-text-alt-present",
                 "label": "<video poster> has a text alternative mechanism",
                 "automation": "partial"
@@ -163,12 +158,6 @@ const FACETS = {
                 "id": "alt-suspicious-patterns",
                 "label": "Alt text suspicious patterns (e.g., filename/placeholder)",
                 "automation": "partial"
-            },
-            {
-                "id": "acc-eligibility-filtering",
-                "label": "Excluded due to accessibility-tree eligibility",
-                "automation": "partial",
-                "macro": true
             },
             {
                 "id": "meter-name-present",
@@ -193,7 +182,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "transcript-evidence",
-                "label": "Transcript / text alternative evidence for prerecorded audio-only or video-only media (in-page association or verified on-page target)",
+                "label": "Prerecorded audio-only and video-only media has a transcript or an equivalent alternative",
                 "automation": "partial"
             }
         ]
@@ -204,7 +193,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "video-captions-track-evidence",
-                "label": "<video> declares a captions/subtitles <track> (evidence only: cannot verify audio content)",
+                "label": "Prerecorded video with sound has captions",
                 "automation": "manual"
             },
             {
@@ -413,7 +402,7 @@ const FACETS = {
             },
             {
                 "id": "visual-cues-conveyed",
-                "label": "Meaning shown by styling or layout, such as bold, color, position or an asterisk, is also given in the markup or the text",
+                "label": "Meaning shown by styling or layout, such as bold, colour, position or an asterisk, is also given in the markup or the text",
                 "automation": "manual",
                 "macro": true
             }
@@ -436,7 +425,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "instructions-not-sensory-only",
-                "label": "Instructions don't rely only on shape, color, size, position, orientation or sound",
+                "label": "Instructions don't rely only on shape, colour, size, position, orientation or sound",
                 "automation": "manual"
             }
         ]
@@ -497,7 +486,7 @@ const FACETS = {
             },
             {
                 "id": "color-not-only-means",
-                "label": "Color is not the only way information is shown, a choice is asked for or an element is set apart",
+                "label": "Colour is not the only way information is shown, a choice is asked for or an element is set apart",
                 "automation": "partial",
                 "macro": true
             }
@@ -509,7 +498,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "no-autoplay-audio-evidence",
-                "label": "Autoplaying unmuted audio/video has a controls mechanism (evidence only: clip duration is not statically knowable)",
+                "label": "Sound that plays by itself for more than 3 seconds can be paused, stopped or turned down",
                 "automation": "manual"
             }
         ]
@@ -525,7 +514,7 @@ const FACETS = {
             },
             {
                 "id": "contrast-minimum-text",
-                "label": "Visible text meets minimum contrast ratio (AA) when computable",
+                "label": "Text has a contrast of at least 4.5:1 with its background, or 3:1 when large",
                 "automation": "partial"
             }
         ]
@@ -575,7 +564,7 @@ const FACETS = {
             },
             {
                 "id": "contrast-enhanced-text",
-                "label": "Visible text meets enhanced contrast ratio (AAA) when computable",
+                "label": "Text has a contrast of at least 7:1 with its background, or 4.5:1 when large",
                 "automation": "partial"
             }
         ]
@@ -597,7 +586,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "visual-presentation",
-                "label": "Blocks of text can be given the user's colors, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
+                "label": "Blocks of text can be given the user's colours, are at most 80 characters wide, not justified, spaced 1.5 lines, and resize to 200% without sideways scrolling",
                 "automation": "manual"
             }
         ]
@@ -646,8 +635,8 @@ const FACETS = {
         "facets": [
             {
                 "id": "avoid-inline-spacing",
-                "label": "Inline style does not force line-height/letter-spacing/word-spacing with !important",
-                "automation": "full"
+                "label": "Spacing forced in a style attribute doesn't stop text from taking the user's spacing",
+                "automation": "partial"
             },
             {
                 "id": "text-spacing-content-loss",
@@ -914,7 +903,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "bypass-blocks-present",
-                "label": "Page has a main landmark, working same-page anchor link, or heading (recognized bypass-blocks mechanism)",
+                "label": "Blocks repeated on several pages can be skipped",
                 "automation": "partial"
             }
         ]
@@ -1001,12 +990,12 @@ const FACETS = {
         "facets": [
             {
                 "id": "heading-text-descriptive-evidence",
-                "label": "Heading text is a description of the content that follows, not a placeholder",
+                "label": "Headings describe the content that follows them",
                 "automation": "manual"
             },
             {
                 "id": "form-control-label-descriptive-evidence",
-                "label": "Form field label text describes the field and is not repeated without visible context",
+                "label": "Labels describe their fields, and fields with the same label can be told apart",
                 "automation": "manual"
             }
         ]
@@ -1143,7 +1132,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "label-in-name",
-                "label": "Controls with aria-label/aria-labelledby: accessible name contains visible label text",
+                "label": "A control's name contains the text of its visible label",
                 "automation": "partial"
             }
         ]
@@ -1198,7 +1187,7 @@ const FACETS = {
         "facets": [
             {
                 "id": "target-size-minimum-pointer",
-                "label": "Pointer targets meet minimum size or spacing exception (24×24 CSS px) when measurable",
+                "label": "Targets are at least 24 by 24 CSS pixels, or far enough apart",
                 "automation": "partial"
             }
         ]
@@ -1572,32 +1561,32 @@ const FACETS = {
             },
             {
                 "id": "textbox-name-present",
-                "label": "Textboxes (role=\\\"textbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Textboxes (role=\"textbox\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
                 "id": "searchbox-name-present",
-                "label": "Searchboxes (role=\\\"searchbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Searchboxes (role=\"searchbox\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
                 "id": "spinbutton-name-present",
-                "label": "Spinbuttons (role=\\\"spinbutton\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Spinbuttons (role=\"spinbutton\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
                 "id": "listbox-name-present",
-                "label": "Listboxes (role=\\\"listbox\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Listboxes (role=\"listbox\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
                 "id": "option-name-present",
-                "label": "Options (role=\\\"option\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Options (role=\"option\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
                 "id": "treeitem-name-present",
-                "label": "Tree items (role=\\\"treeitem\\\") expose an accessible name (content / aria-label / aria-labelledby / title)",
+                "label": "Tree items (role=\"treeitem\") expose an accessible name (content / aria-label / aria-labelledby / title)",
                 "automation": "full"
             },
             {
@@ -1622,7 +1611,7 @@ const FACETS = {
             },
             {
                 "id": "aria-attr-value-valid",
-                "label": "Every recognized aria-* attribute has a value matching its declared type",
+                "label": "Every recognised aria-* attribute has a value matching its declared type",
                 "automation": "full"
             },
             {
@@ -1637,7 +1626,7 @@ const FACETS = {
             },
             {
                 "id": "aria-attr-required-for-role",
-                "label": "Roles with an unambiguous required state/property carry it (e.g. role=\\\"checkbox\\\" has aria-checked)",
+                "label": "Roles with an unambiguous required state/property carry it (e.g. role=\"checkbox\" has aria-checked)",
                 "automation": "full"
             },
             {

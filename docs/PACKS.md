@@ -328,11 +328,12 @@ Core says how a person assesses every WCAG criterion by hand, facet by facet ([`
 
 A checklist has no requirements of its own: its rules' steps join the WCAG criteria they claim, and `proceduresFor('2.4.4', { packs })` lists them there. A standard gives `procedures` for each of its requirements, so a person can assess it requirement by requirement, as the standard numbers them; `surea11y-pack new --kind standard` writes them in `procedures.js`, with an example of each kind, and a test that every requirement of every version has a procedure for each of its facets.
 
-Each requirement takes one of three forms:
+Each requirement takes one of four forms:
 
 - **It restates a WCAG criterion**: `{ wcag: '1.1.1' }`. It takes that criterion's facets, rules and procedures as they are, in every locale core has them.
 - **It restates a criterion, but tests some of it its own way**: `{ wcag: '1.4.3', replace: { <facet>: { ... } } }`. It takes the criterion's facets, and the facets it names show its procedure instead of core's.
 - **It is its own**: `{ facets: [ ... ] }`. It gives the test objectives a person checks, each with its procedure.
+- **It has nothing to assess**: `{ note: '...' }`, such as a clause a version leaves void. It is listed with its note, in English, and no facets, so a person looking for it learns why; a checklist has nothing to do for it. Any other form may carry a `note` too, shown under the requirement's heading.
 
 Each also gives the requirement's `title`, its wording in the standard: a list, a checklist, a page of procedures and `relatedRequirements` name the requirement by it ("4.2 Images have a text alternative"). Take it from where the standard's requirements are written, so the two can't drift: the generated `procedures.js` adds each title from `requirements.js`, and its tests fail on a requirement without one; `ruleMappedStandard`'s `procedures` (`applicability: 'wcag'`) carry them too. An entry without a `title` is accepted, as packs written before titles were read are: it takes the title the standard's rollups name the requirement by (`composites()`, in their `meta.standardMappings`, as `ruleMappedStandard` writes them), and where no rollup names it (no rule checks it) or two name it differently, it has `title: null` and is shown by its number alone (`7.1`).
 
@@ -382,6 +383,15 @@ meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version']
 ```
 
 **Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
+
+**Notes.** What a reader of the standard's procedures should know before using them, such as the status of a version or how its results read in a report, goes in `standard.notes`, by version, in English: `listProcedures` and `procedureChecklist` give them as `notes`, and a page of procedures shows them in its header.
+
+```js
+standard: {
+  // ...
+  notes: { '1.0': ['Say which edition of the standard you tested against in every report.'] }
+}
+```
 
 **Groups.** A standard that groups its requirements, in themes or chapters, says so in `standard.groups`, by version; a list of its procedures shows them in these groups, and in number order within each:
 

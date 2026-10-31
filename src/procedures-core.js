@@ -288,8 +288,14 @@ function packRequirement(packs, id, standard, version, read, packRules) {
       id,
       version: v,
       title: titleOf(st, v, id, entry),
-      level: null
+      level: null,
+      // What the standard's procedures say of the requirement, in English.
+      ...(typeof entry.note === 'string' && entry.note.trim() ? { note: entry.note.trim() } : {})
     };
+    // A requirement with only a note, such as a void clause: nothing to assess.
+    if (typeof entry.wcag !== 'string' && !Array.isArray(entry.facets)) {
+      return head.note ? { ...head, complete: true, rules: [], facets: [] } : null;
+    }
     // What its procedures say it fails: the standard's name and the
     // requirement ('EN 301 549 9.1.4.3').
     const label = `${st.standard} ${id}`;
@@ -527,8 +533,19 @@ function listing(dictionaries, options) {
   );
   const ids = requirements.map((r) => r.id);
   const groups = isObject(st.groups) ? packGroups(st.groups[version], ids) : [];
+  // What the standard says of itself for the version, for a page's header
+  // (standard.notes, in English): its status, say, or how its results read.
+  const notes = (isObject(st.notes) && Array.isArray(st.notes[version]) ? st.notes[version] : [])
+    .filter((n) => typeof n === 'string' && n.trim())
+    .map((n) => n.trim());
   return {
-    head: { standard: st.standard, key: st.key, version, ...shaped() },
+    head: {
+      standard: st.standard,
+      key: st.key,
+      version,
+      ...(notes.length ? { notes } : {}),
+      ...shaped()
+    },
     requirements,
     groups,
     read

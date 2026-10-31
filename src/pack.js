@@ -640,6 +640,24 @@ function replaceProblems(replace, criterion, where) {
   return problems;
 }
 
+// standard.notes: what the standard says of itself, by version, in English,
+// for the header of a page of its procedures ({ version: ['...'] }).
+function notesProblems(notes, versions) {
+  if (notes === undefined) return [];
+  const shape = "standard.notes must be { version: ['<text>'] }";
+  if (!isObject(notes)) return [shape];
+  const problems = [];
+  for (const [version, list] of Object.entries(notes)) {
+    const at = `standard.notes.${version}`;
+    if (!versions.includes(version)) {
+      problems.push(`${at}: ${JSON.stringify(version)} is not one of the standard's versions`);
+    } else if (!Array.isArray(list) || list.some((n) => typeof n !== 'string' || !n.trim())) {
+      problems.push(`${at} must be a list of texts`);
+    }
+  }
+  return problems;
+}
+
 // standard.groups: how the standard groups its requirements, by version, as
 // a list or a table of contents shows them ({ version: [{ id, title,
 // requirements, groups }] }). Each requirement is one of the version's
@@ -724,8 +742,19 @@ function proceduresProblems(procedures, versions) {
       if (entry.title !== undefined && !text(entry.title)) {
         problems.push(`${where}.title must be a non-empty string`);
       }
+      if (entry.note !== undefined && !text(entry.note)) {
+        problems.push(`${where}.note must be a non-empty string`);
+      }
+      // A requirement with nothing to assess, such as a clause the version
+      // leaves void, says so in its note, with no wcag or facets.
+      if (entry.wcag === undefined && entry.facets === undefined && text(entry.note)) {
+        if (entry.relatesTo !== undefined || entry.replace !== undefined) {
+          problems.push(`${where}: a requirement with only a note has no relatesTo or replace`);
+        }
+        continue;
+      }
       if ((entry.wcag === undefined) === (entry.facets === undefined)) {
-        problems.push(`${where} must give either wcag or facets`);
+        problems.push(`${where} must give either wcag or facets, or only a note`);
         continue;
       }
       if (entry.wcag !== undefined) {
@@ -927,6 +956,7 @@ function packProblems(pack, withCoreVersion) {
     const versions = Array.isArray(st.versions) ? st.versions : [];
     problems.push(...proceduresProblems(st.procedures, versions));
     problems.push(...groupsProblems(st.groups, st.procedures, versions));
+    problems.push(...notesProblems(st.notes, versions));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
