@@ -397,7 +397,8 @@ test('a variant read by criterion is exactly the finding’s howToCheck, in ever
 
 test('a locale without a procedure reads it in English; one with it, its own', () => {
   const en = proceduresFor('1.4.13').facets[0].procedure;
-  assert.deepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
+  assert.deepEqual(proceduresFor('1.4.13', { locale: 'pt' }).facets[0].procedure, en);
+  assert.notDeepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
   const dicts = {
     en: read(PROCEDURES_DIR, 'en'),
     fr: { 'wcag_1.4.13_hover-focus-content-dismissible_step1': 'Survolez la page.' }

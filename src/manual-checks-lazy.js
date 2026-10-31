@@ -30,6 +30,32 @@ function procedures() {
   return proceduresModule;
 }
 
+// The language of a name the procedures dictionaries translate (a facet's
+// label, a criterion's title), read in `locale`: 'en' where English is what
+// gives it, null where the locale's dictionary does. A name can read the
+// same in both ("Orientation"), so the text alone can't tell.
+function nameLangs(locale) {
+  let read = null;
+  try {
+    // Paths in variables, as above, so a bundler doesn't follow them.
+    const textId = './procedures-text.js';
+    const dir = './i18n/procedures/';
+    const { reader } = module.require(textId);
+    read = reader((l) => {
+      if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(l)) return null;
+      try {
+        return module.require(dir + l + '.json');
+      } catch {
+        return null;
+      }
+    }, locale);
+  } catch {
+    read = null;
+  }
+  return (key, text) =>
+    read && read.text(key) === text && read.localeOf(key) !== 'en' ? null : 'en';
+}
+
 // The standard scanned: a pack's, where the scan ran one of its profiles
 // and the pack gives procedures; WCAG at the scan's version otherwise.
 function scopeOf(result, packs, levels) {
@@ -68,17 +94,18 @@ function leftToAPerson(result, { packs, locale, levels } = {}) {
   if (!list) return null;
   const english = locale && locale !== 'en' ? read('en') : list;
   const facetsIn = (r) => r.facets.filter((f) => !f.coveredBy && f.procedure);
-  const enRequirement = (r) => english.requirements.find((x) => x.id === r.id) || null;
   const enFacet = (r, f) => {
-    const er = enRequirement(r);
+    const er = english.requirements.find((x) => x.id === r.id);
     return er ? er.facets.find((x) => x.id === f.id) : null;
   };
+  const nameLang = nameLangs(locale);
+  const wcag = scope.standard === 'wcag';
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const requirements = list.requirements
     .map((r) => ({
       id: r.id,
       title: r.title,
-      titleLang: enRequirement(r) && enRequirement(r).title === r.title ? 'en' : null,
+      titleLang: wcag ? nameLang(`wcag_${r.id}_title`, r.title) : null,
       level: r.level,
       wcag: r.wcag || null,
       facets: facetsIn(r).map((f) => {
@@ -86,7 +113,8 @@ function leftToAPerson(result, { packs, locale, levels } = {}) {
         return {
           id: f.id,
           label: f.label,
-          labelLang: en && en.label === f.label ? 'en' : null,
+          labelLang:
+            wcag || r.wcag ? nameLang(`wcag_${r.wcag || r.id}_${f.id}_label`, f.label) : 'en',
           automation: f.automation,
           procedure: f.procedure,
           procedureLang: en && same(en.procedure, f.procedure) ? 'en' : null,
