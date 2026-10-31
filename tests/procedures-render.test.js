@@ -428,7 +428,9 @@ test('Markdown: headings for the groups, task items for a checklist', () => {
   assert.equal(lines[0], '# WCAG 2.2: manual checklist');
   assert.ok(lines.includes('## 1 Perceivable'));
   assert.ok(lines.includes('### 1.1 Text Alternatives'));
-  assert.ok(lines.includes('- [ ] **Non-text content that conveys something has a text alternative**'));
+  assert.ok(
+    lines.includes('- [ ] **Non-text content that conveys something has a text alternative**')
+  );
   assert.ok(md.endsWith('\n') && !md.endsWith('\n\n'));
   const list = renderProcedures(listProcedures({ levels: 'A' }), { format: 'markdown' });
   assert.ok(list.split('\n').includes('#### 1.1.1 Non-text Content'));
@@ -501,3 +503,83 @@ test(
     }
   }
 );
+
+test('a list or checklist starts with "Before you start"; one requirement does not', () => {
+  for (const input of [listProcedures(AA), procedureChecklist(AA)]) {
+    const d = doc(renderProcedures(input));
+    const before = d.querySelector('main section.before');
+    assert.ok(before);
+    assert.equal(before.querySelector('h2').textContent, 'Before you start');
+    assert.equal(before.querySelectorAll('li').length, 8);
+    // Ahead of the requirements, and of a checklist's results.
+    assert.equal(d.querySelector('main').firstElementChild, before);
+    assert.equal(
+      doc(renderProcedures(input, { before: false })).querySelector('section.before'),
+      null
+    );
+  }
+  assert.equal(doc(renderProcedures(proceduresFor('1.4.3'))).querySelector('section.before'), null);
+  const md = renderProcedures(listProcedures(AA), { format: 'markdown' }).split('\n');
+  assert.ok(md.includes('## Before you start'));
+  // English first: a French page marks it as English.
+  const fr = doc(renderProcedures(listProcedures({ ...AA, locale: 'fr' })));
+  assert.equal(fr.querySelector('section.before h2').lang, 'en');
+});
+
+test('the header says Level AAA is advisory, and the best practices count against nothing', () => {
+  const aaa = /Level AAA criteria are included for completeness/;
+  const header = (input) => doc(renderProcedures(input)).querySelector('header.page').textContent;
+  assert.match(header(listProcedures()), aaa);
+  assert.match(header(listProcedures({ levels: ['A', 'AA', 'AAA'] })), aaa);
+  assert.doesNotMatch(header(listProcedures(AA)), aaa);
+  assert.match(
+    header(listProcedures({ standard: 'best-practice' })),
+    /don't count it against conformance/
+  );
+  assert.doesNotMatch(header(listProcedures(AA)), /against conformance/);
+});
+
+test("a pack's standard notes are in its list, checklist and page header", () => {
+  const noted = definePack({
+    name: 'stdn-pack',
+    version: '1.0.0',
+    namespace: 'stdn',
+    core: '*',
+    standard: {
+      key: 'stdn',
+      standard: 'Std N',
+      versions: ['1.0'],
+      ruleTag: 'stdn',
+      mappingsFor: () => [],
+      procedures: { '1.0': { 1.1: { title: 'Images', wcag: '1.1.1' } } },
+      notes: { '1.0': ['Say which edition you tested against.'] }
+    }
+  });
+  const list = listProcedures({ packs: [noted], standard: 'stdn' });
+  assert.deepEqual(list.notes, ['Say which edition you tested against.']);
+  assert.deepEqual(procedureChecklist({ packs: [noted], standard: 'stdn' }).notes, list.notes);
+  const p = [...doc(renderProcedures(list)).querySelectorAll('header.page p')].map(
+    (x) => x.textContent
+  );
+  assert.ok(p.includes('Say which edition you tested against.'));
+  assert.equal(listProcedures({ packs: [pack], standard: 'stdr' }).notes, undefined);
+  assert.throws(
+    () =>
+      definePack({
+        name: 'stdm-pack',
+        version: '1.0.0',
+        namespace: 'stdm',
+        core: '*',
+        standard: {
+          key: 'stdm',
+          standard: 'Std M',
+          versions: ['1.0'],
+          ruleTag: 'stdm',
+          mappingsFor: () => [],
+          procedures: { '1.0': { 1.1: { title: 'Images', wcag: '1.1.1' } } },
+          notes: { '2.0': ['x'] }
+        }
+      }),
+    /standard\.notes\.2\.0/
+  );
+});

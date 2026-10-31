@@ -159,11 +159,14 @@ test('the text has no key the registry doesn’t list', () => {
   const stems = [...new Set(ALL.map(stemOf)), ...PROCEDURE_STEMS];
   const tools = new Set(TOOLS.map((t) => `tool_${t}`));
   const en = read(PROCEDURES_DIR, 'en');
-  // Besides the procedures: the tools' names and the words of a page made
-  // from them (src/procedures-render.js), render_*.
+  // Besides the procedures: the tools' names, the words of a page made from
+  // them (src/procedures-render.js), render_*, and its guidance, guide_*.
   const orphans = Object.keys(en).filter(
     (key) =>
-      !tools.has(key) && !key.startsWith('render_') && !stems.some((stem) => isTextOf(stem, key))
+      !tools.has(key) &&
+      !key.startsWith('render_') &&
+      !key.startsWith('guide_') &&
+      !stems.some((stem) => isTextOf(stem, key))
   );
   assert.deepEqual(orphans, []);
   for (const t of tools) assert.ok(typeof en[t] === 'string' && en[t].trim(), `${t} missing`);

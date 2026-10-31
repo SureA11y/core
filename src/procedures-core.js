@@ -527,8 +527,19 @@ function listing(dictionaries, options) {
   );
   const ids = requirements.map((r) => r.id);
   const groups = isObject(st.groups) ? packGroups(st.groups[version], ids) : [];
+  // What the standard says of itself for the version, for a page's header
+  // (standard.notes, in English): its status, say, or how its results read.
+  const notes = (isObject(st.notes) && Array.isArray(st.notes[version]) ? st.notes[version] : [])
+    .filter((n) => typeof n === 'string' && n.trim())
+    .map((n) => n.trim());
   return {
-    head: { standard: st.standard, key: st.key, version, ...shaped() },
+    head: {
+      standard: st.standard,
+      key: st.key,
+      version,
+      ...(notes.length ? { notes } : {}),
+      ...shaped()
+    },
     requirements,
     groups,
     read

@@ -383,6 +383,15 @@ meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version']
 
 **Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
 
+**Notes.** What a reader of the standard's procedures should know before using them, such as the status of a version or how its results read in a report, goes in `standard.notes`, by version, in English: `listProcedures` and `procedureChecklist` give them as `notes`, and a page of procedures shows them in its header.
+
+```js
+standard: {
+  // ...
+  notes: { '1.0': ['Say which edition of the standard you tested against in every report.'] }
+}
+```
+
 **Groups.** A standard that groups its requirements, in themes or chapters, says so in `standard.groups`, by version; a list of its procedures shows them in these groups, and in number order within each:
 
 ```js
