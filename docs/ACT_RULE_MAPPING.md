@@ -86,6 +86,10 @@ On W3C's corpus, on 2026-10-25: 957 test cases across 60 rules, **zero false pos
 
 Two test cases are MathML documents with no style of their own, which Chromium shows through its XML viewer: the page in the tab is then the browser's, not the test case. The runner detects the viewer and scans those two as parsed, in jsdom, and lists them.
 
+Four passed examples refresh themselves to another site at once, with a `<meta http-equiv="refresh">` of no delay: two of `bc659a` and two of `bisz58`, to github.com or w3.org. Chromium followed them, so up to 1.14.2 those four were scanned on the page they landed on, which has no meta refresh, and reported `inapplicable`. The runner now keeps the page on its test case: a top-level navigation to another document is not followed (`leavesTestCase()`), and the four are scanned as written and pass, as ACT expects. Every result is also filed under its test case's URL, whatever URL the page ends on.
+
+The browser bindings are checked against this run in [SureA11y/act-report](https://github.com/SureA11y/act-report): each scans every test case through its public API, from the same cache and in the same Chromium, and must give the same outcome on every one. `--runner-module=<file>` plugs such a runner in; see the header of `scripts/act-report.js`. On 1.14.2, Playwright and WebdriverIO gave every outcome the engine's runner gives.
+
 The CI `act-corpus` job runs both. Only the top frame is scanned: the rules that look into a frame reach a same-origin frame's document from the frame element, and a page-level rule applies to the top-level document alone.
 
 ### Criteria the W3C listing expects

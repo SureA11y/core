@@ -43,6 +43,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - Two facets of 1.1.1 that no rule claimed: `acc-eligibility-filtering`, an internal note of the engine shown to readers as a facet, and `embed-name-present`, a repeat of `embed-text-alternative-present`.
 
+### Fixed
+
+- The browser ACT implementation report (`scripts/act-report.js --runner=chromium`) scans every test case on its own page. Four passed examples of `bc659a` and `bisz58` refresh themselves to github.com or w3.org at once, and were scanned on the page they landed on, reported `inapplicable`; they now pass, as ACT expects. `--runner-module=<file>` scans the test cases with a runner of the caller's, such as a browser binding's, which SureA11y/act-report uses to check that each binding gives the same outcomes ([`ACT_RULE_MAPPING.md`](docs/ACT_RULE_MAPPING.md#fourth-pass-in-a-browser)).
+
 ## [1.14.2] - 2026-11-01
 
 ### Fixed
