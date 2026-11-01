@@ -22,7 +22,20 @@
  *   node scripts/act-report.js --no-cache          # refetch the live corpus
  *   node scripts/act-report.js --source=cg         # the Community Group's corpus
  *   node scripts/act-report.js --runner=chromium   # in Chromium, as the bindings run
+ *   node scripts/act-report.js --runner=chromium --runner-module=path/to/runner.js
  *   node scripts/act-report.js --out=path.jsonld
+ *
+ * --runner-module replaces the Chromium runner with one of the caller's, to
+ * scan the test cases another way, such as through a browser binding's
+ * public API (SureA11y/act-report checks each binding against this report
+ * with it). The module exports
+ * `openBrowserRunner(options, { cachedResponse, leavesTestCase, SETTLE_MS,
+ * NAVIGATION_TIMEOUT_MS })`, which resolves to the same
+ * `{ scan(caseUrl, { runOnly, engineOptions }), version, close() }` as
+ * scripts/lib/act-browser.js: answer every request from cachedResponse, so
+ * both runners scan the same bytes, and keep the page on its test case
+ * (leavesTestCase). `version` names the browser and anything else the report
+ * should record about the run.
  *
  * Exit: 0 clean · 1 false positives (submission blocked) · 2 corpus incomplete
  */
@@ -41,7 +54,13 @@ const {
   mapPool,
   scanOptionsFor
 } = require('./lib/act-corpus.js');
-const { openBrowserRunner } = require('./lib/act-browser.js');
+const {
+  openBrowserRunner,
+  cachedResponse,
+  leavesTestCase,
+  SETTLE_MS,
+  NAVIGATION_TIMEOUT_MS
+} = require('./lib/act-browser.js');
 
 const { version } = require('../package.json');
 // W3C's site rate-limits a burst of fetches; three at a time stays under it.
@@ -114,6 +133,8 @@ async function runCaseInBrowser(testCase, browserRunner) {
   // Chromium showed the document through its XML viewer: scanned as parsed,
   // in jsdom, since the browser renders no page of it.
   if (result === null) return { ...(await runCase(testCase, {})), parsedOnly: true };
+  // Filed under the test case, whatever URL the runner reports the page at.
+  if (result && result.url !== testCase.caseUrl) result.url = testCase.caseUrl;
   const checks = testCase.ourRuleIds.map((id) => outcomesFor(result, id)).filter(Boolean);
   return { ...testCase, result, checks };
 }
@@ -227,6 +248,29 @@ async function main() {
     console.error(`Unknown --runner=${runner} (jsdom or chromium)`);
     return 2;
   }
+  let openRunner = openBrowserRunner;
+  if (args['runner-module'] !== undefined) {
+    if (runner !== 'chromium' || typeof args['runner-module'] !== 'string') {
+      console.error(
+        '--runner-module=<file> replaces the Chromium runner: use it with --runner=chromium'
+      );
+      return 2;
+    }
+    const modulePath = path.resolve(process.cwd(), args['runner-module']);
+    let runnerModule;
+    try {
+      runnerModule = require(modulePath);
+    } catch (err) {
+      console.error(`Could not load --runner-module=${modulePath}: ${err.message}`);
+      return 2;
+    }
+    if (typeof runnerModule.openBrowserRunner !== 'function') {
+      console.error(`--runner-module=${modulePath} exports no openBrowserRunner function`);
+      return 2;
+    }
+    const helpers = { cachedResponse, leavesTestCase, SETTLE_MS, NAVIGATION_TIMEOUT_MS };
+    openRunner = (runnerOptions) => runnerModule.openBrowserRunner(runnerOptions, helpers);
+  }
   const date = typeof args.date === 'string' ? args.date : new Date().toISOString().slice(0, 10);
 
   const entries = loadManifest(typeof args.act === 'string' ? args.act : undefined);
@@ -261,7 +305,7 @@ async function main() {
   let browserRunner = null;
   if (runner === 'chromium') {
     try {
-      browserRunner = await openBrowserRunner(options);
+      browserRunner = await openRunner(options);
     } catch (err) {
       console.error(`Could not start Chromium: ${err.message}`);
       return 2;

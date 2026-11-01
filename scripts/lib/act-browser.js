@@ -13,6 +13,13 @@
  * origin, so relative URLs and same-origin frames behave as on w3.org, while
  * what it loads is pinned between runs.
  *
+ * The page stays on its test case. A top-level navigation away from it, such
+ * as a meta refresh with a URL and no delay (ACT's bc659a and bisz58 have
+ * passed examples that refresh to github.com or w3.org at once), is not
+ * followed: otherwise the scan would be of the page it lands on, and the
+ * test case would be scored on a document ACT never wrote. A runner of its
+ * own (act-report.js --runner-module) does the same with leavesTestCase().
+ *
  * Only the top frame is scanned. The rules that look into a frame reach a
  * same-origin frame's document from the frame element, as they do in jsdom,
  * and a page-level rule (a title, a lang attribute) applies to the top-level
@@ -32,6 +39,16 @@ const BUNDLE_PATH = path.join(__dirname, '..', '..', 'surea11y.browser.js');
 // after it (a fetch, a timer that fills in content).
 const SETTLE_MS = 2000;
 const NAVIGATION_TIMEOUT_MS = 30000;
+
+/**
+ * Whether a top-level navigation to `url` would leave the test case at
+ * `caseUrl`: any other document, and the same one with another query. A move
+ * within the page (its fragment alone) is not a navigation to a new document.
+ */
+function leavesTestCase(url, caseUrl) {
+  const withoutFragment = (u) => String(u).split('#')[0];
+  return withoutFragment(url) !== withoutFragment(caseUrl);
+}
 
 function chromiumLauncher() {
   let chromium;
@@ -96,7 +113,15 @@ async function openBrowserRunner(options = {}) {
     let unreachable = null;
     try {
       await context.route('**/*', async (route) => {
-        const url = route.request().url();
+        const request = route.request();
+        const url = request.url();
+        if (
+          request.isNavigationRequest() &&
+          !request.frame().parentFrame() &&
+          leavesTestCase(url, caseUrl)
+        ) {
+          return route.abort('aborted');
+        }
         if (!/^https?:/.test(url)) return route.continue();
         try {
           const res = await cachedResponse(url, options);
@@ -128,4 +153,10 @@ async function openBrowserRunner(options = {}) {
   return { scan, version: browser.version(), close: () => browser.close() };
 }
 
-module.exports = { openBrowserRunner, cachedResponse };
+module.exports = {
+  openBrowserRunner,
+  cachedResponse,
+  leavesTestCase,
+  SETTLE_MS,
+  NAVIGATION_TIMEOUT_MS
+};
