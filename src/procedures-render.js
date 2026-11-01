@@ -112,7 +112,8 @@ function model(dictionaries, input, options) {
           standard: input.standard,
           ...(input.key ? { key: input.key } : {}),
           version: input.version || null,
-          locale: null,
+          // The locale proceduresFor read it in, where it says.
+          locale: typeof input.locale === 'string' && input.locale ? input.locale : null,
           scope: null,
           requirements: [input],
           groups: []

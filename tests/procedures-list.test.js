@@ -14,7 +14,11 @@ const {
   proceduresFor,
   relatedRequirements
 } = require('../src/index.js');
-const { listProceduresFrom, procedureChecklistFrom } = require('../src/procedures-core.js');
+const {
+  listProceduresFrom,
+  procedureChecklistFrom,
+  proceduresFrom: proceduresFromDicts
+} = require('../src/procedures-core.js');
 const { checkPack, definePack } = require('../src/pack.js');
 const { wcagCriteria } = require('../src/wcag.js');
 
@@ -356,4 +360,130 @@ test('checkPack refuses groups and relatesTo it can’t read', () => {
     relates({ facets: [OWN_FACET], relatesTo: '1.3.1' }),
     /relatesTo must list WCAG criteria/
   );
+});
+
+// Every text a procedure gives says its language where it isn't the locale
+// the procedure was read in (docs/PROCEDURES.md, "The shape"), so a tool
+// that shows it marks each part as WCAG 3.1.2 asks: procedureLang, else
+// lang, else the locale read, is a facet's procedure's.
+const procedureLangOf = (r, f) => f.procedureLang || f.lang || r.locale;
+// The language fields of a requirement, its facets, tools and variants.
+function langsOf(r) {
+  const out = [];
+  if (r.titleLang) out.push(['title', r.titleLang]);
+  for (const f of r.facets) {
+    if (f.lang) out.push([`${f.id} label`, f.lang]);
+    if (f.procedureLang) out.push([`${f.id} procedure`, f.procedureLang]);
+    for (const t of f.tools) if (t.lang) out.push([`${f.id} tool ${t.id}`, t.lang]);
+    for (const v of f.variants) if (v.lang) out.push([`${f.id} ${v.reasonCode}`, v.lang]);
+  }
+  return out;
+}
+
+test('a requirement says the locale it was read in, and nothing more where all is in it', () => {
+  for (const locale of ['en', 'fr', 'de', 'es', 'ja']) {
+    const r = proceduresFor('1.4.3', { locale });
+    assert.equal(r.locale, locale);
+    assert.deepEqual(langsOf(r), [], locale);
+    assert.ok(
+      r.facets.some((f) => f.variants.length && f.tools.length),
+      'has variants and tools'
+    );
+  }
+  // A locale core has no procedures in is read in English, and says so.
+  const pt = proceduresFor('1.4.3', { locale: 'pt-BR' });
+  assert.equal(pt.locale, 'en');
+  assert.deepEqual(langsOf(pt), []);
+  assert.equal(proceduresFor('best-practice', { locale: 'fr' }).locale, 'fr');
+  assert.equal(proceduresFor('best-practice', { locale: 'fr' }).titleLang, undefined);
+});
+
+test('a text a locale lacks says it is in English', () => {
+  // A French that has only the title and one facet's label and first step.
+  const criterion = proceduresFor('1.4.12');
+  const [first, second] = criterion.facets.filter((f) => f.procedure);
+  const stem = `wcag_1.4.12_${first.id}_`;
+  const dicts = {
+    en,
+    fr: {
+      'wcag_1.4.12_title': 'Espacement du texte',
+      [`${stem}label`]: 'Libellé',
+      [`${stem}step1`]: 'Première étape.'
+    }
+  };
+  const r = proceduresFromDicts(dicts, '1.4.12', { locale: 'fr' });
+  assert.equal(r.locale, 'fr');
+  assert.equal(r.title, 'Espacement du texte');
+  assert.equal(r.titleLang, undefined, 'the title is in French');
+  const a = r.facets.find((f) => f.id === first.id);
+  const b = r.facets.find((f) => f.id === second.id);
+  // Its label is French; its procedure goes by its first step's.
+  assert.equal(a.lang, undefined);
+  assert.equal(a.procedureLang, undefined);
+  assert.equal(procedureLangOf(r, a), 'fr');
+  // All English: the label says it, and the procedure with it.
+  assert.equal(b.lang, 'en');
+  assert.equal(b.procedureLang, undefined);
+  assert.equal(procedureLangOf(r, b), 'en');
+  for (const f of r.facets) {
+    for (const t of f.tools) assert.equal(t.lang, 'en', `${f.id} ${t.id}`);
+    for (const v of f.variants) assert.equal(v.lang, 'en', `${f.id} ${v.reasonCode}`);
+  }
+  // A label in the locale, its procedure not: procedureLang says the procedure's.
+  const onlyLabel = proceduresFromDicts({ en, fr: { [`${stem}label`]: 'Libellé' } }, '1.4.12', {
+    locale: 'fr'
+  }).facets.find((f) => f.id === first.id);
+  assert.deepEqual([onlyLabel.lang, onlyLabel.procedureLang], [undefined, 'en']);
+  // Its label English, its procedure not: lang says the label's, procedureLang the procedure's.
+  const onlyStep = proceduresFromDicts(
+    { en, fr: { [`${stem}step1`]: 'Première étape.' } },
+    '1.4.12',
+    { locale: 'fr' }
+  ).facets.find((f) => f.id === first.id);
+  assert.deepEqual([onlyStep.lang, onlyStep.procedureLang], ['en', 'fr']);
+});
+
+test('an earlier WCAG’s own title, in a list in another locale, says it is in English', () => {
+  const list = listProcedures({ version: '2.1', locale: 'fr' });
+  const parsing = list.requirements.find((r) => r.id === '4.1.1');
+  assert.deepEqual([parsing.title, parsing.titleLang, parsing.locale], ['Parsing', 'en', 'fr']);
+  for (const r of list.requirements.filter((x) => x.id !== '4.1.1')) {
+    assert.equal(r.titleLang, undefined, r.id);
+  }
+  const groups = (gs) => gs.flatMap((g) => [g, ...groups(g.groups)]);
+  assert.deepEqual(
+    groups(list.groups).filter((g) => g.titleLang),
+    [],
+    'WCAG’s principles and guidelines are all in French'
+  );
+  assert.equal(
+    listProcedures({ version: '2.1' }).requirements.find((r) => r.id === '4.1.1').titleLang,
+    undefined,
+    'in English, nothing to say'
+  );
+});
+
+test('a pack’s standard that declares no language says its own text is in English', () => {
+  const list = listProcedures({ packs: [pack], standard: 'stdl', locale: 'fr' });
+  const own = list.requirements.find((r) => r.id === '3');
+  assert.equal(own.locale, 'fr');
+  assert.equal(own.titleLang, 'en');
+  assert.equal(own.facets[0].lang, 'en');
+  assert.equal(procedureLangOf(own, own.facets[0]), 'en');
+  assert.equal(own.facets[0].tools[0].lang, undefined, 'core’s tool, in French');
+  // One that restates a criterion: its title is the pack's, its facets core's.
+  const restated = list.requirements.find((r) => r.id === '2');
+  assert.equal(restated.titleLang, 'en');
+  for (const f of restated.facets) assert.equal(f.lang, undefined, f.id);
+  assert.deepEqual(
+    list.groups.map((g) => [g.id, g.titleLang]),
+    [
+      ['A', 'en'],
+      ['B', 'en']
+    ]
+  );
+  // In English, nothing to say.
+  const english = listProcedures({ packs: [pack], standard: 'stdl' });
+  for (const r of english.requirements) assert.deepEqual(langsOf(r), [], r.id);
+  assert.ok(english.groups.every((g) => g.titleLang === undefined));
 });

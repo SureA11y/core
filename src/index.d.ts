@@ -1053,6 +1053,8 @@ export interface ProcedureTool {
     | 'devtools'
     | (string & {});
   label: string;
+  /** Its label's language, where it isn't the locale the procedure was read in. */
+  lang?: string;
 }
 
 /**
@@ -1062,6 +1064,8 @@ export interface ProcedureTool {
 export interface ProcedureVariant extends HowToCheck {
   ruleId: string;
   reasonCode: string;
+  /** Its steps' language, where it isn't the locale the procedure was read in. */
+  lang?: string;
 }
 
 /** One facet of a requirement: a test objective, and how a person assesses it. */
@@ -1090,11 +1094,19 @@ export interface ProcedureFacet {
    * are then the pack's, in English; rules and variants stay core's.
    */
   procedureFrom?: string;
-  /** A replaced procedure's language, where the pack's standard declares its languages. */
+  /**
+   * Its procedure's language, where it isn't lang's (or, without lang, the
+   * locale read): a replaced procedure's, or core's where a locale lacks it.
+   * procedureLang, else lang, else the requirement's locale, is always the
+   * procedure's.
+   */
   procedureLang?: string;
   /**
-   * A pack's own facet: the language its label and procedure are in, where
-   * its standard declares its languages (docs/PACKS.md).
+   * The language its label is in, and its procedure's where procedureLang
+   * doesn't say: always on a pack's own facet where its standard declares
+   * its languages (docs/PACKS.md); otherwise only where it isn't the locale
+   * read ('en' for a pack's own facet in a standard that declares none, or a
+   * label a locale lacks).
    */
   lang?: string;
   /** The broader facet of the same criterion whose procedure assesses this one. */
@@ -1115,8 +1127,21 @@ export interface Procedures {
    * standard's rollups name it by; null where neither gives one.
    */
   title: string | null;
-  /** A pack's requirement: its title's language, where its standard declares its languages. */
+  /**
+   * Its title's language: a pack's requirement's always where its standard
+   * declares its languages; otherwise only where it isn't the locale read
+   * (an earlier WCAG's own title, such as 2.1's "Parsing" for 4.1.1, or a
+   * pack's title in a standard that declares none: its report.titleLang, or
+   * 'en').
+   */
   titleLang?: string;
+  /**
+   * The locale its text was read in: the first of options.locale a
+   * dictionary was given for, or 'en'; for a pack's standard that declares
+   * its languages, the one of them it is read in. Each text in another says
+   * so (titleLang, lang, procedureLang, a tool's or variant's lang).
+   */
+  locale: string;
   /** A pack's requirement: what its standard's procedures say of it. */
   note?: string;
   /** The note's language, where the standard declares its languages. */
@@ -1163,7 +1188,10 @@ export function proceduresFor(requirement: string, options?: ProceduresOptions):
 export interface ProcedureGroup {
   id: string;
   title: string;
-  /** A pack's group: its title's language, where its standard declares its languages. */
+  /**
+   * Its title's language: a pack's group's always where its standard
+   * declares its languages; otherwise only where it isn't the locale read.
+   */
   titleLang?: string;
   /** The requirements in this group itself, in the standard's order. */
   requirements: string[];
@@ -1204,7 +1232,7 @@ export interface ProcedureList {
   locale: string;
   /** A pack's standard: what it says of itself for the version (standard.notes). */
   notes?: string[];
-  /** The notes' language, where the standard declares its languages. */
+  /** The notes' language: always where the standard declares its languages, else where it isn't the locale read. */
   notesLang?: string;
   /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
   scope: {
@@ -1242,9 +1270,9 @@ export interface ProcedureChecklistItem {
   procedure: HowToCheck;
   /** A pack's procedure in place of core's: the pack's name. */
   procedureFrom?: string;
-  /** A pack's own facet: the language of its label and procedure (ProcedureFacet.lang). */
+  /** Its label's language, and its procedure's where procedureLang doesn't say (ProcedureFacet.lang). */
   lang?: string;
-  /** A replaced procedure's language (ProcedureFacet.procedureLang). */
+  /** Its procedure's language, where it isn't lang's (ProcedureFacet.procedureLang). */
   procedureLang?: string;
 }
 
@@ -1260,7 +1288,7 @@ export interface ProcedureChecklist {
   locale: string;
   /** A pack's standard: what it says of itself for the version (standard.notes). */
   notes?: string[];
-  /** The notes' language, where the standard declares its languages. */
+  /** The notes' language: always where the standard declares its languages, else where it isn't the locale read. */
   notesLang?: string;
   /** What shaped it: the WCAG levels asked for and the filters, each null where not given. */
   scope: {
