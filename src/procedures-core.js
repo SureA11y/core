@@ -46,14 +46,57 @@ const same = (read) => read;
 
 const byId = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
+// The language a text the dictionaries translate is in, where it isn't the
+// locale read: the dictionary's that gives `key` where `text` is its text,
+// English otherwise (a text the locale lacks, or one in a standard's own
+// words, such as an earlier WCAG's title). null where it is the locale read,
+// so that what is in it says nothing more.
+function langOf(read, key, text) {
+  const lang = (typeof text === 'string' && read.text(key) === text && read.localeOf(key)) || 'en';
+  return lang === read.locale ? null : lang;
+}
+const withLang = (lang) => (lang ? { lang } : {});
+
+// The language of a pack's own text, under `field`: the one its translator
+// gives where its standard declares its languages (always said, as it always
+// was), else `undeclared` (English, or report.titleLang for its titles),
+// said where it isn't the locale read.
+function packLang(field, given, tr, read, undeclared = 'en') {
+  if (tr.declared) return { [field]: given };
+  return undeclared.toLowerCase() !== read.locale ? { [field]: undeclared } : {};
+}
+
+// The language a pack's standard titles its requirements and groups in,
+// where it declares none of its languages (report.titleLang); English
+// otherwise.
+function reportTitleLang(st) {
+  const lang = isObject(st.report) ? st.report.titleLang : null;
+  return isText(lang) ? lang.trim() : 'en';
+}
+
+// A tool a procedure needs, with its label's language where it isn't the
+// locale read.
+function toolOf(id, read) {
+  const label = read.text(`tool_${id}`) || id;
+  return { id, label, ...withLang(langOf(read, `tool_${id}`, label)) };
+}
+
+// A variant: a rule's steps for a code, as its finding's howToCheck gives
+// them, with their language where it isn't the locale read.
+function variantOf(ruleId, reasonCode, prefix, read) {
+  const stem = `${prefix}_review_${reasonCode}_`;
+  const how = read.procedure(stem);
+  if (!how) return null;
+  return { ruleId, reasonCode, ...how, ...withLang(langOf(read, `${stem}step1`, how.steps[0])) };
+}
+
 function variantsOf(entry, read) {
   const out = [];
   for (const ruleId of Object.keys((entry && entry.variants) || {})) {
     const rule = RULES[ruleId];
     for (const reasonCode of entry.variants[ruleId]) {
-      const how =
-        rule && rule.prefix ? read.procedure(`${rule.prefix}_review_${reasonCode}_`) : null;
-      if (how) out.push({ ruleId, reasonCode, ...how });
+      const variant = rule && rule.prefix ? variantOf(ruleId, reasonCode, rule.prefix, read) : null;
+      if (variant) out.push(variant);
     }
   }
   return out;
@@ -91,8 +134,8 @@ function packClaims(packRules, key, facetId, requirement, read, pack) {
     rules.push(rule.id);
     if (!prefix) continue;
     for (const reasonCode of codesUnder(rule, key, facetId, requirement)) {
-      const how = read.procedure(`${prefix}_review_${reasonCode}_`);
-      if (how) variants.push({ ruleId: rule.id, reasonCode, ...how });
+      const variant = variantOf(rule.id, reasonCode, prefix, read);
+      if (variant) variants.push(variant);
     }
   }
   return { rules, variants };
@@ -119,6 +162,13 @@ function criterionTitle(criterion, title, read) {
   return (info && title === info.title && read.text(`wcag_${criterion}_title`)) || title;
 }
 
+// { titleLang } where a criterion's title isn't in the locale read; {}
+// where it is.
+function titleLangOf(criterion, title, read) {
+  const lang = langOf(read, `wcag_${criterion}_title`, title);
+  return lang ? { titleLang: lang } : {};
+}
+
 function facetOf(facet, entry, stem, rules, read, requirement) {
   const coveredBy = entry && typeof entry.coveredBy === 'string' ? entry.coveredBy : null;
   const procedure = coveredBy ? null : naming(read.procedure(stem), requirement);
@@ -127,10 +177,18 @@ function facetOf(facet, entry, stem, rules, read, requirement) {
   const out = { id: facet.id, label, automation: facet.automation };
   if (facet.macro) out.macro = true;
   out.rules = rules;
-  out.tools = tools
-    .filter((id) => TOOLS.includes(id))
-    .map((id) => ({ id, label: read.text(`tool_${id}`) || id }));
+  out.tools = tools.filter((id) => TOOLS.includes(id)).map((id) => toolOf(id, read));
   out.procedure = procedure;
+  // The languages of its label and procedure, where they aren't the locale
+  // read: lang, the label's, and procedureLang, the procedure's (its first
+  // step's dictionary), where it isn't lang's, so that procedureLang, else
+  // lang, else the locale read, is always the procedure's.
+  const labelLang = langOf(read, `${stem}label`, label);
+  if (labelLang) out.lang = labelLang;
+  if (procedure) {
+    const stepLang = read.localeOf(`${stem}step1`) || 'en';
+    if (stepLang !== (labelLang || read.locale)) out.procedureLang = stepLang;
+  }
   // A technology facet a broader facet's procedure assesses: that facet's id.
   if (coveredBy) out.coveredBy = coveredBy;
   out.variants = variantsOf(entry, read);
@@ -172,10 +230,12 @@ function wcagCriterion(criterion, read, packRules, requirement) {
     if (Array.isArray(sc) && sc.includes(criterion) && !rules.includes(rule.id))
       rules.push(rule.id);
   }
+  const title = criterionTitle(criterion, info.title, read);
   return {
     standard: 'wcag',
     id: criterion,
-    title: criterionTitle(criterion, info.title, read),
+    title,
+    ...titleLangOf(criterion, title, read),
     level: info.level,
     complete: isComplete(facets),
     rules,
@@ -193,11 +253,14 @@ function bestPractices(read) {
       read
     )
   );
+  // The page's name for them (render_*) is theirs too.
+  const title = read.text('render_standard_bestPractice') || 'Best practices';
+  const titleLang = langOf(read, 'render_standard_bestPractice', title);
   return {
     standard: 'best-practice',
     id: 'best-practice',
-    // The page's name for them (render_*) is theirs too.
-    title: read.text('render_standard_bestPractice') || 'Best practices',
+    title,
+    ...(titleLang ? { titleLang } : {}),
     level: null,
     complete: isComplete(facets),
     rules: [...new Set(facets.flatMap((f) => f.rules))].sort(byId),
@@ -219,12 +282,12 @@ function packFacet(f, read, claims, requirement, tr) {
   return {
     id: f.id,
     label: texts[0],
-    ...(tr.declared ? { lang } : {}),
+    ...packLang('lang', lang, tr, read),
     automation: f.automation || 'manual',
     rules: claims.rules,
     tools: (Array.isArray(f.tools) ? f.tools : [])
       .filter((id) => TOOLS.includes(id))
-      .map((id) => ({ id, label: read.text(`tool_${id}`) || id })),
+      .map((id) => toolOf(id, read)),
     procedure,
     variants: claims.variants
   };
@@ -236,11 +299,10 @@ function packFacet(f, read, claims, requirement, tr) {
 // rules and variants stay: a finding still shows its own steps.
 function replaced(facet, own, read, pack, requirement, tr) {
   const tools = Array.isArray(own.tools)
-    ? own.tools
-        .filter((id) => TOOLS.includes(id))
-        .map((id) => ({ id, label: read.text(`tool_${id}`) || id }))
+    ? own.tools.filter((id) => TOOLS.includes(id)).map((id) => toolOf(id, read))
     : facet.tools;
-  const { variants, ...rest } = facet;
+  // Its procedure's language is the pack's, not the general procedure's.
+  const { variants, procedureLang: _, ...rest } = facet;
   const { texts, lang } = tr.all([...own.steps, own.passWhen, own.failWhen]);
   return {
     ...rest,
@@ -253,7 +315,7 @@ function replaced(facet, own, read, pack, requirement, tr) {
       },
       requirement
     ),
-    ...(tr.declared ? { procedureLang: lang } : {}),
+    ...packLang('procedureLang', lang, tr, read),
     procedureFrom: pack.name,
     variants
   };
@@ -341,9 +403,9 @@ function packRequirement(packs, id, standard, version, readingOf, packRules) {
       id,
       version: v,
       title: t ? t.text : title,
-      ...(t && tr.declared ? { titleLang: t.lang } : {}),
+      ...(t ? packLang('titleLang', t.lang, tr, read, reportTitleLang(st)) : {}),
       level: null,
-      ...(n ? { note: n.text.trim(), ...(tr.declared ? { noteLang: n.lang } : {}) } : {})
+      ...(n ? { note: n.text.trim(), ...packLang('noteLang', n.lang, tr, read) } : {})
     };
     // A requirement with only a note, such as a void clause: nothing to assess.
     if (typeof entry.wcag !== 'string' && !Array.isArray(entry.facets)) {
@@ -401,13 +463,22 @@ function proceduresFrom(dictionaries, requirement, options) {
   const packRules = packRulesOf(opts.packs);
   const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : null;
   const core = !standard || standard === 'wcag' || standard === 'WCAG';
+  // Each says the locale its text was read in, as a list does.
+  const inLocale = (found, locale) => (found ? { ...found, locale } : null);
   if (core || standard === 'best-practice') {
     const found = id === 'best-practice' ? bestPractices(read) : wcagCriterion(id, read, packRules);
-    if (found || standard) return found;
+    if (found || standard) return inLocale(found, read.locale);
   }
   const version = typeof opts.version === 'string' && opts.version ? opts.version : null;
-  const readingOf = readingFor(dictionaries, opts.packs, opts.locale);
-  return packRequirement(opts.packs, id, standard, version, readingOf, packRules);
+  const reading = readingFor(dictionaries, opts.packs, opts.locale);
+  // The reading of the standard the requirement is found in: the last asked.
+  let readIn = read.locale;
+  const readingOf = (st) => {
+    const r = reading(st);
+    readIn = r.read.locale;
+    return r;
+  };
+  return inLocale(packRequirement(opts.packs, id, standard, version, readingOf, packRules), readIn);
 }
 
 // Requirement ids in a standard's order: their dot-separated parts compared
@@ -456,6 +527,12 @@ function versionOf(st, version) {
 // WCAG's principles and guidelines, each with the criteria of `ids` under
 // it, in order, titled in the locale read; a guideline or principle with
 // none is left out.
+function wcagGroupTitle(key, english, read) {
+  const title = read.text(key) || english;
+  const titleLang = langOf(read, key, title);
+  return { title, ...(titleLang ? { titleLang } : {}) };
+}
+
 function wcagGroups(ids, read) {
   const out = [];
   for (const principle of Object.keys(WCAG_PRINCIPLES)) {
@@ -463,7 +540,7 @@ function wcagGroups(ids, read) {
       .filter((g) => g.split('.')[0] === principle)
       .map((g) => ({
         id: g,
-        title: read.text(`wcag_guideline_${g}`) || WCAG_GUIDELINES[g],
+        ...wcagGroupTitle(`wcag_guideline_${g}`, WCAG_GUIDELINES[g], read),
         requirements: ids.filter((id) => id.split('.').slice(0, 2).join('.') === g),
         groups: []
       }))
@@ -471,7 +548,7 @@ function wcagGroups(ids, read) {
     if (guidelines.length) {
       out.push({
         id: principle,
-        title: read.text(`wcag_principle_${principle}`) || WCAG_PRINCIPLES[principle],
+        ...wcagGroupTitle(`wcag_principle_${principle}`, WCAG_PRINCIPLES[principle], read),
         requirements: [],
         groups: guidelines
       });
@@ -483,18 +560,18 @@ function wcagGroups(ids, read) {
 // A pack's groups for a version (standard.groups), with only the
 // requirements of `ids` in each; a group left with none, and no group under
 // it with any, is left out.
-function packGroups(groups, ids, tr) {
+function packGroups(groups, ids, tr, read, titleLang) {
   const out = [];
   for (const g of Array.isArray(groups) ? groups : []) {
     if (!isObject(g)) continue;
     const requirements = listOf(g.requirements).filter((id) => ids.includes(id));
-    const inner = packGroups(g.groups, ids, tr);
+    const inner = packGroups(g.groups, ids, tr, read, titleLang);
     if (!requirements.length && !inner.length) continue;
     const t = tr.text(g.title);
     out.push({
       id: String(g.id),
       title: t.text,
-      ...(tr.declared ? { titleLang: t.lang } : {}),
+      ...packLang('titleLang', t.lang, tr, read, titleLang),
       requirements,
       groups: inner
     });
@@ -548,7 +625,9 @@ function listing(dictionaries, options, wrap = same) {
   const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : 'wcag';
   const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
   const f = filtersOf(opts);
-  const keep = (list) => list.map((r) => filtered(r, f)).filter(Boolean);
+  // Each as proceduresFrom gives it, with the locale it was read in.
+  const keep = (list, locale = read.locale) =>
+    list.map((r) => filtered({ ...r, locale }, f)).filter(Boolean);
   // What shaped the list, so a page made from it can say so: the locale its
   // text was read in, the WCAG levels asked for and the filters.
   const shaped = (levels) => ({
@@ -564,7 +643,11 @@ function listing(dictionaries, options, wrap = same) {
       wcagCriteria(version, { levels })
         .map((c) => {
           const r = wcagCriterion(c.sc, read, packRules);
-          return r && { ...r, title: criterionTitle(c.sc, c.title, read), level: c.level };
+          if (!r) return null;
+          // The version's own title, and its language.
+          const { titleLang: _, ...rest } = r;
+          const title = criterionTitle(c.sc, c.title, read);
+          return { ...rest, title, ...titleLangOf(c.sc, title, read), level: c.level };
         })
         .filter(Boolean)
     );
@@ -596,10 +679,13 @@ function listing(dictionaries, options, wrap = same) {
     Object.keys(st.procedures[version])
       .sort(compareIds)
       .map((id) => packRequirement([pack], id, st.key, version, () => reading, packRules))
-      .filter(Boolean)
+      .filter(Boolean),
+    reading.read.locale
   );
   const ids = requirements.map((r) => r.id);
-  const groups = isObject(st.groups) ? packGroups(st.groups[version], ids, reading.tr) : [];
+  const groups = isObject(st.groups)
+    ? packGroups(st.groups[version], ids, reading.tr, reading.read, reportTitleLang(st))
+    : [];
   // What the standard says of itself for the version, for a page's header
   // (standard.notes): its status, say, or how its results read. Translated
   // as a whole or not at all.
@@ -612,7 +698,7 @@ function listing(dictionaries, options, wrap = same) {
     key: st.key,
     version,
     ...(notes ? { notes: notes.texts } : {}),
-    ...(notes && reading.tr.declared ? { notesLang: notes.lang } : {}),
+    ...(notes ? packLang('notesLang', notes.lang, reading.tr, reading.read) : {}),
     ...shaped()
   };
   // A standard read in one language says which.

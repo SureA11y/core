@@ -656,3 +656,12 @@ test('a requirement with only a note, such as a void clause, is listed with its 
   assert.throws(bad({ title: 'Parsing', note: ' ' }), /note must be a non-empty string/);
   assert.throws(bad({ title: 'Parsing', note: 'Void.', relatesTo: ['4.1.2'] }), /only a note/);
 });
+
+test('a requirement from proceduresFor is rendered in the locale it was read in', () => {
+  const de = proceduresFor('1.4.12', { locale: 'de' });
+  const page = renderProcedures(de, { fragment: true });
+  assert.match(page, /^<div class="surea11y-procedures" lang="de">/);
+  assert.equal(page, renderProcedures(de, { locale: 'de', fragment: true }));
+  // Asked for another, it is the page's.
+  assert.match(renderProcedures(de, { locale: 'en', fragment: true }), /lang="en">/);
+});

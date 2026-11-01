@@ -230,7 +230,7 @@ fs.writeFileSync('wcag-22-aa.md', renderProcedures(listProcedures({ levels: ['A'
 | Option | |
 |---|---|
 | `format` | `'html'` (the default) or `'markdown'`. Anything else throws a `TypeError`, as does an input none of the three calls gives. |
-| `locale` | The language of the page's words; by default, the one the procedures were read in (their `locale`). A single requirement from `proceduresFor` carries none, so pass it the locale you read it in. |
+| `locale` | The language of the page's words; by default, the one the procedures were read in (their `locale`, which a single requirement from `proceduresFor` carries too). |
 | `title` | The page's title and heading; by default one naming the standard ("WCAG 2.2: manual checklist"). |
 | `variants` | `true` adds, under each facet of a list, the steps a scan's undecided finding gives for it, in a closed disclosure. |
 | `record` | `false` leaves out a checklist page's results and its script. |
@@ -382,7 +382,9 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
   // version: 'V4.1.1', wcag: '1.4.3' on a pack's requirement that restates a criterion,
   // relatesTo: ['1.3.1'] on one of its own that relates to some
   title: 'Text Spacing',
-  // titleLang, note and noteLang on a pack's requirement: their language
+  // titleLang: its title's language, where it isn't the locale read (below)
+  // note and noteLang on a pack's requirement: what its standard says of it, and in which language
+  locale: 'en',                  // the locale its text was read in
   level: 'AA',                   // null for best practices
   complete: true,                // every facet has a general procedure
   rules: ['avoid-inline-spacing', 'text-spacing-content-loss'], // the rules that test it (wcagSc)
@@ -394,15 +396,15 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
       rules: ['text-spacing-content-loss'], // the rules that claim the facet, core's then the packs'
       tools: [
         { id: 'devtools', label: "The browser's developer tools" },
-        { id: 'keyboard', label: 'A keyboard' }
+        { id: 'keyboard', label: 'A keyboard' } // lang, where it isn't the locale read
       ],
       procedure: { steps: ['…'], passWhen: '…', failWhen: '…' }, // or null
-      // procedureFrom: '@acme/pack-city', where a pack's requirement replaces it,
-      //   with procedureLang the language its procedure is in
-      // lang: 'fr', on a pack's own facet: the language of its label and procedure
+      // procedureFrom: '@acme/pack-city', where a pack's requirement replaces it
+      // lang: 'en', the language of its label, and of its procedure where procedureLang doesn't say
+      // procedureLang: 'en', its procedure's, where it isn't lang's (below)
       // coveredBy: 'text-alternative-mechanism', on a technology facet
       variants: [
-        { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' }
+        { ruleId: 'text-spacing-content-loss', reasonCode: 'TEXT_OVERLAPS', steps: ['…'], passWhen: '…', failWhen: '…' } // lang, as a tool's
       ]
     }
   ]
@@ -410,6 +412,8 @@ const html = renderProcedures(proceduresFor('1.4.12', { locale: 'de' }), { local
 ```
 
 A facet broader than any one rule has `macro: true`. A facet with `coveredBy` has `procedure: null` and no `tools`: read them from the facet it names. A facet's `tools` is also empty while core has no procedure for it. A variant's `steps`, `passWhen` and `failWhen` are exactly the `howToCheck` of that rule's finding for that code, in the same locale. Labels and titles are in the locale read, like the procedures: a facet's `label`, a criterion's `title`, and the titles of WCAG's principles and guidelines in a list's `groups`. A criterion's title as WCAG 2.0 or 2.1 gives it, where it differs from 2.2's, stays English. A pack's requirement, own facet, replacement, group and notes say the language their text is in (`titleLang`, `noteLang`, `lang`, `procedureLang`, a group's `titleLang`, a list's `notesLang`) where the pack's standard declares its languages.
+
+**The language of each text.** A requirement says the `locale` its text was read in, as a list does, and every text in another language says which, so a tool that shows them can mark each part as WCAG 3.1.2 asks without reading the dictionaries itself: a criterion's or group's `titleLang` (an earlier WCAG's own title, such as 2.1's "Parsing" for 4.1.1, is `'en'`), a facet's `lang` for its label, a tool's and a variant's `lang`, and a facet's `procedureLang` for its procedure where it isn't its label's (a procedure's language is its first step's). A facet's procedure is in `procedureLang`, else `lang`, else the requirement's `locale`. A text in the locale read says nothing, so what is all in one locale has none of these. A pack's standard that declares its languages says them on its own text always, as before; one that declares none says that its own text is in English (or, for its titles, `report.titleLang`) where the locale read is another. `renderProcedures` marks the same texts on its pages.
 
 `@surea11y/core/procedures/<locale>` is plain JSON, key to text. Its keys are covered as `proceduresFrom` reads them; its wording is not.
 

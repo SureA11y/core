@@ -96,14 +96,20 @@ const restating = (l) => l.requirements.find((r) => r.id === 'R-1.4.3');
 const contrastText = (l) =>
   restating(l).facets.find((f) => f.id === 'contrast-minimum-text').procedure.steps[0];
 
-test('a standard that declares no language reads as it always did', () => {
+test('a standard that declares no language reads as it always did, and says its text is English', () => {
   const fr = list(legacy, 'fr');
   assert.equal(fr.locale, 'fr');
   assert.equal(own(fr).title, OWN.title);
   assert.equal(own(fr).facets[0].label, OWN.facets[0].label);
-  assert.equal(own(fr).facets[0].lang, undefined);
-  assert.equal(own(fr).titleLang, undefined);
-  assert.equal(fr.notesLang, undefined);
+  // Its own text is as written, in English, which it says in another locale.
+  assert.equal(own(fr).facets[0].lang, 'en');
+  assert.equal(own(fr).titleLang, 'en');
+  assert.equal(fr.notesLang, fr.notes ? 'en' : undefined);
+  // In English, nothing to say.
+  const en = list(legacy, 'en');
+  assert.equal(own(en).facets[0].lang, undefined);
+  assert.equal(own(en).titleLang, undefined);
+  assert.equal(en.notesLang, undefined);
   // Core's procedures follow the locale asked for.
   assert.equal(contrastText(fr), contrastText(list(translated, 'fr')));
   assert.notEqual(contrastText(fr), contrastText(list(legacy, 'en')));
