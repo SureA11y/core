@@ -293,19 +293,33 @@ test('a facet with a general procedure has 1 to 8 steps and names its tools', ()
 
 // Every WCAG 2.2 criterion (and 4.1.1, removed in 2.2) has a procedure for
 // every facet, its own or its coveredBy facet's.
-test('every criterion has a procedure for every facet', () => {
+// Core gives procedures for what its rules evaluate: a criterion one of its
+// rules reports on, in full, in part or as cantTell, has a procedure for
+// every facet; one no rule evaluates has none, and lists its facets only.
+const evaluated = (r) =>
+  r.rules.length > 0 || r.facets.some((f) => f.automation !== 'manual' || f.rules.length > 0);
+
+test('a criterion a rule evaluates has a procedure for every facet, one no rule evaluates none', () => {
   const incomplete = [];
+  const withProcedures = [];
   for (const [criterion, info] of Object.entries(FACETS)) {
     const ids = info.facets.map((f) => f.id);
-    assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion] || {}), ids, criterion);
     const r = proceduresFor(criterion);
-    if (!r.complete) incomplete.push(criterion);
     assert.deepEqual(
       r.facets.map((f) => f.id),
       ids
     );
+    if (evaluated(r)) {
+      assert.deepEqual(Object.keys(PROCEDURES.wcag[criterion] || {}), ids, criterion);
+      if (!r.complete) incomplete.push(criterion);
+    } else {
+      assert.equal(PROCEDURES.wcag[criterion], undefined, criterion);
+      if (r.facets.some((f) => f.procedure || f.tools.length)) withProcedures.push(criterion);
+      assert.equal(r.complete, false, criterion);
+    }
   }
   assert.deepEqual(incomplete, []);
+  assert.deepEqual(withProcedures, []);
 });
 
 // What no criterion requires has a procedure for every facet too, so a page
@@ -396,15 +410,15 @@ test('a variant read by criterion is exactly the finding’s howToCheck, in ever
 });
 
 test('a locale without a procedure reads it in English; one with it, its own', () => {
-  const en = proceduresFor('1.4.13').facets[0].procedure;
-  assert.deepEqual(proceduresFor('1.4.13', { locale: 'pt' }).facets[0].procedure, en);
-  assert.notDeepEqual(proceduresFor('1.4.13', { locale: 'ja' }).facets[0].procedure, en);
+  const en = proceduresFor('1.4.12').facets[0].procedure;
+  assert.deepEqual(proceduresFor('1.4.12', { locale: 'pt' }).facets[0].procedure, en);
+  assert.notDeepEqual(proceduresFor('1.4.12', { locale: 'ja' }).facets[0].procedure, en);
   const dicts = {
     en: read(PROCEDURES_DIR, 'en'),
-    fr: { 'wcag_1.4.13_hover-focus-content-dismissible_step1': 'Survolez la page.' }
+    fr: { 'wcag_1.4.12_avoid-inline-spacing_step1': 'Ouvrez la page.' }
   };
-  const fr = proceduresFrom(dicts, '1.4.13', { locale: 'fr-CA' }).facets[0].procedure;
-  assert.equal(fr.steps[0], 'Survolez la page.');
+  const fr = proceduresFrom(dicts, '1.4.12', { locale: 'fr-CA' }).facets[0].procedure;
+  assert.equal(fr.steps[0], 'Ouvrez la page.');
   assert.equal(fr.steps[1], en.steps[1]);
   assert.equal(fr.steps.length, en.steps.length);
 });

@@ -68,11 +68,20 @@ test('each criterion shows its outcome in the scan', () => {
     );
   // The image with no alt fails 1.1.1.
   assert.match(row('1.1.1').querySelector('summary').textContent, /Scan: Fail/);
-  // A criterion no rule tests says so.
-  const untested = [...d.querySelectorAll('details.manual-req summary')].find((s) =>
-    /No rule tests it/.test(s.textContent)
-  );
-  assert.ok(untested);
+  // A criterion the scan has no result for says so: core lists only the
+  // criteria its rules evaluate, so here one whose rule didn't run.
+  const without143 = {
+    ...result,
+    rulesResults: result.rulesResults.filter(
+      (r) =>
+        !((r.meta && r.meta.normativeMappings) || []).some((m) => m && m.requirement === '1.4.3')
+    )
+  };
+  const untested = [...doc(renderHtmlReport(without143)).querySelectorAll('details.manual-req')]
+    .find((r) => r.querySelector('.sc-cell').textContent === '1.4.3')
+    .querySelector('summary');
+  assert.match(untested.textContent, /No rule tests it/);
+  assert.doesNotMatch(row('1.4.3').querySelector('summary').textContent, /No rule tests it/);
 });
 
 test('its levels are the ones the scan reported', () => {

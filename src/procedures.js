@@ -39,7 +39,7 @@ function dictionary(locale) {
 }
 
 /**
- * How a person assesses a WCAG 2.2 criterion ('1.4.13'), the best practices
+ * How a person assesses a WCAG 2.2 criterion ('1.4.12'), the best practices
  * ('best-practice'), or, with options.packs, a requirement of a pack's
  * standard (options.standard, options.version), by hand, in options.locale
  * (English where it has no translation); null for a requirement none of

@@ -1,6 +1,6 @@
 # Test procedures
 
-How a person assesses each criterion by hand, criterion by criterion: what a scan can't decide, and what no rule tests at all. Core keeps these procedures in one place and gives them to whatever needs them:
+How a person assesses by hand what core's rules evaluate, criterion by criterion: what a scan can't decide, and the parts of a criterion it checks that no rule tests. Core keeps these procedures in one place and gives them to whatever needs them:
 
 - an undecided finding's `howToCheck` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#how-to-check)), as it always has;
 - a manual assessment with no scan at all: every criterion's procedures, the whole standard at once ([below](#listing-them)), or a checklist of what to do ([below](#a-checklist)), as a page or a document to work through ([below](#rendering-them));
@@ -9,6 +9,8 @@ How a person assesses each criterion by hand, criterion by criterion: what a sca
 - the explanation of a criterion whose rules found nothing but do not cover all of it.
 
 Procedures are guidance, not part of a finding's identity: their wording may improve in any release, as a finding's steps may.
+
+Core gives procedures only for the criteria its rules evaluate, in full, in part or as `cantTell`. A criterion no rule evaluates (1.2.3 Audio Description or Media Alternative, say) is listed with its facets and their labels, with no procedure, and is not `complete` ([below](#which-criteria-have-procedures)). How to assess those by hand is outside core. A pack gives procedures for its own requirements in the same way, where its rules evaluate them ([`PACKS.md`](./PACKS.md#how-a-person-assesses-it-procedures)).
 
 ## What a procedure is
 
@@ -31,7 +33,7 @@ Where a rule asks a narrower question about one element, the facet has a **varia
 
 What no criterion requires is kept apart, under `best-practice`, so a criterion's procedures never present advice as a failure.
 
-A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`: every WCAG 2.2 criterion is ([below](#which-criteria-have-procedures)).
+A criterion whose every facet has a procedure, its own or its `coveredBy` facet's, is `complete`: every criterion a core rule evaluates is ([below](#which-criteria-have-procedures)).
 
 ## Reading them
 
@@ -40,7 +42,7 @@ A criterion whose every facet has a procedure, its own or its `coveredBy` facet'
 | Node | `proceduresFor(requirement, { locale })` from `@surea11y/core`, which reads the dictionaries from disk. |
 | Code that runs in a browser | `proceduresFrom(dictionaries, requirement, { locale })` from `@surea11y/core/procedures`, with the dictionaries it imports as `@surea11y/core/procedures/<locale>` (`{ en, fr }`, or a function from a locale to its dictionary). It needs no file system and reaches none of the rules. |
 
-`requirement` is a WCAG 2.2 criterion (`'1.4.13'`) or `'best-practice'`; a requirement core doesn't know gives `null`. `locale` is a tag (`'fr-CA'` reads `fr-ca`, then `fr`) or a list of tags, most wanted first; English is the fallback for every text a locale lacks, and says how many steps a procedure has. In a browser bundle, `proceduresFor` warns once and returns `null`.
+`requirement` is a WCAG 2.2 criterion (`'1.4.12'`) or `'best-practice'`; a requirement core doesn't know gives `null`. `locale` is a tag (`'fr-CA'` reads `fr-ca`, then `fr`) or a list of tags, most wanted first; English is the fallback for every text a locale lacks, and says how many steps a procedure has. In a browser bundle, `proceduresFor` warns once and returns `null`.
 
 ```js
 const { proceduresFor } = require('@surea11y/core');
@@ -419,7 +421,7 @@ A facet broader than any one rule has `macro: true`. A facet with `coveredBy` ha
 
 ## Which criteria have procedures
 
-Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), has a procedure for every facet: 87 criteria, 224 facets, 110 procedures of their own and 114 technology facets covered by one of them. The best practices have one for each of their 13 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, zoom, repeated names, new windows and downloads, and reduced motion. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
+Every criterion a core rule evaluates, in full, in part or as `cantTell`, has a procedure for every facet, the facets no rule checks included, since a person needs them to finish what the scan began: 36 of the 87 criteria of WCAG 2.2 at levels A, AA and AAA and 4.1.1 (removed in 2.2), with 170 facets, 56 procedures of their own and 114 technology facets covered by one of them. The other 51 criteria, which no rule evaluates, are listed with their facets and no procedure, and are not `complete`; a test keeps the line where the rules draw it. The best practices have one for each of their 13 facets: landmarks, content in landmarks, headings, table markup, ARIA roles, focus order, access keys, skip links, names and labels, zoom, repeated names, new windows and downloads, and reduced motion. `complete` says so for each; a test keeps it so. EN 301 549's clauses come from its pack, `@surea11y/pack-en301549`, each taking the procedures of the criterion it restates.
 
 ## Where they live
 
