@@ -4,7 +4,8 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    # release/** is a patch line cut from an earlier commit of main.
+    branches: [main, 'release/**']
 
 # The jobs only read the repository.
 permissions:
