@@ -445,7 +445,7 @@ function packRequirement(packs, id, standard, version, readingOf, packRules) {
 
 /**
  * How a person assesses a requirement by hand: a WCAG 2.2 criterion
- * ('1.4.13'), 'best-practice' for what no criterion requires, or, with
+ * ('1.4.12'), 'best-practice' for what no criterion requires, or, with
  * `options.packs`, a requirement of a pack's standard ('9.1.4.3', with
  * `options.standard` its key or name and `options.version` one of its
  * versions, the latest by default), with each of its facets, in

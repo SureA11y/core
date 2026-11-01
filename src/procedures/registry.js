@@ -10,6 +10,10 @@
  * ------------
  * `wcag` is keyed by success criterion, then by facet id, the facets of
  * src/coverage/wcag-facets.js, which give each its label and automation.
+ * It holds the criteria core's rules evaluate, in full, in part or as
+ * cantTell, each with every facet: a criterion no rule evaluates has no
+ * entry, and no procedure (docs/PROCEDURES.md, "Which criteria have
+ * procedures").
  * `best-practice` holds what no criterion requires, keyed by facet id, each
  * with its own label and automation: the steps of rules that claim no
  * criterion, so that they are never read as a criterion's.
@@ -18,7 +22,7 @@
  * page, names the `tools` it needs, from TOOLS (an empty list: a browser
  * alone). Its text is in the procedures under
  * `<group>_<criterion>_<facet>_step<n>`, `_pass` and `_fail`
- * (`wcag_1.4.13_hover-content-hoverable_step1`; a best practice has no
+ * (`wcag_1.4.12_avoid-inline-spacing_step1`; a best practice has no
  * criterion: `best-practice_<facet>_step1`), and a tool's name under
  * `tool_<id>`.
  *
@@ -170,41 +174,6 @@ const PROCEDURES = {
         tools: []
       }
     },
-    '1.2.3': {
-      'audio-description-or-alternative': {
-        tools: []
-      }
-    },
-    '1.2.4': {
-      'live-captions': {
-        tools: []
-      }
-    },
-    '1.2.5': {
-      'audio-description': {
-        tools: []
-      }
-    },
-    '1.2.6': {
-      'sign-language': {
-        tools: []
-      }
-    },
-    '1.2.7': {
-      'extended-audio-description': {
-        tools: []
-      }
-    },
-    '1.2.8': {
-      'media-text-alternative': {
-        tools: []
-      }
-    },
-    '1.2.9': {
-      'live-audio-alternative': {
-        tools: []
-      }
-    },
     '1.3.1': {
       'form-control-programmatic-label-present': {
         coveredBy: 'form-labels-associated'
@@ -296,16 +265,6 @@ const PROCEDURES = {
         tools: ['devtools', 'screen-reader']
       }
     },
-    '1.3.2': {
-      'reading-order-meaningful': {
-        tools: ['screen-reader', 'devtools']
-      }
-    },
-    '1.3.3': {
-      'instructions-not-sensory-only': {
-        tools: []
-      }
-    },
     '1.3.4': {
       'css-orientation-lock': {
         coveredBy: 'orientation-not-locked',
@@ -326,11 +285,6 @@ const PROCEDURES = {
         coveredBy: 'input-purpose-identified'
       },
       'input-purpose-identified': {
-        tools: ['devtools']
-      }
-    },
-    '1.3.6': {
-      'purpose-identified': {
         tools: ['devtools']
       }
     },
@@ -455,34 +409,6 @@ const PROCEDURES = {
         }
       }
     },
-    '1.4.7': {
-      'background-audio-low': {
-        tools: []
-      }
-    },
-    '1.4.8': {
-      'visual-presentation': {
-        tools: ['zoom', 'contrast-theme']
-      }
-    },
-    '1.4.9': {
-      'no-images-of-text': {
-        tools: ['devtools']
-      }
-    },
-    '1.4.10': {
-      'reflow-320': {
-        tools: ['devtools', 'zoom']
-      }
-    },
-    '1.4.11': {
-      'ui-component-contrast': {
-        tools: ['devtools', 'keyboard']
-      },
-      'graphics-contrast': {
-        tools: ['devtools']
-      }
-    },
     '1.4.12': {
       'avoid-inline-spacing': {
         tools: ['devtools'],
@@ -514,17 +440,6 @@ const PROCEDURES = {
       },
       'text-spacing-other-states': {
         tools: ['devtools', 'keyboard', 'pointer']
-      }
-    },
-    '1.4.13': {
-      'hover-focus-content-dismissible': {
-        tools: ['pointer', 'keyboard']
-      },
-      'hover-content-hoverable': {
-        tools: ['pointer']
-      },
-      'hover-focus-content-persistent': {
-        tools: ['pointer', 'keyboard']
       }
     },
     '2.1.1': {
@@ -595,11 +510,6 @@ const PROCEDURES = {
         }
       }
     },
-    '2.1.2': {
-      'no-keyboard-trap': {
-        tools: ['keyboard']
-      }
-    },
     '2.1.3': {
       'scrollable-region-focusable-evidence': {
         coveredBy: 'keyboard-no-exception'
@@ -611,11 +521,6 @@ const PROCEDURES = {
         coveredBy: 'keyboard-no-exception'
       },
       'keyboard-no-exception': {
-        tools: ['keyboard']
-      }
-    },
-    '2.1.4': {
-      'character-key-shortcuts': {
         tools: ['keyboard']
       }
     },
@@ -644,11 +549,6 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
-    '2.2.3': {
-      'no-timing': {
-        tools: []
-      }
-    },
     '2.2.4': {
       'meta-refresh-no-exceptions': {
         coveredBy: 'interruptions-postponable'
@@ -658,31 +558,6 @@ const PROCEDURES = {
       },
       'interruptions-postponable': {
         tools: []
-      }
-    },
-    '2.2.5': {
-      'reauthentication-keeps-data': {
-        tools: []
-      }
-    },
-    '2.2.6': {
-      'timeout-warning': {
-        tools: []
-      }
-    },
-    '2.3.1': {
-      'flashing-below-threshold': {
-        tools: []
-      }
-    },
-    '2.3.2': {
-      'no-flashing': {
-        tools: []
-      }
-    },
-    '2.3.3': {
-      'motion-animation-disableable': {
-        tools: ['devtools']
       }
     },
     '2.4.1': {
@@ -742,11 +617,6 @@ const PROCEDURES = {
         tools: ['devtools', 'screen-reader']
       }
     },
-    '2.4.5': {
-      'multiple-ways': {
-        tools: []
-      }
-    },
     '2.4.6': {
       'heading-text-descriptive-evidence': {
         tools: ['screen-reader'],
@@ -792,11 +662,6 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
-    '2.4.8': {
-      'location-shown': {
-        tools: []
-      }
-    },
     '2.4.9': {
       'identical-links-same-purpose-evidence': {
         coveredBy: 'link-text-alone-clear',
@@ -811,36 +676,6 @@ const PROCEDURES = {
         tools: ['devtools', 'screen-reader']
       }
     },
-    '2.4.10': {
-      'section-headings': {
-        tools: ['screen-reader']
-      }
-    },
-    '2.4.11': {
-      'focus-not-obscured': {
-        tools: ['keyboard']
-      }
-    },
-    '2.4.12': {
-      'focus-fully-visible': {
-        tools: ['keyboard']
-      }
-    },
-    '2.4.13': {
-      'focus-appearance': {
-        tools: ['keyboard', 'devtools']
-      }
-    },
-    '2.5.1': {
-      'single-pointer-alternative': {
-        tools: ['pointer']
-      }
-    },
-    '2.5.2': {
-      'pointer-cancellation': {
-        tools: ['pointer']
-      }
-    },
     '2.5.3': {
       'label-in-name': {
         tools: ['devtools'],
@@ -852,26 +687,6 @@ const PROCEDURES = {
             'POSSIBLE_SYMBOLIC_CHARACTER'
           ]
         }
-      }
-    },
-    '2.5.4': {
-      'motion-actuation': {
-        tools: []
-      }
-    },
-    '2.5.5': {
-      'target-size-enhanced': {
-        tools: ['devtools']
-      }
-    },
-    '2.5.6': {
-      'concurrent-input': {
-        tools: ['keyboard', 'pointer']
-      }
-    },
-    '2.5.7': {
-      'dragging-alternative': {
-        tools: ['pointer']
       }
     },
     '2.5.8': {
@@ -898,46 +713,6 @@ const PROCEDURES = {
         tools: ['devtools', 'screen-reader']
       }
     },
-    '3.1.3': {
-      'unusual-words-defined': {
-        tools: []
-      }
-    },
-    '3.1.4': {
-      'abbreviations-expanded': {
-        tools: []
-      }
-    },
-    '3.1.5': {
-      'reading-level': {
-        tools: []
-      }
-    },
-    '3.1.6': {
-      'pronunciation-given': {
-        tools: []
-      }
-    },
-    '3.2.1': {
-      'focus-no-change-of-context': {
-        tools: ['keyboard']
-      }
-    },
-    '3.2.2': {
-      'input-no-unexpected-change': {
-        tools: ['keyboard']
-      }
-    },
-    '3.2.3': {
-      'navigation-consistent': {
-        tools: []
-      }
-    },
-    '3.2.4': {
-      'identification-consistent': {
-        tools: ['devtools']
-      }
-    },
     '3.2.5': {
       'meta-refresh-no-exceptions': {
         coveredBy: 'changes-on-request'
@@ -947,11 +722,6 @@ const PROCEDURES = {
       },
       'changes-on-request': {
         tools: ['keyboard']
-      }
-    },
-    '3.2.6': {
-      'help-consistent': {
-        tools: []
       }
     },
     '3.3.1': {
@@ -1000,31 +770,6 @@ const PROCEDURES = {
         tools: ['devtools']
       }
     },
-    '3.3.3': {
-      'error-suggestions': {
-        tools: []
-      }
-    },
-    '3.3.4': {
-      'submission-reversible-checked-confirmed': {
-        tools: []
-      }
-    },
-    '3.3.5': {
-      'context-help': {
-        tools: []
-      }
-    },
-    '3.3.6': {
-      'all-submissions-reversible-checked-confirmed': {
-        tools: []
-      }
-    },
-    '3.3.7': {
-      'redundant-entry': {
-        tools: []
-      }
-    },
     '3.3.8': {
       'authentication-paste-not-blocked': {
         coveredBy: 'authentication-no-cognitive-test',
@@ -1033,11 +778,6 @@ const PROCEDURES = {
         }
       },
       'authentication-no-cognitive-test': {
-        tools: []
-      }
-    },
-    '3.3.9': {
-      'authentication-no-recognition-test': {
         tools: []
       }
     },
