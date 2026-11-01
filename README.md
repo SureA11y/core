@@ -137,12 +137,17 @@ such as whether a heading describes the content under it.
 reasoning, and `node scripts/act-testcase-check.js` reproduces the figures. They
 cover the rules that have an ACT counterpart.
 
-The [EARL implementation report](https://surea11y.github.io/act-report/act-report.jsonld)
-records the outcome for every one of those cases, passes and inapplicable
-results included, so a rule that stayed silent because nothing applied is
-distinguishable from one that is not implemented. `node scripts/act-report.js`
-regenerates it against the corpus as it stands rather than a snapshot, and a
-scheduled job republishes it weekly and on release.
+Two EARL implementation reports record the outcome for every one of those
+cases, passes and inapplicable results included, so a rule that stayed silent
+because nothing applied is distinguishable from one that is not implemented:
+[one from a scan in jsdom](https://surea11y.github.io/act-report/act-report.jsonld),
+as the CLI and test-matchers run the engine, and
+[one from a scan in Chromium](https://surea11y.github.io/act-report/act-report-browser.jsonld),
+as the browser bindings do. `node scripts/act-report.js` (with
+`--runner=chromium` for the second) regenerates them against the corpus as it
+stands rather than a snapshot, from the latest release: a workflow in
+[SureA11y/act-report](https://github.com/SureA11y/act-report) republishes them
+every Monday, and is run by hand after each release.
 
 ## What this engine does not detect
 
