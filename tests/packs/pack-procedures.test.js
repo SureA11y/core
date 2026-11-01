@@ -131,10 +131,14 @@ test('a requirement of its own gives its facets, its text in English', () => {
   assert.equal(r.title, 'A text version of every form');
   assert.equal(r.complete, true);
   assert.deepEqual(r.rules, []);
+  // Read in German, it says its own text is English.
+  assert.equal(r.locale, 'de');
+  assert.equal(r.titleLang, 'en');
   assert.deepEqual(r.facets, [
     {
       id: 'text-version',
       label: 'Each form can be had as a text document',
+      lang: 'en',
       automation: 'manual',
       rules: [],
       // The tools' names are core's, in the reader's language.
@@ -228,6 +232,8 @@ test('a requirement that restates a criterion can replace its facets’ general 
       passWhen: REPLACE['contrast-minimum-text'].passWhen,
       failWhen: REPLACE['contrast-minimum-text'].failWhen
     },
+    // The pack's procedure is in English, read in French.
+    procedureLang: 'en',
     procedureFrom: 'stdp-pack'
   });
   // The variants stay: a finding shows its own steps.
