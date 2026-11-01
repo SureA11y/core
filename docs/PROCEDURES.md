@@ -430,6 +430,7 @@ Every WCAG 2.2 criterion, at levels A, AA and AAA, and 4.1.1 (removed in 2.2), h
 | [`src/procedures-render.js`](../src/procedures-render.js) | Rendering them, as HTML or Markdown. |
 | `src/i18n/review/<locale>.json` | Generated: the variants alone, the review dictionaries `howToCheck` reads (`@surea11y/core/review/<locale>`). |
 | `src/procedures/rules.json` | Generated: each core rule's prefix, criteria and facets, so the browser form needs no rule. |
+| [`src/procedures-to-review.json`](../src/procedures-to-review.json) | The translations to check again because their English changed after they were made, each with the English it was made from ([`I18N.md`](./I18N.md#when-the-english-of-a-procedure-changes)). Not published. |
 
 `npm run procedures` writes the generated files and `npm run procedures:check` fails on a stale one; `npm test` checks them too. Writing a rule's steps is [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §8.6; translating them, [`I18N.md`](./I18N.md#the-review-dictionaries).
 
