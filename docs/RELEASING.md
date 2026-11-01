@@ -1,6 +1,6 @@
 # Releasing
 
-What a release of `@surea11y/core` goes through, in order. Every release is a pull request to `main` titled `Release x.y.z`; pushing the tag afterwards is what publishes it. What the version number promises is in [`API_STABILITY.md`](./API_STABILITY.md#release-cadence).
+What a release of `@surea11y/core` goes through, in order. Every release is a pull request titled `Release x.y.z`, to `main`, or to its release branch for [a patch from an earlier commit](#a-patch-from-an-earlier-commit); pushing the tag afterwards is what publishes it. What the version number promises is in [`API_STABILITY.md`](./API_STABILITY.md#release-cadence).
 
 ## 1. Prepare the branch
 
@@ -21,3 +21,17 @@ On a branch `release-x.y.z` from `main`:
 
 - [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag vx.y.z && git push origin vx.y.z`.
 - [ ] [`release.yml`](../.github/workflows/release.yml) runs on the tag. It checks that the tag matches `package.json`, runs lint and the full suite, checks that the committed build is what a clean build gives, and that W3C's ACT corpus gives no false positive, then publishes to npm with provenance. Any failure stops it before publishing: fix it on `main` and tag again.
+
+## A patch from an earlier commit
+
+When `main` already holds work for the next minor release, fixes merged before it can still ship as a patch, from the last commit before that work. 1.14.2 was released this way.
+
+- [ ] **Find the commit:** the last commit on `main` that has every fix to release and none of the minor release's work. If a fix landed after that work, a patch needs it cherry-picked onto the branch, with its tests.
+- [ ] **Cut the line:** push `release/x.y.x` at that commit (`git push origin <commit>:refs/heads/release/x.y.x`), and make `release-x.y.z` from it.
+- [ ] **Prepare** `release-x.y.z` as in step 1. The changelog's Unreleased section at that commit holds only what this release ships. Leave `src/baseline-moves.json` as it is: a patch keeps the minor release's moves.
+- [ ] **Check and open** `Release x.y.z` as in step 2, into `release/x.y.x`, not `main`. [`test.yml`](../.github/workflows/test.yml) runs on pull requests into `release/**`.
+- [ ] **Publish** as in step 3, but tag the merge on `release/x.y.x`: `git fetch origin release/x.y.x && git tag vx.y.z origin/release/x.y.x && git push origin vx.y.z`. A tag on `main` would publish the minor release's work too.
+- [ ] **Bring it back into `main`** before the next minor release, on a branch from `main` that merges `origin/release/x.y.x`:
+  - `CHANGELOG.md`: the released entries leave Unreleased for the `[x.y.z]` section, as released, between Unreleased and the release before. Git can merge it without a conflict and still put Unreleased's entries under `[x.y.z]`: check it by hand.
+  - `package.json`, `package-lock.json`, `scripts/data/lean-measures.json` and `scripts/data/released-finding-ids.json` as released. The build is generated: take `main`'s and run `npm run build`.
+  - `npm test`, then a pull request into `main`, merged with **Squash and merge**: `main` requires a linear history. Git then doesn't record the line as merged, so a later patch from it meets the same conflicts when it comes back.
