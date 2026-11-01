@@ -284,6 +284,7 @@
     "coverage:check": "node scripts/generate-wcag-coverage.js --check",
     "procedures": "node scripts/generate-procedures.js",
     "procedures:check": "node scripts/generate-procedures.js --check",
+    "procedures:review": "node scripts/procedures-review.js",
     "aria-tables:check": "node scripts/generate-aria-tables.js --check",
     "language-subtags:check": "node scripts/generate-language-subtags.js --check",
     "finding-ids": "npm run build && node scripts/generate-finding-ids.js",

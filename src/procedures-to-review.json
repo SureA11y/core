@@ -1,0 +1,3 @@
+{
+  "$comment": "Translations of the procedures (src/i18n/procedures/<locale>.json) that are to be checked again because the English changed after they were made: by locale, each key with the English the translation was made from. A translation listed here still shows until it is updated; once it is, remove its entry. npm run procedures:review lists them, and a test fails on an entry whose English is unchanged or whose key is gone. See docs/I18N.md, Maintaining the locales."
+}
