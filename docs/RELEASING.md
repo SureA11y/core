@@ -21,6 +21,7 @@ On a branch `release-x.y.z` from `main`:
 
 - [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag vx.y.z && git push origin vx.y.z`.
 - [ ] [`release.yml`](../.github/workflows/release.yml) runs on the tag. It checks that the tag matches `package.json`, runs lint and the full suite, checks that the committed build is what a clean build gives, and that W3C's ACT corpus gives no false positive, then publishes to npm with provenance. Any failure stops it before publishing: fix it on `main` and tag again.
+- [ ] **ACT reports:** once the version is on npm, run the "ACT implementation report" workflow in [SureA11y/act-report](https://github.com/SureA11y/act-report/actions/workflows/act-report.yml) (Run workflow, on `main`). It regenerates both implementation reports from the version npm serves as `latest`, and W3C reads them daily ([`EARL.md`](./EARL.md)); without it they wait for its Monday run. A false positive fails it and leaves the published reports as they were.
 
 ## A patch from an earlier commit
 
