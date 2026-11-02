@@ -183,6 +183,12 @@
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error; the
  *     text is to be measured by hand.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
+ * @implementation-notes
+ * - A page lists at most 50 elements whose contrast can't be computed, in
+ *   document order; the rest are counted, not listed. The rule's own
+ *   `data.details` on a cantTell says how many there were (`elementCount`),
+ *   how many are listed (`reportedCount`, at most `maxOccurrences`) and
+ *   whether any were left out (`truncated`).
  */
 
 const id = 'contrast-computable';
@@ -282,6 +288,9 @@ function runInPage(ctx) {
   const assumptionsAppliedSet = new Set();
 
   const seenFailEls = new Set();
+  // Elements past the occurrence cap: counted, not listed, so the result can
+  // say how many there were (data.details.truncated).
+  let unlistedCount = 0;
 
   // Defined inside runInPage, which is serialized into the page and cannot
   // reach module scope. English fallbacks for the dictionary keys below.
@@ -322,8 +331,11 @@ function runInPage(ctx) {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
       seen.add(el);
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        unlistedCount += 1;
+        return;
+      }
 
       const rc = String(reasonCode || 'UNKNOWN');
 
@@ -705,10 +717,9 @@ function runInPage(ctx) {
       eligibleTextCount = Number(scan.eligibleTextCount) || 0;
 
       for (const rec of scan.elements) {
-        // If we're already capped on occurrences and already know the final outcome is cantTell,
-        // stop scanning to avoid wasting time. Deterministic: we don't randomize; we just stop
-        // once further work cannot change the output (cantTell + capped occurrences).
-        if (cantTellCount > 0 && occurrences.length >= MAX_OCCURRENCES) break;
+        // Past the occurrence cap the walk goes on, counting what it no
+        // longer lists, so the result says how many elements there were. The
+        // blockers are cached and shared with the other contrast rules.
 
         const el = rec && rec.el;
         const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
@@ -952,7 +963,15 @@ function runInPage(ctx) {
       outcome: 'cantTell',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences
+      occurrences,
+      data: {
+        details: {
+          reportedCount: occurrences.length,
+          elementCount: occurrences.length + unlistedCount,
+          maxOccurrences: MAX_OCCURRENCES,
+          truncated: unlistedCount > 0
+        }
+      }
     };
   }
 

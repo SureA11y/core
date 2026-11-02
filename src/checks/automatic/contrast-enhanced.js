@@ -145,6 +145,11 @@
  *   `CONTRAST_UNREACHABLE_ANY_BACKGROUND`; otherwise contrast-computable asks
  *   about it (`BACKGROUND_NOT_COMPUTABLE` and its other blockers), so this
  *   rule has no code of its own for it.
+ * - A page lists at most 50 elements below the ratio (or asked about), in
+ *   document order; the rest are counted, not listed. The rule's own
+ *   `data.details` on a fail or cantTell says how many there were
+ *   (`elementCount`), how many are listed (`reportedCount`, at most
+ *   `maxOccurrences`) and whether any were left out (`truncated`).
  */
 
 const id = 'contrast-enhanced';
@@ -325,6 +330,20 @@ function runInPage(ctx) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // Elements below the ratio past the occurrence cap: counted, not listed,
+  // so the result can say how many there were (data.details.truncated).
+  let unlistedCount = 0;
+  function countUnlisted(el, pseudo) {
+    if (!el) return;
+    let seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+    if (!seen) {
+      seen = new Set();
+      seenGenerated.set(pseudo, seen);
+    }
+    if (seen.has(el)) return;
+    seen.add(el);
+    unlistedCount += 1;
+  }
   // The color schemes text on the page's canvas was measured in, where the
   // page supports one it wasn't (acrossSchemes), for the pass's evidence.
   let schemesChecked = null;
@@ -430,7 +449,10 @@ function runInPage(ctx) {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        countUnlisted(el, pseudo);
+        return;
+      }
 
       seen.add(el);
 
@@ -1058,6 +1080,7 @@ function runInPage(ctx) {
           failCount += textCount;
           if (occurrences.length < MAX_OCCURRENCES)
             pushUnreachableOccurrence(el, analysis.unreachable);
+          else countUnlisted(el, '');
           continue;
         }
         if (!analysis || analysis.computable !== true) continue;
@@ -1111,8 +1134,12 @@ function runInPage(ctx) {
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
-          // 50th failure fell.
-          if (occurrences.length >= MAX_OCCURRENCES) continue;
+          // 50th failure fell. The element is still counted, once, for the
+          // result's truncated count.
+          if (occurrences.length >= MAX_OCCURRENCES) {
+            countUnlisted(el, pseudo);
+            continue;
+          }
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -1292,7 +1319,15 @@ function runInPage(ctx) {
       confidence: rule.defaultConfidence || 'high',
       occurrences,
       marginCandidates,
-      measuredCount: measuredElements
+      measuredCount: measuredElements,
+      data: {
+        details: {
+          reportedCount: occurrences.length,
+          elementCount: occurrences.length + unlistedCount,
+          maxOccurrences: MAX_OCCURRENCES,
+          truncated: unlistedCount > 0
+        }
+      }
     };
   }
 

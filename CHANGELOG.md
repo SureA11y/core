@@ -65,6 +65,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `contrast-minimum`, `contrast-enhanced` and `contrast-computable` say how many elements they found when they list only some. Each lists at most 50, and the others were dropped without a trace: a page with 1000 grey paragraphs reported 50, as if that were all. Their `data.details` on a fail or cantTell now gives `elementCount` (every element below the ratio, asked about or not computable), `reportedCount` (those listed, at most `maxOccurrences`, 50) and `truncated`, as the alt-quality rules already did. `contrast-computable` no longer stops walking the page at the 50th element, so it counts them all; the analysis it reads is shared with the other contrast rules.
 - The browser ACT implementation report (`scripts/act-report.js --runner=chromium`) scans every test case on its own page. Four passed examples of `bc659a` and `bisz58` refresh themselves to github.com or w3.org at once, and were scanned on the page they landed on, reported `inapplicable`; they now pass, as ACT expects. `--runner-module=<file>` scans the test cases with a runner of the caller's, such as a browser binding's, which SureA11y/act-report uses to check that each binding gives the same outcomes ([`ACT_RULE_MAPPING.md`](docs/ACT_RULE_MAPPING.md#fourth-pass-in-a-browser)).
 
 ## [1.14.2] - 2026-11-01

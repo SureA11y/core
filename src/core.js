@@ -65967,6 +65967,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const assumptionsAppliedSet = new Set();
 
   const seenFailEls = new Set();
+  // Elements past the occurrence cap: counted, not listed, so the result can
+  // say how many there were (data.details.truncated).
+  let unlistedCount = 0;
 
   // Defined inside runInPage, which is serialized into the page and cannot
   // reach module scope. English fallbacks for the dictionary keys below.
@@ -66007,8 +66010,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
       seen.add(el);
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        unlistedCount += 1;
+        return;
+      }
 
       const rc = String(reasonCode || 'UNKNOWN');
 
@@ -66390,10 +66396,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       eligibleTextCount = Number(scan.eligibleTextCount) || 0;
 
       for (const rec of scan.elements) {
-        // If we're already capped on occurrences and already know the final outcome is cantTell,
-        // stop scanning to avoid wasting time. Deterministic: we don't randomize; we just stop
-        // once further work cannot change the output (cantTell + capped occurrences).
-        if (cantTellCount > 0 && occurrences.length >= MAX_OCCURRENCES) break;
+        // Past the occurrence cap the walk goes on, counting what it no
+        // longer lists, so the result says how many elements there were. The
+        // blockers are cached and shared with the other contrast rules.
 
         const el = rec && rec.el;
         const textCount = rec && Number(rec.textCount) ? Number(rec.textCount) : 0;
@@ -66637,7 +66642,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'cantTell',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences
+      occurrences,
+      data: {
+        details: {
+          reportedCount: occurrences.length,
+          elementCount: occurrences.length + unlistedCount,
+          maxOccurrences: MAX_OCCURRENCES,
+          truncated: unlistedCount > 0
+        }
+      }
     };
   }
 
@@ -66819,6 +66832,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // Elements below the ratio past the occurrence cap: counted, not listed,
+  // so the result can say how many there were (data.details.truncated).
+  let unlistedCount = 0;
+  function countUnlisted(el, pseudo) {
+    if (!el) return;
+    let seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+    if (!seen) {
+      seen = new Set();
+      seenGenerated.set(pseudo, seen);
+    }
+    if (seen.has(el)) return;
+    seen.add(el);
+    unlistedCount += 1;
+  }
   // The color schemes text on the page's canvas was measured in, where the
   // page supports one it wasn't (acrossSchemes), for the pass's evidence.
   let schemesChecked = null;
@@ -66924,7 +66951,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        countUnlisted(el, pseudo);
+        return;
+      }
 
       seen.add(el);
 
@@ -67552,6 +67582,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           failCount += textCount;
           if (occurrences.length < MAX_OCCURRENCES)
             pushUnreachableOccurrence(el, analysis.unreachable);
+          else countUnlisted(el, '');
           continue;
         }
         if (!analysis || analysis.computable !== true) continue;
@@ -67605,8 +67636,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
-          // 50th failure fell.
-          if (occurrences.length >= MAX_OCCURRENCES) continue;
+          // 50th failure fell. The element is still counted, once, for the
+          // result's truncated count.
+          if (occurrences.length >= MAX_OCCURRENCES) {
+            countUnlisted(el, pseudo);
+            continue;
+          }
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -67786,7 +67821,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       confidence: rule.defaultConfidence || 'high',
       occurrences,
       marginCandidates,
-      measuredCount: measuredElements
+      measuredCount: measuredElements,
+      data: {
+        details: {
+          reportedCount: occurrences.length,
+          elementCount: occurrences.length + unlistedCount,
+          maxOccurrences: MAX_OCCURRENCES,
+          truncated: unlistedCount > 0
+        }
+      }
     };
   }
 
@@ -67979,6 +68022,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   let measuredElements = 0;
 
   const seenFailEls = new Set();
+  // Elements below the ratio past the occurrence cap: counted, not listed,
+  // so the result can say how many there were (data.details.truncated).
+  let unlistedCount = 0;
   // The color schemes text on the page's canvas was measured in, where the
   // page supports one it wasn't (acrossSchemes), for the pass's evidence.
   let schemesChecked = null;
@@ -68134,7 +68180,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
       const seen = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
       if (!el || seen.has(el)) return;
-      if (occurrences.length >= MAX_OCCURRENCES) return;
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        seen.add(el);
+        unlistedCount += 1;
+        return;
+      }
 
       seen.add(el);
 
@@ -68276,8 +68326,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // from outlineOnlyAnalysis or pseudoColorAnalysis).
   function pushAskOccurrence(el, ask) {
     try {
-      if (!el || seenFailEls.has(el) || occurrences.length >= MAX_OCCURRENCES) return;
+      if (!el || seenFailEls.has(el)) return;
       seenFailEls.add(el);
+      if (occurrences.length >= MAX_OCCURRENCES) {
+        unlistedCount += 1;
+        return;
+      }
       const C = helpers.contrast;
       const hex = (c) => (C.rgbToHex ? C.rgbToHex(c) : '');
       const rc = ask.reasonCode;
@@ -68856,8 +68910,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           // Past the occurrence cap a failure is only counted. The loop goes
           // on, so text further down the page still counts toward the margin
           // and measuredCount: stopping here made both depend on where the
-          // 50th failure fell.
-          if (occurrences.length >= MAX_OCCURRENCES) continue;
+          // 50th failure fell. The element is still counted, once, for the
+          // result's truncated count.
+          if (occurrences.length >= MAX_OCCURRENCES) {
+            const seenHere = pseudo ? seenGenerated.get(pseudo) : seenFailEls;
+            if (!seenHere || !seenHere.has(el)) {
+              if (seenHere) seenHere.add(el);
+              else seenGenerated.set(pseudo, new Set([el]));
+              unlistedCount += 1;
+            }
+            continue;
+          }
 
           const fgHex = helpers.contrast.rgbToHex ? helpers.contrast.rgbToHex(fgOpaque) : '';
 
@@ -68976,6 +69039,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
+  // How many elements fell short (or were asked about) and how many of them
+  // the result lists: past MAX_OCCURRENCES they are counted, not listed.
+  function listingDetails() {
+    return {
+      reportedCount: occurrences.length,
+      elementCount: occurrences.length + unlistedCount,
+      maxOccurrences: MAX_OCCURRENCES,
+      truncated: unlistedCount > 0
+    };
+  }
+
   if (eligibleTextCount === 0) {
     return {
       ruleId: rule.ruleId,
@@ -69024,7 +69098,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       confidence: rule.defaultConfidence || 'high',
       occurrences,
       marginCandidates,
-      measuredCount: measuredElements
+      measuredCount: measuredElements,
+      data: { details: listingDetails() }
     };
   }
 
