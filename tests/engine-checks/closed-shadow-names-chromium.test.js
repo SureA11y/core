@@ -177,7 +177,8 @@ const CASES = [
     '<div role="tooltip"></div>',
     '',
     'tooltip-name-present',
-    'fail',
+    // A WAI-ARIA violation asked about: a tooltip is no control.
+    'cantTell',
     'name_missing'
   ],
   ['an empty button', '<button></button>', '', 'button-name-present', 'fail', 'name_missing'],
