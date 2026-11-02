@@ -64,14 +64,36 @@ function runProfiles(engineOptions, run) {
 }
 
 /**
+ * Marks a scan's result with why its profile was not applied, when it
+ * wasn't (resolveEffectiveRunOnly's profileNotApplied: 'unknown' or
+ * 'overridden'), for mergeProfileResults to say. Not enumerable, so it never
+ * reaches a result's JSON.
+ */
+function noteProfileNotApplied(result, reason) {
+  if (!reason) return result;
+  const mark = (r) => {
+    if (r && typeof r === 'object') {
+      try {
+        Object.defineProperty(r, '__profileNotApplied', { value: reason, configurable: true });
+      } catch {
+        // frozen: the merge says unknown-profile
+      }
+    }
+    return r;
+  };
+  return result && typeof result.then === 'function' ? result.then(mark) : mark(result);
+}
+
+/**
  * One result from the scans of several profiles, `runs` ([{ profile,
  * result }], in the order asked). A profile its scan didn't apply (no such
- * profile, its pack skipped) is listed in engine.profilesNotRun and judges
- * nothing. Of the others:
+ * profile, its pack skipped, a runOnly that selects the rules instead) is
+ * listed in engine.profilesNotRun and judges nothing. Of the others:
  *
  * - checksResults: each rule once. Its `verdicts` are each profile's outcome
  *   for it, and its `outcome` the worst of them (fail, cantTell, pass,
- *   notApplicable). Each finding is listed once, with `verdicts` saying
+ *   notApplicable); `checkOutcome` is the rule's own, before any standard
+ *   judged its findings by reason code, which its WCAG criteria read. Each finding is listed once, with `verdicts` saying
  *   what each profile that ran the rule makes of it: its tier, or what a
  *   standard's rollups make of it by its reason code (a WCAG cantTell that
  *   a standard fails), or notApplicable where a standard doesn't count it.
@@ -114,7 +136,16 @@ function mergeProfileResults(runs, asked) {
     else {
       const skipped =
         r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
-      notRun.push({ profile: r.profile, reason: skipped ? 'pack-skipped' : 'unknown-profile' });
+      const why = r.result && r.result.__profileNotApplied;
+      notRun.push({
+        profile: r.profile,
+        reason:
+          why === 'overridden'
+            ? 'overridden-by-selection'
+            : skipped
+              ? 'pack-skipped'
+              : 'unknown-profile'
+      });
     }
   }
   const first = (ran[0] || runs[0] || {}).result;
@@ -158,11 +189,12 @@ function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [] });
+        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
+      merged.ownOutcomes.push(check.outcome);
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       occurrences.forEach((o, i) => {
@@ -185,6 +217,10 @@ function mergeProfileResults(runs, asked) {
   }
   const checksResults = [];
   for (const merged of checks.values()) {
+    // The rule's own outcome, as its scans report it before any standard
+    // judges its findings: what a WCAG criterion it maps reads (EARL).
+    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    delete merged.ownOutcomes;
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));
@@ -271,4 +307,4 @@ function mergeProfileResults(runs, asked) {
   return out;
 }
 
-module.exports = { profileListOf, runProfiles, mergeProfileResults };
+module.exports = { profileListOf, runProfiles, mergeProfileResults, noteProfileNotApplied };

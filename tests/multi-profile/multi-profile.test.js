@@ -200,3 +200,84 @@ test('SARIF and JUnit treat a profile asked for and not run as an error, unless 
   const ok = JSON.parse(renderSarifReport(scan(BOTH))).runs[0];
   assert.ok(!ok.invocations || ok.invocations[0].executionSuccessful === true);
 });
+
+// A standard can fail a finding WCAG only asks about: an attribute the role
+// doesn't support is a WCAG question and a failure of the names standard's
+// N1 here, mapped the same way. The check's own outcome stays what its WCAG
+// criteria read.
+test("a check keeps the rule's own outcome, which EARL asserts for its WCAG criteria", () => {
+  const attrStd = ruleMappedStandard({
+    standard: 'Attr Standard',
+    tag: 'attrs',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: { '1.0': { A1: { title: 'Attributes are supported', wcagSc: [] } } },
+    ruleMap: {
+      '1.0': {
+        'aria-allowed-attr': {
+          requirements: ['A1'],
+          reasonCodes: {
+            ARIA_ATTR_NOT_ALLOWED: { outcome: 'fail' },
+            ARIA_ATTR_NOT_ALLOWED_ROLELESS: { outcome: 'fail' },
+            ARIA_ATTR_DEPRECATED: { outcome: 'cantTell' }
+          }
+        }
+      }
+    }
+  });
+  const attrPack = definePack({
+    name: 'attrs-pack',
+    version: '1.0.0',
+    namespace: 'attrs',
+    core: '*',
+    standard: {
+      key: 'attrs',
+      standard: 'Attr Standard',
+      versions: ['1.0'],
+      profiles: { 'attrs-1.0': { version: '1.0', tags: ['attrs'], mappedRules: true } },
+      ruleTag: 'attrs',
+      ruleMapped: true,
+      mappingsFor: attrStd.mappingsFor,
+      composites: attrStd.composites,
+      validate: attrStd.validate
+    }
+  });
+  const r = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><div role="group" aria-checked="true">Options</div></main></body></html>',
+    { engineOptions: { packs: [attrPack], profile: ['wcag22-aa', 'attrs-1.0'] } }
+  );
+  const check = r.checksResults.find((c) => c.ruleId === 'aria-allowed-attr');
+  assert.deepEqual(check.verdicts, { 'wcag22-aa': 'cantTell', 'attrs-1.0': 'fail' });
+  assert.equal(check.outcome, 'fail');
+  assert.equal(check.checkOutcome, 'cantTell');
+
+  const { renderEarlReport } = require('../../src/earl.js');
+  const text = JSON.stringify(renderEarlReport(r));
+  const at = text.indexOf('"title":"aria-allowed-attr"');
+  assert.ok(at > 0);
+  assert.match(text.slice(at, at + 200), /"outcome":"earl:cantTell"/);
+
+  // The HTML report shows each profile's verdict on the card, and every
+  // profile in its heading.
+  const { renderHtmlReport } = require('../../src/report.js');
+  const html = renderHtmlReport(r);
+  assert.match(html, /wcag22-aa \+ attrs-1\.0/);
+  assert.match(html, />attrs-1\.0: Fail</);
+});
+
+test('a single-profile result has no checkOutcome, and EARL reads its outcome as before', () => {
+  const r = scan({ profile: 'wcag22-aa' });
+  assert.equal(check(r, 'aria-role-name-present').checkOutcome, undefined);
+});
+
+test('a runOnly that selects the rules instead leaves every profile unapplied, and says why', () => {
+  const r = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { packs: [pack], profile: ['wcag22-aa', 'names-1.0'] },
+    runOnly: ['img-alt-present']
+  });
+  assert.deepEqual(r.engine.profiles, []);
+  assert.deepEqual(r.engine.profilesNotRun, [
+    { profile: 'wcag22-aa', reason: 'overridden-by-selection' },
+    { profile: 'names-1.0', reason: 'overridden-by-selection' }
+  ]);
+  assert.ok(!JSON.stringify(r).includes('__profileNotApplied'));
+});

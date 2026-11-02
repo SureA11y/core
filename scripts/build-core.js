@@ -66,7 +66,12 @@ const {
   warnIgnoredWcagTarget,
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
-const { profileListOf, runProfiles, mergeProfileResults } = require('../src/core/multi-profile');
+const {
+  profileListOf,
+  runProfiles,
+  mergeProfileResults,
+  noteProfileNotApplied
+} = require('../src/core/multi-profile');
 const {
   createSafeDom,
   SAFE_DOM_GETTERS,
@@ -2293,6 +2298,7 @@ ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 ${inlineConstFunction('profileListOf', profileListOf)}
 ${inlineConstFunction('runProfiles', runProfiles)}
 ${inlineConstFunction('mergeProfileResults', mergeProfileResults)}
+${inlineConstFunction('noteProfileNotApplied', noteProfileNotApplied)}
 `.trim();
 
   const inPageRunnerSource = `
@@ -2454,36 +2460,26 @@ ${implEntriesInPage.join(',\n')}
     return isThenable(unrun) ? unrun.then(note) : note(unrun);
   }
   if (!PACK_ENTRY) {
-    return runProfiles(engineOptions, (eo) =>
-      runCore(
-        pageUrl,
-        contextSelector,
-        eo,
-        resolveEffectiveRunOnly(eo, runOnly),
-        CHECK_DEFS,
-        RULE_IMPLS,
-        ENGINE_TAG,
-        SCHEMA_VERSION,
-        COMPOSITE_RULES
-      )
+    return runProfiles(engineOptions, (eo) => {
+      const selection = resolveEffectiveRunOnly(eo, runOnly);
+      return noteProfileNotApplied(
+        runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+        selection && selection.profileNotApplied
+      );
+    }
     );
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
   const scanOptions = Object.assign({}, engineOptions);
   delete scanOptions.packs;
-  const result = runProfiles(scanOptions, (eo) =>
-    runCore(
-      pageUrl,
-      contextSelector,
-      eo,
-      resolveEffectiveRunOnly(eo, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    )
+  const result = runProfiles(scanOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;
@@ -2828,18 +2824,13 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
-  return runProfiles(engineOptions, (eo) =>
-    runCore(
-      pageUrl,
-      contextSelector,
-      eo,
-      resolveEffectiveRunOnly(eo, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    )
+  return runProfiles(engineOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
 }
 

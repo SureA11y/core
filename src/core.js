@@ -24012,7 +24012,16 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     else {
       const skipped =
         r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
-      notRun.push({ profile: r.profile, reason: skipped ? 'pack-skipped' : 'unknown-profile' });
+      const why = r.result && r.result.__profileNotApplied;
+      notRun.push({
+        profile: r.profile,
+        reason:
+          why === 'overridden'
+            ? 'overridden-by-selection'
+            : skipped
+              ? 'pack-skipped'
+              : 'unknown-profile'
+      });
     }
   }
   const first = (ran[0] || runs[0] || {}).result;
@@ -24056,11 +24065,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [] });
+        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
+      merged.ownOutcomes.push(check.outcome);
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       occurrences.forEach((o, i) => {
@@ -24083,6 +24093,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   }
   const checksResults = [];
   for (const merged of checks.values()) {
+    // The rule's own outcome, as its scans report it before any standard
+    // judges its findings: what a WCAG criterion it maps reads (EARL).
+    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    delete merged.ownOutcomes;
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));
@@ -24167,6 +24181,20 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
   return out;
+});
+const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
+  if (!reason) return result;
+  const mark = (r) => {
+    if (r && typeof r === 'object') {
+      try {
+        Object.defineProperty(r, '__profileNotApplied', { value: reason, configurable: true });
+      } catch {
+        // frozen: the merge says unknown-profile
+      }
+    }
+    return r;
+  };
+  return result && typeof result.then === 'function' ? result.then(mark) : mark(result);
 });
 
 // The rules a scan with these engineOptions has: the built-in ones, with
@@ -24370,18 +24398,13 @@ function runDomRulesInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
   if (strictOf(engineOptions)) enforceEngineOptions(engineOptions);
-  return runProfiles(engineOptions, (eo) =>
-    runCore(
-      pageUrl,
-      contextSelector,
-      eo,
-      resolveEffectiveRunOnly(eo, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    )
+  return runProfiles(engineOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
 }
 
@@ -129438,7 +129461,16 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     else {
       const skipped =
         r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
-      notRun.push({ profile: r.profile, reason: skipped ? 'pack-skipped' : 'unknown-profile' });
+      const why = r.result && r.result.__profileNotApplied;
+      notRun.push({
+        profile: r.profile,
+        reason:
+          why === 'overridden'
+            ? 'overridden-by-selection'
+            : skipped
+              ? 'pack-skipped'
+              : 'unknown-profile'
+      });
     }
   }
   const first = (ran[0] || runs[0] || {}).result;
@@ -129482,11 +129514,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [] });
+        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
+      merged.ownOutcomes.push(check.outcome);
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       occurrences.forEach((o, i) => {
@@ -129509,6 +129542,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   }
   const checksResults = [];
   for (const merged of checks.values()) {
+    // The rule's own outcome, as its scans report it before any standard
+    // judges its findings: what a WCAG criterion it maps reads (EARL).
+    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    delete merged.ownOutcomes;
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));
@@ -129594,6 +129631,20 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
   return out;
 });
+const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
+  if (!reason) return result;
+  const mark = (r) => {
+    if (r && typeof r === 'object') {
+      try {
+        Object.defineProperty(r, '__profileNotApplied', { value: reason, configurable: true });
+      } catch {
+        // frozen: the merge says unknown-profile
+      }
+    }
+    return r;
+  };
+  return result && typeof result.then === 'function' ? result.then(mark) : mark(result);
+});
 
   // Under strictOptions the options are checked before the selection is
   // worked out from them, as they are said to be.
@@ -129648,36 +129699,26 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     return isThenable(unrun) ? unrun.then(note) : note(unrun);
   }
   if (!PACK_ENTRY) {
-    return runProfiles(engineOptions, (eo) =>
-      runCore(
-        pageUrl,
-        contextSelector,
-        eo,
-        resolveEffectiveRunOnly(eo, runOnly),
-        CHECK_DEFS,
-        RULE_IMPLS,
-        ENGINE_TAG,
-        SCHEMA_VERSION,
-        COMPOSITE_RULES
-      )
+    return runProfiles(engineOptions, (eo) => {
+      const selection = resolveEffectiveRunOnly(eo, runOnly);
+      return noteProfileNotApplied(
+        runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+        selection && selection.profileNotApplied
+      );
+    }
     );
   }
   // A scan with registered packs: the options without them, and a result
   // that names them and lists the core rules they replace.
   const scanOptions = Object.assign({}, engineOptions);
   delete scanOptions.packs;
-  const result = runProfiles(scanOptions, (eo) =>
-    runCore(
-      pageUrl,
-      contextSelector,
-      eo,
-      resolveEffectiveRunOnly(eo, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    )
+  const result = runProfiles(scanOptions, (eo) => {
+    const selection = resolveEffectiveRunOnly(eo, runOnly);
+    return noteProfileNotApplied(
+      runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES),
+      selection && selection.profileNotApplied
+    );
+  }
   );
   const stamp = (r) => {
     if (!r || typeof r !== 'object') return r;

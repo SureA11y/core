@@ -98,7 +98,11 @@ function worseOf(current, next) {
 }
 
 function assertionFor(check, assertor, mode, inScope) {
-  const outcome = OUTCOME_TO_EARL[check.outcome];
+  // In a scan of several profiles, a check's outcome is the worst its
+  // profiles give it, which may be a standard's failure of a finding WCAG
+  // only asks about: the rule's own outcome is what its criteria read.
+  const own = typeof check.checkOutcome === 'string' ? check.checkOutcome : check.outcome;
+  const outcome = OUTCOME_TO_EARL[own];
   if (!outcome) return null;
 
   const test = { title: check.ruleId };

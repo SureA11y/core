@@ -74,7 +74,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 | `engine.profile` | Present only when an `engineOptions.profile` selected this run's rules, and names the profile, lowercased. Absent when none was asked for, and also when one was asked for but did not apply (unknown name, or an include in `runOnly` or `engineOptions` chose the rules instead), so its presence is how you confirm a run really targeted that profile. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles). |
 | `engine.profileExcludes` | Present only when the applied profile leaves rules out (`exclude` in its standard's registry entry): `{ rules, criteria }`, the rules it names and the WCAG criteria it waives. The rules it names, the rules whose every criterion it waives, and the waived criteria's WCAG rollups did not run; a rule that also checks a criterion the profile keeps ran, and counts toward that criterion. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles). |
 | `engine.profiles` | A scan of several profiles only (`engineOptions.profile` as a list): the profiles that ran, in the order asked. `engine.profile` is then the first of them. See [Several profiles](#several-profiles). |
-| `engine.profilesNotRun` | A scan of several profiles only, and only when one of them didn't run: `[{ profile, reason }]`, `reason` `unknown-profile` (no such profile) or `pack-skipped` (its pack was skipped, see `skippedPacks`). The set of reasons is open. |
+| `engine.profilesNotRun` | A scan of several profiles only, and only when one of them didn't run: `[{ profile, reason }]`, `reason` `unknown-profile` (no such profile), `pack-skipped` (its pack was skipped, see `skippedPacks`) or `overridden-by-selection` (an include in `runOnly`, or rule ids or tags in `engineOptions`, selects the rules instead, as it would for one profile; it does for every profile's scan). The set of reasons is open. |
 | `engine.optInRules` | Present only when `engineOptions.optInRules` ran at least one opt-in rule that the rest of the selection would not have run. Lists their tags. Its presence means the result includes rules for requirements beyond the targeted standard, such as a national standard's, so a failure may not be a WCAG failure. Absent under a WCAG profile, where unlocking selects nothing, and when a standard's own profile ran its rules. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#running-every-rule-optinrules). |
 | `engine.mappings` | Present only when the run names a standard besides WCAG in `meta.normativeMappings`, through `engineOptions.mappings` or a standard's profile. Lists them canonically, in table order: `"en301549"` for every version, `"en301549:V3.2.1"` for one. Absent means every result names WCAG only. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#other-standards-mappings). |
 | `engine.packs` | Present only when the scan ran with `engineOptions.packs`: each pack that ran, as `name@version`, sorted by name. See [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core). |
@@ -97,13 +97,24 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
 
 With `engineOptions.profile` a list of two or more (`['wcag22-aa', 'wai-aria-1.2']`), each profile judges the page as a scan of it alone would, and the result reads as a scan of one profile with the rules of all. A single name, or a list of one, gives exactly the result it always has, with none of the fields below.
 
-- **`checksResults`**: each rule once. `verdicts` is each profile's outcome for it (`{ 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }`), keyed by profile, for the profiles that ran it; `outcome` is the worst of them, `fail`, then `cantTell`, then `pass`, then `notApplicable`. A reporter that reads `outcome` counts the scan as that one profile.
+- **`checksResults`**: each rule once. `verdicts` is each profile's outcome for it (`{ 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }`), keyed by profile, for the profiles that ran it; `outcome` is the worst of them, `fail`, then `cantTell`, then `pass`, then `notApplicable`. A reporter that reads `outcome` counts the scan as that one profile. `checkOutcome` is the rule's own outcome, the worst its scans report before any standard judges its findings by reason code: what its WCAG criteria read, since a standard's failure of a finding WCAG only asks about is no WCAG failure.
 - **Each occurrence** is listed once, with `verdicts`: what each profile makes of it. That is its tier, unless a standard's rollups judge the rule by its findings' reason codes: then it is what they make of it (a WCAG `cantTell` a standard is certain of is `fail` there), or `notApplicable` where the standard doesn't count it. Every verdict is kept: a finding that fails one profile and is a question for another says both. `occurrenceOutcome` is the worst of them where it differs from the check's.
 - **`rulesResults`**: every profile's rollups, each once, with `profiles`, the profiles that give it. One that two profiles give with different outcomes (two WCAG versions, say) is the worst of them; `profiles` (below) has each.
 - **`profiles`**: per profile that ran, `{ wcagVersion, standards, rulesResults }`, `rulesResults` the outcome of each of its rollups by id.
 - **`engine.profiles`**, **`engine.profilesNotRun`**: above. `standards`, `engine.packs`, `skippedPacks` and `overriddenBuiltinIds` are those of every profile's scan.
 
 A rollup judged by findings records, per contributor, what it made of each finding (`data.details.contributors[i].findingOutcomes`, in the order of the check's occurrences), which the verdicts are read from.
+
+What reads such a result:
+
+| Reader | What it does with several profiles |
+| --- | --- |
+| SARIF, JUnit | Gate on `outcome`: any profile's failure fails the build. A profile asked for and not run is an error unless `allowProfilesNotRun` ([`SARIF.md`](./SARIF.md), [`JUNIT.md`](./JUNIT.md)). |
+| EARL | Asserts each rule against its WCAG criteria by `checkOutcome`, the rule's own outcome, so a standard's failure is never asserted as a WCAG one ([`EARL.md`](./EARL.md)). |
+| The HTML report | Names every profile in its heading, and shows each profile's verdict on a finding's card (`wai-aria-1.2: Fail`) beside its WCAG criteria. |
+| Baselines | Match findings by rule, reason code and markup, as for any result: a finding is one entry, whatever its verdicts ([`BASELINE.md`](./BASELINE.md)). |
+| `coercedResult` | Reads a stored result back as it was: the rollups are not judged again from the merged outcomes. |
+| Bindings | Pass `engineOptions` through; with frames, each frame's result is a merged one ([`BINDING_AUTHORS_GUIDE.md`](./BINDING_AUTHORS_GUIDE.md)). |
 
 ## Cross-frame result (`runa11yCoreAcrossFrames`)
 

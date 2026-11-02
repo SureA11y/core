@@ -136,3 +136,7 @@ When `--baseline` or `--write-baseline` is used together with `--json`, the prin
 ## Alternative: diff two scans yourself
 
 If your pages don't fit this model (heavy dynamic content inside the flagged elements themselves), the always-available fallback is to diff two full `--json` outputs yourself — see [`INTEGRATION.md`](./INTEGRATION.md#ci-gating-a-build-on-the-result). That gives you full control over the identity/matching logic at the cost of writing it yourself.
+
+## A scan of several profiles
+
+A result of several profiles (`engineOptions.profile` as a list) lists each finding once, with what each profile makes of it in `verdicts`. A baseline entry is the finding, by rule, reason code and markup, so one entry covers it under every profile, and a baseline written from a scan of one profile still matches the same findings in a scan of several.
