@@ -89,11 +89,11 @@ No `<img usemap>` references this map, so the area is never hit-tested or render
 ```
 `aria-checked` is one of the states role="checkbox" supports.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="checkbox" aria-valuenow="1"></div>
 ```
-`aria-valuenow` belongs to range widgets, not role="checkbox".
+`aria-valuenow` belongs to range widgets, not role="checkbox": a WAI-ARIA violation. The checkbox keeps its name, role and state without it, so whether WCAG 4.1.2 fails depends on what the attribute was meant to convey.
 
 ## aria-allowed-role
 
@@ -320,11 +320,11 @@ role="tab" has no tablist ancestor or owner anywhere on the page.
 ```
 role="grid" requires an accessible name, and `aria-label` provides one.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="grid"></div>
 ```
-role="grid" requires an accessible name; none is present.
+role="grid" requires an accessible name in WAI-ARIA; none is present. A grid is a container of controls, not a single control, so whether a WCAG criterion fails depends on whether the page shows a title for it that is not tied to it.
 
 ## aria-roles-valid
 
@@ -336,9 +336,15 @@ role="grid" requires an accessible name; none is present.
 
 **Failed**
 ```html
-<div role="buton"></div>
+<div role="buton" tabindex="0">Save</div>
 ```
-"buton" isn't a defined ARIA role token (typo).
+"buton" isn't a defined ARIA role token (typo), so a control that takes focus is left with no role.
+
+**Flagged (cantTell)**
+```html
+<div role="heding">Orders</div>
+```
+"heding" isn't a defined ARIA role token either, but the element takes no focus: whether losing the heading role fails WCAG depends on whether the page shows it as a heading.
 
 ## aria-text
 
@@ -380,9 +386,15 @@ No focusable descendant exists inside the `role="text"` element.
 
 **Failed**
 ```html
+<div role="checkbox" tabindex="0" aria-checked="yes">Subscribe</div>
+```
+`aria-checked` is tristate; "yes" isn't a valid token, so the checkbox's checked state is not stated.
+
+**Flagged (cantTell)**
+```html
 <div aria-hidden="yes"></div>
 ```
-`aria-hidden` is boolean-typed; "yes" isn't a valid boolean token.
+`aria-hidden` is boolean-typed; "yes" isn't a valid boolean token. It carries no control's state, so whether a WCAG criterion fails depends on the page.
 
 ## autocomplete-valid
 
@@ -677,7 +689,7 @@ A landscape media query forces a 90-degree rotation, locking the page to portrai
 ```
 `<dl>`'s only direct children are `dt`/`dd`.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <dl>
   <dt>Term</dt>
@@ -685,7 +697,7 @@ A landscape media query forces a 90-degree rotation, locking the page to portrai
   <p>oops</p>
 </dl>
 ```
-The `<p>` is a direct child of `<dl>` that isn't `dt`/`dd` (or an allowed wrapper).
+The `<p>` is a direct child of `<dl>` that isn't `dt`/`dd` (or an allowed wrapper). The term and definition keep their roles, so whether a WCAG criterion fails depends on whether the page shows a pairing the markup breaks.
 
 ## deprecated-elements-not-used
 
@@ -712,13 +724,13 @@ No `<marquee>` anywhere, which satisfies the rule outright; there is no separate
 ```
 `aria-label` names the dialog.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="dialog">
   <p>Body text only.</p>
 </div>
 ```
-No accessible name; visible body text doesn't count toward a dialog's name.
+No accessible name, which WAI-ARIA requires; visible body text doesn't count toward a dialog's name. A dialog is not a single control, so whether a WCAG criterion fails depends on whether it shows a title that is not tied to it.
 
 ## dlitem-parent-valid
 
@@ -731,13 +743,13 @@ No accessible name; visible body text doesn't count toward a dialog's name.
 ```
 Both `dt` and `dd` are inside a `<dl>` ancestor.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div>
   <dt>orphan</dt>
 </div>
 ```
-`<dt>` has no `<dl>` ancestor at all.
+`<dt>` has no `<dl>` ancestor at all. It keeps its term role, so whether a WCAG criterion fails depends on whether the page shows it paired with a definition.
 
 ## duplicate-id
 
@@ -1519,11 +1531,21 @@ The link text is specific and descriptive.
 **Failed**
 ```html
 <ul>
+  <div>
+    <li>Elderberry</li>
+  </div>
+</ul>
+```
+A `<div>` between the `<ul>` and its `<li>` leaves the bulleted item in no list.
+
+**Flagged (cantTell)**
+```html
+<ul>
   <li>Elderberry</li>
   <div>wrapper</div>
 </ul>
 ```
-A `<div>` is a direct child of `<ul>` alongside the `<li>`.
+A `<div>` is a direct child of `<ul>` alongside the `<li>`, but it is not drawn as a list item: whether a WCAG criterion fails depends on whether the page shows it as one.
 
 ## listbox-name-present
 
@@ -2354,11 +2376,11 @@ No accessible name from any supported mechanism.
 ```
 Visible text content names the tooltip.
 
-**Failed**
+**Flagged (cantTell)**
 ```html
 <div role="tooltip"></div>
 ```
-No text content and no accessible name.
+No text content and no accessible name, which WAI-ARIA requires. A tooltip is not a control, and an empty one shows nothing that is missing.
 
 ## treeitem-name-present
 
