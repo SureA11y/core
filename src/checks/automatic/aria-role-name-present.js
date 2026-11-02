@@ -31,6 +31,11 @@
  *   A custom element whose ElementInternals give it one of those roles
  *   (this.attachInternals().role), with no role attribute naming another, is
  *   in scope too: that is its default role, and no other rule checks it.
+ *   A variant with the setting roles: 'all' also checks application,
+ *   marquee, table, tabpanel and treegrid, the other name-from-author roles
+ *   WAI-ARIA requires a name for: a standard for WAI-ARIA asks it, and a WCAG
+ *   scan does not, as an unnamed table is common and usually no WCAG
+ *   failure.
  * @expectation
  *   The element has a non-empty aria-label, an aria-labelledby that resolves
  *   to non-empty text, or a non-empty title. Every role in the set is
@@ -183,6 +188,24 @@ function runInPage(ctx) {
   const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
   // </generated:aria-name-required-roles>
 
+  // With the setting roles: 'all' (a variant's, docs/RULE_AUTHORING.md,
+  // "Rule variants"), the other name-from-author roles WAI-ARIA 1.2 requires
+  // a name for, which no WCAG rule owns: an unnamed table is common and
+  // usually no WCAG failure, so a WCAG scan leaves them out.
+  // <generated:aria-name-required-roles-all>
+  const ALL_ONLY_NAME_REQUIRED_ROLES = new Set([
+    'application',
+    'marquee',
+    'table',
+    'tabpanel',
+    'treegrid'
+  ]);
+  // </generated:aria-name-required-roles-all>
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  if (cfg.roles === 'all') {
+    for (const r of ALL_ONLY_NAME_REQUIRED_ROLES) NAME_REQUIRED_ROLES.add(r);
+  }
+
   // Derived from the set above so the two cannot drift apart.
   // `~=` matches the token anywhere in the role fallback list; the loop
   // keeps only elements whose resolved explicit role (the first known token)
@@ -322,4 +345,20 @@ function runInPage(ctx) {
   };
 }
 
-module.exports = { id, meta, runInPage };
+// What a variant may change (docs/RULE_AUTHORING.md, "Rule variants"): which
+// of the roles WAI-ARIA requires a name for the rule checks.
+const settings = {
+  roles: 'wcag'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  roles: {
+    values: ['wcag', 'all'],
+    description:
+      'The roles checked: wcag, grid, meter, progressbar, radiogroup and tree; or all, those and every other name-from-author role WAI-ARIA 1.2 requires a name for that no other rule owns (application, marquee, table, tabpanel and treegrid).',
+    basis: 'WAI-ARIA 1.2, "Accessible Name Required: True"'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

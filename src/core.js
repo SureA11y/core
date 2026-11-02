@@ -25842,7 +25842,22 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "roles"
+    ],
+    "variantSettings": [
+      {
+        "name": "roles",
+        "default": "wcag",
+        "values": [
+          "wcag",
+          "all"
+        ],
+        "description": "The roles checked: wcag, grid, meter, progressbar, radiogroup and tree; or all, those and every other name-from-author role WAI-ARIA 1.2 requires a name for that no other rule owns (application, marquee, table, tabpanel and treegrid).",
+        "basis": "WAI-ARIA 1.2, \"Accessible Name Required: True\""
+      }
+    ]
   },
   {
     "ruleId": "aria-roles-valid",
@@ -44828,7 +44843,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "settings": [
+      "roles"
+    ],
+    "variantSettings": [
+      {
+        "name": "roles",
+        "default": "wcag",
+        "values": [
+          "wcag",
+          "all"
+        ],
+        "description": "The roles checked: wcag, grid, meter, progressbar, radiogroup and tree; or all, those and every other name-from-author role WAI-ARIA 1.2 requires a name for that no other rule owns (application, marquee, table, tabpanel and treegrid).",
+        "basis": "WAI-ARIA 1.2, \"Accessible Name Required: True\""
+      }
+    ]
   },
   {
     "ruleId": "aria-roles-valid",
@@ -60633,6 +60663,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <generated:aria-name-required-roles>
   const NAME_REQUIRED_ROLES = new Set(['grid', 'meter', 'progressbar', 'radiogroup', 'tree']);
   // </generated:aria-name-required-roles>
+
+  // With the setting roles: 'all' (a variant's, docs/RULE_AUTHORING.md,
+  // "Rule variants"), the other name-from-author roles WAI-ARIA 1.2 requires
+  // a name for, which no WCAG rule owns: an unnamed table is common and
+  // usually no WCAG failure, so a WCAG scan leaves them out.
+  // <generated:aria-name-required-roles-all>
+  const ALL_ONLY_NAME_REQUIRED_ROLES = new Set([
+    'application',
+    'marquee',
+    'table',
+    'tabpanel',
+    'treegrid'
+  ]);
+  // </generated:aria-name-required-roles-all>
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  if (cfg.roles === 'all') {
+    for (const r of ALL_ONLY_NAME_REQUIRED_ROLES) NAME_REQUIRED_ROLES.add(r);
+  }
 
   // Derived from the set above so the two cannot drift apart.
   // `~=` matches the token anywhere in the role fallback list; the loop

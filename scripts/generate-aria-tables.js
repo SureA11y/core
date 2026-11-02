@@ -64,6 +64,8 @@ const BEGIN_CONCRETE = '  // <generated:aria-concrete-roles>';
 const END_CONCRETE = '  // </generated:aria-concrete-roles>';
 const BEGIN_NAME_REQUIRED = '  // <generated:aria-name-required-roles>';
 const END_NAME_REQUIRED = '  // </generated:aria-name-required-roles>';
+const BEGIN_NAME_REQUIRED_ALL = '  // <generated:aria-name-required-roles-all>';
+const END_NAME_REQUIRED_ALL = '  // </generated:aria-name-required-roles-all>';
 const BEGIN_REQUIRED_IMPLICIT = '  // <generated:aria-required-prop-implicit-values>';
 const END_REQUIRED_IMPLICIT = '  // </generated:aria-required-prop-implicit-values>';
 const BEGIN_ALLOWED_EXTRA = '  // <generated:aria-allowed-extra-owned-roles>';
@@ -272,16 +274,18 @@ function renderRoleless(list) {
 // meter and progressbar have dedicated rules too, but those map to SC 1.1.1;
 // keeping both here is what gives the two roles any 4.1.2 coverage at all.
 //
-// Name-required roles with no rule anywhere yet -- a real gap, tracked in
-// docs/DESIGN_CHALLENGES.md rather than closed here, because each one means new
-// failures on existing scans and deserves its own change:
+// Name-required roles no WCAG rule owns, checked only under the setting
+// roles: 'all' (a variant's, such as WAI-ARIA's pack): an unnamed table is
+// common and usually no WCAG failure, so a WCAG scan leaves them out.
+// docs/DESIGN_CHALLENGES.md has why:
 //   application, marquee, table, tabpanel, treegrid
-//   doc-biblioentry, doc-pagebreak, doc-part (DPUB), graphics-document,
-//   graphics-symbol (Graphics module)
+// Still with no rule: the DPUB and Graphics module roles doc-biblioentry,
+// doc-pagebreak, doc-part, graphics-document, graphics-symbol.
 const NAME_REQUIRED_ROLES = ['grid', 'meter', 'progressbar', 'radiogroup', 'tree'];
+const ALL_ONLY_NAME_REQUIRED_ROLES = ['application', 'marquee', 'table', 'tabpanel', 'treegrid'];
 
-function nameRequiredRoles() {
-  for (const name of NAME_REQUIRED_ROLES) {
+function nameRequiredRoles(list = NAME_REQUIRED_ROLES) {
+  for (const name of list) {
     const def = roles.get(name);
     if (!def) {
       throw new Error(`aria-query no longer defines the role: ${name}`);
@@ -296,7 +300,7 @@ function nameRequiredRoles() {
       );
     }
   }
-  return [...NAME_REQUIRED_ROLES].sort();
+  return [...list].sort();
 }
 
 // Roles a container may own even though they are not among its REQUIRED owned
@@ -593,6 +597,20 @@ async function main() {
         END_NAME_REQUIRED,
         'NAME_REQUIRED_ROLES',
         nameRequiredRoles()
+      )
+    )
+  });
+  files.set(NAME_REQUIRED_RULE_PATH, {
+    before: nameRequiredBefore,
+    after: replaceBlock(
+      files.get(NAME_REQUIRED_RULE_PATH).after,
+      BEGIN_NAME_REQUIRED_ALL,
+      END_NAME_REQUIRED_ALL,
+      renderRoleSet(
+        BEGIN_NAME_REQUIRED_ALL,
+        END_NAME_REQUIRED_ALL,
+        'ALL_ONLY_NAME_REQUIRED_ROLES',
+        nameRequiredRoles(ALL_ONLY_NAME_REQUIRED_ROLES)
       )
     )
   });
