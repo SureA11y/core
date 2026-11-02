@@ -89,6 +89,11 @@ export interface EngineOptionFields {
   wcagLevel?: WcagLevelInput;
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
   mappings?: StringList;
+  /**
+   * The standards besides WCAG whose verdict each finding carries, beside
+   * WCAG's: 'wai-aria'. Off by default.
+   */
+  verdicts?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */
   logUntestedWcag?: boolean;
@@ -487,6 +492,8 @@ export interface EngineInfo {
   profileExcludes?: { rules: string[]; criteria: string[] };
   optInRules?: string[];
   mappings?: string[];
+  /** The standards whose verdicts the results carry (engineOptions.verdicts). */
+  verdicts?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
   outputDetail?: 'findings';
   /** The packs the scan ran with, as name@version (engineOptions.packs). */

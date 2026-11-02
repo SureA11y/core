@@ -178,6 +178,47 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     return declared;
   })();
 
+  // A rule's verdicts under standards besides WCAG, by reason code:
+  // { 'wai-aria': { name_missing: { outcome: 'fail', requirement: 'name-required' } } }.
+  // WCAG's verdict is the finding's own tier; this says what the same finding
+  // means under another standard, which can differ (a WAI-ARIA violation the
+  // markup states for certain may leave the WCAG question open). A code the
+  // table leaves out is not a question for that standard.
+  const verdicts = (() => {
+    const v = m.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const std of Object.keys(v)) {
+      const key = String(std).trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(key) || key === 'wcag') {
+        throw new Error(`Rule ${ruleId}: meta.verdicts has a key "${std}" that names no standard`);
+      }
+      const byCode = v[std];
+      if (!byCode || typeof byCode !== 'object' || Array.isArray(byCode)) {
+        throw new Error(
+          `Rule ${ruleId}: meta.verdicts["${std}"] must map reason codes to verdicts`
+        );
+      }
+      const codes = {};
+      for (const code of Object.keys(byCode)) {
+        const entry = byCode[code];
+        const outcome = entry && typeof entry === 'object' ? entry.outcome : entry;
+        if (outcome !== 'fail' && outcome !== 'cantTell') {
+          throw new Error(
+            `Rule ${ruleId}: meta.verdicts["${std}"]["${code}"] must be fail or cantTell, not ${JSON.stringify(outcome)}`
+          );
+        }
+        const requirement =
+          entry && typeof entry === 'object' && typeof entry.requirement === 'string'
+            ? entry.requirement.trim()
+            : '';
+        codes[code] = requirement ? { outcome, requirement } : { outcome };
+      }
+      out[key] = codes;
+    }
+    return Object.keys(out).length ? out : null;
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -219,7 +260,8 @@ function normalizeRuleMeta(ruleId, id, meta, engineTag) {
     references,
     requirements,
     mappings,
-    margin
+    margin,
+    verdicts
   };
 }
 

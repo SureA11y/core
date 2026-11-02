@@ -119,6 +119,20 @@ runDomRulesInPage(url, null, { optInRules: 'all' }, null);
 
 This is for seeing everything the engine can report, during development or when exploring a site. It is not a conformance target: such a run fails a page for things WCAG allows and only another standard forbids. The result says so: `engine.optInRules` lists the tags whose rules ran, and the HTML report, SARIF and JUnit show it next to the profile. It adds no other standard's numbers to results; pass `mappings` for that, for example `{ optInRules: 'all', mappings: ['<key>'] }` to see a standard's requirements each rule checks.
 
+### Verdicts under other standards (`verdicts`)
+
+A finding's `outcome` and `occurrenceOutcome` are its WCAG verdict. `engineOptions.verdicts` adds what the same finding means under another standard, which can differ: an unnamed `role="grid"` breaks WAI-ARIA for certain (it requires the role to be named), while whether it fails a WCAG criterion is for a person to say.
+
+| Value | Adds |
+|---|---|
+| `'wai-aria'` | Each finding's WAI-ARIA 1.2 verdict, and one WAI-ARIA rollup per requirement its rules check |
+
+```js
+runDomRulesInPage(url, null, { verdicts: ['wai-aria'] }, null);
+```
+
+With it, a result of a rule that states WAI-ARIA verdicts, and each of its occurrences, carries `verdicts: { wcag, 'wai-aria' }`, each `pass`, `fail`, `cantTell` or `notApplicable`; `rulesResults` gains a rollup such as `wai-aria-name-required`; and `engine.verdicts` lists the standards. Off by default: without it a scan reports exactly as before. It never changes a WCAG outcome. Work in progress: only `aria-role-name-present` states WAI-ARIA verdicts so far.
+
 ### Other standards (`mappings`)
 
 Every result's `meta.normativeMappings` names the WCAG Success Criteria it tests. `engineOptions.mappings` adds the requirement of another standard that corresponds to each one. By default it adds none: a clause of a standard you do not audit against is noise in every SARIF tag, JUnit property and report.

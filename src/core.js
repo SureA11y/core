@@ -12352,6 +12352,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     profile: T.string,
     mappings: T.list,
+    verdicts: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
     messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
@@ -20465,6 +20466,47 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     return declared;
   })();
 
+  // A rule's verdicts under standards besides WCAG, by reason code:
+  // { 'wai-aria': { name_missing: { outcome: 'fail', requirement: 'name-required' } } }.
+  // WCAG's verdict is the finding's own tier; this says what the same finding
+  // means under another standard, which can differ (a WAI-ARIA violation the
+  // markup states for certain may leave the WCAG question open). A code the
+  // table leaves out is not a question for that standard.
+  const verdicts = (() => {
+    const v = m.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const std of Object.keys(v)) {
+      const key = String(std).trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(key) || key === 'wcag') {
+        throw new Error(`Rule ${ruleId}: meta.verdicts has a key "${std}" that names no standard`);
+      }
+      const byCode = v[std];
+      if (!byCode || typeof byCode !== 'object' || Array.isArray(byCode)) {
+        throw new Error(
+          `Rule ${ruleId}: meta.verdicts["${std}"] must map reason codes to verdicts`
+        );
+      }
+      const codes = {};
+      for (const code of Object.keys(byCode)) {
+        const entry = byCode[code];
+        const outcome = entry && typeof entry === 'object' ? entry.outcome : entry;
+        if (outcome !== 'fail' && outcome !== 'cantTell') {
+          throw new Error(
+            `Rule ${ruleId}: meta.verdicts["${std}"]["${code}"] must be fail or cantTell, not ${JSON.stringify(outcome)}`
+          );
+        }
+        const requirement =
+          entry && typeof entry === 'object' && typeof entry.requirement === 'string'
+            ? entry.requirement.trim()
+            : '';
+        codes[code] = requirement ? { outcome, requirement } : { outcome };
+      }
+      out[key] = codes;
+    }
+    return Object.keys(out).length ? out : null;
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -20506,7 +20548,8 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     references,
     requirements,
     mappings,
-    margin
+    margin,
+    verdicts
   };
 });
 
@@ -23289,6 +23332,168 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // engineOptions.verdicts: the standards besides WCAG whose verdict each
+  // finding carries, beside WCAG's (docs/OUTPUT_SCHEMA.md, "Verdicts"). Off by
+  // default: a scan without it reports exactly as before. A rule states, per
+  // reason code, what its finding means under each standard (meta.verdicts);
+  // WCAG's verdict is the finding's own tier, which this never changes.
+  const VERDICT_STANDARDS = {
+    'wai-aria': {
+      name: 'WAI-ARIA',
+      version: '1.2',
+      requirements: {
+        'name-required': {
+          title: 'Roles that require an accessible name have one',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        }
+      }
+    }
+  };
+  const verdictStandards = (() => {
+    const raw = engineOptionsResolved && engineOptionsResolved.verdicts;
+    const asked = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+      .map((s) => String(s).trim().toLowerCase())
+      .filter(Boolean);
+    const known = [];
+    const unknown = [];
+    for (const key of asked) {
+      if (Object.prototype.hasOwnProperty.call(VERDICT_STANDARDS, key)) {
+        if (!known.includes(key)) known.push(key);
+      } else if (!unknown.includes(key)) unknown.push(key);
+    }
+    if (unknown.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.verdicts: ignoring ' +
+            unknown.map((k) => '"' + k + '"').join(', ') +
+            ', no such standard.'
+        );
+      } catch {}
+    }
+    return known;
+  })();
+
+  // The verdicts of one rule's result and of each of its findings, under WCAG
+  // and each standard asked for. A finding whose code a standard's table leaves
+  // out is notApplicable there; a rule with no table for any standard asked for
+  // is left as it was.
+  function worstOf(outcomes) {
+    if (outcomes.includes('fail')) return 'fail';
+    if (outcomes.includes('cantTell')) return 'cantTell';
+    return null;
+  }
+  function withVerdicts(check, def) {
+    const table = def && def.verdicts;
+    if (!check || !table || !verdictStandards.some((k) => table[k])) return check;
+    const wcagApplies = Array.isArray(def.wcagSc) && def.wcagSc.length > 0;
+    const occurrences = Array.isArray(check.occurrences)
+      ? check.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const tier = occ.occurrenceOutcome || check.outcome;
+          const code = occ.data && occ.data.details && occ.data.details.reasonCode;
+          const v = { wcag: wcagApplies ? tier : 'notApplicable' };
+          for (const k of verdictStandards) {
+            const entry = table[k] && code ? table[k][code] : null;
+            v[k] = entry ? entry.outcome : 'notApplicable';
+          }
+          return { ...occ, verdicts: v };
+        })
+      : check.occurrences;
+    const verdicts = { wcag: wcagApplies ? check.outcome : 'notApplicable' };
+    for (const k of verdictStandards) {
+      if (!table[k]) continue;
+      const found = worstOf((occurrences || []).map((o) => o && o.verdicts && o.verdicts[k]));
+      verdicts[k] =
+        found || (check.outcome === 'notApplicable' || check.error ? check.outcome : 'pass');
+    }
+    return { ...check, verdicts, occurrences };
+  }
+
+  // A standard's own rollups of these verdicts, one per requirement its rules'
+  // tables name: fail when a finding fails the requirement there, cantTell when
+  // one asks, pass when a rule that checks it ran and found nothing, else
+  // notApplicable.
+  function verdictRollups(checks, defById) {
+    const out = [];
+    for (const k of verdictStandards) {
+      const std = VERDICT_STANDARDS[k];
+      for (const reqId of Object.keys(std.requirements)) {
+        const req = std.requirements[reqId];
+        const contributors = [];
+        const tiers = [];
+        for (const c of checks) {
+          const def = c && defById.get(c.ruleId);
+          const table = def && def.verdicts && def.verdicts[k];
+          if (!table) continue;
+          const codes = Object.keys(table).filter((code) => table[code].requirement === reqId);
+          if (!codes.length) continue;
+          const own = (c.occurrences || [])
+            .filter(
+              (o) => o && o.data && o.data.details && codes.includes(o.data.details.reasonCode)
+            )
+            .map((o) => (o.verdicts && o.verdicts[k]) || 'notApplicable');
+          const outcome =
+            worstOf(own) || (c.outcome === 'notApplicable' || c.error ? c.outcome : 'pass');
+          contributors.push({ testId: c.ruleId, outcome });
+          tiers.push(outcome);
+        }
+        if (!contributors.length) continue;
+        const outcome = worstOf(tiers) || (tiers.includes('pass') ? 'pass' : 'notApplicable');
+        const id = k + '-' + reqId;
+        out.push({
+          ruleId: id,
+          outcome,
+          outcomeNormalized: outcome === 'notApplicable' ? 'inapplicable' : outcome,
+          occurrences: [],
+          severity: outcome === 'fail' ? 'serious' : 'minor',
+          confidence: 'high',
+          type: 'automatic',
+          title: std.name + ' ' + std.version + ': ' + req.title,
+          description:
+            'Rollup of the ' +
+            std.name +
+            ' verdicts of the findings of the rules that check this requirement.',
+          data: {
+            details: {
+              kind: 'verdictRollup',
+              standard: std.name,
+              version: std.version,
+              requirement: reqId,
+              url: req.url,
+              checksIds: contributors.map((x) => x.testId),
+              contributors
+            }
+          },
+          meta: {
+            ruleId: id,
+            tags: [],
+            standard: std.name,
+            normativeMappings: [
+              {
+                standard: std.name,
+                version: std.version,
+                requirement: reqId,
+                title: req.title,
+                url: req.url
+              }
+            ]
+          },
+          schemaVersion: SCHEMA_VERSION
+        });
+      }
+    }
+    return out;
+  }
+
+  let verdictDefById = null;
+  if (verdictStandards.length) {
+    verdictDefById = new Map(effectiveCheckDefs.map((d) => [d.ruleId, d]));
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      checksResults[i] = withVerdicts(c, c && verdictDefById.get(c.ruleId));
+    }
+  }
+
   // The severity the applied profile gives a rule replaces the rule's own,
   // which the result keeps as ruleSeverity; the rollups take the profile's.
   const profileSeverity =
@@ -23321,6 +23526,10 @@ const runCoreSettled = (function runCoreSettled(
     resolvedCustom.defs,
     { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
+
+  if (verdictStandards.length) {
+    rulesResults.push(...verdictRollups(checksResults, verdictDefById));
+  }
 
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
@@ -23551,6 +23760,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(verdictStandards.length ? { verdicts: verdictStandards.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
@@ -24224,7 +24434,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "area-alt-present",
@@ -24301,7 +24512,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "area-alt-quality",
@@ -24378,7 +24590,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-allowed-attr",
@@ -24454,7 +24667,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-allowed-role",
@@ -24493,7 +24707,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-braille-equivalent",
@@ -24569,7 +24784,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-checked-state-mismatch",
@@ -24645,7 +24861,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-conditional-attr",
@@ -24721,7 +24938,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -24797,7 +25015,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -24873,7 +25092,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-hidden-body",
@@ -24981,7 +25201,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-hidden-focus",
@@ -25058,7 +25279,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-owns-valid",
@@ -25134,7 +25356,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -25210,7 +25433,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -25286,7 +25510,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-attr",
@@ -25362,7 +25587,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-children",
@@ -25438,7 +25664,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-parent",
@@ -25514,7 +25741,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-role-name-present",
@@ -25591,7 +25819,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-roles-valid",
@@ -25699,7 +25939,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-text",
@@ -25738,7 +25979,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-valid-attr",
@@ -25814,7 +26056,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-valid-attr-value",
@@ -25890,7 +26133,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "autocomplete-valid",
@@ -25965,7 +26209,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "avoid-inline-spacing",
@@ -26040,7 +26285,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "binary-control-name-present",
@@ -26121,7 +26367,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "button-name-present",
@@ -26198,7 +26445,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -26273,7 +26521,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "canvas-text-alternative-present",
@@ -26349,7 +26598,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "canvas-text-alternative-quality",
@@ -26425,7 +26675,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "click-handler-keyboard-operable",
@@ -26515,7 +26766,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "combobox-name-present",
@@ -26592,7 +26844,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "contrast-computable",
@@ -26685,7 +26938,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "contrast-enhanced",
@@ -26752,7 +27006,8 @@ const RUNTIME_CATALOG = {
       "band": {
         "relative": 0.1
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "contrast-minimum",
@@ -26838,6 +27093,7 @@ const RUNTIME_CATALOG = {
         "relative": 0.1
       }
     },
+    "verdicts": null,
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -26938,7 +27194,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -27015,7 +27272,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-hidden-focus",
@@ -27092,7 +27350,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-orientation-lock",
@@ -27167,7 +27426,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "definition-list-children-valid",
@@ -27243,7 +27503,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "deprecated-elements-not-used",
@@ -27318,7 +27579,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "dialog-name-present",
@@ -27395,7 +27657,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -27471,7 +27734,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "duplicate-id",
@@ -27538,7 +27802,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "duplicate-id-aria",
@@ -27614,7 +27879,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "embed-text-alternative-present",
@@ -27690,7 +27956,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "embed-text-alternative-quality",
@@ -27766,7 +28033,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "empty-heading",
@@ -27805,7 +28073,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "empty-table-header",
@@ -27844,7 +28113,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "focus-not-removed-by-script",
@@ -27953,7 +28223,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "focus-order-semantics",
@@ -27992,7 +28263,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-label-quality",
@@ -28069,7 +28341,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-programmatic-label-present",
@@ -28209,7 +28482,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
@@ -28286,7 +28560,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-single-label",
@@ -28361,7 +28636,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "heading-order",
@@ -28400,7 +28676,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "heading-quality",
@@ -28477,7 +28754,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "html-lang-attr-present",
@@ -28553,7 +28831,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "html-xml-lang-mismatch",
@@ -28629,7 +28908,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "identical-iframes-same-purpose",
@@ -28706,7 +28986,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "identical-links-same-purpose",
@@ -28763,7 +29044,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-focusable-content",
@@ -28840,7 +29122,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-name-present",
@@ -28917,7 +29200,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-title-unique",
@@ -28998,7 +29282,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "image-of-text",
@@ -29074,7 +29359,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "image-redundant-alt",
@@ -29113,7 +29399,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-decorative",
@@ -29189,7 +29476,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-present",
@@ -29265,7 +29553,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-quality",
@@ -29341,7 +29630,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-decorative",
@@ -29417,7 +29707,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-present",
@@ -29525,7 +29816,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-quality",
@@ -29601,7 +29893,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "invalid-field-error-message",
@@ -29677,7 +29970,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-for-valid",
@@ -29715,7 +30009,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-in-name",
@@ -29790,7 +30085,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-title-only",
@@ -29833,7 +30129,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-banner-is-top-level",
@@ -29872,7 +30169,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-complementary-is-top-level",
@@ -29911,7 +30209,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-contentinfo-is-top-level",
@@ -29950,7 +30249,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-main-is-top-level",
@@ -29989,7 +30289,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-banner",
@@ -30028,7 +30329,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-contentinfo",
@@ -30067,7 +30369,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-main",
@@ -30106,7 +30409,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-one-main",
@@ -30145,7 +30449,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-role-name-present",
@@ -30185,7 +30490,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-unique",
@@ -30224,7 +30530,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "link-in-text-block",
@@ -30310,7 +30617,8 @@ const RUNTIME_CATALOG = {
       "band": {
         "relative": 0.1
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "link-name-present",
@@ -30434,7 +30742,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "link-name-quality",
@@ -30525,7 +30834,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "list-children-valid",
@@ -30601,7 +30911,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "listbox-name-present",
@@ -30678,7 +30989,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -30754,7 +31066,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "live-region-announcements",
@@ -30831,7 +31144,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "manual-review",
@@ -30983,7 +31297,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
@@ -31059,7 +31374,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "menuitem-name-present",
@@ -31136,7 +31452,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -31207,7 +31524,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-refresh-timing-absent",
@@ -31311,7 +31629,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-viewport-large",
@@ -31349,7 +31668,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-viewport-zoom-enabled",
@@ -31424,7 +31744,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meter-name-present",
@@ -31500,7 +31821,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -31590,7 +31912,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "moving-content-pausable",
@@ -31665,7 +31988,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "nested-interactive-controls-absent",
@@ -31740,7 +32064,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "no-autoplay-audio",
@@ -31815,7 +32140,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "object-text-alternative-present",
@@ -31891,7 +32217,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "object-text-alternative-quality",
@@ -31967,7 +32294,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "option-name-present",
@@ -32044,7 +32372,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "p-as-heading",
@@ -32119,7 +32448,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-has-heading-one",
@@ -32158,7 +32488,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-title-patterns",
@@ -32234,7 +32565,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-title-present",
@@ -32310,7 +32642,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "password-paste-enabled",
@@ -32378,7 +32711,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "presentation-role-conflict",
@@ -32417,7 +32751,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "presentational-children-focusable-absent",
@@ -32494,7 +32829,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "progressbar-name-present",
@@ -32570,7 +32906,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "region",
@@ -32609,7 +32946,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "role-img-text-alternative-present",
@@ -32686,7 +33024,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "scope-attr-valid",
@@ -32725,7 +33064,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "scrollable-region-focusable",
@@ -32815,7 +33155,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "searchbox-name-present",
@@ -32892,7 +33233,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -32968,7 +33310,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "skip-link",
@@ -33007,7 +33350,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "slider-name-present",
@@ -33084,7 +33428,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -33161,7 +33506,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "summary-name-present",
@@ -33237,7 +33583,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-image-text-alternative-present",
@@ -33314,7 +33661,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-text-alternative-present",
@@ -33391,7 +33739,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-text-alternative-quality",
@@ -33467,7 +33816,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tab-name-present",
@@ -33544,7 +33894,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tabindex",
@@ -33583,7 +33934,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-duplicate-name",
@@ -33622,7 +33974,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-fake-caption",
@@ -33697,7 +34050,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-headers-attr-valid",
@@ -33773,7 +34127,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-th-has-data-cells",
@@ -33849,7 +34204,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "target-size-minimum",
@@ -33926,7 +34282,8 @@ const RUNTIME_CATALOG = {
       "band": {
         "absolute": 6
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "td-has-header",
@@ -34001,7 +34358,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "text-spacing-content-loss",
@@ -34083,7 +34441,8 @@ const RUNTIME_CATALOG = {
       "band": {
         "absolute": 8
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "textbox-name-present",
@@ -34160,7 +34519,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tooltip-name-present",
@@ -34236,7 +34596,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "treeitem-name-present",
@@ -34313,7 +34674,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "valid-lang",
@@ -34390,6 +34752,7 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
+    "verdicts": null,
     "settings": [
       "codes"
     ],
@@ -34480,7 +34843,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "video-poster-text-alternative-present",
@@ -34556,7 +34920,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "widget-keyboard-focusable",
@@ -34633,7 +34998,8 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   }
 ],
   composites: [
@@ -43210,7 +43576,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "area-alt-present",
@@ -43287,7 +43654,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "area-alt-quality",
@@ -43364,7 +43732,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-allowed-attr",
@@ -43440,7 +43809,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-allowed-role",
@@ -43479,7 +43849,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-braille-equivalent",
@@ -43555,7 +43926,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-checked-state-mismatch",
@@ -43631,7 +44003,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-conditional-attr",
@@ -43707,7 +44080,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -43783,7 +44157,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -43859,7 +44234,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-hidden-body",
@@ -43967,7 +44343,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-hidden-focus",
@@ -44044,7 +44421,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-owns-valid",
@@ -44120,7 +44498,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -44196,7 +44575,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -44272,7 +44652,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-attr",
@@ -44348,7 +44729,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-children",
@@ -44424,7 +44806,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-required-parent",
@@ -44500,7 +44883,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-role-name-present",
@@ -44577,7 +44961,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-roles-valid",
@@ -44685,7 +45081,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-text",
@@ -44724,7 +45121,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-valid-attr",
@@ -44800,7 +45198,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "aria-valid-attr-value",
@@ -44876,7 +45275,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "autocomplete-valid",
@@ -44951,7 +45351,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "avoid-inline-spacing",
@@ -45026,7 +45427,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "binary-control-name-present",
@@ -45107,7 +45509,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "button-name-present",
@@ -45184,7 +45587,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -45259,7 +45663,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "canvas-text-alternative-present",
@@ -45335,7 +45740,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "canvas-text-alternative-quality",
@@ -45411,7 +45817,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "click-handler-keyboard-operable",
@@ -45501,7 +45908,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "combobox-name-present",
@@ -45578,7 +45986,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "contrast-computable",
@@ -45671,7 +46080,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "contrast-enhanced",
@@ -45738,7 +46148,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "relative": 0.1
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "contrast-minimum",
@@ -45824,6 +46235,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "relative": 0.1
       }
     },
+    "verdicts": null,
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -45924,7 +46336,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -46001,7 +46414,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-hidden-focus",
@@ -46078,7 +46492,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "css-orientation-lock",
@@ -46153,7 +46568,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "definition-list-children-valid",
@@ -46229,7 +46645,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "deprecated-elements-not-used",
@@ -46304,7 +46721,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "dialog-name-present",
@@ -46381,7 +46799,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -46457,7 +46876,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "duplicate-id",
@@ -46524,7 +46944,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "duplicate-id-aria",
@@ -46600,7 +47021,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "embed-text-alternative-present",
@@ -46676,7 +47098,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "embed-text-alternative-quality",
@@ -46752,7 +47175,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "empty-heading",
@@ -46791,7 +47215,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "empty-table-header",
@@ -46830,7 +47255,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "focus-not-removed-by-script",
@@ -46939,7 +47365,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "focus-order-semantics",
@@ -46978,7 +47405,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-label-quality",
@@ -47055,7 +47483,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-programmatic-label-present",
@@ -47195,7 +47624,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
@@ -47272,7 +47702,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "form-control-single-label",
@@ -47347,7 +47778,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "heading-order",
@@ -47386,7 +47818,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "heading-quality",
@@ -47463,7 +47896,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "html-lang-attr-present",
@@ -47539,7 +47973,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "html-xml-lang-mismatch",
@@ -47615,7 +48050,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "identical-iframes-same-purpose",
@@ -47692,7 +48128,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "identical-links-same-purpose",
@@ -47749,7 +48186,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-focusable-content",
@@ -47826,7 +48264,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-name-present",
@@ -47903,7 +48342,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "iframe-title-unique",
@@ -47984,7 +48424,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "image-of-text",
@@ -48060,7 +48501,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "image-redundant-alt",
@@ -48099,7 +48541,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-decorative",
@@ -48175,7 +48618,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-present",
@@ -48251,7 +48695,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "img-alt-quality",
@@ -48327,7 +48772,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-decorative",
@@ -48403,7 +48849,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-present",
@@ -48511,7 +48958,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "input-image-alt-quality",
@@ -48587,7 +49035,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "invalid-field-error-message",
@@ -48663,7 +49112,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-for-valid",
@@ -48701,7 +49151,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-in-name",
@@ -48776,7 +49227,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "label-title-only",
@@ -48819,7 +49271,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-banner-is-top-level",
@@ -48858,7 +49311,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-complementary-is-top-level",
@@ -48897,7 +49351,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-contentinfo-is-top-level",
@@ -48936,7 +49391,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-main-is-top-level",
@@ -48975,7 +49431,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-banner",
@@ -49014,7 +49471,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-contentinfo",
@@ -49053,7 +49511,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-no-duplicate-main",
@@ -49092,7 +49551,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-one-main",
@@ -49131,7 +49591,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-role-name-present",
@@ -49171,7 +49632,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "landmark-unique",
@@ -49210,7 +49672,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "link-in-text-block",
@@ -49296,7 +49759,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "relative": 0.1
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "link-name-present",
@@ -49420,7 +49884,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "link-name-quality",
@@ -49511,7 +49976,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "list-children-valid",
@@ -49587,7 +50053,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "listbox-name-present",
@@ -49664,7 +50131,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -49740,7 +50208,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "live-region-announcements",
@@ -49817,7 +50286,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "manual-review",
@@ -49969,7 +50439,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
@@ -50045,7 +50516,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "menuitem-name-present",
@@ -50122,7 +50594,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -50193,7 +50666,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-refresh-timing-absent",
@@ -50297,7 +50771,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-viewport-large",
@@ -50335,7 +50810,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meta-viewport-zoom-enabled",
@@ -50410,7 +50886,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "meter-name-present",
@@ -50486,7 +50963,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -50576,7 +51054,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "moving-content-pausable",
@@ -50651,7 +51130,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "nested-interactive-controls-absent",
@@ -50726,7 +51206,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "no-autoplay-audio",
@@ -50801,7 +51282,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "object-text-alternative-present",
@@ -50877,7 +51359,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "object-text-alternative-quality",
@@ -50953,7 +51436,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "option-name-present",
@@ -51030,7 +51514,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "p-as-heading",
@@ -51105,7 +51590,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-has-heading-one",
@@ -51144,7 +51630,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-title-patterns",
@@ -51220,7 +51707,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "page-title-present",
@@ -51296,7 +51784,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "password-paste-enabled",
@@ -51364,7 +51853,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "presentation-role-conflict",
@@ -51403,7 +51893,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "presentational-children-focusable-absent",
@@ -51480,7 +51971,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "progressbar-name-present",
@@ -51556,7 +52048,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "region",
@@ -51595,7 +52088,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "role-img-text-alternative-present",
@@ -51672,7 +52166,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "scope-attr-valid",
@@ -51711,7 +52206,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "scrollable-region-focusable",
@@ -51801,7 +52297,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "searchbox-name-present",
@@ -51878,7 +52375,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -51954,7 +52452,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "skip-link",
@@ -51993,7 +52492,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "slider-name-present",
@@ -52070,7 +52570,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -52147,7 +52648,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "summary-name-present",
@@ -52223,7 +52725,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-image-text-alternative-present",
@@ -52300,7 +52803,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-text-alternative-present",
@@ -52377,7 +52881,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "svg-text-alternative-quality",
@@ -52453,7 +52958,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tab-name-present",
@@ -52530,7 +53036,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tabindex",
@@ -52569,7 +53076,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-duplicate-name",
@@ -52608,7 +53116,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-fake-caption",
@@ -52683,7 +53192,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-headers-attr-valid",
@@ -52759,7 +53269,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "table-th-has-data-cells",
@@ -52835,7 +53346,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "target-size-minimum",
@@ -52912,7 +53424,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "absolute": 6
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "td-has-header",
@@ -52987,7 +53500,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "text-spacing-content-loss",
@@ -53069,7 +53583,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "absolute": 8
       }
-    }
+    },
+    "verdicts": null
   },
   {
     "ruleId": "textbox-name-present",
@@ -53146,7 +53661,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "tooltip-name-present",
@@ -53222,7 +53738,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "treeitem-name-present",
@@ -53299,7 +53816,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "valid-lang",
@@ -53376,6 +53894,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
+    "verdicts": null,
     "settings": [
       "codes"
     ],
@@ -53466,7 +53985,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "video-poster-text-alternative-present",
@@ -53542,7 +54062,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   },
   {
     "ruleId": "widget-keyboard-focusable",
@@ -53619,7 +54140,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": null
   }
 ],
     composites: [
@@ -117404,6 +117926,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     profile: T.string,
     mappings: T.list,
+    verdicts: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
     messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
@@ -125517,6 +126040,47 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     return declared;
   })();
 
+  // A rule's verdicts under standards besides WCAG, by reason code:
+  // { 'wai-aria': { name_missing: { outcome: 'fail', requirement: 'name-required' } } }.
+  // WCAG's verdict is the finding's own tier; this says what the same finding
+  // means under another standard, which can differ (a WAI-ARIA violation the
+  // markup states for certain may leave the WCAG question open). A code the
+  // table leaves out is not a question for that standard.
+  const verdicts = (() => {
+    const v = m.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const std of Object.keys(v)) {
+      const key = String(std).trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(key) || key === 'wcag') {
+        throw new Error(`Rule ${ruleId}: meta.verdicts has a key "${std}" that names no standard`);
+      }
+      const byCode = v[std];
+      if (!byCode || typeof byCode !== 'object' || Array.isArray(byCode)) {
+        throw new Error(
+          `Rule ${ruleId}: meta.verdicts["${std}"] must map reason codes to verdicts`
+        );
+      }
+      const codes = {};
+      for (const code of Object.keys(byCode)) {
+        const entry = byCode[code];
+        const outcome = entry && typeof entry === 'object' ? entry.outcome : entry;
+        if (outcome !== 'fail' && outcome !== 'cantTell') {
+          throw new Error(
+            `Rule ${ruleId}: meta.verdicts["${std}"]["${code}"] must be fail or cantTell, not ${JSON.stringify(outcome)}`
+          );
+        }
+        const requirement =
+          entry && typeof entry === 'object' && typeof entry.requirement === 'string'
+            ? entry.requirement.trim()
+            : '';
+        codes[code] = requirement ? { outcome, requirement } : { outcome };
+      }
+      out[key] = codes;
+    }
+    return Object.keys(out).length ? out : null;
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -125558,7 +126122,8 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     references,
     requirements,
     mappings,
-    margin
+    margin,
+    verdicts
   };
 });
 
@@ -128341,6 +128906,168 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // engineOptions.verdicts: the standards besides WCAG whose verdict each
+  // finding carries, beside WCAG's (docs/OUTPUT_SCHEMA.md, "Verdicts"). Off by
+  // default: a scan without it reports exactly as before. A rule states, per
+  // reason code, what its finding means under each standard (meta.verdicts);
+  // WCAG's verdict is the finding's own tier, which this never changes.
+  const VERDICT_STANDARDS = {
+    'wai-aria': {
+      name: 'WAI-ARIA',
+      version: '1.2',
+      requirements: {
+        'name-required': {
+          title: 'Roles that require an accessible name have one',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        }
+      }
+    }
+  };
+  const verdictStandards = (() => {
+    const raw = engineOptionsResolved && engineOptionsResolved.verdicts;
+    const asked = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+      .map((s) => String(s).trim().toLowerCase())
+      .filter(Boolean);
+    const known = [];
+    const unknown = [];
+    for (const key of asked) {
+      if (Object.prototype.hasOwnProperty.call(VERDICT_STANDARDS, key)) {
+        if (!known.includes(key)) known.push(key);
+      } else if (!unknown.includes(key)) unknown.push(key);
+    }
+    if (unknown.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.verdicts: ignoring ' +
+            unknown.map((k) => '"' + k + '"').join(', ') +
+            ', no such standard.'
+        );
+      } catch {}
+    }
+    return known;
+  })();
+
+  // The verdicts of one rule's result and of each of its findings, under WCAG
+  // and each standard asked for. A finding whose code a standard's table leaves
+  // out is notApplicable there; a rule with no table for any standard asked for
+  // is left as it was.
+  function worstOf(outcomes) {
+    if (outcomes.includes('fail')) return 'fail';
+    if (outcomes.includes('cantTell')) return 'cantTell';
+    return null;
+  }
+  function withVerdicts(check, def) {
+    const table = def && def.verdicts;
+    if (!check || !table || !verdictStandards.some((k) => table[k])) return check;
+    const wcagApplies = Array.isArray(def.wcagSc) && def.wcagSc.length > 0;
+    const occurrences = Array.isArray(check.occurrences)
+      ? check.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const tier = occ.occurrenceOutcome || check.outcome;
+          const code = occ.data && occ.data.details && occ.data.details.reasonCode;
+          const v = { wcag: wcagApplies ? tier : 'notApplicable' };
+          for (const k of verdictStandards) {
+            const entry = table[k] && code ? table[k][code] : null;
+            v[k] = entry ? entry.outcome : 'notApplicable';
+          }
+          return { ...occ, verdicts: v };
+        })
+      : check.occurrences;
+    const verdicts = { wcag: wcagApplies ? check.outcome : 'notApplicable' };
+    for (const k of verdictStandards) {
+      if (!table[k]) continue;
+      const found = worstOf((occurrences || []).map((o) => o && o.verdicts && o.verdicts[k]));
+      verdicts[k] =
+        found || (check.outcome === 'notApplicable' || check.error ? check.outcome : 'pass');
+    }
+    return { ...check, verdicts, occurrences };
+  }
+
+  // A standard's own rollups of these verdicts, one per requirement its rules'
+  // tables name: fail when a finding fails the requirement there, cantTell when
+  // one asks, pass when a rule that checks it ran and found nothing, else
+  // notApplicable.
+  function verdictRollups(checks, defById) {
+    const out = [];
+    for (const k of verdictStandards) {
+      const std = VERDICT_STANDARDS[k];
+      for (const reqId of Object.keys(std.requirements)) {
+        const req = std.requirements[reqId];
+        const contributors = [];
+        const tiers = [];
+        for (const c of checks) {
+          const def = c && defById.get(c.ruleId);
+          const table = def && def.verdicts && def.verdicts[k];
+          if (!table) continue;
+          const codes = Object.keys(table).filter((code) => table[code].requirement === reqId);
+          if (!codes.length) continue;
+          const own = (c.occurrences || [])
+            .filter(
+              (o) => o && o.data && o.data.details && codes.includes(o.data.details.reasonCode)
+            )
+            .map((o) => (o.verdicts && o.verdicts[k]) || 'notApplicable');
+          const outcome =
+            worstOf(own) || (c.outcome === 'notApplicable' || c.error ? c.outcome : 'pass');
+          contributors.push({ testId: c.ruleId, outcome });
+          tiers.push(outcome);
+        }
+        if (!contributors.length) continue;
+        const outcome = worstOf(tiers) || (tiers.includes('pass') ? 'pass' : 'notApplicable');
+        const id = k + '-' + reqId;
+        out.push({
+          ruleId: id,
+          outcome,
+          outcomeNormalized: outcome === 'notApplicable' ? 'inapplicable' : outcome,
+          occurrences: [],
+          severity: outcome === 'fail' ? 'serious' : 'minor',
+          confidence: 'high',
+          type: 'automatic',
+          title: std.name + ' ' + std.version + ': ' + req.title,
+          description:
+            'Rollup of the ' +
+            std.name +
+            ' verdicts of the findings of the rules that check this requirement.',
+          data: {
+            details: {
+              kind: 'verdictRollup',
+              standard: std.name,
+              version: std.version,
+              requirement: reqId,
+              url: req.url,
+              checksIds: contributors.map((x) => x.testId),
+              contributors
+            }
+          },
+          meta: {
+            ruleId: id,
+            tags: [],
+            standard: std.name,
+            normativeMappings: [
+              {
+                standard: std.name,
+                version: std.version,
+                requirement: reqId,
+                title: req.title,
+                url: req.url
+              }
+            ]
+          },
+          schemaVersion: SCHEMA_VERSION
+        });
+      }
+    }
+    return out;
+  }
+
+  let verdictDefById = null;
+  if (verdictStandards.length) {
+    verdictDefById = new Map(effectiveCheckDefs.map((d) => [d.ruleId, d]));
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      checksResults[i] = withVerdicts(c, c && verdictDefById.get(c.ruleId));
+    }
+  }
+
   // The severity the applied profile gives a rule replaces the rule's own,
   // which the result keeps as ruleSeverity; the rollups take the profile's.
   const profileSeverity =
@@ -128373,6 +129100,10 @@ const runCoreSettled = (function runCoreSettled(
     resolvedCustom.defs,
     { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
+
+  if (verdictStandards.length) {
+    rulesResults.push(...verdictRollups(checksResults, verdictDefById));
+  }
 
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
@@ -128603,6 +129334,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(verdictStandards.length ? { verdicts: verdictStandards.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },

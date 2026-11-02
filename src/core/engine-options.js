@@ -66,6 +66,7 @@ function engineOptionSpec() {
     },
     profile: T.string,
     mappings: T.list,
+    verdicts: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
     messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
