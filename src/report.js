@@ -193,6 +193,14 @@ function renderTargetChips(engine, ui) {
     chips.push(
       `<div><b>${esc(profiles.join(' + '))}</b>${esc(ui.tr('report_meta_profile'))}</div>`
     );
+  // The profiles a scan of several asked for that did not run.
+  const notRun = Array.isArray(engine.profilesNotRun)
+    ? engine.profilesNotRun.map((p) => p && p.profile).filter(Boolean)
+    : [];
+  if (notRun.length)
+    chips.push(
+      `<div><b>${esc(notRun.join(', '))}</b>${esc(ui.tr('report_meta_profileNotRun'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(

@@ -105,7 +105,7 @@ The check results are shared. Each finding carries a verdict per profile that ju
 verdicts: { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }
 ```
 
-Each profile has a section of its own, named by its id and saying its standard and version: its rollups, its summary, its coverage. Every verdict is reported: a finding that fails one profile and is `cantTell` for another lists both, and it appears in the second profile's review list as well as in the first's failures.
+Each profile has a section of its own, `profiles[id]`, named by its id and saying its WCAG version, its standards and the outcome of each of its rollups. Every verdict is reported: a finding that fails one profile and is `cantTell` for another lists both, and it appears in the second profile's review list as well as in the first's failures.
 
 ### Counting
 

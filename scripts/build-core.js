@@ -2448,24 +2448,23 @@ ${implEntriesInPage.join(',\n')}
     } catch {}
     const withoutPacks = Object.assign({}, engineOptions);
     delete withoutPacks.packs;
-    const unrun = runCore(
-      pageUrl,
-      contextSelector,
-      withoutPacks,
-      resolveEffectiveRunOnly(withoutPacks, runOnly),
-      CHECK_DEFS,
-      RULE_IMPLS,
-      ENGINE_TAG,
-      SCHEMA_VERSION,
-      COMPOSITE_RULES
-    );
     const note = (r) =>
       r && typeof r === 'object'
         ? Object.assign({}, r, {
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
           })
         : r;
-    return isThenable(unrun) ? unrun.then(note) : note(unrun);
+    // Each profile scanned as without the packs (a list of them too), each
+    // result naming the packs skipped, so a scan of several says which of
+    // its profiles did not run because of them.
+    return runProfiles(withoutPacks, (eo) => {
+      const selection = resolveEffectiveRunOnly(eo, runOnly);
+      const one = runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES);
+      return noteProfileNotApplied(
+        isThenable(one) ? one.then(note) : note(one),
+        selection && selection.profileNotApplied
+      );
+    });
   }
   if (!PACK_ENTRY) {
     return runProfiles(engineOptions, (eo) => {
