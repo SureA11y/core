@@ -25,7 +25,10 @@ const AUTOMATIC_DIRS = ruleTypeDirs('automatic');
 // go down: it is the remaining migration, not an allowance for new rules.
 const RULES_WITHOUT_UNCERTAINTY = 0;
 
-function reportsCantTell(src) {
+function reportsCantTell(source) {
+  // A rule's meta.verdicts table says what its findings mean under another
+  // standard ({ outcome: 'cantTell', requirement }), not what it reports.
+  const src = source.replace(/\n {2}verdicts: \{[\s\S]*?\n {2}\},\n/, '\n');
   return (
     src.includes('cantTellOccurrences') ||
     src.includes("outcome: 'cantTell'") ||

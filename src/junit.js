@@ -58,7 +58,9 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf
+  leaningOccurrencesOf,
+  verdictStandardsOption,
+  failsVerdictOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -146,10 +148,17 @@ function classify(check, baseline, gating, options) {
     }
   }
 
+  // With failOnVerdicts, an undecided occurrence that fails one of the
+  // standards named (by the verdicts the scan gave it) gates as a failure.
+  const verdictFailing = undecided.filter(
+    (o) => !leaning.includes(o) && failsVerdictOf(o, options.failOnVerdicts)
+  );
+
   let status;
   if (ruleErrorOf(check)) status = 'error';
   else if (failing.length) status = 'failure';
   else if (leaning.length) status = 'failure';
+  else if (verdictFailing.length) status = 'failure';
   else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
@@ -163,6 +172,7 @@ function classify(check, baseline, gating, options) {
     failing,
     undecided,
     leaning,
+    verdictFailing,
     baselined,
     leanBaselined,
     cantTellAs: options.cantTellAs
@@ -233,6 +243,23 @@ function renderTestcase(entry, classname, indent) {
     const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
     inner.push(
       `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
+    );
+  } else if (
+    status === 'failure' &&
+    entry.verdictFailing &&
+    entry.verdictFailing.length &&
+    entry.cantTellAs !== 'failure'
+  ) {
+    const standards = [
+      ...new Set(
+        entry.verdictFailing.flatMap((o) =>
+          Object.keys(o.verdicts || {}).filter((k) => k !== 'wcag' && o.verdicts[k] === 'fail')
+        )
+      )
+    ];
+    const message = `${plural(entry.verdictFailing.length, 'occurrence')} ${entry.verdictFailing.length === 1 ? 'fails' : 'fail'} ${standards.join(', ')}: ${entry.verdictFailing[0].summary || check.ruleId}`;
+    inner.push(
+      `${indent}  <failure type="verdict" message="${xmlText(message)}">${xmlText([...entry.verdictFailing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
@@ -494,6 +521,7 @@ function renderJunitReport(result, options = {}) {
     cantTellAs,
     leanFailAs,
     leanFailWcagOnly: leanFailWcagOnly === true,
+    failOnVerdicts: verdictStandardsOption(options.failOnVerdicts, 'renderJunitReport'),
     includeNotApplicable: options.includeNotApplicable === true
   };
   // A finding that gates as a likely failure says how to confirm it: a

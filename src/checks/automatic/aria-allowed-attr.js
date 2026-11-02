@@ -129,6 +129,14 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // What each finding means under WAI-ARIA, beside its WCAG tier: an attribute the role does not support is not WAI-ARIA conformant; a deprecated one is still allowed, but not recommended.
+  verdicts: {
+    'wai-aria': {
+      ARIA_ATTR_DEPRECATED: { outcome: 'cantTell', requirement: 'supported-attributes' },
+      ARIA_ATTR_NOT_ALLOWED: { outcome: 'fail', requirement: 'supported-attributes' },
+      ARIA_ATTR_NOT_ALLOWED_ROLELESS: { outcome: 'fail', requirement: 'supported-attributes' }
+    }
+  },
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',

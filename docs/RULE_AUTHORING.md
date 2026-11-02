@@ -161,6 +161,23 @@ const meta = {
 
 ### 4.2 Notes on specific meta keys
 
+#### `meta.verdicts`
+Optional. What each of the rule's findings means under a standard besides WCAG, by reason code, for scans with `engineOptions.verdicts` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#verdicts)):
+
+```js
+verdicts: {
+  'wai-aria': {
+    name_missing: { outcome: 'fail', requirement: 'name-required' },
+    name_internals: { outcome: 'cantTell', requirement: 'name-required' }
+  }
+}
+```
+
+- The WCAG verdict is the finding's own tier; never restate it here.
+- `outcome` is `fail` where the standard says MUST or MUST NOT and the markup breaks it for certain, `cantTell` where it recommends (SHOULD, "not recommended") or where script may still change the answer. Leave out a code the standard states no author requirement for: it is `notApplicable` there.
+- `requirement` names the requirement the finding is about, one of those the engine has a rollup for (`src/core/dom-runner.js`, `VERDICT_STANDARDS`). Quote the standard's own wording in the comment above the table.
+- Every code must be one the rule gives (`scripts/data/finding-ids.json`); `tests/verdicts.test.js` checks it, and that each requirement has its rollup.
+
 #### `meta.i18n`
 This repo uses **key-based i18n**:
 - `titleKey`, `descriptionKey` are dictionary keys.

@@ -3147,6 +3147,197 @@ function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // engineOptions.verdicts: the standards besides WCAG whose verdict each
+  // finding carries, beside WCAG's (docs/OUTPUT_SCHEMA.md, "Verdicts"). Off by
+  // default: a scan without it reports exactly as before. A rule states, per
+  // reason code, what its finding means under each standard (meta.verdicts);
+  // WCAG's verdict is the finding's own tier, which this never changes.
+  const VERDICT_STANDARDS = {
+    'wai-aria': {
+      name: 'WAI-ARIA',
+      version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
+      requirements: {
+        'name-required': {
+          title: 'Roles that require an accessible name have one',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
+        }
+      }
+    }
+  };
+  const verdictStandards = (() => {
+    const raw = engineOptionsResolved && engineOptionsResolved.verdicts;
+    const asked = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+      .map((s) => String(s).trim().toLowerCase())
+      .filter(Boolean);
+    const known = [];
+    const unknown = [];
+    for (const key of asked) {
+      if (Object.prototype.hasOwnProperty.call(VERDICT_STANDARDS, key)) {
+        if (!known.includes(key)) known.push(key);
+      } else if (!unknown.includes(key)) unknown.push(key);
+    }
+    if (unknown.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.verdicts: ignoring ' +
+            unknown.map((k) => '"' + k + '"').join(', ') +
+            ', no such standard.'
+        );
+      } catch {}
+    }
+    return known;
+  })();
+
+  // The verdicts of one rule's result and of each of its findings, under WCAG
+  // and each standard asked for. A finding whose code a standard's table leaves
+  // out is notApplicable there; a rule with no table for any standard asked for
+  // is left as it was.
+  function worstOf(outcomes) {
+    if (outcomes.includes('fail')) return 'fail';
+    if (outcomes.includes('cantTell')) return 'cantTell';
+    return null;
+  }
+  function withVerdicts(check, def) {
+    const table = def && def.verdicts;
+    if (!check || !table || !verdictStandards.some((k) => table[k])) return check;
+    const wcagApplies = Array.isArray(def.wcagSc) && def.wcagSc.length > 0;
+    const occurrences = Array.isArray(check.occurrences)
+      ? check.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const tier = occ.occurrenceOutcome || check.outcome;
+          const code = occ.data && occ.data.details && occ.data.details.reasonCode;
+          const v = { wcag: wcagApplies ? tier : 'notApplicable' };
+          for (const k of verdictStandards) {
+            const entry = table[k] && code ? table[k][code] : null;
+            v[k] = entry ? entry.outcome : 'notApplicable';
+          }
+          return { ...occ, verdicts: v };
+        })
+      : check.occurrences;
+    const verdicts = { wcag: wcagApplies ? check.outcome : 'notApplicable' };
+    for (const k of verdictStandards) {
+      if (!table[k]) continue;
+      const found = worstOf((occurrences || []).map((o) => o && o.verdicts && o.verdicts[k]));
+      verdicts[k] =
+        found || (check.outcome === 'notApplicable' || check.error ? check.outcome : 'pass');
+    }
+    return { ...check, verdicts, occurrences };
+  }
+
+  // A standard's own rollups of these verdicts, one per requirement its rules'
+  // tables name: fail when a finding fails the requirement there, cantTell when
+  // one asks, pass when a rule that checks it ran and found nothing, else
+  // notApplicable.
+  function verdictRollups(checks, defById) {
+    const out = [];
+    for (const k of verdictStandards) {
+      const std = VERDICT_STANDARDS[k];
+      for (const reqId of Object.keys(std.requirements)) {
+        const req = std.requirements[reqId];
+        const contributors = [];
+        const tiers = [];
+        for (const c of checks) {
+          const def = c && defById.get(c.ruleId);
+          const table = def && def.verdicts && def.verdicts[k];
+          if (!table) continue;
+          const codes = Object.keys(table).filter((code) => table[code].requirement === reqId);
+          if (!codes.length) continue;
+          const own = (c.occurrences || [])
+            .filter(
+              (o) => o && o.data && o.data.details && codes.includes(o.data.details.reasonCode)
+            )
+            .map((o) => (o.verdicts && o.verdicts[k]) || 'notApplicable');
+          const outcome =
+            worstOf(own) || (c.outcome === 'notApplicable' || c.error ? c.outcome : 'pass');
+          contributors.push({ testId: c.ruleId, outcome });
+          tiers.push(outcome);
+        }
+        if (!contributors.length) continue;
+        const outcome = worstOf(tiers) || (tiers.includes('pass') ? 'pass' : 'notApplicable');
+        const id = k + '-' + reqId;
+        out.push({
+          ruleId: id,
+          outcome,
+          outcomeNormalized: outcome === 'notApplicable' ? 'inapplicable' : outcome,
+          occurrences: [],
+          severity: outcome === 'fail' ? 'serious' : 'minor',
+          confidence: 'high',
+          type: 'automatic',
+          title: std.name + ' ' + std.version + ': ' + req.title,
+          description:
+            'Rollup of the ' +
+            std.name +
+            ' verdicts of the findings of the rules that check this requirement.',
+          data: {
+            details: {
+              kind: 'verdictRollup',
+              standard: std.name,
+              version: std.version,
+              requirement: reqId,
+              url: req.url,
+              checksIds: contributors.map((x) => x.testId),
+              contributors
+            }
+          },
+          meta: {
+            ruleId: id,
+            tags: [],
+            standard: std.name,
+            normativeMappings: [
+              {
+                standard: std.name,
+                version: std.version,
+                requirement: reqId,
+                title: req.title,
+                url: req.url
+              }
+            ]
+          },
+          schemaVersion: SCHEMA_VERSION
+        });
+      }
+    }
+    return out;
+  }
+
+  let verdictDefById = null;
+  if (verdictStandards.length) {
+    verdictDefById = new Map(effectiveCheckDefs.map((d) => [d.ruleId, d]));
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      checksResults[i] = withVerdicts(c, c && verdictDefById.get(c.ruleId));
+    }
+  }
+
   // The severity the applied profile gives a rule replaces the rule's own,
   // which the result keeps as ruleSeverity; the rollups take the profile's.
   const profileSeverity =
@@ -3180,6 +3371,10 @@ function runCoreSettled(
     { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
 
+  if (verdictStandards.length) {
+    rulesResults.push(...verdictRollups(checksResults, verdictDefById));
+  }
+
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
   for (const r of checksResults.concat(rulesResults)) {
@@ -3188,6 +3383,30 @@ function runCoreSettled(
       r.meta.normativeMappings,
       mappingSelection.tokens
     );
+  }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
   }
 
   // Every result echoes the options it ran with, and translation reads its
@@ -3347,6 +3566,13 @@ function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
@@ -3409,6 +3635,7 @@ function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(verdictStandards.length ? { verdicts: verdictStandards.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },

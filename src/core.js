@@ -1997,6 +1997,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     margin: r.margin
       ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
       : null,
+    // Its verdicts under standards besides WCAG, by reason code, or null.
+    verdicts: r.verdicts ? JSON.parse(JSON.stringify(r.verdicts)) : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -12352,6 +12354,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     profile: T.string,
     mappings: T.list,
+    verdicts: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
     messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
@@ -20465,6 +20468,47 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     return declared;
   })();
 
+  // A rule's verdicts under standards besides WCAG, by reason code:
+  // { 'wai-aria': { name_missing: { outcome: 'fail', requirement: 'name-required' } } }.
+  // WCAG's verdict is the finding's own tier; this says what the same finding
+  // means under another standard, which can differ (a WAI-ARIA violation the
+  // markup states for certain may leave the WCAG question open). A code the
+  // table leaves out is not a question for that standard.
+  const verdicts = (() => {
+    const v = m.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const std of Object.keys(v)) {
+      const key = String(std).trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(key) || key === 'wcag') {
+        throw new Error(`Rule ${ruleId}: meta.verdicts has a key "${std}" that names no standard`);
+      }
+      const byCode = v[std];
+      if (!byCode || typeof byCode !== 'object' || Array.isArray(byCode)) {
+        throw new Error(
+          `Rule ${ruleId}: meta.verdicts["${std}"] must map reason codes to verdicts`
+        );
+      }
+      const codes = {};
+      for (const code of Object.keys(byCode)) {
+        const entry = byCode[code];
+        const outcome = entry && typeof entry === 'object' ? entry.outcome : entry;
+        if (outcome !== 'fail' && outcome !== 'cantTell') {
+          throw new Error(
+            `Rule ${ruleId}: meta.verdicts["${std}"]["${code}"] must be fail or cantTell, not ${JSON.stringify(outcome)}`
+          );
+        }
+        const requirement =
+          entry && typeof entry === 'object' && typeof entry.requirement === 'string'
+            ? entry.requirement.trim()
+            : '';
+        codes[code] = requirement ? { outcome, requirement } : { outcome };
+      }
+      out[key] = codes;
+    }
+    return Object.keys(out).length ? out : null;
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -20506,7 +20550,8 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     references,
     requirements,
     mappings,
-    margin
+    margin,
+    verdicts
   };
 });
 
@@ -23289,6 +23334,197 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // engineOptions.verdicts: the standards besides WCAG whose verdict each
+  // finding carries, beside WCAG's (docs/OUTPUT_SCHEMA.md, "Verdicts"). Off by
+  // default: a scan without it reports exactly as before. A rule states, per
+  // reason code, what its finding means under each standard (meta.verdicts);
+  // WCAG's verdict is the finding's own tier, which this never changes.
+  const VERDICT_STANDARDS = {
+    'wai-aria': {
+      name: 'WAI-ARIA',
+      version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
+      requirements: {
+        'name-required': {
+          title: 'Roles that require an accessible name have one',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
+        }
+      }
+    }
+  };
+  const verdictStandards = (() => {
+    const raw = engineOptionsResolved && engineOptionsResolved.verdicts;
+    const asked = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+      .map((s) => String(s).trim().toLowerCase())
+      .filter(Boolean);
+    const known = [];
+    const unknown = [];
+    for (const key of asked) {
+      if (Object.prototype.hasOwnProperty.call(VERDICT_STANDARDS, key)) {
+        if (!known.includes(key)) known.push(key);
+      } else if (!unknown.includes(key)) unknown.push(key);
+    }
+    if (unknown.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.verdicts: ignoring ' +
+            unknown.map((k) => '"' + k + '"').join(', ') +
+            ', no such standard.'
+        );
+      } catch {}
+    }
+    return known;
+  })();
+
+  // The verdicts of one rule's result and of each of its findings, under WCAG
+  // and each standard asked for. A finding whose code a standard's table leaves
+  // out is notApplicable there; a rule with no table for any standard asked for
+  // is left as it was.
+  function worstOf(outcomes) {
+    if (outcomes.includes('fail')) return 'fail';
+    if (outcomes.includes('cantTell')) return 'cantTell';
+    return null;
+  }
+  function withVerdicts(check, def) {
+    const table = def && def.verdicts;
+    if (!check || !table || !verdictStandards.some((k) => table[k])) return check;
+    const wcagApplies = Array.isArray(def.wcagSc) && def.wcagSc.length > 0;
+    const occurrences = Array.isArray(check.occurrences)
+      ? check.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const tier = occ.occurrenceOutcome || check.outcome;
+          const code = occ.data && occ.data.details && occ.data.details.reasonCode;
+          const v = { wcag: wcagApplies ? tier : 'notApplicable' };
+          for (const k of verdictStandards) {
+            const entry = table[k] && code ? table[k][code] : null;
+            v[k] = entry ? entry.outcome : 'notApplicable';
+          }
+          return { ...occ, verdicts: v };
+        })
+      : check.occurrences;
+    const verdicts = { wcag: wcagApplies ? check.outcome : 'notApplicable' };
+    for (const k of verdictStandards) {
+      if (!table[k]) continue;
+      const found = worstOf((occurrences || []).map((o) => o && o.verdicts && o.verdicts[k]));
+      verdicts[k] =
+        found || (check.outcome === 'notApplicable' || check.error ? check.outcome : 'pass');
+    }
+    return { ...check, verdicts, occurrences };
+  }
+
+  // A standard's own rollups of these verdicts, one per requirement its rules'
+  // tables name: fail when a finding fails the requirement there, cantTell when
+  // one asks, pass when a rule that checks it ran and found nothing, else
+  // notApplicable.
+  function verdictRollups(checks, defById) {
+    const out = [];
+    for (const k of verdictStandards) {
+      const std = VERDICT_STANDARDS[k];
+      for (const reqId of Object.keys(std.requirements)) {
+        const req = std.requirements[reqId];
+        const contributors = [];
+        const tiers = [];
+        for (const c of checks) {
+          const def = c && defById.get(c.ruleId);
+          const table = def && def.verdicts && def.verdicts[k];
+          if (!table) continue;
+          const codes = Object.keys(table).filter((code) => table[code].requirement === reqId);
+          if (!codes.length) continue;
+          const own = (c.occurrences || [])
+            .filter(
+              (o) => o && o.data && o.data.details && codes.includes(o.data.details.reasonCode)
+            )
+            .map((o) => (o.verdicts && o.verdicts[k]) || 'notApplicable');
+          const outcome =
+            worstOf(own) || (c.outcome === 'notApplicable' || c.error ? c.outcome : 'pass');
+          contributors.push({ testId: c.ruleId, outcome });
+          tiers.push(outcome);
+        }
+        if (!contributors.length) continue;
+        const outcome = worstOf(tiers) || (tiers.includes('pass') ? 'pass' : 'notApplicable');
+        const id = k + '-' + reqId;
+        out.push({
+          ruleId: id,
+          outcome,
+          outcomeNormalized: outcome === 'notApplicable' ? 'inapplicable' : outcome,
+          occurrences: [],
+          severity: outcome === 'fail' ? 'serious' : 'minor',
+          confidence: 'high',
+          type: 'automatic',
+          title: std.name + ' ' + std.version + ': ' + req.title,
+          description:
+            'Rollup of the ' +
+            std.name +
+            ' verdicts of the findings of the rules that check this requirement.',
+          data: {
+            details: {
+              kind: 'verdictRollup',
+              standard: std.name,
+              version: std.version,
+              requirement: reqId,
+              url: req.url,
+              checksIds: contributors.map((x) => x.testId),
+              contributors
+            }
+          },
+          meta: {
+            ruleId: id,
+            tags: [],
+            standard: std.name,
+            normativeMappings: [
+              {
+                standard: std.name,
+                version: std.version,
+                requirement: reqId,
+                title: req.title,
+                url: req.url
+              }
+            ]
+          },
+          schemaVersion: SCHEMA_VERSION
+        });
+      }
+    }
+    return out;
+  }
+
+  let verdictDefById = null;
+  if (verdictStandards.length) {
+    verdictDefById = new Map(effectiveCheckDefs.map((d) => [d.ruleId, d]));
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      checksResults[i] = withVerdicts(c, c && verdictDefById.get(c.ruleId));
+    }
+  }
+
   // The severity the applied profile gives a rule replaces the rule's own,
   // which the result keeps as ruleSeverity; the rollups take the profile's.
   const profileSeverity =
@@ -23322,6 +23558,10 @@ const runCoreSettled = (function runCoreSettled(
     { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
 
+  if (verdictStandards.length) {
+    rulesResults.push(...verdictRollups(checksResults, verdictDefById));
+  }
+
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
   for (const r of checksResults.concat(rulesResults)) {
@@ -23330,6 +23570,30 @@ const runCoreSettled = (function runCoreSettled(
       r.meta.normativeMappings,
       mappingSelection.tokens
     );
+  }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
   }
 
   // Every result echoes the options it ran with, and translation reads its
@@ -23489,6 +23753,13 @@ const runCoreSettled = (function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
@@ -23551,6 +23822,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(verdictStandards.length ? { verdicts: verdictStandards.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
@@ -24454,7 +24726,23 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-allowed-role",
@@ -24721,7 +25009,15 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -24797,7 +25093,23 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_AUTHOR_DISCOURAGED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_AUTHOR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -25134,7 +25446,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_OWNS_ANCESTOR": {
+          "outcome": "cantTell",
+          "requirement": "owned-elements"
+        },
+        "ARIA_OWNS_DUPLICATE": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -25210,7 +25534,23 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -25286,7 +25626,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_PROHIBITED_CHILD": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_PROHIBITED_CHILD_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-attr",
@@ -25362,7 +25714,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_REQUIRED_MISSING": {
+          "outcome": "fail",
+          "requirement": "required-states"
+        },
+        "state_internals": {
+          "outcome": "cantTell",
+          "requirement": "required-states"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-children",
@@ -25438,7 +25802,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_CHILD_MISSING": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_REQUIRED_CHILD_TEXT_ONLY": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-parent",
@@ -25514,7 +25890,15 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_PARENT_MISSING": {
+          "outcome": "fail",
+          "requirement": "context-roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-role-name-present",
@@ -25591,7 +25975,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-roles-valid",
@@ -25699,7 +26095,15 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_ABSTRACT": {
+          "outcome": "fail",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-text",
@@ -25890,7 +26294,39 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ACTIVEDESCENDANT_OUTSIDE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_INVALID": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_TARGET_ABSENT": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_HASPOPUP_ROLE_MISMATCH": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_POSINSET_EXCEEDS_SETSIZE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUENOW_OUT_OF_RANGE": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUE_RANGE_INVERTED": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "autocomplete-valid",
@@ -26121,7 +26557,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "button-name-present",
@@ -26198,7 +26646,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -26592,7 +27060,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "contrast-computable",
@@ -27395,7 +27875,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -30185,7 +30677,15 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "LANDMARK_ROLE_NAME_MISSING": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "landmark-unique",
@@ -30434,7 +30934,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "link-name-quality",
@@ -30678,7 +31198,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -31136,7 +31668,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -31500,7 +32052,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -32044,7 +32608,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "p-as-heading",
@@ -32570,7 +33154,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "region",
@@ -32686,7 +33282,31 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "emptyAriaLabel": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "emptyAriaLabelledby": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "missingTextAlternative": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "nameNotResolved": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "scope-attr-valid",
@@ -32892,7 +33512,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -33084,7 +33716,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -33161,7 +33805,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "summary-name-present",
@@ -34160,7 +34816,19 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "tooltip-name-present",
@@ -34236,7 +34904,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "treeitem-name-present",
@@ -34313,7 +35001,27 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "valid-lang",
@@ -43440,7 +44148,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-allowed-role",
@@ -43707,7 +44431,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -43783,7 +44515,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_AUTHOR_DISCOURAGED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_AUTHOR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -44120,7 +44868,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_OWNS_ANCESTOR": {
+          "outcome": "cantTell",
+          "requirement": "owned-elements"
+        },
+        "ARIA_OWNS_DUPLICATE": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -44196,7 +44956,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -44272,7 +45048,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_PROHIBITED_CHILD": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_PROHIBITED_CHILD_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-attr",
@@ -44348,7 +45136,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_REQUIRED_MISSING": {
+          "outcome": "fail",
+          "requirement": "required-states"
+        },
+        "state_internals": {
+          "outcome": "cantTell",
+          "requirement": "required-states"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-children",
@@ -44424,7 +45224,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_CHILD_MISSING": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_REQUIRED_CHILD_TEXT_ONLY": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-parent",
@@ -44500,7 +45312,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_PARENT_MISSING": {
+          "outcome": "fail",
+          "requirement": "context-roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-role-name-present",
@@ -44577,7 +45397,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-roles-valid",
@@ -44685,7 +45517,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_ABSTRACT": {
+          "outcome": "fail",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-text",
@@ -44876,7 +45716,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ACTIVEDESCENDANT_OUTSIDE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_INVALID": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_TARGET_ABSENT": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_HASPOPUP_ROLE_MISMATCH": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_POSINSET_EXCEEDS_SETSIZE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUENOW_OUT_OF_RANGE": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUE_RANGE_INVERTED": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "autocomplete-valid",
@@ -45107,7 +45979,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "button-name-present",
@@ -45184,7 +46068,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -45578,7 +46482,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "contrast-computable",
@@ -46381,7 +47297,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -49171,7 +50099,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "LANDMARK_ROLE_NAME_MISSING": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "landmark-unique",
@@ -49420,7 +50356,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "link-name-quality",
@@ -49664,7 +50620,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -50122,7 +51090,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -50486,7 +51474,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -51030,7 +52030,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "p-as-heading",
@@ -51556,7 +52576,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "region",
@@ -51672,7 +52704,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "emptyAriaLabel": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "emptyAriaLabelledby": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "missingTextAlternative": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "nameNotResolved": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "scope-attr-valid",
@@ -51878,7 +52934,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -52070,7 +53138,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -52147,7 +53227,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "summary-name-present",
@@ -53146,7 +54238,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "tooltip-name-present",
@@ -53222,7 +54326,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "treeitem-name-present",
@@ -53299,7 +54423,27 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null
+    "margin": null,
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "valid-lang",
@@ -107049,6 +108193,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     margin: r.margin
       ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
       : null,
+    // Its verdicts under standards besides WCAG, by reason code, or null.
+    verdicts: r.verdicts ? JSON.parse(JSON.stringify(r.verdicts)) : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -117404,6 +118550,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     },
     profile: T.string,
     mappings: T.list,
+    verdicts: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,
     messages: { test: isObject, expected: '{ [locale]: { key: text } }' },
@@ -125517,6 +126664,47 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     return declared;
   })();
 
+  // A rule's verdicts under standards besides WCAG, by reason code:
+  // { 'wai-aria': { name_missing: { outcome: 'fail', requirement: 'name-required' } } }.
+  // WCAG's verdict is the finding's own tier; this says what the same finding
+  // means under another standard, which can differ (a WAI-ARIA violation the
+  // markup states for certain may leave the WCAG question open). A code the
+  // table leaves out is not a question for that standard.
+  const verdicts = (() => {
+    const v = m.verdicts;
+    if (!v || typeof v !== 'object' || Array.isArray(v)) return null;
+    const out = {};
+    for (const std of Object.keys(v)) {
+      const key = String(std).trim().toLowerCase();
+      if (!/^[a-z][a-z0-9-]*$/.test(key) || key === 'wcag') {
+        throw new Error(`Rule ${ruleId}: meta.verdicts has a key "${std}" that names no standard`);
+      }
+      const byCode = v[std];
+      if (!byCode || typeof byCode !== 'object' || Array.isArray(byCode)) {
+        throw new Error(
+          `Rule ${ruleId}: meta.verdicts["${std}"] must map reason codes to verdicts`
+        );
+      }
+      const codes = {};
+      for (const code of Object.keys(byCode)) {
+        const entry = byCode[code];
+        const outcome = entry && typeof entry === 'object' ? entry.outcome : entry;
+        if (outcome !== 'fail' && outcome !== 'cantTell') {
+          throw new Error(
+            `Rule ${ruleId}: meta.verdicts["${std}"]["${code}"] must be fail or cantTell, not ${JSON.stringify(outcome)}`
+          );
+        }
+        const requirement =
+          entry && typeof entry === 'object' && typeof entry.requirement === 'string'
+            ? entry.requirement.trim()
+            : '';
+        codes[code] = requirement ? { outcome, requirement } : { outcome };
+      }
+      out[key] = codes;
+    }
+    return Object.keys(out).length ? out : null;
+  })();
+
   if (i18n) {
     if (typeof i18n.titleKey !== 'string' || !i18n.titleKey.trim()) {
       throw new Error(`Rule ${ruleId}: meta.i18n.titleKey must be a non-empty string`);
@@ -125558,7 +126746,8 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
     references,
     requirements,
     mappings,
-    margin
+    margin,
+    verdicts
   };
 });
 
@@ -128341,6 +129530,197 @@ const runCoreSettled = (function runCoreSettled(
     sharedHelpers.__setActiveRuleExcludeSelectors(null);
   }
 
+  // engineOptions.verdicts: the standards besides WCAG whose verdict each
+  // finding carries, beside WCAG's (docs/OUTPUT_SCHEMA.md, "Verdicts"). Off by
+  // default: a scan without it reports exactly as before. A rule states, per
+  // reason code, what its finding means under each standard (meta.verdicts);
+  // WCAG's verdict is the finding's own tier, which this never changes.
+  const VERDICT_STANDARDS = {
+    'wai-aria': {
+      name: 'WAI-ARIA',
+      version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
+      requirements: {
+        'name-required': {
+          title: 'Roles that require an accessible name have one',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
+        }
+      }
+    }
+  };
+  const verdictStandards = (() => {
+    const raw = engineOptionsResolved && engineOptionsResolved.verdicts;
+    const asked = (Array.isArray(raw) ? raw : typeof raw === 'string' ? raw.split(/[\s,]+/) : [])
+      .map((s) => String(s).trim().toLowerCase())
+      .filter(Boolean);
+    const known = [];
+    const unknown = [];
+    for (const key of asked) {
+      if (Object.prototype.hasOwnProperty.call(VERDICT_STANDARDS, key)) {
+        if (!known.includes(key)) known.push(key);
+      } else if (!unknown.includes(key)) unknown.push(key);
+    }
+    if (unknown.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.verdicts: ignoring ' +
+            unknown.map((k) => '"' + k + '"').join(', ') +
+            ', no such standard.'
+        );
+      } catch {}
+    }
+    return known;
+  })();
+
+  // The verdicts of one rule's result and of each of its findings, under WCAG
+  // and each standard asked for. A finding whose code a standard's table leaves
+  // out is notApplicable there; a rule with no table for any standard asked for
+  // is left as it was.
+  function worstOf(outcomes) {
+    if (outcomes.includes('fail')) return 'fail';
+    if (outcomes.includes('cantTell')) return 'cantTell';
+    return null;
+  }
+  function withVerdicts(check, def) {
+    const table = def && def.verdicts;
+    if (!check || !table || !verdictStandards.some((k) => table[k])) return check;
+    const wcagApplies = Array.isArray(def.wcagSc) && def.wcagSc.length > 0;
+    const occurrences = Array.isArray(check.occurrences)
+      ? check.occurrences.map((occ) => {
+          if (!occ || typeof occ !== 'object' || Array.isArray(occ)) return occ;
+          const tier = occ.occurrenceOutcome || check.outcome;
+          const code = occ.data && occ.data.details && occ.data.details.reasonCode;
+          const v = { wcag: wcagApplies ? tier : 'notApplicable' };
+          for (const k of verdictStandards) {
+            const entry = table[k] && code ? table[k][code] : null;
+            v[k] = entry ? entry.outcome : 'notApplicable';
+          }
+          return { ...occ, verdicts: v };
+        })
+      : check.occurrences;
+    const verdicts = { wcag: wcagApplies ? check.outcome : 'notApplicable' };
+    for (const k of verdictStandards) {
+      if (!table[k]) continue;
+      const found = worstOf((occurrences || []).map((o) => o && o.verdicts && o.verdicts[k]));
+      verdicts[k] =
+        found || (check.outcome === 'notApplicable' || check.error ? check.outcome : 'pass');
+    }
+    return { ...check, verdicts, occurrences };
+  }
+
+  // A standard's own rollups of these verdicts, one per requirement its rules'
+  // tables name: fail when a finding fails the requirement there, cantTell when
+  // one asks, pass when a rule that checks it ran and found nothing, else
+  // notApplicable.
+  function verdictRollups(checks, defById) {
+    const out = [];
+    for (const k of verdictStandards) {
+      const std = VERDICT_STANDARDS[k];
+      for (const reqId of Object.keys(std.requirements)) {
+        const req = std.requirements[reqId];
+        const contributors = [];
+        const tiers = [];
+        for (const c of checks) {
+          const def = c && defById.get(c.ruleId);
+          const table = def && def.verdicts && def.verdicts[k];
+          if (!table) continue;
+          const codes = Object.keys(table).filter((code) => table[code].requirement === reqId);
+          if (!codes.length) continue;
+          const own = (c.occurrences || [])
+            .filter(
+              (o) => o && o.data && o.data.details && codes.includes(o.data.details.reasonCode)
+            )
+            .map((o) => (o.verdicts && o.verdicts[k]) || 'notApplicable');
+          const outcome =
+            worstOf(own) || (c.outcome === 'notApplicable' || c.error ? c.outcome : 'pass');
+          contributors.push({ testId: c.ruleId, outcome });
+          tiers.push(outcome);
+        }
+        if (!contributors.length) continue;
+        const outcome = worstOf(tiers) || (tiers.includes('pass') ? 'pass' : 'notApplicable');
+        const id = k + '-' + reqId;
+        out.push({
+          ruleId: id,
+          outcome,
+          outcomeNormalized: outcome === 'notApplicable' ? 'inapplicable' : outcome,
+          occurrences: [],
+          severity: outcome === 'fail' ? 'serious' : 'minor',
+          confidence: 'high',
+          type: 'automatic',
+          title: std.name + ' ' + std.version + ': ' + req.title,
+          description:
+            'Rollup of the ' +
+            std.name +
+            ' verdicts of the findings of the rules that check this requirement.',
+          data: {
+            details: {
+              kind: 'verdictRollup',
+              standard: std.name,
+              version: std.version,
+              requirement: reqId,
+              url: req.url,
+              checksIds: contributors.map((x) => x.testId),
+              contributors
+            }
+          },
+          meta: {
+            ruleId: id,
+            tags: [],
+            standard: std.name,
+            normativeMappings: [
+              {
+                standard: std.name,
+                version: std.version,
+                requirement: reqId,
+                title: req.title,
+                url: req.url
+              }
+            ]
+          },
+          schemaVersion: SCHEMA_VERSION
+        });
+      }
+    }
+    return out;
+  }
+
+  let verdictDefById = null;
+  if (verdictStandards.length) {
+    verdictDefById = new Map(effectiveCheckDefs.map((d) => [d.ruleId, d]));
+    for (let i = 0; i < checksResults.length; i++) {
+      const c = checksResults[i];
+      checksResults[i] = withVerdicts(c, c && verdictDefById.get(c.ruleId));
+    }
+  }
+
   // The severity the applied profile gives a rule replaces the rule's own,
   // which the result keeps as ruleSeverity; the rollups take the profile's.
   const profileSeverity =
@@ -128374,6 +129754,10 @@ const runCoreSettled = (function runCoreSettled(
     { wcagVersion: targetWcagVersion, selectedIds, namedIds, namedCriteria }
   );
 
+  if (verdictStandards.length) {
+    rulesResults.push(...verdictRollups(checksResults, verdictDefById));
+  }
+
   // A custom rule keeps exactly the mappings it declares; every other result
   // drops the standards this run did not ask for.
   for (const r of checksResults.concat(rulesResults)) {
@@ -128382,6 +129766,30 @@ const runCoreSettled = (function runCoreSettled(
       r.meta.normativeMappings,
       mappingSelection.tokens
     );
+  }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
   }
 
   // Every result echoes the options it ran with, and translation reads its
@@ -128541,6 +129949,13 @@ const runCoreSettled = (function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
@@ -128603,6 +130018,7 @@ const runCoreSettled = (function runCoreSettled(
         ? { optInRules: optInUnlocked.filter((t) => optInRulesRan.has(t)) }
         : {}),
       ...(mappingSelection.tokens.length ? { mappings: mappingSelection.tokens.slice() } : {}),
+      ...(verdictStandards.length ? { verdicts: verdictStandards.slice() } : {}),
       ...(findingsOnly ? { outputDetail: 'findings' } : {}),
       environment
     },
