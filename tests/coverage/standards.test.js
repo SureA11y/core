@@ -19,6 +19,7 @@ const {
 const { standardsOf, standardOfEntryIn } = require('../../src/scan-result');
 const core = require('../../src/core.js');
 const { FACETS } = require('../../src/coverage/wcag-facets');
+const { WCAG_PROFILE_TAGS } = require('../../src/core/prepare-catalog');
 
 // --- the contract every registered standard keeps ---------------------------
 
@@ -54,7 +55,7 @@ test('every entry a standard gives names its standard, a known version and real 
 });
 
 test('profiles are uniquely named and target a version their standard has', () => {
-  const names = ['wcag22-aa', 'section508'];
+  const names = Object.keys(WCAG_PROFILE_TAGS);
   for (const s of NORMATIVE_STANDARDS) {
     for (const [name, p] of Object.entries(s.profiles || {})) {
       names.push(name);

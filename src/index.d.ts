@@ -11,6 +11,15 @@
 
 type Open<T extends string> = T | (string & {});
 
+/** The conformance profiles core has itself; a pack's standard brings others. */
+type CoreProfileName =
+  | 'wcag22-a'
+  | 'wcag22-aa'
+  | 'wcag22-aaa'
+  | 'en301549-v4.1.1'
+  | 'en301549-v3.2.1'
+  | 'section508';
+
 // ---- Inputs ----
 
 /** A list given as an array or as a comma-separated string. */
@@ -91,9 +100,7 @@ export interface EngineOptionFields {
    * A conformance profile, or a list of them: a scan of several at once,
    * which reads as one profile with the rules of all (ScanResult.profiles).
    */
-  profile?:
-    | Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>
-    | Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>[];
+  profile?: Open<CoreProfileName> | Open<CoreProfileName>[];
   mappings?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */

@@ -21,10 +21,11 @@ const { JSDOM } = require('jsdom');
 const { runDomRulesInPage, getChecksCatalog } = require('../src/index.js');
 const { standardsData } = require('../src/coverage/standards.js');
 const { ruleSources } = require('../scripts/lib/rule-dirs');
+const { WCAG_PROFILE_TAGS } = require('../src/core/prepare-catalog');
 
 // Core's own profiles (docs/ENGINE_OPTIONS.md), then every registered
 // standard's.
-const PROFILES = ['wcag22-aa', 'section508'].concat(
+const PROFILES = Object.keys(WCAG_PROFILE_TAGS).concat(
   standardsData().flatMap((s) => Object.keys(s.profiles || {}))
 );
 
