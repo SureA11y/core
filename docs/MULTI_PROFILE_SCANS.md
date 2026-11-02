@@ -1,6 +1,6 @@
-# Multi-profile scans and WAI-ARIA as a pack (proposal)
+# Multi-profile scans and WAI-ARIA as a pack
 
-**Status:** §1, §2 and §4 are built in core for 1.15, §3 in `@surea11y/pack-wai-aria`; the WAI-ARIA inventory and its new rules ([§1](#1-wai-aria-leaves-core)) are still to come. What changed from the proposal while building it is said in each section.
+**Status:** built. §1, §2 and §4 are in core for 1.15, and §3 in `@surea11y/pack-wai-aria`, with its inventory of WAI-ARIA 1.2 (`docs/COVERAGE.md` there) and the rules that close its gaps: the pack's own, and a variant of `aria-role-name-present` with its setting `roles: 'all'`. What changed from the proposal while building it is said in each section. The user-facing documentation is [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles) and [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles); this note keeps the reasons.
 
 It covers four changes that depend on each other:
 
@@ -122,18 +122,24 @@ A scan of profiles A and B counts as a scan of one profile C with the rules of b
 - A profile asked for and not run (its pack skipped, or no such profile) is listed in `engine.profilesNotRun`, with the reason. A scan that ran fewer profiles than it was asked to has counted less than C, so SARIF, JUnit and the CLI treat it as an error by default, with an option to allow it. This applies to a list only: a scan of one profile behaves as it does today.
 - Two versions of one standard may run together, EN 301 549 V3.2.1 with V4.1.1, as may two standards built on different WCAG versions, `section508` (2.0) with `wcag22-aa`: useful while moving from one to the other, and nothing special to the mechanism.
 - Profile ids can't collide: each starts with its pack's namespace, and two packs in one scan can't share one (the first by name runs, the other is skipped, as today). A profile of the skipped pack is in `engine.profilesNotRun`.
-- `engine` records what produced the result: core's version, each pack's name and version, and each profile's id, standard and version, so a scan can be repeated and two results compared knowing whether they used the same standards.
+- `engine` records what produced the result: core's version (`engine.version`), each pack's name and version (`engine.packs`) and each profile's id (`engine.profiles`); `profiles` has each one's WCAG version and the standards it names. A profile's own version is in its id (`wai-aria-1.2`).
+
+### Settled while building it
+
+- Each profile's section is `profiles[id]`: `{ wcagVersion, standards, rulesResults }`, its rollups' outcomes by id ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)).
+- A check keeps the rule's own outcome as `checkOutcome`. EARL asserts a rule's WCAG criteria by it, so a standard's failure of a finding WCAG only asks about is never asserted as a WCAG failure; the HTML report shows each profile's verdict on the card and names every profile in its heading.
+- Bindings need nothing: the in-page runner takes the list, and with frames each frame's result is merged. Checked through `@surea11y/puppeteer` in Chromium, with and without `frames(true)`.
 
 ### Open
 
-- The exact shape of the per-profile sections, and how the HTML report and EARL show them.
-- Options a profile sets that conflict with another's (`runOnly`, a policy's `allowedOutcomes`): run per profile where they decide what a rule finds, refuse where they can't be separated.
-- How `getProfileWcagTarget`, `bestPractices` and `runOnly` combine with a list.
+- Every profile's scan gets the same `engineOptions` and `runOnly` but for `profile`. A `runOnly` that includes rules selects instead of a profile, as for one profile, so it applies to every profile's scan and none of them applies its profile: each is then listed in `engine.profilesNotRun`, as `overridden-by-selection`. Options one profile should set and another not (a policy's `allowedOutcomes`) have no way to be given per profile yet.
+- `getProfileWcagTarget` takes one profile, and `bestPractices` adds the best-practice rules to each profile's scan.
+- Running a rule the profiles share once, rather than once per profile.
 
 ## Order of work
 
-1. **Core:** remove the WAI-ARIA opt-in ([§1](#1-wai-aria-leaves-core)); add `outcome: 'fail'` ([§2](#2-a-pack-can-make-a-finding-a-failure)). Both before 1.15 is released.
-2. **pack-wai-aria** as a single-profile standard ([§3](#3-surea11ypack-wai-aria)): useful on its own, and a real second standard to design §4 against.
-3. **Core:** the WAI-ARIA 1.2 inventory, and its new rules where they belong (core or the pack).
-4. **Core:** multi-profile scans ([§4](#4-multi-profile-scans)), with WCAG, EN 301 549 and WAI-ARIA as the cases it is built and tested on.
-5. **Lab:** several profiles per scan, a tally and a filter per profile in the table, the groupings and Compare.
+1. Done. **Core:** remove the WAI-ARIA opt-in ([§1](#1-wai-aria-leaves-core)); add `outcome: 'fail'` ([§2](#2-a-pack-can-make-a-finding-a-failure)), before 1.15 is released.
+2. Done. **pack-wai-aria** as a single-profile standard ([§3](#3-surea11ypack-wai-aria)).
+3. Done. **The WAI-ARIA 1.2 inventory** and its new rules: the pack's own, and the `roles` setting of `aria-role-name-present` in core.
+4. Done. **Core:** multi-profile scans ([§4](#4-multi-profile-scans)), built and tested with WCAG, EN 301 549 and WAI-ARIA.
+5. To come. **Lab:** several profiles per scan, a tally and a filter per profile in the table, the groupings and Compare. The lab offers WAI-ARIA 1.2 as a profile of its own for now.

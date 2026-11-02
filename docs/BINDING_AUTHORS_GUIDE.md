@@ -286,3 +286,7 @@ Nothing in the page can stop a scan once it has started, and most drivers' evalu
 ## A page that broke JavaScript built-ins
 
 A page whose scripts change a JavaScript built-in the engine relies on (`Array.prototype.filter`, `Map`, `JSON.stringify` and others) stops the scan with an error whose `code` is `PAGE_BUILTINS_BROKEN` and whose message names each one, rather than giving a result that reads well and is wrong (see [`LIMITATIONS.md`](./LIMITATIONS.md#environment-dependent--depends-on-how-you-run-it)). Retrying does not help. Report it to your users as its own case, not as a failure of your binding. A driver that rethrows an in-page error may keep only its message, so if your users need the code, catch the error in the page and return `code` and `message` from there.
+
+## Scans of several profiles
+
+`engineOptions.profile` may be a list (`['wcag22-aa', 'wai-aria-1.2']`). The in-page runner scans each profile in turn and merges the results ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)), so a binding passes the option through as it is and needs nothing of its own; with packs, it registers them as for one profile (`packScript`). Scanning frames, each frame's result is a merged one, with its own `verdicts`, `profiles` and `engine.profilesNotRun`. A binding that reads `engine.profile` to say what a scan targeted reads `engine.profiles` when it is there.

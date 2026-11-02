@@ -495,6 +495,19 @@ const result = runDomRulesInPage(url, null, { packs: [policy], profile: 'acme-po
 result.engine.packs;   // ['@acme/a11y-pack@0.1.0']
 ```
 
+**With other profiles.** A pack's profile can run beside WCAG's, or beside another pack's, in one scan: `profile` takes a list, and each profile judges the page as it would alone ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles), [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)):
+
+```js
+const result = runDomRulesInPage(url, null, {
+  packs: [policy, en301549],
+  profile: ['acme-policy', 'en301549-v4.1.1']
+});
+result.engine.profiles; // ['acme-policy', 'en301549-v4.1.1']
+result.profiles['acme-policy'].rulesResults; // the policy's items, by id
+```
+
+A finding the standard is certain of where WCAG asks (`outcome: 'fail'` in its rule map, above) fails the scan, and says both: its `verdicts` are each profile's. A profile whose pack is skipped is listed in `engine.profilesNotRun`, and the others still run.
+
 The pack is prepared once and kept for the next scan with the same pack object, so a pack must not change once made: `definePack` freezes it, with its lists and objects, and a change throws. A pack made without `definePack` isn't frozen, and a change to it after a scan goes unseen.
 
 **From the CLI** ([`@surea11y/cli`](https://github.com/SureA11y/cli)): `surea11y scan <url> --pack @acme/a11y-pack --profile acme-policy`.

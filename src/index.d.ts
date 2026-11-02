@@ -494,7 +494,10 @@ export interface EngineInfo {
   /** A scan of several profiles only: those that ran, in the order asked. */
   profiles?: string[];
   /** A scan of several profiles only: those asked for that didn't run, and why. */
-  profilesNotRun?: { profile: string; reason: 'unknown-profile' | 'pack-skipped' | string }[];
+  profilesNotRun?: {
+    profile: string;
+    reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | string;
+  }[];
   profileExcludes?: { rules: string[]; criteria: string[] };
   optInRules?: string[];
   mappings?: string[];
@@ -697,6 +700,11 @@ export interface CheckResult {
    * `outcome` is the worst of them.
    */
   verdicts?: Record<string, Outcome>;
+  /**
+   * A scan of several profiles only: the rule's own outcome, before any
+   * standard judged its findings by reason code. Its WCAG criteria read it.
+   */
+  checkOutcome?: Outcome;
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
@@ -957,8 +965,7 @@ export interface FramePosition {
 
 /** One frame of a flattened cross-frame result: its result, or why it has none. */
 export type FlatFrame =
-  | { frame: FramePosition; result: ScanResult }
-  | { frame: FramePosition; error: string };
+  { frame: FramePosition; result: ScanResult } | { frame: FramePosition; error: string };
 
 /**
  * Lists every frame of a cross-frame result, the top frame first, then each
@@ -1697,9 +1704,9 @@ export type EvidenceStateApplied =
 export function evidenceState(
   request: Extract<EvidenceStateRequest, { op: 'apply' }>
 ): EvidenceStateApplied;
-export function evidenceState(
-  request: Extract<EvidenceStateRequest, { op: 'release' }>
-): { released: boolean };
+export function evidenceState(request: Extract<EvidenceStateRequest, { op: 'release' }>): {
+  released: boolean;
+};
 
 /**
  * An announcement as getAnnouncements({ selectors: true }) gives it: the

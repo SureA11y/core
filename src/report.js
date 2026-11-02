@@ -181,8 +181,18 @@ function renderTargetChips(engine, ui) {
     chips.push(
       `<div><b>WCAG ${esc(engine.wcagVersion)}</b>${esc(ui.tr('report_meta_target'))}</div>`
     );
-  if (engine.profile)
-    chips.push(`<div><b>${esc(engine.profile)}</b>${esc(ui.tr('report_meta_profile'))}</div>`);
+  // A scan of several profiles names each (engine.profiles), not only the
+  // first, which engine.profile keeps for code that reads one.
+  const profiles =
+    Array.isArray(engine.profiles) && engine.profiles.length
+      ? engine.profiles
+      : engine.profile
+        ? [engine.profile]
+        : [];
+  if (profiles.length)
+    chips.push(
+      `<div><b>${esc(profiles.join(' + '))}</b>${esc(ui.tr('report_meta_profile'))}</div>`
+    );
   // Rules beyond the targeted standard ran (engineOptions.optInRules).
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     chips.push(
@@ -809,6 +819,19 @@ function renderCards(checksResults, ui) {
           `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
       )
       .join('');
+    // In a scan of several profiles, what each profile makes of the finding
+    // ("wai-aria-1.2: Fail" beside "wcag22-aa: Can't tell"), so a failure of
+    // one standard isn't read as a failure of the WCAG criterion beside it.
+    const verdicts = (representative && representative.verdicts) || r.verdicts || null;
+    const verdictChips = verdicts
+      ? Object.entries(verdicts)
+          .filter(([, v]) => OUTCOME_INFO[v])
+          .map(([profile, v]) => {
+            const o = OUTCOME_INFO[v];
+            return `<span class="chip" style="background:${o.bg};color:${o.color}">${esc(profile)}: ${esc(o.label)}</span>`;
+          })
+          .join('')
+      : '';
     const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
     const countLabel =
       occs.length > 1
@@ -831,7 +854,7 @@ function renderCards(checksResults, ui) {
         <span class="card-title"><strong>${esc(r.ruleId)}</strong> ${esc(ui.tr('report_card_status', { outcome: info.label, severity: ui.severity(r.severity) }))}${countLabel}</span>
       </div>
       <div class="card-body">
-        <div class="card-meta">${wcagChips}</div>
+        <div class="card-meta">${wcagChips}${verdictChips}</div>
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${leanLine}

@@ -397,10 +397,28 @@ runDomRulesInPage(url, null, { profile: 'section508' }, null);
 ```
 
 Either one only chooses which rules run; it does not certify conformance.
+
+A scan can judge the page by several profiles at once, a pack's among
+them; the result reads as one profile with the rules of all, and each
+finding says what each profile makes of it:
+
+```js
+const waiAria = require('@surea11y/pack-wai-aria');
+
+const result = runDomRulesInPage(url, null, {
+  packs: [waiAria],
+  profile: ['wcag22-aa', 'wai-aria-1.2']
+});
+// <div role="group" aria-checked="true">: an attribute the role doesn't
+// support, a question for WCAG 4.1.2 and a failure of WAI-ARIA.
+result.checksResults.find((c) => c.ruleId === 'aria-allowed-attr').verdicts;
+// { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }
+```
+
 The profiles (`wcag22-aa`, `section508`, and `en301549-v4.1.1` and
 `en301549-v3.2.1`, deprecated since 1.13.0 in favour of
 `@surea11y/pack-en301549`), best-practice rules, EN 301 549 clauses in
-results, and finer selections are in
+results, finer selections and scans of several profiles are in
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
 
 ### Going further
