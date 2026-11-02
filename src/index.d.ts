@@ -1633,6 +1633,39 @@ export function getAnnouncements(
 ): Announcement[] | null;
 export function getAnnouncements(options: GetAnnouncementsOptions): Announcement[] | null;
 
+/** A state a rule puts the page in to find what it reports. */
+export type EvidenceStateName = 'text-spacing';
+
+/** The states evidenceState() knows. */
+export const EVIDENCE_STATES: readonly EvidenceStateName[];
+
+export type EvidenceStateRequest =
+  | { op: 'apply'; state: EvidenceStateName | string; token: string }
+  | { op: 'release'; token: string };
+
+export type EvidenceStateApplied =
+  | { applied: true; via: 'style' | 'adopted' }
+  | { applied: false; reason: 'unknown-state' | 'blocked' | 'no-document' };
+
+/**
+ * Puts the page in the state a finding was made in, as its
+ * `data.details.evidenceState` names it, and takes it out again: a rule
+ * measures in one task, so the browser never paints the state, and a
+ * screenshot taken after the scan doesn't show the finding. For a binding's
+ * screenshots. `apply` returns whether the state applied (`blocked` where
+ * the page's Content Security Policy kept it out); `release` with the same
+ * token takes it off the page and puts the scroll position back, and never
+ * throws. Self-contained, like runa11yCoreInPage: `evidenceState.toString()`
+ * evaluated in a page works there. Throws a TypeError for a request it
+ * can't read.
+ */
+export function evidenceState(
+  request: Extract<EvidenceStateRequest, { op: 'apply' }>
+): EvidenceStateApplied;
+export function evidenceState(
+  request: Extract<EvidenceStateRequest, { op: 'release' }>
+): { released: boolean };
+
 /**
  * An announcement as getAnnouncements({ selectors: true }) gives it: the
  * region named by a selector, in place of the element.

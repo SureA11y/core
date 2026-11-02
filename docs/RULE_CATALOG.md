@@ -3647,6 +3647,7 @@ Without a layout and with no such rule, the rule is notApplicable, with `data.re
 - `viewport.width`, `viewport.height` (cut-off or overlapping text): the viewport the page was laid out in, in CSS pixels. Text that fits at one width can be cut off at another.
 - `other` (overlapping text): the text it comes to overlap.
 - `selector`, `property`, `value` (a style sheet rule): the rule's selector and the declaration that forces the spacing.
+- `evidenceState` (cut-off, overlapping or scroll-locked text): `text-spacing`, as the finding shows only with the spacing applied, which the rule takes off the page again before the browser paints. A tool applies it again with evidenceState() to picture the finding.
 
 **Reason codes.**
 

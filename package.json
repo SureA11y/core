@@ -231,6 +231,7 @@
     "src/core/internals-hook.js",
     "src/core/listener-hook.js",
     "src/core/live-region-hook.js",
+    "src/core/evidence-state.js",
     "src/hook-reason-codes.js",
     "src/core/engine-options.js",
     "src/pack-docs.js",

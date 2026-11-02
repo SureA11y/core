@@ -32,7 +32,7 @@ test('every export is classified, and nothing is classified twice', () => {
 
 // The supported exports that are data, not functions: frozen, so a consumer
 // can't change what every other one reads.
-const SUPPORTED_DATA = new Set(['HOOK_REASON_CODES']);
+const SUPPORTED_DATA = new Set(['HOOK_REASON_CODES', 'EVIDENCE_STATES']);
 
 test('every supported export is actually present and callable', () => {
   for (const name of supported) {
