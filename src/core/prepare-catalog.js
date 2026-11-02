@@ -23,7 +23,19 @@ const { languagesOf, sourceOf } = require('../pack-languages');
 // The WCAG profiles core defines itself, by tag set; a standard's profiles
 // come from the registry.
 const WCAG_PROFILE_TAGS = {
+  'wcag22-a': ['wcag2a', 'wcag21a', 'wcag22a'],
   'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  'wcag22-aaa': [
+    'wcag2a',
+    'wcag2aa',
+    'wcag2aaa',
+    'wcag21a',
+    'wcag21aa',
+    'wcag21aaa',
+    'wcag22a',
+    'wcag22aa',
+    'wcag22aaa'
+  ],
   section508: ['wcag2a', 'wcag2aa']
 };
 

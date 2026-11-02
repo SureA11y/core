@@ -25,7 +25,7 @@ This is the exact shape of the object returned by `runDomRulesInPage(...)` / `ru
     locale: { requested: string, resolved: string, reason: string },
     wcagVersion: "2.0" | "2.1" | "2.2",
     wcagLevel?: "A" | "AA" | "AAA",
-    profile?: string,      // "wcag22-aa", "en301549-v4.1.1", "en301549-v3.2.1", "section508", or a registered standard's own
+    profile?: string,      // "wcag22-a", "wcag22-aa", "wcag22-aaa", "en301549-v4.1.1", "en301549-v3.2.1", "section508", or a registered standard's own
     mappings?: string[],   // e.g. ["en301549"] or ["en301549:V3.2.1"]
     profileExcludes?: { rules: string[], criteria: string[] },
     optInRules?: string[],

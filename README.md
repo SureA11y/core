@@ -415,7 +415,7 @@ result.checksResults.find((c) => c.ruleId === 'aria-allowed-attr').verdicts;
 // { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }
 ```
 
-The profiles (`wcag22-aa`, `section508`, and `en301549-v4.1.1` and
+The profiles (`wcag22-a`, `wcag22-aa`, `wcag22-aaa`, `section508`, and `en301549-v4.1.1` and
 `en301549-v3.2.1`, deprecated since 1.13.0 in favour of
 `@surea11y/pack-en301549`), best-practice rules, EN 301 549 clauses in
 results, finer selections and scans of several profiles are in

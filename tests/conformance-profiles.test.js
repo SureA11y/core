@@ -15,8 +15,23 @@ const core = require('../src/core.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 const PROFILES = {
+  'wcag22-a': { tags: ['wcag2a', 'wcag21a', 'wcag22a'], wcagVersion: '2.2' },
   'wcag22-aa': {
     tags: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+    wcagVersion: '2.2'
+  },
+  'wcag22-aaa': {
+    tags: [
+      'wcag2a',
+      'wcag2aa',
+      'wcag2aaa',
+      'wcag21a',
+      'wcag21aa',
+      'wcag21aaa',
+      'wcag22a',
+      'wcag22aa',
+      'wcag22aaa'
+    ],
     wcagVersion: '2.2'
   },
   'en301549-v4.1.1': {
@@ -90,6 +105,35 @@ test('AAA composites and criteria outside the profile do not run', () => {
   assert.ok(!composites('wcag22-aa').some((id) => id.startsWith('wcag-1.4.6-')));
   assert.ok(composites('en301549-v4.1.1').some((id) => id.startsWith('wcag-2.5.8-')));
   assert.ok(!composites('en301549-v3.2.1').some((id) => id.startsWith('wcag-2.5.8-')));
+});
+
+test('each WCAG level adds to the one below it', () => {
+  const selected = (profile) => ids(core.getChecksForRunOnly(null, { profile }));
+  const [a, aa, aaa] = ['wcag22-a', 'wcag22-aa', 'wcag22-aaa'].map(selected);
+  assert.ok(a.every((id) => aa.includes(id)));
+  assert.ok(aa.every((id) => aaa.includes(id)));
+  assert.ok(a.length < aa.length && aa.length < aaa.length);
+  const composites = (profile) => scan({ profile }).rulesResults.map((r) => r.ruleId);
+  assert.ok(!composites('wcag22-a').some((id) => id.startsWith('wcag-1.4.3-')));
+  assert.ok(composites('wcag22-aa').some((id) => id.startsWith('wcag-1.4.3-')));
+  assert.ok(composites('wcag22-aaa').some((id) => id.startsWith('wcag-1.4.6-')));
+});
+
+test('a WCAG level profile runs what runOnly.wcag runs, and 4.1.1 Parsing', () => {
+  // As for wcag22-aa: the profile selects by tags, so duplicate-id, tagged
+  // wcag2a, runs (and cannot fail under WCAG 2.2); runOnly.wcag leaves it out.
+  for (const [profile, level] of [
+    ['wcag22-a', 'A'],
+    ['wcag22-aa', 'AA'],
+    ['wcag22-aaa', 'AAA']
+  ]) {
+    const byTarget = ids(core.getChecksForRunOnly({ wcag: { version: '2.2', level } }));
+    assert.deepEqual(
+      ids(core.getChecksForRunOnly(null, { profile })),
+      byTarget.concat('duplicate-id').sort(),
+      profile
+    );
+  }
 });
 
 test('an unknown profile runs the default selection and warns', () => {

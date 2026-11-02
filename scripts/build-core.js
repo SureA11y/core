@@ -797,7 +797,9 @@ function normalizeRunOnly(runOnly) {
  * see docs/WCAG_CONFORMANCE.md). The WCAG target version then follows from the
  * tags the usual way, so a profile needs no version of its own.
  *
+ * - wcag22-a: WCAG 2.2 Level A.
  * - wcag22-aa: WCAG 2.2 Level A and AA.
+ * - wcag22-aaa: WCAG 2.2 Level A, AA and AAA.
  * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
  *   such as en301549-v4.1.1 and en301549-v3.2.1.
@@ -806,7 +808,13 @@ function normalizeRunOnly(runOnly) {
  * satisfies the standard it is named after.
  */
 const CONFORMANCE_PROFILES = {
+  'wcag22-a': ['wcag2a', 'wcag21a', 'wcag22a'],
   'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
+  'wcag22-aaa': [
+    'wcag2a', 'wcag2aa', 'wcag2aaa',
+    'wcag21a', 'wcag21aa', 'wcag21aaa',
+    'wcag22a', 'wcag22aa', 'wcag22aaa'
+  ],
   'section508': ['wcag2a', 'wcag2aa'],
   ...CATALOG.profileTags
 };
