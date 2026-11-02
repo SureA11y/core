@@ -67,15 +67,6 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  // What each finding means under WAI-ARIA, beside its WCAG tier: a value of the wrong type, a position past the set size and an active descendant outside the element break WAI-ARIA MUSTs; what script may still change is a question.
-  verdicts: {
-    'wai-aria': {
-      ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID: {
-        outcome: 'cantTell',
-        requirement: 'attribute-values'
-      }
-    }
-  },
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',

@@ -93,15 +93,6 @@ const meta = {
     }
   ],
   defaultSeverity: 'serious',
-  // What each finding means under WAI-ARIA, beside its WCAG tier: a missing
-  // name is a certain WAI-ARIA violation ("Accessible Name Required: True"),
-  // whatever WCAG makes of it.
-  verdicts: {
-    'wai-aria': {
-      name_missing: { outcome: 'fail', requirement: 'name-required' },
-      name_internals: { outcome: 'cantTell', requirement: 'name-required' }
-    }
-  },
   category: 'robust',
   type: 'automatic',
   defaultConfidence: 'high',

@@ -89,11 +89,6 @@ export interface EngineOptionFields {
   wcagLevel?: WcagLevelInput;
   profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
   mappings?: StringList;
-  /**
-   * The standards besides WCAG whose verdict each finding carries, beside
-   * WCAG's: 'wai-aria'. Off by default.
-   */
-  verdicts?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */
   logUntestedWcag?: boolean;
@@ -492,8 +487,6 @@ export interface EngineInfo {
   profileExcludes?: { rules: string[]; criteria: string[] };
   optInRules?: string[];
   mappings?: string[];
-  /** The standards whose verdicts the results carry (engineOptions.verdicts). */
-  verdicts?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
   outputDetail?: 'findings';
   /** The packs the scan ran with, as name@version (engineOptions.packs). */
@@ -610,11 +603,6 @@ export interface Occurrence {
   lean?: Lean;
   /** On a cantTell occurrence only: how a person answers the question, in the scan's locale. */
   howToCheck?: HowToCheck;
-  /**
-   * With engineOptions.verdicts, on a rule that states verdicts: what the
-   * finding means under WCAG (its own tier) and under each standard asked for.
-   */
-  verdicts?: Verdicts;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;
@@ -682,17 +670,9 @@ export interface CompactCheckResult {
   error?: string;
 }
 
-/**
- * A finding's or a rule's verdict under WCAG and under each other standard
- * engineOptions.verdicts asked for, keyed by the standard's key ('wai-aria').
- */
-export type Verdicts = { wcag: Outcome } & Record<string, Outcome>;
-
 export interface CheckResult {
   ruleId: string;
   outcome: Outcome;
-  /** With engineOptions.verdicts, on a rule that states verdicts: the rule's verdict under each standard. */
-  verdicts?: Verdicts;
   outcomeNormalized: OutcomeNormalized;
   severity: Severity;
   /** The rule's own severity, when the applied profile gave it another one. */

@@ -42,9 +42,7 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf,
-  verdictStandardsOption,
-  failsVerdictOf
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -199,11 +197,6 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       ...(outside ? { outsideTarget: outside } : {}),
       // An undecided finding's lean: which way its evidence points.
       ...(lean ? { lean } : {}),
-      // Its verdict under WCAG and each other standard the scan asked for
-      // (engineOptions.verdicts).
-      ...(occurrence.verdicts && typeof occurrence.verdicts === 'object'
-        ? { verdicts: { ...occurrence.verdicts } }
-        : {}),
       // How a person answers an undecided finding (docs/OUTPUT_SCHEMA.md,
       // "How to check"), also written under its message for a reader of
       // the alert.
@@ -324,10 +317,6 @@ function renderSarifReport(result, options = {}) {
       `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
-  // failOnVerdicts: ['wai-aria'] reports an undecided finding that fails one
-  // of the standards named, by the verdicts the scan gave it
-  // (engineOptions.verdicts), at "error", so a gate on errors counts it.
-  const failOnVerdicts = verdictStandardsOption(options.failOnVerdicts, 'renderSarifReport');
   const automation = automationDetails(category);
   const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
 
@@ -442,11 +431,7 @@ function renderSarifReport(result, options = {}) {
             buildResult(
               check,
               occurrence,
-              outside
-                ? 'note'
-                : raised.has(occurrence) || failsVerdictOf(occurrence, failOnVerdicts)
-                  ? 'error'
-                  : 'warning',
+              outside ? 'note' : raised.has(occurrence) ? 'error' : 'warning',
               artifactUri,
               framePath,
               outside

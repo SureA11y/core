@@ -525,9 +525,6 @@ function toCheckDefs(mods, { helpUrl }) {
     mappings: m.meta.mappings,
     // What the rule measures against a threshold (src/core/margin.js), or null.
     margin: m.meta.margin,
-    // Its verdicts under standards besides WCAG, by reason code, when it
-    // states any (the catalog gives null for the others).
-    ...(m.meta.verdicts ? { verdicts: m.meta.verdicts } : {}),
 
     // A variant: the base rule it runs, its settings and its message prefix
     // (src/core/rule-variants.js). The runner reads both.

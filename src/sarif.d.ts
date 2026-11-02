@@ -16,8 +16,6 @@ export interface SarifOptions {
   leanFailAs?: 'warning' | 'error';
   /** With leanFailAs: 'error', raise only the leans of rules mapped to a WCAG criterion, not a best-practice rule's. Default false. */
   leanFailWcagOnly?: boolean;
-  /** Report an undecided finding that fails one of these standards by its verdicts (engineOptions.verdicts) at "error": ['wai-aria']. */
-  failOnVerdicts?: string | string[];
   /**
    * The packs the scan ran (engineOptions.packs): in Node, a pack rule's
    * undecided findings carry the steps of its meta.review.
