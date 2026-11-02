@@ -36,10 +36,12 @@ test(`${RULE_ID}: fail when a button contains a checkbox`, () => {
   assert.deepStrictEqual(rule.occurrences[0].data.details.nestedElements, ['input']);
 });
 
-test(`${RULE_ID}: fail when a link contains a button`, () => {
+// A link has no presentational children, so both controls keep their roles:
+// HTML forbids the nesting, but whether anything is lost is for a person.
+test(`${RULE_ID}: cantTell when a link contains a button`, () => {
   const html = `<!doctype html><html><body><a id="b" href="/x">Text <button>nested</button></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
@@ -161,13 +163,13 @@ test(`${RULE_ID}: Angular CDK segmented-button (listbox/option, roving tabindex)
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for an orphan focusable role=option with no owning listbox`, () => {
+test(`${RULE_ID}: an orphan focusable role=option with no owning listbox is reported`, () => {
   // The composite exemption requires a real container relationship. A
   // role="option" with tabindex="0" that is NOT owned by a listbox/combobox
   // is a focusable widget nested in a control, so it still counts.
   const html = `<!doctype html><html><body><a id="a" href="/x">Card <span role="option" tabindex="0">Home</span></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
@@ -181,10 +183,10 @@ test(`${RULE_ID}: fail when a real nested control sits inside a listbox option`,
   assert.ok(hasOccurrenceForId(rule, 'opt'));
 });
 
-test(`${RULE_ID}: fail when a focusable role=button is nested in a link`, () => {
+test(`${RULE_ID}: cantTell when a focusable role=button is nested in a link`, () => {
   const html = `<!doctype html><html><body><a id="a" href="/x">Card <span role="button" tabindex="0">Delete</span></a></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
@@ -260,4 +262,26 @@ test(`${RULE_ID}: a composite's owned child is resolved from a fallback list, in
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
+// Inside a role with presentational children (a button, a tab, an option...)
+// the nested control's role is removed, so it fails SC 4.1.2; inside a link
+// both controls keep their roles and the nesting is asked about.
+test(`${RULE_ID}: fails inside a role with presentational children, and asks about a control in a link`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID);
+  for (const body of [
+    '<button>Save <a href="/help">help</a></button>',
+    '<div role="tab" tabindex="0">Inbox <button>x</button></div>',
+    '<div role="checkbox" aria-checked="false" tabindex="0">Agree <a href="/t">terms</a></div>'
+  ]) {
+    const rule = run(body);
+    assert.strictEqual(rule.outcome, 'fail', body);
+  }
+  const link = run('<a href="/x">Card <button>Delete</button></a>');
+  assert.strictEqual(link.outcome, 'cantTell');
+  assert.strictEqual(link.occurrences[0].uncertainty.code, 'spec-only');
 });

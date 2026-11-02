@@ -505,8 +505,7 @@ module.exports = [
       'aria-braille-equivalent',
       'aria-conditional-attr',
       'aria-checked-state-mismatch',
-      'aria-expanded-state-mismatch',
-      'aria-owns-valid'
+      'aria-expanded-state-mismatch'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_412_aria_validity.title',

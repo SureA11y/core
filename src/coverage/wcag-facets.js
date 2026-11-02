@@ -1690,11 +1690,6 @@ const FACETS = {
                 "automation": "manual"
             },
             {
-                "id": "aria-owns-valid",
-                "label": "aria-owns gives each element one owner, and never an ancestor of the owner",
-                "automation": "full"
-            },
-            {
                 "id": "components-named",
                 "label": "Every link, control, frame and dialog has a name that says what it is for",
                 "automation": "partial",

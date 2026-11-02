@@ -57,10 +57,10 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | css-focus-indicator-suppressed | manual | `tests/fixtures/css-focus-indicator-suppressed-all-scenarios.html` | 17 | 7 | 0 | 7 | 3 |
 | css-hidden-focus | manual | `tests/fixtures/css-hidden-focus-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | css-orientation-lock | automatic | `tests/fixtures/css-orientation-lock-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
-| definition-list-children-valid | automatic | `tests/fixtures/definition-list-children-valid-all-scenarios.html` | 14 | 6 | 7 | 0 | 1 |
+| definition-list-children-valid | automatic | `tests/fixtures/definition-list-children-valid-all-scenarios.html` | 14 | 6 | 0 | 7 | 1 |
 | deprecated-elements-not-used | automatic | `tests/fixtures/deprecated-elements-not-used-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
 | dialog-name-present | automatic | `tests/fixtures/dialog-name-present-all-scenarios.html` | 25 | 5 | 0 | 8 | 12 |
-| dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
+| dlitem-parent-valid | automatic | `tests/fixtures/dlitem-parent-valid-all-scenarios.html` | 5 | 2 | 0 | 3 | 0 |
 | duplicate-id | automatic | `tests/fixtures/duplicate-id-all-scenarios.html` | 7 | 2 | 0 | 3 | 2 |
 | duplicate-id-aria | automatic | `tests/fixtures/duplicate-id-aria-all-scenarios.html` | 5 | 1 | 0 | 3 | 1 |
 | embed-text-alternative-present | automatic | `tests/fixtures/embed-text-alternative-present-all-scenarios.html` | 15 | 3 | 6 | 0 | 6 |
@@ -105,7 +105,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | link-in-text-block | automatic | `tests/fixtures/link-in-text-block-all-scenarios.html` | 11 | 4 | 3 | 2 | 2 |
 | link-name-present | automatic | `tests/fixtures/link-name-present-all-scenarios.html` | 21 | 12 | 5 | 0 | 4 |
 | link-name-quality | manual | `tests/fixtures/link-name-quality-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
-| list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 19 | 8 | 8 | 0 | 3 |
+| list-children-valid | automatic | `tests/fixtures/list-children-valid-all-scenarios.html` | 20 | 8 | 6 | 3 | 3 |
 | listbox-name-present | automatic | `tests/fixtures/listbox-name-present-all-scenarios.html` | 23 | 5 | 7 | 0 | 11 |
 | listitem-parent-valid | automatic | `tests/fixtures/listitem-parent-valid-all-scenarios.html` | 14 | 6 | 5 | 0 | 3 |
 | live-region-announcements | manual | `tests/fixtures/live-region-announcements-all-scenarios.html` | 9 | 4 | 0 | 3 | 2 |
@@ -118,7 +118,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | meta-viewport-zoom-enabled | automatic | `tests/fixtures/meta-viewport-zoom-enabled-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
 | meter-name-present | automatic | `tests/fixtures/meter-name-present-all-scenarios.html` | 7 | 3 | 3 | 0 | 1 |
 | mouse-only-event-handlers | manual | `tests/fixtures/mouse-only-event-handlers-all-scenarios.html` | 9 | 0 | 0 | 4 | 5 |
-| nested-interactive-controls-absent | automatic | `tests/fixtures/nested-interactive-controls-absent-all-scenarios.html` | 5 | 2 | 3 | 0 | 0 |
+| nested-interactive-controls-absent | automatic | `tests/fixtures/nested-interactive-controls-absent-all-scenarios.html` | 5 | 2 | 2 | 1 | 0 |
 | no-autoplay-audio | manual | `tests/fixtures/no-autoplay-audio-all-scenarios.html` | 11 | 1 | 0 | 6 | 4 |
 | object-text-alternative-present | automatic | `tests/fixtures/object-text-alternative-present-all-scenarios.html` | 18 | 5 | 6 | 0 | 7 |
 | object-text-alternative-quality | manual | `tests/fixtures/object-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |

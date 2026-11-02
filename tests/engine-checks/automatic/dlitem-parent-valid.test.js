@@ -34,25 +34,25 @@ test(`${RULE_ID}: pass when dt/dd is wrapped in a single div under dl`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when dt's parent is a plain div outside dl`, () => {
+test(`${RULE_ID}: cantTell when dt's parent is a plain div outside dl`, () => {
   const html = `<!doctype html><html><body><div><dt id="a">orphan</dt></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.parentElement, 'div');
 });
 
-test(`${RULE_ID}: fail when dd has no dl ancestor at all`, () => {
+test(`${RULE_ID}: cantTell when dd has no dl ancestor at all`, () => {
   const html = `<!doctype html><html><body><section><dd id="b">Definition</dd></section></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'b'));
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div><dt id="a">orphan</dt></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Description-list items must be inside a description list');
 });
 
@@ -66,7 +66,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dlitem-parent-valid-all-scena
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 3, maxOccurrences: 3 });
 
   const expectedFailIds = ['dip_case_03', 'dip_case_04', 'dip_case_05'];
   const expectedNoOccIds = ['dip_case_01', 'dip_case_02'];

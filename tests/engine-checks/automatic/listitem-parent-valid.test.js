@@ -218,3 +218,22 @@ test(`${RULE_ID}: a parent with role="directory" is a list`, () => {
     assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
   }
 });
+
+// An <li> outside a list fails where it is still drawn as a list item (a
+// marker the reader sees, in no list the markup states); one drawn as a
+// plain layout box, with no marker, shows no list and is asked about.
+test(`${RULE_ID}: fails where the stray item is drawn as a list item, and asks about one drawn with no marker`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.strictEqual(run('<div><li>Apple</li></div>').outcome, 'fail');
+  const plain = run('<div><li style="display:block">Apple</li></div>');
+  assert.strictEqual(plain.outcome, 'cantTell');
+  assert.strictEqual(plain.occurrences[0].uncertainty.code, 'spec-only');
+  assert.strictEqual(
+    run('<div><li style="list-style-type:none">Apple</li></div>').outcome,
+    'cantTell'
+  );
+});

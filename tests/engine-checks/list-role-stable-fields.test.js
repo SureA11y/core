@@ -21,14 +21,16 @@ const details = (ruleId, body, outcome = 'fail') => {
 };
 
 test('list-children-valid: every finding names its list in element', () => {
+  // A stray paragraph is not drawn as an item, so it is asked about; an
+  // overridden <li> still draws its marker, so it fails.
   const cases = [
-    ['<ul><li>a</li><p>b</p></ul>', 'LIST_INVALID_CHILD', 'ul'],
-    ['<ol><li>a</li><p>b</p></ol>', 'LIST_INVALID_CHILD', 'ol'],
-    ['<ul><li role="presentation">a</li></ul>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ul'],
-    ['<ol><li role="none">a</li></ol>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ol']
+    ['<ul><li>a</li><p>b</p></ul>', 'LIST_INVALID_CHILD', 'ul', 'cantTell'],
+    ['<ol><li>a</li><p>b</p></ol>', 'LIST_INVALID_CHILD', 'ol', 'cantTell'],
+    ['<ul><li role="presentation">a</li></ul>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ul', 'fail'],
+    ['<ol><li role="none">a</li></ol>', 'LIST_ITEM_ROLE_OVERRIDDEN', 'ol', 'fail']
   ];
-  for (const [body, code, element] of cases) {
-    const [d] = details('list-children-valid', body);
+  for (const [body, code, element, outcome] of cases) {
+    const [d] = details('list-children-valid', body, outcome);
     assert.deepEqual([d.reasonCode, d.element], [code, element], body);
   }
 });

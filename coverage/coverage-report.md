@@ -682,8 +682,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/44** facets covered.
-Automation mix: **full 37, partial 5, manual 2**.
+Facet coverage: **39/43** facets covered.
+Automation mix: **full 36, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -726,7 +726,6 @@ Automation mix: **full 37, partial 5, manual 2**.
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
-| aria-owns-valid | full | aria-owns-valid |
 | components-named | partial | — |
 | roles-match-behavior | partial | — |
 | states-values-exposed | partial | — |
@@ -742,7 +741,6 @@ Uncovered facets: components-named, roles-match-behavior, states-values-exposed,
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
-| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |
@@ -1477,8 +1475,8 @@ Automation mix: **full 1, partial 0, manual 0**.
 
 ### 4.1.2
 
-Facet coverage: **40/44** facets covered.
-Automation mix: **full 37, partial 5, manual 2**.
+Facet coverage: **39/43** facets covered.
+Automation mix: **full 36, partial 5, manual 2**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
@@ -1521,7 +1519,6 @@ Automation mix: **full 37, partial 5, manual 2**.
 | aria-conditional-attr | full | aria-conditional-attr |
 | aria-checked-state-mismatch | manual | aria-checked-state-mismatch |
 | aria-expanded-state-mismatch | manual | aria-expanded-state-mismatch |
-| aria-owns-valid | full | aria-owns-valid |
 | components-named | partial | — |
 | roles-match-behavior | partial | — |
 | states-values-exposed | partial | — |
@@ -1537,7 +1534,6 @@ Uncovered facets: components-named, roles-match-behavior, states-values-exposed,
 | aria-deprecated-role | automatic | role attribute should not use a deprecated or author-discouraged ARIA role | src/checks/automatic/aria-deprecated-role.js | aria-role-not-deprecated |  |
 | aria-hidden-body | automatic | The document &lt;body&gt; must not be aria-hidden | src/checks/automatic/aria-hidden-body.js | aria-hidden-body-absent |  |
 | aria-hidden-focus | automatic | ARIA hidden elements must not be focusable | src/checks/automatic/aria-hidden-focus.js | aria-hidden-focusable |  |
-| aria-owns-valid | automatic | aria-owns must give each element one owner, and never an ancestor of the owner | src/checks/automatic/aria-owns-valid.js | aria-owns-valid |  |
 | aria-prohibited-attr | automatic | ARIA naming attributes must not be used on roles that prohibit them | src/checks/automatic/aria-prohibited-attr.js | aria-attr-not-prohibited |  |
 | aria-required-attr | automatic | Roles with a required ARIA state/property must carry it | src/checks/automatic/aria-required-attr.js | aria-attr-required-for-role |  |
 | aria-role-name-present | automatic | ARIA roles that require an accessible name have one | src/checks/automatic/aria-role-name-present.js | aria-role-name-present |  |

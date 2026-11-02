@@ -40,10 +40,12 @@ test(`${RULE_ID}: pass when ol contains li plus script/template`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when ul has a non-li direct child`, () => {
+// A stray child that is not drawn as an item breaks HTML's content model
+// without losing an item the page shows: asked about.
+test(`${RULE_ID}: cantTell when ul has a non-li direct child not drawn as an item`, () => {
   const html = `<!doctype html><html><body><ul id="a"><li>a</li><div>wrapper</div></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
@@ -125,12 +127,12 @@ test(`${RULE_ID}: pass when a non-<li> direct child has an explicit role="listit
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail still reported when an invalid child IS visible, even alongside a hidden invalid child`, () => {
+test(`${RULE_ID}: still reported when an invalid child IS visible, even alongside a hidden invalid child`, () => {
   const html = `<!doctype html><html><body>
     <ul id="a"><li>a</li><div>visible wrapper</div><span style="display:none">hidden</span></ul>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['div']);
 });
 
@@ -159,7 +161,10 @@ test(`${RULE_ID}: role="list", or a role naming no concrete role, keeps the list
   ]) {
     const html = `<!doctype html><html><body>${body}</body></html>`;
     const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-    const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+    const rule = assertRule(result, RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
     assert.ok(hasOccurrenceForId(rule, 'a'), body);
   }
 });
@@ -167,7 +172,7 @@ test(`${RULE_ID}: role="list", or a role naming no concrete role, keeps the list
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><ul id="a"><div>wrapper</div></ul></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'Lists must only directly contain list items');
 });
 
@@ -181,9 +186,12 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/list-children-valid-all-scena
   const html = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 8, maxOccurrences: 8 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
 
+  // Reported either way; 40 (items in a wrapper) fails, 04-06 (stray
+  // children not drawn as items) are asked about.
   const expectedFailIds = [
+    'lcv_case_40',
     'lcv_case_04',
     'lcv_case_05',
     'lcv_case_06',
@@ -245,9 +253,42 @@ test(`${RULE_ID}: text directly inside a list is an invalid child`, () => {
       `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
       { runOnly: [RULE_ID] }
     ).checksResults.find((r) => r.ruleId === RULE_ID);
+  // Loose text is in no item, but is not drawn as one: asked about.
   const rule = run('<ul>Fruits<li>Apple</li></ul>');
-  assert.strictEqual(rule.outcome, 'fail');
+  assert.strictEqual(rule.outcome, 'cantTell');
   assert.deepStrictEqual(rule.occurrences[0].data.details.invalidChildren, ['#text']);
-  assert.strictEqual(run('<ul>stray text</ul>').outcome, 'fail');
+  assert.strictEqual(run('<ul>stray text</ul>').outcome, 'cantTell');
   assert.strictEqual(run('<ul>\n  <li>a</li>\n  <!-- c -->\n</ul>').outcome, 'pass');
+});
+
+// A child that does not belong fails where the page draws an item the markup
+// loses: a wrapper around <li> elements (which HTML-AAM then maps to no list
+// item), or a child drawn as a list item itself, or an <li> whose role
+// replaces listitem while its marker is still drawn. Anything else is asked
+// about.
+test(`${RULE_ID}: fails where an item the page draws is lost, and asks about the rest`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`,
+      { runOnly: [RULE_ID] }
+    ).checksResults.find((r) => r.ruleId === RULE_ID);
+  const failing = [
+    '<ul><div><li>Apple</li><li>Pear</li></div></ul>',
+    '<ul><li>Apple</li><div style="display:list-item">Pear</div></ul>',
+    '<ul><li role="presentation">Apple</li><li>Pear</li></ul>'
+  ];
+  for (const body of failing) {
+    const rule = run(body);
+    assert.strictEqual(rule.outcome, 'fail', body);
+    assert.strictEqual(rule.occurrences[0].occurrenceOutcome, 'fail', body);
+  }
+  const asked = [
+    '<ul><li>Apple</li><h3>More</h3><li>Pear</li></ul>',
+    '<ul><li style="list-style-type:none" role="presentation">Apple</li></ul>'
+  ];
+  for (const body of asked) {
+    const rule = run(body);
+    assert.strictEqual(rule.outcome, 'cantTell', body);
+    assert.strictEqual(rule.occurrences[0].uncertainty.code, 'spec-only', body);
+  }
 });
