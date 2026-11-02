@@ -77,6 +77,12 @@
  *   with controls. That button is inert, so presentational-children-
  *   focusable-absent leaves it alone, and HTML allows no interactive content
  *   and no tabindex inside a button.
+ *   The finding is the select's, a combobox or list box, which has no
+ *   presentational children, so it is asked about (CANTTELL). A control
+ *   inside one of its options is the select's finding too, an owned option
+ *   not counting as a control of its own; the option's presentational
+ *   children make it a failure, which presentational-children-focusable-
+ *   absent reports.
  * - A disabled native control (<button disabled>, <input disabled>) and an
  *   inert descendant are not focusable, so they do not nest an interactive
  *   control; a display:none or aria-hidden descendant is not exposed to AT

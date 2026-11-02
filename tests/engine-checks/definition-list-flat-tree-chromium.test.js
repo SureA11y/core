@@ -78,7 +78,8 @@ const CASES = [
     '<div><slot></slot></div>',
     'out',
     'notApplicable',
-    'fail'
+    // The term and definition roles survive; the lost pairing is asked about.
+    'cantTell'
   ],
   [
     'items the host does not slot',
@@ -93,7 +94,7 @@ const CASES = [
     `<x-dl id="host">${ITEMS}<p>Note</p></x-dl>`,
     '<dl><slot></slot></dl>',
     'list',
-    'fail',
+    'cantTell',
     'pass'
   ]
 ];

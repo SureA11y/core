@@ -134,7 +134,8 @@ test(
 
     await t.test('text directly inside a <ul>', async () => {
       await withPage('<ul>Fruits<li>Apple</li></ul>', async (page) => {
-        assert.equal(await outcomeOf(page, 'list-children-valid'), 'fail');
+        // Loose text is in no item but not drawn as one: asked about.
+        assert.equal(await outcomeOf(page, 'list-children-valid'), 'cantTell');
       });
     });
   }
