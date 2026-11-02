@@ -62,3 +62,35 @@ test('shadow dom contract: an occurrence in a shadow tree says how to reach it f
     assert.equal(o.structuralPath, null, 'no path from documentElement to shadow content');
   }
 });
+
+test('shadow dom contract: past 100 shadow roots deep, the path still starts at the document', () => {
+  const dom = createDom(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main id="m"></main></body></html>'
+  );
+  const { document } = dom.window;
+  let parent = document.getElementById('m');
+  for (let i = 0; i < 150; i += 1) {
+    const host = document.createElement('div');
+    parent.appendChild(host);
+    parent = host.attachShadow({ mode: 'open' });
+    parent.appendChild(document.createElement('button'));
+  }
+  const result = runa11yCoreOnDom(dom, { runOnly: ['button-name-present'] });
+  const occurrences = result.checksResults.find(
+    (r) => r.ruleId === 'button-name-present'
+  ).occurrences;
+  assert.strictEqual(occurrences.length, 150);
+  const paths = occurrences.map((o) => o.shadowHostSelectors || []);
+  // Each a root deeper than the last, every one from the document: the walk
+  // stopped at 100 and kept the innermost hosts, so the deepest fifty had
+  // the same path, leading nowhere from the document.
+  assert.deepStrictEqual(
+    paths.map((p) => p.length).sort((a, b) => a - b),
+    Array.from({ length: 150 }, (_, i) => i + 1)
+  );
+  assert.ok(
+    paths.every((p) => p[0] === paths[0][0]),
+    'every path starts at the same host in the document'
+  );
+  assert.strictEqual(new Set(paths.map((p) => p.join(' >>> '))).size, 150);
+});
