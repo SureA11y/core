@@ -76,6 +76,10 @@ A compact result (`engineOptions.output.detail: 'findings'`, see [`OUTPUT_SCHEMA
 
 **`cantTell` does not cost conformance credit.** ACT's own consistency rules allow an automated implementation to report "cannot tell" on some — though not all — examples and still count as consistent. What a partially consistent implementation may *not* do is produce a false positive: failing an example the rule says should pass, or that is inapplicable. That is the gate worth watching, and it is a property of the rules rather than of this reporter. As of the last full run the engine produces **zero false positives** across the 957 examples W3C publishes for its 60 matched rules — see [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md), and re-run `scripts/act-testcase-check.js` for the live figure rather than trusting this one indefinitely.
 
+## Verdicts under other standards
+
+With `engineOptions.verdicts` ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#verdicts)), a rule that gives a verdict under another standard is asserted under it too, apart from its WCAG assertion: its test is titled `<ruleId> (WAI-ARIA)`, is part of the URLs of the WAI-ARIA requirements the rule names, and its outcome is the rule's WAI-ARIA verdict. An unnamed `role="grid"` is `earl:cantTell` for `aria-role-name-present` and `earl:failed` for `aria-role-name-present (WAI-ARIA)`, part of `https://www.w3.org/TR/wai-aria-1.2/#namecalculation`.
+
 ## Several results, one report
 
 `renderEarlReport` takes an array as readily as a single result, because a report covering many pages is the normal case:

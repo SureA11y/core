@@ -131,7 +131,7 @@ A finding's `outcome` and `occurrenceOutcome` are its WCAG verdict. `engineOptio
 runDomRulesInPage(url, null, { verdicts: ['wai-aria'] }, null);
 ```
 
-With it, a result of a rule that states WAI-ARIA verdicts, and each of its occurrences, carries `verdicts: { wcag, 'wai-aria' }`, each `pass`, `fail`, `cantTell` or `notApplicable`; `rulesResults` gains a rollup such as `wai-aria-name-required`; and `engine.verdicts` lists the standards. Off by default: without it a scan reports exactly as before. It never changes a WCAG outcome. Work in progress: only `aria-role-name-present` states WAI-ARIA verdicts so far.
+With it, a result of a rule that states WAI-ARIA verdicts, and each of its occurrences, carries `verdicts: { wcag, 'wai-aria' }`, each `pass`, `fail`, `cantTell` or `notApplicable`; `rulesResults` gains a rollup such as `wai-aria-name-required`; and `engine.verdicts` lists the standards. Off by default: without it a scan reports exactly as before. It never changes a WCAG outcome, and it changes which rules run no more than `mappings` does. The rules that check WAI-ARIA requirements state their verdicts: the ARIA rules, the name rules of the roles WAI-ARIA requires a name for, and `landmark-role-name-present`. A verdict is `fail` where WAI-ARIA 1.2 says MUST or MUST NOT, `cantTell` where it recommends or where script decides, and a reason code WAI-ARIA states no author requirement for (an unknown role token, an undefined `aria-*` attribute) has none. See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#verdicts) for the shape, and `failOnVerdicts` in [`SARIF.md`](./SARIF.md) and [`JUNIT.md`](./JUNIT.md) to gate a build on WAI-ARIA failures.
 
 ### Other standards (`mappings`)
 

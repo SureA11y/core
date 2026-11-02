@@ -91,6 +91,12 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // What each finding means under WAI-ARIA, beside its WCAG tier: WAI-ARIA 1.2 5.2.7: authors MUST ensure the element is contained in, or owned by, its context role.
+  verdicts: {
+    'wai-aria': {
+      ARIA_REQUIRED_PARENT_MISSING: { outcome: 'fail', requirement: 'context-roles' }
+    }
+  },
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',

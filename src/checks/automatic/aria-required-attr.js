@@ -122,6 +122,13 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // What each finding means under WAI-ARIA, beside its WCAG tier: WAI-ARIA 1.2 5.2.2: authors MUST provide required states, unless the role has an implicit value (left out: no violation).
+  verdicts: {
+    'wai-aria': {
+      ARIA_ATTR_REQUIRED_MISSING: { outcome: 'fail', requirement: 'required-states' },
+      state_internals: { outcome: 'cantTell', requirement: 'required-states' }
+    }
+  },
   defaultSeverity: 'serious',
   category: 'robust',
   type: 'automatic',

@@ -809,6 +809,17 @@ function renderCards(checksResults, ui) {
           `<span class="chip" style="background:${STATUS.neutral.bg};color:${STATUS.neutral.color}">WCAG ${esc(m.requirement)}</span>`
       )
       .join('');
+    // The finding's verdict under each other standard the scan asked for
+    // (engineOptions.verdicts), beside its WCAG outcome: "WAI-ARIA: Fail" on
+    // a finding WCAG leaves for a person to judge.
+    const VERDICT_NAMES = { 'wai-aria': 'WAI-ARIA' };
+    const verdictChips = Object.entries(representative.verdicts || {})
+      .filter(([k, v]) => k !== 'wcag' && OUTCOME_INFO[v])
+      .map(([k, v]) => {
+        const info = OUTCOME_INFO[v];
+        return `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(VERDICT_NAMES[k] || k)}: ${esc(info.label)}</span>`;
+      })
+      .join('');
     const hasMixedOutcomes = occurrenceCounts.fail > 0 && occurrenceCounts.cantTell > 0;
     const countLabel =
       occs.length > 1
@@ -831,7 +842,7 @@ function renderCards(checksResults, ui) {
         <span class="card-title"><strong>${esc(r.ruleId)}</strong> ${esc(ui.tr('report_card_status', { outcome: info.label, severity: ui.severity(r.severity) }))}${countLabel}</span>
       </div>
       <div class="card-body">
-        <div class="card-meta">${wcagChips}</div>
+        <div class="card-meta">${wcagChips}${verdictChips}</div>
         <div class="card-selector"><span class="card-selector-label">${esc(ui.tr('report_card_selector'))}</span> <code>${esc(representative.selector ? truncateForCard(locationText(representative)) : ui.tr('report_card_noSelector'))}</code></div>
         <div class="card-snippet">${snippetPart(ui, truncateForCard(representative.summary), representative.summary, occI18n.summaryKey, occI18n.params)}${representative.hint ? ` — ${snippetPart(ui, representative.hint, representative.hint, occI18n.hintKey, occI18n.params)}` : ''}</div>
         ${leanLine}

@@ -610,6 +610,11 @@ export interface Occurrence {
   lean?: Lean;
   /** On a cantTell occurrence only: how a person answers the question, in the scan's locale. */
   howToCheck?: HowToCheck;
+  /**
+   * With engineOptions.verdicts, on a rule that states verdicts: what the
+   * finding means under WCAG (its own tier) and under each standard asked for.
+   */
+  verdicts?: Verdicts;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;
@@ -677,9 +682,17 @@ export interface CompactCheckResult {
   error?: string;
 }
 
+/**
+ * A finding's or a rule's verdict under WCAG and under each other standard
+ * engineOptions.verdicts asked for, keyed by the standard's key ('wai-aria').
+ */
+export type Verdicts = { wcag: Outcome } & Record<string, Outcome>;
+
 export interface CheckResult {
   ruleId: string;
   outcome: Outcome;
+  /** With engineOptions.verdicts, on a rule that states verdicts: the rule's verdict under each standard. */
+  verdicts?: Verdicts;
   outcomeNormalized: OutcomeNormalized;
   severity: Severity;
   /** The rule's own severity, when the applied profile gave it another one. */

@@ -3156,10 +3156,39 @@ function runCoreSettled(
     'wai-aria': {
       name: 'WAI-ARIA',
       version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
       requirements: {
         'name-required': {
           title: 'Roles that require an accessible name have one',
           url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
         }
       }
     }
@@ -3355,6 +3384,30 @@ function runCoreSettled(
       mappingSelection.tokens
     );
   }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
+  }
 
   // Every result echoes the options it ran with, and translation reads its
   // dictionaries from that echo while each result is built. Once all of them
@@ -3513,6 +3566,13 @@ function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists

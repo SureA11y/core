@@ -89,6 +89,16 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // What each finding means under WAI-ARIA, beside its WCAG tier: a missing name breaks WAI-ARIA's "Accessible Name Required" for the role.
+  verdicts: {
+    'wai-aria': {
+      emptyAriaLabel: { outcome: 'fail', requirement: 'name-required' },
+      emptyAriaLabelledby: { outcome: 'fail', requirement: 'name-required' },
+      missingTextAlternative: { outcome: 'fail', requirement: 'name-required' },
+      nameNotResolved: { outcome: 'fail', requirement: 'name-required' },
+      name_internals: { outcome: 'cantTell', requirement: 'name-required' }
+    }
+  },
   defaultSeverity: 'serious',
   category: 'perceivable',
   type: 'automatic',

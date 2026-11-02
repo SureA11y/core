@@ -122,6 +122,13 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
+  // What each finding means under WAI-ARIA, beside its WCAG tier: WAI-ARIA 1.2 5.2.6 and aria-owns: required owned elements, and one owner per element (a cycle is a question: the spec does not address it).
+  verdicts: {
+    'wai-aria': {
+      ARIA_REQUIRED_CHILD_MISSING: { outcome: 'fail', requirement: 'owned-elements' },
+      ARIA_REQUIRED_CHILD_TEXT_ONLY: { outcome: 'fail', requirement: 'owned-elements' }
+    }
+  },
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',

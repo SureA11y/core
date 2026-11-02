@@ -2180,6 +2180,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     margin: r.margin
       ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
       : null,
+    // Its verdicts under standards besides WCAG, by reason code, or null.
+    verdicts: r.verdicts ? JSON.parse(JSON.stringify(r.verdicts)) : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {

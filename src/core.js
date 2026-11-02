@@ -1997,6 +1997,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     margin: r.margin
       ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
       : null,
+    // Its verdicts under standards besides WCAG, by reason code, or null.
+    verdicts: r.verdicts ? JSON.parse(JSON.stringify(r.verdicts)) : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -23341,10 +23343,39 @@ const runCoreSettled = (function runCoreSettled(
     'wai-aria': {
       name: 'WAI-ARIA',
       version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
       requirements: {
         'name-required': {
           title: 'Roles that require an accessible name have one',
           url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
         }
       }
     }
@@ -23540,6 +23571,30 @@ const runCoreSettled = (function runCoreSettled(
       mappingSelection.tokens
     );
   }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
+  }
 
   // Every result echoes the options it ran with, and translation reads its
   // dictionaries from that echo while each result is built. Once all of them
@@ -23698,6 +23753,13 @@ const runCoreSettled = (function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
@@ -24434,8 +24496,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "area-alt-present",
@@ -24512,8 +24573,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "area-alt-quality",
@@ -24590,8 +24650,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-allowed-attr",
@@ -24668,7 +24727,22 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-allowed-role",
@@ -24707,8 +24781,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-braille-equivalent",
@@ -24784,8 +24857,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-checked-state-mismatch",
@@ -24861,8 +24933,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-conditional-attr",
@@ -24939,7 +25010,14 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -25016,7 +25094,22 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_AUTHOR_DISCOURAGED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_AUTHOR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -25092,8 +25185,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-hidden-body",
@@ -25201,8 +25293,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-hidden-focus",
@@ -25279,8 +25370,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-owns-valid",
@@ -25357,7 +25447,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_OWNS_ANCESTOR": {
+          "outcome": "cantTell",
+          "requirement": "owned-elements"
+        },
+        "ARIA_OWNS_DUPLICATE": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -25434,7 +25535,22 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -25511,7 +25627,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_PROHIBITED_CHILD": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_PROHIBITED_CHILD_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-attr",
@@ -25588,7 +25715,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_REQUIRED_MISSING": {
+          "outcome": "fail",
+          "requirement": "required-states"
+        },
+        "state_internals": {
+          "outcome": "cantTell",
+          "requirement": "required-states"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-children",
@@ -25665,7 +25803,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_CHILD_MISSING": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_REQUIRED_CHILD_TEXT_ONLY": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-parent",
@@ -25742,7 +25891,14 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_PARENT_MISSING": {
+          "outcome": "fail",
+          "requirement": "context-roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-role-name-present",
@@ -25940,7 +26096,14 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_ABSTRACT": {
+          "outcome": "fail",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-text",
@@ -25979,8 +26142,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-valid-attr",
@@ -26056,8 +26218,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-valid-attr-value",
@@ -26134,7 +26295,38 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ACTIVEDESCENDANT_OUTSIDE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_INVALID": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_TARGET_ABSENT": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_HASPOPUP_ROLE_MISMATCH": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_POSINSET_EXCEEDS_SETSIZE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUENOW_OUT_OF_RANGE": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUE_RANGE_INVERTED": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "autocomplete-valid",
@@ -26209,8 +26401,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "avoid-inline-spacing",
@@ -26285,8 +26476,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "binary-control-name-present",
@@ -26368,7 +26558,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "button-name-present",
@@ -26446,7 +26647,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -26521,8 +26741,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "canvas-text-alternative-present",
@@ -26598,8 +26817,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "canvas-text-alternative-quality",
@@ -26675,8 +26893,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "click-handler-keyboard-operable",
@@ -26766,8 +26983,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "combobox-name-present",
@@ -26845,7 +27061,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "contrast-computable",
@@ -26938,8 +27165,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "contrast-enhanced",
@@ -27006,8 +27232,7 @@ const RUNTIME_CATALOG = {
       "band": {
         "relative": 0.1
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "contrast-minimum",
@@ -27093,7 +27318,6 @@ const RUNTIME_CATALOG = {
         "relative": 0.1
       }
     },
-    "verdicts": null,
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -27194,8 +27418,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -27272,8 +27495,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-hidden-focus",
@@ -27350,8 +27572,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-orientation-lock",
@@ -27426,8 +27647,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "definition-list-children-valid",
@@ -27503,8 +27723,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "deprecated-elements-not-used",
@@ -27579,8 +27798,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "dialog-name-present",
@@ -27658,7 +27876,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -27734,8 +27963,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "duplicate-id",
@@ -27802,8 +28030,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "duplicate-id-aria",
@@ -27879,8 +28106,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "embed-text-alternative-present",
@@ -27956,8 +28182,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "embed-text-alternative-quality",
@@ -28033,8 +28258,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "empty-heading",
@@ -28073,8 +28297,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "empty-table-header",
@@ -28113,8 +28336,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "focus-not-removed-by-script",
@@ -28223,8 +28445,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "focus-order-semantics",
@@ -28263,8 +28484,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-label-quality",
@@ -28341,8 +28561,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-programmatic-label-present",
@@ -28482,8 +28701,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
@@ -28560,8 +28778,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-single-label",
@@ -28636,8 +28853,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "heading-order",
@@ -28676,8 +28892,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "heading-quality",
@@ -28754,8 +28969,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "html-lang-attr-present",
@@ -28831,8 +29045,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "html-xml-lang-mismatch",
@@ -28908,8 +29121,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "identical-iframes-same-purpose",
@@ -28986,8 +29198,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "identical-links-same-purpose",
@@ -29044,8 +29255,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-focusable-content",
@@ -29122,8 +29332,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-name-present",
@@ -29200,8 +29409,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-title-unique",
@@ -29282,8 +29490,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "image-of-text",
@@ -29359,8 +29566,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "image-redundant-alt",
@@ -29399,8 +29605,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-decorative",
@@ -29476,8 +29681,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-present",
@@ -29553,8 +29757,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-quality",
@@ -29630,8 +29833,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-decorative",
@@ -29707,8 +29909,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-present",
@@ -29816,8 +30017,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-quality",
@@ -29893,8 +30093,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "invalid-field-error-message",
@@ -29970,8 +30169,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-for-valid",
@@ -30009,8 +30207,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-in-name",
@@ -30085,8 +30282,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-title-only",
@@ -30129,8 +30325,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-banner-is-top-level",
@@ -30169,8 +30364,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-complementary-is-top-level",
@@ -30209,8 +30403,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-contentinfo-is-top-level",
@@ -30249,8 +30442,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-main-is-top-level",
@@ -30289,8 +30481,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-banner",
@@ -30329,8 +30520,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-contentinfo",
@@ -30369,8 +30559,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-main",
@@ -30409,8 +30598,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-one-main",
@@ -30449,8 +30637,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-role-name-present",
@@ -30491,7 +30678,14 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "LANDMARK_ROLE_NAME_MISSING": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "landmark-unique",
@@ -30530,8 +30724,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "link-in-text-block",
@@ -30617,8 +30810,7 @@ const RUNTIME_CATALOG = {
       "band": {
         "relative": 0.1
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "link-name-present",
@@ -30743,7 +30935,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "link-name-quality",
@@ -30834,8 +31045,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "list-children-valid",
@@ -30911,8 +31121,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "listbox-name-present",
@@ -30990,7 +31199,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -31066,8 +31286,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "live-region-announcements",
@@ -31144,8 +31363,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "manual-review",
@@ -31297,8 +31515,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
@@ -31374,8 +31591,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "menuitem-name-present",
@@ -31453,7 +31669,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -31524,8 +31759,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-refresh-timing-absent",
@@ -31629,8 +31863,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-viewport-large",
@@ -31668,8 +31901,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-viewport-zoom-enabled",
@@ -31744,8 +31976,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meter-name-present",
@@ -31822,7 +32053,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -31912,8 +32154,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "moving-content-pausable",
@@ -31988,8 +32229,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "nested-interactive-controls-absent",
@@ -32064,8 +32304,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "no-autoplay-audio",
@@ -32140,8 +32379,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "object-text-alternative-present",
@@ -32217,8 +32455,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "object-text-alternative-quality",
@@ -32294,8 +32531,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "option-name-present",
@@ -32373,7 +32609,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "p-as-heading",
@@ -32448,8 +32703,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-has-heading-one",
@@ -32488,8 +32742,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-title-patterns",
@@ -32565,8 +32818,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-title-present",
@@ -32642,8 +32894,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "password-paste-enabled",
@@ -32711,8 +32962,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "presentation-role-conflict",
@@ -32751,8 +33001,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "presentational-children-focusable-absent",
@@ -32829,8 +33078,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "progressbar-name-present",
@@ -32907,7 +33155,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "region",
@@ -32946,8 +33205,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "role-img-text-alternative-present",
@@ -33025,7 +33283,30 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "emptyAriaLabel": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "emptyAriaLabelledby": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "missingTextAlternative": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "nameNotResolved": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "scope-attr-valid",
@@ -33064,8 +33345,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "scrollable-region-focusable",
@@ -33155,8 +33435,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "searchbox-name-present",
@@ -33234,7 +33513,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -33310,8 +33600,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "skip-link",
@@ -33350,8 +33639,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "slider-name-present",
@@ -33429,7 +33717,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -33507,7 +33806,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "summary-name-present",
@@ -33583,8 +33893,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-image-text-alternative-present",
@@ -33661,8 +33970,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-text-alternative-present",
@@ -33739,8 +34047,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-text-alternative-quality",
@@ -33816,8 +34123,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "tab-name-present",
@@ -33894,8 +34200,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "tabindex",
@@ -33934,8 +34239,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-duplicate-name",
@@ -33974,8 +34278,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-fake-caption",
@@ -34050,8 +34353,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-headers-attr-valid",
@@ -34127,8 +34429,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-th-has-data-cells",
@@ -34204,8 +34505,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "target-size-minimum",
@@ -34282,8 +34582,7 @@ const RUNTIME_CATALOG = {
       "band": {
         "absolute": 6
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "td-has-header",
@@ -34358,8 +34657,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "text-spacing-content-loss",
@@ -34441,8 +34739,7 @@ const RUNTIME_CATALOG = {
       "band": {
         "absolute": 8
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "textbox-name-present",
@@ -34520,7 +34817,18 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "tooltip-name-present",
@@ -34597,7 +34905,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "treeitem-name-present",
@@ -34675,7 +35002,26 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "valid-lang",
@@ -34752,7 +35098,6 @@ const RUNTIME_CATALOG = {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null,
     "settings": [
       "codes"
     ],
@@ -34843,8 +35188,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "video-poster-text-alternative-present",
@@ -34920,8 +35264,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "widget-keyboard-focusable",
@@ -34998,8 +35341,7 @@ const RUNTIME_CATALOG = {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   }
 ],
   composites: [
@@ -43576,8 +43918,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "area-alt-present",
@@ -43654,8 +43995,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "area-alt-quality",
@@ -43732,8 +44072,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-allowed-attr",
@@ -43810,7 +44149,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        },
+        "ARIA_ATTR_NOT_ALLOWED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "supported-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-allowed-role",
@@ -43849,8 +44203,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-braille-equivalent",
@@ -43926,8 +44279,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-checked-state-mismatch",
@@ -44003,8 +44355,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-conditional-attr",
@@ -44081,7 +44432,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ERRORMESSAGE_WITHOUT_TRUTHY_INVALID": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-deprecated-role",
@@ -44158,7 +44516,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_AUTHOR_DISCOURAGED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_AUTHOR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "roles"
+        },
+        "ARIA_ROLE_DEPRECATED": {
+          "outcome": "cantTell",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-expanded-state-mismatch",
@@ -44234,8 +44607,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-hidden-body",
@@ -44343,8 +44715,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-hidden-focus",
@@ -44421,8 +44792,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-owns-valid",
@@ -44499,7 +44869,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_OWNS_ANCESTOR": {
+          "outcome": "cantTell",
+          "requirement": "owned-elements"
+        },
+        "ARIA_OWNS_DUPLICATE": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-attr",
@@ -44576,7 +44957,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_PROHIBITED": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        },
+        "ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
+          "outcome": "fail",
+          "requirement": "prohibited-attributes"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-prohibited-children",
@@ -44653,7 +45049,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_PROHIBITED_CHILD": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_PROHIBITED_CHILD_ROLELESS": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-attr",
@@ -44730,7 +45137,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ATTR_REQUIRED_MISSING": {
+          "outcome": "fail",
+          "requirement": "required-states"
+        },
+        "state_internals": {
+          "outcome": "cantTell",
+          "requirement": "required-states"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-children",
@@ -44807,7 +45225,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_CHILD_MISSING": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        },
+        "ARIA_REQUIRED_CHILD_TEXT_ONLY": {
+          "outcome": "fail",
+          "requirement": "owned-elements"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-required-parent",
@@ -44884,7 +45313,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_REQUIRED_PARENT_MISSING": {
+          "outcome": "fail",
+          "requirement": "context-roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-role-name-present",
@@ -45082,7 +45518,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ROLE_ABSTRACT": {
+          "outcome": "fail",
+          "requirement": "roles"
+        }
+      }
+    }
   },
   {
     "ruleId": "aria-text",
@@ -45121,8 +45564,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-valid-attr",
@@ -45198,8 +45640,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "aria-valid-attr-value",
@@ -45276,7 +45717,38 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "ARIA_ACTIVEDESCENDANT_OUTSIDE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_INVALID": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_ATTR_VALUE_TARGET_ABSENT": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_HASPOPUP_ROLE_MISMATCH": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_POSINSET_EXCEEDS_SETSIZE": {
+          "outcome": "fail",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUENOW_OUT_OF_RANGE": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        },
+        "ARIA_VALUE_RANGE_INVERTED": {
+          "outcome": "cantTell",
+          "requirement": "attribute-values"
+        }
+      }
+    }
   },
   {
     "ruleId": "autocomplete-valid",
@@ -45351,8 +45823,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "avoid-inline-spacing",
@@ -45427,8 +45898,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "binary-control-name-present",
@@ -45510,7 +45980,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "button-name-present",
@@ -45588,7 +46069,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "bypass-blocks-present",
@@ -45663,8 +46163,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "canvas-text-alternative-present",
@@ -45740,8 +46239,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "canvas-text-alternative-quality",
@@ -45817,8 +46315,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "click-handler-keyboard-operable",
@@ -45908,8 +46405,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "combobox-name-present",
@@ -45987,7 +46483,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "contrast-computable",
@@ -46080,8 +46587,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "contrast-enhanced",
@@ -46148,8 +46654,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "relative": 0.1
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "contrast-minimum",
@@ -46235,7 +46740,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "relative": 0.1
       }
     },
-    "verdicts": null,
     "settings": [
       "boldLargeMinPx",
       "largeTextRatio",
@@ -46336,8 +46840,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-focus-indicator-suppressed",
@@ -46414,8 +46917,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-hidden-focus",
@@ -46492,8 +46994,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "css-orientation-lock",
@@ -46568,8 +47069,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "definition-list-children-valid",
@@ -46645,8 +47145,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "deprecated-elements-not-used",
@@ -46721,8 +47220,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "dialog-name-present",
@@ -46800,7 +47298,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "dlitem-parent-valid",
@@ -46876,8 +47385,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "duplicate-id",
@@ -46944,8 +47452,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "duplicate-id-aria",
@@ -47021,8 +47528,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "embed-text-alternative-present",
@@ -47098,8 +47604,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "embed-text-alternative-quality",
@@ -47175,8 +47680,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "empty-heading",
@@ -47215,8 +47719,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "empty-table-header",
@@ -47255,8 +47758,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "focus-not-removed-by-script",
@@ -47365,8 +47867,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "focus-order-semantics",
@@ -47405,8 +47906,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-label-quality",
@@ -47483,8 +47983,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-programmatic-label-present",
@@ -47624,8 +48123,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-programmatic-label-quality",
@@ -47702,8 +48200,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "form-control-single-label",
@@ -47778,8 +48275,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "heading-order",
@@ -47818,8 +48314,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "heading-quality",
@@ -47896,8 +48391,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "html-lang-attr-present",
@@ -47973,8 +48467,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "html-xml-lang-mismatch",
@@ -48050,8 +48543,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "identical-iframes-same-purpose",
@@ -48128,8 +48620,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "identical-links-same-purpose",
@@ -48186,8 +48677,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-focusable-content",
@@ -48264,8 +48754,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-name-present",
@@ -48342,8 +48831,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "iframe-title-unique",
@@ -48424,8 +48912,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "image-of-text",
@@ -48501,8 +48988,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "image-redundant-alt",
@@ -48541,8 +49027,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-decorative",
@@ -48618,8 +49103,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-present",
@@ -48695,8 +49179,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "img-alt-quality",
@@ -48772,8 +49255,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-decorative",
@@ -48849,8 +49331,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-present",
@@ -48958,8 +49439,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "input-image-alt-quality",
@@ -49035,8 +49515,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "invalid-field-error-message",
@@ -49112,8 +49591,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-for-valid",
@@ -49151,8 +49629,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-in-name",
@@ -49227,8 +49704,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "label-title-only",
@@ -49271,8 +49747,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-banner-is-top-level",
@@ -49311,8 +49786,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-complementary-is-top-level",
@@ -49351,8 +49825,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-contentinfo-is-top-level",
@@ -49391,8 +49864,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-main-is-top-level",
@@ -49431,8 +49903,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-banner",
@@ -49471,8 +49942,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-contentinfo",
@@ -49511,8 +49981,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-no-duplicate-main",
@@ -49551,8 +50020,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-one-main",
@@ -49591,8 +50059,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "landmark-role-name-present",
@@ -49633,7 +50100,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "LANDMARK_ROLE_NAME_MISSING": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "landmark-unique",
@@ -49672,8 +50146,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "link-in-text-block",
@@ -49759,8 +50232,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "relative": 0.1
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "link-name-present",
@@ -49885,7 +50357,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "link-name-quality",
@@ -49976,8 +50467,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "list-children-valid",
@@ -50053,8 +50543,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "listbox-name-present",
@@ -50132,7 +50621,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "listitem-parent-valid",
@@ -50208,8 +50708,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "live-region-announcements",
@@ -50286,8 +50785,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "manual-review",
@@ -50439,8 +50937,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "media-alternative-transcript-evidence",
@@ -50516,8 +51013,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "menuitem-name-present",
@@ -50595,7 +51091,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "meta-refresh-no-exceptions",
@@ -50666,8 +51181,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-refresh-timing-absent",
@@ -50771,8 +51285,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-viewport-large",
@@ -50810,8 +51323,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meta-viewport-zoom-enabled",
@@ -50886,8 +51398,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "meter-name-present",
@@ -50964,7 +51475,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "mouse-only-event-handlers",
@@ -51054,8 +51576,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "moving-content-pausable",
@@ -51130,8 +51651,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "nested-interactive-controls-absent",
@@ -51206,8 +51726,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "no-autoplay-audio",
@@ -51282,8 +51801,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "object-text-alternative-present",
@@ -51359,8 +51877,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "object-text-alternative-quality",
@@ -51436,8 +51953,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "option-name-present",
@@ -51515,7 +52031,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "p-as-heading",
@@ -51590,8 +52125,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-has-heading-one",
@@ -51630,8 +52164,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-title-patterns",
@@ -51707,8 +52240,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "page-title-present",
@@ -51784,8 +52316,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "password-paste-enabled",
@@ -51853,8 +52384,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "presentation-role-conflict",
@@ -51893,8 +52423,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "presentational-children-focusable-absent",
@@ -51971,8 +52500,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "progressbar-name-present",
@@ -52049,7 +52577,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "region",
@@ -52088,8 +52627,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "role-img-text-alternative-present",
@@ -52167,7 +52705,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "emptyAriaLabel": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "emptyAriaLabelledby": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "missingTextAlternative": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "nameNotResolved": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "scope-attr-valid",
@@ -52206,8 +52767,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "scrollable-region-focusable",
@@ -52297,8 +52857,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "searchbox-name-present",
@@ -52376,7 +52935,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "server-side-image-map-absent",
@@ -52452,8 +53022,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "skip-link",
@@ -52492,8 +53061,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "slider-name-present",
@@ -52571,7 +53139,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "spinbutton-name-present",
@@ -52649,7 +53228,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "summary-name-present",
@@ -52725,8 +53315,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-image-text-alternative-present",
@@ -52803,8 +53392,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-text-alternative-present",
@@ -52881,8 +53469,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "svg-text-alternative-quality",
@@ -52958,8 +53545,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "tab-name-present",
@@ -53036,8 +53622,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "tabindex",
@@ -53076,8 +53661,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-duplicate-name",
@@ -53116,8 +53700,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-fake-caption",
@@ -53192,8 +53775,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-headers-attr-valid",
@@ -53269,8 +53851,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "table-th-has-data-cells",
@@ -53346,8 +53927,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "target-size-minimum",
@@ -53424,8 +54004,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "absolute": 6
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "td-has-header",
@@ -53500,8 +54079,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "text-spacing-content-loss",
@@ -53583,8 +54161,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "absolute": 8
       }
-    },
-    "verdicts": null
+    }
   },
   {
     "ruleId": "textbox-name-present",
@@ -53662,7 +54239,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "tooltip-name-present",
@@ -53739,7 +54327,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "treeitem-name-present",
@@ -53817,7 +54424,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null
+    "verdicts": {
+      "wai-aria": {
+        "name_closedContent": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_contentTooDeep": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_internals": {
+          "outcome": "cantTell",
+          "requirement": "name-required"
+        },
+        "name_missing": {
+          "outcome": "fail",
+          "requirement": "name-required"
+        }
+      }
+    }
   },
   {
     "ruleId": "valid-lang",
@@ -53894,7 +54520,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null,
-    "verdicts": null,
     "settings": [
       "codes"
     ],
@@ -53985,8 +54610,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "video-poster-text-alternative-present",
@@ -54062,8 +54686,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   },
   {
     "ruleId": "widget-keyboard-focusable",
@@ -54140,8 +54763,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "references": [],
     "requirements": null,
     "mappings": null,
-    "margin": null,
-    "verdicts": null
+    "margin": null
   }
 ],
     composites: [
@@ -107571,6 +108193,8 @@ function toCatalogEntry(r, engineOptions, mappingTokens) {
     margin: r.margin
       ? { ...r.margin, ...(r.margin.band ? { band: { ...r.margin.band } } : {}) }
       : null,
+    // Its verdicts under standards besides WCAG, by reason code, or null.
+    verdicts: r.verdicts ? JSON.parse(JSON.stringify(r.verdicts)) : null,
     // The settings it offers a pack's variant, described; absent when none.
     ...(Array.isArray(r.variantSettings) && r.variantSettings.length
       ? {
@@ -128915,10 +129539,39 @@ const runCoreSettled = (function runCoreSettled(
     'wai-aria': {
       name: 'WAI-ARIA',
       version: '1.2',
+      // One rollup per requirement a rule's verdicts name, in this order.
       requirements: {
         'name-required': {
           title: 'Roles that require an accessible name have one',
           url: 'https://www.w3.org/TR/wai-aria-1.2/#namecalculation'
+        },
+        roles: {
+          title: 'Roles are concrete and current',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#roles'
+        },
+        'required-states': {
+          title: 'Required states and properties are present',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#requiredState'
+        },
+        'supported-attributes': {
+          title: 'States and properties are supported by the role',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#supportedState'
+        },
+        'prohibited-attributes': {
+          title: 'Prohibited states and properties are absent',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#prohibitedattributes'
+        },
+        'attribute-values': {
+          title: 'States and properties have valid values',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#propcharacteristic_value'
+        },
+        'owned-elements': {
+          title: 'Containers own the elements their role requires, each with one owner',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#mustContain'
+        },
+        'context-roles': {
+          title: 'Elements are in the context their role requires',
+          url: 'https://www.w3.org/TR/wai-aria-1.2/#scope'
         }
       }
     }
@@ -129114,6 +129767,30 @@ const runCoreSettled = (function runCoreSettled(
       mappingSelection.tokens
     );
   }
+  // A rule that gives verdicts under a standard names the requirements its
+  // codes check there, after WCAG's and any other standard's.
+  if (verdictStandards.length) {
+    for (const c of checksResults) {
+      const def = c && c.verdicts && verdictDefById.get(c.ruleId);
+      if (!def || !c.meta) continue;
+      for (const k of verdictStandards) {
+        const table = def.verdicts && def.verdicts[k];
+        if (!table) continue;
+        const std = VERDICT_STANDARDS[k];
+        const reqIds = [...new Set(Object.values(table).map((e) => e.requirement))].filter(
+          (id) => id && std.requirements[id]
+        );
+        const extra = reqIds.map((id) => ({
+          standard: std.name,
+          version: std.version,
+          requirement: id,
+          title: std.requirements[id].title,
+          url: std.requirements[id].url
+        }));
+        c.meta.normativeMappings = (c.meta.normativeMappings || []).concat(extra);
+      }
+    }
+  }
 
   // Every result echoes the options it ran with, and translation reads its
   // dictionaries from that echo while each result is built. Once all of them
@@ -129272,6 +129949,13 @@ const runCoreSettled = (function runCoreSettled(
         ...(note ? { note } : {})
       };
     });
+  // The standards whose verdicts the results carry, which their rollups name.
+  for (const k of verdictStandards) {
+    const name = VERDICT_STANDARDS[k].name;
+    if (named.has(name) && !standards.some((s) => s.standard === name)) {
+      standards.push({ key: k, standard: name });
+    }
+  }
 
   // output.detail: 'findings' keeps whole only the results that report
   // something: fail and cantTell, and a pass or notApplicable that lists
