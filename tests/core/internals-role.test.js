@@ -160,8 +160,9 @@ function scanPlain(body, ruleId, { inMain = true } = {}) {
 test('aria-allowed-attr judges a custom element by the role its internals give', () => {
   const checkbox = '<x-plain data-role="checkbox" aria-checked="true">Subscribe</x-plain>';
   assert.equal(scanPlain(checkbox, 'aria-allowed-attr').outcome, 'pass');
+  // An attribute the role does not support: a WAI-ARIA violation, asked about.
   const button = '<x-plain data-role="button" aria-checked="true">Subscribe</x-plain>';
-  assert.equal(scanPlain(button, 'aria-allowed-attr').outcome, 'fail');
+  assert.equal(scanPlain(button, 'aria-allowed-attr').outcome, 'cantTell');
 });
 
 test('aria-prohibited-attr does not read a custom element with a role as roleless', () => {
