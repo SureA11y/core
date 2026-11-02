@@ -34,10 +34,10 @@ test(`${RULE_ID}: pass for a valid boolean value`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for an invalid boolean value`, () => {
+test(`${RULE_ID}: an invalid boolean value on a non-control is asked about`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-hidden="yes"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ATTR_VALUE_INVALID');
 });
@@ -48,16 +48,16 @@ test(`${RULE_ID}: pass for a valid tristate value ("mixed")`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for an invalid tristate value`, () => {
+test(`${RULE_ID}: an invalid tristate value on an element with no widget role is asked about`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-checked="maybe"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test(`${RULE_ID}: fail for an invalid enumerated token`, () => {
+test(`${RULE_ID}: an invalid enumerated token on a non-state attribute is asked about`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-live="loud"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: pass for a valid enumerated token`, () => {
@@ -66,10 +66,10 @@ test(`${RULE_ID}: pass for a valid enumerated token`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail for a non-integer aria-level`, () => {
+test(`${RULE_ID}: a non-integer aria-level is asked about`, () => {
   const html = `<!doctype html><html><body><div id="a" role="heading" aria-level="abc"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: pass for a valid integer aria-level`, () => {
@@ -124,7 +124,7 @@ test(`${RULE_ID}: a dangling aria-describedby or aria-labelledby on a named butt
   });
 });
 
-test(`${RULE_ID}: integers outside the range WAI-ARIA sets fail`, () => {
+test(`${RULE_ID}: integers outside the range WAI-ARIA sets are asked about`, () => {
   const cases = [
     ['<div role="heading" aria-level="0">t</div>', 'aria-level'],
     ['<ul><li aria-posinset="0" aria-setsize="3">a</li></ul>', 'aria-posinset'],
@@ -147,7 +147,10 @@ test(`${RULE_ID}: integers outside the range WAI-ARIA sets fail`, () => {
     const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
     for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
       const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID], engineOptions });
-      const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+      const rule = assertRule(result, RULE_ID, 'cantTell', {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      });
       assert.equal(rule.occurrences[0].data.details.attr, attr);
       assert.equal(rule.occurrences[0].data.details.valueReason, 'integer-out-of-range');
     }
@@ -213,7 +216,7 @@ test(`${RULE_ID}: pass when aria-controls resolves`, () => {
 test(`${RULE_ID}: a real fail elsewhere keeps the outcome at fail and carries the aria-controls occurrence along`, () => {
   const html = `<!doctype html><html><body>
     <button aria-controls="does_not_exist">Show details</button>
-    <div aria-hidden="yes">Bad boolean</div>
+    <div role="checkbox" tabindex="0" aria-checked="yes">Bad state</div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
@@ -243,7 +246,7 @@ test(`${RULE_ID}: an empty token-list value is out of scope, not invalid`, () =>
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><div id="a" aria-hidden="yes"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'aria-* attribute values must match their declared type');
 });
 
@@ -257,22 +260,32 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-valid-attr-value-all-sce
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 15, maxOccurrences: 15 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 17, maxOccurrences: 17 });
 
+  // An invalid value fails only where it leaves a control's state, value or
+  // focus unstated (15, 34, 35); elsewhere it is a WAI-ARIA violation asked
+  // about (06-09, 18, 19).
   const expectedFailIds = [
+    'avav_case_15',
+    'avav_case_21',
+    'avav_case_22',
+    'avav_case_23',
+    'avav_case_24',
+    'avav_case_34',
+    'avav_case_35'
+  ];
+  const expectedCantTellIds = [
     'avav_case_06',
     'avav_case_07',
     'avav_case_08',
     'avav_case_09',
-    'avav_case_15',
     'avav_case_18',
     'avav_case_19',
-    'avav_case_21',
-    'avav_case_22',
-    'avav_case_23',
-    'avav_case_24'
+    'avav_case_14',
+    'avav_case_17',
+    'avav_case_25',
+    'avav_case_26'
   ];
-  const expectedCantTellIds = ['avav_case_14', 'avav_case_17', 'avav_case_25', 'avav_case_26'];
   const expectedNoOccIds = [
     'avav_case_01',
     'avav_case_02',
@@ -545,4 +558,39 @@ test(`${RULE_ID}: no lean for a closed popup with another role than aria-haspopu
     ),
     undefined
   );
+});
+
+// An invalid value fails SC 4.1.2 only where it leaves a control's
+// user-settable state or value, or its focused item, unstated. Elsewhere it is
+// a WAI-ARIA violation (ACT 6a7281: "not required for conformance to WCAG 2.1
+// at any level") reported for review.
+test(`${RULE_ID}: an invalid state value fails on a control and is asked about elsewhere`, () => {
+  const failing = [
+    '<div role="checkbox" tabindex="0" aria-checked="yes">a</div>',
+    '<button aria-pressed="on">b</button>',
+    '<button aria-expanded="open">c</button>',
+    '<div role="listbox"><div role="option" aria-selected="yes">d</div></div>',
+    '<div role="slider" tabindex="0" aria-label="s" aria-valuenow="high"></div>',
+    '<div role="listbox" tabindex="0" aria-activedescendant="nope"></div>'
+  ];
+  for (const body of failing) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+    const invalid = rule.occurrences.find(
+      (o) => o.data.details.reasonCode === 'ARIA_ATTR_VALUE_INVALID'
+    );
+    assert.strictEqual(invalid.occurrenceOutcome, 'fail', body);
+  }
+  const asked = [
+    '<div aria-checked="yes">a</div>',
+    '<div role="heading" aria-level="abc">b</div>',
+    '<div aria-live="loud">c</div>',
+    '<span aria-hidden="yes">d</span>'
+  ];
+  for (const body of asked) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+    const [occ] = rule.occurrences;
+    assert.strictEqual(occ.uncertainty && occ.uncertainty.code, 'spec-only', body);
+  }
 });

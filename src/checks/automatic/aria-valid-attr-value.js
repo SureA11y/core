@@ -26,6 +26,13 @@
  *   of scope for every value type, not a violation: a common, deliberate
  *   pattern in templated markup (e.g. React conditionally rendering
  *   `aria-describedby={hasError ? errorId : ''}`).
+ *   A value of the wrong type is a WAI-ARIA violation, which ACT 6a7281
+ *   says is "not required for conformance to WCAG 2.1 at any level". It is a
+ *   FAIL only where it leaves a control's user-settable state or value, or
+ *   the focused item, unstated, which SC 4.1.2 requires to be programmatically
+ *   determinable: one of aria-checked, aria-pressed, aria-selected,
+ *   aria-expanded or aria-valuenow on an element with a widget role, or any
+ *   invalid aria-activedescendant. Anywhere else it is CANTTELL.
  *   Some attributes also constrain each other, checked once each is
  *   valid on its own:
  *   - On an element whose role is slider, scrollbar, progressbar, meter,
@@ -53,7 +60,8 @@
  * @reports
  *   - `attr`: the attribute whose value is not valid.
  *   - `value`: its value as written.
- *   - `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`,
+ *   - `valueReason`: what is wrong with it. On an ARIA_ATTR_VALUE_INVALID
+ *     finding (either tier): `expected-true-false`,
  *     `expected-true-false-undefined`, `expected-true-false-mixed`,
  *     `expected-integer`, `expected-number` or `invalid-token` when it is not
  *     of the attribute's type, `integer-out-of-range` when it is below the
@@ -67,11 +75,18 @@
  *     included); `posinset`, `setsize`; `haspopup`, `expectedRole`,
  *     `popupRole`; `activedescendant`.
  * @reason-codes
- *   - `ARIA_ATTR_VALUE_INVALID` (fail): an aria-* attribute whose value is not
- *     of the type WAI-ARIA defines for it, is below its lowest allowed value,
- *     or, for aria-activedescendant, names no element.
- *     Basis: WCAG 4.1.2; ACT 6a7281; WAI-ARIA 1.2 state and property value
- *     types.
+ *   - `ARIA_ATTR_VALUE_INVALID` (fail, cantTell): an aria-* attribute whose
+ *     value is not of the type WAI-ARIA defines for it, is below its lowest
+ *     allowed value, or, for aria-activedescendant, names no element. It fails
+ *     where the value leaves a control's state, value or focus unstated: one
+ *     of aria-checked, aria-pressed, aria-selected, aria-expanded or
+ *     aria-valuenow on an element with a widget role (explicit or native), or
+ *     any invalid aria-activedescendant. Anywhere else (aria-level="abc",
+ *     aria-live="loud", aria-checked on an element with no widget role) it is
+ *     asked about: a WAI-ARIA violation whose WCAG effect depends on what the
+ *     attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 state and property value types; ACT 6a7281; WCAG
+ *     4.1.2.
  *   - `ARIA_ATTR_VALUE_TARGET_ABSENT` (cantTell): an id reference list, such as
  *     aria-describedby or aria-controls, none of whose ids matches an element;
  *     a script may add it later.
@@ -569,6 +584,55 @@ function runInPage(ctx) {
     return out;
   }
 
+  // The states and value a user sets on a control (SC 4.1.2: "states,
+  // properties, and values that can be set by the user can be
+  // programmatically set"). An invalid value for one of them on a control
+  // leaves that state or value unstated.
+  const USER_SETTABLE_STATE_ATTRS = new Set([
+    'aria-checked',
+    'aria-pressed',
+    'aria-selected',
+    'aria-expanded',
+    'aria-valuenow'
+  ]);
+  // The widget roles: the user interface components those states belong to.
+  const CONTROL_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'link',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
+  function controlRoleOf(el) {
+    const author = roleOf(el);
+    if (author) return author;
+    try {
+      return trim(ariaHelpers.getNativeRoleForElement(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function invalidValueFailsWcag(el, item) {
+    // An active descendant that names no element: the focused item is not
+    // exposed.
+    if (item.name === 'aria-activedescendant') return true;
+    return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const failOccurrences = [];
@@ -614,15 +678,30 @@ function runInPage(ctx) {
     }
 
     for (const item of invalid || []) {
-      failOccurrences.push(
+      // A FAIL only where the invalid value leaves a control's state, value
+      // or focus undeterminable (SC 4.1.2); elsewhere it is a WAI-ARIA
+      // violation whose WCAG effect a person settles.
+      const wcagFail = invalidValueFailsWcag(el, item);
+      (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an ARIA attribute with an invalid value.',
           hint: 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
+          occurrenceOutcome: wcagFail ? 'fail' : 'cantTell',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_fail',
             hintKey: 'ariaValidAttrValue_hint_fail',
             params: { attr: item.name, value: item.value }
           },
+          ...(wcagFail
+            ? {}
+            : {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed:
+                    'Whether the attribute carries information the page shows and conveys no other way.',
+                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                }
+              }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',

@@ -42,7 +42,7 @@ test('dialog-name-present: role=dialog with aria-labelledby => pass', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('dialog-name-present: role=alertdialog missing name => fail', () => {
+test('dialog-name-present: role=alertdialog missing name => cantTell', () => {
   const html = `<!doctype html><html><body><div role='alertdialog'></div></body></html>`;
 
   if (!runa11yCoreOnHtml || !assertRule) {
@@ -50,7 +50,7 @@ test('dialog-name-present: role=alertdialog missing name => fail', () => {
     return;
   }
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: pass when aria-labelledby points at an element whose own name comes from a wrapped img alt`, () => {
@@ -98,7 +98,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dialog-name-present-all-scena
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 9, maxOccurrences: 9 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 9, maxOccurrences: 9 });
 
   const expectedFailIds = [
     'dialog_case_01',
@@ -157,13 +157,13 @@ test('dialog-name-present: aria-labelledby pointing at an <iframe> falls back to
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: an open native <dialog> with no name fails; a named one passes`, () => {
+test(`${RULE_ID}: an open native <dialog> with no name is asked about; a named one passes`, () => {
   const bad = `<!doctype html><html><body><dialog open id="d"><p>Sure?</p><button>OK</button></dialog></body></html>`;
   for (const engineOptions of [{}, { profile: 'wcag22-aa' }]) {
     const rule = assertRule(
       runa11yCoreOnHtml(bad, { runOnly: [RULE_ID], engineOptions }),
       RULE_ID,
-      'fail',
+      'cantTell',
       { minOccurrences: 1, maxOccurrences: 1 }
     );
     assert.ok(hasOccurrenceForId(rule, 'd'));
@@ -188,19 +188,19 @@ test(`${RULE_ID}: the role is the first concrete token of a fallback list`, () =
     const rule = assertRule(
       runa11yCoreOnHtml(alert, { runOnly: [RULE_ID], engineOptions }),
       RULE_ID,
-      'fail',
+      'cantTell',
       { minOccurrences: 1, maxOccurrences: 1 }
     );
     assert.equal(rule.occurrences[0].data.details.controlType, 'alertdialog');
   }
   const unknownFirst = `<!doctype html><html><body><div role="modal dialog" id="d"></div></body></html>`;
-  assertRule(runa11yCoreOnHtml(unknownFirst, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+  assertRule(runa11yCoreOnHtml(unknownFirst, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
     minOccurrences: 1,
     maxOccurrences: 1
   });
   // Tokens are separated by any ASCII whitespace and matched in any case.
   const tabUpper = `<!doctype html><html><body><div role="modal\tDIALOG" id="d"></div></body></html>`;
-  assertRule(runa11yCoreOnHtml(tabUpper, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+  assertRule(runa11yCoreOnHtml(tabUpper, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
     minOccurrences: 1,
     maxOccurrences: 1
   });

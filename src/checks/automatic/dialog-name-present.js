@@ -23,11 +23,20 @@
  *   aria-labelledby that resolves to non-empty text, or from title. Both
  *   roles are name-from-author-only, so the heading or body text inside the
  *   dialog is not accepted as its name unless aria-labelledby points at it.
+ *   A missing name is reported at CANTTELL, not FAIL. WAI-ARIA requires it
+ *   ("Authors MUST provide an accessible name for a dialog"), but a dialog is
+ *   not itself a user interface component in WCAG's sense, "a single control
+ *   for a distinct function": its controls are, and each is named by its own
+ *   rule. So the missing name proves the WAI-ARIA violation, not a failure of
+ *   SC 4.1.2. It can still be a WCAG failure where the dialog shows a visible
+ *   title that is not tied to it (that relationship is then not
+ *   programmatically determinable, SC 1.3.1); a person settles that.
  * @reason-codes
- *   - `name_missing` (fail): the dialog or alertdialog has no accessible name
- *     from aria-label, aria-labelledby or title.
- *     Basis: WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST);
- *     WAI-ARIA 1.2 alertdialog role.
+ *   - `name_missing` (cantTell): the dialog or alertdialog has no accessible
+ *     name from aria-label, aria-labelledby or title. A WAI-ARIA violation;
+ *     whether it also fails a WCAG criterion depends on what the page shows.
+ *     Basis: WAI-ARIA 1.2 dialog role (MUST); WAI-ARIA 1.2 alertdialog role;
+ *     accname 1.2; WCAG 4.1.2 (not settled); WCAG 1.3.1 (not settled).
  *   - `name_internals` (cantTell): the element is a custom element that may
  *     give itself a name through ElementInternals, which no script can read, so
  *     whether it has one could not be told.
@@ -216,6 +225,12 @@ function runInPage(ctx) {
           hintKey: 'dialogNamePresent_hint_fail',
           params: { role }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the dialog shows a visible title or heading that is not tied to it with aria-labelledby.',
+          evidence: { role, source: 'WAI-ARIA 1.2, dialog role (MUST)' }
+        },
         data: {
           details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
@@ -227,22 +242,16 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

@@ -66,16 +66,16 @@ test(`${RULE_ID}: pass when first token of a fallback role list is graphics-symb
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: fail when role does not exist (typo)`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="buton"></div></body></html>`;
+test(`${RULE_ID}: fail when role does not exist (typo) on a focusable element`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="buton" tabindex="0">Save</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'ARIA_ROLE_INVALID');
 });
 
-test(`${RULE_ID}: fail when role is abstract`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="widget"></div></body></html>`;
+test(`${RULE_ID}: fail when role is abstract on a focusable element`, () => {
+  const html = `<!doctype html><html><body><div id="a" role="widget" tabindex="0">Save</div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'a'));
@@ -99,7 +99,7 @@ test(`${RULE_ID}: cantTell when an abstract role sits on an element with a nativ
 });
 
 test(`${RULE_ID}: a roleless host stays a fail, a custom element has no native role to fall back to`, () => {
-  const html = `<!doctype html><html><body><my-widget id="a" role="buton">x</my-widget></body></html>`;
+  const html = `<!doctype html><html><body><my-widget id="a" role="buton" tabindex="0">x</my-widget></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.equal(rule.occurrences[0].occurrenceOutcome, 'fail');
@@ -107,7 +107,7 @@ test(`${RULE_ID}: a roleless host stays a fail, a custom element has no native r
 
 test(`${RULE_ID}: a fail-tier finding outranks a cantTell-tier one, and neither is dropped`, () => {
   const html = `<!doctype html><html><body>
-    <div id="a" role="buton"></div>
+    <div id="a" role="buton" tabindex="0"></div>
     <button id="b" role="buton">Click</button>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -118,7 +118,7 @@ test(`${RULE_ID}: a fail-tier finding outranks a cantTell-tier one, and neither 
 });
 
 test(`${RULE_ID}: i18n default is English`, () => {
-  const html = `<!doctype html><html><body><div id="a" role="buton"></div></body></html>`;
+  const html = `<!doctype html><html><body><div id="a" role="buton" tabindex="0"></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
   assert.strictEqual(rule.title, 'role attribute must be a valid, non-abstract ARIA role');
@@ -134,9 +134,16 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
 
   const expectedFailIds = ['arv_case_03', 'arv_case_04'];
+  // An unusable role on an element that takes no focus: asked about.
+  for (const id of ['arv_case_40', 'arv_case_41']) {
+    const occ = rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`));
+    assert.ok(occ, `Expected occurrence for id="${id}"`);
+    assert.equal(occ.occurrenceOutcome, 'cantTell');
+    assert.equal(occ.uncertainty.code, 'spec-only');
+  }
   const cantTellOcc = rule.occurrences.find((o) => o.html && o.html.includes('id="arv_case_08"'));
   assert.ok(cantTellOcc, 'Expected occurrence for id="arv_case_08"');
   assert.equal(cantTellOcc.occurrenceOutcome, 'cantTell');
@@ -160,7 +167,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
 });
 
 // role takes a fallback list: the first token the browser recognises wins, so
-// the rule fails only when no token names a concrete role (ACT 674b10).
+// the rule reports only when no token names a concrete role (ACT 674b10).
 test(`${RULE_ID}: a fallback list passes when any token is a concrete role`, () => {
   for (const role of ['searchfield searchbox', 'doc-biblioref link', 'link bogus']) {
     const html = `<!doctype html><html><body><div role="${role}" aria-label="x">t</div></body></html>`;
@@ -171,7 +178,7 @@ test(`${RULE_ID}: a fallback list passes when any token is a concrete role`, () 
 });
 
 test(`${RULE_ID}: a fallback list fails when no token is a concrete role`, () => {
-  const html = `<!doctype html><html><body><div role="bogus alsobogus" aria-label="x">t</div></body></html>`;
+  const html = `<!doctype html><html><body><div role="bogus alsobogus" aria-label="x" tabindex="0">t</div></body></html>`;
   assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
     minOccurrences: 1
   });
@@ -287,4 +294,27 @@ test(`${RULE_ID}: leans by whether the native role is a kind of the abstract rol
   const other = leanOn('<button id="a" role="landmark">Save</button>', 'a');
   assert.strictEqual(other.toward, 'fail');
   assert.strictEqual(other.i18n.whyKey, 'ariaRolesValid_lean_why_abstractOther');
+});
+
+// An unusable role on an element that takes no focus is a WAI-ARIA violation
+// whose WCAG effect depends on the page (<div role="heding"> fails SC 1.3.1
+// only if it is shown as a heading); on a focusable element it leaves a
+// control with no role (F59), which fails SC 4.1.2.
+test(`${RULE_ID}: an unusable role fails on a focusable element and is asked about on one that takes no focus`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+    <div id="a" role="heding">Orders</div>
+    <div id="b" role="buton" tabindex="0">Save</div>
+    <span id="c" role="landmark">x</span>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const tier = (id) =>
+    rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`)).occurrenceOutcome;
+  assert.equal(tier('a'), 'cantTell');
+  assert.equal(tier('b'), 'fail');
+  assert.equal(tier('c'), 'cantTell');
+  const onlyUnfocusable = `<!doctype html><html lang="en"><head><title>t</title></head><body><div role="heding">Orders</div></body></html>`;
+  assertRule(runa11yCoreOnHtml(onlyUnfocusable, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
 });

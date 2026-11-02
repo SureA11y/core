@@ -19,8 +19,11 @@
  *     gives it to one owner, by order, so the structure the other owners
  *     state is lost.
  *   - An `aria-owns` naming the element itself or one of its ancestors:
- *     fail (`ARIA_OWNS_ANCESTOR`), reported on the owner. The browser
- *     ignores that ownership, as it would make a cycle.
+ *     cantTell (`ARIA_OWNS_ANCESTOR`), reported on the owner. The
+ *     ownership is impossible (it would make a cycle) and is ignored, so the
+ *     structure the document itself states still stands: the WAI-ARIA
+ *     violation is certain, but a relationship the page shows is lost only
+ *     if it differs from that structure, which a person settles.
  *   - Otherwise: pass.
  * @reports
  *   - `ownerCount`: for `ARIA_OWNS_DUPLICATE`, how many elements name the
@@ -31,9 +34,12 @@
  *     more elements, so the browser gives it to one owner and the structure the
  *     others state is lost.
  *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns (MUST).
- *   - `ARIA_OWNS_ANCESTOR` (fail): an aria-owns that names the element itself
- *     or one of its ancestors, an ownership the browser ignores.
- *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns.
+ *   - `ARIA_OWNS_ANCESTOR` (cantTell): an aria-owns that names the element
+ *     itself or one of its ancestors, an ownership that is ignored, leaving
+ *     the document's own structure. A WAI-ARIA violation; whether it also
+ *     fails SC 1.3.1 depends on the relationship the page shows.
+ *     Basis: WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled); WCAG
+ *     4.1.2 (not settled).
  * @implementation-notes
  * - Chromium, checked: an element named by two owners is a child of one of
  *   them only, and an owner naming its ancestor gets no such child.
@@ -98,6 +104,7 @@ function runInPage(ctx) {
   }
 
   const fails = [];
+  const questions = [];
   let applicableCount = 0;
   // Each owned element, with the owners that name it, in document order.
   const ownersOf = new Map();
@@ -113,7 +120,10 @@ function runInPage(ctx) {
     for (const ref of refs) {
       if (ref === owner || dom.contains(ref, owner)) {
         const ownedId = trim(dom.get(ref, 'id'));
-        fails.push(
+        // The ownership is impossible, so the markup's own structure still
+        // stands: a WAI-ARIA violation whose WCAG effect depends on whether
+        // the page shows the relationship the author tried to state.
+        questions.push(
           helpers.reportOccurrence(owner, {
             summary: `This element’s aria-owns names ${ownedId}, which contains the element itself.`,
             hint: 'Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.',
@@ -121,6 +131,12 @@ function runInPage(ctx) {
               summaryKey: 'ariaOwnsValid_summary_fail_ancestor',
               hintKey: 'ariaOwnsValid_hint_fail_ancestor',
               params: { id: ownedId }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the page shows a relationship between the two elements that their place in the document does not already state.',
+              evidence: { ownedId, relation: 'ancestor-or-self' }
             },
             data: {
               details: { reasonCode: 'ARIA_OWNS_ANCESTOR', ownedId },
@@ -169,7 +185,7 @@ function runInPage(ctx) {
   }
   return {
     ruleId: rule.ruleId,
-    ...helpers.resolveTieredOutcome(fails, [], rule.defaultSeverity || 'serious')
+    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
   };
 }
 

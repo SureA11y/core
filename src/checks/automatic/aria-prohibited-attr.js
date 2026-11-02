@@ -31,21 +31,30 @@
  *   it off) and at worst silently ignored by assistive technology. A
  *   roleless element whose own content already gives it a name is
  *   reported as CANTTELL, since the attribute may be a deliberate override;
- *   one with no other source for a name FAILs.
+ *   one with no other source for a name FAILs. The same holds for (a): an
+ *   element whose own text already names it loses nothing WCAG requires for
+ *   certain when the prohibited label is ignored, so the WAI-ARIA violation
+ *   is reported at CANTTELL (ACT kb1m8s maps it to WAI-ARIA, with SC 1.3.1
+ *   only as a secondary requirement); without such text it FAILs. A role
+ *   description on generic or on an element with no role refines no control,
+ *   so it is a WAI-ARIA violation reported at CANTTELL whatever the content.
  * @reports
  *   - `attr`: the naming attribute found, `aria-label` or
  *     `aria-labelledby`.
  *   - `role`: the role that prohibits it; `null` on an element with no role.
  * @reason-codes
- *   - `ARIA_ATTR_PROHIBITED` (fail): aria-label or aria-labelledby on an
- *     element whose role cannot be named, such as paragraph, generic or
- *     presentation.
- *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 prohibited states and
- *     properties (MUST).
- *   - `ARIA_ATTR_PROHIBITED_ROLELESS` (fail): a naming attribute on an element
- *     with no role and no other source for a name, or a role description on an
- *     element with no role.
- *     Basis: WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 generic (MUST); HTML-AAM.
+ *   - `ARIA_ATTR_PROHIBITED` (fail, cantTell): aria-label or aria-labelledby
+ *     on an element whose role cannot be named, such as paragraph, generic or
+ *     presentation, or a role description on generic. It fails where the
+ *     element has no other source for a name, and is asked about where its own
+ *     text already names it, or for a role description.
+ *     Basis: WAI-ARIA 1.2 prohibited states and properties (MUST); ACT
+ *     kb1m8s; WCAG 4.1.2.
+ *   - `ARIA_ATTR_PROHIBITED_ROLELESS` (fail, cantTell): a naming attribute on
+ *     an element with no role and no other source for a name (fail), or a role
+ *     description on an element with no role (cantTell: it refines no
+ *     control).
+ *     Basis: WAI-ARIA 1.2 generic (MUST); HTML-AAM; ACT kb1m8s; WCAG 4.1.2.
  *   - `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` (cantTell): a naming
  *     attribute on an element with no role whose own text gives it a name, so
  *     the attribute may be a deliberate override.
@@ -217,10 +226,24 @@ function runInPage(ctx) {
 
     if (!present.length) continue;
 
+    // As for an element with no role (Tier 2): where the element's own text
+    // already gives it a name, an ignored label loses nothing WCAG requires
+    // for certain, and a role description describes no control. Both are
+    // WAI-ARIA violations asked about; a label on an element with no other
+    // name still fails.
+    const tier1NameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    const tier1HasContent = !!(
+      tier1NameInfo &&
+      tier1NameInfo.present &&
+      String(tier1NameInfo.value || '').trim() !== ''
+    );
+
     for (const attr of present) {
-      failOccurrences.push(
+      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
+      const asked = roleDescription || tier1HasContent;
+      (asked ? cantTellOccurrences : failOccurrences).push(
         helpers.reportOccurrence(el, {
-          occurrenceOutcome: 'fail',
+          occurrenceOutcome: asked ? 'cantTell' : 'fail',
           summary: 'This attribute is prohibited on this element’s role.',
           hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
           i18n: {
@@ -228,6 +251,17 @@ function runInPage(ctx) {
             hintKey: 'ariaProhibitedAttr_hint_fail',
             params: { attr, role }
           },
+          ...(asked
+            ? {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed: roleDescription
+                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
+                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
+                  evidence: { attribute: attr, role, hasOwnContent: tier1HasContent }
+                }
+              }
+            : {}),
           data: {
             details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
           }
@@ -475,16 +509,24 @@ function runInPage(ctx) {
     for (const attr of present) {
       // A role description has nothing to describe without a role, whatever
       // the element's content: content can stand in for a name, not a role.
+      // It describes no control either, so nothing a WCAG criterion asks for
+      // is lost: a WAI-ARIA violation, asked about.
       if (PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr)) {
-        failOccurrences.push(
+        cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
-            occurrenceOutcome: 'fail',
+            occurrenceOutcome: 'cantTell',
             summary: `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
             hint: 'Give the element the role the description refines, or remove the attribute.',
             i18n: {
               summaryKey: 'ariaProhibitedAttr_summary_fail_roleDescription',
               hintKey: 'ariaProhibitedAttr_hint_fail_roleDescription',
               params: { attr, element: tag }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the element is a control whose role the description was meant to refine; if so, it needs that role.',
+              evidence: { attribute: attr, element: tag, role: null }
             },
             data: {
               details: {

@@ -10,13 +10,13 @@ const assert = require('node:assert/strict');
 
 const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
-const details = (ruleId, body) => {
+const details = (ruleId, body, outcome = 'fail') => {
   const result = runa11yCoreOnHtml(
     `<!doctype html><html lang="en"><head><title>t</title></head><body>${body}</body></html>`,
     { runOnly: [ruleId] }
   );
   const rule = result.checksResults.find((r) => r.ruleId === ruleId);
-  assert.equal(rule.outcome, 'fail', body);
+  assert.equal(rule.outcome, outcome, body);
   return rule.occurrences.map((o) => o.data.details);
 };
 
@@ -54,7 +54,8 @@ test('aria-role-name-present: every finding names the role that needs a name', (
     ['tree', '<ul role="tree"><li role="treeitem">a</li></ul>']
   ];
   for (const [role, body] of cases) {
-    const [d] = details('aria-role-name-present', body);
+    // A missing name is a WAI-ARIA violation reported for review (cantTell).
+    const [d] = details('aria-role-name-present', body, 'cantTell');
     assert.equal(d.role, role, body);
   }
 });

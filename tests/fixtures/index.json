@@ -74,8 +74,8 @@
       "totalCases": 36,
       "caseCounts": {
         "PASS": 14,
-        "FAIL": 16,
-        "CANTTELL": 2,
+        "FAIL": 0,
+        "CANTTELL": 18,
         "OTHER": 4
       }
     },
@@ -245,8 +245,8 @@
       "totalCases": 7,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 3,
-        "CANTTELL": 0,
+        "FAIL": 1,
+        "CANTTELL": 2,
         "OTHER": 2
       }
     },
@@ -264,8 +264,8 @@
       "totalCases": 16,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 10,
-        "CANTTELL": 0,
+        "FAIL": 9,
+        "CANTTELL": 1,
         "OTHER": 4
       }
     },
@@ -359,8 +359,8 @@
       "totalCases": 30,
       "caseCounts": {
         "PASS": 8,
-        "FAIL": 9,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 9,
         "OTHER": 13
       }
     },
@@ -376,11 +376,11 @@
       "testFile": "tests/engine-checks/automatic/aria-roles-valid.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 7,
         "FAIL": 2,
-        "CANTTELL": 1,
+        "CANTTELL": 3,
         "OTHER": 1
       }
     },
@@ -431,11 +431,11 @@
       "testFile": "tests/engine-checks/automatic/aria-valid-attr-value.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-valid-attr-value-all-scenarios.html",
-      "totalCases": 33,
+      "totalCases": 35,
       "caseCounts": {
         "PASS": 17,
-        "FAIL": 11,
-        "CANTTELL": 4,
+        "FAIL": 7,
+        "CANTTELL": 10,
         "OTHER": 1
       }
     },
@@ -795,8 +795,8 @@
       "totalCases": 25,
       "caseCounts": {
         "PASS": 5,
-        "FAIL": 8,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 8,
         "OTHER": 12
       }
     },
@@ -2602,8 +2602,8 @@
       "totalCases": 7,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 2,
-        "CANTTELL": 0,
+        "FAIL": 0,
+        "CANTTELL": 2,
         "OTHER": 1
       }
     },

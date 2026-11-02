@@ -41,14 +41,29 @@
  *   role: the first child <legend> of a <fieldset>, the first child
  *   <caption> of a <table>, and an associated <label> on a labelable
  *   element such as <progress> or <meter>.
+ *   A missing name is reported at CANTTELL, not FAIL. The requirement is
+ *   WAI-ARIA's ("Accessible Name Required: True"), and none of these roles is
+ *   by itself a user interface component in WCAG's sense, "a single control
+ *   for a distinct function": a grid, tree or radiogroup is a container of
+ *   controls (its cells, items or radios, each named by its own rule), and a
+ *   meter or progressbar is no control at all. So a missing name proves the
+ *   WAI-ARIA violation, not a failure of SC 4.1.2. It can still be one, or a
+ *   failure of another criterion, depending on the page: a visible question
+ *   above a radiogroup that is not tied to it, a visible title for a grid that
+ *   is not tied to it. A person settles that. A meter or progressbar with no
+ *   text alternative fails SC 1.1.1 through meter-name-present and
+ *   progressbar-name-present.
  * @reports
  *   - `role`: the role that needs a name, one of `grid`, `meter`,
  *     `progressbar`, `radiogroup` and `tree`. A stable contract,
  *     unlike the rest of `data.details`.
  * @reason-codes
- *   - `name_missing` (fail): an element whose role requires an accessible name
- *     has none from aria-label, aria-labelledby, title or its host element.
- *     Basis: WCAG 4.1.2; WAI-ARIA 1.2 accessible name required; accname 1.2.
+ *   - `name_missing` (cantTell): an element whose role requires an accessible
+ *     name has none from aria-label, aria-labelledby, title or its host
+ *     element. A WAI-ARIA violation; whether it also fails a WCAG criterion
+ *     depends on what the page shows.
+ *     Basis: WAI-ARIA 1.2 accessible name required (MUST); accname 1.2; WCAG
+ *     4.1.2 (not settled).
  *   - `name_internals` (cantTell): the element is a custom element that may
  *     give itself a name through ElementInternals, which no script can read, so
  *     whether it has one could not be told.
@@ -265,6 +280,12 @@ function runInPage(ctx) {
         hintKey: 'ariaRoleNamePresent_hint_fail',
         params: { role }
       },
+      uncertainty: {
+        code: 'spec-only',
+        needed:
+          'Whether the page shows a name or question for this element that people rely on, such as a visible title or group label not tied to it.',
+        evidence: { role, source: 'WAI-ARIA 1.2, Accessible Name Required' }
+      },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
@@ -286,22 +307,18 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (!occurrences.length) {
+  if (!occurrences.length && !questions.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'minor',
-    occurrences
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
   };
 }
 
