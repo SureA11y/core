@@ -1242,6 +1242,7 @@
   "report_meta_schemaVersion": "versión del esquema",
   "report_meta_target": "objetivo",
   "report_meta_profile": "perfil",
+  "report_meta_profileNotRun": "no ejecutado",
   "report_meta_optInRules": "reglas activadas explícitamente",
   "report_meta_viewport": "área de visualización",
   "report_meta_colorScheme": "esquema de color",

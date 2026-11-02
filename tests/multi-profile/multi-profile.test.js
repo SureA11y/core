@@ -281,3 +281,61 @@ test('a runOnly that selects the rules instead leaves every profile unapplied, a
   ]);
   assert.ok(!JSON.stringify(r).includes('__profileNotApplied'));
 });
+
+// From a stress test of the merge.
+
+test('two findings of one rule on one element for the same reason are both kept', () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><main>
+    <span aria-checked="true" aria-pressed="true" aria-selected="true">x</span>
+    <button aria-pressed="maybe" aria-expanded="perhaps" aria-haspopup="nah">b</button>
+  </main></body></html>`;
+  const run = (profile) => runa11yCoreOnHtml(html, { engineOptions: { packs: [pack], profile } });
+  for (const id of ['aria-allowed-attr', 'aria-valid-attr-value']) {
+    const one = check(run('wcag22-aa'), id).occurrences.length;
+    assert.ok(one > 1, `${id} finds several`);
+    assert.equal(check(run(['wcag22-aa', 'names-1.0']), id).occurrences.length, one, id);
+  }
+});
+
+test('names in a list are matched without case, as one name is', () => {
+  const r = scan({ profile: ['WCAG22-AA', 'Names-1.0', 'wcag22-aa'] });
+  assert.deepEqual(r.engine.profiles, ['wcag22-aa', 'names-1.0']);
+  assert.equal(r.engine.profilesNotRun, undefined);
+});
+
+test('a profile whose pack was skipped is said to be so', () => {
+  const old = { ...pack, core: '^9.0.0' };
+  const r = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { packs: [old], profile: ['wcag22-aa', 'names-1.0'] }
+  });
+  assert.deepEqual(r.engine.profilesNotRun, [{ profile: 'names-1.0', reason: 'pack-skipped' }]);
+});
+
+test('what each profile says of a rule is kept, whichever is listed first', () => {
+  const ab = scan({ profile: ['wcag22-aa', 'names-1.0'] });
+  const ba = scan({ profile: ['names-1.0', 'wcag22-aa'] });
+  for (const r of [ab, ba]) {
+    const c = check(r, 'aria-role-name-present');
+    assert.ok(
+      c.rollupIds.some((id) => /^wcag-/.test(id)),
+      'a WCAG rollup'
+    );
+    assert.ok(
+      c.rollupIds.some((id) => /^names/.test(id)),
+      "the standard's rollup"
+    );
+  }
+  assert.deepEqual(
+    [...check(ab, 'aria-role-name-present').rollupIds].sort(),
+    [...check(ba, 'aria-role-name-present').rollupIds].sort()
+  );
+  // The WCAG the scan is judged by: the highest level and version asked.
+  assert.equal(scan({ profile: ['wcag22-a', 'wcag22-aaa'] }).engine.wcagLevel, 'AAA');
+  assert.equal(scan({ profile: ['section508', 'wcag22-aa'] }).engine.wcagVersion, '2.2');
+});
+
+test('the HTML report names a profile asked for and not run', () => {
+  const { renderHtmlReport } = require('../../src/report.js');
+  const r = scan({ profile: ['wcag22-aa', 'nope-1.0'] });
+  assert.match(renderHtmlReport(r), /<b>nope-1\.0<\/b>not run/);
+});

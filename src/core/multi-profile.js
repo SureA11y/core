@@ -22,7 +22,8 @@ function profileListOf(profile) {
   const out = [];
   for (const p of profile) {
     if (typeof p !== 'string') continue;
-    const name = p.trim();
+    // Names are matched without case, as a single profile's are.
+    const name = p.trim().toLowerCase();
     if (name && !out.includes(name)) out.push(name);
   }
   return out.length > 1 ? out : null;
@@ -38,8 +39,24 @@ function runProfiles(engineOptions, run) {
   const asked =
     engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
   if (Array.isArray(asked)) {
-    const names = asked.filter((p) => typeof p === 'string' && p.trim()).map((p) => p.trim());
+    // Names are matched without case, as a single profile's are: one asked
+    // twice in two cases runs once.
+    const names = asked
+      .filter((p) => typeof p === 'string' && p.trim())
+      .map((p) => p.trim().toLowerCase());
     const unique = names.filter((p, i) => names.indexOf(p) === i);
+    const ignored = asked.filter((p) => typeof p !== 'string');
+    if (ignored.length) {
+      try {
+        console.warn(
+          '[surea11y] engineOptions.profile: ignoring ' +
+            ignored.length +
+            ' item(s) that are not a profile name (a string).'
+        );
+      } catch {
+        // no console
+      }
+    }
     if (unique.length <= 1) {
       return run(
         Object.assign({}, engineOptions, { profile: unique.length ? unique[0] : undefined })
@@ -114,17 +131,38 @@ function mergeProfileResults(runs, asked) {
     return out;
   };
   const isTier = (o) => o === 'fail' || o === 'cantTell';
+  const unionBy = (lists, keyFn) => {
+    const out = [];
+    const seen = new Set();
+    for (const list of lists) {
+      for (const x of Array.isArray(list) ? list : []) {
+        const k = keyFn(x);
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(x);
+      }
+    }
+    return out;
+  };
+  const unionList = (a, b) =>
+    unionBy([a, b], (x) => (typeof x === 'string' ? x : JSON.stringify(x)));
   const reasonCodeOf = (o) =>
     o && o.data && o.data.details && typeof o.data.details.reasonCode === 'string'
       ? o.data.details.reasonCode
       : '';
-  const keyOf = (o) =>
+  // An element's finding, as each profile's scan of the same page finds it:
+  // where it is and why. Two findings of one rule on one element for the
+  // same reason (two attributes it doesn't allow) differ by what else they
+  // say, and else by their order, which each scan of the page shares.
+  const baseKeyOf = (o) =>
     JSON.stringify([
       (o && o.frameUrl) || '',
       (o && o.selector) || '',
       (o && o.structuralPath) || '',
       reasonCodeOf(o),
-      (o && o.html) || ''
+      (o && o.html) || '',
+      (o && o.summary) || '',
+      (o && o.data && o.data.details && JSON.stringify(o.data.details)) || ''
     ]);
   const normalizedOf = (o) => (o === 'notApplicable' ? 'inapplicable' : o);
 
@@ -132,7 +170,9 @@ function mergeProfileResults(runs, asked) {
   const notRun = [];
   for (const r of runs) {
     const applied = r.result && r.result.engine ? r.result.engine.profile : undefined;
-    if (r.result && typeof r.result === 'object' && applied === r.profile) ran.push(r);
+    const same =
+      typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
+    if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
       const skipped =
         r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
@@ -197,16 +237,47 @@ function mergeProfileResults(runs, asked) {
       merged.ownOutcomes.push(check.outcome);
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
+      const seenHere = new Map(); // base key -> how many so far in this scan
       occurrences.forEach((o, i) => {
-        const key = keyOf(o);
+        const base = baseKeyOf(o);
+        const nth = seenHere.get(base) || 0;
+        seenHere.set(base, nth + 1);
+        const key = base + '#' + nth;
         let m = byKey.get(key);
         if (!m) {
           m = Object.assign({}, o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
+        } else {
+          // What a question needs to be answered, from whichever profile
+          // asks it: the same whatever order the profiles were listed in.
+          for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
+            if (m[field] === undefined && o[field] !== undefined) m[field] = o[field];
+          }
         }
         m.verdicts[r.profile] = verdicts[i] || check.outcome;
       });
+      if (merged !== check) {
+        // What each profile's scan says of the rule, all of it: the
+        // rollups it feeds and the requirements it maps to, whichever
+        // profile was listed first.
+        if (Array.isArray(check.rollupIds)) {
+          merged.rollupIds = unionList(merged.rollupIds, check.rollupIds);
+        }
+        const mappings =
+          check.meta && Array.isArray(check.meta.normativeMappings)
+            ? check.meta.normativeMappings
+            : null;
+        if (mappings) {
+          const had =
+            merged.meta && Array.isArray(merged.meta.normativeMappings)
+              ? merged.meta.normativeMappings
+              : [];
+          merged.meta = Object.assign({}, merged.meta, {
+            normativeMappings: unionBy([had, mappings], (x) => JSON.stringify(x))
+          });
+        }
+      }
       // A check whose findings the profile counts nowhere found nothing it
       // is about: a pass there, as its rollups read it.
       merged.verdicts[r.profile] =
@@ -256,19 +327,6 @@ function mergeProfileResults(runs, asked) {
     );
   }
 
-  const unionBy = (lists, keyFn) => {
-    const out = [];
-    const seen = new Set();
-    for (const list of lists) {
-      for (const x of Array.isArray(list) ? list : []) {
-        const k = keyFn(x);
-        if (seen.has(k)) continue;
-        seen.add(k);
-        out.push(x);
-      }
-    }
-    return out;
-  };
   const results = ran.map((r) => r.result);
   const packs = unionBy(
     results.map((x) => x.engine && x.engine.packs),
@@ -287,7 +345,34 @@ function mergeProfileResults(runs, asked) {
     (x) => x
   ).sort();
 
+  // The WCAG the scan was judged by: the highest version and level of its
+  // profiles', whichever was listed first; the standards' mappings of each.
+  const VERSIONS = ['2.0', '2.1', '2.2'];
+  const LEVELS = ['A', 'AA', 'AAA'];
+  const highest = (values, order) => {
+    let out;
+    for (const v of values)
+      if (order.includes(v) && (out === undefined || order.indexOf(v) > order.indexOf(out)))
+        out = v;
+    return out;
+  };
+  const engines = results.map((x) => x.engine || {});
+  const wcagVersion = highest(
+    engines.map((e) => e.wcagVersion),
+    VERSIONS
+  );
+  const wcagLevel = highest(
+    engines.map((e) => e.wcagLevel),
+    LEVELS
+  );
+  const mappings = unionBy(
+    engines.map((e) => e.mappings),
+    (x) => (typeof x === 'string' ? x : JSON.stringify(x))
+  );
   const engine = Object.assign({}, first.engine, {
+    ...(wcagVersion ? { wcagVersion } : {}),
+    ...(wcagLevel ? { wcagLevel } : {}),
+    ...(mappings.length ? { mappings } : {}),
     profile: ran[0].profile,
     profiles: ran.map((r) => r.profile),
     ...(notRun.length ? { profilesNotRun: notRun } : {}),

@@ -86,12 +86,38 @@ function withPacks(engineOptions) {
 // lists the core rules they replace with the overrides of customRules
 // (overriddenBuiltinIds), and the packs it skipped (skippedPacks) when there
 // are any.
-function stampPacks(result, engine) {
+function stampPacks(result, engine, given = []) {
+  // The profiles of the packs it skipped: one a scan of several asked for
+  // did not run because its pack was skipped, which the scan of each
+  // profile, run before this stamp, could not tell from no such profile.
+  const skippedNames = new Set(engine.skipped.map((s) => s && s.name).filter(Boolean));
+  const skippedProfiles = new Set();
+  for (const pack of Array.isArray(given) ? given : []) {
+    const named = pack && typeof pack === 'object' && pack.name;
+    const id = named && pack.version ? `${pack.name}@${pack.version}` : named;
+    if (!named || (!skippedNames.has(named) && !skippedNames.has(id))) continue;
+    const profiles = pack.standard && pack.standard.profiles;
+    for (const name of Object.keys(profiles && typeof profiles === 'object' ? profiles : {})) {
+      skippedProfiles.add(name.toLowerCase());
+    }
+  }
+  const notRun = (e) =>
+    e && Array.isArray(e.profilesNotRun) && skippedProfiles.size
+      ? {
+          profilesNotRun: e.profilesNotRun.map((n) =>
+            n &&
+            n.reason === 'unknown-profile' &&
+            skippedProfiles.has(String(n.profile).toLowerCase())
+              ? { ...n, reason: 'pack-skipped' }
+              : n
+          )
+        }
+      : {};
   const stamp = (r) =>
     r && typeof r === 'object'
       ? {
           ...r,
-          engine: { ...r.engine, packs: engine.packs.slice() },
+          engine: { ...r.engine, packs: engine.packs.slice(), ...notRun(r.engine) },
           ...(engine.overrides.length
             ? {
                 overriddenBuiltinIds: Array.from(
@@ -254,7 +280,8 @@ function scanInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return stampPacks(
     p.engine.runtime.runDomRulesInPage(pageUrl, contextSelector, p.engineOptions, runOnly),
-    p.engine
+    p.engine,
+    engineOptions.packs
   );
 }
 
