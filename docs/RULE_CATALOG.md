@@ -293,7 +293,7 @@ Checks that every recognized aria-* attribute present on an element with an expl
 
 **Applies to.** Applies to elements carrying at least one recognized, non-global aria-* attribute, judged against the role they actually have: an explicit valid role, else the implicit role of their tag, else, for the elements HTML-AAM maps to no role at all, nothing. A custom element with no role attribute naming a role is judged against the role its ElementInternals give it (this.attachInternals().role), its default role, as a native element is judged against its tag's.
 
-**Expectation.** Every recognized aria-* attribute present is either: (a) globally supported on any element (the "global" ARIA states/properties, e.g. aria-label/aria-hidden/aria-describedby), or (b) explicitly listed as a required or supported state/property for the element's role. An attribute ARIA deprecated (rather than prohibited) on the role is still allowed: it is reported as CANTTELL, so the author decides, not as a not-allowed FAIL. The same goes for an element with no role: an attribute ARIA 1.2 made no longer global (`aria-disabled`, `aria-errormessage`, `aria-haspopup`, `aria-invalid`) is CANTTELL there too.
+**Expectation.** Every recognized aria-* attribute present is either: (a) globally supported on any element (the "global" ARIA states/properties, e.g. aria-label/aria-hidden/aria-describedby), or (b) explicitly listed as a required or supported state/property for the element's role. An attribute ARIA deprecated (rather than prohibited) on the role is still allowed: it is reported as CANTTELL, so the author decides, not as a not-allowed FAIL. The same goes for an element with no role: an attribute ARIA 1.2 made no longer global (`aria-disabled`, `aria-errormessage`, `aria-haspopup`, `aria-invalid`) is CANTTELL there too. An attribute the role does not support is reported at CANTTELL as well, not FAIL. It is a WAI-ARIA violation, but the element keeps the name, role and state it has without the attribute: `<button aria-valuenow="1">Save</button>` is still a button named Save. ACT 5c01ea maps this to WAI-ARIA, and to SC 1.3.1 and 4.1.2 only as secondary requirements "less strict" than the rule. Whether SC 4.1.2 fails depends on whether the element is a control whose state or value the page meant the attribute to convey and conveys no other way (a toggle button given aria-checked instead of aria-pressed); a person settles that.
 
 **What a finding reports.**
 
@@ -304,8 +304,8 @@ Checks that every recognized aria-* attribute present on an element with an expl
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ATTR_NOT_ALLOWED` | fail | An aria-* attribute that the element's role, explicit or implicit, neither requires nor supports, and that is not global. | WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and properties |
-| `ARIA_ATTR_NOT_ALLOWED_ROLELESS` | fail | A role-specific aria-* attribute on an element that has no role at all, so nothing supports it and assistive technology ignores it. | WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and properties; HTML-AAM |
+| `ARIA_ATTR_NOT_ALLOWED` | cantTell | An aria-* attribute that the element's role, explicit or implicit, neither requires nor supports, and that is not global. A WAI-ARIA violation; whether it also fails SC 4.1.2 depends on what the attribute was meant to convey. | WAI-ARIA 1.2 supported states and properties; ACT 5c01ea; WCAG 4.1.2 (not settled) |
+| `ARIA_ATTR_NOT_ALLOWED_ROLELESS` | cantTell | A role-specific aria-* attribute on an element that has no role at all, so nothing supports it and assistive technology ignores it. A WAI-ARIA violation; whether it also fails SC 4.1.2 depends on what the attribute was meant to convey. | WAI-ARIA 1.2 supported states and properties; HTML-AAM; ACT 5c01ea; WCAG 4.1.2 (not settled) |
 | `ARIA_ATTR_DEPRECATED` | cantTell | An aria-* attribute that ARIA deprecates on the element's role, or that ARIA 1.2 stopped making global, used on an element with no role; it is still allowed. | WAI-ARIA 1.2 deprecated states and properties; WCAG 4.1.2 (not settled) |
 
 ### `aria-allowed-role`
@@ -540,7 +540,7 @@ Checks that no element is named by more than one aria-owns, and that no aria-own
 WAI-ARIA: an element has only one owner, so its id is in no more than one `aria-owns`, and an element cannot own one that contains it.
 
 - An element named by two or more `aria-owns`: fail (`ARIA_OWNS_DUPLICATE`), reported on the element owned. The browser gives it to one owner, by order, so the structure the other owners state is lost.
-- An `aria-owns` naming the element itself or one of its ancestors: fail (`ARIA_OWNS_ANCESTOR`), reported on the owner. The browser ignores that ownership, as it would make a cycle.
+- An `aria-owns` naming the element itself or one of its ancestors: cantTell (`ARIA_OWNS_ANCESTOR`), reported on the owner. The ownership is impossible (it would make a cycle) and is ignored, so the structure the document itself states still stands: the WAI-ARIA violation is certain, but a relationship the page shows is lost only if it differs from that structure, which a person settles.
 - Otherwise: pass.
 
 **What a finding reports.**
@@ -553,7 +553,7 @@ WAI-ARIA: an element has only one owner, so its id is in no more than one `aria-
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `ARIA_OWNS_DUPLICATE` | fail | An element named in the aria-owns of two or more elements, so the browser gives it to one owner and the structure the others state is lost. | WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns (MUST) |
-| `ARIA_OWNS_ANCESTOR` | fail | An aria-owns that names the element itself or one of its ancestors, an ownership the browser ignores. | WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns |
+| `ARIA_OWNS_ANCESTOR` | cantTell | An aria-owns that names the element itself or one of its ancestors, an ownership that is ignored, leaving the document's own structure. A WAI-ARIA violation; whether it also fails SC 1.3.1 depends on the relationship the page shows. | WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled); WCAG 4.1.2 (not settled) |
 
 ### `aria-prohibited-attr`
 
@@ -565,7 +565,7 @@ Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose s
 
 **Applies to.** Applies to (a) elements whose explicit, valid role is one of the ARIA 1.2 roles with a documented "Prohibited ARIA States and Properties" list for naming attributes (pure text-semantics / non-naming structural roles: caption, code, deletion, emphasis, generic, insertion, mark, none, paragraph, presentation, strong, subscript, suggestion, superscript, time), plus a native &lt;caption&gt; with no valid explicit role, whose implicit role is caption, and (b) elements with no role at all: native HTML tags verified to carry no implicit role (such as &lt;div&gt;, &lt;span&gt;, &lt;p&gt;, &lt;strong&gt;, &lt;em&gt;, &lt;code&gt; and &lt;time&gt;), or any autonomous custom element (a hyphenated, author-defined tag per the Custom Elements spec). In both cases, only elements that also carry aria-label or aria-labelledby. A custom element whose ElementInternals give it a role (this.attachInternals().role) is judged by that role, its default role: one of the roles above puts it in (a), any other keeps it out of (b).
 
-**Expectation.** Prohibited attributes must not be present on (a); for (b), the naming attribute is at best unreliable (nothing accessible-name-aware to hang it off) and at worst silently ignored by assistive technology. A roleless element whose own content already gives it a name is reported as CANTTELL, since the attribute may be a deliberate override; one with no other source for a name FAILs.
+**Expectation.** Prohibited attributes must not be present on (a); for (b), the naming attribute is at best unreliable (nothing accessible-name-aware to hang it off) and at worst silently ignored by assistive technology. A roleless element whose own content already gives it a name is reported as CANTTELL, since the attribute may be a deliberate override; one with no other source for a name FAILs. The same holds for (a): an element whose own text already names it loses nothing WCAG requires for certain when the prohibited label is ignored, so the WAI-ARIA violation is reported at CANTTELL (ACT kb1m8s maps it to WAI-ARIA, with SC 1.3.1 only as a secondary requirement); without such text it FAILs. A role description on generic or on an element with no role refines no control, so it is a WAI-ARIA violation reported at CANTTELL whatever the content.
 
 **What a finding reports.**
 
@@ -576,8 +576,8 @@ Checks that aria-label/aria-labelledby are not present on WAI-ARIA roles whose s
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ATTR_PROHIBITED` | fail | Aria-label or aria-labelledby on an element whose role cannot be named, such as paragraph, generic or presentation. | WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 prohibited states and properties (MUST) |
-| `ARIA_ATTR_PROHIBITED_ROLELESS` | fail | A naming attribute on an element with no role and no other source for a name, or a role description on an element with no role. | WCAG 4.1.2; ACT kb1m8s; WAI-ARIA 1.2 generic (MUST); HTML-AAM |
+| `ARIA_ATTR_PROHIBITED` | fail, cantTell | Aria-label or aria-labelledby on an element whose role cannot be named, such as paragraph, generic or presentation, or a role description on generic. It fails where the element has no other source for a name, and is asked about where its own text already names it, or for a role description. | WAI-ARIA 1.2 prohibited states and properties (MUST); ACT kb1m8s; WCAG 4.1.2 |
+| `ARIA_ATTR_PROHIBITED_ROLELESS` | fail, cantTell | A naming attribute on an element with no role and no other source for a name (fail), or a role description on an element with no role (cantTell: it refines no control). | WAI-ARIA 1.2 generic (MUST); HTML-AAM; ACT kb1m8s; WCAG 4.1.2 |
 | `ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW` | cantTell | A naming attribute on an element with no role whose own text gives it a name, so the attribute may be a deliberate override. It leans pass when the label's words already appear, in order, in the element's text, and fail when the label has words the text lacks. | WCAG 4.1.2 (not settled); ACT kb1m8s; WAI-ARIA 1.2 generic |
 
 ### `aria-prohibited-children`
@@ -695,7 +695,7 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 
 **Applies to.** Applies to elements whose role attribute resolves to one of grid, meter, progressbar, radiogroup or tree (its first token naming a known role, matched in any case: role="foo tree" and role="TREE" count, role="link tree" does not), and that are included in the accessibility tree. Membership is decided by WAI-ARIA's own "Accessible Name Required: True" characteristic, not by whether a role merely permits a name: tablist, toolbar, menu, menubar and scrollbar are name-from-author roles the spec does not require a name for, and are out of scope. meter and progressbar are also covered by meter-name-present and progressbar-name-present, which map to SC 1.1.1; this rule is what gives those two roles their 4.1.2 coverage. A custom element whose ElementInternals give it one of those roles (this.attachInternals().role), with no role attribute naming another, is in scope too: that is its default role, and no other rule checks it.
 
-**Expectation.** The element has a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. Every role in the set is name-from-author-only, so descendant text is not accepted: a labelled child inside a composite widget would otherwise pass the container that has no name of its own. The name the HTML host element gives itself counts too, since the browser still computes it under the role: the first child &lt;legend&gt; of a &lt;fieldset&gt;, the first child &lt;caption&gt; of a &lt;table&gt;, and an associated &lt;label&gt; on a labelable element such as &lt;progress&gt; or &lt;meter&gt;.
+**Expectation.** The element has a non-empty aria-label, an aria-labelledby that resolves to non-empty text, or a non-empty title. Every role in the set is name-from-author-only, so descendant text is not accepted: a labelled child inside a composite widget would otherwise pass the container that has no name of its own. The name the HTML host element gives itself counts too, since the browser still computes it under the role: the first child &lt;legend&gt; of a &lt;fieldset&gt;, the first child &lt;caption&gt; of a &lt;table&gt;, and an associated &lt;label&gt; on a labelable element such as &lt;progress&gt; or &lt;meter&gt;. A missing name is reported at CANTTELL, not FAIL. The requirement is WAI-ARIA's ("Accessible Name Required: True"), and none of these roles is by itself a user interface component in WCAG's sense, "a single control for a distinct function": a grid, tree or radiogroup is a container of controls (its cells, items or radios, each named by its own rule), and a meter or progressbar is no control at all. So a missing name proves the WAI-ARIA violation, not a failure of SC 4.1.2. It can still be one, or a failure of another criterion, depending on the page: a visible question above a radiogroup that is not tied to it, a visible title for a grid that is not tied to it. A person settles that. A meter or progressbar with no text alternative fails SC 1.1.1 through meter-name-present and progressbar-name-present.
 
 **What a finding reports.**
 
@@ -705,7 +705,7 @@ Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `name_missing` | fail | An element whose role requires an accessible name has none from aria-label, aria-labelledby, title or its host element. | WCAG 4.1.2; WAI-ARIA 1.2 accessible name required; accname 1.2 |
+| `name_missing` | cantTell | An element whose role requires an accessible name has none from aria-label, aria-labelledby, title or its host element. A WAI-ARIA violation; whether it also fails a WCAG criterion depends on what the page shows. | WAI-ARIA 1.2 accessible name required (MUST); accname 1.2; WCAG 4.1.2 (not settled) |
 | `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `aria-roles-valid`
@@ -722,7 +722,8 @@ Checks that an explicit role="" attribute resolves to a real, non-abstract WAI-A
 
 At least one role token names a concrete, non-abstract ARIA role. Graded by what the element falls back to when none does:
 
-- FAIL on a roleless host (div, span, custom element), which is left exposed as generic, so the role the author meant reaches no one.
+- FAIL on a roleless host (div, span, custom element) that takes focus, which is left exposed as generic: a control whose role is not programmatically determinable (SC 4.1.2, F59).
+- CANTTELL on a roleless host that takes no focus. The WAI-ARIA violation is certain, but whether losing the role the author meant fails a criterion depends on the page: `<div role="heding">` fails SC 1.3.1 only if it is shown as a heading. ACT 674b10 maps the rule to no WCAG requirement for conformance.
 - CANTTELL where the element has a native role (a &lt;button&gt;, &lt;nav&gt;, &lt;a href&gt;), which the accessibility tree keeps using. ACT 674b10 lists 4.1.2 as a secondary requirement only, "satisfied through the implicit role," so the bad token is worth reporting but is not itself the criterion failing.
 
 **What a finding reports.**
@@ -734,8 +735,8 @@ At least one role token names a concrete, non-abstract ARIA role. Graded by what
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ROLE_INVALID` | fail, cantTell | No token of the role attribute is a known ARIA role; it fails on an element left with no role, and is asked about where the element keeps its native role. Where asked about, it leans pass when the value is a near misspelling of the native role and fail when it is one of another role. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute |
-| `ARIA_ROLE_ABSTRACT` | fail, cantTell | The role attribute names only abstract roles, which authors must not use; it fails on an element left with no role, and is asked about where the element keeps its native role. Where asked about, it leans pass when the native role is a kind of the abstract role named, and fail when it is not. | WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles (MUST) |
+| `ARIA_ROLE_INVALID` | fail, cantTell | No token of the role attribute is a known ARIA role; it fails on a focusable element left with no role, and is asked about where the element keeps its native role or takes no focus. Where it keeps its native role, it leans pass when the value is a near misspelling of the native role and fail when it is one of another role. | WAI-ARIA 1.2 role attribute; ACT 674b10; F59; WCAG 1.3.1; WCAG 4.1.2 |
+| `ARIA_ROLE_ABSTRACT` | fail, cantTell | The role attribute names only abstract roles, which authors must not use; it fails on a focusable element left with no role, and is asked about where the element keeps its native role or takes no focus. Where it keeps its native role, it leans pass when the native role is a kind of the abstract role named, and fail when it is not. | WAI-ARIA 1.2 abstract roles (MUST); ACT 674b10; F59; WCAG 1.3.1; WCAG 4.1.2 |
 
 ### `aria-text`
 
@@ -789,7 +790,7 @@ Checks that every recognized aria-* attribute has a value conforming to its WAI-
 
 **Expectation.**
 
-Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`). Some attributes also constrain each other, checked once each is valid on its own:
+Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`). A value of the wrong type is a WAI-ARIA violation, which ACT 6a7281 says is "not required for conformance to WCAG 2.1 at any level". It is a FAIL only where it leaves a control's user-settable state or value, or the focused item, unstated, which SC 4.1.2 requires to be programmatically determinable; anywhere else it is CANTTELL (see ARIA_ATTR_VALUE_INVALID). Some attributes also constrain each other, checked once each is valid on its own:
 
 - On an element whose role is slider, scrollbar, progressbar, meter, separator or spinbutton: `aria-valuemin` greater than `aria-valuemax` fails (`ARIA_VALUE_RANGE_INVERTED`), and so does an `aria-valuenow` outside the range (`ARIA_VALUENOW_OUT_OF_RANGE`), since the browser then gives assistive technology the nearest end of the range instead (Chromium announces 10 for 50 of 0 to 10). The range is the stated one; else a native element's own (a `<progress>`, `<meter>`, range or number input, by its `min` and `max`), as HTML-AAM maps it; else ARIA's defaults of 0 and 100, except on a spinbutton, which has none. With `aria-valuetext`, which is announced in place of the number, the value is not compared.
 - `aria-posinset` greater than `aria-setsize` fails (`ARIA_POSINSET_EXCEEDS_SETSIZE`); a set size of -1 (unknown) is left alone.
@@ -800,14 +801,14 @@ Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("t
 
 - `attr`: the attribute whose value is not valid.
 - `value`: its value as written.
-- `valueReason`: what is wrong with it. On a FAIL: `expected-true-false`, `expected-true-false-undefined`, `expected-true-false-mixed`, `expected-integer`, `expected-number` or `invalid-token` when it is not of the attribute's type, `integer-out-of-range` when it is below the lowest value ARIA allows, `expected-single-idref` when an attribute taking one id holds several, `idref-not-found` when aria-activedescendant's id matches no element. On a CANTTELL: `idref-list-none-found` when none of the ids in a list matches an element, `idref-controls-not-found` for the same on aria-controls.
+- `valueReason`: what is wrong with it. On an ARIA_ATTR_VALUE_INVALID finding (either tier): `expected-true-false`, `expected-true-false-undefined`, `expected-true-false-mixed`, `expected-integer`, `expected-number` or `invalid-token` when it is not of the attribute's type, `integer-out-of-range` when it is below the lowest value ARIA allows, `expected-single-idref` when an attribute taking one id holds several, `idref-not-found` when aria-activedescendant's id matches no element. On a CANTTELL: `idref-list-none-found` when none of the ids in a list matches an element, `idref-controls-not-found` for the same on aria-controls.
 - For the constraints between attributes, the values compared: `role`, `valuenow`, `valuemin`, `valuemax` (the range used, defaults included); `posinset`, `setsize`; `haspopup`, `expectedRole`, `popupRole`; `activedescendant`.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_ATTR_VALUE_INVALID` | fail | An aria-* attribute whose value is not of the type WAI-ARIA defines for it, is below its lowest allowed value, or, for aria-activedescendant, names no element. | WCAG 4.1.2; ACT 6a7281; WAI-ARIA 1.2 state and property value types |
+| `ARIA_ATTR_VALUE_INVALID` | fail, cantTell | An aria-* attribute whose value is not of the type WAI-ARIA defines for it, is below its lowest allowed value, or, for aria-activedescendant, names no element. It fails where the value leaves a control's state, value or focus unstated: one of aria-checked, aria-pressed, aria-selected, aria-expanded or aria-valuenow on an element with a widget role (explicit or native), or any invalid aria-activedescendant. Anywhere else (aria-level="abc", aria-live="loud", aria-checked on an element with no widget role) it is asked about: a WAI-ARIA violation whose WCAG effect depends on what the attribute was meant to convey. | WAI-ARIA 1.2 state and property value types; ACT 6a7281; WCAG 4.1.2 |
 | `ARIA_ATTR_VALUE_TARGET_ABSENT` | cantTell | An id reference list, such as aria-describedby or aria-controls, none of whose ids matches an element; a script may add it later. It leans fail when an element with the id exists in another document tree (across a shadow root), or one with an id differing only in case or one character, digits aside, exists in the same tree. | WCAG 4.1.2 (not settled); ACT 6a7281; WAI-ARIA 1.2 ID reference list |
 | `ARIA_VALUE_RANGE_INVERTED` | fail | A range widget whose aria-valuemin is greater than its aria-valuemax. | WCAG 4.1.2; WAI-ARIA 1.2 aria-valuemin; WAI-ARIA 1.2 aria-valuemax |
 | `ARIA_VALUENOW_OUT_OF_RANGE` | fail | A range widget whose aria-valuenow is outside its range, so assistive technology is given the nearest end of the range instead. | WCAG 4.1.2; WAI-ARIA 1.2 aria-valuenow; HTML-AAM |
@@ -1343,13 +1344,13 @@ Checks that dialogs (elements with role="dialog" or role="alertdialog", and nati
 
 **Applies to.** Applies to elements included in the accessibility tree whose role is dialog or alertdialog: an element whose role attribute resolves to one of those roles (the first token that names a concrete ARIA role wins, so role="alertdialog dialog" is an alertdialog), and a native &lt;dialog&gt; whose role attribute is absent or names no concrete role (its implicit role is dialog). A closed &lt;dialog&gt; is hidden and so not in scope. A custom element whose ElementInternals give it one of those roles (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
-**Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, or from title. Both roles are name-from-author-only, so the heading or body text inside the dialog is not accepted as its name unless aria-labelledby points at it.
+**Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, or from title. Both roles are name-from-author-only, so the heading or body text inside the dialog is not accepted as its name unless aria-labelledby points at it. A missing name is reported at CANTTELL, not FAIL. WAI-ARIA requires it ("Authors MUST provide an accessible name for a dialog"), but a dialog is not itself a user interface component in WCAG's sense, "a single control for a distinct function": its controls are, and each is named by its own rule. So the missing name proves the WAI-ARIA violation, not a failure of SC 4.1.2. It can still be a WCAG failure where the dialog shows a visible title that is not tied to it (that relationship is then not programmatically determinable, SC 1.3.1); a person settles that.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `name_missing` | fail | The dialog or alertdialog has no accessible name from aria-label, aria-labelledby or title. | WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 dialog role (MUST); WAI-ARIA 1.2 alertdialog role |
+| `name_missing` | cantTell | The dialog or alertdialog has no accessible name from aria-label, aria-labelledby or title. A WAI-ARIA violation; whether it also fails a WCAG criterion depends on what the page shows. | WAI-ARIA 1.2 dialog role (MUST); WAI-ARIA 1.2 alertdialog role; accname 1.2; WCAG 4.1.2 (not settled); WCAG 1.3.1 (not settled) |
 | `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 
 ### `dlitem-parent-valid`
@@ -3692,13 +3693,13 @@ Checks that elements with role="tooltip" expose a non-empty accessible name.
 
 **Applies to.** Applies to elements whose role attribute resolves to tooltip: its first token naming a known role, matched in any case, is tooltip, so role="foo tooltip" and role="TOOLTIP" count while role="link tooltip" (a link) does not. The element must be included in the accessibility tree. An element with the matching implicit role but no role attribute is out of scope. A custom element whose ElementInternals give it the role (this.attachInternals().role), with no role attribute naming another, is in scope too: that is its default role, and no other rule checks it.
 
-**Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, from title, or, role="tooltip" being name-from-content, from its own subtree text, where a descendant's own name (an &lt;img alt&gt;, aria-label or title) counts as that descendant's contribution rather than only its text nodes.
+**Expectation.** The element has a non-empty accessible name from aria-label, from an aria-labelledby that resolves to non-empty text, from title, or, role="tooltip" being name-from-content, from its own subtree text, where a descendant's own name (an &lt;img alt&gt;, aria-label or title) counts as that descendant's contribution rather than only its text nodes. A missing name is reported at CANTTELL, not FAIL. WAI-ARIA requires a tooltip to have one, but a tooltip is not a user interface component in WCAG's sense, "a single control for a distinct function", and its name comes from its content, so a tooltip with none also shows no text: no information shown in text is missing from the accessibility tree. What it shows otherwise (an image with no text alternative) is the image rules' decision under SC 1.1.1. So the missing name proves the WAI-ARIA violation, not a failure of SC 4.1.2; a person settles whether the page relies on what the tooltip shows.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `name_missing` | fail | The tooltip has no accessible name from aria-label, aria-labelledby, title or its content. | WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 tooltip role |
+| `name_missing` | cantTell | The tooltip has no accessible name from aria-label, aria-labelledby, title or its content. A WAI-ARIA violation; whether it also fails a WCAG criterion depends on what the tooltip shows. | WAI-ARIA 1.2 tooltip role; accname 1.2; WCAG 4.1.2 (not settled) |
 | `name_closedContent` | cantTell | The tooltip may take its name from content inside a closed shadow root, which no script can read, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_contentTooDeep` | cantTell | The tooltip's content is nested too deeply for its name to be worked out, so whether it has a name could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |
 | `name_internals` | cantTell | The element is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told. | WCAG 4.1.2 (not settled); accname 1.2 (not settled) |

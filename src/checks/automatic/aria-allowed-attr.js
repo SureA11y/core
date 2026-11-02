@@ -27,22 +27,34 @@
  *   attribute ARIA 1.2 made no longer global (`aria-disabled`,
  *   `aria-errormessage`, `aria-haspopup`, `aria-invalid`) is CANTTELL there
  *   too.
+ *   An attribute the role does not support is reported at CANTTELL as well,
+ *   not FAIL. It is a WAI-ARIA violation, but the element keeps the name,
+ *   role and state it has without the attribute: `<button
+ *   aria-valuenow="1">Save</button>` is still a button named Save. ACT
+ *   5c01ea maps this to WAI-ARIA, and to SC 1.3.1 and 4.1.2 only as
+ *   secondary requirements "less strict" than the rule. Whether SC 4.1.2
+ *   fails depends on whether the element is a control whose state or value
+ *   the page meant the attribute to convey and conveys no other way (a
+ *   toggle button given aria-checked instead of aria-pressed); a person
+ *   settles that.
  * @reports
  *   - `attr`: the aria-* attribute that is not allowed, or deprecated, on
  *     the element.
  *   - `role` (an element with a role): the role it was judged against,
  *     explicit or implicit. Absent when the element has no role at all.
  * @reason-codes
- *   - `ARIA_ATTR_NOT_ALLOWED` (fail): an aria-* attribute that the element's
- *     role, explicit or implicit, neither requires nor supports, and that is
- *     not global.
- *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
- *     properties.
- *   - `ARIA_ATTR_NOT_ALLOWED_ROLELESS` (fail): a role-specific aria-* attribute
- *     on an element that has no role at all, so nothing supports it and
- *     assistive technology ignores it.
- *     Basis: WCAG 4.1.2; ACT 5c01ea; WAI-ARIA 1.2 supported states and
- *     properties; HTML-AAM.
+ *   - `ARIA_ATTR_NOT_ALLOWED` (cantTell): an aria-* attribute that the
+ *     element's role, explicit or implicit, neither requires nor supports, and
+ *     that is not global. A WAI-ARIA violation; whether it also fails SC 4.1.2
+ *     depends on what the attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 supported states and properties; ACT 5c01ea; WCAG
+ *     4.1.2 (not settled).
+ *   - `ARIA_ATTR_NOT_ALLOWED_ROLELESS` (cantTell): a role-specific aria-*
+ *     attribute on an element that has no role at all, so nothing supports it
+ *     and assistive technology ignores it. A WAI-ARIA violation; whether it
+ *     also fails SC 4.1.2 depends on what the attribute was meant to convey.
+ *     Basis: WAI-ARIA 1.2 supported states and properties; HTML-AAM; ACT
+ *     5c01ea; WCAG 4.1.2 (not settled).
  *   - `ARIA_ATTR_DEPRECATED` (cantTell): an aria-* attribute that ARIA
  *     deprecates on the element's role, or that ARIA 1.2 stopped making global,
  *     used on an element with no role; it is still allowed.
@@ -909,14 +921,21 @@ function runInPage(ctx) {
         continue;
       }
 
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
           hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
             hintKey: 'ariaAllowedAttr_hint_fail_roleless',
             params: { attr: name, element: tag }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, element: tag, status: 'not-supported-roleless' }
           },
           data: {
             details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
@@ -1126,15 +1145,21 @@ function runInPage(ctx) {
         );
         continue;
       }
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This ARIA attribute is not permitted for this element’s role.',
           hint: 'Remove this attribute, or use a role that supports it.',
-          occurrenceOutcome: 'fail',
+          occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'ariaAllowedAttr_summary_fail',
             hintKey: 'ariaAllowedAttr_hint_fail',
             params: { attr: name, role }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, role, status: 'not-supported-for-role' }
           },
           data: {
             details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }

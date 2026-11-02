@@ -62,10 +62,20 @@ const NAME_RULES = [
   ['empty-heading', 'heading']
 ];
 
+// Roles WAI-ARIA requires a name for that are not by themselves a user
+// interface component in WCAG's sense: a missing name is asked about, not
+// failed (the WAI-ARIA violation is reported; the WCAG verdict needs a person).
+const SPEC_ONLY_NAME_RULES = new Set([
+  'aria-role-name-present',
+  'dialog-name-present',
+  'tooltip-name-present'
+]);
+
 for (const [ruleId, role] of NAME_RULES) {
   test(`${ruleId}: a custom element whose internals make it a ${role} needs a name`, () => {
     const unnamed = scan(`<x-el data-role="${role}"></x-el>`, ruleId);
-    assert.equal(unnamed.outcome, 'fail', JSON.stringify(unnamed.outcome));
+    const expected = SPEC_ONLY_NAME_RULES.has(ruleId) ? 'cantTell' : 'fail';
+    assert.equal(unnamed.outcome, expected, JSON.stringify(unnamed.outcome));
     const named = scan(`<x-el data-role="${role}" data-label="Settings"></x-el>`, ruleId);
     assert.equal(named.outcome, 'pass');
   });

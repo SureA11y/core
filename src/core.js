@@ -56378,14 +56378,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
 
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
           hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
+          occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
             hintKey: 'ariaAllowedAttr_hint_fail_roleless',
             params: { attr: name, element: tag }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, element: tag, status: 'not-supported-roleless' }
           },
           data: {
             details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
@@ -56595,15 +56602,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         );
         continue;
       }
-      failOccurrences.push(
+      cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This ARIA attribute is not permitted for this element’s role.',
           hint: 'Remove this attribute, or use a role that supports it.',
-          occurrenceOutcome: 'fail',
+          occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: 'ariaAllowedAttr_summary_fail',
             hintKey: 'ariaAllowedAttr_hint_fail',
             params: { attr: name, role }
+          },
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the element is a control whose state or value the page means this attribute to convey, and that state or value is conveyed no other way.',
+            evidence: { attribute: name, role, status: 'not-supported-for-role' }
           },
           data: {
             details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
@@ -58572,6 +58585,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   const fails = [];
+  const questions = [];
   let applicableCount = 0;
   // Each owned element, with the owners that name it, in document order.
   const ownersOf = new Map();
@@ -58587,7 +58601,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const ref of refs) {
       if (ref === owner || dom.contains(ref, owner)) {
         const ownedId = trim(dom.get(ref, 'id'));
-        fails.push(
+        // The ownership is impossible, so the markup's own structure still
+        // stands: a WAI-ARIA violation whose WCAG effect depends on whether
+        // the page shows the relationship the author tried to state.
+        questions.push(
           helpers.reportOccurrence(owner, {
             summary: `This element’s aria-owns names ${ownedId}, which contains the element itself.`,
             hint: 'Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.',
@@ -58595,6 +58612,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               summaryKey: 'ariaOwnsValid_summary_fail_ancestor',
               hintKey: 'ariaOwnsValid_hint_fail_ancestor',
               params: { id: ownedId }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the page shows a relationship between the two elements that their place in the document does not already state.',
+              evidence: { ownedId, relation: 'ancestor-or-self' }
             },
             data: {
               details: { reasonCode: 'ARIA_OWNS_ANCESTOR', ownedId },
@@ -58643,7 +58666,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return {
     ruleId: rule.ruleId,
-    ...helpers.resolveTieredOutcome(fails, [], rule.defaultSeverity || 'serious')
+    ...helpers.resolveTieredOutcome(fails, questions, rule.defaultSeverity || 'serious')
   };
 }), applicability: null },
     "aria-prohibited-attr": { run: (function runInPage(ctx) {
@@ -58729,10 +58752,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     if (!present.length) continue;
 
+    // As for an element with no role (Tier 2): where the element's own text
+    // already gives it a name, an ignored label loses nothing WCAG requires
+    // for certain, and a role description describes no control. Both are
+    // WAI-ARIA violations asked about; a label on an element with no other
+    // name still fails.
+    const tier1NameInfo = helpers.getContentNameInfo ? helpers.getContentNameInfo(el, ctx) : null;
+    const tier1HasContent = !!(
+      tier1NameInfo &&
+      tier1NameInfo.present &&
+      String(tier1NameInfo.value || '').trim() !== ''
+    );
+
     for (const attr of present) {
-      failOccurrences.push(
+      const roleDescription = PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr);
+      const asked = roleDescription || tier1HasContent;
+      (asked ? cantTellOccurrences : failOccurrences).push(
         helpers.reportOccurrence(el, {
-          occurrenceOutcome: 'fail',
+          occurrenceOutcome: asked ? 'cantTell' : 'fail',
           summary: 'This attribute is prohibited on this element’s role.',
           hint: "Remove this attribute. Elements with this role can't be named, so assistive technology may ignore it.",
           i18n: {
@@ -58740,6 +58777,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'ariaProhibitedAttr_hint_fail',
             params: { attr, role }
           },
+          ...(asked
+            ? {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed: roleDescription
+                    ? 'Nothing for a WCAG criterion: the role description refines no role a user operates. Remove it to conform to WAI-ARIA.'
+                    : 'Whether the label says something the element’s own text does not, which is lost where it is ignored.',
+                  evidence: { attribute: attr, role, hasOwnContent: tier1HasContent }
+                }
+              }
+            : {}),
           data: {
             details: { reasonCode: 'ARIA_ATTR_PROHIBITED', attr, role }
           }
@@ -58987,16 +59035,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const attr of present) {
       // A role description has nothing to describe without a role, whatever
       // the element's content: content can stand in for a name, not a role.
+      // It describes no control either, so nothing a WCAG criterion asks for
+      // is lost: a WAI-ARIA violation, asked about.
       if (PROHIBITED_ROLE_DESCRIPTION_ATTRS.includes(attr)) {
-        failOccurrences.push(
+        cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
-            occurrenceOutcome: 'fail',
+            occurrenceOutcome: 'cantTell',
             summary: `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
             hint: 'Give the element the role the description refines, or remove the attribute.',
             i18n: {
               summaryKey: 'ariaProhibitedAttr_summary_fail_roleDescription',
               hintKey: 'ariaProhibitedAttr_hint_fail_roleDescription',
               params: { attr, element: tag }
+            },
+            uncertainty: {
+              code: 'spec-only',
+              needed:
+                'Whether the element is a control whose role the description was meant to refine; if so, it needs that role.',
+              evidence: { attribute: attr, element: tag, role: null }
             },
             data: {
               details: {
@@ -60490,6 +60546,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hintKey: 'ariaRoleNamePresent_hint_fail',
         params: { role }
       },
+      uncertainty: {
+        code: 'spec-only',
+        needed:
+          'Whether the page shows a name or question for this element that people rely on, such as a visible title or group label not tied to it.',
+        evidence: { role, source: 'WAI-ARIA 1.2, Accessible Name Required' }
+      },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         details: {
@@ -60511,22 +60573,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (!occurrences.length) {
+  if (!occurrences.length && !questions.length) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
-
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
   return {
     ruleId: rule.ruleId,
-    outcome: 'fail',
-    severity: rule.defaultSeverity || 'minor',
-    occurrences
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
   };
 }), applicability: null },
     "aria-roles-valid": { run: (function runInPage(ctx) {
@@ -60794,9 +60852,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    failOccurrences.push(
+    // A roleless host that takes focus is operated as a control, and is left
+    // exposed with no role at all: a control whose role is not
+    // programmatically determinable (SC 4.1.2, F59). One that takes no focus
+    // may be a heading, a list or plain text the author meant to mark up: the
+    // WAI-ARIA violation is certain, the WCAG effect is for a person.
+    let focusable;
+    try {
+      focusable = !!(
+        typeof helpers.getFocusableInfo === 'function' &&
+        helpers.getFocusableInfo(el, ctx).focusable
+      );
+    } catch {
+      focusable = false;
+    }
+
+    (focusable ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
-        occurrenceOutcome: 'fail',
+        occurrenceOutcome: focusable ? 'fail' : 'cantTell',
+        ...(focusable
+          ? {}
+          : {
+              uncertainty: {
+                code: 'spec-only',
+                needed:
+                  'Whether the role the author meant (a heading, a list, a control) conveys something the page shows and no other markup states.',
+                evidence: { role, nativeRole: null, focusable: false }
+              }
+            }),
         summary: !isKnown
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
@@ -61570,6 +61653,55 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return out;
   }
 
+  // The states and value a user sets on a control (SC 4.1.2: "states,
+  // properties, and values that can be set by the user can be
+  // programmatically set"). An invalid value for one of them on a control
+  // leaves that state or value unstated.
+  const USER_SETTABLE_STATE_ATTRS = new Set([
+    'aria-checked',
+    'aria-pressed',
+    'aria-selected',
+    'aria-expanded',
+    'aria-valuenow'
+  ]);
+  // The widget roles: the user interface components those states belong to.
+  const CONTROL_ROLES = new Set([
+    'button',
+    'checkbox',
+    'combobox',
+    'gridcell',
+    'link',
+    'listbox',
+    'menuitem',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'option',
+    'radio',
+    'scrollbar',
+    'searchbox',
+    'slider',
+    'spinbutton',
+    'switch',
+    'tab',
+    'textbox',
+    'treeitem'
+  ]);
+  function controlRoleOf(el) {
+    const author = roleOf(el);
+    if (author) return author;
+    try {
+      return trim(ariaHelpers.getNativeRoleForElement(el)).toLowerCase();
+    } catch {
+      return '';
+    }
+  }
+  function invalidValueFailsWcag(el, item) {
+    // An active descendant that names no element: the focused item is not
+    // exposed.
+    if (item.name === 'aria-activedescendant') return true;
+    return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const failOccurrences = [];
@@ -61615,15 +61747,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     for (const item of invalid || []) {
-      failOccurrences.push(
+      // A FAIL only where the invalid value leaves a control's state, value
+      // or focus undeterminable (SC 4.1.2); elsewhere it is a WAI-ARIA
+      // violation whose WCAG effect a person settles.
+      const wcagFail = invalidValueFailsWcag(el, item);
+      (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an ARIA attribute with an invalid value.',
           hint: 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
+          occurrenceOutcome: wcagFail ? 'fail' : 'cantTell',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_fail',
             hintKey: 'ariaValidAttrValue_hint_fail',
             params: { attr: item.name, value: item.value }
           },
+          ...(wcagFail
+            ? {}
+            : {
+                uncertainty: {
+                  code: 'spec-only',
+                  needed:
+                    'Whether the attribute carries information the page shows and conveys no other way.',
+                  evidence: { attribute: item.name, value: item.value, valueReason: item.reason }
+                }
+              }),
           data: {
             details: {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
@@ -70696,6 +70843,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'dialogNamePresent_hint_fail',
           params: { role }
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the dialog shows a visible title or heading that is not tied to it with aria-labelledby.',
+          evidence: { role, source: 'WAI-ARIA 1.2, dialog role (MUST)' }
+        },
         data: {
           details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
@@ -70707,22 +70860,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
+  };
 }), applicability: null },
     "dlitem-parent-valid": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -96696,6 +96843,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           hintKey: 'tooltipNamePresent_hint_fail',
           params: {}
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the tooltip shows anything, such as an image or styled content, that people rely on and that has no text alternative.',
+          evidence: { role: 'tooltip', source: 'WAI-ARIA 1.2, tooltip role' }
+        },
         data: {
           details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
@@ -96707,22 +96860,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
+  };
 }), applicability: null },
     "treeitem-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;

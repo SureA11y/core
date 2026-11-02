@@ -244,7 +244,10 @@ const PROCEDURES = {
         coveredBy: 'aria-structure-valid'
       },
       'aria-owns-valid': {
-        coveredBy: 'aria-structure-valid'
+        coveredBy: 'aria-structure-valid',
+        variants: {
+          'aria-owns-valid': ['ARIA_OWNS_ANCESTOR']
+        }
       },
       'headings-marked-up': {
         tools: ['devtools', 'screen-reader']
@@ -835,7 +838,7 @@ const PROCEDURES = {
       'dialog-name-present': {
         coveredBy: 'components-named',
         variants: {
-          'dialog-name-present': ['name_internals']
+          'dialog-name-present': ['name_internals', 'name_missing']
         }
       },
       'menuitem-name-present': {
@@ -895,7 +898,7 @@ const PROCEDURES = {
       'aria-role-name-present': {
         coveredBy: 'components-named',
         variants: {
-          'aria-role-name-present': ['name_internals']
+          'aria-role-name-present': ['name_internals', 'name_missing']
         }
       },
       'aria-role-valid': {
@@ -921,6 +924,7 @@ const PROCEDURES = {
         variants: {
           'aria-valid-attr-value': [
             'ARIA_ACTIVEDESCENDANT_OUTSIDE',
+            'ARIA_ATTR_VALUE_INVALID',
             'ARIA_ATTR_VALUE_TARGET_ABSENT',
             'ARIA_HASPOPUP_ROLE_MISMATCH'
           ]
@@ -929,13 +933,21 @@ const PROCEDURES = {
       'aria-attr-allowed-for-role': {
         coveredBy: 'aria-used-validly',
         variants: {
-          'aria-allowed-attr': ['ARIA_ATTR_DEPRECATED']
+          'aria-allowed-attr': [
+            'ARIA_ATTR_DEPRECATED',
+            'ARIA_ATTR_NOT_ALLOWED',
+            'ARIA_ATTR_NOT_ALLOWED_ROLELESS'
+          ]
         }
       },
       'aria-attr-not-prohibited': {
         coveredBy: 'aria-used-validly',
         variants: {
-          'aria-prohibited-attr': ['ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW']
+          'aria-prohibited-attr': [
+            'ARIA_ATTR_PROHIBITED',
+            'ARIA_ATTR_PROHIBITED_ROLELESS',
+            'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW'
+          ]
         }
       },
       'aria-attr-required-for-role': {
@@ -974,7 +986,12 @@ const PROCEDURES = {
       'tooltip-name-present': {
         coveredBy: 'components-named',
         variants: {
-          'tooltip-name-present': ['name_closedContent', 'name_contentTooDeep', 'name_internals']
+          'tooltip-name-present': [
+            'name_closedContent',
+            'name_contentTooDeep',
+            'name_internals',
+            'name_missing'
+          ]
         }
       },
       'nested-interactive-controls-absent': {

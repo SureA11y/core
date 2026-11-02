@@ -18,6 +18,24 @@
       "fr-CA": "29b02a1de33f3fdf",
       "pt": "75a7f9a5d018acff"
     },
+    "aria-allowed-attr ARIA_ATTR_NOT_ALLOWED": {
+      "en": "ac90648c99182a45",
+      "de": "47663da24340a330",
+      "es": "8cba2421acedf2d8",
+      "fr": "44936e672c5261e6",
+      "ja": "af9d21abd36e811b",
+      "fr-CA": "44936e672c5261e6",
+      "pt": "ac90648c99182a45"
+    },
+    "aria-allowed-attr ARIA_ATTR_NOT_ALLOWED_ROLELESS": {
+      "en": "84c3898350a76d56",
+      "de": "d2f4c25545fa47d0",
+      "es": "f55a8b9402e9fefb",
+      "fr": "cb07efc872d98376",
+      "ja": "df1169ccb1497f1f",
+      "fr-CA": "cb07efc872d98376",
+      "pt": "84c3898350a76d56"
+    },
     "aria-allowed-role ARIA_ROLE_NOT_ALLOWED_FOR_ELEMENT": {
       "en": "b93f9c7c7bb97e97",
       "de": "290378dd6d60ea92",
@@ -81,6 +99,33 @@
       "fr-CA": "d7a4900f0accbc9b",
       "pt": "d1640f9e2fbc75cd"
     },
+    "aria-owns-valid ARIA_OWNS_ANCESTOR": {
+      "en": "b676760a6e940162",
+      "de": "7771c610b84f62cc",
+      "es": "aaa919a9d24bbe63",
+      "fr": "41e10427467329a9",
+      "ja": "3222a3b2631725a7",
+      "fr-CA": "41e10427467329a9",
+      "pt": "b676760a6e940162"
+    },
+    "aria-prohibited-attr ARIA_ATTR_PROHIBITED": {
+      "en": "541b94c40943e92c",
+      "de": "5f4ff00ea51cf021",
+      "es": "d6d1cb3c72bc3f72",
+      "fr": "d1a2e38992f90a51",
+      "ja": "0eac214615f334eb",
+      "fr-CA": "d1a2e38992f90a51",
+      "pt": "541b94c40943e92c"
+    },
+    "aria-prohibited-attr ARIA_ATTR_PROHIBITED_ROLELESS": {
+      "en": "17542a12f5b84c78",
+      "de": "73346e3825a6ba5a",
+      "es": "25f0c40419df1b4e",
+      "fr": "a33db54df52d1d53",
+      "ja": "4e1f3810053cb552",
+      "fr-CA": "a33db54df52d1d53",
+      "pt": "17542a12f5b84c78"
+    },
     "aria-prohibited-attr ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW": {
       "en": "3967ea518ea4e2a8",
       "de": "5539f7edea45254d",
@@ -126,6 +171,15 @@
       "fr-CA": "1dcb3188f54608d1",
       "pt": "802acdadabe3c242"
     },
+    "aria-role-name-present name_missing": {
+      "en": "6986d60ce78d0c14",
+      "de": "f3c8fa87f083e065",
+      "es": "8b1911cd60bfc5ec",
+      "fr": "b1503e29ad5259c9",
+      "ja": "896abfc835f98991",
+      "fr-CA": "b1503e29ad5259c9",
+      "pt": "6986d60ce78d0c14"
+    },
     "aria-roles-valid ARIA_ROLE_ABSTRACT": {
       "en": "ab7d099c879150e1",
       "de": "dbb5b2a9f35f278d",
@@ -152,6 +206,15 @@
       "ja": "4a871fefa998db85",
       "fr-CA": "e588586f94be34e8",
       "pt": "94c022f75c00f14d"
+    },
+    "aria-valid-attr-value ARIA_ATTR_VALUE_INVALID": {
+      "en": "5c7584d8b78c95fe",
+      "de": "f18fd42b82b13322",
+      "es": "8ea9810be460a15f",
+      "fr": "69761f14e9e97819",
+      "ja": "067ecfdf2641f5e0",
+      "fr-CA": "69761f14e9e97819",
+      "pt": "5c7584d8b78c95fe"
     },
     "aria-valid-attr-value ARIA_ATTR_VALUE_TARGET_ABSENT": {
       "en": "48f7bfad6630c9f9",
@@ -620,6 +683,15 @@
       "ja": "7a932107adecfd56",
       "fr-CA": "24329f023ea3c773",
       "pt": "fc6263b24581642c"
+    },
+    "dialog-name-present name_missing": {
+      "en": "182bbfa5185f6790",
+      "de": "d2dfc5c735c5ee81",
+      "es": "74a2e45272a21273",
+      "fr": "b29aa1be17e99ab7",
+      "ja": "c0888c4efef99413",
+      "fr-CA": "b29aa1be17e99ab7",
+      "pt": "182bbfa5185f6790"
     },
     "duplicate-id-aria DUPLICATE_ID_ARIA_REFERENCED": {
       "en": "be40aca84702843b",
@@ -1340,6 +1412,15 @@
       "ja": "ff4c2ff8783af748",
       "fr-CA": "9fa6c46931febcca",
       "pt": "9a268e9e0be313cd"
+    },
+    "tooltip-name-present name_missing": {
+      "en": "ad70be33342b2272",
+      "de": "8789ed9a36f850cf",
+      "es": "22e9a7172472605f",
+      "fr": "a1874693e06f84f5",
+      "ja": "247ae6b842b1c8a0",
+      "fr-CA": "a1874693e06f84f5",
+      "pt": "ad70be33342b2272"
     },
     "treeitem-name-present name_closedContent": {
       "en": "0c25b326b870f453",
@@ -2253,22 +2334,22 @@
   },
   "reviews": {
     "area-alt-present": null,
-    "aria-allowed-attr": "6aca3fef111a6c18",
+    "aria-allowed-attr": "a55aa88c9e381ce9",
     "aria-allowed-role": "153a748d887cf768",
     "aria-braille-equivalent": "02a97e23474c2c8c",
     "aria-conditional-attr": "fd1b0f52b280b4d3",
     "aria-deprecated-role": "06d6b8e890ec1680",
     "aria-hidden-body": null,
     "aria-hidden-focus": "eaaafac6c289ff20",
-    "aria-owns-valid": null,
-    "aria-prohibited-attr": "5cdfbc59b7d9cf37",
+    "aria-owns-valid": "f4293213ba42486a",
+    "aria-prohibited-attr": "9d08524fc70ab653",
     "aria-prohibited-children": null,
     "aria-required-attr": "968fffa0170e8ada",
     "aria-required-children": "b92654b1be4d9b6c",
     "aria-required-parent": null,
-    "aria-role-name-present": "9777f8926c9f3d38",
+    "aria-role-name-present": "fd232698ef78bc86",
     "aria-roles-valid": "658a3acb78023d90",
-    "aria-valid-attr-value": "98db7dd8107d45d2",
+    "aria-valid-attr-value": "29c0822f309310ad",
     "aria-valid-attr": "1e5f6a445b571b84",
     "autocomplete-valid": null,
     "avoid-inline-spacing": "45b4e99de15b0cfa",
@@ -2283,7 +2364,7 @@
     "css-orientation-lock": "e7320ee9b2d2bb9b",
     "definition-list-children-valid": null,
     "deprecated-elements-not-used": "1d21f3a37bbe5cb3",
-    "dialog-name-present": "fad1a3e6b134e4eb",
+    "dialog-name-present": "21765471cdfc8083",
     "dlitem-parent-valid": null,
     "duplicate-id-aria": "7fed56bfe512e9fb",
     "duplicate-id": "12a0e26484134d19",
@@ -2334,7 +2415,7 @@
     "td-has-header": "b8674789d28b9b80",
     "text-spacing-content-loss": "a4366e97a28b8268",
     "textbox-name-present": "104625d1cf121a51",
-    "tooltip-name-present": "f4e76103b59b6c43",
+    "tooltip-name-present": "9a60b842d8255264",
     "treeitem-name-present": "de8113e234f128aa",
     "valid-lang": null,
     "video-poster-text-alternative-present": "c8cdf0260fb2cdae",
@@ -2399,10 +2480,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "42e541f6a7eb5b047abe975d914fc10b3bb52fa675f4539797aa2a51bbbd5a33",
-    "en": "9f088434f5e4db5ca0528f8c6c376c5a33d2d5e463b892457be18e1007c7451a",
-    "es": "c70a27c2854071425f434fcbb0bc65a4fac8e12730199fa440cdc5e6f6d4af5d",
-    "fr": "90038c132f7cda7670ab50dfe8e48f801566c5d2f57a8dbe79995f8184a62f21",
-    "ja": "3ad4abc758ef0fdfcd7954dc601acb0491fe88cb5d09eb0ff71dfa1620d9e690"
+    "de": "8deff1d9fb14f0c3a4b68a6c66bf47a09803591f86f29f952dfaf115486685e3",
+    "en": "837de72149815e73625fe5001aa78eabbcc38d84c16d7728cdbd5f970021dd16",
+    "es": "8b3134470e0341fa8ed64caa0d6b8363c9d5c44eb7a0b2d75b797584c01c6571",
+    "fr": "e1f51ad62088165aa3ccc280e9334eaafbb7fea0bf059aea6ba8bcc5284967c2",
+    "ja": "45863b9fefeb6917729bf221a891c86053760993f46a077202df6cf60cbee5bc"
   }
 }

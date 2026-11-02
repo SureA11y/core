@@ -46,8 +46,8 @@
   <h2>B. Invalid</h2>
 
   <div class="case" id="case_03">
-    <div class="case-title">03 — FAIL: role does not exist (typo)</div>
-    <div role="buton" id="arv_case_03"></div>
+    <div class="case-title">03 — FAIL: role does not exist (typo) on a focusable element, which is left a control with no role</div>
+    <div role="buton" tabindex="0" id="arv_case_03">Save</div>
   </div>
 
   <div class="case" id="case_08">
@@ -56,8 +56,18 @@
   </div>
 
   <div class="case" id="case_04">
-    <div class="case-title">04 — FAIL: role is abstract (must not be used directly)</div>
-    <div role="widget" id="arv_case_04"></div>
+    <div class="case-title">04 — FAIL: role is abstract (must not be used directly) on a focusable element</div>
+    <div role="widget" tabindex="0" id="arv_case_04">Save</div>
+  </div>
+
+  <div class="case" id="case_40">
+    <div class="case-title">40 — CANTTELL: role does not exist (typo) on an element that takes no focus: the WAI-ARIA violation is certain, its WCAG effect depends on what the page shows</div>
+    <div role="heding" id="arv_case_40">Orders</div>
+  </div>
+
+  <div class="case" id="case_41">
+    <div class="case-title">41 — CANTTELL: abstract role on an element that takes no focus</div>
+    <div role="section" id="arv_case_41">Orders</div>
   </div>
 
   <h2>C. Not applicable (skipped, not counted)</h2>

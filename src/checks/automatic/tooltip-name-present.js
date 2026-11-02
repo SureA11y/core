@@ -24,10 +24,22 @@
  *   role="tooltip" being name-from-content, from its own subtree text,
  *   where a descendant's own name (an <img alt>, aria-label or title) counts
  *   as that descendant's contribution rather than only its text nodes.
+ *   A missing name is reported at CANTTELL, not FAIL. WAI-ARIA requires a
+ *   tooltip to have one, but a tooltip is not a user interface component in
+ *   WCAG's sense, "a single control for a distinct function", and its name
+ *   comes from its content, so a tooltip with none also shows no text: no
+ *   information shown in text is missing from the accessibility tree. What it
+ *   shows otherwise (an image with no text alternative) is the image rules'
+ *   decision under SC 1.1.1. So the missing name proves the WAI-ARIA
+ *   violation, not a failure of SC 4.1.2; a person settles whether the page
+ *   relies on what the tooltip shows.
  * @reason-codes
- *   - `name_missing` (fail): the tooltip has no accessible name from
- *     aria-label, aria-labelledby, title or its content.
- *     Basis: WCAG 4.1.2; accname 1.2; WAI-ARIA 1.2 tooltip role.
+ *   - `name_missing` (cantTell): the tooltip has no accessible name from
+ *     aria-label, aria-labelledby, title or its content. A WAI-ARIA
+ *     violation; whether it also fails a WCAG criterion depends on what the
+ *     tooltip shows.
+ *     Basis: WAI-ARIA 1.2 tooltip role; accname 1.2; WCAG 4.1.2 (not
+ *     settled).
  *   - `name_closedContent` (cantTell): the tooltip may take its name from
  *     content inside a closed shadow root, which no script can read, so
  *     whether it has a name could not be told.
@@ -264,6 +276,12 @@ function runInPage(ctx) {
           hintKey: 'tooltipNamePresent_hint_fail',
           params: {}
         },
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the tooltip shows anything, such as an image or styled content, that people rely on and that has no text alternative.',
+          evidence: { role: 'tooltip', source: 'WAI-ARIA 1.2, tooltip role' }
+        },
         data: {
           details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
@@ -275,22 +293,16 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  // Tiered only when there is a question, so a plain failure reads as before.
-  if (questions.length) {
-    return {
-      ruleId: rule.ruleId,
-      ...helpers.resolveTieredOutcome(occurrences, questions, rule.defaultSeverity || 'minor')
-    };
-  }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'minor',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: a missing name proves the WAI-ARIA
+  // violation, not a WCAG failure (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      [],
+      [...occurrences, ...questions],
+      rule.defaultSeverity || 'minor'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

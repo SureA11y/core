@@ -98,7 +98,7 @@ test('aria-role-name-present: role=grid aria-labelledby => pass', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=radiogroup empty aria-label => fail', () => {
+test('aria-role-name-present: role=radiogroup empty aria-label => cantTell', () => {
   const html = `
 <!doctype html><html><body>
   <div role="radiogroup" aria-label=" "></div>
@@ -111,7 +111,7 @@ test('aria-role-name-present: role=radiogroup empty aria-label => fail', () => {
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=tree title => pass', () => {
@@ -130,7 +130,7 @@ test('aria-role-name-present: role=tree title => pass', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: multiple roles mixed => fail with >=2 occurrences', () => {
+test('aria-role-name-present: multiple roles mixed => cantTell with >=2 occurrences', () => {
   const html = `
 <!doctype html><html><body>
   <div role="grid"></div>
@@ -145,7 +145,7 @@ test('aria-role-name-present: multiple roles mixed => fail with >=2 occurrences'
   }
 
   const result = runa11yCoreOnHtml(html);
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
 test('aria-role-name-present: unnamed not-required roles do not add occurrences to a fail', () => {
@@ -165,7 +165,7 @@ test('aria-role-name-present: unnamed not-required roles do not add occurrences 
   const result = runa11yCoreOnHtml(html);
   // Only the grid is reported: the tablist and toolbar are out of scope, not
   // silently passing occurrences.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=tree labelledby hidden text => pass', () => {
@@ -189,7 +189,7 @@ test('aria-role-name-present: role=tree labelledby hidden text => pass', () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=meter title => fail when no name', () => {
+test('aria-role-name-present: role=meter title => cantTell when no name', () => {
   const html = `
 <!doctype html><html><body>
   <div role="meter"></div>
@@ -203,7 +203,7 @@ test('aria-role-name-present: role=meter title => fail when no name', () => {
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=meter title => pass when name is provided via title', () => {
@@ -222,7 +222,7 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=meter title => fail when title is empty', () => {
+test('aria-role-name-present: role=meter title => cantTell when title is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="meter" title=""></div>
@@ -236,7 +236,7 @@ test('aria-role-name-present: role=meter title => fail when title is empty', () 
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=meter title => pass when name is provided via aria-label', () => {
@@ -255,7 +255,7 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=meter title => fail when aria-label is empty', () => {
+test('aria-role-name-present: role=meter title => cantTell when aria-label is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="meter" aria-label=""></div>
@@ -269,7 +269,7 @@ test('aria-role-name-present: role=meter title => fail when aria-label is empty'
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=meter title => pass when name is provided via aria-labelledby', () => {
@@ -289,7 +289,7 @@ test('aria-role-name-present: role=meter title => pass when name is provided via
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=meter title => fail when aria-labelledby is empty', () => {
+test('aria-role-name-present: role=meter title => cantTell when aria-labelledby is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="meter" aria-labelledby=""></div>
@@ -303,10 +303,10 @@ test('aria-role-name-present: role=meter title => fail when aria-labelledby is e
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test('aria-role-name-present: role=meter title => fail when aria-labelledby points to a non-existing element', () => {
+test('aria-role-name-present: role=meter title => cantTell when aria-labelledby points to a non-existing element', () => {
   const html = `
 <!doctype html><html><body>
   <div role="meter" aria-labelledby="jasdf"></div>
@@ -320,10 +320,10 @@ test('aria-role-name-present: role=meter title => fail when aria-labelledby poin
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test('aria-role-name-present: role=progressbar title => fail when no name', () => {
+test('aria-role-name-present: role=progressbar title => cantTell when no name', () => {
   const html = `
 <!doctype html><html><body>
   <div role="progressbar"></div>
@@ -337,7 +337,7 @@ test('aria-role-name-present: role=progressbar title => fail when no name', () =
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=progressbar title => pass when name is provided via title', () => {
@@ -356,7 +356,7 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=progressbar title => fail when title is empty', () => {
+test('aria-role-name-present: role=progressbar title => cantTell when title is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="progressbar" title=""></div>
@@ -370,7 +370,7 @@ test('aria-role-name-present: role=progressbar title => fail when title is empty
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=progressbar title => pass when name is provided via aria-label', () => {
@@ -389,7 +389,7 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=progressbar title => fail when aria-label is empty', () => {
+test('aria-role-name-present: role=progressbar title => cantTell when aria-label is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="progressbar" aria-label=""></div>
@@ -403,7 +403,7 @@ test('aria-role-name-present: role=progressbar title => fail when aria-label is 
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test('aria-role-name-present: role=progressbar title => pass when name is provided via aria-labelledby', () => {
@@ -423,7 +423,7 @@ test('aria-role-name-present: role=progressbar title => pass when name is provid
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test('aria-role-name-present: role=progressbar title => fail when aria-labelledby is empty', () => {
+test('aria-role-name-present: role=progressbar title => cantTell when aria-labelledby is empty', () => {
   const html = `
 <!doctype html><html><body>
   <div role="progressbar" aria-labelledby=""></div>
@@ -437,10 +437,10 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
-test('aria-role-name-present: role=progressbar title => fail when aria-labelledby points to a non-existing element', () => {
+test('aria-role-name-present: role=progressbar title => cantTell when aria-labelledby points to a non-existing element', () => {
   const html = `
 <!doctype html><html><body>
   <div role="progressbar" aria-labelledby="jasdf"></div>
@@ -454,7 +454,7 @@ test('aria-role-name-present: role=progressbar title => fail when aria-labelledb
 
   const result = runa11yCoreOnHtml(html);
   // Conservative: hidden label text should not count as name.
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
 test(`${RULE_ID}: the host's own legend, caption or label names it under the role`, () => {
@@ -475,7 +475,7 @@ test(`${RULE_ID}: an empty legend or caption, or one on a div host, does not nam
     <div role="grid" id="b"><div role="caption">Planning</div><div role="row"><div role="gridcell">Lundi</div></div></div>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-scenarios.html)`, () => {
@@ -493,7 +493,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-role-name-present-all-sc
   }
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedFailIds = [
     'role_case_30',
@@ -603,8 +603,40 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
     <a href="#" role="link tree" id="link">x</a>
   </body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'fallback'));
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'link'));
+});
+
+// An unnamed grid, tree, radiogroup, meter or progressbar breaks WAI-ARIA's
+// "Accessible Name Required", but none of those roles is by itself a user
+// interface component ("a single control for a distinct function"), so the
+// missing name is a question for WCAG, never a fail: a nearby heading is not
+// a name, and whether the page relies on one is for a person to say.
+test('aria-role-name-present: an unnamed grid after a heading is a spec-only question, not a WCAG fail', () => {
+  const html = `
+<!doctype html><html><body>
+  <h2>Orders</h2>
+  <div role="grid" id="g">
+    <div role="row"><div role="gridcell">Order 123</div></div>
+  </div>
+</body></html>
+  `;
+
+  if (!runa11yCoreOnHtml || !assertRule) {
+    assert.ok(true);
+    return;
+  }
+
+  const result = runa11yCoreOnHtml(html);
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const [occ] = rule.occurrences;
+  assert.equal(occ.occurrenceOutcome, 'cantTell');
+  assert.equal(occ.uncertainty && occ.uncertainty.code, 'spec-only');
+  assert.equal(occ.data.details.reasonCode, 'name_missing');
+  assert.equal(occ.data.details.role, 'grid');
+  const rollup = result.rulesResults.find((r) => r.ruleId === 'wcag-4.1.2-name');
+  assert.ok(rollup, 'the 4.1.2 name rollup ran');
+  assert.notEqual(rollup.outcome, 'fail', 'an unnamed grid alone does not fail SC 4.1.2');
 });

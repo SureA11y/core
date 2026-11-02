@@ -13,8 +13,14 @@
  * @expectation
  *   At least one role token names a concrete, non-abstract ARIA role.
  *   Graded by what the element falls back to when none does:
- *   - FAIL on a roleless host (div, span, custom element), which is left
- *     exposed as generic, so the role the author meant reaches no one.
+ *   - FAIL on a roleless host (div, span, custom element) that takes focus,
+ *     which is left exposed as generic: a control whose role is not
+ *     programmatically determinable (SC 4.1.2, F59).
+ *   - CANTTELL on a roleless host that takes no focus. The WAI-ARIA
+ *     violation is certain, but whether losing the role the author meant
+ *     fails a criterion depends on the page: `<div role="heding">` fails SC
+ *     1.3.1 only if it is shown as a heading. ACT 674b10 maps the rule to
+ *     no WCAG requirement for conformance.
  *   - CANTTELL where the element has a native role (a <button>, <nav>,
  *     <a href>), which the accessibility tree keeps using. ACT 674b10 lists
  *     4.1.2 as a secondary requirement only, "satisfied through the implicit
@@ -27,18 +33,21 @@
  *     assistive technology keeps using.
  * @reason-codes
  *   - `ARIA_ROLE_INVALID` (fail, cantTell): no token of the role attribute is a
- *     known ARIA role; it fails on an element left with no role, and is asked
- *     about where the element keeps its native role.
- *     Where asked about, it leans pass when the value is a near misspelling of
+ *     known ARIA role; it fails on a focusable element left with no role, and
+ *     is asked about where the element keeps its native role or takes no
+ *     focus.
+ *     Where it keeps its native role, it leans pass when the value is a near misspelling of
  *     the native role and fail when it is one of another role.
- *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 role attribute.
+ *     Basis: WAI-ARIA 1.2 role attribute; ACT 674b10; F59; WCAG 1.3.1; WCAG
+ *     4.1.2.
  *   - `ARIA_ROLE_ABSTRACT` (fail, cantTell): the role attribute names only
- *     abstract roles, which authors must not use; it fails on an element left
- *     with no role, and is asked about where the element keeps its native role.
- *     Where asked about, it leans pass when the native role is a kind of the
+ *     abstract roles, which authors must not use; it fails on a focusable
+ *     element left with no role, and is asked about where the element keeps
+ *     its native role or takes no focus.
+ *     Where it keeps its native role, it leans pass when the native role is a kind of the
  *     abstract role named, and fail when it is not.
- *     Basis: WCAG 1.3.1; WCAG 4.1.2; ACT 674b10; WAI-ARIA 1.2 abstract roles
- *     (MUST).
+ *     Basis: WAI-ARIA 1.2 abstract roles (MUST); ACT 674b10; F59; WCAG
+ *     1.3.1; WCAG 4.1.2.
  */
 
 const id = 'aria-roles-valid';
@@ -342,9 +351,34 @@ function runInPage(ctx) {
       continue;
     }
 
-    failOccurrences.push(
+    // A roleless host that takes focus is operated as a control, and is left
+    // exposed with no role at all: a control whose role is not
+    // programmatically determinable (SC 4.1.2, F59). One that takes no focus
+    // may be a heading, a list or plain text the author meant to mark up: the
+    // WAI-ARIA violation is certain, the WCAG effect is for a person.
+    let focusable;
+    try {
+      focusable = !!(
+        typeof helpers.getFocusableInfo === 'function' &&
+        helpers.getFocusableInfo(el, ctx).focusable
+      );
+    } catch {
+      focusable = false;
+    }
+
+    (focusable ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
-        occurrenceOutcome: 'fail',
+        occurrenceOutcome: focusable ? 'fail' : 'cantTell',
+        ...(focusable
+          ? {}
+          : {
+              uncertainty: {
+                code: 'spec-only',
+                needed:
+                  'Whether the role the author meant (a heading, a list, a control) conveys something the page shows and no other markup states.',
+                evidence: { role, nativeRole: null, focusable: false }
+              }
+            }),
         summary: !isKnown
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',

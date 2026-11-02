@@ -57,11 +57,13 @@ test(`${RULE_ID}: an element with two owners fails once, on the element owned`, 
   });
 });
 
-test(`${RULE_ID}: an owner naming itself or an ancestor fails, on the owner`, () => {
+// The ownership is impossible and ignored, so the document's own structure
+// still stands: a WAI-ARIA violation asked about, not a WCAG fail.
+test(`${RULE_ID}: an owner naming itself or an ancestor is asked about, on the owner`, () => {
   const rule = assertRule(
     run('<div id="o"><div id="g" role="group" aria-label="g" aria-owns="o g">x</div></div>'),
     RULE_ID,
-    'fail',
+    'cantTell',
     { minOccurrences: 2, maxOccurrences: 2 }
   );
   assert.deepEqual(
