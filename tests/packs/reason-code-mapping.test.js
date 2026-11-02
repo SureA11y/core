@@ -75,7 +75,7 @@ test('a finding whose code the map makes a question is one, in every requirement
 });
 
 test('a finding of another code fails the row requirement, and leaves the others', () => {
-  const result = scan('<ul><li>1</li><div>stray</div></ul>');
+  const result = scan('<ul><li>1</li><div style="display:list-item">stray</div></ul>');
   assert.equal(rollup(result, 'L1').outcome, 'fail');
   assert.equal(rollup(result, 'L2').outcome, 'pass');
 });
@@ -97,7 +97,9 @@ test('the rule maps to every requirement its codes send findings to', () => {
 // fail): the requirement its finding counted toward drops to cantTell, and
 // one the finding never went to stays a pass.
 test('a stored result read back keeps the judgement by reason code', () => {
-  const stored = JSON.parse(JSON.stringify(scan('<ul><li>1</li><div>stray</div></ul>')));
+  const stored = JSON.parse(
+    JSON.stringify(scan('<ul><li>1</li><div style="display:list-item">stray</div></ul>'))
+  );
   stored.checksResults.find((c) => c.ruleId === 'list-children-valid').policyOutcome = 'fail';
   const read = coercedResult(stored);
   assert.equal(

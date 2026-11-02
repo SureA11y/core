@@ -89,10 +89,12 @@ const CASES = [
   [
     'a link an author puts inside the button',
     '<label>Fruit <select><button><a href="/x">x</a><selectedcontent></selectedcontent></button><option>Apple</option></select></label>',
-    { 'nested-interactive-controls-absent': 'fail' }
+    { 'nested-interactive-controls-absent': 'cantTell' }
   ],
   // Anything focusable in the button is a nested control too, whatever its
   // role: HTML allows no tabindex and no interactive content in a button.
+  // The select (a combobox or list box) has no presentational children, so
+  // the nesting is asked about.
   ...[
     ['a tabindex span', '<span tabindex="0">i</span>'],
     ['an editable span', '<span contenteditable="true">e</span>'],
@@ -102,21 +104,24 @@ const CASES = [
     `${what} an author puts inside the button`,
     BASE_SELECT +
       `<label>Fruit <select><button>${inner}<selectedcontent></selectedcontent></button><option>Apple</option></select></label>`,
-    { 'nested-interactive-controls-absent': 'fail' }
+    { 'nested-interactive-controls-absent': 'cantTell' }
   ]),
   [
     'a link inside an option',
     BASE_SELECT +
       '<label>Fruit <select><option><a href="/x">Apple</a></option><option>Pear</option></select></label>',
     {
-      'nested-interactive-controls-absent': 'fail',
+      // The link is attributed to the select, whose role has no presentational
+      // children: asked about. The option's presentational children make it a
+      // failure, which presentational-children-focusable-absent reports.
+      'nested-interactive-controls-absent': 'cantTell',
       'presentational-children-focusable-absent': 'fail'
     }
   ],
   [
     'a button after the options',
     '<label>Fruit <select><option>Apple</option><button>Pick</button></select></label>',
-    { 'nested-interactive-controls-absent': 'fail', 'button-name-present': 'pass' }
+    { 'nested-interactive-controls-absent': 'cantTell', 'button-name-present': 'pass' }
   ]
 ];
 
@@ -179,7 +184,7 @@ test('in jsdom, the select button built with the DOM is inert, and what is put i
   });
   assert.equal(
     outcomes(runa11yCoreOnDom(withLink, { runOnly: RULES }))['nested-interactive-controls-absent'],
-    'fail'
+    'cantTell'
   );
 
   const second = selectWithButton((doc, select) => {
@@ -189,6 +194,6 @@ test('in jsdom, the select button built with the DOM is inert, and what is put i
   });
   assert.equal(
     outcomes(runa11yCoreOnDom(second, { runOnly: RULES }))['nested-interactive-controls-absent'],
-    'fail'
+    'cantTell'
   );
 });
