@@ -79,8 +79,8 @@
  *   ruleTag in meta.tags so only a run that asks for the standard produces
  *   them (one per requirement, say). A rollup's meta.contributions,
  *   optional, judges some of its rules by their findings:
- *   { [ruleId]: { default, codes, findings } }, each act 'count', 'cantTell'
- *   or 'ignore', or { act, requirements } naming which of the rollup's
+ *   { [ruleId]: { default, codes, findings } }, each act 'count', 'cantTell',
+ *   'fail' or 'ignore', or { act, requirements } naming which of the rollup's
  *   requirements (its meta.standardMappings) such findings count toward; the
  *   rollup then names only those for that rule (src/core/dom-runner.js,
  *   outcomeByReasonCode). ruleMappedStandard writes them from a rule map's

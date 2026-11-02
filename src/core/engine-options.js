@@ -64,7 +64,8 @@ function engineOptionSpec() {
       test: (v) => typeof v === 'string' && ['A', 'AA', 'AAA'].includes(v.trim().toUpperCase()),
       expected: '"A", "AA" or "AAA", in any case'
     },
-    profile: T.string,
+    // One profile, or a list of them: a scan of several at once.
+    profile: T.list,
     mappings: T.list,
     optInRules: T.list,
     logUntestedWcag: T.boolean,

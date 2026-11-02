@@ -1,6 +1,6 @@
 # Multi-profile scans and WAI-ARIA as a pack (proposal)
 
-**Status:** proposal, nothing built. It changes what 1.15 ships, so it is to be settled before the release.
+**Status:** §1, §2 and §4 are built in core for 1.15, §3 in `@surea11y/pack-wai-aria`; the WAI-ARIA inventory and its new rules ([§1](#1-wai-aria-leaves-core)) are still to come. What changed from the proposal while building it is said in each section.
 
 It covers four changes that depend on each other:
 
@@ -93,9 +93,9 @@ A single name, or a list of one, gives exactly the result it gives today.
 
 ### What runs
 
-The rules are run once, as the union of what each profile selects, and each profile judges the findings by its own rule map and rollups. A rule only some of the profiles select is judged only by those.
+Each profile is scanned as a scan of it alone would be, in turn, on the same page, and the results are merged (`src/core/multi-profile.js`). Each profile's rollups are then exactly those of its own scan, a test holds it to that, and variants, overrides and a profile's own options (severity, excludes, its WCAG version) need nothing special: each profile's scan has its own. A rule only some of the profiles select is judged only by those.
 
-A variant has an id of its own, so it is a rule like any other. An override replaces a core rule in place, so two profiles may give the same id different code: each version runs, as an instance per profile, and each profile sees only its own. Running a rule once when two instances are configured the same is an optimisation, which changes no result.
+The proposal was to run the union of the rules once. That is an optimisation, which changes no result: a rule two profiles run with the same code and settings gives the same findings twice. Until it is made, a scan of several profiles takes about as long as one scan per profile.
 
 ### What the result says
 

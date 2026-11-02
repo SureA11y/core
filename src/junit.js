@@ -490,6 +490,14 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
+  // allowProfilesNotRun: true accepts a scan of several profiles that ran
+  // fewer than it asked for; by default each profile not run is an error.
+  const allowProfilesNotRun = options.allowProfilesNotRun;
+  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
+    throw new TypeError(
+      `renderJunitReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+    );
+  }
   const opts = {
     cantTellAs,
     leanFailAs,
@@ -528,6 +536,36 @@ function renderJunitReport(result, options = {}) {
         `    <testcase classname="frame" name="${xmlText(pathText)}" time="0">`,
         `      <skipped message="${xmlText(`Not scanned: ${error}`)}"/>`,
         '    </testcase>',
+        '  </testsuite>'
+      ].join('\n')
+    );
+  }
+
+  // A scan of several profiles that ran fewer than it asked for counted less
+  // than it was asked to: one error per profile not run, in a suite of its
+  // own, unless allowProfilesNotRun accepts it (then a skip).
+  const notRun = [];
+  for (const f of frames) {
+    const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
+    for (const p of Array.isArray(list) ? list : []) {
+      if (p && !notRun.some((x) => x.profile === p.profile)) notRun.push(p);
+    }
+  }
+  if (notRun.length) {
+    const allowed = allowProfilesNotRun === true;
+    totals.tests += notRun.length;
+    if (allowed) totals.skipped += notRun.length;
+    else totals.errors += notRun.length;
+    suiteXml.push(
+      [
+        `  <testsuite name="Profiles" tests="${notRun.length}" failures="0" errors="${allowed ? 0 : notRun.length}" skipped="${allowed ? notRun.length : 0}" time="0">`,
+        ...notRun.flatMap((p) => [
+          `    <testcase classname="profile" name="${xmlText(p.profile)}" time="0">`,
+          allowed
+            ? `      <skipped message="${xmlText(`Not run: ${p.reason}`)}"/>`
+            : `      <error message="${xmlText(`Asked for and not run: ${p.reason}`)}"/>`,
+          '    </testcase>'
+        ]),
         '  </testsuite>'
       ].join('\n')
     );

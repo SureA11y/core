@@ -136,15 +136,17 @@ export type PackRequirementProcedures =
 
 /**
  * What a rollup does with a finding: count it, make a failing one a
- * question ('cantTell'), or leave it out ('ignore'). As an object, it also
+ * question ('cantTell'), make a question a failure ('fail'), or leave it out
+ * ('ignore'). As an object, it also
  * names the rollup's requirements the finding counts toward, so the rollup
  * names only those when such findings decide it.
  */
 export type ContributionAct =
   | 'count'
   | 'cantTell'
+  | 'fail'
   | 'ignore'
-  | { act: 'count' | 'cantTell' | 'ignore'; requirements?: string[] };
+  | { act: 'count' | 'cantTell' | 'fail' | 'ignore'; requirements?: string[] };
 
 /**
  * How a rollup judges one of its rules by the rule's findings: by the first
@@ -341,8 +343,8 @@ export function ruleMappedStandard(options: {
       string,
       {
         requirements: string[];
-        /** Findings of a reason code: the requirements they count toward ([] for none), and 'cantTell' to make a failing one a question there. */
-        reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' }>;
+        /** Findings of a reason code: the requirements they count toward ([] for none), 'cantTell' to make a failing one a question there, and 'fail' to make a question a failure there. */
+        reasonCodes?: Record<string, { requirements?: string[]; outcome?: 'cantTell' | 'fail' }>;
         /**
          * Findings by what they record: the first entry whose `when` values
          * equal the finding's data.details fields (by dotted path) decides,
@@ -351,7 +353,7 @@ export function ruleMappedStandard(options: {
         findings?: Array<{
           when: Record<string, string | number | boolean | null>;
           requirements?: string[];
-          outcome?: 'cantTell';
+          outcome?: 'cantTell' | 'fail';
         }>;
         [field: string]: unknown;
       }

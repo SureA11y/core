@@ -569,7 +569,7 @@ function rollupCompositeResults(
       return true;
     }
 
-    // An act of a contribution: 'count', 'cantTell' or 'ignore', or
+    // An act of a contribution: 'count', 'cantTell', 'fail' or 'ignore', or
     // { act, requirements } naming the rollup's requirements the finding
     // counts toward. null requirements: those of the rule, as without them.
     function readAct(a) {
@@ -584,7 +584,8 @@ function rollupCompositeResults(
 
     // A check's outcome for one rollup of a standard whose mapping sends
     // findings elsewhere: each finding is counted, made a question
-    // ('cantTell') or left out ('ignore') by the first of
+    // ('cantTell'), made a failure ('fail': the standard is certain where the
+    // rule asks) or left out ('ignore') by the first of
     // contribution.findings it matches, else by its code
     // (contribution.codes), else contribution.default. A fail or cantTell
     // whose findings all go elsewhere is a pass here: the rule found nothing
@@ -600,6 +601,9 @@ function rollupCompositeResults(
       if (!occurrences.length) return { outcome, named: { fail: null, cantTell: null } };
       let fail = false;
       let ask = false;
+      // What this rollup makes of each finding, in order: 'fail',
+      // 'cantTell', or null for one it doesn't count.
+      const findings = [];
       const name = (tier, requirements) => {
         if (named[tier] === null) return;
         if (!requirements) named[tier] = null;
@@ -618,17 +622,22 @@ function rollupCompositeResults(
               ? contribution.codes[code]
               : contribution.default
         );
-        if (act === 'ignore') continue;
+        if (act === 'ignore') {
+          findings.push(null);
+          continue;
+        }
         const tier = (o && o.occurrenceOutcome) || outcome;
-        if (tier === 'fail' && act !== 'cantTell') {
+        if ((tier === 'fail' && act !== 'cantTell') || act === 'fail') {
           fail = true;
+          findings.push('fail');
           name('fail', requirements);
         } else {
           ask = true;
+          findings.push('cantTell');
           name('cantTell', requirements);
         }
       }
-      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named };
+      return { outcome: fail ? 'fail' : ask ? 'cantTell' : 'pass', named, findings };
     }
 
     // Whether to report a rollup the selection does not select: true when a
@@ -763,6 +772,9 @@ function rollupCompositeResults(
           severity: childSev || null,
           ...custom,
           ...(contribution ? { byReasonCode: true, checkOutcome: child.outcome } : {}),
+          // Per finding, what the rollup made of it: what a scan of several
+          // profiles reads each finding's verdict by (src/core/multi-profile.js).
+          ...(routed && routed.findings ? { findingOutcomes: routed.findings.slice() } : {}),
           ...(routedNames && routedNames.length ? { requirements: routedNames.slice() } : {})
         });
 
