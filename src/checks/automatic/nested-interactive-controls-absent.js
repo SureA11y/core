@@ -29,14 +29,27 @@
  *   announced or operable via assistive technology, activating the outer
  *   control and the inner one become ambiguous, and some AT only exposes
  *   one of the two.
+ *   It FAILS where the outer control's role has presentational children
+ *   (WAI-ARIA 1.2: button, checkbox, img, menuitemcheckbox, menuitemradio,
+ *   meter, option, progressbar, radio, scrollbar, separator, slider, switch,
+ *   tab): the nested control's role is removed there, so a control that still
+ *   takes focus has no role to determine (SC 4.1.2, as ACT 307n5z has it).
+ *   Elsewhere (a link, textbox, combobox, listbox, menuitem, searchbox,
+ *   spinbutton or treeitem holding a control) both keep their roles; HTML's
+ *   content model forbids the nesting, but whether a name, role or value is
+ *   lost depends on the page, so it is reported at CANTTELL.
  * @reports
  *   - `nestedElements`: the controls nested inside this one, one tag name
  *     per control.
  * @reason-codes
- *   - `NESTED_INTERACTIVE_CONTROL` (fail): an interactive control contains
- *     another control that can take focus, such as a button inside a link.
- *     Basis: WCAG 4.1.2; HTML interactive content (MUST); WAI-ARIA 1.2
- *     presentational children.
+ *   - `NESTED_INTERACTIVE_CONTROL` (fail, cantTell): an interactive control
+ *     contains another control that can take focus, such as a button inside a
+ *     link. It fails where the outer control's role has presentational
+ *     children (a button, tab, checkbox, option...), which removes the nested
+ *     control's role, and is asked about otherwise (a control inside a link,
+ *     textbox or tree item), where both keep their roles.
+ *     Basis: WCAG 4.1.2; ACT 307n5z; HTML interactive content (MUST);
+ *     WAI-ARIA 1.2 presentational children.
  * @implementation-notes
  * - A descendant counts as a nested interactive control only when it is both
  *   (a) a native interactive element or an explicit ARIA widget role and
@@ -326,8 +339,39 @@ function runInPage(ctx) {
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(INTERACTIVE_SELECTOR);
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The roles WAI-ARIA gives presentational children: inside one, the
+  // nested control's own role is removed, so a control that still takes
+  // focus there has no role that can be programmatically determined
+  // (SC 4.1.2; ACT 307n5z makes the same call for any focusable content).
+  const PRESENTATIONAL_CHILDREN_ROLES = new Set([
+    'button',
+    'checkbox',
+    'img',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ]);
+  function effectiveRole(node) {
+    const explicit = getExplicitRole(node);
+    if (explicit) return explicit;
+    try {
+      return String(helpers.aria.getNativeRoleForElement(node) || '').toLowerCase();
+    } catch {
+      return '';
+    }
+  }
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
@@ -347,8 +391,26 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    occurrences.push(
+    // Inside a role with presentational children the nested control loses its
+    // role: a FAIL. Anywhere else (a control inside a link, say) both keep
+    // their roles; HTML's content model forbids the nesting, but whether a
+    // name, role or value is lost depends on the page: asked about.
+    const outerRole = effectiveRole(el);
+    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
+
+    (fails ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: fails ? 'fail' : 'cantTell',
+        ...(fails
+          ? {}
+          : {
+              uncertainty: {
+                code: 'spec-only',
+                needed:
+                  'Whether the nested control can be reached and operated on its own, and whether its name is swallowed by the outer control’s.',
+                evidence: { element: tag, outerRole, nestedElements: nestedTags }
+              }
+            }),
         summary: 'This interactive control contains one or more other interactive controls.',
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
@@ -370,15 +432,14 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

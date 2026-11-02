@@ -18,15 +18,22 @@
  *   The parent is <dl>, or the parent is a <div> whose own parent is <dl>
  *   (a single level of wrapping div is allowed, matching how authors
  *   commonly group dt/dd pairs). A <dt>/<dd> used outside a real
- *   description-list container is not exposed as a term/definition to
- *   assistive technologies.
+ *   description-list container keeps its term or definition role, but no
+ *   list pairs it with the definition or term that goes with it.
+ *   Every finding is reported at CANTTELL, not FAIL. HTML-AAM gives <dt> and
+ *   <dd> their term and definition roles wherever they sit, so what a broken
+ *   content model loses is the pairing of terms with definitions, which only
+ *   the <dl>'s structure and order state. That is a WCAG failure (SC 1.3.1)
+ *   only where the page shows the pairing, and H40 is only a sufficient
+ *   technique: a person settles it.
  * @reports
  *   - `parentElement`: the tag name of the element's parent, the container
  *     it is in instead of a `<dl>`.
  * @reason-codes
- *   - `DLITEM_INVALID_PARENT` (fail): a dt or dd is not inside a dl, either
+ *   - `DLITEM_INVALID_PARENT` (cantTell): a dt or dd is not inside a dl, either
  *     directly or through one wrapping div.
- *     Basis: WCAG 1.3.1; H40; HTML dt and dd elements contexts (MUST).
+ *     Basis: H40; HTML dt and dd elements contexts (MUST); WCAG 1.3.1 (not
+ *     settled).
  * @implementation-notes
  * - Distinct, atomic decision from definition-list-children-valid
  *   (the inverse relationship: does a given <dl> have valid children).
@@ -101,6 +108,12 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary: 'This description-list item is not contained by a <dl>.',
         hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows this term or definition paired with another, a pairing no <dl> states.',
+          evidence: { element: tag, parentElement: parentTag }
+        },
         i18n: {
           summaryKey: 'dlitemParentValid_summary_fail',
           hintKey: 'dlitemParentValid_hint_fail',
@@ -116,15 +129,13 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: the term and definition roles survive,
+  // and whether the pairing the markup breaks is one the page shows is for
+  // a person to say (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious')
+  };
 }
 
 module.exports = { id, meta, runInPage };

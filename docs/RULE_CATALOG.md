@@ -24,7 +24,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-deprecated-role`](#aria-deprecated-role) | role attribute should not use a deprecated or author-discouraged ARIA role | 4.1.2 | A | high | moderate |
 | [`aria-hidden-body`](#aria-hidden-body) | The document &lt;body&gt; must not be aria-hidden | 1.3.1, 4.1.2 | A | high | critical |
 | [`aria-hidden-focus`](#aria-hidden-focus) | ARIA hidden elements must not be focusable | 4.1.2 | A | high | serious |
-| [`aria-owns-valid`](#aria-owns-valid) | aria-owns must give each element one owner, and never an ancestor of the owner | 1.3.1, 4.1.2 | A | high | serious |
+| [`aria-owns-valid`](#aria-owns-valid) | aria-owns must give each element one owner, and never an ancestor of the owner | 1.3.1 | A | high | serious |
 | [`aria-prohibited-attr`](#aria-prohibited-attr) | ARIA naming attributes must not be used on roles that prohibit them | 4.1.2 | A | high | moderate |
 | [`aria-prohibited-children`](#aria-prohibited-children) | Container roles must not own a child with a disallowed role | 1.3.1 | A | medium | moderate |
 | [`aria-required-attr`](#aria-required-attr) | Roles with a required ARIA state/property must carry it | 4.1.2 | A | high | serious |
@@ -207,7 +207,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-3.3.2-labels-or-instructions` | Labels or Instructions | Rollup of checks ensuring form controls have unambiguous labeling. | 3.3.2 | A | 3 |
 | `wcag-3.3.8-accessible-authentication-minimum` | Accessible Authentication (Minimum) | Rollup of checks ensuring an authentication step leaves the mechanisms that help a user through it in place. | 3.3.8 | AA | 1 |
 | `wcag-4.1.1-parsing` | Parsing | Rollup of checks ensuring id values are unique. WCAG 2.0/2.1 only: SC 4.1.1 was removed in WCAG 2.2, so this composite carries the wcag22-removed tag. | 4.1.1 | A | 1 |
-| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 15 |
+| `wcag-4.1.2-aria-validity` | Name, role, value: ARIA validity | Rollup of checks that ARIA role and attribute usage conforms to the WAI-ARIA specification (valid roles, valid attributes, valid values, required attributes, unique ARIA-referenced ids). | 4.1.2 | A | 14 |
 | `wcag-4.1.2-name` | Name, role, value: accessible name | Rollup of checks that common interactive elements expose a non-empty accessible name. | 4.1.2 | A | 24 |
 | `wcag-4.1.3-status-messages` | Status Messages | Rollup of checks that live regions can present status messages to assistive technology without receiving focus. | 4.1.3 | AA | 1 |
 
@@ -529,7 +529,7 @@ Checks that aria-hidden="true" elements are not focusable and do not contain foc
 
 **aria-owns must give each element one owner, and never an ancestor of the owner**
 
-automatic · WCAG 1.3.1, 4.1.2 (A) · confidence high · default severity serious
+automatic · WCAG 1.3.1 (A) · confidence high · default severity serious
 
 Checks that no element is named by more than one aria-owns, and that no aria-owns names the element itself or one of its ancestors.
 
@@ -552,8 +552,8 @@ WAI-ARIA: an element has only one owner, so its id is in no more than one `aria-
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `ARIA_OWNS_DUPLICATE` | fail | An element named in the aria-owns of two or more elements, so the browser gives it to one owner and the structure the others state is lost. | WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns (MUST) |
-| `ARIA_OWNS_ANCESTOR` | cantTell | An aria-owns that names the element itself or one of its ancestors, an ownership that is ignored, leaving the document's own structure. A WAI-ARIA violation; whether it also fails SC 1.3.1 depends on the relationship the page shows. | WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled); WCAG 4.1.2 (not settled) |
+| `ARIA_OWNS_DUPLICATE` | fail | An element named in the aria-owns of two or more elements, so the browser gives it to one owner and the structure the others state is lost. | WCAG 1.3.1; WAI-ARIA 1.2 aria-owns (MUST) |
+| `ARIA_OWNS_ANCESTOR` | cantTell | An aria-owns that names the element itself or one of its ancestors, an ownership that is ignored, leaving the document's own structure. A WAI-ARIA violation; whether it also fails SC 1.3.1 depends on the relationship the page shows. | WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled) |
 
 ### `aria-prohibited-attr`
 
@@ -790,7 +790,7 @@ Checks that every recognized aria-* attribute has a value conforming to its WAI-
 
 **Expectation.**
 
-Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`). A value of the wrong type is a WAI-ARIA violation, which ACT 6a7281 says is "not required for conformance to WCAG 2.1 at any level". It is a FAIL only where it leaves a control's user-settable state or value, or the focused item, unstated, which SC 4.1.2 requires to be programmatically determinable; anywhere else it is CANTTELL (see ARIA_ATTR_VALUE_INVALID). Some attributes also constrain each other, checked once each is valid on its own:
+Each attribute's value conforms to its WAI-ARIA-declared value type: boolean ("true"/"false"), tristate ("true"/"false"/"mixed"), a token from a fixed enumerated set, an integer (within the range WAI-ARIA sets for it), a real number, or an ID reference (list) that resolves to an existing element in the document. Boolean, tristate and token values are read in any case, as Chromium reads them (aria-checked="TRUE" is checked). Per ACT 6a7281's own applicability ("any state or property that is NOT empty"), an explicitly empty value, including a bare boolean-style attribute with no "=value" at all, e.g. `aria-checked` alone, is out of scope for every value type, not a violation: a common, deliberate pattern in templated markup (e.g. React conditionally rendering `aria-describedby={hasError ? errorId : ''}`). A value of the wrong type is a WAI-ARIA violation, which ACT 6a7281 says is "not required for conformance to WCAG 2.1 at any level". It is a FAIL only where it leaves a control's user-settable state or value, or the focused item, unstated, which SC 4.1.2 requires to be programmatically determinable: one of aria-checked, aria-pressed, aria-selected, aria-expanded or aria-valuenow on an element with a widget role, or any invalid aria-activedescendant. Anywhere else it is CANTTELL. Some attributes also constrain each other, checked once each is valid on its own:
 
 - On an element whose role is slider, scrollbar, progressbar, meter, separator or spinbutton: `aria-valuemin` greater than `aria-valuemax` fails (`ARIA_VALUE_RANGE_INVERTED`), and so does an `aria-valuenow` outside the range (`ARIA_VALUENOW_OUT_OF_RANGE`), since the browser then gives assistive technology the nearest end of the range instead (Chromium announces 10 for 50 of 0 to 10). The range is the stated one; else a native element's own (a `<progress>`, `<meter>`, range or number input, by its `min` and `max`), as HTML-AAM maps it; else ARIA's defaults of 0 and 100, except on a spinbutton, which has none. With `aria-valuetext`, which is announced in place of the number, the value is not compared.
 - `aria-posinset` greater than `aria-setsize` fails (`ARIA_POSINSET_EXCEEDS_SETSIZE`); a set size of -1 (unknown) is left alone.
@@ -1302,7 +1302,7 @@ Checks that &lt;dl&gt; elements only directly contain &lt;dt&gt;/&lt;dd&gt; grou
 
 **Applies to.** Applies to &lt;dl&gt; elements that have at least one direct element child or non-whitespace text directly inside them.
 
-**Expectation.** Every direct element child is &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;, or a &lt;div&gt; whose own children are drawn from that same set (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). Non-whitespace text directly inside the &lt;dl&gt; or a wrapping &lt;div&gt; is an invalid child too. If the flattened set contains any &lt;dt&gt; or &lt;dd&gt; at all, it must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is invalid), and read in order it must be groups of one or more &lt;dt&gt; followed by one or more &lt;dd&gt;: a &lt;dd&gt; before the first &lt;dt&gt; has no term, and a &lt;dt&gt; after the last &lt;dd&gt; has no definition. A flattened set with neither (an empty list, or one holding only &lt;script&gt;, &lt;template&gt; or &lt;style&gt;) is not a violation: the pairing is required only of a list that has items. Any other direct or wrapped child breaks the description-list semantics assistive technologies rely on.
+**Expectation.** Every direct element child is &lt;dt&gt;, &lt;dd&gt;, &lt;script&gt;, &lt;template&gt;, &lt;style&gt;, or a &lt;div&gt; whose own children are drawn from that same set (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). Non-whitespace text directly inside the &lt;dl&gt; or a wrapping &lt;div&gt; is an invalid child too. If the flattened set contains any &lt;dt&gt; or &lt;dd&gt; at all, it must contain BOTH (an unbalanced dt-without-dd or dd-without-dt is invalid), and read in order it must be groups of one or more &lt;dt&gt; followed by one or more &lt;dd&gt;: a &lt;dd&gt; before the first &lt;dt&gt; has no term, and a &lt;dt&gt; after the last &lt;dd&gt; has no definition. A flattened set with neither (an empty list, or one holding only &lt;script&gt;, &lt;template&gt; or &lt;style&gt;) is not a violation: the pairing is required only of a list that has items. Any other direct or wrapped child breaks the description-list semantics assistive technologies rely on. Every finding is reported at CANTTELL, not FAIL. HTML-AAM gives &lt;dt&gt; and &lt;dd&gt; their term and definition roles wherever they sit, so what a broken content model loses is the pairing of terms with definitions, which only the &lt;dl&gt;'s structure and order state. That is a WCAG failure (SC 1.3.1) only where the page shows the pairing, and H40 is only a sufficient technique: a person settles it.
 
 **What a finding reports.**
 
@@ -1312,9 +1312,9 @@ Checks that &lt;dl&gt; elements only directly contain &lt;dt&gt;/&lt;dd&gt; grou
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DL_INVALID_CHILD` | fail | The list holds an element, or text, that is not a dt/dd group, a single wrapping div, script, template or style. | WCAG 1.3.1; H40; HTML dl element content model (MUST) |
-| `DL_NO_DT_DD` | fail | The list has terms with no definition, or definitions with no term. | WCAG 1.3.1; H40; HTML dl element content model (MUST) |
-| `DL_DT_DD_ORDER` | fail | A definition comes before the first term, or the last term has no definition after it. | WCAG 1.3.1; H40; HTML dl element content model (MUST) |
+| `DL_INVALID_CHILD` | cantTell | The list holds an element, or text, that is not a dt/dd group, a single wrapping div, script, template or style. | H40; HTML dl element content model (MUST); WCAG 1.3.1 (not settled) |
+| `DL_NO_DT_DD` | cantTell | The list has terms with no definition, or definitions with no term. | H40; HTML dl element content model (MUST); WCAG 1.3.1 (not settled) |
+| `DL_DT_DD_ORDER` | cantTell | A definition comes before the first term, or the last term has no definition after it. | H40; HTML dl element content model (MUST); WCAG 1.3.1 (not settled) |
 
 ### `deprecated-elements-not-used`
 
@@ -1363,7 +1363,7 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 **Applies to.** Applies to &lt;dt&gt;/&lt;dd&gt; elements that have a parent element in the flat tree, as the page renders it: a &lt;dt&gt;/&lt;dd&gt; slotted into a shadow &lt;dl&gt;&lt;slot&gt;&lt;/slot&gt;&lt;/dl&gt; is in that list, and a &lt;slot&gt; in between is seen through. A &lt;dt&gt;/&lt;dd&gt; a shadow host doesn't slot is not rendered and is left out.
 
-**Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container is not exposed as a term/definition to assistive technologies.
+**Expectation.** The parent is &lt;dl&gt;, or the parent is a &lt;div&gt; whose own parent is &lt;dl&gt; (a single level of wrapping div is allowed, matching how authors commonly group dt/dd pairs). A &lt;dt&gt;/&lt;dd&gt; used outside a real description-list container keeps its term or definition role, but no list pairs it with the definition or term that goes with it. Every finding is reported at CANTTELL, not FAIL. HTML-AAM gives &lt;dt&gt; and &lt;dd&gt; their term and definition roles wherever they sit, so what a broken content model loses is the pairing of terms with definitions, which only the &lt;dl&gt;'s structure and order state. That is a WCAG failure (SC 1.3.1) only where the page shows the pairing, and H40 is only a sufficient technique: a person settles it.
 
 **What a finding reports.**
 
@@ -1373,7 +1373,7 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `DLITEM_INVALID_PARENT` | fail | A dt or dd is not inside a dl, either directly or through one wrapping div. | WCAG 1.3.1; H40; HTML dt and dd elements contexts (MUST) |
+| `DLITEM_INVALID_PARENT` | cantTell | A dt or dd is not inside a dl, either directly or through one wrapping div. | H40; HTML dt and dd elements contexts (MUST); WCAG 1.3.1 (not settled) |
 
 ### `duplicate-id`
 
@@ -2500,7 +2500,7 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 
 **Applies to.** Applies to &lt;ul&gt;/&lt;ol&gt; elements that have at least one direct element child or non-whitespace text directly inside them, and whose role is list: no role attribute, a role attribute resolving to list (its first token naming a known role, in any case), or one naming no known ARIA role. A &lt;ul&gt;/&lt;ol&gt; given another role (listbox, menubar, tablist, none, ...) is not a list, so its children follow that role's rules instead.
 
-**Expectation.** Every direct element child is &lt;li&gt;, &lt;script&gt;, or &lt;template&gt;. UNLESS it has an explicit role (its role attribute's first token naming a known role, matched in any case), in which case the explicit role wins over the tag entirely: a child is valid iff that role is "listitem" (so `<li role="presentation">`/`<li role="menuitem">` are invalid despite the &lt;li&gt; tag, and conversely a non-&lt;li&gt; element explicitly given `role="listitem"` or `role="foo LISTITEM"` is valid). A role attribute naming no known role leaves the tag to decide. A wrapper &lt;div&gt; used for styling (no role at all) still breaks list semantics the same as before. Non-whitespace text directly inside the list is an invalid child too: HTML allows only &lt;li&gt; and script-supporting elements there, and the text belongs to no list item.
+**Expectation.** Every direct element child is &lt;li&gt;, &lt;script&gt;, or &lt;template&gt;. UNLESS it has an explicit role (its role attribute's first token naming a known role, matched in any case), in which case the explicit role wins over the tag entirely: a child is valid iff that role is "listitem" (so `<li role="presentation">`/`<li role="menuitem">` are invalid despite the &lt;li&gt; tag, and conversely a non-&lt;li&gt; element explicitly given `role="listitem"` or `role="foo LISTITEM"` is valid). A role attribute naming no known role leaves the tag to decide. A wrapper &lt;div&gt; used for styling (no role at all) still breaks list semantics the same as before. Non-whitespace text directly inside the list is an invalid child too: HTML allows only &lt;li&gt; and script-supporting elements there, and the text belongs to no list item. A child that does not belong FAILS only where the page shows an item the markup loses: the child is drawn as a list item (display list-item with a marker), or it wraps &lt;li&gt; elements that are, which HTML-AAM then maps to no list item. That is a relationship shown and not programmatically determinable (SC 1.3.1). Anything else (a heading or a separator between the items, loose text, an &lt;li&gt; whose role replaces listitem with no marker drawn) breaks HTML's content model, and H48 is only a sufficient technique: it is reported at CANTTELL, for a person to say whether the page shows it as one of the items. The marker is read from the computed style; jsdom does not resolve the list-style shorthand, so there `list-style: none` set that way still reads as a marker, and the finding fails as it would have before.
 
 **What a finding reports.**
 
@@ -2514,8 +2514,8 @@ Checks that &lt;ul&gt;/&lt;ol&gt; elements only have &lt;li&gt;, &lt;script&gt;,
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LIST_INVALID_CHILD` | fail | The list holds an element that is not a list item, script or template, or text outside any list item. | WCAG 1.3.1; H48; HTML ul and ol elements content model (MUST); WAI-ARIA 1.2 list role (MUST) |
-| `LIST_ITEM_ROLE_OVERRIDDEN` | fail | An li in the list has a role that replaces listitem, so it is not one of the list's items. | WCAG 1.3.1; ARIA in HTML li element (MUST); WAI-ARIA 1.2 list role (MUST) |
+| `LIST_INVALID_CHILD` | fail, cantTell | The list holds an element that is not a list item, script or template, or text outside any list item. It fails where that child is drawn as a list item or wraps items that are, and is asked about otherwise. | WCAG 1.3.1; H48; HTML ul and ol elements content model (MUST); WAI-ARIA 1.2 list role (MUST) |
+| `LIST_ITEM_ROLE_OVERRIDDEN` | fail, cantTell | An li in the list has a role that replaces listitem, so it is not one of the list's items. It fails where the li is still drawn as a list item, and is asked about where no marker is drawn. | WCAG 1.3.1; ARIA in HTML li element (MUST); WAI-ARIA 1.2 list role (MUST) |
 
 ### `listbox-name-present`
 
@@ -2546,11 +2546,11 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 **Applies to.** Applies to &lt;li&gt; elements that have a parent element.
 
-**Expectation.** The parent is &lt;ul&gt;/&lt;ol&gt;/&lt;menu&gt; with no role override (all three have the implicit role list), or an element with an explicit role of "list", "directory" (deprecated, but a required parent of listitem in WAI-ARIA 1.2), "presentation", or "none". An &lt;li&gt; used outside a real list container (e.g. as a generic flex/grid item under a &lt;div&gt;) is not exposed as a list item to assistive technologies.
+**Expectation.** The parent is &lt;ul&gt;/&lt;ol&gt;/&lt;menu&gt; with no role override (all three have the implicit role list), or an element with an explicit role of "list", "directory" (deprecated, but a required parent of listitem in WAI-ARIA 1.2), "presentation", or "none". An &lt;li&gt; used outside a real list container (e.g. as a generic flex/grid item under a &lt;div&gt;) is not exposed as a list item to assistive technologies. It FAILS where the page still draws the &lt;li&gt; as a list item (display list-item with a marker): an item a reader sees that the markup puts in no list, a relationship not programmatically determinable (SC 1.3.1). An &lt;li&gt; drawn with no marker, as a plain layout box, shows no list, so the broken content model is reported at CANTTELL (H48 is only a sufficient technique) for a person to say whether it reads as a list. jsdom does not resolve the list-style shorthand, so there `list-style: none` set that way still reads as a marker.
 
 **What a finding reports.**
 
-- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail.
+- `reasonCode`: `LIST_ROLE_OVERRIDDEN` when the parent is a &lt;ul&gt;, &lt;ol&gt; or &lt;menu&gt; whose explicit role replaces list (`<ul role="tablist">`), `LISTITEM_INVALID_PARENT` otherwise. Both fail where the &lt;li&gt; is drawn as a list item, and are asked about where it is not.
 - `parentElement`: the tag name of the `<li>`'s parent, the container it is in instead of a list.
 - `parentRole`: with `LIST_ROLE_OVERRIDDEN`, the parent's role.
 - `parentElement` is a stable contract, unlike the rest of `data.details`.
@@ -2559,8 +2559,8 @@ Checks that &lt;li&gt; elements are contained by &lt;ul&gt;, &lt;ol&gt;, &lt;men
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `LISTITEM_INVALID_PARENT` | fail | An li is not inside a ul, ol, menu or an element with role list, so it is not exposed as a list item. | WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2 listitem role (MUST) |
-| `LIST_ROLE_OVERRIDDEN` | fail | The li's parent is a ul, ol or menu whose explicit role replaces list, so the li is not in a list. | WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST) |
+| `LISTITEM_INVALID_PARENT` | fail, cantTell | An li is not inside a ul, ol, menu or an element with role list, so it is not exposed as a list item. It fails where the li is drawn as a list item. | WCAG 1.3.1; H48; HTML li element contexts (MUST); WAI-ARIA 1.2 listitem role (MUST) |
+| `LIST_ROLE_OVERRIDDEN` | fail, cantTell | The li's parent is a ul, ol or menu whose explicit role replaces list, so the li is not in a list. It fails where the li is drawn as a list item. | WCAG 1.3.1; WAI-ARIA 1.2 listitem role (MUST) |
 
 ### `live-region-announcements`
 
@@ -2828,7 +2828,7 @@ Checks that an interactive control (link, button, form control, or ARIA widget r
 
 **Applies to.** Applies to elements matching the interactive-control set (native a[href], button, input (not hidden), select, textarea; or an explicit ARIA widget role: button, link, checkbox, radio, switch, tab, textbox, combobox, listbox, menuitem, menuitemcheckbox, menuitemradio, option, slider, spinbutton, searchbox, treeitem, taken from the role attribute's first token naming a known role, matched in any case, so role="foo button" and role="BUTTON" count and role="none button" does not). The container is applicable regardless of whether it is itself focusable, focusability is only used to decide whether a *descendant* nests an interactive control. A custom element whose ElementInternals give it one of those widget roles (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
-**Expectation.** The element does not contain, as a descendant, another *operable* interactive control (e.g. a &lt;button&gt; wrapping a &lt;select&gt;, or a link containing a checkbox). Nested interactive controls are not reliably announced or operable via assistive technology, activating the outer control and the inner one become ambiguous, and some AT only exposes one of the two.
+**Expectation.** The element does not contain, as a descendant, another *operable* interactive control (e.g. a &lt;button&gt; wrapping a &lt;select&gt;, or a link containing a checkbox). Nested interactive controls are not reliably announced or operable via assistive technology, activating the outer control and the inner one become ambiguous, and some AT only exposes one of the two. It FAILS where the outer control's role has presentational children (WAI-ARIA 1.2: button, checkbox, img, menuitemcheckbox, menuitemradio, meter, option, progressbar, radio, scrollbar, separator, slider, switch, tab): the nested control's role is removed there, so a control that still takes focus has no role to determine (SC 4.1.2, as ACT 307n5z has it). Elsewhere (a link, textbox, combobox, listbox, menuitem, searchbox, spinbutton or treeitem holding a control) both keep their roles; HTML's content model forbids the nesting, but whether a name, role or value is lost depends on the page, so it is reported at CANTTELL.
 
 **What a finding reports.**
 
@@ -2838,7 +2838,7 @@ Checks that an interactive control (link, button, form control, or ARIA widget r
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `NESTED_INTERACTIVE_CONTROL` | fail | An interactive control contains another control that can take focus, such as a button inside a link. | WCAG 4.1.2; HTML interactive content (MUST); WAI-ARIA 1.2 presentational children |
+| `NESTED_INTERACTIVE_CONTROL` | fail, cantTell | An interactive control contains another control that can take focus, such as a button inside a link. It fails where the outer control's role has presentational children (a button, tab, checkbox, option...), which removes the nested control's role, and is asked about otherwise (a control inside a link, textbox or tree item), where both keep their roles. | WCAG 4.1.2; ACT 307n5z; HTML interactive content (MUST); WAI-ARIA 1.2 presentational children |
 
 ### `no-autoplay-audio`
 

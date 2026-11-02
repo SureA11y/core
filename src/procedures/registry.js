@@ -194,16 +194,28 @@ const PROCEDURES = {
         coveredBy: 'aria-structure-valid'
       },
       'list-children-valid': {
-        coveredBy: 'lists-marked-up'
+        coveredBy: 'lists-marked-up',
+        variants: {
+          'list-children-valid': ['LIST_INVALID_CHILD', 'LIST_ITEM_ROLE_OVERRIDDEN']
+        }
       },
       'listitem-parent-valid': {
-        coveredBy: 'lists-marked-up'
+        coveredBy: 'lists-marked-up',
+        variants: {
+          'listitem-parent-valid': ['LISTITEM_INVALID_PARENT', 'LIST_ROLE_OVERRIDDEN']
+        }
       },
       'definition-list-children-valid': {
-        coveredBy: 'lists-marked-up'
+        coveredBy: 'lists-marked-up',
+        variants: {
+          'definition-list-children-valid': ['DL_DT_DD_ORDER', 'DL_INVALID_CHILD', 'DL_NO_DT_DD']
+        }
       },
       'dlitem-parent-valid': {
-        coveredBy: 'lists-marked-up'
+        coveredBy: 'lists-marked-up',
+        variants: {
+          'dlitem-parent-valid': ['DLITEM_INVALID_PARENT']
+        }
       },
       'aria-role-required-owned-children': {
         coveredBy: 'aria-structure-valid',
@@ -995,7 +1007,10 @@ const PROCEDURES = {
         }
       },
       'nested-interactive-controls-absent': {
-        coveredBy: 'roles-match-behavior'
+        coveredBy: 'roles-match-behavior',
+        variants: {
+          'nested-interactive-controls-absent': ['NESTED_INTERACTIVE_CONTROL']
+        }
       },
       'presentational-children-focusable-absent': {
         coveredBy: 'roles-match-behavior'
@@ -1026,9 +1041,6 @@ const PROCEDURES = {
             'EXPANDED_TRUE_CONTROLLED_HIDDEN'
           ]
         }
-      },
-      'aria-owns-valid': {
-        coveredBy: 'roles-match-behavior'
       },
       'components-named': {
         tools: ['devtools', 'screen-reader']

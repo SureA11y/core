@@ -29,6 +29,18 @@
  *   the same as before. Non-whitespace text directly inside the list is an
  *   invalid child too: HTML allows only <li> and script-supporting elements
  *   there, and the text belongs to no list item.
+ *   A child that does not belong FAILS only where the page shows an item
+ *   the markup loses: the child is drawn as a list item (display list-item
+ *   with a marker), or it wraps <li> elements that are, which HTML-AAM then
+ *   maps to no list item. That is a relationship shown and not
+ *   programmatically determinable (SC 1.3.1). Anything else (a heading or a
+ *   separator between the items, loose text, an <li> whose role replaces
+ *   listitem with no marker drawn) breaks HTML's content model, and H48 is
+ *   only a sufficient technique: it is reported at CANTTELL, for a person to
+ *   say whether the page shows it as one of the items. The marker is read
+ *   from the computed style; jsdom does not resolve the list-style
+ *   shorthand, so there `list-style: none` set that way still reads as a
+ *   marker, and the finding fails as it would have before.
  * @reports
  *   - `reasonCode`: `LIST_ITEM_ROLE_OVERRIDDEN` when every child that
  *     does not belong is an <li> whose explicit role replaces listitem
@@ -43,12 +55,16 @@
  *   - `element` is a stable contract, unlike the rest of
  *     `data.details`.
  * @reason-codes
- *   - `LIST_INVALID_CHILD` (fail): the list holds an element that is not a
- *     list item, script or template, or text outside any list item.
+ *   - `LIST_INVALID_CHILD` (fail, cantTell): the list holds an element that
+ *     is not a list item, script or template, or text outside any list item.
+ *     It fails where that child is drawn as a list item or wraps items that
+ *     are, and is asked about otherwise.
  *     Basis: WCAG 1.3.1; H48; HTML ul and ol elements content model (MUST);
  *     WAI-ARIA 1.2 list role (MUST).
- *   - `LIST_ITEM_ROLE_OVERRIDDEN` (fail): an li in the list has a role that
- *     replaces listitem, so it is not one of the list's items.
+ *   - `LIST_ITEM_ROLE_OVERRIDDEN` (fail, cantTell): an li in the list has a
+ *     role that replaces listitem, so it is not one of the list's items. It
+ *     fails where the li is still drawn as a list item, and is asked about
+ *     where no marker is drawn.
  *     Basis: WCAG 1.3.1; ARIA in HTML li element (MUST); WAI-ARIA 1.2 list
  *     role (MUST).
  * @implementation-notes
@@ -139,8 +155,33 @@ function runInPage(ctx) {
     }
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Whether the page draws the element as a list item: display list-item
+  // with a marker (a bullet, number or image). That is the item a reader
+  // sees; WCAG 1.3.1 asks that it also be one in the markup.
+  function drawnAsListItem(el) {
+    try {
+      const cs = helpers.computedStyle(el) || {};
+      if (!/\blist-item\b/.test(String(cs.display || ''))) return false;
+      const type = String(cs.listStyleType || '').trim();
+      const image = String(cs.listStyleImage || '').trim();
+      return (type !== '' && type !== 'none') || (image !== '' && image !== 'none');
+    } catch {
+      return false;
+    }
+  }
+  // An element with <li> descendants drawn as items: a wrapper between the
+  // list and its items, which leaves them items of no list.
+  function wrapsDrawnItems(el) {
+    try {
+      return Array.from(dom.querySelectorAll(el, 'li')).some((li) => drawnAsListItem(li));
+    } catch {
+      return false;
+    }
+  }
 
   // The first role token that names a known, non-abstract ARIA role, in
   // any case, or '' when none does (the element keeps its native role).
@@ -177,6 +218,11 @@ function runInPage(ctx) {
     // every invalid child is one of those.
     const overriddenRoles = [];
     let onlyOverriddenItems = true;
+    // Whether a child that does not belong is drawn as one of the list's
+    // items, or wraps items that are: then an item the page shows is not one
+    // in the markup (SC 1.3.1). Any other stray child, or loose text, breaks
+    // HTML's content model without such a loss being shown.
+    let showsLostItem = false;
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
@@ -189,6 +235,7 @@ function runInPage(ctx) {
 
       if (valid) continue;
       invalidTags.push(tag);
+      if (drawnAsListItem(child) || (tag !== 'li' && wrapsDrawnItems(child))) showsLostItem = true;
       if (tag === 'li' && explicitRole) overriddenRoles.push(explicitRole);
       else onlyOverriddenItems = false;
     }
@@ -203,10 +250,24 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    const bucket = showsLostItem ? failOccurrences : cantTellOccurrences;
+    const tier = showsLostItem
+      ? { occurrenceOutcome: 'fail' }
+      : {
+          occurrenceOutcome: 'cantTell',
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the page shows the content that does not belong as one of the list’s items.',
+            evidence: { element: dom.tagName(el).toLowerCase(), invalidChildren: invalidTags }
+          }
+        };
+
     if (onlyOverriddenItems) {
       const roles = [...new Set(overriddenRoles)];
-      occurrences.push(
+      bucket.push(
         helpers.reportOccurrence(el, {
+          ...tier,
           summary: `This list has an <li> whose role (${roles.join(', ')}) replaces listitem, so it is not one of the list's items.`,
           hint: 'Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.',
           i18n: {
@@ -227,8 +288,9 @@ function runInPage(ctx) {
       continue;
     }
 
-    occurrences.push(
+    bucket.push(
       helpers.reportOccurrence(el, {
+        ...tier,
         summary: 'This list contains a direct child that is not a list item.',
         hint: 'Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.',
         i18n: {
@@ -246,15 +308,14 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }
 
 module.exports = { id, meta, runInPage };

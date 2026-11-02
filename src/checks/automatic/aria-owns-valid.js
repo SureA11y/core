@@ -7,7 +7,7 @@
  * @atomic true
  * @summary aria-owns must give each element one owner, and never an ancestor of the owner
  * @standard WCAG 2.2
- * @sc 1.3.1, 4.1.2
+ * @sc 1.3.1
  * @applicability
  *   Elements the page shows with an `aria-owns` naming at least one
  *   element in the same tree.
@@ -33,13 +33,12 @@
  *   - `ARIA_OWNS_DUPLICATE` (fail): an element named in the aria-owns of two or
  *     more elements, so the browser gives it to one owner and the structure the
  *     others state is lost.
- *     Basis: WCAG 1.3.1; WCAG 4.1.2; WAI-ARIA 1.2 aria-owns (MUST).
+ *     Basis: WCAG 1.3.1; WAI-ARIA 1.2 aria-owns (MUST).
  *   - `ARIA_OWNS_ANCESTOR` (cantTell): an aria-owns that names the element
  *     itself or one of its ancestors, an ownership that is ignored, leaving
  *     the document's own structure. A WAI-ARIA violation; whether it also
  *     fails SC 1.3.1 depends on the relationship the page shows.
- *     Basis: WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled); WCAG
- *     4.1.2 (not settled).
+ *     Basis: WAI-ARIA 1.2 aria-owns (MUST); WCAG 1.3.1 (not settled).
  * @implementation-notes
  * - Chromium, checked: an element named by two owners is a child of one of
  *   them only, and an owner naming its ancestor gets no such child.
@@ -58,21 +57,14 @@ const meta = {
     descriptionKey: 'ariaOwnsValid_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag131', 'wcag412', 'aria', 'structure', 'atomic', 'automatic'],
-  wcagSc: ['1.3.1', '4.1.2'],
+  tags: ['wcag2a', 'wcag131', 'aria', 'structure', 'atomic', 'automatic'],
+  wcagSc: ['1.3.1'],
   normativeMappings: [
     {
       standard: 'WCAG',
       version: '2.2',
       requirement: '1.3.1',
       title: 'Info and Relationships',
-      conformanceLevel: 'A'
-    },
-    {
-      standard: 'WCAG',
-      version: '2.2',
-      requirement: '4.1.2',
-      title: 'Name, Role, Value',
       conformanceLevel: 'A'
     }
   ],
@@ -82,8 +74,7 @@ const meta = {
   defaultConfidence: 'high',
   coverage: {
     facetsBySc: {
-      '1.3.1': ['aria-owns-valid'],
-      '4.1.2': ['aria-owns-valid']
+      '1.3.1': ['aria-owns-valid']
     }
   }
 };

@@ -25072,7 +25072,6 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag131",
-      "wcag412",
       "aria",
       "structure",
       "atomic",
@@ -25080,8 +25079,7 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "1.3.1",
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
@@ -25094,15 +25092,6 @@ const RUNTIME_CATALOG = {
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
       },
       {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
-        "conformanceLevel": "A",
-        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
-        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
         "standard": "EN 301 549",
         "version": "V3.2.1",
         "requirement": "9.1.3.1",
@@ -25118,24 +25107,6 @@ const RUNTIME_CATALOG = {
         "title": "Info and relationships",
         "wcagSc": [
           "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
         ]
       }
     ],
@@ -25145,9 +25116,6 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "1.3.1": [
-          "aria-owns-valid"
-        ],
-        "4.1.2": [
           "aria-owns-valid"
         ]
       }
@@ -35698,8 +35666,7 @@ const RUNTIME_CATALOG = {
       "aria-braille-equivalent",
       "aria-conditional-attr",
       "aria-checked-state-mismatch",
-      "aria-expanded-state-mismatch",
-      "aria-owns-valid"
+      "aria-expanded-state-mismatch"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -44091,7 +44058,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag131",
-      "wcag412",
       "aria",
       "structure",
       "atomic",
@@ -44099,8 +44065,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "1.3.1",
-      "4.1.2"
+      "1.3.1"
     ],
     "normativeMappings": [
       {
@@ -44113,15 +44078,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/info-and-relationships.html"
       },
       {
-        "standard": "WCAG",
-        "version": "2.2",
-        "requirement": "4.1.2",
-        "title": "Name, Role, Value",
-        "conformanceLevel": "A",
-        "url": "https://www.w3.org/TR/WCAG22/#name-role-value",
-        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/name-role-value.html"
-      },
-      {
         "standard": "EN 301 549",
         "version": "V3.2.1",
         "requirement": "9.1.3.1",
@@ -44137,24 +44093,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "title": "Info and relationships",
         "wcagSc": [
           "1.3.1"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V3.2.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
-        ]
-      },
-      {
-        "standard": "EN 301 549",
-        "version": "V4.1.1",
-        "requirement": "9.4.1.2",
-        "title": "Name, role, value",
-        "wcagSc": [
-          "4.1.2"
         ]
       }
     ],
@@ -44164,9 +44102,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "1.3.1": [
-          "aria-owns-valid"
-        ],
-        "4.1.2": [
           "aria-owns-valid"
         ]
       }
@@ -54717,8 +54652,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "aria-braille-equivalent",
       "aria-conditional-attr",
       "aria-checked-state-mismatch",
-      "aria-expanded-state-mismatch",
-      "aria-owns-valid"
+      "aria-expanded-state-mismatch"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_412_aria_validity.title",
@@ -70503,6 +70437,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.reportOccurrence(el, {
         summary: TEXT.summary,
         hint: TEXT.hint,
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows terms paired with their definitions in a way this markup does not state.',
+          evidence: { reasonCode, invalidChildren: invalidTags }
+        },
         i18n: {
           summaryKey: `definitionListChildrenValid_summary_fail_${TEXT.key}`,
           hintKey: `definitionListChildrenValid_hint_fail_${TEXT.key}`,
@@ -70518,15 +70458,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: the term and definition roles survive,
+  // and whether the pairing the markup breaks is one the page shows is for
+  // a person to say (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious')
+  };
 }), applicability: null },
     "deprecated-elements-not-used": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -70911,6 +70849,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       helpers.reportOccurrence(el, {
         summary: 'This description-list item is not contained by a <dl>.',
         hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows this term or definition paired with another, a pairing no <dl> states.',
+          evidence: { element: tag, parentElement: parentTag }
+        },
         i18n: {
           summaryKey: 'dlitemParentValid_summary_fail',
           hintKey: 'dlitemParentValid_hint_fail',
@@ -70926,15 +70870,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: the term and definition roles survive,
+  // and whether the pairing the markup breaks is one the page shows is for
+  // a person to say (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious')
+  };
 }), applicability: null },
     "duplicate-id": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -83319,8 +83261,33 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
   }
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Whether the page draws the element as a list item: display list-item
+  // with a marker (a bullet, number or image). That is the item a reader
+  // sees; WCAG 1.3.1 asks that it also be one in the markup.
+  function drawnAsListItem(el) {
+    try {
+      const cs = helpers.computedStyle(el) || {};
+      if (!/\blist-item\b/.test(String(cs.display || ''))) return false;
+      const type = String(cs.listStyleType || '').trim();
+      const image = String(cs.listStyleImage || '').trim();
+      return (type !== '' && type !== 'none') || (image !== '' && image !== 'none');
+    } catch {
+      return false;
+    }
+  }
+  // An element with <li> descendants drawn as items: a wrapper between the
+  // list and its items, which leaves them items of no list.
+  function wrapsDrawnItems(el) {
+    try {
+      return Array.from(dom.querySelectorAll(el, 'li')).some((li) => drawnAsListItem(li));
+    } catch {
+      return false;
+    }
+  }
 
   // The first role token that names a known, non-abstract ARIA role, in
   // any case, or '' when none does (the element keeps its native role).
@@ -83357,6 +83324,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // every invalid child is one of those.
     const overriddenRoles = [];
     let onlyOverriddenItems = true;
+    // Whether a child that does not belong is drawn as one of the list's
+    // items, or wraps items that are: then an item the page shows is not one
+    // in the markup (SC 1.3.1). Any other stray child, or loose text, breaks
+    // HTML's content model without such a loss being shown.
+    let showsLostItem = false;
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (!isExposedToAt(child)) continue;
@@ -83369,6 +83341,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       if (valid) continue;
       invalidTags.push(tag);
+      if (drawnAsListItem(child) || (tag !== 'li' && wrapsDrawnItems(child))) showsLostItem = true;
       if (tag === 'li' && explicitRole) overriddenRoles.push(explicitRole);
       else onlyOverriddenItems = false;
     }
@@ -83383,10 +83356,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    const bucket = showsLostItem ? failOccurrences : cantTellOccurrences;
+    const tier = showsLostItem
+      ? { occurrenceOutcome: 'fail' }
+      : {
+          occurrenceOutcome: 'cantTell',
+          uncertainty: {
+            code: 'spec-only',
+            needed:
+              'Whether the page shows the content that does not belong as one of the list’s items.',
+            evidence: { element: dom.tagName(el).toLowerCase(), invalidChildren: invalidTags }
+          }
+        };
+
     if (onlyOverriddenItems) {
       const roles = [...new Set(overriddenRoles)];
-      occurrences.push(
+      bucket.push(
         helpers.reportOccurrence(el, {
+          ...tier,
           summary: `This list has an <li> whose role (${roles.join(', ')}) replaces listitem, so it is not one of the list's items.`,
           hint: 'Remove the role from the <li>, or take the element out of the list, or give the list itself the role its children need, such as tablist for tabs.',
           i18n: {
@@ -83407,8 +83394,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    occurrences.push(
+    bucket.push(
       helpers.reportOccurrence(el, {
+        ...tier,
         summary: 'This list contains a direct child that is not a list item.',
         hint: 'Only <li>, <script> and <template> may sit directly inside <ul> or <ol>; move other markup inside an <li>.',
         i18n: {
@@ -83426,15 +83414,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }), applicability: null },
     "listbox-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -83642,8 +83629,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // Whether the page draws the <li> as a list item: display list-item with a
+  // marker. An item a reader sees that the markup puts in no list is a
+  // relationship not programmatically determinable (SC 1.3.1); an <li> used
+  // as a plain layout box, with no marker, shows no list.
+  function drawnAsListItem(li) {
+    try {
+      const cs = helpers.computedStyle(li) || {};
+      if (!/\blist-item\b/.test(String(cs.display || ''))) return false;
+      const type = String(cs.listStyleType || '').trim();
+      const image = String(cs.listStyleImage || '').trim();
+      return (type !== '' && type !== 'none') || (image !== '' && image !== 'none');
+    } catch {
+      return false;
+    }
+  }
+  function tierFor(li) {
+    if (drawnAsListItem(li))
+      return { bucket: failOccurrences, extra: { occurrenceOutcome: 'fail' } };
+    return {
+      bucket: cantTellOccurrences,
+      extra: {
+        occurrenceOutcome: 'cantTell',
+        uncertainty: {
+          code: 'spec-only',
+          needed: 'Whether the page shows this element as an item of a list.',
+          evidence: { drawnAsListItem: false }
+        }
+      }
+    };
+  }
 
   for (const el of nodes) {
     if (!el) continue;
@@ -83691,9 +83710,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // else, so this <li> is a stray listitem in it. Still a failure, with its
     // own reason, since the fix differs: give the <li> the role the container
     // expects, rather than put it in a list.
+    const { bucket, extra } = tierFor(el);
     if (explicitRole && (parentTag === 'ul' || parentTag === 'ol' || parentTag === 'menu')) {
-      occurrences.push(
+      bucket.push(
         helpers.reportOccurrence(el, {
+          ...extra,
           summary: `This list item's parent <${parentTag}> has role="${explicitRole}", which replaces list, so it is not in a list.`,
           hint: `Give the <li> the role the ${explicitRole} expects of its children, or role="none" with that role on what it holds, or remove the role from the <${parentTag}>.`,
           i18n: {
@@ -83713,8 +83734,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       continue;
     }
 
-    occurrences.push(
+    bucket.push(
       helpers.reportOccurrence(el, {
+        ...extra,
         summary: 'This list item is not contained by a list container.',
         hint: 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
         i18n: {
@@ -83732,15 +83754,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }), applicability: null },
     "live-region-announcements": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -85908,8 +85929,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ? helpers.queryAllSmart(INTERACTIVE_SELECTOR, { internalsRoles: true })
     : helpers.queryAll(INTERACTIVE_SELECTOR);
 
-  const occurrences = [];
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
   let applicableCount = 0;
+
+  // The roles WAI-ARIA gives presentational children: inside one, the
+  // nested control's own role is removed, so a control that still takes
+  // focus there has no role that can be programmatically determined
+  // (SC 4.1.2; ACT 307n5z makes the same call for any focusable content).
+  const PRESENTATIONAL_CHILDREN_ROLES = new Set([
+    'button',
+    'checkbox',
+    'img',
+    'menuitemcheckbox',
+    'menuitemradio',
+    'meter',
+    'option',
+    'progressbar',
+    'radio',
+    'scrollbar',
+    'separator',
+    'slider',
+    'switch',
+    'tab'
+  ]);
+  function effectiveRole(node) {
+    const explicit = getExplicitRole(node);
+    if (explicit) return explicit;
+    try {
+      return String(helpers.aria.getNativeRoleForElement(node) || '').toLowerCase();
+    } catch {
+      return '';
+    }
+  }
 
   for (const el of nodes) {
     if (!el || dom.nodeType(el) !== 1) continue;
@@ -85929,8 +85981,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = dom.tagName(el).toLowerCase();
 
-    occurrences.push(
+    // Inside a role with presentational children the nested control loses its
+    // role: a FAIL. Anywhere else (a control inside a link, say) both keep
+    // their roles; HTML's content model forbids the nesting, but whether a
+    // name, role or value is lost depends on the page: asked about.
+    const outerRole = effectiveRole(el);
+    const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
+
+    (fails ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
+        occurrenceOutcome: fails ? 'fail' : 'cantTell',
+        ...(fails
+          ? {}
+          : {
+              uncertainty: {
+                code: 'spec-only',
+                needed:
+                  'Whether the nested control can be reached and operated on its own, and whether its name is swallowed by the outer control’s.',
+                evidence: { element: tag, outerRole, nestedElements: nestedTags }
+              }
+            }),
         summary: 'This interactive control contains one or more other interactive controls.',
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
@@ -85952,15 +86022,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome(
+      failOccurrences,
+      cantTellOccurrences,
+      rule.defaultSeverity || 'serious'
+    )
+  };
 }), applicability: null },
     "no-autoplay-audio": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;

@@ -26,20 +26,29 @@
  *   required only of a list that has items. Any other direct or wrapped
  *   child breaks the description-list semantics assistive technologies rely
  *   on.
+ *   Every finding is reported at CANTTELL, not FAIL. HTML-AAM gives <dt> and
+ *   <dd> their term and definition roles wherever they sit, so what a broken
+ *   content model loses is the pairing of terms with definitions, which only
+ *   the <dl>'s structure and order state. That is a WCAG failure (SC 1.3.1)
+ *   only where the page shows the pairing, and H40 is only a sufficient
+ *   technique: a person settles it.
  * @reports
  *   - `invalidChildren`: the children that do not belong in the list, one
  *     tag name per child (`#text` for text placed directly inside). Empty
  *     when the problem is a missing or misordered `<dt>`/`<dd>`.
  * @reason-codes
- *   - `DL_INVALID_CHILD` (fail): the list holds an element, or text, that is
- *     not a dt/dd group, a single wrapping div, script, template or style.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
- *   - `DL_NO_DT_DD` (fail): the list has terms with no definition, or
+ *   - `DL_INVALID_CHILD` (cantTell): the list holds an element, or text,
+ *     that is not a dt/dd group, a single wrapping div, script, template or style.
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
+ *   - `DL_NO_DT_DD` (cantTell): the list has terms with no definition, or
  *     definitions with no term.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
- *   - `DL_DT_DD_ORDER` (fail): a definition comes before the first term, or
- *     the last term has no definition after it.
- *     Basis: WCAG 1.3.1; H40; HTML dl element content model (MUST).
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
+ *   - `DL_DT_DD_ORDER` (cantTell): a definition comes before the first
+ *     term, or the last term has no definition after it.
+ *     Basis: H40; HTML dl element content model (MUST); WCAG 1.3.1 (not
+ *     settled).
  * @implementation-notes
  * - Only one level of <div> wrapping is flattened, a <div> nested inside
  *   another wrapping <div> is not flattened further and its contents are
@@ -212,6 +221,12 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         summary: TEXT.summary,
         hint: TEXT.hint,
+        uncertainty: {
+          code: 'spec-only',
+          needed:
+            'Whether the page shows terms paired with their definitions in a way this markup does not state.',
+          evidence: { reasonCode, invalidChildren: invalidTags }
+        },
         i18n: {
           summaryKey: `definitionListChildrenValid_summary_fail_${TEXT.key}`,
           hintKey: `definitionListChildrenValid_hint_fail_${TEXT.key}`,
@@ -227,15 +242,13 @@ function runInPage(ctx) {
   if (applicableCount === 0) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
-  if (occurrences.length) {
-    return {
-      ruleId: rule.ruleId,
-      outcome: 'fail',
-      severity: rule.defaultSeverity || 'serious',
-      occurrences
-    };
-  }
-  return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  // Every finding is a question: the term and definition roles survive,
+  // and whether the pairing the markup breaks is one the page shows is for
+  // a person to say (see @expectation).
+  return {
+    ruleId: rule.ruleId,
+    ...helpers.resolveTieredOutcome([], occurrences, rule.defaultSeverity || 'serious')
+  };
 }
 
 module.exports = { id, meta, runInPage };
