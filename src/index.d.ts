@@ -87,13 +87,14 @@ export interface EngineOptionFields {
    * as named.
    */
   wcagLevel?: WcagLevelInput;
-  profile?: Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>;
-  mappings?: StringList;
   /**
-   * The standards besides WCAG whose verdict each finding carries, beside
-   * WCAG's: 'wai-aria'. Off by default.
+   * A conformance profile, or a list of them: a scan of several at once,
+   * which reads as one profile with the rules of all (ScanResult.profiles).
    */
-  verdicts?: StringList;
+  profile?:
+    | Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>
+    | Open<'wcag22-aa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508'>[];
+  mappings?: StringList;
   optInRules?: 'all' | StringList;
   /** Default true. false leaves out the console.info note for a WCAG version/level tag no rule carries. */
   logUntestedWcag?: boolean;
@@ -488,12 +489,15 @@ export interface EngineInfo {
    */
   wcagLevel?: 'A' | 'AA' | 'AAA';
   environment: RenderingEnvironment;
+  /** The profile applied; in a scan of several, the first that ran. */
   profile?: string;
+  /** A scan of several profiles only: those that ran, in the order asked. */
+  profiles?: string[];
+  /** A scan of several profiles only: those asked for that didn't run, and why. */
+  profilesNotRun?: { profile: string; reason: 'unknown-profile' | 'pack-skipped' | string }[];
   profileExcludes?: { rules: string[]; criteria: string[] };
   optInRules?: string[];
   mappings?: string[];
-  /** The standards whose verdicts the results carry (engineOptions.verdicts). */
-  verdicts?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
   outputDetail?: 'findings';
   /** The packs the scan ran with, as name@version (engineOptions.packs). */
@@ -604,17 +608,14 @@ export interface Occurrence {
   i18n: { summaryKey: string; hintKey: string; params: Record<string, unknown> } | null;
   /** Present when the rule graded its findings into tiers. */
   occurrenceOutcome?: 'fail' | 'cantTell';
+  /** A scan of several profiles only: what each profile that ran the rule makes of the finding. */
+  verdicts?: Record<string, Outcome>;
   /** Present only on a cantTell-tier occurrence. */
   uncertainty?: Uncertainty;
   /** On a cantTell occurrence only: the answer the evidence makes likely. */
   lean?: Lean;
   /** On a cantTell occurrence only: how a person answers the question, in the scan's locale. */
   howToCheck?: HowToCheck;
-  /**
-   * With engineOptions.verdicts, on a rule that states verdicts: what the
-   * finding means under WCAG (its own tier) and under each standard asked for.
-   */
-  verdicts?: Verdicts;
   /** Absent on manual-review's finding, which is about the whole page. */
   data?: {
     visibilityFilter?: VisibilityFilter;
@@ -682,23 +683,20 @@ export interface CompactCheckResult {
   error?: string;
 }
 
-/**
- * A finding's or a rule's verdict under WCAG and under each other standard
- * engineOptions.verdicts asked for, keyed by the standard's key ('wai-aria').
- */
-export type Verdicts = { wcag: Outcome } & Record<string, Outcome>;
-
 export interface CheckResult {
   ruleId: string;
   outcome: Outcome;
-  /** With engineOptions.verdicts, on a rule that states verdicts: the rule's verdict under each standard. */
-  verdicts?: Verdicts;
   outcomeNormalized: OutcomeNormalized;
   severity: Severity;
   /** The rule's own severity, when the applied profile gave it another one. */
   ruleSeverity?: Severity;
   /** The outcome the rule found, when the policy's allowedOutcomes made it cantTell. */
   policyOutcome?: 'fail' | 'pass' | 'cantTell' | 'notApplicable';
+  /**
+   * A scan of several profiles only: each profile's outcome for the rule;
+   * `outcome` is the worst of them.
+   */
+  verdicts?: Record<string, Outcome>;
   confidence: Confidence;
   type: RuleType;
   occurrences: Occurrence[];
@@ -753,6 +751,8 @@ export interface CompositeResult {
   type: RuleType;
   /** Always empty: a composite rolls rules up, it does not flag elements. */
   occurrences: [];
+  /** A scan of several profiles only: the profiles that give this rollup. */
+  profiles?: string[];
   title: string;
   description: string;
   i18n: { titleKey: string; descriptionKey: string } | null;
@@ -797,6 +797,12 @@ export interface CompositeResult {
          */
         byReasonCode?: true;
         checkOutcome?: string;
+        /**
+         * Of such a rule, what the rollup made of each of its findings, in
+         * the order of the check's occurrences: 'fail', 'cantTell', or null
+         * for one it doesn't count.
+         */
+        findingOutcomes?: Array<'fail' | 'cantTell' | null>;
         /**
          * Of such a rule, the rollup's requirements its counted findings
          * name, when every one of them names some: those the rollup names
@@ -863,6 +869,15 @@ export interface ScanResult {
   skippedCustomRules: { id: string | null; reason: string; excluded?: true }[];
   /** engineOptions.packs that were not run, and why; absent when all ran. */
   skippedPacks?: { name: string | null; reason: string }[];
+  /**
+   * A scan of several profiles only: per profile that ran, the WCAG version
+   * it was judged by, the standards it names, and the outcome of each of its
+   * rollups (rulesResults lists each rollup once).
+   */
+  profiles?: Record<
+    string,
+    { wcagVersion?: string; standards?: string[]; rulesResults: Record<string, Outcome> }
+  >;
 }
 
 /**

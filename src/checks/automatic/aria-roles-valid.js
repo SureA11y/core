@@ -79,12 +79,6 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  // What each finding means under WAI-ARIA, beside its WCAG tier: authors MUST NOT use abstract roles; deprecated and reserved roles are not recommended (a token naming no role is left out: WAI-ARIA states no author requirement for it).
-  verdicts: {
-    'wai-aria': {
-      ARIA_ROLE_ABSTRACT: { outcome: 'fail', requirement: 'roles' }
-    }
-  },
   defaultSeverity: 'serious',
   category: 'robust',
   type: 'automatic',

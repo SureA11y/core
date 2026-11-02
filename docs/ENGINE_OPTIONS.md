@@ -81,6 +81,8 @@ runDomRulesInPage(url, null, { profile: 'en301549-v3.2.1' }, null);
 
 > **Deprecated:** `en301549-v4.1.1` and `en301549-v3.2.1` move to EN 301 549's pack, `@surea11y/pack-en301549`, and leave core in 2.0.0. They work as before, with one `console.warn` per process. Given the pack (`packs: [en301549]`), a scan takes the same names from it and shows no notice; the pack's profiles report a result per clause in place of the WCAG rollups. See [`API_STABILITY.md`](./API_STABILITY.md#deprecating-a-standard-a-profile-or-an-entry-point).
 
+**Several profiles at once.** `profile` also takes a list: `profile: ['wcag22-aa', 'wai-aria-1.2']`, with the packs that bring them in `packs`. Each profile judges the page as a scan of it alone would, and the result reads as one profile with the rules of all: a check's `outcome` is the worst its profiles give it, and each finding's `verdicts` say what each profile makes of it ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)). Each profile is scanned in turn, on the same page, so the scan takes about as long as one per profile. A profile that doesn't apply is listed in `engine.profilesNotRun`, and the others still run. A list of one is its one name.
+
 A pack's standard or checklist brings its own profiles to this list ([`PACKS.md`](./PACKS.md#4-choose-what-runs-profiles)), as a standard registered as a profile under `profiles/` would ([`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md#adding-another-standard)).
 
 The WCAG target follows from the tags the same way it does for a hand-written set (see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)), so `en301549-v3.2.1` targets WCAG 2.1 and `en301549-v4.1.1` WCAG 2.2. A duplicate id can still `fail` under `en301549-v3.2.1` because its profile keeps 4.1.1's text (`keepsParsing`, see [Filtering by WCAG version](#filtering-by-wcag-version-21-vs-22)); under `en301549-v4.1.1` it cannot. A pack's profile can name its version instead, with `wcagVersion` ([Packs](#packs--rules-and-standards-from-outside-core)): a profile that runs only the rules its standard maps has no WCAG tags to imply one. Names are matched case-insensitively. A run that used a profile reports it back as `engine.profile`.
@@ -118,20 +120,6 @@ runDomRulesInPage(url, null, { optInRules: 'all' }, null);
 `'all'` unlocks every standard's opt-in rules; a list of tags (`['<tag>']`, or `'<tag>'`) unlocks only those. It lifts the gate and nothing else: the rest of the selection still decides which rules run. So with no filter and no profile, as above, the run covers every rule and every standard's rollups; under `profile: 'wcag22-aa'` it still runs the WCAG rules only, since opt-in rules carry no WCAG tag, and under a standard's own profile it changes nothing for that standard's rules. Excludes apply as usual. A tag that is not an opt-in tag is ignored with a `console.warn`. Only this engine option unlocks: `runOnly` has no `optInTags` key, so one given there is an unknown key, which throws `INVALID_RUN_ONLY` on its own and is ignored with a warning beside keys `runOnly` reads, the message pointing to `engineOptions.optInRules`.
 
 This is for seeing everything the engine can report, during development or when exploring a site. It is not a conformance target: such a run fails a page for things WCAG allows and only another standard forbids. The result says so: `engine.optInRules` lists the tags whose rules ran, and the HTML report, SARIF and JUnit show it next to the profile. It adds no other standard's numbers to results; pass `mappings` for that, for example `{ optInRules: 'all', mappings: ['<key>'] }` to see a standard's requirements each rule checks.
-
-### Verdicts under other standards (`verdicts`)
-
-A finding's `outcome` and `occurrenceOutcome` are its WCAG verdict. `engineOptions.verdicts` adds what the same finding means under another standard, which can differ: an unnamed `role="grid"` breaks WAI-ARIA for certain (it requires the role to be named), while whether it fails a WCAG criterion is for a person to say.
-
-| Value | Adds |
-|---|---|
-| `'wai-aria'` | Each finding's WAI-ARIA 1.2 verdict, and one WAI-ARIA rollup per requirement its rules check |
-
-```js
-runDomRulesInPage(url, null, { verdicts: ['wai-aria'] }, null);
-```
-
-With it, a result of a rule that states WAI-ARIA verdicts, and each of its occurrences, carries `verdicts: { wcag, 'wai-aria' }`, each `pass`, `fail`, `cantTell` or `notApplicable`; `rulesResults` gains a rollup such as `wai-aria-name-required`; and `engine.verdicts` lists the standards. Off by default: without it a scan reports exactly as before. It never changes a WCAG outcome, and it changes which rules run no more than `mappings` does. The rules that check WAI-ARIA requirements state their verdicts: the ARIA rules, the name rules of the roles WAI-ARIA requires a name for, and `landmark-role-name-present`. A verdict is `fail` where WAI-ARIA 1.2 says MUST or MUST NOT, `cantTell` where it recommends or where script decides, and a reason code WAI-ARIA states no author requirement for (an unknown role token, an undefined `aria-*` attribute) has none. See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#verdicts) for the shape, and `failOnVerdicts` in [`SARIF.md`](./SARIF.md) and [`JUNIT.md`](./JUNIT.md) to gate a build on WAI-ARIA failures.
 
 ### Other standards (`mappings`)
 

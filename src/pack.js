@@ -69,12 +69,12 @@ const PACK_KEYS = [
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 
-const ACTS = ['count', 'cantTell', 'ignore'];
+const ACTS = ['count', 'cantTell', 'fail', 'ignore'];
 
 /**
  * Problems with a standard's rollup's meta.contributions, the rules it
  * judges by their findings: { [ruleId]: { default, codes, findings } }, each
- * act 'count', 'cantTell' or 'ignore', or { act, requirements } naming
+ * act 'count', 'cantTell', 'fail' or 'ignore', or { act, requirements } naming
  * requirements of the rollup's own meta.standardMappings. `at` starts each
  * message.
  */

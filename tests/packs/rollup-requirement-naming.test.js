@@ -184,7 +184,8 @@ test('definePack refuses contributions it cannot use', () => {
   assert.equal(problems(bySize), '');
   assert.match(problems([]), /contributions must be an object/);
   assert.match(problems({ 'link-name-present': { default: 'count' } }), /not one of its checksIds/);
-  assert.match(problems({ 'contrast-minimum': { default: 'fail' } }), /default must be/);
+  assert.match(problems({ 'contrast-minimum': { default: 'pass' } }), /default must be/);
+  assert.equal(problems({ 'contrast-minimum': { default: 'count', codes: { X: 'fail' } } }), '');
   assert.match(
     problems({ 'contrast-minimum': { default: { act: 'count', requirements: ['Z.9'] } } }),
     /names Z\.9, which the rollup does not/

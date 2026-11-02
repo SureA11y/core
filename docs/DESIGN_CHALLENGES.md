@@ -27,15 +27,13 @@ Before changing behavior that already ships, or agreeing that a challenge to it 
 
 ## Decided
 
-### A WAI-ARIA violation that leaves the WCAG question open was reported as a WCAG question only, now with a WAI-ARIA verdict of its own
+### A WAI-ARIA violation that leaves the WCAG question open: a verdict of its own in core, now WAI-ARIA as a standard in a pack
 
-**Decision as it stood:** after the 2026-11-02 grading below, a finding that breaks WAI-ARIA for certain but whose WCAG effect the markup can't settle (an unnamed `role="grid"`, `aria-valuenow` on a button) is `cantTell`. That is the honest WCAG answer, but it hid what the engine knows for certain: the WAI-ARIA violation.
+**Decision as it stood:** an unnamed `role="grid"` breaks WAI-ARIA for certain, but whether it fails 4.1.2 depends on what the page shows, so its WCAG outcome is `cantTell`. Unreleased, core gave each finding a second verdict under WAI-ARIA, opt-in (`engineOptions.verdicts: ['wai-aria']`), with a table per reason code on 29 rules and eight WAI-ARIA rollups written into core.
 
-**What was weighed:** splitting each such rule into a WAI-ARIA rule and a WCAG rule (two findings for one element, about 15 new rule ids and finding-identity churn); registering WAI-ARIA as a standard and judging its rollups by reason code (no per-finding verdict, so nothing to filter or gate a finding on); and a verdict table per reason code with a verdict on every finding, on top of rollups of its own. The third was taken, as the only one that keeps the WAI-ARIA violation certain on the finding itself while the WCAG verdict states only what the evidence supports. A check result's `outcome` stays the WCAG verdict, so existing gates keep their meaning; WAI-ARIA 1.2, the Recommendation, is the version judged against; the mechanism takes any standard's key, so the HTML content-model rules can get an `html` verdict later. Two choices were made against alternatives: the verdicts are opt-in, with the rule that turning them off never hides a WCAG finding; and no finding's WCAG verdict moves to `notApplicable` because it only breaks WAI-ARIA, since `cantTell` already counts against no compliance and "doesn't apply" would claim what the markup does not establish (a toggle may carry its state only in the attribute ARIA disallows on its role).
+**Why it was questioned:** it made WAI-ARIA a special case inside core, where every other standard is a profile. A scan could not evaluate WAI-ARIA alone, nor beside a pack's standard, and under a pack profile that ran part of the rules a WAI-ARIA rollup read `pass` on one of the twenty or so rules that check it.
 
-**Decision (2026-11-02):** `engineOptions.verdicts: ['wai-aria']`; `meta.verdicts` per reason code on 29 rules, read from WAI-ARIA 1.2's own wording (MUST and MUST NOT give `fail`; SHOULD, "not recommended" and what script decides give `cantTell`; a code the spec states no author requirement for is left out: an unknown role token, an undefined attribute, `aria-hidden` on focusable content, `aria-owns` cycles); eight WAI-ARIA rollups; `failOnVerdicts` in SARIF and JUnit; an EARL assertion per standard; a chip on the HTML report's cards. The browser bundle grows by 11 KB.
-
-**Status:** resolved 2026-11-02.
+**Decision (2026-11-02):** before 1.15, the opt-in leaves core: `engineOptions.verdicts`, `meta.verdicts`, the WAI-ARIA rollups, `failOnVerdicts` and the report's chip. The ARIA rules stay, as WCAG rules, with their reason codes and outcomes: each reports `fail` or `cantTell` wherever it finds something, so a WCAG scan never hides a WAI-ARIA violation. WAI-ARIA 1.2 becomes a standard in a pack of its own, which judges core's findings by reason code, and a scan can run several profiles at once. See [`MULTI_PROFILE_SCANS.md`](./MULTI_PROFILE_SCANS.md).
 
 ### Eight rules reported a WCAG failure where only WAI-ARIA was broken, now graded case by case
 

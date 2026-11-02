@@ -10,8 +10,11 @@ export interface JunitOptions {
   leanFailAs?: 'skipped' | 'failure';
   /** With leanFailAs: 'failure', gate only on the leans of rules mapped to a WCAG criterion, not a best-practice rule's. Default false. */
   leanFailWcagOnly?: boolean;
-  /** Gate on an undecided finding that fails one of these standards by its verdicts (engineOptions.verdicts), as <failure type="verdict">: ['wai-aria']. */
-  failOnVerdicts?: string | string[];
+  /**
+   * A scan of several profiles that ran fewer than it asked for
+   * (engine.profilesNotRun) is an error by default; true accepts it.
+   */
+  allowProfilesNotRun?: boolean;
   /** Include notApplicable rules as skipped tests. */
   includeNotApplicable?: boolean;
   /** Failures recorded here are skipped as known, and under leanFailAs so are findings that lean fail recorded here (docs/BASELINE.md). */

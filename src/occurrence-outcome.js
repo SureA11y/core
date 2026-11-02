@@ -40,37 +40,4 @@ function reviewGroupOf(check, occurrence) {
   return 'open';
 }
 
-// The standards a reporter's failOnVerdicts option names, as keys
-// ('wai-aria'), from an array or a comma-separated string. `who` names the
-// reporter in the error a value of another kind gives.
-function verdictStandardsOption(value, who) {
-  if (value === undefined || value === null) return [];
-  const list = Array.isArray(value)
-    ? value
-    : typeof value === 'string'
-      ? value.split(/[\s,]+/)
-      : null;
-  if (!list || list.some((k) => typeof k !== 'string')) {
-    throw new TypeError(
-      `${who}: failOnVerdicts must be a standard's key or a list of them, such as ['wai-aria'], not ${JSON.stringify(value)}`
-    );
-  }
-  return list.map((k) => k.trim().toLowerCase()).filter(Boolean);
-}
-
-// Whether a finding fails one of the standards named, by the verdicts the
-// scan gave it (engineOptions.verdicts): a cantTell for WCAG that is a
-// certain failure under WAI-ARIA, say.
-function failsVerdictOf(occurrence, standards) {
-  const v = occurrence && occurrence.verdicts;
-  if (!v || typeof v !== 'object' || !standards || !standards.length) return false;
-  return standards.some((k) => v[k] === 'fail');
-}
-
-module.exports = {
-  tierOf,
-  occurrenceOutcome,
-  reviewGroupOf,
-  verdictStandardsOption,
-  failsVerdictOf
-};
+module.exports = { tierOf, occurrenceOutcome, reviewGroupOf };

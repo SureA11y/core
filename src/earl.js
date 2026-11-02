@@ -117,33 +117,6 @@ function assertionFor(check, assertor, mode, inScope) {
   return assertion;
 }
 
-// One assertion per standard besides WCAG in the check's verdicts: its test
-// is the rule under that standard, part of the requirements the rule names
-// there (their URLs).
-function verdictAssertionsFor(check, assertor, mode) {
-  const verdicts = check && check.verdicts;
-  if (!verdicts || typeof verdicts !== 'object') return [];
-  const mappings = (check.meta && check.meta.normativeMappings) || [];
-  const out = [];
-  for (const key of Object.keys(verdicts).sort()) {
-    if (key === 'wcag') continue;
-    const outcome = OUTCOME_TO_EARL[verdicts[key]];
-    if (!outcome) continue;
-    const ofStandard = mappings.filter(
-      (m) => m && m.standard && String(m.standard).toLowerCase() === key && m.url
-    );
-    const name = ofStandard.length ? ofStandard[0].standard : key;
-    const test = { title: `${check.ruleId} (${name})` };
-    const isPartOf = [...new Set(ofStandard.map((m) => m.url))].sort();
-    if (isPartOf.length) test.isPartOf = isPartOf;
-    const assertion = { '@type': 'Assertion', test, result: { outcome } };
-    if (assertor) assertion.assertedBy = assertor;
-    if (mode) assertion.mode = mode;
-    out.push({ key: `${check.ruleId} (${name})`, assertion });
-  }
-  return out;
-}
-
 // The release defaults to the engine version the results carry, when they
 // all carry the same one: results from two releases have no one assertor
 // release, and then none is claimed.
@@ -249,12 +222,6 @@ function renderEarlReport(results, options = {}) {
       if (!check || typeof check.ruleId !== 'string') continue;
       const assertion = assertionFor(check, assertor, mode, inScope);
       if (assertion) assertions.set(check.ruleId, worseOf(assertions.get(check.ruleId), assertion));
-      // Its verdict under each other standard the scan asked for
-      // (engineOptions.verdicts) is an assertion of its own, part of the
-      // requirements of that standard the rule names.
-      for (const extra of verdictAssertionsFor(check, assertor, mode)) {
-        assertions.set(extra.key, worseOf(assertions.get(extra.key), extra.assertion));
-      }
     }
   }
 

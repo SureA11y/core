@@ -59,12 +59,6 @@ const meta = {
   tags: ['best-practice', 'aria', 'landmarks', 'name', 'atomic', 'automatic'],
   wcagSc: [],
   normativeMappings: [],
-  // What each finding means under WAI-ARIA, beside its WCAG tier: a missing name breaks WAI-ARIA's "Accessible Name Required" for the role.
-  verdicts: {
-    'wai-aria': {
-      LANDMARK_ROLE_NAME_MISSING: { outcome: 'fail', requirement: 'name-required' }
-    }
-  },
   defaultSeverity: 'minor',
   category: 'robust',
   type: 'automatic',

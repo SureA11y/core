@@ -120,14 +120,14 @@ test('the map is checked', () => {
       '1.0': {
         'list-children-valid': {
           requirements: ['L1'],
-          reasonCodes: { X: { requirements: ['L9'] }, Y: { outcome: 'fail' }, Z: 'cantTell' }
+          reasonCodes: { X: { requirements: ['L9'] }, Y: { outcome: 'pass' }, Z: 'cantTell' }
         }
       }
     }
   });
   assert.deepEqual(bad.validate([{ ruleId: 'list-children-valid', wcagSc: ['1.3.1'] }]), [
     '1.0 list-children-valid X: no requirement L9',
-    "1.0 list-children-valid Y: outcome can only be 'cantTell'",
+    "1.0 list-children-valid Y: outcome can only be 'cantTell' or 'fail'",
     '1.0 list-children-valid Z: must be { requirements, outcome }'
   ]);
 });

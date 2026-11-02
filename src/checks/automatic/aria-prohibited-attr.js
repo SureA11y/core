@@ -136,17 +136,6 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  // What each finding means under WAI-ARIA, beside its WCAG tier: WAI-ARIA prohibits naming these roles and generic, whatever the element's text.
-  verdicts: {
-    'wai-aria': {
-      ARIA_ATTR_PROHIBITED: { outcome: 'fail', requirement: 'prohibited-attributes' },
-      ARIA_ATTR_PROHIBITED_ROLELESS: { outcome: 'fail', requirement: 'prohibited-attributes' },
-      ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW: {
-        outcome: 'fail',
-        requirement: 'prohibited-attributes'
-      }
-    }
-  },
   defaultSeverity: 'moderate',
   category: 'robust',
   type: 'automatic',

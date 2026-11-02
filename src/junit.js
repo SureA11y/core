@@ -58,9 +58,7 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf,
-  verdictStandardsOption,
-  failsVerdictOf
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const OTHER_SUITE = 'Other checks';
@@ -148,17 +146,10 @@ function classify(check, baseline, gating, options) {
     }
   }
 
-  // With failOnVerdicts, an undecided occurrence that fails one of the
-  // standards named (by the verdicts the scan gave it) gates as a failure.
-  const verdictFailing = undecided.filter(
-    (o) => !leaning.includes(o) && failsVerdictOf(o, options.failOnVerdicts)
-  );
-
   let status;
   if (ruleErrorOf(check)) status = 'error';
   else if (failing.length) status = 'failure';
   else if (leaning.length) status = 'failure';
-  else if (verdictFailing.length) status = 'failure';
   else if (undecided.length) status = options.cantTellAs === 'failure' ? 'failure' : 'skipped';
   else if (baselined) status = 'skipped';
   else if (check.outcome === 'notApplicable') status = 'notApplicable';
@@ -172,7 +163,6 @@ function classify(check, baseline, gating, options) {
     failing,
     undecided,
     leaning,
-    verdictFailing,
     baselined,
     leanBaselined,
     cantTellAs: options.cantTellAs
@@ -243,23 +233,6 @@ function renderTestcase(entry, classname, indent) {
     const message = `${plural(leaning.length, 'occurrence')} likely ${leaning.length === 1 ? 'fails' : 'fail'}: ${leaning[0].summary || check.ruleId}`;
     inner.push(
       `${indent}  <failure type="leanFail" message="${xmlText(message)}">${xmlText([...leaning.map(describeLeaning), ...helpLine(check)].join('\n'))}</failure>`
-    );
-  } else if (
-    status === 'failure' &&
-    entry.verdictFailing &&
-    entry.verdictFailing.length &&
-    entry.cantTellAs !== 'failure'
-  ) {
-    const standards = [
-      ...new Set(
-        entry.verdictFailing.flatMap((o) =>
-          Object.keys(o.verdicts || {}).filter((k) => k !== 'wcag' && o.verdicts[k] === 'fail')
-        )
-      )
-    ];
-    const message = `${plural(entry.verdictFailing.length, 'occurrence')} ${entry.verdictFailing.length === 1 ? 'fails' : 'fail'} ${standards.join(', ')}: ${entry.verdictFailing[0].summary || check.ruleId}`;
-    inner.push(
-      `${indent}  <failure type="verdict" message="${xmlText(message)}">${xmlText([...entry.verdictFailing.map(describeOccurrence), ...helpLine(check)].join('\n'))}</failure>`
     );
   } else if (status === 'failure') {
     const message = undecided.length ? needReview(undecided.length) : 'Needs manual review';
@@ -517,11 +490,18 @@ function renderJunitReport(result, options = {}) {
       `renderJunitReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
+  // allowProfilesNotRun: true accepts a scan of several profiles that ran
+  // fewer than it asked for; by default each profile not run is an error.
+  const allowProfilesNotRun = options.allowProfilesNotRun;
+  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
+    throw new TypeError(
+      `renderJunitReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+    );
+  }
   const opts = {
     cantTellAs,
     leanFailAs,
     leanFailWcagOnly: leanFailWcagOnly === true,
-    failOnVerdicts: verdictStandardsOption(options.failOnVerdicts, 'renderJunitReport'),
     includeNotApplicable: options.includeNotApplicable === true
   };
   // A finding that gates as a likely failure says how to confirm it: a
@@ -556,6 +536,36 @@ function renderJunitReport(result, options = {}) {
         `    <testcase classname="frame" name="${xmlText(pathText)}" time="0">`,
         `      <skipped message="${xmlText(`Not scanned: ${error}`)}"/>`,
         '    </testcase>',
+        '  </testsuite>'
+      ].join('\n')
+    );
+  }
+
+  // A scan of several profiles that ran fewer than it asked for counted less
+  // than it was asked to: one error per profile not run, in a suite of its
+  // own, unless allowProfilesNotRun accepts it (then a skip).
+  const notRun = [];
+  for (const f of frames) {
+    const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
+    for (const p of Array.isArray(list) ? list : []) {
+      if (p && !notRun.some((x) => x.profile === p.profile)) notRun.push(p);
+    }
+  }
+  if (notRun.length) {
+    const allowed = allowProfilesNotRun === true;
+    totals.tests += notRun.length;
+    if (allowed) totals.skipped += notRun.length;
+    else totals.errors += notRun.length;
+    suiteXml.push(
+      [
+        `  <testsuite name="Profiles" tests="${notRun.length}" failures="0" errors="${allowed ? 0 : notRun.length}" skipped="${allowed ? notRun.length : 0}" time="0">`,
+        ...notRun.flatMap((p) => [
+          `    <testcase classname="profile" name="${xmlText(p.profile)}" time="0">`,
+          allowed
+            ? `      <skipped message="${xmlText(`Not run: ${p.reason}`)}"/>`
+            : `      <error message="${xmlText(`Asked for and not run: ${p.reason}`)}"/>`,
+          '    </testcase>'
+        ]),
         '  </testsuite>'
       ].join('\n')
     );

@@ -42,9 +42,7 @@ const {
   standardOfEntryIn,
   wcagScopeOf,
   occurrenceOutcome,
-  leaningOccurrencesOf,
-  verdictStandardsOption,
-  failsVerdictOf
+  leaningOccurrencesOf
 } = require('./scan-result.js');
 
 const SARIF_SCHEMA_URI =
@@ -199,11 +197,6 @@ function buildResult(check, occurrence, level, artifactUri, framePath = [], outs
       ...(outside ? { outsideTarget: outside } : {}),
       // An undecided finding's lean: which way its evidence points.
       ...(lean ? { lean } : {}),
-      // Its verdict under WCAG and each other standard the scan asked for
-      // (engineOptions.verdicts).
-      ...(occurrence.verdicts && typeof occurrence.verdicts === 'object'
-        ? { verdicts: { ...occurrence.verdicts } }
-        : {}),
       // How a person answers an undecided finding (docs/OUTPUT_SCHEMA.md,
       // "How to check"), also written under its message for a reader of
       // the alert.
@@ -293,6 +286,19 @@ function automationDetails(category) {
   return { id: id.endsWith('/') ? id : `${id}/` };
 }
 
+// The profiles a scan of several asked for and didn't run, from every frame
+// that answered, each once.
+function profilesNotRunOf(frames) {
+  const out = [];
+  for (const f of frames) {
+    const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
+    for (const p of Array.isArray(list) ? list : []) {
+      if (p && !out.some((x) => x.profile === p.profile)) out.push(p);
+    }
+  }
+  return out;
+}
+
 function renderSarifReport(result, options = {}) {
   // A result that comes without the steps for its undecided findings (a
   // binding's, from runa11yCoreInPage) gains them here, in Node, as the
@@ -324,10 +330,15 @@ function renderSarifReport(result, options = {}) {
       `renderSarifReport: leanFailWcagOnly must be true or false, not ${JSON.stringify(leanFailWcagOnly)}`
     );
   }
-  // failOnVerdicts: ['wai-aria'] reports an undecided finding that fails one
-  // of the standards named, by the verdicts the scan gave it
-  // (engineOptions.verdicts), at "error", so a gate on errors counts it.
-  const failOnVerdicts = verdictStandardsOption(options.failOnVerdicts, 'renderSarifReport');
+  // allowProfilesNotRun: true accepts a scan of several profiles that ran
+  // fewer than it asked for. By default each profile not run is an error,
+  // and the run not successful: it counted less than it was asked to.
+  const { allowProfilesNotRun } = options;
+  if (allowProfilesNotRun != null && typeof allowProfilesNotRun !== 'boolean') {
+    throw new TypeError(
+      `renderSarifReport: allowProfilesNotRun must be true or false, not ${JSON.stringify(allowProfilesNotRun)}`
+    );
+  }
   const automation = automationDetails(category);
   const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
 
@@ -442,11 +453,7 @@ function renderSarifReport(result, options = {}) {
             buildResult(
               check,
               occurrence,
-              outside
-                ? 'note'
-                : raised.has(occurrence) || failsVerdictOf(occurrence, failOnVerdicts)
-                  ? 'error'
-                  : 'warning',
+              outside ? 'note' : raised.has(occurrence) ? 'error' : 'warning',
               artifactUri,
               framePath,
               outside
@@ -456,6 +463,15 @@ function renderSarifReport(result, options = {}) {
       }
     }
   }
+
+  const notRun = profilesNotRunOf(frames);
+  for (const p of notRun) {
+    notices.push({
+      level: allowProfilesNotRun === true ? 'warning' : 'error',
+      message: { text: `The profile ${p.profile} was asked for and not run: ${p.reason}` }
+    });
+  }
+  const executionSuccessful = !(notRun.length && allowProfilesNotRun !== true);
 
   const sarifLog = {
     $schema: SARIF_SCHEMA_URI,
@@ -481,7 +497,7 @@ function renderSarifReport(result, options = {}) {
         ...(automation ? { automationDetails: automation } : {}),
         ...(runProperties(top) ? { properties: runProperties(top) } : {}),
         ...(notices.length
-          ? { invocations: [{ executionSuccessful: true, toolExecutionNotifications: notices }] }
+          ? { invocations: [{ executionSuccessful, toolExecutionNotifications: notices }] }
           : {})
       }
     ]

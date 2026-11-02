@@ -172,18 +172,6 @@ const meta = {
       conformanceLevel: 'A'
     }
   ],
-  // What each finding means under WAI-ARIA, beside its WCAG tier: a value of the wrong type, a position past the set size and an active descendant outside the element break WAI-ARIA MUSTs; what script may still change is a question.
-  verdicts: {
-    'wai-aria': {
-      ARIA_ACTIVEDESCENDANT_OUTSIDE: { outcome: 'fail', requirement: 'attribute-values' },
-      ARIA_ATTR_VALUE_INVALID: { outcome: 'fail', requirement: 'attribute-values' },
-      ARIA_ATTR_VALUE_TARGET_ABSENT: { outcome: 'cantTell', requirement: 'attribute-values' },
-      ARIA_HASPOPUP_ROLE_MISMATCH: { outcome: 'cantTell', requirement: 'attribute-values' },
-      ARIA_POSINSET_EXCEEDS_SETSIZE: { outcome: 'fail', requirement: 'attribute-values' },
-      ARIA_VALUENOW_OUT_OF_RANGE: { outcome: 'cantTell', requirement: 'attribute-values' },
-      ARIA_VALUE_RANGE_INVERTED: { outcome: 'cantTell', requirement: 'attribute-values' }
-    }
-  },
   defaultSeverity: 'serious',
   category: 'robust',
   type: 'automatic',

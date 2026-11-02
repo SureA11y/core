@@ -26,7 +26,7 @@ const KB = 1024;
 
 // [file, budget in KB]: about 5% above the size when the budget was set.
 const BUDGETS = [
-  ['surea11y.browser.js', 1610],
+  ['surea11y.browser.js', 1605],
   ['surea11y.i18n.de.js', 218],
   ['surea11y.i18n.es.js', 211],
   ['surea11y.i18n.fr.js', 219],

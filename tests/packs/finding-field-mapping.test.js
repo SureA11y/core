@@ -147,5 +147,8 @@ test('validate refuses a findings entry it cannot use', () => {
   assert.match(problems([{ when: {} }]).join('\n'), /when must name at least one field/);
   assert.match(problems([{ when: { a: [1] } }]).join('\n'), /when\.a must be/);
   assert.match(problems([{ when: { a: 1 }, requirements: ['Z'] }]).join('\n'), /no requirement Z/);
-  assert.match(problems([{ when: { a: 1 }, outcome: 'fail' }]).join('\n'), /outcome can only be/);
+  assert.match(
+    problems([{ when: { a: 1 }, outcome: 'pass' }]).join('\n'),
+    /outcome can only be 'cantTell' or 'fail'/
+  );
 });

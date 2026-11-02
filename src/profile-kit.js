@@ -28,7 +28,8 @@
  *   `reasonCodes`, optional, sends a rule's findings of a reason code
  *   elsewhere: { [code]: { requirements, outcome } }, where `requirements`
  *   (default: the row's) are those its findings count toward, [] for none,
- *   and `outcome: 'cantTell'` makes a failing one a question there. A
+ *   `outcome: 'cantTell'` makes a failing one a question there, and
+ *   `outcome: 'fail'` makes a question a failure there. A
  *   requirement's rollup then judges the rule by the findings that count
  *   toward it, not by the rule's outcome as a whole.
  *   `findings`, optional, does the same by what a finding records:
@@ -92,7 +93,7 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
 
   // For a rule whose row sends some findings elsewhere: what a finding does
   // in requirement `id`'s rollup, 'count', 'cantTell' (a failing one is a
-  // question) or 'ignore': by the first of `findings` it matches, else by
+  // question), 'fail' (a question is a failure) or 'ignore': by the first of `findings` it matches, else by
   // its code, else `default`. null for a rule without reasonCodes or
   // findings, which is judged whole.
   function contributionOf(version, ruleId, id) {
@@ -103,7 +104,9 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
     const own = Array.isArray(row.requirements) ? row.requirements : [];
     const act = (c) => {
       const reqs = c && Array.isArray(c.requirements) ? c.requirements : own;
-      return !reqs.includes(id) ? 'ignore' : c && c.outcome === 'cantTell' ? 'cantTell' : 'count';
+      if (!reqs.includes(id)) return 'ignore';
+      if (c && c.outcome === 'cantTell') return 'cantTell';
+      return c && c.outcome === 'fail' ? 'fail' : 'count';
     };
     const out = { default: own.includes(id) ? 'count' : 'ignore', codes: {} };
     for (const [code, c] of Object.entries(codes || {})) out.codes[code] = act(c);
@@ -249,8 +252,8 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
                     problems.push(`${at}: no requirement ${id}`);
                 }
             }
-            if (c.outcome !== undefined && c.outcome !== 'cantTell') {
-              problems.push(`${at}: outcome can only be 'cantTell'`);
+            if (c.outcome !== undefined && c.outcome !== 'cantTell' && c.outcome !== 'fail') {
+              problems.push(`${at}: outcome can only be 'cantTell' or 'fail'`);
             }
           }
         }
@@ -289,8 +292,8 @@ function ruleMappedStandard({ standard, tag, versions, requirements, ruleMap, ap
                     problems.push(`${at}: no requirement ${id}`);
                 }
             }
-            if (f.outcome !== undefined && f.outcome !== 'cantTell') {
-              problems.push(`${at}: outcome can only be 'cantTell'`);
+            if (f.outcome !== undefined && f.outcome !== 'cantTell' && f.outcome !== 'fail') {
+              problems.push(`${at}: outcome can only be 'cantTell' or 'fail'`);
             }
           });
         }
