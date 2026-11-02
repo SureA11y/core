@@ -19313,14 +19313,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // lead to it, outermost first, each resolved in the tree that holds it;
   // the element's own selector is resolved in its shadow root. null for an
   // element in the document, or when a host gets no selector.
+  // How many shadow roots deep an element's path from the document may go.
+  const MAX_SHADOW_HOSTS = 1000;
+
   function buildShadowHostSelectors(el) {
     try {
       if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
         return null;
       const hosts = [];
       let root = dom.getRootNode(el);
-      let guard = 0;
-      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+      // The walk goes out from the element, so stopping short kept the
+      // innermost hosts and lost the outermost: a path that no longer starts
+      // at the document, the same for every element past the limit. Past
+      // MAX_SHADOW_HOSTS there is no path rather than a wrong one.
+      while (root && dom.nodeType(root) === 11 && dom.host(root)) {
+        if (hosts.length >= MAX_SHADOW_HOSTS) return null;
         hosts.unshift(dom.host(root));
         root = dom.getRootNode(dom.host(root));
       }
@@ -125584,14 +125591,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // lead to it, outermost first, each resolved in the tree that holds it;
   // the element's own selector is resolved in its shadow root. null for an
   // element in the document, or when a host gets no selector.
+  // How many shadow roots deep an element's path from the document may go.
+  const MAX_SHADOW_HOSTS = 1000;
+
   function buildShadowHostSelectors(el) {
     try {
       if (!el || dom.nodeType(el) !== 1 || typeof dom.get(el, 'getRootNode') !== 'function')
         return null;
       const hosts = [];
       let root = dom.getRootNode(el);
-      let guard = 0;
-      while (root && dom.nodeType(root) === 11 && dom.host(root) && guard++ < 100) {
+      // The walk goes out from the element, so stopping short kept the
+      // innermost hosts and lost the outermost: a path that no longer starts
+      // at the document, the same for every element past the limit. Past
+      // MAX_SHADOW_HOSTS there is no path rather than a wrong one.
+      while (root && dom.nodeType(root) === 11 && dom.host(root)) {
+        if (hosts.length >= MAX_SHADOW_HOSTS) return null;
         hosts.unshift(dom.host(root));
         root = dom.getRootNode(dom.host(root));
       }
