@@ -43,6 +43,7 @@ const { preloadStyleSheets } = require('../src/core/stylesheet-preload');
 const { getMargins } = require('../src/core/margin');
 const { readLiveRegionHook, selectAnnouncements } = require('../src/core/live-region-hook');
 const { consoleHelpers } = require('../src/core/console-helpers');
+const { evidenceState } = require('../src/core/evidence-state');
 const { version: PACKAGE_VERSION } = require('../package.json');
 
 const {
@@ -165,6 +166,9 @@ ${inPageRunnerSource}
     },
     // Fetches the style sheets the page can't read (src/core/stylesheet-preload.js).
     preloadStyleSheets: ${preloadStyleSheets.toString()},
+    // Puts the page in the state a finding was made in, and out again
+    // (src/core/evidence-state.js).
+    evidenceState: ${evidenceState.toString()},
     runa11yCoreInPage: function (pageUrl, contextSelector, engineOptions, runOnly) {
       return runa11yCoreInPage(
         pageUrl,

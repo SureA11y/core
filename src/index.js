@@ -23,6 +23,9 @@ const { listenerHookScript } = require('./core/listener-hook.js');
 // The opt-in live-region hook: records what a page's live regions are given
 // (src/core/live-region-hook.js).
 const { liveRegionHookScript } = require('./core/live-region-hook.js');
+// Puts a page in the state a finding was made in, and out again, for a
+// binding's screenshots (src/core/evidence-state.js).
+const { evidenceState, EVIDENCE_STATES } = require('./core/evidence-state.js');
 // The reason codes each hook decides or changes, for a binding's docs.
 const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
 
@@ -329,5 +332,7 @@ module.exports = {
   internalsHookScript,
   listenerHookScript,
   liveRegionHookScript,
+  evidenceState,
+  EVIDENCE_STATES,
   HOOK_REASON_CODES
 };

@@ -95760,6 +95760,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (inside) visibleBefore.add(n);
     }
 
+    // evidenceState() (src/core/evidence-state.js) applies the same style
+    // sheet to picture the findings; a test keeps the two alike.
     const spacingCss =
       `@layer ${LAYER} {` +
       '* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }' +
@@ -96366,6 +96368,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const fails = [];
   const questions = [];
+  // The findings that exist only with the spacing applied, which the page
+  // as it is doesn't show: they name the state, so a tool can apply it again
+  // to picture them (evidenceState, src/core/evidence-state.js).
+  const SEEN_WITH_SPACING = new Set([
+    'TEXT_CLIPPED',
+    'TEXT_CLIPPED_PARTLY',
+    'TEXT_CLIPPED_MOVING',
+    'TEXT_CLIPPED_SCRIPT_SIZED',
+    'TEXT_CLIPPED_FURTHER',
+    'TEXT_OVERLAPS',
+    'VIEWPORT_SCROLL_LOCKED'
+  ]);
   // `params` fill in the summary; `details` are what the rule found, with
   // the measurements behind it.
   function report(reasonCode, el, params, details, uncertaintyCode, lean, message) {
@@ -96382,7 +96396,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ...(msg.needed
         ? { uncertainty: { code: uncertaintyCode, needed: msg.needed, evidence: { reasonCode } } }
         : {}),
-      data: { details: { reasonCode, ...details } }
+      data: {
+        details: {
+          reasonCode,
+          ...details,
+          ...(SEEN_WITH_SPACING.has(reasonCode) ? { evidenceState: 'text-spacing' } : {})
+        }
+      }
     });
     (msg.needed ? questions : fails).push(occ);
   }

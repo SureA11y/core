@@ -12,6 +12,7 @@ export const {
   waitForPageReady,
   getMargins,
   getAnnouncements,
+  evidenceState,
   preloadStyleSheets,
   runa11yCoreInPage,
   runa11yCoreInPageAsync,
