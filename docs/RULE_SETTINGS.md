@@ -4,7 +4,7 @@ Generated from the compiled engine's own catalog (`getChecksCatalog()`, each rul
 
 Some core rules can be run with other settings by a **variant**: a rule of a pack or profile that names the core rule in `from` and sets some of these in `config` ([`PACKS.md`](./PACKS.md), [`RULE_AUTHORING.md`](./RULE_AUTHORING.md#rule-variants)). That is how another standard's version of a requirement, or a choice WCAG leaves to the evaluator, runs on core's code: a fix to the core rule reaches every variant. A scan's caller can't change them: a result that names WCAG is decided at WCAG's values, the defaults below.
 
-**2 rules offer 7 settings.** Semver covers them: a setting is not removed or renamed, and does not change meaning, before a major version. To ask for a new one, say which rule, what it should change and what in WCAG or the other standard it stands on.
+**3 rules offer 8 settings.** Semver covers them: a setting is not removed or renamed, and does not change meaning, before a major version. To ask for a new one, say which rule, what it should change and what in WCAG or the other standard it stands on.
 
 ```js
 // A pack's variant: core's rule, at the other standard's settings.
@@ -15,6 +15,14 @@ module.exports = {
   meta: { /* its own title, description, i18n, tags */ }
 };
 ```
+
+## `aria-role-name-present`
+
+ARIA roles that require an accessible name have one. [Rule reference](./RULE_CATALOG.md#aria-role-name-present).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `roles` | `"wcag"` | `"wcag"`, `"all"` | The roles checked: wcag, grid, meter, progressbar, radiogroup and tree; or all, those and every other name-from-author role WAI-ARIA 1.2 requires a name for that no other rule owns (application, marquee, table, tabpanel and treegrid). | WAI-ARIA 1.2, "Accessible Name Required: True" |
 
 ## `contrast-minimum`
 
