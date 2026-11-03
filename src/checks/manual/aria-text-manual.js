@@ -24,6 +24,9 @@
  *     It leans fail: the page states it.
  *     Basis: WAI-ARIA Authoring Practices (best practice).
  * @implementation-notes
+ * - `text` is no WAI-ARIA role (neither 1.2 nor the 1.3 draft defines it),
+ *   so `aria-roles-valid` reports `role="text"` as naming no valid role
+ *   (ACT 674b10); this rule reads the token itself.
  * - Not WCAG-normative, authored as an advisory, cantTell-capped
  *   `type: 'manual'` rule, matching the Tier 1b precedent (see
  *   `landmark-unique`'s header comment for the shared rationale).
@@ -71,12 +74,23 @@ function runInPage(ctx) {
   }
 
   // role is a fallback list matched in any case: select by token, then keep
-  // only elements whose resolved role is text (role="link text" is a link).
+  // only elements where text comes before any WAI-ARIA role (role="link
+  // text" is a link). text is no WAI-ARIA role, so it is read here, not by
+  // the role helpers, which don't know it.
+  const textFirst = (el) => {
+    const tokens =
+      typeof helpers.aria.getAllRoleTokens === 'function' ? helpers.aria.getAllRoleTokens(el) : [];
+    for (const t of tokens) {
+      if (t === 'text') return true;
+      if (helpers.aria.isValidConcreteRole && helpers.aria.isValidConcreteRole(t)) return false;
+    }
+    return false;
+  };
   const nodes = (
     helpers.queryAllSmart
       ? helpers.queryAllSmart('[role~="text" i]')
       : helpers.queryAll('[role~="text" i]')
-  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
+  ).filter(textFirst);
 
   const occurrences = [];
   let applicableCount = 0;

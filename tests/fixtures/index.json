@@ -377,9 +377,9 @@
       "fixtureFile": "tests/fixtures/aria-roles-valid-all-scenarios.html",
       "totalCases": 13,
       "caseCounts": {
-        "PASS": 7,
+        "PASS": 6,
         "FAIL": 2,
-        "CANTTELL": 3,
+        "CANTTELL": 4,
         "OTHER": 1
       }
     },

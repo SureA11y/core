@@ -377,7 +377,6 @@ function createAriaHelpers(opts, shared) {
     'tablist',
     'tabpanel',
     'term',
-    'text',
     'textbox',
     'time',
     'timer',
