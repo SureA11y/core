@@ -96,7 +96,9 @@ function stampPacks(result, engine, given = []) {
     const named = pack && typeof pack === 'object' && pack.name;
     const id = named && pack.version ? `${pack.name}@${pack.version}` : named;
     if (!named || (!skippedNames.has(named) && !skippedNames.has(id))) continue;
-    const profiles = pack.standard && pack.standard.profiles;
+    // A standard's profiles, or a checklist pack's own (its top-level
+    // profiles, which its standard is made from).
+    const profiles = pack.standard ? pack.standard.profiles : pack.profiles;
     for (const name of Object.keys(profiles && typeof profiles === 'object' ? profiles : {})) {
       skippedProfiles.add(name.toLowerCase());
     }

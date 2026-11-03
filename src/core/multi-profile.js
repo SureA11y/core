@@ -302,7 +302,10 @@ function mergeProfileResults(runs, asked) {
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-      merged.ownOutcomes.push(check.outcome);
+      merged.ownOutcomes.push({
+        outcome: check.outcome,
+        wcagVersion: r.result.engine ? r.result.engine.wcagVersion : undefined
+      });
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
@@ -358,11 +361,24 @@ function mergeProfileResults(runs, asked) {
           : check.outcome;
     }
   }
+  // The WCAG version the result reports, the highest of the profiles'.
+  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
+  let reportedWcag;
+  for (const r of ran) {
+    const v = r.result.engine && r.result.engine.wcagVersion;
+    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
+  }
   const checksResults = [];
   for (const merged of checks.values()) {
     // The rule's own outcome, as its scans report it before any standard
-    // judges its findings: what a WCAG criterion it maps reads (EARL).
-    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    // judges its findings: what a WCAG criterion it maps reads (EARL). Only
+    // the scans of the WCAG version the result reports count: a rule judged
+    // by an earlier version (4.1.1 Parsing, which WCAG 2.2 drops) under a
+    // standard that keeps it is not a failure of the WCAG reported.
+    const ofReported = merged.ownOutcomes.filter((o) => o.wcagVersion === reportedWcag);
+    merged.checkOutcome =
+      worst((ofReported.length ? ofReported : merged.ownOutcomes).map((o) => o.outcome)) ||
+      merged.outcome;
     delete merged.ownOutcomes;
     // The severity is the highest any profile that fails or asks about the
     // rule gives it, whatever order the profiles were listed in, so a gate

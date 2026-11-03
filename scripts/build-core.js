@@ -2376,6 +2376,28 @@ ${implEntriesInPage.join(',\n')}
     }
     return Object.assign({}, entry, { impls, i18n });
   }
+  // In a page a pack is named (name@version): an item of the list that is
+  // no name is left out, with a warning, and the named packs run as named,
+  // or are skipped and said to be, rather than all dropped unnoticed.
+  if (
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.some((p) => typeof p !== 'string')
+  ) {
+    const left = engineOptions.packs.filter((p) => typeof p !== 'string').length;
+    try {
+      console.warn(
+        '[surea11y] engineOptions.packs: ' +
+          left +
+          (left === 1 ? ' item is' : ' items are') +
+          ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
+      );
+    } catch {}
+    engineOptions = Object.assign({}, engineOptions, {
+      packs: engineOptions.packs.filter((p) => typeof p === 'string')
+    });
+  }
   const packNames =
     engineOptions &&
     Array.isArray(engineOptions.packs) &&

@@ -948,6 +948,15 @@ function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A rollup cantTell because its rules found nothing they look for,
+        // and they check only part of the requirement: no rule decided it,
+        // and the rollup still judged its own requirement, a person's to
+        // answer.
+        if (reasonCode === 'composite.rollup.cantTell.partialCoverage' && own.standard) {
+          produced.add(
+            keyOf({ standard: own.standard, version: own.version, requirement: own.criterion })
+          );
+        }
         // A requirement that restates the WCAG criterion is named whatever decided.
         const restated = (m) => {
           const prefixes =
