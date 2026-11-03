@@ -170,6 +170,61 @@ test('a pack’s standard, where the scan ran its profile', () => {
   );
 });
 
+test('a scan of several profiles has a part for each standard and version', () => {
+  const versions = ['1.0', '2.0'];
+  const requirements = Object.fromEntries(
+    versions.map((v) => [v, { 'R-1.4.3': { title: 'Contrast', wcagSc: ['1.4.3'] } }])
+  );
+  const ruleMap = Object.fromEntries(
+    versions.map((v) => [v, { 'contrast-minimum': { requirements: ['R-1.4.3'] } }])
+  );
+  const std = ruleMappedStandard({
+    standard: 'Std V',
+    tag: 'stdv',
+    versions: versions.map((version) => ({ version, wcagVersion: '2.2' })),
+    requirements,
+    ruleMap,
+    applicability: 'wcag'
+  });
+  const pack = definePack({
+    name: 'stdv-pack',
+    version: '1.0.0',
+    namespace: 'stdv',
+    core: '*',
+    standard: {
+      key: 'stdv',
+      standard: 'Std V',
+      versions,
+      ruleTag: 'stdv',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate,
+      procedures: std.procedures,
+      profiles: Object.fromEntries(
+        versions.map((v) => [
+          `stdv-${v}`,
+          { version: v, tags: ['stdv'], mappedRules: true, wcagVersion: '2.2' }
+        ])
+      )
+    }
+  });
+  const intros = (profile) => {
+    const d = doc(renderHtmlReport(scan({ packs: [pack], profile }), { packs: [pack] }));
+    assert.equal(d.querySelectorAll('#manual-checks-heading').length, 1);
+    return [...d.querySelectorAll('.manual-intro')].map((p) =>
+      p.textContent.replace(/^.* of (.*?)\. .*$/, '$1')
+    );
+  };
+  assert.deepEqual(intros(['wcag22-aa', 'stdv-1.0']), ['WCAG 2.2 (A, AA)', 'Std V 1.0']);
+  assert.deepEqual(intros(['stdv-1.0', 'wcag22-aa']), ['Std V 1.0', 'WCAG 2.2 (A, AA)']);
+  // A standard's versions in its own order, as its rollup tables are.
+  assert.deepEqual(intros(['stdv-2.0', 'stdv-1.0']), ['Std V 1.0', 'Std V 2.0']);
+  // One profile, or two of one standard and version, is one part.
+  assert.deepEqual(intros('stdv-2.0'), ['Std V 2.0']);
+  assert.deepEqual(intros(['wcag22-aa', 'wcag22-a']), ['WCAG 2.2 (A, AA)']);
+});
+
 test('the browser report carries no procedures', () => {
   const bundle = fs.readFileSync(path.join(__dirname, '..', 'surea11y.report.js'), 'utf8');
   assert.ok(!bundle.includes('wcag_1.1.1_text-alternative-mechanism_step1'));

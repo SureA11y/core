@@ -439,6 +439,59 @@ test('in a page, a name no skipped pack may have is an unknown profile', (t) => 
   }
 });
 
+test('in a page, a profile of a pack the scan did not name is not pack-skipped', (t) => {
+  const { JSDOM } = require('jsdom');
+  const main = require('../../src/index.js');
+  const { packScript } = require('../../src/pack.js');
+  const inPage = (engineOptions) => {
+    const dom = new JSDOM(PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      return main.runa11yCoreInPage('https://example.test/', null, engineOptions);
+    } finally {
+      console.warn = warn;
+      dom.window.close();
+    }
+  };
+  const KEY = Symbol.for('surea11y.packs');
+  const saved = globalThis[KEY];
+  delete globalThis[KEY];
+  t.after(() => {
+    delete globalThis[KEY];
+    if (saved) Object.defineProperty(globalThis, KEY, { value: saved, configurable: true });
+  });
+  const zed = definePack({
+    name: '@acme/policy',
+    version: '1.0.0',
+    namespace: 'zed',
+    core: '*',
+    profiles: { 'zed-1.0': { tags: ['wcag2a'] } },
+    rollups: [{ id: 'zed-1', title: 'One', checksIds: ['img-alt-present'] }]
+  });
+  // Both packs in one set; the scan names one of them, so that set isn't run.
+  new Function(packScript([pack, zed]))();
+  const options = { packs: ['@acme/policy@1.0.0'], profile: ['wcag22-aa', 'names-1.0', 'zed-1.0'] };
+  assert.deepEqual(inPage(options).engine.profilesNotRun, [
+    { profile: 'names-1.0', reason: 'unknown-profile' },
+    { profile: 'zed-1.0', reason: 'pack-skipped' }
+  ]);
+  // A set registered by an older script says nothing of which pack has which
+  // profile: its packs' namespaces are all there is to go by.
+  const [entry] = Object.values(globalThis[KEY]);
+  delete entry.packProfiles;
+  assert.deepEqual(inPage(options).engine.profilesNotRun, [
+    { profile: 'names-1.0', reason: 'unknown-profile' },
+    { profile: 'zed-1.0', reason: 'unknown-profile' }
+  ]);
+  assert.deepEqual(inPage({ ...options, packs: ['names-pack@1.0.0'] }).engine.profilesNotRun, [
+    { profile: 'names-1.0', reason: 'pack-skipped' },
+    { profile: 'zed-1.0', reason: 'unknown-profile' }
+  ]);
+});
+
 test('the HTML report gives each version of a standard its own table', () => {
   const { renderHtmlReport } = require('../../src/report.js');
   const versions = ['1.0', '2.0'];

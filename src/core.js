@@ -130018,13 +130018,25 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
           })
         : r;
     // The profiles the skipped packs declare, where a packScript in the
-    // page registered them in some other set: those not built in.
+    // page registered them in some other set: those not built in, of the
+    // skipped packs themselves and not of the others in that set. A set
+    // that doesn't say which pack has which (a script of an older core)
+    // gives its profiles for a set of one pack only; for the others the
+    // packs' namespaces are all there is to go by.
     const declared = [];
     const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
     for (const key of Object.keys(sets)) {
       const entry = sets[key];
       if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
-      for (const name of Object.keys(entry.profileTags || {})) {
+      const own = Array.isArray(entry.packProfiles)
+        ? entry.packProfiles
+            .filter((p) => Array.isArray(p) && named.includes(p[0]) && Array.isArray(p[1]))
+            .flatMap((p) => p[1])
+        : entry.packs.length === 1
+          ? Object.keys(entry.profileTags || {})
+          : [];
+      for (const name of own) {
+        if (typeof name !== 'string' || !Object.prototype.hasOwnProperty.call(entry.profileTags || {}, name)) continue;
         if (Object.prototype.hasOwnProperty.call(BUILT_IN_CATALOG.profileTags || {}, name)) continue;
         if (!declared.includes(name.toLowerCase())) declared.push(name.toLowerCase());
       }

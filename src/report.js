@@ -514,12 +514,25 @@ function scanOutcomes(rollups, left) {
   return out;
 }
 
-// "What's left for a person": for each requirement of the standard scanned,
-// the checks no rule decides in full, with their steps, closed until asked
-// for, and the requirement's outcome in the scan beside it. A requirement
-// whose rules all pass is not met until these are done.
-function renderManualChecks(left, rollups, standard, ui) {
-  if (!left || !left.requirements.length) return '';
+// "What's left for a person": for each requirement of each standard and
+// version scanned, the checks no rule decides in full, with their steps,
+// closed until asked for, and the requirement's outcome in the scan beside
+// it. A requirement whose rules all pass is not met until these are done.
+function renderManualChecks(lefts, rollups, standards, ui) {
+  const sections = lefts
+    .filter((left) => left && left.requirements.length)
+    .map((left) =>
+      renderManualSection(left, rollups, standards.find((s) => s.key === left.standard) || null, ui)
+    );
+  if (!sections.length) return '';
+  return `<h2 id="manual-checks-heading">${esc(ui.tr('report_heading_manualChecks'))}</h2>
+  ${sections.join('\n  ')}
+  <p class="note">${esc(ui.tr('report_manualChecks_worksheet'))}</p>`;
+}
+
+// One standard's and version's part of it: how many checks it leaves, and
+// the list of them by requirement.
+function renderManualSection(left, rollups, standard, ui) {
   const OUTCOME_INFO = ui.outcomeInfo;
   // Each text says its language: marked where it isn't the report's (a text
   // the locale lacks, or a pack's standard read in its own language).
@@ -585,10 +598,8 @@ function renderManualChecks(left, rollups, standard, ui) {
       <div class="manual-body">${facets.join('')}</div>
     </details>`;
   });
-  return `<h2 id="manual-checks-heading">${esc(ui.tr('report_heading_manualChecks'))}</h2>
-  <p class="manual-intro">${intro}</p>
-  <div class="manual-list">${items.join('')}</div>
-  <p class="note">${esc(ui.tr('report_manualChecks_worksheet'))}</p>`;
+  return `<p class="manual-intro">${intro}</p>
+  <div class="manual-list">${items.join('')}</div>`;
 }
 
 // `version` names the standard's version in each row, for a table that is
@@ -1008,15 +1019,15 @@ function renderHtmlReport(input, options = {}) {
   });
   const OUTCOME_INFO = ui.outcomeInfo;
   // What the scan leaves to a person, in Node, unless asked not to.
-  const left =
+  // One part per standard and version a profile of the scan judged by.
+  const lefts =
     options && options.manualChecks === false
-      ? null
+      ? []
       : leftToAPerson(result, {
           packs: options && options.packs,
           locale: ui.uiLocale,
           levels: reportedLevels(allRollups)
         });
-  const leftStandard = left ? standards.find((s) => s.key === left.standard) || null : null;
   // The scan's own timestamp when it has one (engineOptions.timestamp), so
   // the same result always renders the same page; the time of rendering
   // only for a result without one. In UTC either way, so the page does not
@@ -1195,7 +1206,7 @@ ${standardRollups
 `
   )
   .join('')}
-  ${renderManualChecks(left, allRollups, leftStandard, ui)}
+  ${renderManualChecks(lefts, allRollups, standards, ui)}
   <details class="tech-details">
     <summary>${esc(ui.tr('report_techDetails'))}</summary>
     <div class="tech-body">
