@@ -803,6 +803,56 @@ test('a document embedded under aria-hidden is out of the accessibility tree, an
   assert.equal(isFrameAriaHidden(doc.getElementById('b')), false);
 });
 
+test('a document embedded under [inert] is judged only by how it looks', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1>' +
+    '<img src="a.png"><p style="color:#ccc;background:#fff">low</p></main></body></html>';
+  const fails = (engineOptions) =>
+    runa11yCoreOnHtml(html, { engineOptions })
+      .checksResults.filter((c) => c.outcome === 'fail')
+      .map((c) => c.ruleId);
+  const inert = fails({ embeddedInert: true });
+  assert.ok(!inert.includes('img-alt-present'), 'a name is no rule of inert content');
+  assert.ok(inert.includes('contrast-minimum'), 'what is seen is still judged');
+  const { isFrameInert, isFrameAriaHidden } = require('../../src/core/frame-scan.js');
+  const { JSDOM } = require('jsdom');
+  const doc = new JSDOM(
+    '<div inert><iframe id="a"></iframe></div><iframe id="b"></iframe><x-host id="h"></x-host>'
+  ).window.document;
+  assert.equal(isFrameInert(doc.getElementById('a')), true);
+  assert.equal(isFrameInert(doc.getElementById('b')), false);
+  // Through a shadow root to its host, as the accessibility tree reads it.
+  const host = doc.getElementById('h');
+  host.setAttribute('aria-hidden', 'true');
+  const shadowed = host.attachShadow({ mode: 'open' });
+  shadowed.innerHTML = '<iframe></iframe>';
+  const inShadow = shadowed.querySelector('iframe');
+  assert.equal(isFrameAriaHidden(inShadow), true);
+});
+
+test('topLevelDocument says whether the document is a page of its own', () => {
+  const html = '<!doctype html><html><head></head><body><p>No title, no lang.</p></body></html>';
+  const outcomes = (engineOptions) =>
+    Object.fromEntries(
+      runa11yCoreOnHtml(html, {
+        engineOptions,
+        runOnly: ['page-title-present', 'html-lang-attr-present']
+      }).checksResults.map((c) => [c.ruleId, c.outcome])
+    );
+  assert.deepEqual(outcomes({}), {
+    'page-title-present': 'fail',
+    'html-lang-attr-present': 'fail'
+  });
+  assert.deepEqual(outcomes({ topLevelDocument: true }), {
+    'page-title-present': 'fail',
+    'html-lang-attr-present': 'fail'
+  });
+  assert.deepEqual(outcomes({ topLevelDocument: false }), {
+    'page-title-present': 'notApplicable',
+    'html-lang-attr-present': 'notApplicable'
+  });
+});
+
 test("SARIF and JUnit give every frame's reason for a profile not run", () => {
   const { renderSarifReport } = require('../../src/sarif.js');
   const { renderJunitReport } = require('../../src/junit.js');

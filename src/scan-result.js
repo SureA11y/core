@@ -96,8 +96,16 @@ function flattenCrossFrameResult(value) {
     else if (Array.isArray(node.checksResults)) out.push({ frame, result: node });
     else out.push({ frame, error: typeof node.error === 'string' ? node.error : 'not scanned' });
     for (const child of Array.isArray(node.frames) ? node.frames : []) {
-      const step =
+      // A frame in a shadow root is named through the shadow hosts that
+      // lead to it, joined as shadow-piercing selectors write it, so two
+      // components' frames are not one.
+      const selector =
         child && typeof child.selector === 'string' && child.selector ? child.selector : 'iframe';
+      const hosts =
+        child && Array.isArray(child.shadowHostSelectors)
+          ? child.shadowHostSelectors.filter((s) => typeof s === 'string' && s)
+          : [];
+      const step = hosts.length ? [...hosts, selector].join(' >>> ') : selector;
       walk(child, path.concat(step));
     }
   };

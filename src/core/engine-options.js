@@ -74,6 +74,8 @@ function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     embeddedAriaHidden: T.boolean,
+    embeddedInert: T.boolean,
+    topLevelDocument: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {

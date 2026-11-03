@@ -137,6 +137,9 @@ const {
   isFrameShown,
   isFrameExcluded,
   isFrameAriaHidden,
+  isFrameInert,
+  isFrameBehindModal,
+  frameAncestors,
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,
@@ -2638,7 +2641,13 @@ ${isFrameShown.toString()}
 
 ${isFrameExcluded.toString()}
 
+${frameAncestors.toString()}
+
 ${isFrameAriaHidden.toString()}
+
+${isFrameInert.toString()}
+
+${isFrameBehindModal.toString()}
 
 ${getFrameElementSelector.toString()}
 
