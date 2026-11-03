@@ -30,6 +30,32 @@ function profileListOf(profile) {
 }
 
 /**
+ * The profile names a list asks a scan of several to run, in order, each
+ * once: trimmed and matched without case, as a single profile's are, and
+ * whatever is not a name left out.
+ */
+function profileNamesOf(asked) {
+  const names = (Array.isArray(asked) ? asked : [])
+    .filter((p) => typeof p === 'string' && p.trim())
+    .map((p) => p.trim().toLowerCase());
+  return names.filter((p, i) => names.indexOf(p) === i);
+}
+
+/**
+ * The options of each scan runProfiles runs for these: one per profile a
+ * list names (profileNamesOf), or, for any other profile option, the options
+ * as they are. A list of no name is a scan without a profile.
+ */
+function profileOptionsOf(engineOptions) {
+  const asked =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  if (!Array.isArray(asked)) return [engineOptions];
+  const unique = profileNamesOf(asked);
+  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+}
+
+/**
  * Runs `run(engineOptions)` once per profile `engineOptions.profile` lists,
  * one after another, and merges the results (mergeProfileResults). Any other
  * profile option is a single scan: a list of one is its one name.
@@ -41,10 +67,7 @@ function runProfiles(engineOptions, run) {
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
-    const names = asked
-      .filter((p) => typeof p === 'string' && p.trim())
-      .map((p) => p.trim().toLowerCase());
-    const unique = names.filter((p, i) => names.indexOf(p) === i);
+    const unique = profileNamesOf(asked);
     const ignored = asked.filter((p) => typeof p !== 'string');
     if (ignored.length) {
       try {
@@ -81,9 +104,37 @@ function runProfiles(engineOptions, run) {
 }
 
 /**
+ * Whether a profile name a scan has no profile of may be one of the packs it
+ * skipped (`packNames`, as name@version), for a scan of several to say
+ * pack-skipped rather than unknown-profile: a name the packs are known to
+ * declare (`declared`, lowercase), or one that starts with a namespace such
+ * a pack's name suggests (its scope, or its package name with or without
+ * "pack"), since every profile of a pack starts with its namespace and "-".
+ */
+function mayBeSkippedPackProfile(profile, packNames, declared) {
+  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  if (!name) return false;
+  if (Array.isArray(declared) && declared.includes(name)) return true;
+  const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
+  for (const packName of Array.isArray(packNames) ? packNames : []) {
+    if (typeof packName !== 'string') continue;
+    let id = packName.trim().toLowerCase();
+    const at = id.lastIndexOf('@');
+    if (at > 0) id = id.slice(0, at);
+    const slash = id.indexOf('/');
+    const scope = id[0] === '@' && slash > 0 ? id.slice(1, slash) : '';
+    const base = slash >= 0 ? id.slice(slash + 1) : id;
+    const bare = base.replace(/^pack-/, '').replace(/-pack$/, '');
+    if ([scope, base, bare, bare.split('-')[0]].some(starts)) return true;
+  }
+  return false;
+}
+
+/**
  * Marks a scan's result with why its profile was not applied, when it
  * wasn't (resolveEffectiveRunOnly's profileNotApplied: 'unknown' or
- * 'overridden'), for mergeProfileResults to say. Not enumerable, so it never
+ * 'overridden', or 'pack-skipped' for a name a skipped pack may have), for
+ * mergeProfileResults to say. Not enumerable, so it never
  * reaches a result's JSON.
  */
 function noteProfileNotApplied(result, reason) {
@@ -174,15 +225,16 @@ function mergeProfileResults(runs, asked) {
       typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
-      const skipped =
-        r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
+      // A name no profile has is unknown-profile, unless the scan marked it
+      // as one a pack it skipped may have: a list with a typo beside a
+      // skipped pack's profile names the typo as such.
       const why = r.result && r.result.__profileNotApplied;
       notRun.push({
         profile: r.profile,
         reason:
           why === 'overridden'
             ? 'overridden-by-selection'
-            : skipped
+            : why === 'pack-skipped'
               ? 'pack-skipped'
               : 'unknown-profile'
       });
@@ -392,4 +444,12 @@ function mergeProfileResults(runs, asked) {
   return out;
 }
 
-module.exports = { profileListOf, runProfiles, mergeProfileResults, noteProfileNotApplied };
+module.exports = {
+  profileListOf,
+  profileNamesOf,
+  profileOptionsOf,
+  mayBeSkippedPackProfile,
+  runProfiles,
+  mergeProfileResults,
+  noteProfileNotApplied
+};
