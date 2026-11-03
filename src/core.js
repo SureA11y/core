@@ -105674,13 +105674,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return Object.assign({}, entry, { impls, i18n });
   }
-  // In a page a pack is named (name@version): an item of the list that is
-  // no name is left out, with a warning, and the named packs run as named,
-  // or are skipped and said to be, rather than all dropped unnoticed.
+  // In a page a pack is named (name@version): beside names, an item of the
+  // list that is no name is left out, with a warning, and the named packs
+  // run as named, or are skipped and said to be, rather than all dropped
+  // unnoticed. A list of no names (packs themselves) is a Node scan's, and
+  // the runner says so.
   if (
     engineOptions &&
     typeof engineOptions === 'object' &&
     Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.some((p) => typeof p === 'string') &&
     engineOptions.packs.some((p) => typeof p !== 'string')
   ) {
     const left = engineOptions.packs.filter((p) => typeof p !== 'string').length;
