@@ -24270,7 +24270,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  for (const r of ran) {
+  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
   }
@@ -24368,8 +24369,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     return out;
   };
   const engines = results.map((x) => x.engine || {});
+  // A profile with no WCAG target of its own (a standard that maps no WCAG
+  // level, as WAI-ARIA's) carries core's default version: the version is
+  // that of the profiles that target WCAG, where any does.
+  const targeting = engines.filter((e) => e.wcagLevel);
   const wcagVersion = highest(
-    engines.map((e) => e.wcagVersion),
+    (targeting.length ? targeting : engines).map((e) => e.wcagVersion),
     VERSIONS
   );
   const wcagLevel = highest(
@@ -24400,6 +24405,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
+  // A custom rule skipped is one no profile ran: one profile's selection
+  // can leave out a rule another runs.
+  const skippedLists = ran.map((r) =>
+    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+  );
+  if (skippedLists.length && skippedLists.some((list) => list.length)) {
+    const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
+    out.skippedCustomRules = skippedLists[0].filter((entry) =>
+      skippedLists.every((list) => list.some((x) => idOf(x) === idOf(entry)))
+    );
+  }
   return out;
 });
 const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
@@ -130008,7 +130024,8 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   // The WCAG version the result reports, the highest of the profiles'.
   const WCAG_ORDER = ['2.0', '2.1', '2.2'];
   let reportedWcag;
-  for (const r of ran) {
+  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  for (const r of targetingRuns.length ? targetingRuns : ran) {
     const v = r.result.engine && r.result.engine.wcagVersion;
     if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
   }
@@ -130106,8 +130123,12 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     return out;
   };
   const engines = results.map((x) => x.engine || {});
+  // A profile with no WCAG target of its own (a standard that maps no WCAG
+  // level, as WAI-ARIA's) carries core's default version: the version is
+  // that of the profiles that target WCAG, where any does.
+  const targeting = engines.filter((e) => e.wcagLevel);
   const wcagVersion = highest(
-    engines.map((e) => e.wcagVersion),
+    (targeting.length ? targeting : engines).map((e) => e.wcagVersion),
     VERSIONS
   );
   const wcagLevel = highest(
@@ -130138,6 +130159,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   if (overridden.length || Array.isArray(first.overriddenBuiltinIds))
     out.overriddenBuiltinIds = overridden;
   if (skippedPacks.length) out.skippedPacks = skippedPacks;
+  // A custom rule skipped is one no profile ran: one profile's selection
+  // can leave out a rule another runs.
+  const skippedLists = ran.map((r) =>
+    Array.isArray(r.result.skippedCustomRules) ? r.result.skippedCustomRules : []
+  );
+  if (skippedLists.length && skippedLists.some((list) => list.length)) {
+    const idOf = (x) => (x && typeof x.id === 'string' ? x.id : JSON.stringify(x));
+    out.skippedCustomRules = skippedLists[0].filter((entry) =>
+      skippedLists.every((list) => list.some((x) => idOf(x) === idOf(entry)))
+    );
+  }
   return out;
 });
 const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {

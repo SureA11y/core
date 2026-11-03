@@ -146,6 +146,13 @@ function contributionProblems(rollup, at) {
 // and digits in parts joined by "-", dots allowed within a part (sample-1.0);
 // a rollup id may keep the capitals of its requirement's number (S1, A.1).
 const ID = /^[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*$/;
+
+// What is wrong with a profile name: its namespace first, then the
+// characters it may have, so the message names the problem it has.
+function profileNameProblem(name, ns) {
+  if (!name.startsWith(ns + '-')) return `profile name "${name}" must start with "${ns}-"`;
+  return `profile name "${name}" may have only lowercase letters, digits, dots and hyphens, as "${ns}-1.0"`;
+}
 const ROLLUP_ID = /^[A-Za-z0-9]+(\.[A-Za-z0-9]+)*(-[A-Za-z0-9]+(\.[A-Za-z0-9]+)*)*$/;
 // npm's rules for a package name: lowercase, a scope or none, no spaces.
 const PACKAGE_NAME = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*$/;
@@ -966,7 +973,7 @@ function packProblems(pack, withCoreVersion) {
     problems.push(...languageProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
-        problems.push(`standard.profiles: profile name "${name}" must start with "${ns}-"`);
+        problems.push(`standard.profiles: ${profileNameProblem(name, ns)}`);
       }
       if (!isObject(profile)) continue;
       // A version the standard lacks maps no rule and makes no rollup.
@@ -1040,7 +1047,7 @@ function packProblems(pack, withCoreVersion) {
     else {
       for (const [name, profile] of Object.entries(pack.profiles)) {
         if (typeof ns === 'string' && (!name.startsWith(ns + '-') || !ID.test(name))) {
-          problems.push(`profiles: profile name "${name}" must start with "${ns}-"`);
+          problems.push(`profiles: ${profileNameProblem(name, ns)}`);
         }
         if (
           !isObject(profile) ||
