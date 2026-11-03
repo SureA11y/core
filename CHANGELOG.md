@@ -68,6 +68,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- `role="text"` was read as a valid role, though neither WAI-ARIA 1.2 nor the 1.3 draft defines a `text` role. `aria-roles-valid` now reports it as naming no valid role (ACT 674b10, WCAG 4.1.2): a question on an element that takes no focus, a failure on one that does. `aria-text` still checks such elements for focusable content.
 - An `<img>`, `<svg>`, `<object>`, `<embed>`, `<video>` poster or `<canvas>` with `role="presentation"` or `"none"` and a global ARIA attribute (`aria-describedby`, say) was left out as decorative, though presentational roles conflict resolution gives it back its role: an `<img role="presentation" aria-describedby="d">` with no `alt` now fails `img-alt-present` (WCAG 1.1.1), as a focusable one already did. The four attributes WAI-ARIA 1.2 deprecates as globals still leave it presentational.
 - In a page, a pack named twice in `engineOptions.packs` is said to be (`is named twice; name each pack once`), as Node refuses it, instead of every pack being skipped as "no packScript registered exactly these packs".
 - An element with `role="none"` or `"presentation"` and only `aria-disabled`, `aria-errormessage`, `aria-haspopup` or `aria-invalid` kept its implicit role, though Chromium leaves it presentational: WAI-ARIA 1.2 deprecates those four as globals. An empty `<h2 role="none" aria-invalid="true">` no longer fails `empty-heading`. Any other global still keeps the role.

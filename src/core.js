@@ -10894,7 +10894,6 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'tablist',
     'tabpanel',
     'term',
-    'text',
     'textbox',
     'time',
     'timer',
@@ -61482,12 +61481,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   // role is a fallback list matched in any case: select by token, then keep
-  // only elements whose resolved role is text (role="link text" is a link).
+  // only elements where text comes before any WAI-ARIA role (role="link
+  // text" is a link). text is no WAI-ARIA role, so it is read here, not by
+  // the role helpers, which don't know it.
+  const textFirst = (el) => {
+    const tokens =
+      typeof helpers.aria.getAllRoleTokens === 'function' ? helpers.aria.getAllRoleTokens(el) : [];
+    for (const t of tokens) {
+      if (t === 'text') return true;
+      if (helpers.aria.isValidConcreteRole && helpers.aria.isValidConcreteRole(t)) return false;
+    }
+    return false;
+  };
   const nodes = (
     helpers.queryAllSmart
       ? helpers.queryAllSmart('[role~="text" i]')
       : helpers.queryAll('[role~="text" i]')
-  ).filter((el) => helpers.aria.getExplicitRole(el) === 'text');
+  ).filter(textFirst);
 
   const occurrences = [];
   let applicableCount = 0;
@@ -116741,7 +116751,6 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'tablist',
     'tabpanel',
     'term',
-    'text',
     'textbox',
     'time',
     'timer',

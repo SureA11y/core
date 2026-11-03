@@ -79,8 +79,7 @@ const SUPPLEMENTAL_CONCRETE_ROLES = [
   'image',
   'sectionfooter',
   'sectionheader',
-  'suggestion',
-  'text'
+  'suggestion'
 ];
 
 function roleSets() {

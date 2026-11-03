@@ -38,10 +38,19 @@ test(`${RULE_ID}: pass when role is a valid concrete role`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
-test(`${RULE_ID}: pass when role="text" (ARIA 1.2 concrete role, also checked by aria-text)`, () => {
-  const html = `<!doctype html><html><body><span id="a" role="text">Plain text</span></body></html>`;
-  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
+// text is no WAI-ARIA role (1.2 or the 1.3 draft), so role="text" names no
+// valid role (ACT 674b10): asked about on an element that takes no focus,
+// a failure on one that does.
+test(`${RULE_ID}: role="text" names no WAI-ARIA role`, () => {
+  const plain = `<!doctype html><html><body><span id="a" role="text">Plain text</span></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(plain, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1
+  });
+  assert.equal(rule.occurrences[0].occurrenceOutcome, 'cantTell');
+  const focusable = `<!doctype html><html><body><div role="text" tabindex="0" aria-label="x">t</div></body></html>`;
+  assertRule(runa11yCoreOnHtml(focusable, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1
+  });
 });
 
 test(`${RULE_ID}: pass when first token of a fallback role list is valid`, () => {
@@ -134,11 +143,11 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 5, maxOccurrences: 5 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 6, maxOccurrences: 6 });
 
   const expectedFailIds = ['arv_case_03', 'arv_case_04'];
   // An unusable role on an element that takes no focus: asked about.
-  for (const id of ['arv_case_40', 'arv_case_41']) {
+  for (const id of ['arv_case_06', 'arv_case_40', 'arv_case_41']) {
     const occ = rule.occurrences.find((o) => o.html && o.html.includes(`id="${id}"`));
     assert.ok(occ, `Expected occurrence for id="${id}"`);
     assert.equal(occ.occurrenceOutcome, 'cantTell');
@@ -151,7 +160,6 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-roles-valid-all-scenario
     'arv_case_01',
     'arv_case_02',
     'arv_case_05',
-    'arv_case_06',
     'arv_case_07',
     'arv_case_09',
     'arv_case_10',
@@ -185,7 +193,7 @@ test(`${RULE_ID}: a fallback list fails when no token is a concrete role`, () =>
 });
 
 test(`${RULE_ID}: Digital Publishing and ARIA 1.3 roles are recognised`, () => {
-  for (const role of ['doc-biblioref', 'doc-abstract', 'comment', 'suggestion', 'text']) {
+  for (const role of ['doc-biblioref', 'doc-abstract', 'comment', 'suggestion']) {
     const html = `<!doctype html><html><body><div role="${role}" aria-label="x">t</div></body></html>`;
     assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
       maxOccurrences: 0
