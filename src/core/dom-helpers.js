@@ -7362,6 +7362,20 @@ function createDomHelpers(opts) {
     return roots.includes(dom.documentElement(document));
   }
 
+  // Whether the document is a page of its own, not one shown in a frame
+  // (an <iframe> or <frame> of another page): a page's title and language
+  // are the top document's, and a frame is named by its <iframe>. Comparing
+  // windows works across origins; a window that can't be read is a frame.
+  function isTopLevelDocument() {
+    const win = realmWindow;
+    if (!win) return true;
+    try {
+      return win.self === win.top;
+    } catch {
+      return false;
+    }
+  }
+
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
   // contenu", "Zum Inhalt"...), in the languages the engine ships and the
   // phrasings French sites use ("liens d'évitement"). One list for
@@ -7421,6 +7435,7 @@ function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
     getDocumentRoots: documentRoots,

@@ -13,6 +13,8 @@
  *   Applies to HTML documents with a root <html> element.
  *   The rule evaluates the document element only and does not iterate over child nodes.
  *   Non-HTML documents or documents without a document element are not applicable.
+ *   A document shown in a frame (an <iframe> or <frame> of another page) is
+ *   not applicable: the page's language is the top document's.
  *
  * @expectation
  *   The <html> element has a lang attribute.
@@ -90,8 +92,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's language is
+// the top document's, and the frame is named by its <iframe>
+// (iframe-name-present), so it is notApplicable there too.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {

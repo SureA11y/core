@@ -165,6 +165,9 @@ function noteProfileNotApplied(result, reason) {
  *   what each profile that ran the rule makes of it: its tier, or what a
  *   standard's rollups make of it by its reason code (a WCAG cantTell that
  *   a standard fails), or notApplicable where a standard doesn't count it.
+ *   Its `severity` is the highest a profile that fails or asks about it
+ *   gives it (the highest of all where none does), in any order of the
+ *   profiles, with the rule's own as `ruleSeverity` where that differs.
  * - rulesResults: every profile's rollups, each once; one two profiles give
  *   with different outcomes is the worst, and each names the profiles that
  *   give it (`profiles`).
@@ -176,6 +179,14 @@ function noteProfileNotApplied(result, reason) {
 function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
+  const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
+  const highestSeverity = (list) => {
+    let best = null;
+    for (const s of list) {
+      if (SEVERITY_ORDER.indexOf(s) > SEVERITY_ORDER.indexOf(best)) best = s;
+    }
+    return best;
+  };
   const worst = (list) => {
     let out = null;
     for (const o of list) if (o && rank(o) > rank(out)) out = o;
@@ -281,12 +292,21 @@ function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
+        merged = Object.assign({}, check, {
+          verdicts: {},
+          occurrences: [],
+          ownOutcomes: [],
+          severities: {}
+        });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
       merged.ownOutcomes.push(check.outcome);
+      // The severity this profile gives the rule (a profile's own, or the
+      // rule's), and the rule's own.
+      merged.severities[r.profile] = check.severity;
+      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -344,6 +364,23 @@ function mergeProfileResults(runs, asked) {
     // judges its findings: what a WCAG criterion it maps reads (EARL).
     merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
     delete merged.ownOutcomes;
+    // The severity is the highest any profile that fails or asks about the
+    // rule gives it, whatever order the profiles were listed in, so a gate
+    // on severity reads the same; with none, the highest of all. The rule's
+    // own stays as ruleSeverity where that differs.
+    const severities = merged.severities;
+    delete merged.severities;
+    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    delete merged.ownSeverity;
+    const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
+    const severity = highestSeverity(
+      (judging.length ? judging : Object.keys(severities)).map((p) => severities[p])
+    );
+    if (severity) {
+      merged.severity = severity;
+      if (own && own !== severity) merged.ruleSeverity = own;
+      else delete merged.ruleSeverity;
+    }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));

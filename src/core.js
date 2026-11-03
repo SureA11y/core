@@ -19860,6 +19860,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(dom.documentElement(document));
   }
 
+  // Whether the document is a page of its own, not one shown in a frame
+  // (an <iframe> or <frame> of another page): a page's title and language
+  // are the top document's, and a frame is named by its <iframe>. Comparing
+  // windows works across origins; a window that can't be read is a frame.
+  function isTopLevelDocument() {
+    const win = realmWindow;
+    if (!win) return true;
+    try {
+      return win.self === win.top;
+    } catch {
+      return false;
+    }
+  }
+
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
   // contenu", "Zum Inhalt"...), in the languages the engine ships and the
   // phrasings French sites use ("liens d'évitement"). One list for
@@ -19919,6 +19933,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
     getDocumentRoots: documentRoots,
@@ -24061,6 +24076,14 @@ const runProfiles = (function runProfiles(engineOptions, run) {
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
+  const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
+  const highestSeverity = (list) => {
+    let best = null;
+    for (const s of list) {
+      if (SEVERITY_ORDER.indexOf(s) > SEVERITY_ORDER.indexOf(best)) best = s;
+    }
+    return best;
+  };
   const worst = (list) => {
     let out = null;
     for (const o of list) if (o && rank(o) > rank(out)) out = o;
@@ -24166,12 +24189,21 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
+        merged = Object.assign({}, check, {
+          verdicts: {},
+          occurrences: [],
+          ownOutcomes: [],
+          severities: {}
+        });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
       merged.ownOutcomes.push(check.outcome);
+      // The severity this profile gives the rule (a profile's own, or the
+      // rule's), and the rule's own.
+      merged.severities[r.profile] = check.severity;
+      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -24229,6 +24261,23 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     // judges its findings: what a WCAG criterion it maps reads (EARL).
     merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
     delete merged.ownOutcomes;
+    // The severity is the highest any profile that fails or asks about the
+    // rule gives it, whatever order the profiles were listed in, so a gate
+    // on severity reads the same; with none, the highest of all. The rule's
+    // own stays as ruleSeverity where that differs.
+    const severities = merged.severities;
+    delete merged.severities;
+    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    delete merged.ownSeverity;
+    const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
+    const severity = highestSeverity(
+      (judging.length ? judging : Object.keys(severities)).map((p) => severities[p])
+    );
+    if (severity) {
+      merged.severity = severity;
+      if (own && own !== severity) merged.ruleSeverity = own;
+      else delete merged.ruleSeverity;
+    }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));
@@ -75649,7 +75698,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     occurrences: []
   };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
     "html-xml-lang-mismatch": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -88676,7 +88727,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
     "password-paste-enabled": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -125495,6 +125548,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return roots.includes(dom.documentElement(document));
   }
 
+  // Whether the document is a page of its own, not one shown in a frame
+  // (an <iframe> or <frame> of another page): a page's title and language
+  // are the top document's, and a frame is named by its <iframe>. Comparing
+  // windows works across origins; a window that can't be read is a frame.
+  function isTopLevelDocument() {
+    const win = realmWindow;
+    if (!win) return true;
+    try {
+      return win.self === win.top;
+    } catch {
+      return false;
+    }
+  }
+
   // Whether a link's text reads as a skip link ("Skip to content", "Aller au
   // contenu", "Zum Inhalt"...), in the languages the engine ships and the
   // phrasings French sites use ("liens d'évitement"). One list for
@@ -125554,6 +125621,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isIncludedInAccessibilityTree,
     isDomVisibleEligible,
     isWholeDocumentScope,
+    isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
     getDocumentRoots: documentRoots,
@@ -129696,6 +129764,14 @@ const runProfiles = (function runProfiles(engineOptions, run) {
 const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const RANK = { fail: 4, cantTell: 3, pass: 2, notApplicable: 1 };
   const rank = (o) => RANK[o] || 0;
+  const SEVERITY_ORDER = ['minor', 'moderate', 'serious', 'critical'];
+  const highestSeverity = (list) => {
+    let best = null;
+    for (const s of list) {
+      if (SEVERITY_ORDER.indexOf(s) > SEVERITY_ORDER.indexOf(best)) best = s;
+    }
+    return best;
+  };
   const worst = (list) => {
     let out = null;
     for (const o of list) if (o && rank(o) > rank(out)) out = o;
@@ -129801,12 +129877,21 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       if (!check || !check.ruleId) continue;
       let merged = checks.get(check.ruleId);
       if (!merged) {
-        merged = Object.assign({}, check, { verdicts: {}, occurrences: [], ownOutcomes: [] });
+        merged = Object.assign({}, check, {
+          verdicts: {},
+          occurrences: [],
+          ownOutcomes: [],
+          severities: {}
+        });
         checks.set(check.ruleId, merged);
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
       merged.ownOutcomes.push(check.outcome);
+      // The severity this profile gives the rule (a profile's own, or the
+      // rule's), and the rule's own.
+      merged.severities[r.profile] = check.severity;
+      if (check.ruleSeverity && !merged.ownSeverity) merged.ownSeverity = check.ruleSeverity;
       const verdicts = isTier(check.outcome) ? verdictsByRollups(r.result, check) : [];
       const byKey = occurrenceMaps.get(check.ruleId);
       const seenHere = new Map(); // base key -> how many so far in this scan
@@ -129864,6 +129949,23 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     // judges its findings: what a WCAG criterion it maps reads (EARL).
     merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
     delete merged.ownOutcomes;
+    // The severity is the highest any profile that fails or asks about the
+    // rule gives it, whatever order the profiles were listed in, so a gate
+    // on severity reads the same; with none, the highest of all. The rule's
+    // own stays as ruleSeverity where that differs.
+    const severities = merged.severities;
+    delete merged.severities;
+    const own = merged.ownSeverity || merged.ruleSeverity || merged.severity;
+    delete merged.ownSeverity;
+    const judging = Object.keys(severities).filter((p) => isTier(merged.verdicts[p]));
+    const severity = highestSeverity(
+      (judging.length ? judging : Object.keys(severities)).map((p) => severities[p])
+    );
+    if (severity) {
+      merged.severity = severity;
+      if (own && own !== severity) merged.ruleSeverity = own;
+      else delete merged.ruleSeverity;
+    }
     const outcome = worst(Object.values(merged.verdicts)) || merged.outcome;
     for (const m of merged.occurrences) {
       const tier = worst(Object.values(m.verdicts));
