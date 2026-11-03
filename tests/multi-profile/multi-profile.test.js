@@ -483,9 +483,7 @@ test('the HTML report gives each version of a standard its own table', () => {
   const run = (profile) =>
     runa11yCoreOnHtml(PAGE, { engineOptions: { packs: [versioned], profile } });
   const headings = (html) =>
-    (html.match(/<h2 id="standard-rollup-\d+">[^<]*<\/h2>/g) || []).map((h) =>
-      h.replace(/<[^>]+>/g, '')
-    );
+    [...html.matchAll(/<h2 id="standard-rollup-\d+">([^<]*)<\/h2>/g)].map((m) => m[1]);
   const rowsOf = (html, i) =>
     (
       html
