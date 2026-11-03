@@ -13,7 +13,9 @@
  *   is <html>; an SVG document opened on its own is notApplicable. A run
  *   narrowed by contextSelector, or by engineOptions.fragment, is
  *   notApplicable: whether the page has a title is not a property any
- *   subtree can answer.
+ *   subtree can answer. A document shown in a frame (an <iframe> or <frame>
+ *   of another page) is notApplicable too: it is no page of its own, and
+ *   its frame is named by the <iframe> (iframe-name-present).
  * @expectation
  *   The document has a <title> element, and document.title with whitespace
  *   collapsed is non-empty. The element is looked for anywhere in the
@@ -63,8 +65,13 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's title is
+// the top document's, and the frame is named by its <iframe>
+// (iframe-name-present), so it is notApplicable there too.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {

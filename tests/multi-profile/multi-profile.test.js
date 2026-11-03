@@ -172,6 +172,40 @@ test('a finding a profile does not count is notApplicable there, and its check a
   assert.equal(c.outcome, 'cantTell');
 });
 
+test("a rule's severity is the highest a profile judging it gives, in any order of the profiles", () => {
+  const result = (profile, outcome, severity, ruleSeverity) => ({
+    engine: { profile, wcagVersion: '2.2' },
+    checksResults: [
+      {
+        ruleId: 'r',
+        outcome,
+        severity,
+        ...(ruleSeverity ? { ruleSeverity } : {}),
+        occurrences: outcome === 'fail' ? [{ selector: 'img' }] : []
+      }
+    ],
+    rulesResults: []
+  });
+  const strict = () => ({
+    profile: 'strict',
+    result: result('strict', 'fail', 'critical', 'serious')
+  });
+  const plain = () => ({ profile: 'plain', result: result('plain', 'fail', 'serious') });
+  for (const runs of [
+    [strict(), plain()],
+    [plain(), strict()]
+  ]) {
+    const c = mergeProfileResults(runs).checksResults[0];
+    assert.equal(c.severity, 'critical');
+    assert.equal(c.ruleSeverity, 'serious');
+  }
+  // A profile that passes the rule doesn't raise it.
+  const passing = { profile: 'strict', result: result('strict', 'pass', 'critical', 'serious') };
+  const c = mergeProfileResults([plain(), passing]).checksResults[0];
+  assert.equal(c.severity, 'serious');
+  assert.equal(c.ruleSeverity, undefined);
+});
+
 test('SARIF and JUnit treat a profile asked for and not run as an error, unless allowed', () => {
   const { renderSarifReport } = require('../../src/sarif.js');
   const { renderJunitReport } = require('../../src/junit.js');
