@@ -361,6 +361,7 @@ export interface RuleHelpers {
   readViewportContent: RuleHelper;
   getTextBoundaryKind: RuleHelper;
   isWholeDocumentScope: RuleHelper;
+  isTopLevelDocument: RuleHelper;
   isModalDialogOpen: RuleHelper;
   getOpenModalDialogs: RuleHelper;
   getDocumentRoots: RuleHelper;

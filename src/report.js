@@ -841,7 +841,7 @@ function renderCards(checksResults, ui) {
       )
       .join('');
     // In a scan of several profiles, what each profile makes of the finding
-    // ("wai-aria-1.2: Fail" beside "wcag22-aa: Can't tell"), so a failure of
+    // ("wai-aria-1.2: Fail" beside "wcag22-aa: Needs review"), so a failure of
     // one standard isn't read as a failure of the WCAG criterion beside it.
     const verdicts = (representative && representative.verdicts) || r.verdicts || null;
     const verdictChips = verdicts

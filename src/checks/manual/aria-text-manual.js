@@ -8,16 +8,18 @@
  * @summary role="text" elements should have no focusable descendants
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Elements whose role attribute resolves to text: its first token naming
- *   a known role, matched in any case, is `text`, so `role="foo text"` and
- *   `role="TEXT"` count while `role="link text"` (a link) does not.
+ *   Elements whose role attribute has the token `text`, matched in any
+ *   case, before any token naming a WAI-ARIA role, so `role="foo text"`
+ *   and `role="TEXT"` count while `role="link text"` (a link) does not.
  * @expectation
- *   `role="text"` tells assistive technology to treat an element's whole
- *   subtree as a single unit of plain text (e.g. text visually split
- *   across multiple `<span>`s by styling). Per the WAI-ARIA Authoring
- *   Practices, this only makes sense when that subtree contains no
- *   focusable content: a focusable descendant inside a "this is just
- *   text" region is unreachable or confusing for keyboard/AT users.
+ *   `role="text"` names no WAI-ARIA role (neither WAI-ARIA 1.2 nor the
+ *   1.3 draft defines it; aria-roles-valid reports it), but some
+ *   assistive technology has read it as asking to treat an element's
+ *   whole subtree as a single unit of plain text (e.g. text visually split
+ *   across multiple `<span>`s by styling). That only makes sense when the
+ *   subtree contains no focusable content: a focusable descendant inside
+ *   a "this is just text" region is unreachable or confusing for
+ *   keyboard/AT users.
  * @reason-codes
  *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
  *     role="text" contains content that can take keyboard focus.

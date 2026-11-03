@@ -186,7 +186,10 @@ the wrong one, so the distinctions matter:
 Whether a node is eligible for the accessibility tree, per an ordered set of checks
 (display/visibility, `hidden`, `inert`, closed `<details>`, template content, etc.).
 Deliberately keeps a focusable-but-`aria-hidden` element _eligible_ — see the header
-comment on `isIncludedInAccessibilityTree` below for why.
+comment on `isIncludedInAccessibilityTree` below for why. Under `engineOptions.embeddedAriaHidden` (a
+document shown in a frame under `aria-hidden="true"`), every element is read as under an
+`aria-hidden` ancestor, and under `engineOptions.embeddedInert` (one under `[inert]`), as
+inert.
 
 ### `isHiddenContent(el, opts?)` → `boolean`
 
@@ -196,7 +199,7 @@ closed `<details>` other than its first `<summary>`, content under
 `content-visibility:hidden` or `hidden="until-found"` (not on an inline element, which
 `until-found` doesn't hide), an `[inert]` subtree and the
 button a customizable `<select>` draws itself with, the page behind an open modal
-dialog). `isHiddenContent(el, { inert: true })` keeps inert content, as
+dialog; every element under `engineOptions.embeddedInert`). `isHiddenContent(el, { inert: true })` keeps inert content, as
 `queryAllSmart` does with the same option. Inert content takes no focus and no click
 and is out of the accessibility tree, so a rule about either leaves it out with this
 one exclusion rather than deciding it alone; it is still drawn, so the contrast scan
@@ -309,6 +312,18 @@ one-per-document property (`<title>`, `<html lang>`, landmark structure) — gat
 an `applicability(ctx)` export using this, per [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) §2 (the rules that use it are listed in §11.2), or the
 rule will wrongly fault a scoped subtree for lacking something it was never meant to
 have.
+
+### `isTopLevelDocument()` → `boolean`
+
+Whether the document is a page of its own, not one shown in a frame (an `<iframe>` or
+`<frame>` of another page): `true` when its window is the top window
+(`window.self === window.top`), `false` in a frame, including one whose top window can't be
+read. `engineOptions.topLevelDocument`, when set, decides instead, for a page a test runner
+shows in a frame of its own. A rule about the page itself (its `<title>`, its language, its
+viewport, its level-one heading, main landmark, bypass mechanism or landmark structure) adds
+it to its `applicability(ctx)` next to `isWholeDocumentScope()`: a framed document's title
+and language are the top page's, a browser ignores its viewport `<meta>`, and it sits in the
+top page's landmarks.
 
 ### `isModalDialogOpen()` → `boolean`
 
@@ -729,7 +744,9 @@ password, date, time, color and file inputs have no ARIA role.
 Whether `el`'s `role="none"` or `role="presentation"` is ignored, as WAI-ARIA's presentational
 roles conflict resolution has browsers do when the element can take focus or carries a global
 ARIA attribute (`aria.hasGlobalAriaAttr`): it keeps its implicit role then, so an
-`<h1 role="none" aria-label="…">` is still a heading. `false` for any other role.
+`<h1 role="none" aria-label="…">` is still a heading. As in Chromium, the four globals WAI-ARIA
+1.2 deprecates (`aria-disabled`, `aria-errormessage`, `aria-haspopup`, `aria-invalid`) don't
+count here: with only those, the element stays presentational. `false` for any other role.
 
 ### `getEventListenerInfo(target, types)` → `{ hook, listens }`
 
@@ -984,8 +1001,9 @@ author leaves it out), `hasLandmarkScopingAncestor` (also re-exported flat, see 
 `getRoleInfo`), `hasSuggestionsSource` (whether an input's `list` names a `<datalist>` in its
 own tree), `getTableCellRole` (a `<td>`'s role from its nearest table: `cell`, `gridcell` in a
 grid or treegrid, `''` in a presentational table; worked out once per table) and
-`hasGlobalAriaAttr` (whether an element carries any of WAI-ARIA's global states and
-properties, by presence, not value).
+`hasGlobalAriaAttr(el, { exceptDeprecated })` (whether an element carries any of WAI-ARIA's
+global states and properties, by presence, not value; with `exceptDeprecated: true` the four
+deprecated globals in `DEPRECATED_ATTRS` don't count).
 
 `getExplicitRole(el)` is how a rule reads an element's role: the attribute is a
 fallback list, and browsers use "the first token in the sequence of tokens in the role

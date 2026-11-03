@@ -348,6 +348,8 @@ role="grid" requires an accessible name in WAI-ARIA; none is present. A grid is 
 
 ## aria-text
 
+*`text` is no WAI-ARIA role (neither 1.2 nor the 1.3 draft defines it), so `aria-roles-valid` also reports every `role="text"` below as naming no valid role. This rule reads the token itself and asks only about focusable content inside it.*
+
 **Passed**
 ```html
 <span role="text">Plain text with no interactive content.</span>
@@ -358,7 +360,7 @@ No focusable descendant exists inside the `role="text"` element.
 ```html
 <span role="text">Some text with <a href="#">a link</a> inside it.</span>
 ```
-`role="text"` tells assistive technology to treat this as a single flat string, but the nested link is still focusable and interactive underneath it.
+`role="text"` is meant to have the content read as a single flat string, but the nested link is still focusable and interactive underneath it.
 
 ## aria-valid-attr
 
@@ -1577,7 +1579,7 @@ No accessible name from any supported mechanism.
   <li>Date</li>
 </div>
 ```
-`<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor.
+`<li>` has no `<ul>`/`<ol>`/`role="list"` ancestor, yet the browser draws it with a bullet: the page shows a list item the markup leaves in no list.
 
 ## live-region-announcements
 
@@ -1767,7 +1769,7 @@ No nested interactive control.
   <input type="checkbox"> Accept
 </button>
 ```
-A `<button>` contains a nested `<input type="checkbox">`, another focusable control.
+A `<button>` contains a nested `<input type="checkbox">`, another focusable control. A button's children are presentational, so the checkbox loses its role.
 
 ## no-autoplay-audio
 

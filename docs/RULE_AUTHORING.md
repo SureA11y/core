@@ -488,7 +488,7 @@ the rule set itself ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-chec
 | `contextSelector` | The selector that scoped the run, if any. |
 | `rule` | The rule's resolved definition: `ruleId`, `defaultSeverity`, `defaultConfidence`, `type`, `meta`... |
 | `config` | The caller's `engineOptions.rules[ruleId]` (see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md)), less any value for one of the rule's `settings`, which the runner drops, and, for a variant, its own `config` on top (§4.2). |
-| `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. |
+| `standard` | The standard and version the run targets, `{ key, name, version }` (`{ key: 'en301549', name: 'EN 301 549', version: 'V4.1.1' }`), when a standard's profile selected the run; `null` otherwise (no profile, a WCAG profile, or rules chosen by tag or id). A rule whose behaviour differs between versions of its standard reads it here, and does what holds for every version when it is `null`. In a scan of several profiles each profile is scanned in turn, so each run sees its own profile's standard ([`MULTI_PROFILE_SCANS.md`](./MULTI_PROFILE_SCANS.md#what-runs)). |
 | `helpers` | The helpers documented in [`RULE_HELPERS.md`](./RULE_HELPERS.md). Read-only for a custom or pack rule. |
 | `engineTag` | The engine's tag (`"a11ycore"`), the one every rule carries in `meta.tags`. |
 | `engineOptions` | The scan's options as resolved. Read-only for a custom or pack rule. |
@@ -822,6 +822,11 @@ why:
   `landmark-one-main`, `bypass-blocks-present`, `region`) are also `notApplicable` while
   `helpers.isModalDialogOpen()`: the rest of the page is inert then, so the scan saw a
   dialog, not the page.
+  Nine of them, `page-title-present`, `page-title-patterns`, `html-lang-attr-present`,
+  `meta-viewport-zoom-enabled`, `meta-viewport-large` and those four, are also
+  `notApplicable` in a document shown in a frame, unless `engineOptions.topLevelDocument`
+  says it is the page (`helpers.isTopLevelDocument()`): the page around the frame has the
+  title, language and landmarks, and a browser ignores a framed document's viewport.
 
 - **Page-relational checks** (`landmark-unique`, the `landmark-no-duplicate-*` and
   `landmark-*-is-top-level` rules, `accesskeys`, `heading-order`,
