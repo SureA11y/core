@@ -212,7 +212,12 @@ function runInPage(ctx) {
     const focusable = isFocusable(el);
 
     if (role === 'presentation' || role === 'none') {
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     // Applicability step 3: intent signal gating (computed once per element)

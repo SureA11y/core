@@ -24030,17 +24030,6 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
 
 // Inlined from src/core/multi-profile.js -- a scan of several profiles at
 // once, engineOptions.profile as a list.
-const profileListOf = (function profileListOf(profile) {
-  if (!Array.isArray(profile)) return null;
-  const out = [];
-  for (const p of profile) {
-    if (typeof p !== 'string') continue;
-    // Names are matched without case, as a single profile's are.
-    const name = p.trim().toLowerCase();
-    if (name && !out.includes(name)) out.push(name);
-  }
-  return out.length > 1 ? out : null;
-});
 const profileNamesOf = (function profileNamesOf(asked) {
   const names = (Array.isArray(asked) ? asked : [])
     .filter((p) => typeof p === 'string' && p.trim())
@@ -24381,7 +24370,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes }
+      { rulesResults: outcomes },
+      // Each profile's own timings, where they were asked for: the result's
+      // perfStats are the first profile's.
+      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
     );
   }
 
@@ -64157,6 +64149,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // global naming attribute, keeps its native role.
   function isPresentationHonoured(el) {
     if (attrText(el, 'aria-label') || attrText(el, 'aria-labelledby')) return false;
+    // Any other global ARIA attribute keeps its role too (presentational
+    // roles conflict resolution).
+    if (typeof helpers.isPresentationalRoleIgnored === 'function') {
+      try {
+        if (helpers.isPresentationalRoleIgnored(el)) return false;
+      } catch {}
+    }
     if (getFocusableInfo) {
       try {
         const fi = getFocusableInfo(el, ctx);
@@ -72032,7 +72031,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           String(tabindex).trim() !== '' &&
           !Number.isNaN(Number(String(tabindex).trim()));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;
@@ -77882,16 +77886,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
 
     if (role === 'presentation' || role === 'none') {
-      let focusable;
+      // Presentational roles conflict resolution: a global ARIA attribute
+      // (aria-describedby, say) keeps the img role, as being focusable does.
+      let kept;
       try {
         const fi = getFocusableInfo(el, ctx);
         // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
-        focusable = !!(fi && (fi.focusable || fi.tabbable));
+        kept = !!(fi && (fi.focusable || fi.tabbable));
       } catch {
-        focusable = false;
+        kept = false;
+      }
+      if (!kept && typeof helpers.isPresentationalRoleIgnored === 'function') {
+        try {
+          kept = helpers.isPresentationalRoleIgnored(el);
+        } catch {
+          kept = false;
+        }
       }
 
-      if (!focusable) continue;
+      if (!kept) continue;
     }
 
     // From here: applicable
@@ -87180,7 +87193,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           String(tabindex).trim() !== '' &&
           !Number.isNaN(Number(String(tabindex).trim()));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;
@@ -92022,7 +92040,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;
@@ -92257,7 +92280,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const focusable = isFocusable(el);
 
     if (role === 'presentation' || role === 'none') {
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     // Applicability step 3: intent signal gating (computed once per element)
@@ -98368,7 +98396,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;
@@ -105796,7 +105829,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
         ? registry[key]
         : null;
-    if (!entry) {
+    // A name given twice is one pack named twice, as it is in Node.
+    const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
+    if (twice) {
+      packProblem = twice + ' is named twice; name each pack once';
+    } else if (!entry) {
       const sets = registry ? Object.keys(registry) : [];
       packProblem =
         'no packScript in this page registered exactly these packs (' +
@@ -129840,17 +129877,6 @@ const enableFrameRpcResponder = (function enableFrameRpcResponder(win, handler) 
 
 // Inlined from src/core/multi-profile.js -- a scan of several profiles at
 // once, engineOptions.profile as a list.
-const profileListOf = (function profileListOf(profile) {
-  if (!Array.isArray(profile)) return null;
-  const out = [];
-  for (const p of profile) {
-    if (typeof p !== 'string') continue;
-    // Names are matched without case, as a single profile's are.
-    const name = p.trim().toLowerCase();
-    if (name && !out.includes(name)) out.push(name);
-  }
-  return out.length > 1 ? out : null;
-});
 const profileNamesOf = (function profileNamesOf(asked) {
   const names = (Array.isArray(asked) ? asked : [])
     .filter((p) => typeof p === 'string' && p.trim())
@@ -130191,7 +130217,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes }
+      { rulesResults: outcomes },
+      // Each profile's own timings, where they were asked for: the result's
+      // perfStats are the first profile's.
+      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
     );
   }
 

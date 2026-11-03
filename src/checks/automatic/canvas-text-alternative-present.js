@@ -135,6 +135,13 @@ function runInPage(ctx) {
   // global naming attribute, keeps its native role.
   function isPresentationHonoured(el) {
     if (attrText(el, 'aria-label') || attrText(el, 'aria-labelledby')) return false;
+    // Any other global ARIA attribute keeps its role too (presentational
+    // roles conflict resolution).
+    if (typeof helpers.isPresentationalRoleIgnored === 'function') {
+      try {
+        if (helpers.isPresentationalRoleIgnored(el)) return false;
+      } catch {}
+    }
     if (getFocusableInfo) {
       try {
         const fi = getFocusableInfo(el, ctx);

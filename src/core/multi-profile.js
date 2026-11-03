@@ -13,23 +13,6 @@
 // inlined together into the generated core.js and the in-page runner.
 
 /**
- * The profiles a list asks for, in order, each once; null for an option
- * that is no list of two or more (a string, a list of one, anything else),
- * which a scan reads as it always has.
- */
-function profileListOf(profile) {
-  if (!Array.isArray(profile)) return null;
-  const out = [];
-  for (const p of profile) {
-    if (typeof p !== 'string') continue;
-    // Names are matched without case, as a single profile's are.
-    const name = p.trim().toLowerCase();
-    if (name && !out.includes(name)) out.push(name);
-  }
-  return out.length > 1 ? out : null;
-}
-
-/**
  * The profile names a list asks a scan of several to run, in order, each
  * once: trimmed and matched without case, as a single profile's are, and
  * whatever is not a name left out.
@@ -442,7 +425,10 @@ function mergeProfileResults(runs, asked) {
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
-      { rulesResults: outcomes }
+      { rulesResults: outcomes },
+      // Each profile's own timings, where they were asked for: the result's
+      // perfStats are the first profile's.
+      r.result.perfStats ? { perfStats: r.result.perfStats } : {}
     );
   }
 
@@ -527,7 +513,6 @@ function mergeProfileResults(runs, asked) {
 }
 
 module.exports = {
-  profileListOf,
   profileNamesOf,
   profileOptionsOf,
   mayBeSkippedPackProfile,

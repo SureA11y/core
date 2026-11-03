@@ -67,7 +67,6 @@ const {
   readRenderingEnvironment
 } = require('../src/core/dom-runner');
 const {
-  profileListOf,
   profileNamesOf,
   profileOptionsOf,
   mayBeSkippedPackProfile,
@@ -2333,7 +2332,6 @@ ${inlineConstFunction('enableFrameRpcResponder', enableFrameRpcResponder)}
 
 // Inlined from src/core/multi-profile.js -- a scan of several profiles at
 // once, engineOptions.profile as a list.
-${inlineConstFunction('profileListOf', profileListOf)}
 ${inlineConstFunction('profileNamesOf', profileNamesOf)}
 ${inlineConstFunction('profileOptionsOf', profileOptionsOf)}
 ${inlineConstFunction('mayBeSkippedPackProfile', mayBeSkippedPackProfile)}
@@ -2430,7 +2428,11 @@ ${implEntriesInPage.join(',\n')}
       registry && Object.prototype.hasOwnProperty.call(registry, key) && registry[key]
         ? registry[key]
         : null;
-    if (!entry) {
+    // A name given twice is one pack named twice, as it is in Node.
+    const twice = packNames.find((name, i) => i > 0 && packNames[i - 1] === name);
+    if (twice) {
+      packProblem = twice + ' is named twice; name each pack once';
+    } else if (!entry) {
       const sets = registry ? Object.keys(registry) : [];
       packProblem =
         'no packScript in this page registered exactly these packs (' +

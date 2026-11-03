@@ -10,8 +10,9 @@
  * @sc 1.1.1
  * @applicability
  *   Applies to <img> elements included in the accessibility tree.
- *   Images with role="presentation" or role="none" are excluded only when they are not focusable,
- *   since a focusable one reverts to the img role under presentational roles conflict resolution.
+ *   Images with role="presentation" or role="none" are excluded only when they are not focusable
+ *   and have no global ARIA attribute, since presentational roles conflict resolution gives either
+ *   one back its img role.
  *   Hidden images are excluded whether or not they are focusable.
  * @expectation
  *   Each applicable <img> element has an alt attribute.
@@ -149,16 +150,25 @@ function runInPage(ctx) {
     }
 
     if (role === 'presentation' || role === 'none') {
-      let focusable;
+      // Presentational roles conflict resolution: a global ARIA attribute
+      // (aria-describedby, say) keeps the img role, as being focusable does.
+      let kept;
       try {
         const fi = getFocusableInfo(el, ctx);
         // Preserve existing behavior: prefer fi.focusable; fall back to fi.tabbable if present.
-        focusable = !!(fi && (fi.focusable || fi.tabbable));
+        kept = !!(fi && (fi.focusable || fi.tabbable));
       } catch {
-        focusable = false;
+        kept = false;
+      }
+      if (!kept && typeof helpers.isPresentationalRoleIgnored === 'function') {
+        try {
+          kept = helpers.isPresentationalRoleIgnored(el);
+        } catch {
+          kept = false;
+        }
       }
 
-      if (!focusable) continue;
+      if (!kept) continue;
     }
 
     // From here: applicable

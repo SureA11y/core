@@ -298,7 +298,10 @@ function profilesNotRunOf(frames) {
     const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
     for (const p of Array.isArray(list) ? list : []) {
       if (!p) continue;
-      const held = out.find((x) => x.profile === p.profile);
+      // Names match in any case, as core reads them.
+      const held = out.find(
+        (x) => String(x.profile).toLowerCase() === String(p.profile).toLowerCase()
+      );
       if (!held) out.push({ ...p });
       else if (p.reason && !String(held.reason).split(', ').includes(p.reason)) {
         held.reason = `${held.reason}, ${p.reason}`;
