@@ -872,6 +872,29 @@ test("SARIF and JUnit give every frame's reason for a profile not run", () => {
   const sarif = JSON.stringify(JSON.parse(renderSarifReport(tree)));
   assert.match(sarif, /zed-1\.0/);
   assert.match(renderJunitReport(tree), /not run: pack-skipped, unknown-profile/);
+  // A profile named in another case in one frame is the same profile.
+  const mixed = {
+    topFrame: frame('pack-skipped'),
+    frames: [
+      {
+        url: 'f',
+        topFrame: {
+          ...frame('unknown-profile'),
+          engine: {
+            ...frame('x').engine,
+            profilesNotRun: [{ profile: 'ZED-1.0', reason: 'unknown-profile' }]
+          }
+        },
+        frames: []
+      }
+    ]
+  };
+  const junit = renderJunitReport(mixed);
+  assert.match(junit, /<testsuite name="Profiles" tests="1"/);
+  assert.match(junit, /not run: pack-skipped, unknown-profile/);
+  const notifications = JSON.parse(renderSarifReport(mixed)).runs[0].invocations[0]
+    .toolExecutionNotifications;
+  assert.equal(notifications.filter((n) => /zed-1\.0/i.test(n.message.text)).length, 1);
 });
 
 test("the question a finding asks is the reported WCAG version's, in any order of the profiles", () => {
@@ -898,4 +921,11 @@ test("a profile that targets no WCAG level adds no WCAG version of its own to th
     .join(' ');
   assert.match(intros, /requirements of WCAG 2\.0 /);
   assert.doesNotMatch(intros, /requirements of WCAG 2\.2 /);
+});
+
+test("each profile's section keeps its own perfStats, where they were asked for", () => {
+  const r = scan({ ...BOTH, perfStats: true });
+  for (const id of r.engine.profiles) assert.ok(r.profiles[id].perfStats, id);
+  assert.ok(r.perfStats);
+  assert.equal(scan(BOTH).profiles['names-1.0'].perfStats, undefined);
 });

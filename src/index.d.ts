@@ -917,6 +917,8 @@ export interface ScanResult {
       wcagLevel?: string;
       standards?: string[];
       rulesResults: Record<string, Outcome>;
+      /** This profile's scan timings, with engineOptions.perfStats. */
+      perfStats?: Record<string, unknown>;
     }
   >;
 }

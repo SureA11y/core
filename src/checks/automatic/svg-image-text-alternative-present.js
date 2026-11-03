@@ -183,7 +183,12 @@ function runInPage(ctx) {
         focusable =
           tabindex != null && trim(tabindex) !== '' && !Number.isNaN(Number(trim(tabindex)));
       }
-      if (!focusable) continue;
+      // A global ARIA attribute keeps its role too (presentational roles
+      // conflict resolution), as being focusable does.
+      const keptByGlobal =
+        typeof helpers.isPresentationalRoleIgnored === 'function' &&
+        helpers.isPresentationalRoleIgnored(el);
+      if (!focusable && !keptByGlobal) continue;
     }
 
     applicableCount += 1;

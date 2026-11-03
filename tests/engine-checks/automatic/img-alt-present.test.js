@@ -83,6 +83,26 @@ test(`${RULE_ID}: role=presentation but focusable is NOT excluded and fails if a
   assert.ok(hasOccurrenceForId(rule, 'pres_focus'));
 });
 
+// Presentational roles conflict resolution: a global ARIA attribute keeps
+// the img role too, so an image with no alt fails WCAG 1.1.1 (ACT 23a2a8).
+// One of the four attributes WAI-ARIA 1.2 deprecates as globals does not.
+test(`${RULE_ID}: role=presentation with a global ARIA attribute is NOT excluded and fails if alt missing`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="d">Chart of sales</p>
+    <img id="pres_global" src="x.png" role="presentation" aria-describedby="d">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'pres_global'));
+  const deprecated = `<!doctype html><html><body>
+    <img src="x.png" role="presentation" aria-disabled="true">
+  </body></html>`;
+  assertRule(runa11yCoreOnHtml(deprecated, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+});
+
 test(`${RULE_ID}: pass when alt is entirely absent but a non-empty title attribute is present (a valid HTML-AAM text-alternative fallback)`, () => {
   const html = `<!doctype html><html><body>
     <img id="title_only" src="x.png" title="Company logo">

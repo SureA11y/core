@@ -1977,7 +1977,7 @@ automatic · WCAG 1.1.1 (A) · confidence high · default severity serious
 
 Checks that &lt;img&gt; elements provide an alt attribute to support a text alternative mechanism.
 
-**Applies to.** Applies to &lt;img&gt; elements included in the accessibility tree. Images with role="presentation" or role="none" are excluded only when they are not focusable, since a focusable one reverts to the img role under presentational roles conflict resolution. Hidden images are excluded whether or not they are focusable.
+**Applies to.** Applies to &lt;img&gt; elements included in the accessibility tree. Images with role="presentation" or role="none" are excluded only when they are not focusable and have no global ARIA attribute, since presentational roles conflict resolution gives either one back its img role. Hidden images are excluded whether or not they are focusable.
 
 **Expectation.** Each applicable &lt;img&gt; element has an alt attribute. The alt attribute may be empty (alt="").
 
