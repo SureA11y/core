@@ -606,3 +606,123 @@ test('SARIF and JUnit name every profile of a scan of several', () => {
   assert.equal(JSON.parse(renderSarifReport(one)).runs[0].properties.profiles, undefined);
   assert.doesNotMatch(renderJunitReport(one), /name="profiles"/);
 });
+
+test("a skipped checklist pack's profile is pack-skipped, as a standard pack's is", () => {
+  const zed = definePack({
+    name: '@acme/policy',
+    version: '1.0.0',
+    namespace: 'zed',
+    core: '^9.0.0',
+    profiles: { 'zed-1.0': { tags: ['wcag2a'] } },
+    rollups: [{ id: 'zed-1', title: 'One', checksIds: ['img-alt-present'] }]
+  });
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const r = runa11yCoreOnHtml(PAGE, {
+      engineOptions: { packs: [zed], profile: ['wcag22-aa', 'zed-1.0'] }
+    });
+    assert.deepEqual(
+      r.skippedPacks.map((s) => s.name),
+      ['@acme/policy']
+    );
+    assert.deepEqual(r.engine.profilesNotRun, [{ profile: 'zed-1.0', reason: 'pack-skipped' }]);
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test("EARL asserts WCAG 2.2's criteria by the WCAG 2.2 scans: a standard that keeps 4.1.1 fails it for itself", () => {
+  const { renderEarlReport } = require('../../src/earl.js');
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+    '<div id="x">1</div><div id="x">2</div></main></body></html>';
+  const warn = console.warn;
+  console.warn = () => {};
+  try {
+    const r = runa11yCoreOnHtml(html, {
+      engineOptions: { profile: ['wcag22-aa', 'en301549-v3.2.1'] }
+    });
+    const dup = check(r, 'duplicate-id');
+    assert.equal(dup.verdicts['en301549-v3.2.1'], 'fail');
+    assert.equal(dup.checkOutcome, 'cantTell');
+    const earl = renderEarlReport(r);
+    const graph = JSON.stringify(earl);
+    const at = graph.indexOf('"title":"duplicate-id"');
+    assert.ok(at > 0);
+    const outcome = /"outcome":"(earl:[a-zA-Z]+)"/.exec(graph.slice(at));
+    assert.equal(outcome && outcome[1], 'earl:cantTell');
+  } finally {
+    console.warn = warn;
+  }
+});
+
+test('a requirement its rules check only in part keeps its own mapping when they find nothing', () => {
+  const partialStd = ruleMappedStandard({
+    standard: 'Partial Standard',
+    tag: 'partial',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: { '1.0': { P1: { title: 'Named roles', wcagSc: [], partial: true } } },
+    ruleMap: { '1.0': { 'aria-role-name-present': { requirements: ['P1'] } } }
+  });
+  const partialPack = definePack({
+    name: 'partial-pack',
+    version: '1.0.0',
+    namespace: 'partial',
+    core: '*',
+    standard: {
+      key: 'partial',
+      standard: 'Partial Standard',
+      versions: ['1.0'],
+      profiles: { 'partial-1.0': { version: '1.0', tags: ['partial'], mappedRules: true } },
+      ruleTag: 'partial',
+      ruleMapped: true,
+      mappingsFor: partialStd.mappingsFor,
+      composites: partialStd.composites,
+      validate: partialStd.validate
+    }
+  });
+  const r = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><p>x</p></main></body></html>',
+    { engineOptions: { packs: [partialPack], profile: 'partial-1.0' } }
+  );
+  const p1 = rollup(r, 'partial-1.0-P1');
+  assert.equal(p1.outcome, 'cantTell');
+  assert.deepEqual(
+    p1.meta.normativeMappings.map((m) => m.requirement),
+    ['P1']
+  );
+});
+
+test('in a page, an item of the packs list that is no name is left out, and the named packs run', (t) => {
+  const { JSDOM } = require('jsdom');
+  const main = require('../../src/index.js');
+  const { packScript } = require('../../src/pack.js');
+  const KEY = Symbol.for('surea11y.packs');
+  const saved = globalThis[KEY];
+  delete globalThis[KEY];
+  t.after(() => {
+    delete globalThis[KEY];
+    if (saved) Object.defineProperty(globalThis, KEY, { value: saved, configurable: true });
+  });
+  new Function(packScript([pack]))();
+  const dom = new JSDOM(PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+  global.window = dom.window;
+  global.document = dom.window.document;
+  const warnings = [];
+  const warn = console.warn;
+  console.warn = (m) => warnings.push(String(m));
+  let r;
+  try {
+    r = main.runa11yCoreInPage('https://example.test/', null, {
+      packs: ['names-pack@1.0.0', null],
+      profile: ['wcag22-aa', 'names-1.0']
+    });
+  } finally {
+    console.warn = warn;
+    dom.window.close();
+  }
+  assert.deepEqual(r.engine.packs, ['names-pack@1.0.0']);
+  assert.equal(r.engine.profilesNotRun, undefined);
+  assert.ok(warnings.some((w) => /1 item is not a pack name/.test(w)));
+});

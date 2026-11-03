@@ -21361,6 +21361,15 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A rollup cantTell because its rules found nothing they look for,
+        // and they check only part of the requirement: no rule decided it,
+        // and the rollup still judged its own requirement, a person's to
+        // answer.
+        if (reasonCode === 'composite.rollup.cantTell.partialCoverage' && own.standard) {
+          produced.add(
+            keyOf({ standard: own.standard, version: own.version, requirement: own.criterion })
+          );
+        }
         // A requirement that restates the WCAG criterion is named whatever decided.
         const restated = (m) => {
           const prefixes =
@@ -24199,7 +24208,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-      merged.ownOutcomes.push(check.outcome);
+      merged.ownOutcomes.push({
+        outcome: check.outcome,
+        wcagVersion: r.result.engine ? r.result.engine.wcagVersion : undefined
+      });
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
@@ -24255,11 +24267,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           : check.outcome;
     }
   }
+  // The WCAG version the result reports, the highest of the profiles'.
+  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
+  let reportedWcag;
+  for (const r of ran) {
+    const v = r.result.engine && r.result.engine.wcagVersion;
+    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
+  }
   const checksResults = [];
   for (const merged of checks.values()) {
     // The rule's own outcome, as its scans report it before any standard
-    // judges its findings: what a WCAG criterion it maps reads (EARL).
-    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    // judges its findings: what a WCAG criterion it maps reads (EARL). Only
+    // the scans of the WCAG version the result reports count: a rule judged
+    // by an earlier version (4.1.1 Parsing, which WCAG 2.2 drops) under a
+    // standard that keeps it is not a failure of the WCAG reported.
+    const ofReported = merged.ownOutcomes.filter((o) => o.wcagVersion === reportedWcag);
+    merged.checkOutcome =
+      worst((ofReported.length ? ofReported : merged.ownOutcomes).map((o) => o.outcome)) ||
+      merged.outcome;
     delete merged.ownOutcomes;
     // The severity is the highest any profile that fails or asks about the
     // rule gives it, whatever order the profiles were listed in, so a gate
@@ -105649,6 +105674,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return Object.assign({}, entry, { impls, i18n });
   }
+  // In a page a pack is named (name@version): an item of the list that is
+  // no name is left out, with a warning, and the named packs run as named,
+  // or are skipped and said to be, rather than all dropped unnoticed.
+  if (
+    engineOptions &&
+    typeof engineOptions === 'object' &&
+    Array.isArray(engineOptions.packs) &&
+    engineOptions.packs.some((p) => typeof p !== 'string')
+  ) {
+    const left = engineOptions.packs.filter((p) => typeof p !== 'string').length;
+    try {
+      console.warn(
+        '[surea11y] engineOptions.packs: ' +
+          left +
+          (left === 1 ? ' item is' : ' items are') +
+          ' not a pack name (name@version) and left out; in a page, packs are named as packScript registered them.'
+      );
+    } catch {}
+    engineOptions = Object.assign({}, engineOptions, {
+      packs: engineOptions.packs.filter((p) => typeof p === 'string')
+    });
+  }
   const packNames =
     engineOptions &&
     Array.isArray(engineOptions.packs) &&
@@ -127049,6 +127096,15 @@ const rollupCompositeResults = (function rollupCompositeResults(
             if (m && ruleMapped.includes(m.standard)) produced.add(keyOf(m));
           }
         }
+        // A rollup cantTell because its rules found nothing they look for,
+        // and they check only part of the requirement: no rule decided it,
+        // and the rollup still judged its own requirement, a person's to
+        // answer.
+        if (reasonCode === 'composite.rollup.cantTell.partialCoverage' && own.standard) {
+          produced.add(
+            keyOf({ standard: own.standard, version: own.version, requirement: own.criterion })
+          );
+        }
         // A requirement that restates the WCAG criterion is named whatever decided.
         const restated = (m) => {
           const prefixes =
@@ -129887,7 +129943,10 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
         occurrenceMaps.set(check.ruleId, new Map());
       }
       const occurrences = Array.isArray(check.occurrences) ? check.occurrences : [];
-      merged.ownOutcomes.push(check.outcome);
+      merged.ownOutcomes.push({
+        outcome: check.outcome,
+        wcagVersion: r.result.engine ? r.result.engine.wcagVersion : undefined
+      });
       // The severity this profile gives the rule (a profile's own, or the
       // rule's), and the rule's own.
       merged.severities[r.profile] = check.severity;
@@ -129943,11 +130002,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           : check.outcome;
     }
   }
+  // The WCAG version the result reports, the highest of the profiles'.
+  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
+  let reportedWcag;
+  for (const r of ran) {
+    const v = r.result.engine && r.result.engine.wcagVersion;
+    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
+  }
   const checksResults = [];
   for (const merged of checks.values()) {
     // The rule's own outcome, as its scans report it before any standard
-    // judges its findings: what a WCAG criterion it maps reads (EARL).
-    merged.checkOutcome = worst(merged.ownOutcomes) || merged.outcome;
+    // judges its findings: what a WCAG criterion it maps reads (EARL). Only
+    // the scans of the WCAG version the result reports count: a rule judged
+    // by an earlier version (4.1.1 Parsing, which WCAG 2.2 drops) under a
+    // standard that keeps it is not a failure of the WCAG reported.
+    const ofReported = merged.ownOutcomes.filter((o) => o.wcagVersion === reportedWcag);
+    merged.checkOutcome =
+      worst((ofReported.length ? ofReported : merged.ownOutcomes).map((o) => o.outcome)) ||
+      merged.outcome;
     delete merged.ownOutcomes;
     // The severity is the highest any profile that fails or asks about the
     // rule gives it, whatever order the profiles were listed in, so a gate
