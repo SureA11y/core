@@ -1430,9 +1430,13 @@ function createAriaHelpers(opts, shared) {
     'aria-relevant',
     'aria-roledescription'
   ];
-  function hasGlobalAriaAttr(el) {
+  // Whether an element has a global ARIA attribute. With exceptDeprecated,
+  // the four WAI-ARIA 1.2 deprecates as globals (DEPRECATED_ATTRS) don't
+  // count, as Chromium doesn't count them for a role="none" element.
+  function hasGlobalAriaAttr(el, { exceptDeprecated = false } = {}) {
     if (!isElement(el)) return false;
     for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (exceptDeprecated && DEPRECATED_ATTRS.has(attr)) continue;
       if (dom.hasAttribute(el, attr)) return true;
     }
     return false;

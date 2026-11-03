@@ -906,12 +906,18 @@ export interface ScanResult {
   skippedPacks?: { name: string | null; reason: string }[];
   /**
    * A scan of several profiles only: per profile that ran, the WCAG version
-   * it was judged by, the standards it names, and the outcome of each of its
-   * rollups (rulesResults lists each rollup once).
+   * it was judged by, the WCAG level it targets (absent for a profile that
+   * targets none, such as WAI-ARIA's), the standards it names, and the
+   * outcome of each of its rollups (rulesResults lists each rollup once).
    */
   profiles?: Record<
     string,
-    { wcagVersion?: string; standards?: string[]; rulesResults: Record<string, Outcome> }
+    {
+      wcagVersion?: string;
+      wcagLevel?: string;
+      standards?: string[];
+      rulesResults: Record<string, Outcome>;
+    }
   >;
 }
 

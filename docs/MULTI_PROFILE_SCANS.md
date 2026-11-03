@@ -126,7 +126,7 @@ A scan of profiles A and B counts as a scan of one profile C with the rules of b
 
 ### Settled while building it
 
-- Each profile's section is `profiles[id]`: `{ wcagVersion, standards, rulesResults }`, its rollups' outcomes by id ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)).
+- Each profile's section is `profiles[id]`: `{ wcagVersion, wcagLevel, standards, rulesResults }` (`wcagLevel` only for a profile that targets a WCAG level), its rollups' outcomes by id ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#several-profiles)).
 - A check keeps the rule's own outcome as `checkOutcome`. EARL asserts a rule's WCAG criteria by it, so a standard's failure of a finding WCAG only asks about is never asserted as a WCAG failure; the HTML report shows each profile's verdict on the card and names every profile in its heading.
 - The catalog functions take the list as a scan does: `getChecksForRunOnly`, `getRulesForRunOnly`, `getRulesCatalog` and `getCheckDefById` list the rules, rollups and requirements of every profile the scan would run, leaving out a name no profile has, so the catalog lists what the scan returns.
 - The HTML report gives each version of a standard a table of its own, named by the version, when the scan judged the page by two (EN 301 549 V3.2.1 with V4.1.1); SARIF names every profile in the run's `properties.profiles`, and JUnit in a `profiles` property, comma-separated, beside `profile`, the first.

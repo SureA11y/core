@@ -197,3 +197,26 @@ test(`${RULE_ID}: an empty focusable heading with role="none" is still a heading
     maxOccurrences: 1
   });
 });
+
+// A global ARIA attribute keeps the role too, but not one of the four
+// WAI-ARIA 1.2 deprecates as globals: Chromium leaves the heading
+// presentational with aria-invalid, and a heading with aria-describedby.
+test(`${RULE_ID}: role="none" with only a deprecated global is presentational, with a real global a heading`, () => {
+  for (const attr of [
+    'aria-invalid="true"',
+    'aria-disabled="true"',
+    'aria-haspopup="true"',
+    'aria-errormessage="e"'
+  ]) {
+    const html = `<!doctype html><html><body><p id="e">x</p><h2 role="none" ${attr}></h2></body></html>`;
+    assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+  }
+  const kept = `<!doctype html><html><body><p id="e">x</p><h2 role="none" aria-describedby="e"></h2></body></html>`;
+  assertRule(runa11yCoreOnHtml(kept, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});
