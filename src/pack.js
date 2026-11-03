@@ -1818,6 +1818,10 @@ function packScript(packs) {
   const data = { ...catalog, i18n };
   delete data.impls;
   const key = engine.packs.slice().sort().join(',');
+  const packProfiles = (Array.isArray(packs) ? packs : [packs]).map((pack) => [
+    describePack(pack),
+    Object.keys((standardOf(pack) || {}).profiles || {})
+  ]);
   const script = [
     // The names as data: written as text, a line break in one would end the
     // comment and the rest would run.
@@ -1842,6 +1846,9 @@ function packScript(packs) {
     `  data.core = ${scriptJson(CORE_VERSION)};`,
     `  data.packs = ${scriptJson(engine.packs)};`,
     `  data.overrides = ${scriptJson(engine.overrides)};`,
+    // Each pack's own profiles, by name@version: a scan that names some of
+    // them, and so isn't run, tells their profiles from the others'.
+    `  data.packProfiles = ${scriptJson(packProfiles)};`,
     '  data.impls = {',
     impls.join(',\n'),
     '  };',
