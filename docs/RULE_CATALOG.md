@@ -1759,7 +1759,7 @@ automatic · WCAG 3.1.1 (A) · confidence high · default severity serious
 
 Checks that the default language of the page is programmatically declared.
 
-**Applies to.** Applies to HTML documents with a root &lt;html&gt; element. The rule evaluates the document element only and does not iterate over child nodes. Non-HTML documents or documents without a document element are not applicable.
+**Applies to.** Applies to HTML documents with a root &lt;html&gt; element. The rule evaluates the document element only and does not iterate over child nodes. Non-HTML documents or documents without a document element are not applicable. A document shown in a frame (an &lt;iframe&gt; or &lt;frame&gt; of another page) is not applicable: the page's language is the top document's.
 
 **Expectation.** The &lt;html&gt; element has a lang attribute. The lang attribute is not empty and its primary language subtag (the part before the first hyphen) is a registered language subtag, as ACT bf051a requires. A malformed later subtag (lang="fr-FR-!!") still identifies French, so it passes here; it is a markup validity error, not a missing language.
 
@@ -3022,7 +3022,7 @@ automatic · WCAG 2.4.2 (A) · confidence high · default severity serious
 
 Checks that the page includes a non-empty &lt;title&gt; element.
 
-**Applies to.** Applies to a run over a whole HTML document, one whose document element is &lt;html&gt;; an SVG document opened on its own is notApplicable. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: whether the page has a title is not a property any subtree can answer.
+**Applies to.** Applies to a run over a whole HTML document, one whose document element is &lt;html&gt;; an SVG document opened on its own is notApplicable. A run narrowed by contextSelector, or by engineOptions.fragment, is notApplicable: whether the page has a title is not a property any subtree can answer. A document shown in a frame (an &lt;iframe&gt; or &lt;frame&gt; of another page) is notApplicable too: it is no page of its own, and its frame is named by the &lt;iframe&gt; (iframe-name-present).
 
 **Expectation.** The document has a &lt;title&gt; element, and document.title with whitespace collapsed is non-empty. The element is looked for anywhere in the document, not only inside &lt;head&gt;: a &lt;title&gt; the parser leaves outside &lt;head&gt; is still the document title in every browser. Only an HTML-namespace &lt;title&gt; counts; the &lt;title&gt; of an inline &lt;svg&gt; names the graphic, so a page whose only &lt;title&gt; is inside an &lt;svg&gt; is missing its title element. Whether that title describes the page is page-title-patterns' question.
 
