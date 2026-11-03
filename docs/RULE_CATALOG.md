@@ -752,9 +752,9 @@ manual · no formal WCAG SC mapping · confidence medium · default severity min
 
 Checks that elements with role="text" contain no focusable descendant (link, button, form control, tabindex, iframe, or contenteditable).
 
-**Applies to.** Elements whose role attribute resolves to text: its first token naming a known role, matched in any case, is `text`, so `role="foo text"` and `role="TEXT"` count while `role="link text"` (a link) does not.
+**Applies to.** Elements whose role attribute has the token `text`, matched in any case, before any token naming a WAI-ARIA role, so `role="foo text"` and `role="TEXT"` count while `role="link text"` (a link) does not.
 
-**Expectation.** `role="text"` tells assistive technology to treat an element's whole subtree as a single unit of plain text (e.g. text visually split across multiple `<span>`s by styling). Per the WAI-ARIA Authoring Practices, this only makes sense when that subtree contains no focusable content: a focusable descendant inside a "this is just text" region is unreachable or confusing for keyboard/AT users.
+**Expectation.** `role="text"` names no WAI-ARIA role (neither WAI-ARIA 1.2 nor the 1.3 draft defines it; aria-roles-valid reports it), but some assistive technology has read it as asking to treat an element's whole subtree as a single unit of plain text (e.g. text visually split across multiple `<span>`s by styling). That only makes sense when the subtree contains no focusable content: a focusable descendant inside a "this is just text" region is unreachable or confusing for keyboard/AT users.
 
 **Reason codes.**
 

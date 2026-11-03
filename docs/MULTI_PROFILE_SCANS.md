@@ -15,7 +15,7 @@ None of it is a breaking change ([below](#no-breaking-changes)). [Order of work]
 
 Everything here ships in minor releases. A scan, a pack or a reporter written against 1.14 gives the same result after it:
 
-- **Removing the WAI-ARIA opt-in** removes nothing released: #345 is under `[Unreleased]` (1.14.2 is the latest release), so it leaves before 1.15 ships it.
+- **Removing the WAI-ARIA opt-in** removes nothing released: #345 was never released (it was under `[Unreleased]` while 1.14.2 was the latest release), and it left before 1.15.
 - **`outcome: 'fail'`** is a new value a rule map row may use. A pack that uses it asks for `core: '^1.15.0'`; a pack that doesn't is judged as before.
 - **Multi-profile scans** are asked for by a list, which no scan passes today. `profile: 'wcag22-aa'` gives exactly today's result: the same `outcome`s, rollups, `engine.profile` and gates. Only a list gets the new fields (`engine.profiles`, `engine.profilesNotRun`, the per-profile sections), and in a list's result `engine.profile` is still a string, the first profile listed, so code that reads it keeps working.
 - **The rules core adds** come in minors, as rules do now, each with its own reason codes. The WAI-ARIA-only cases go in the pack, so a WCAG scan gains no findings for them.
@@ -71,7 +71,7 @@ A standard pack, built with `ruleMappedStandard`:
 
 - **Requirements:** WAI-ARIA 1.2's author requirements, starting from the eight #345 has (name required, roles, required states, supported attributes, prohibited attributes, attribute values, owned elements, context roles), each with its title and URL. A requirement no rule checks in full is `partial: true`, so it never passes on part of what it asks.
 - **Rule map:** core's ARIA rules, by reason code, with what #345's `meta.verdicts` says today (MUST and MUST NOT give `fail`, SHOULD and what script decides give `cantTell`, a code the spec states no author requirement for is left out).
-- **Its own rules:** the WAI-ARIA cases with no WCAG impact (see [§1](#1-wai-aria-leaves-core)), starting with the name-required roles no rule covers: `table`, `tabpanel`, `treegrid`, `application`, `marquee`, and the DPUB and Graphics roles listed in [DESIGN_CHALLENGES.md](./DESIGN_CHALLENGES.md#five-aria-roles-that-require-an-accessible-name-have-no-rule-covering-them-at-all).
+- **Its own rules:** the WAI-ARIA cases with no WCAG impact (see [§1](#1-wai-aria-leaves-core)), starting with the name-required roles no WCAG scan checks: `table`, `tabpanel`, `treegrid`, `application` and `marquee`, which a variant of `aria-role-name-present` with `roles: 'all'` now checks, as [DESIGN_CHALLENGES.md](./DESIGN_CHALLENGES.md#five-aria-roles-that-require-an-accessible-name-had-no-rule-covering-them-at-all-now-checked-by-a-variant-not-by-wcag-scans) says.
 - **Profile:** `wai-aria-1.2`, which runs core's ARIA rules and the pack's, and nothing else.
 - **Coverage:** a statement of which requirements its rules check in full, in part, or not at all, built from an inventory of WAI-ARIA 1.2 against what is automatable.
 

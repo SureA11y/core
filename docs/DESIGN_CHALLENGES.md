@@ -31,7 +31,7 @@ None at the moment.
 
 ### A WAI-ARIA violation that leaves the WCAG question open: a verdict of its own in core, now WAI-ARIA as a standard in a pack
 
-**Decision as it stood:** an unnamed `role="grid"` breaks WAI-ARIA for certain, but whether it fails 4.1.2 depends on what the page shows, so its WCAG outcome is `cantTell`. Unreleased, core gave each finding a second verdict under WAI-ARIA, opt-in (`engineOptions.verdicts: ['wai-aria']`), with a table per reason code on 29 rules and eight WAI-ARIA rollups written into core.
+**Decision as it stood:** an unnamed `role="grid"` breaks WAI-ARIA for certain, but whether it fails 4.1.2 depends on what the page shows, so its WCAG outcome is `cantTell`. In work toward 1.15, never released, core gave each finding a second verdict under WAI-ARIA, opt-in (`engineOptions.verdicts: ['wai-aria']`), with a table per reason code on 29 rules and eight WAI-ARIA rollups written into core.
 
 **Why it was questioned:** it made WAI-ARIA a special case inside core, where every other standard is a profile. A scan could not evaluate WAI-ARIA alone, nor beside a pack's standard, and under a pack profile that ran part of the rules a WAI-ARIA rollup read `pass` on one of the twenty or so rules that check it.
 
@@ -67,7 +67,7 @@ None at the moment.
 
 **Decision (2026-10-18):** option 1, in both rules. A placeholder below its ratio fails when the page chose its colors: the `::placeholder` color, opacity or background, or the field's background, differ from the browser's own, which a scan reads from the same kind of field in a blank frame with the field's `color-scheme`. In the browser's own colors it is not reported (G148). Where whose colors they are can't be told, it is asked about (`cantTell`). Option 2 was not taken: `contrast-enhanced` fails at AAA what the page chose, as `contrast-minimum` does at AA.
 
-**Status:** resolved 2026-10-18 (unreleased; `CHANGELOG.md`).
+**Status:** resolved 2026-10-18, released in 1.14.0 (`CHANGELOG.md`).
 
 ### `label-in-name` left `aria-hidden` text out of the visible label, where ACT uses *visible* inner text, fixed
 
@@ -242,7 +242,7 @@ Then the remaining overstatement went too. `aria-allowed-role` declared SC 4.1.2
 
 **Decision (2026-08-19):** rewritten around the direction ACT actually asks for. Instead of a narrow "already-marked-decorative" selector, the rule now selects visible `img`/`canvas`/`svg` elements and asks whether each is *excluded* from the accessibility tree (`isIncludedInAccessibilityTree` for aria-hidden/inert; an explicit `role="none"`/`"presentation"` or `<img alt="">` not overridden by focusability, matching the same conflict-resolution convention already used by `svg-text-alternative-present.js`; an unlabeled `<svg>`'s implicit `graphics-document` role reusing that same file's `hasIntent` boundary; an unlabeled `<canvas>` with no explicit role). The noise-reduction concern is handled by ACT's own exception: an element is skipped entirely when any ancestor already has an author-supplied name (`aria-label`/`aria-labelledby`/`title`/`<label>`), the common real case of an icon-only button already named via `aria-label`, where whether the icon itself is decorative is moot. Two of ACT's own applicability carve-outs (an `<img>` mid-load/broken, a fully-transparent `<canvas>`) aren't decidable from a static scan and are accepted as a documented limitation (`docs/LIMITATIONS.md`) rather than chased further, a rare, low-cost false positive a reviewer dismisses at a glance.
 
-**Status:** resolved 2026-08-19. `e88epe` runs clean (0/20). **Later (2026-10-18, unreleased):** the exemption is narrower. An element is skipped only under an ancestor whose name stands for its content, one with a role named from content or with presentational children (a named button or link), not under any ancestor an author named.
+**Status:** resolved 2026-08-19. `e88epe` runs clean (0/20). **Later (2026-10-18, 1.14.0):** the exemption is narrower. An element is skipped only under an ancestor whose name stands for its content, one with a role named from content or with presentational children (a named button or link), not under any ancestor an author named.
 
 ### `label-in-name` had no exemption for icon-font glyphs or icon-standing-in characters, fixed
 
@@ -312,7 +312,7 @@ Two consequences, both accepted: the shared helper and its six rule-local copies
 
 **Decision (2026-08-19):** separate the two. A generated `ROLELESS_ELEMENTS` set (`audio`, `video`) makes "no role in any context" an answer rather than a shrug, and every non-global ARIA attribute on one of those is reported. `div`/`span` joined the context-free table as `generic`, whose supported set is empty, so `<div aria-expanded="true">` is now reported too; the attribute announces nothing there, a real defect rather than a spec technicality. Context-dependent elements (`<a>`, `<section>`, `<td>`, ...) are still skipped rather than guessed at; that restraint is what the second entry above is about.
 
-**Status:** resolved 2026-08-19. `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does. **Later (2026-10-22, unreleased):** two of the skipped context-dependent elements are judged: `<a href>` as a link, and `<td>` by its table's role (cell, or gridcell in a grid or treegrid), as HTML-AAM conditions it.
+**Status:** resolved 2026-08-19. `5c01ea` now runs clean against all 17 of ACT's examples, and the rule's header comment describes what it does. **Later (2026-10-22, 1.14.0):** two of the skipped context-dependent elements are judged: `<a href>` as a link, and `<td>` by its table's role (cell, or gridcell in a grid or treegrid), as HTML-AAM conditions it.
 
 ### `aria-required-children` uses "at least one acceptable owned role," where ACT requires every owned role to be acceptable
 

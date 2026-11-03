@@ -44,7 +44,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 |---|---|
 | [`PACKS.md`](./PACKS.md) | Your own rules, profiles, checklist or standard, from `surea11y-pack new` to publishing. |
 | [`RULE_AUTHORING.md`](./RULE_AUTHORING.md) | The rule contract, in full. |
-| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, with its test in [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js). |
+| [`RULE_TEMPLATE.md`](./RULE_TEMPLATE.md) | A rule to start from, [`RULE_TEMPLATE.js`](./RULE_TEMPLATE.js), with its test in [`RULE_TEMPLATE.test.js`](./RULE_TEMPLATE.test.js) ([`RULE_TEST_TEMPLATE.md`](./RULE_TEST_TEMPLATE.md)). |
 | [`RULE_TEST_AUTHORING.md`](./RULE_TEST_AUTHORING.md) | Testing a rule. |
 | [`RULE_HELPERS.md`](./RULE_HELPERS.md) | Every `ctx.helpers` function a rule can use. |
 | [`RULE_TAXONOMY.md`](./RULE_TAXONOMY.md) | How rules are categorized and split. |
@@ -59,6 +59,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | [`ACT_RULE_MAPPING.md`](./ACT_RULE_MAPPING.md) | Which W3C ACT rules the engine implements, how it scores on their test cases, and where it differs by design. |
 | [`ARIA_DEPRECATION.md`](./ARIA_DEPRECATION.md) | How deprecated ARIA roles and attributes are graded. |
 | [`DESIGN_CHALLENGES.md`](./DESIGN_CHALLENGES.md) | Open and settled design questions, each with the reasoning behind the call. |
+| [`MULTI_PROFILE_SCANS.md`](./MULTI_PROFILE_SCANS.md) | Why a scan can run several profiles at once, and WAI-ARIA as a standard in a pack: the design and what changed while building it. |
 | [`RELEASING.md`](./RELEASING.md) | The release checklist: version, changelog, finding identities, and publishing, and a patch from an earlier commit. |
 
 Project policies are at the repository root: [`CONTRIBUTING.md`](../CONTRIBUTING.md), [`GOVERNANCE.md`](../GOVERNANCE.md), [`SUPPORT.md`](../SUPPORT.md), [`SECURITY.md`](../SECURITY.md) and [`CHANGELOG.md`](../CHANGELOG.md).

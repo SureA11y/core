@@ -53,7 +53,7 @@ The pack works as generated: its tests pass, its rules lint clean, its examples 
 | `eslint.config.js` | Core's lint rules for rules. |
 | `requirements.js`, `rule-map.js` | Standard only: the requirements and the rules that check each. |
 | `procedures.js`, `tests/procedures.test.js` | Standard only: how a person assesses each requirement by hand, and a test that every requirement has a procedure for each of its facets. |
-| `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^1.14.0`), and eslint, jsdom and Playwright as development dependencies. |
+| `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^<version>`, such as `^1.15.0`), and eslint, jsdom and Playwright as development dependencies. |
 | `README.md`, `.gitignore` | The pack's own guide to these files, and what git leaves out. |
 
 Its README walks through each file. The rest of this guide explains the choices behind them.
@@ -263,7 +263,7 @@ A row can also send a rule's findings of one reason code elsewhere, with `reason
 }
 ```
 
-It fails the standard's requirement only: the check result's own outcome, and every WCAG rollup, stay as they were. List only the codes the standard states for certain; a code left out is judged by the rule's own outcome.
+It fails the standard's requirement only: the check result's own outcome, and every WCAG rollup, stay as they were. List only the codes the standard states for certain; a code left out is judged by the rule's own outcome. A pack that uses `outcome: 'fail'` needs core 1.15 or later, so its `core` range starts there (`'^1.15.0'`).
 
 A row can send findings by what they record as well, with `findings: [{ when, requirements, outcome }]`: `when` gives values that fields of a finding's `data.details` must equal, named by dotted path, and `requirements` and `outcome` work as in `reasonCodes`. A finding goes by the first entry it matches, else by its reason code, else by the row. So a standard can file one rule's failures under the test for their text size, though they share a reason code:
 

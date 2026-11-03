@@ -67,7 +67,7 @@ const record = {
 };
 ```
 
-`engine.profile` is present only when the profile you asked for applied; an unknown name, or a selection of your own that overrides it, leaves it out with a warning. A tool that offers profiles should check it rather than assume.
+`engine.profile` is present only when the profile you asked for applied; an unknown name, or a selection of your own that overrides it, leaves it out with a warning. A tool that offers profiles should check it rather than assume. A scan of several profiles (`profile: ['wcag22-aa', 'wai-aria-1.2']`) gives the first that ran as `engine.profile`, every one that ran in `engine.profiles` and those that didn't in `engine.profilesNotRun`: store `engine.profiles` too, and check `engine.profilesNotRun` ([Several profiles](./OUTPUT_SCHEMA.md#several-profiles)).
 
 ## 2. Running a scan
 
@@ -96,7 +96,7 @@ Results from jsdom and from a browser differ for rules that need a layout (`targ
 
 [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) is the reference.
 
-**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'section508'`, or a pack's) names a standard instead ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
+**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'section508'`, or a pack's) names a standard instead, and a list of them judges the page by each at once ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
 
 **Letting users pick checks.** Name the checks, and say the conformance target with `wcagVersion` and `wcagLevel`: they decide which criteria are reported without changing what runs. Version and level tags beside the rule ids would also drop named checks that carry no WCAG tag, such as best-practice or custom ones ([Which criteria a scan reports](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)).
 

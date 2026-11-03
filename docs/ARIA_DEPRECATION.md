@@ -46,6 +46,10 @@ isAuthorProhibitedRole(role)
   An element with no role at all (`<input type="file">`, `<video>`) supports
   them too, deprecated, so there they are `cantTell` as well
   (`ARIA_ATTR_DEPRECATED`), as on a `<div>`.
+  They also don't count as global attributes for presentational roles
+  conflict resolution (`hasGlobalAriaAttr(el, { exceptDeprecated: true })`,
+  used by `isPresentationalRoleIgnored`): an element with `role="none"` or
+  `role="presentation"` and only these stays presentational, as in Chromium.
 - `DEPRECATED_ROLES` = `directory`, the only role marked
   `[Deprecated in ARIA 1.2]`, superseded by `list`.
 - `AUTHOR_DISCOURAGED_ROLES` = `generic`, which §5.4 describes as "primarily
