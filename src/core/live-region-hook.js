@@ -202,7 +202,6 @@ const CONCRETE_ROLES = [
   'tablist',
   'tabpanel',
   'term',
-  'text',
   'textbox',
   'time',
   'timer',
