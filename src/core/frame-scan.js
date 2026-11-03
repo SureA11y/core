@@ -107,6 +107,18 @@ function isFrameShown(el) {
   return true;
 }
 
+// Whether a frame element, or an element around it, has aria-hidden="true".
+function isFrameAriaHidden(el) {
+  const dom = createSafeDom();
+  for (let node = el; node && dom.nodeType(node) === 1; node = dom.parentElement(node)) {
+    try {
+      const v = dom.getAttribute(node, 'aria-hidden');
+      if (v != null && String(v).trim().toLowerCase() === 'true') return true;
+    } catch {}
+  }
+  return false;
+}
+
 // A frame matching excludeSelectors, or inside an element that does, is
 // left out with its whole content, as excluded content is by every rule:
 // excluding a third-party embed (an ad slot, a video player) keeps its
@@ -276,7 +288,12 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
         {
           pageUrl: url,
           contextSelector: null,
-          engineOptions: engineOptionsForFrames(eo),
+          // A frame under aria-hidden="true", or in a document that is, is
+          // read as aria-hidden: what is seen still counts, names and roles
+          // don't.
+          engineOptions: isFrameAriaHidden(el)
+            ? { ...engineOptionsForFrames(eo), embeddedAriaHidden: true }
+            : engineOptionsForFrames(eo),
           runOnly: runOnly
         },
         frameWaitTime
@@ -333,6 +350,7 @@ module.exports = {
   engineOptionsForFrames,
   isFrameShown,
   isFrameExcluded,
+  isFrameAriaHidden,
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,

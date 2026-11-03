@@ -68,6 +68,9 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- A document shown in a frame was judged as a page of its own by `meta-viewport-zoom-enabled`, which failed a framed document's viewport meta though browsers ignore it, and by `meta-viewport-large`, `page-title-patterns`, `bypass-blocks-present`, `landmark-one-main`, `page-has-heading-one` and `region`, which asked of each frame what the page has. They are `notApplicable` there, as `page-title-present` and `html-lang-attr-present` are.
+- A frame under `aria-hidden="true"` was scanned as a page anyone's assistive technology reads, so its unnamed images and buttons failed. The new `engineOptions.embeddedAriaHidden` reads a document as under an aria-hidden ancestor, and `runa11yCoreAcrossFrames` sets it for such a frame: names and roles don't apply there, and contrast, focus and keyboard still do (`docs/ENGINE_OPTIONS.md`).
+- SARIF and JUnit gave a profile not run the reason of the first frame that listed it; they give every frame's.
 - A scan of several profiles (unreleased) gave a rule the severity of the first profile listed, so a gate on severity (`--fail-on-severity`, `failOnSeverity`) passed or failed by the order of the profiles when one gives the rule another severity. A rule's severity is now the highest any profile that fails or asks about it gives it, with the rule's own as `ruleSeverity` where that differs (`docs/OUTPUT_SCHEMA.md`).
 - In Node, a skipped pack that brings its profiles as a checklist (top-level `profiles`, no `standard`) gave its profile in a scan of several as `unknown-profile`; it is `pack-skipped`, as in a page and as a standard pack's.
 - EARL asserted a WCAG 2.2 criterion as failed when a profile of an earlier WCAG version beside it failed it: 4.1.1 Parsing, which EN 301 549 V3.2.1 keeps and WCAG 2.2 drops, for duplicate ids. A check's `checkOutcome` is now read from the scans of the WCAG version the result reports.

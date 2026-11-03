@@ -781,3 +781,45 @@ test('a profile name with characters it may not have is told so', () => {
   assert.match(problems('zed-a,b')[0], /may have only lowercase letters, digits, dots and hyphens/);
   assert.match(problems('foo-1')[0], /must start with "zed-"/);
 });
+
+test('a document embedded under aria-hidden is out of the accessibility tree, and still seen', () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1>' +
+    '<img src="a.png"><p style="color:#ccc;background:#fff">low</p></main></body></html>';
+  const fails = (engineOptions) =>
+    runa11yCoreOnHtml(html, { engineOptions })
+      .checksResults.filter((c) => c.outcome === 'fail')
+      .map((c) => c.ruleId);
+  assert.ok(fails({}).includes('img-alt-present'));
+  const hidden = fails({ embeddedAriaHidden: true });
+  assert.ok(!hidden.includes('img-alt-present'), 'a name is no rule of what is out of the tree');
+  assert.ok(hidden.includes('contrast-minimum'), 'what is seen is still judged');
+  const { isFrameAriaHidden } = require('../../src/core/frame-scan.js');
+  const { JSDOM } = require('jsdom');
+  const doc = new JSDOM(
+    '<div aria-hidden=" TRUE "><iframe id="a"></iframe></div><iframe id="b"></iframe>'
+  ).window.document;
+  assert.equal(isFrameAriaHidden(doc.getElementById('a')), true);
+  assert.equal(isFrameAriaHidden(doc.getElementById('b')), false);
+});
+
+test("SARIF and JUnit give every frame's reason for a profile not run", () => {
+  const { renderSarifReport } = require('../../src/sarif.js');
+  const { renderJunitReport } = require('../../src/junit.js');
+  const frame = (reason) => ({
+    engine: {
+      profile: 'wcag22-aa',
+      profiles: ['wcag22-aa'],
+      profilesNotRun: [{ profile: 'zed-1.0', reason }]
+    },
+    checksResults: [],
+    rulesResults: []
+  });
+  const tree = {
+    topFrame: frame('pack-skipped'),
+    frames: [{ url: 'f', topFrame: frame('unknown-profile'), frames: [] }]
+  };
+  const sarif = JSON.stringify(JSON.parse(renderSarifReport(tree)));
+  assert.match(sarif, /zed-1\.0/);
+  assert.match(renderJunitReport(tree), /not run: pack-skipped, unknown-profile/);
+});

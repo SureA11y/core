@@ -8,7 +8,8 @@
  * @summary Page content should be contained within a landmark region
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Applies to a page whose <body> has content: outside any landmark, an
+ *   Applies to a page of its own (not a document shown in a frame, which
+ *   sits in the top document's landmarks) whose <body> has content: outside any landmark, an
  *   element with text of its own or an aria-label, an <img>, <video>,
  *   <audio>, <canvas>, <object> or <embed>, or an <input> other than
  *   type="hidden"; or a landmark with anything in it. Live regions,
@@ -112,8 +113,10 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the page's landmarks are the top document's, and the frame sits in them.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }

@@ -11,7 +11,8 @@
  * @applicability
  *   Applies to <meta name="viewport"> elements whose content attribute sets
  *   maximum-scale or user-scalable. Content setting neither cannot restrict
- *   zoom.
+ *   zoom. A document shown in a frame is not applicable: browsers ignore its
+ *   viewport meta, and the page zooms as its top document says.
  * @expectation
  *   In the viewport meta tag in effect, the last one with content (an
  *   earlier one is replaced, and asked about if it restricts zoom):
@@ -76,8 +77,11 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: a browser ignores a framed document's viewport meta: the page zooms as its top document says.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {
