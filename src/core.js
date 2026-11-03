@@ -1964,9 +1964,32 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 // The standards a catalog entry names for these options, chosen exactly as for
 // a scan result: engineOptions.mappings, plus what a profile adds when it
 // would apply to this selection. With no options that is WCAG alone.
+// A list of profiles names the standards of each profile its scan applies
+// (catalogProfileRuns), as the merged result's mappings do.
 function catalogMappingTokens(engineOptions, runOnly) {
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
-  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+  const tokens = [];
+  for (const run of catalogProfileRuns(engineOptions, runOnly)) {
+    for (const token of resolveMappingSelection(run.eo, run.selection.profile || null).tokens) {
+      if (!tokens.includes(token)) tokens.push(token);
+    }
+  }
+  return tokens;
+}
+
+// The scans a scan with these options runs, each with its options and its
+// selection: one per profile engineOptions.profile lists (runProfiles), or
+// the one. A profile its scan doesn't apply in a scan of several (no such
+// profile, a runOnly that selects the rules instead) adds nothing to the
+// merged result, so it is left out; with none applied the merged result is
+// the first scan's, and so is the catalog's.
+function catalogProfileRuns(engineOptions, runOnly) {
+  const runs = profileOptionsOf(engineOptions).map((eo) => ({
+    eo,
+    selection: resolveEffectiveRunOnly(eo, runOnly)
+  }));
+  if (runs.length < 2) return runs;
+  const applied = runs.filter((r) => !r.selection.profileNotApplied);
+  return applied.length ? applied : runs.slice(0, 1);
 }
 
 function toCatalogEntry(r, engineOptions, mappingTokens) {
@@ -23961,6 +23984,38 @@ const profileListOf = (function profileListOf(profile) {
   }
   return out.length > 1 ? out : null;
 });
+const profileNamesOf = (function profileNamesOf(asked) {
+  const names = (Array.isArray(asked) ? asked : [])
+    .filter((p) => typeof p === 'string' && p.trim())
+    .map((p) => p.trim().toLowerCase());
+  return names.filter((p, i) => names.indexOf(p) === i);
+});
+const profileOptionsOf = (function profileOptionsOf(engineOptions) {
+  const asked =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  if (!Array.isArray(asked)) return [engineOptions];
+  const unique = profileNamesOf(asked);
+  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+});
+const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
+  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  if (!name) return false;
+  if (Array.isArray(declared) && declared.includes(name)) return true;
+  const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
+  for (const packName of Array.isArray(packNames) ? packNames : []) {
+    if (typeof packName !== 'string') continue;
+    let id = packName.trim().toLowerCase();
+    const at = id.lastIndexOf('@');
+    if (at > 0) id = id.slice(0, at);
+    const slash = id.indexOf('/');
+    const scope = id[0] === '@' && slash > 0 ? id.slice(1, slash) : '';
+    const base = slash >= 0 ? id.slice(slash + 1) : id;
+    const bare = base.replace(/^pack-/, '').replace(/-pack$/, '');
+    if ([scope, base, bare, bare.split('-')[0]].some(starts)) return true;
+  }
+  return false;
+});
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const asked =
@@ -23968,10 +24023,7 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
-    const names = asked
-      .filter((p) => typeof p === 'string' && p.trim())
-      .map((p) => p.trim().toLowerCase());
-    const unique = names.filter((p, i) => names.indexOf(p) === i);
+    const unique = profileNamesOf(asked);
     const ignored = asked.filter((p) => typeof p !== 'string');
     if (ignored.length) {
       try {
@@ -24058,15 +24110,16 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
-      const skipped =
-        r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
+      // A name no profile has is unknown-profile, unless the scan marked it
+      // as one a pack it skipped may have: a list with a typo beside a
+      // skipped pack's profile names the typo as such.
       const why = r.result && r.result.__profileNotApplied;
       notRun.push({
         profile: r.profile,
         reason:
           why === 'overridden'
             ? 'overridden-by-selection'
-            : skipped
+            : why === 'pack-skipped'
               ? 'pack-skipped'
               : 'unknown-profile'
       });
@@ -24395,10 +24448,10 @@ function getRulesCatalog(engineOptions) {
   // Data-only catalog. No i18n resolution yet (we can add later if needed).
   checkCatalogOptions(engineOptions, null);
   const tokens = catalogMappingTokens(engineOptions, null);
-  const selection = resolveEffectiveRunOnly(engineOptions, null);
+  const selections = catalogProfileRuns(engineOptions, null).map((r) => r.selection);
   const customDefs = catalogCustomDefs(engineOptions);
   return Array.isArray(COMPOSITE_RULES)
-    ? COMPOSITE_RULES.filter((x) => isCompositeListed(x, selection)).map((x) =>
+    ? COMPOSITE_RULES.filter((x) => selections.some((selection) => isCompositeListed(x, selection))).map((x) =>
         toCompositeCatalogEntry(x, tokens, customDefs)
       )
     : [];
@@ -24418,17 +24471,18 @@ function getCompositeRuleById(ruleId, engineOptions) {
 
 function getChecksForRunOnly(runOnly, engineOptions) {
   checkCatalogOptions(engineOptions, runOnly);
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
+  // A list of profiles lists the rules of each, as its scan runs them.
+  const runs = catalogProfileRuns(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
   // As in a scan, an override is selected wherever its built-in would be.
-  const selected = (r) =>
+  const selectedBy = (r, selection) =>
     ruleMatchesRunOnly(r, selection, ENGINE_TAG) ||
     (overridden.includes(r.ruleId) &&
       CHECK_DEFS.some((d) => d.ruleId === r.ruleId && ruleMatchesRunOnly(d, selection, ENGINE_TAG)));
-  const chosen = defs.filter(selected);
+  const chosen = defs.filter((r) => runs.some((run) => selectedBy(r, run.selection)));
   // A selection that cancels itself is said so, as a scan says it.
-  if (!chosen.length && defs.length) noteEmptySelection(selection, engineOptions);
+  if (!chosen.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
   return chosen.map((r) => toCatalogEntry(r, engineOptions, tokens));
 }
 
@@ -24437,12 +24491,29 @@ function getChecksForRunOnly(runOnly, engineOptions) {
 // checks. The scan's own rollup step works them out, over the rules
 // getChecksForRunOnly lists, so the list and the scan agree.
 function getRulesForRunOnly(runOnly, engineOptions) {
-  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   checkCatalogOptions(engineOptions, runOnly);
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
   const tokens = catalogMappingTokens(engineOptions, runOnly);
   const { defs, overridden } = catalogCheckDefs(engineOptions);
   const customDefs = catalogCustomDefs(engineOptions);
+  // A list of profiles reports the rollups of each, as its scan does.
+  const ids = new Set();
+  const runs = catalogProfileRuns(engineOptions, runOnly);
+  let empty = 0;
+  for (const run of runs) {
+    const rolled = rollupsForSelection(run.selection, run.eo, defs, overridden, customDefs);
+    if (!rolled.selected) empty++;
+    for (const id of rolled.ids) ids.add(id);
+  }
+  if (empty === runs.length && defs.length) noteEmptySelection(runs[0].selection, engineOptions);
+  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
+    toCompositeCatalogEntry(x, tokens, customDefs)
+  );
+}
+
+// The ids of the rollups one scan with this selection and these options
+// reports, and how many rules it selects.
+function rollupsForSelection(selection, engineOptions, defs, overridden, customDefs) {
+  const eo = engineOptions && typeof engineOptions === 'object' ? engineOptions : {};
   const selectedIds = new Set();
   const namedIds = new Set();
   const namedCriteria = new Map();
@@ -24456,7 +24527,6 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     const criteria = criteriaNamingRule(r, selection).concat(builtin ? criteriaNamingRule(builtin, selection) : []);
     if (criteria.length) namedCriteria.set(r.ruleId, criteria);
   }
-  if (!selectedIds.size && defs.length) noteEmptySelection(selection, engineOptions);
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
   const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
@@ -24472,10 +24542,7 @@ function getRulesForRunOnly(runOnly, engineOptions) {
     customDefs,
     { wcagVersion: targetWcagVersionOf(eo, selection), selectedIds, namedIds, namedCriteria }
   );
-  const ids = new Set(rolled.map((x) => x.ruleId));
-  return COMPOSITE_RULES.filter((x) => x && ids.has(x.id)).map((x) =>
-    toCompositeCatalogEntry(x, tokens, customDefs)
-  );
+  return { ids: rolled.map((x) => x.ruleId), selected: selectedIds.size };
 }
 
 function getTestsForRunOnly(runOnly, engineOptions) {
@@ -107532,9 +107599,32 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
 // The standards a catalog entry names for these options, chosen exactly as for
 // a scan result: engineOptions.mappings, plus what a profile adds when it
 // would apply to this selection. With no options that is WCAG alone.
+// A list of profiles names the standards of each profile its scan applies
+// (catalogProfileRuns), as the merged result's mappings do.
 function catalogMappingTokens(engineOptions, runOnly) {
-  const selection = resolveEffectiveRunOnly(engineOptions, runOnly);
-  return resolveMappingSelection(engineOptions, selection.profile || null).tokens;
+  const tokens = [];
+  for (const run of catalogProfileRuns(engineOptions, runOnly)) {
+    for (const token of resolveMappingSelection(run.eo, run.selection.profile || null).tokens) {
+      if (!tokens.includes(token)) tokens.push(token);
+    }
+  }
+  return tokens;
+}
+
+// The scans a scan with these options runs, each with its options and its
+// selection: one per profile engineOptions.profile lists (runProfiles), or
+// the one. A profile its scan doesn't apply in a scan of several (no such
+// profile, a runOnly that selects the rules instead) adds nothing to the
+// merged result, so it is left out; with none applied the merged result is
+// the first scan's, and so is the catalog's.
+function catalogProfileRuns(engineOptions, runOnly) {
+  const runs = profileOptionsOf(engineOptions).map((eo) => ({
+    eo,
+    selection: resolveEffectiveRunOnly(eo, runOnly)
+  }));
+  if (runs.length < 2) return runs;
+  const applied = runs.filter((r) => !r.selection.profileNotApplied);
+  return applied.length ? applied : runs.slice(0, 1);
 }
 
 function toCatalogEntry(r, engineOptions, mappingTokens) {
@@ -129529,6 +129619,38 @@ const profileListOf = (function profileListOf(profile) {
   }
   return out.length > 1 ? out : null;
 });
+const profileNamesOf = (function profileNamesOf(asked) {
+  const names = (Array.isArray(asked) ? asked : [])
+    .filter((p) => typeof p === 'string' && p.trim())
+    .map((p) => p.trim().toLowerCase());
+  return names.filter((p, i) => names.indexOf(p) === i);
+});
+const profileOptionsOf = (function profileOptionsOf(engineOptions) {
+  const asked =
+    engineOptions && typeof engineOptions === 'object' ? engineOptions.profile : undefined;
+  if (!Array.isArray(asked)) return [engineOptions];
+  const unique = profileNamesOf(asked);
+  if (!unique.length) return [Object.assign({}, engineOptions, { profile: undefined })];
+  return unique.map((p) => Object.assign({}, engineOptions, { profile: p }));
+});
+const mayBeSkippedPackProfile = (function mayBeSkippedPackProfile(profile, packNames, declared) {
+  const name = typeof profile === 'string' ? profile.trim().toLowerCase() : '';
+  if (!name) return false;
+  if (Array.isArray(declared) && declared.includes(name)) return true;
+  const starts = (prefix) => !!prefix && (name === prefix || name.indexOf(prefix + '-') === 0);
+  for (const packName of Array.isArray(packNames) ? packNames : []) {
+    if (typeof packName !== 'string') continue;
+    let id = packName.trim().toLowerCase();
+    const at = id.lastIndexOf('@');
+    if (at > 0) id = id.slice(0, at);
+    const slash = id.indexOf('/');
+    const scope = id[0] === '@' && slash > 0 ? id.slice(1, slash) : '';
+    const base = slash >= 0 ? id.slice(slash + 1) : id;
+    const bare = base.replace(/^pack-/, '').replace(/-pack$/, '');
+    if ([scope, base, bare, bare.split('-')[0]].some(starts)) return true;
+  }
+  return false;
+});
 const runProfiles = (function runProfiles(engineOptions, run) {
   const thenable = (v) => !!v && typeof v.then === 'function';
   const asked =
@@ -129536,10 +129658,7 @@ const runProfiles = (function runProfiles(engineOptions, run) {
   if (Array.isArray(asked)) {
     // Names are matched without case, as a single profile's are: one asked
     // twice in two cases runs once.
-    const names = asked
-      .filter((p) => typeof p === 'string' && p.trim())
-      .map((p) => p.trim().toLowerCase());
-    const unique = names.filter((p, i) => names.indexOf(p) === i);
+    const unique = profileNamesOf(asked);
     const ignored = asked.filter((p) => typeof p !== 'string');
     if (ignored.length) {
       try {
@@ -129626,15 +129745,16 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
       typeof applied === 'string' && applied.toLowerCase() === String(r.profile).toLowerCase();
     if (r.result && typeof r.result === 'object' && same) ran.push(r);
     else {
-      const skipped =
-        r.result && Array.isArray(r.result.skippedPacks) && r.result.skippedPacks.length;
+      // A name no profile has is unknown-profile, unless the scan marked it
+      // as one a pack it skipped may have: a list with a typo beside a
+      // skipped pack's profile names the typo as such.
       const why = r.result && r.result.__profileNotApplied;
       notRun.push({
         profile: r.profile,
         reason:
           why === 'overridden'
             ? 'overridden-by-selection'
-            : skipped
+            : why === 'pack-skipped'
               ? 'pack-skipped'
               : 'unknown-profile'
       });
@@ -129897,15 +130017,29 @@ const noteProfileNotApplied = (function noteProfileNotApplied(result, reason) {
             skippedPacks: named.map((name) => ({ name: name, reason: packProblem }))
           })
         : r;
+    // The profiles the skipped packs declare, where a packScript in the
+    // page registered them in some other set: those not built in.
+    const declared = [];
+    const sets = packRegistry && typeof packRegistry === 'object' ? packRegistry : {};
+    for (const key of Object.keys(sets)) {
+      const entry = sets[key];
+      if (!entry || !Array.isArray(entry.packs) || !entry.packs.some((n) => named.includes(n))) continue;
+      for (const name of Object.keys(entry.profileTags || {})) {
+        if (Object.prototype.hasOwnProperty.call(BUILT_IN_CATALOG.profileTags || {}, name)) continue;
+        if (!declared.includes(name.toLowerCase())) declared.push(name.toLowerCase());
+      }
+    }
     // Each profile scanned as without the packs (a list of them too), each
     // result naming the packs skipped, so a scan of several says which of
-    // its profiles did not run because of them.
+    // its profiles did not run because of them: one a skipped pack may
+    // have, and not any name no profile has.
     return runProfiles(withoutPacks, (eo) => {
       const selection = resolveEffectiveRunOnly(eo, runOnly);
       const one = runCore(pageUrl, contextSelector, eo, selection, CHECK_DEFS, RULE_IMPLS, ENGINE_TAG, SCHEMA_VERSION, COMPOSITE_RULES);
+      const why = selection && selection.profileNotApplied;
       return noteProfileNotApplied(
         isThenable(one) ? one.then(note) : note(one),
-        selection && selection.profileNotApplied
+        why === 'unknown' && mayBeSkippedPackProfile(eo && eo.profile, named, declared) ? 'pack-skipped' : why
       );
     });
   }

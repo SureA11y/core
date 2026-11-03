@@ -836,3 +836,18 @@ test("renderSarifReport: no wcag- tag names a criterion outside the scan's level
   old.engine = { ...old.engine, wcagVersion: '2.2', wcagLevel: 'AA' };
   assert.deepStrictEqual(wcagTags(parse(renderSarifReport(old)), 'contrast-enhanced'), []);
 });
+
+test('renderSarifReport: a scan of several profiles names them all in the run properties', () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.engine = {
+    ...result.engine,
+    profile: 'wcag22-aa',
+    profiles: ['wcag22-aa', 'en301549-v4.1.1']
+  };
+  const props = parse(renderSarifReport(result)).runs[0].properties;
+  assert.strictEqual(props.profile, 'wcag22-aa');
+  assert.deepStrictEqual(props.profiles, ['wcag22-aa', 'en301549-v4.1.1']);
+  // One profile: profile alone, as before.
+  delete result.engine.profiles;
+  assert.strictEqual(parse(renderSarifReport(result)).runs[0].properties.profiles, undefined);
+});

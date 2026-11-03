@@ -591,7 +591,9 @@ function renderManualChecks(left, rollups, standard, ui) {
   <p class="note">${esc(ui.tr('report_manualChecks_worksheet'))}</p>`;
 }
 
-function renderStandardRollup(standard, results, ui, headingId) {
+// `version` names the standard's version in each row, for a table that is
+// one of several versions of it.
+function renderStandardRollup(standard, results, ui, headingId, version) {
   const OUTCOME_INFO = ui.outcomeInfo;
   const titleLang = standard.titleLang ? ` lang="${esc(standard.titleLang)}"` : '';
   const byCriterion = (r) =>
@@ -619,7 +621,7 @@ function renderStandardRollup(standard, results, ui, headingId) {
         na: ui.num(metrics.notApplicableCount)
       });
       return `<tr>
-            <td class="sc-cell">${esc(standard.standard)} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
+            <td class="sc-cell">${esc(standard.standard)}${version ? ` ${esc(version)}` : ''} ${esc(byCriterion(rule))}${tests.length ? `<br><span class="note">${tests.map(esc).join(', ')}</span>` : ''}</td>
             <td${titleLang}>${esc(rule.title || rule.ruleId)}</td>
             <td>${chip}</td>
             <td class="note">${esc(metricsLabel)}${partlyCheckedNote(details, ui)}</td>
@@ -979,12 +981,31 @@ function renderHtmlReport(input, options = {}) {
   const ownStandard = (r) =>
     (r && r.meta && standards.find((s) => s.standard === r.meta.standard)) || null;
   const rulesResults = allRollups.filter((r) => !ownStandard(r));
-  const standardRollups = standards
-    .map((standard) => ({
+  // One table per standard, and per version of it where the scan judged
+  // the page by several (a scan of two of its profiles): each version's
+  // clauses are the same numbers, and one table would list each twice with
+  // nothing to tell them apart.
+  const versionOfRollup = (r) => {
+    const details = r && r.data && r.data.details;
+    if (details && typeof details.version === 'string' && details.version) return details.version;
+    const mapping = ((r && r.meta && r.meta.normativeMappings) || []).find(
+      (m) => m && typeof m.version === 'string' && m.version
+    );
+    return mapping ? mapping.version : '';
+  };
+  const standardRollups = standards.flatMap((standard) => {
+    const results = allRollups.filter((r) => ownStandard(r) === standard);
+    const versions = Array.from(new Set(results.map(versionOfRollup)));
+    if (versions.length < 2) return results.length ? [{ standard, results }] : [];
+    const known = Array.isArray(standard.versions) ? standard.versions : [];
+    const at = (v) => (known.includes(v) ? known.indexOf(v) : known.length);
+    versions.sort((a, b) => at(a) - at(b) || a.localeCompare(b, undefined, { numeric: true }));
+    return versions.map((version) => ({
       standard,
-      results: allRollups.filter((r) => ownStandard(r) === standard)
-    }))
-    .filter((s) => s.results.length);
+      version,
+      results: results.filter((r) => versionOfRollup(r) === version)
+    }));
+  });
   const OUTCOME_INFO = ui.outcomeInfo;
   // What the scan leaves to a person, in Node, unless asked not to.
   const left =
@@ -1168,9 +1189,9 @@ function renderHtmlReport(input, options = {}) {
   ${renderWcagRollup(rulesResults, standards, ui)}
 ${standardRollups
   .map(
-    ({ standard, results }, i) => `
-  <h2 id="standard-rollup-${i}">${esc(ui.tr('report_heading_standardRollup', { standard: standard.standard }))}</h2>
-  ${renderStandardRollup(standard, results, ui, `standard-rollup-${i}`)}
+    ({ standard, version, results }, i) => `
+  <h2 id="standard-rollup-${i}">${esc(ui.tr('report_heading_standardRollup', { standard: version ? `${standard.standard} ${version}` : standard.standard }))}</h2>
+  ${renderStandardRollup(standard, results, ui, `standard-rollup-${i}`, version)}
 `
   )
   .join('')}

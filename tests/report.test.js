@@ -907,3 +907,35 @@ test('renderHtmlReport: with no failure, the report says that is not a conforman
     /Aucune règle n’a échoué, ce qui ne signifie pas que la page est conforme/
   );
 });
+
+test("renderHtmlReport: two versions of a standard's rollups get a table each, naming the version", () => {
+  const result = makeScanResult([makeCheckResult({})]);
+  result.standards = [{ key: 'acme', standard: 'Acme Standard' }];
+  const rollup = (version, criterion) => ({
+    ruleId: `acme-${version}-${criterion}`,
+    title: 'Images have a text alternative',
+    outcome: 'fail',
+    meta: {
+      standard: 'Acme Standard',
+      normativeMappings: [{ standard: 'Acme Standard', version, requirement: criterion }]
+    },
+    data: { details: { standard: 'Acme Standard', version, criterion, checksIds: [] } }
+  });
+  result.rulesResults = [rollup('V4', '1.1'), rollup('V3', '1.1'), rollup('V3', '1.2')];
+  const report = renderHtmlReport(result);
+  const headings = report.match(/<h2 id="standard-rollup-\d+">[^<]*/g).map((h) => h.split('>')[1]);
+  assert.deepStrictEqual(headings, ['Acme Standard V3 rollup', 'Acme Standard V4 rollup']);
+  const cells = (i) =>
+    report
+      .split(`id="standard-rollup-${i}"`)[1]
+      .split('<h2')[0]
+      .match(/<td class="sc-cell">[^<]*/g)
+      .map((td) => td.split('>')[1]);
+  assert.deepStrictEqual(cells(0), ['Acme Standard V3 1.1', 'Acme Standard V3 1.2']);
+  assert.deepStrictEqual(cells(1), ['Acme Standard V4 1.1']);
+  // One version: one table, as before.
+  result.rulesResults = [rollup('V3', '1.1')];
+  const one = renderHtmlReport(result);
+  assert.match(one, /<h2 id="standard-rollup-0">Acme Standard rollup<\/h2>/);
+  assert.match(one, /<td class="sc-cell">Acme Standard 1\.1/);
+});

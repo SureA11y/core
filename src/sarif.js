@@ -257,7 +257,8 @@ function addLineHashes(results) {
 }
 
 // The conformance target a run used, so a dashboard can tell a WCAG 2.1 run
-// from a 2.2 one, and an AA one from one at every level, the opt-in rules it
+// from a 2.2 one, and an AA one from one at every level, the profile it
+// scanned (or the profiles, of a scan of several), the opt-in rules it
 // added beyond that target, and the conditions the page was rendered under,
 // which layout-dependent results depend on. Absent on results from releases
 // that predate the fields.
@@ -267,6 +268,9 @@ function runProperties(result) {
   if (engine.wcagVersion) props.wcagVersion = engine.wcagVersion;
   if (engine.wcagLevel) props.wcagLevel = engine.wcagLevel;
   if (engine.profile) props.profile = engine.profile;
+  // A scan of several profiles names them all; profile is the first.
+  if (Array.isArray(engine.profiles) && engine.profiles.length)
+    props.profiles = engine.profiles.slice();
   if (Array.isArray(engine.optInRules) && engine.optInRules.length)
     props.optInRules = engine.optInRules.slice();
   if (engine.environment && typeof engine.environment === 'object')

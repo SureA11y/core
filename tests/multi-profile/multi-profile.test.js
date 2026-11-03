@@ -339,3 +339,185 @@ test('the HTML report names a profile asked for and not run', () => {
   const r = scan({ profile: ['wcag22-aa', 'nope-1.0'] });
   assert.match(renderHtmlReport(r), /<b>nope-1\.0<\/b>not run/);
 });
+
+// The catalog of a scan of several profiles lists what that scan runs
+// (docs/BUILDING_ON_CORE.md): the rules and rollups of each profile, and the
+// requirements of each profile's standard.
+test('the catalog of a list of profiles is what a scan of them runs', () => {
+  const core = require('../../src/index.js');
+  const ids = (list) => list.map((x) => x.ruleId || x.id).sort();
+  for (const profile of [
+    ['wcag22-aa', 'names-1.0'],
+    ['Names-1.0 ', 'wcag22-aa', 'nope'],
+    ['nope', 'names-1.0']
+  ]) {
+    const eo = { packs: [pack], profile };
+    const r = scan({ profile });
+    assert.deepEqual(
+      ids(core.getChecksForRunOnly(undefined, eo)),
+      ids(r.checksResults),
+      JSON.stringify(profile)
+    );
+    assert.deepEqual(
+      ids(core.getRulesForRunOnly(undefined, eo)),
+      ids(r.rulesResults),
+      JSON.stringify(profile)
+    );
+    const standards = (list) => Array.from(new Set(list.map((m) => m.standard))).sort();
+    assert.deepEqual(
+      standards(core.getCheckDefById('aria-role-name-present', eo).normativeMappings),
+      standards(check(r, 'aria-role-name-present').meta.normativeMappings),
+      JSON.stringify(profile)
+    );
+  }
+  // Each profile's own rules and rollups are in it.
+  const both = { packs: [pack], ...BOTH };
+  const listed = ids(core.getRulesForRunOnly(undefined, both));
+  assert.ok(listed.some((id) => /^names/.test(id)));
+  assert.ok(listed.some((id) => /^wcag-/.test(id)));
+  assert.ok(ids(core.getRulesCatalog(both)).some((id) => /^names/.test(id)));
+  assert.ok(
+    !ids(core.getRulesCatalog({ packs: [pack], profile: 'wcag22-aa' })).some((id) =>
+      /^names/.test(id)
+    )
+  );
+});
+
+test('in a page, a name no skipped pack may have is an unknown profile', (t) => {
+  const { JSDOM } = require('jsdom');
+  const main = require('../../src/index.js');
+  const { packScript } = require('../../src/pack.js');
+  const inPage = (engineOptions) => {
+    const dom = new JSDOM(PAGE, { url: 'https://example.test/', pretendToBeVisual: true });
+    global.window = dom.window;
+    global.document = dom.window.document;
+    const warn = console.warn;
+    console.warn = () => {};
+    try {
+      return main.runa11yCoreInPage('https://example.test/', null, engineOptions);
+    } finally {
+      console.warn = warn;
+      dom.window.close();
+    }
+  };
+  // The scans above registered their packs in this process, as a page does.
+  const KEY = Symbol.for('surea11y.packs');
+  const saved = globalThis[KEY];
+  delete globalThis[KEY];
+  t.after(() => {
+    delete globalThis[KEY];
+    if (saved) Object.defineProperty(globalThis, KEY, { value: saved, configurable: true });
+  });
+  // Not registered: its namespace is all there is to go by.
+  const r = inPage({ packs: ['names-pack@1.0.0'], profile: ['nope', 'wcag22-aa', 'names-1.0'] });
+  assert.deepEqual(r.engine.profiles, ['wcag22-aa']);
+  assert.deepEqual(r.engine.profilesNotRun, [
+    { profile: 'nope', reason: 'unknown-profile' },
+    { profile: 'names-1.0', reason: 'pack-skipped' }
+  ]);
+  // Registered in another set: the profiles it declares.
+  const zed = definePack({
+    name: '@acme/policy',
+    version: '1.0.0',
+    namespace: 'zed',
+    core: '*',
+    profiles: { 'zed-1.0': { tags: ['wcag2a'] } },
+    rollups: [{ id: 'zed-1', title: 'One', checksIds: ['img-alt-present'] }]
+  });
+  new Function(packScript([zed]))();
+  try {
+    const skipped = inPage({
+      packs: ['@acme/policy@1.0.0', 'names-pack@1.0.0'],
+      profile: ['wcag22-aa', 'zed-1.0', 'other-1.0']
+    });
+    assert.deepEqual(skipped.engine.profilesNotRun, [
+      { profile: 'zed-1.0', reason: 'pack-skipped' },
+      { profile: 'other-1.0', reason: 'unknown-profile' }
+    ]);
+  } finally {
+    delete globalThis[KEY];
+  }
+});
+
+test('the HTML report gives each version of a standard its own table', () => {
+  const { renderHtmlReport } = require('../../src/report.js');
+  const versions = ['1.0', '2.0'];
+  const two = ruleMappedStandard({
+    standard: 'Versioned Standard',
+    tag: 'vers',
+    versions: versions.map((version) => ({ version, wcagVersion: '2.2' })),
+    requirements: Object.fromEntries(
+      versions.map((v) => [v, { N1: { title: 'Roles that require a name have one', wcagSc: [] } }])
+    ),
+    ruleMap: Object.fromEntries(
+      versions.map((v) => [
+        v,
+        {
+          'aria-role-name-present': {
+            requirements: ['N1'],
+            reasonCodes: { name_missing: { outcome: 'fail' } }
+          }
+        }
+      ])
+    )
+  });
+  const versioned = definePack({
+    name: 'vers-pack',
+    version: '1.0.0',
+    namespace: 'vers',
+    core: '*',
+    standard: {
+      key: 'vers',
+      standard: 'Versioned Standard',
+      versions,
+      profiles: Object.fromEntries(
+        versions.map((v) => [`vers-${v}`, { version: v, tags: ['vers'], mappedRules: true }])
+      ),
+      ruleTag: 'vers',
+      ruleMapped: true,
+      mappingsFor: two.mappingsFor,
+      composites: two.composites,
+      validate: two.validate
+    }
+  });
+  const run = (profile) =>
+    runa11yCoreOnHtml(PAGE, { engineOptions: { packs: [versioned], profile } });
+  const headings = (html) =>
+    (html.match(/<h2 id="standard-rollup-\d+">[^<]*<\/h2>/g) || []).map((h) =>
+      h.replace(/<[^>]+>/g, '')
+    );
+  const rowsOf = (html, i) =>
+    (
+      html
+        .split(`id="standard-rollup-${i}"`)[1]
+        .split('<h2')[0]
+        .match(/<td class="sc-cell">[^<]*/g) || []
+    ).map((td) => td.replace('<td class="sc-cell">', ''));
+  const both = renderHtmlReport(run(['vers-2.0', 'vers-1.0']));
+  assert.deepEqual(headings(both), [
+    'Versioned Standard 1.0 rollup',
+    'Versioned Standard 2.0 rollup'
+  ]);
+  assert.deepEqual(rowsOf(both, 0), ['Versioned Standard 1.0 N1']);
+  assert.deepEqual(rowsOf(both, 1), ['Versioned Standard 2.0 N1']);
+  // One version is one table, as before.
+  const one = renderHtmlReport(run('vers-1.0'));
+  assert.deepEqual(headings(one), ['Versioned Standard rollup']);
+  assert.deepEqual(rowsOf(one, 0), ['Versioned Standard N1']);
+});
+
+test('SARIF and JUnit name every profile of a scan of several', () => {
+  const { renderSarifReport } = require('../../src/sarif.js');
+  const { renderJunitReport } = require('../../src/junit.js');
+  const r = scan({ profile: ['wcag22-aa', 'names-1.0'] });
+  const props = JSON.parse(renderSarifReport(r)).runs[0].properties;
+  assert.equal(props.profile, 'wcag22-aa');
+  assert.deepEqual(props.profiles, ['wcag22-aa', 'names-1.0']);
+  const junit = renderJunitReport(r);
+  assert.match(junit, /<property name="profile" value="wcag22-aa"\/>/);
+  assert.match(junit, /<property name="profiles" value="wcag22-aa,names-1\.0"\/>/);
+  // One profile is named as before, with no list.
+  const one = scan({ profile: 'wcag22-aa' });
+  assert.equal(JSON.parse(renderSarifReport(one)).runs[0].properties.profiles, undefined);
+  assert.doesNotMatch(renderJunitReport(one), /name="profiles"/);
+});

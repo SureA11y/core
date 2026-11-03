@@ -400,6 +400,8 @@ function frameSuites(result, frame, baseline, opts, totals) {
     ['schemaVersion', engine.schemaVersion],
     ['wcagVersion', engine.wcagVersion],
     ['profile', engine.profile],
+    // A scan of several profiles names them all; profile is the first.
+    ['profiles', Array.isArray(engine.profiles) ? engine.profiles.join(',') : null],
     ['optInRules', Array.isArray(engine.optInRules) ? engine.optInRules.join(',') : null],
     ...environmentProperties(engine.environment),
     ['locale', engine.locale && engine.locale.resolved],
