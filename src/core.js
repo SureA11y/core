@@ -11947,9 +11947,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-relevant',
     'aria-roledescription'
   ];
-  function hasGlobalAriaAttr(el) {
+  // Whether an element has a global ARIA attribute. With exceptDeprecated,
+  // the four WAI-ARIA 1.2 deprecates as globals (DEPRECATED_ATTRS) don't
+  // count, as Chromium doesn't count them for a role="none" element.
+  function hasGlobalAriaAttr(el, { exceptDeprecated = false } = {}) {
     if (!isElement(el)) return false;
     for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (exceptDeprecated && DEPRECATED_ATTRS.has(attr)) continue;
       if (dom.hasAttribute(el, attr)) return true;
     }
     return false;
@@ -18527,12 +18531,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Whether an element's role="none" or "presentation" is ignored, as
   // WAI-ARIA's presentational roles conflict resolution has browsers do when
   // the element is focusable or carries a global ARIA attribute: it keeps
-  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  // its implicit role then (an <h1> stays a heading). Chromium does both,
+  // but doesn't count the four attributes WAI-ARIA 1.2 deprecates as
+  // globals (aria-disabled, aria-errormessage, aria-haspopup,
+  // aria-invalid): with only those, the element stays presentational.
   function isPresentationalRoleIgnored(el) {
     if (!isElement(el)) return false;
     const explicit = aria.getExplicitRole(el);
     if (explicit !== 'none' && explicit !== 'presentation') return false;
-    if (aria.hasGlobalAriaAttr(el)) return true;
+    if (aria.hasGlobalAriaAttr(el, { exceptDeprecated: true })) return true;
     return getFocusableInfo(el).focusable;
   }
 
@@ -24219,6 +24226,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
 
   const checks = new Map(); // ruleId -> merged check
   const occurrenceMaps = new Map(); // ruleId -> Map(key -> merged occurrence)
+  // The WCAG version the result reports, the highest of the profiles'.
+  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
+  let reportedWcag;
+  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  for (const r of targetingRuns.length ? targetingRuns : ran) {
+    const v = r.result.engine && r.result.engine.wcagVersion;
+    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
+  }
+  // Which occurrences took what a question needs from a scan of the WCAG
+  // version reported: that scan's text wins, in any order of the profiles.
+  const textOfReported = new WeakSet();
   for (const r of ran) {
     for (const check of Array.isArray(r.result.checksResults) ? r.result.checksResults : []) {
       if (!check || !check.ruleId) continue;
@@ -24250,17 +24268,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
         const nth = seenHere.get(base) || 0;
         seenHere.set(base, nth + 1);
         const key = base + '#' + nth;
+        const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
           m = Object.assign({}, o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
+          if (ofReported) textOfReported.add(m);
         } else {
           // What a question needs to be answered, from whichever profile
-          // asks it: the same whatever order the profiles were listed in.
+          // asks it, a scan of the WCAG version reported first ("WCAG 2.2
+          // removed the criterion", not 2.0's errata): the same whatever
+          // order the profiles were listed in.
+          const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (m[field] === undefined && o[field] !== undefined) m[field] = o[field];
+            if (o[field] === undefined) continue;
+            if (m[field] === undefined || replace) m[field] = o[field];
           }
+          if (ofReported) textOfReported.add(m);
         }
         m.verdicts[r.profile] = verdicts[i] || check.outcome;
       });
@@ -24292,14 +24317,6 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
           : check.outcome;
     }
-  }
-  // The WCAG version the result reports, the highest of the profiles'.
-  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
-  let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
-  for (const r of targetingRuns.length ? targetingRuns : ran) {
-    const v = r.result.engine && r.result.engine.wcagVersion;
-    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
   }
   const checksResults = [];
   for (const merged of checks.values()) {
@@ -24358,8 +24375,11 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     }
     const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
     const engine = r.result.engine || {};
+    // wcagLevel only for a profile that targets WCAG: one that doesn't
+    // (WAI-ARIA's) carries core's default version, which judges nothing.
     profiles[r.profile] = Object.assign(
       { wcagVersion: engine.wcagVersion },
+      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
       { rulesResults: outcomes }
     );
@@ -117737,9 +117757,13 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     'aria-relevant',
     'aria-roledescription'
   ];
-  function hasGlobalAriaAttr(el) {
+  // Whether an element has a global ARIA attribute. With exceptDeprecated,
+  // the four WAI-ARIA 1.2 deprecates as globals (DEPRECATED_ATTRS) don't
+  // count, as Chromium doesn't count them for a role="none" element.
+  function hasGlobalAriaAttr(el, { exceptDeprecated = false } = {}) {
     if (!isElement(el)) return false;
     for (const attr of GLOBAL_ARIA_ATTRS) {
+      if (exceptDeprecated && DEPRECATED_ATTRS.has(attr)) continue;
       if (dom.hasAttribute(el, attr)) return true;
     }
     return false;
@@ -124317,12 +124341,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Whether an element's role="none" or "presentation" is ignored, as
   // WAI-ARIA's presentational roles conflict resolution has browsers do when
   // the element is focusable or carries a global ARIA attribute: it keeps
-  // its implicit role then (an <h1> stays a heading). Chromium does both.
+  // its implicit role then (an <h1> stays a heading). Chromium does both,
+  // but doesn't count the four attributes WAI-ARIA 1.2 deprecates as
+  // globals (aria-disabled, aria-errormessage, aria-haspopup,
+  // aria-invalid): with only those, the element stays presentational.
   function isPresentationalRoleIgnored(el) {
     if (!isElement(el)) return false;
     const explicit = aria.getExplicitRole(el);
     if (explicit !== 'none' && explicit !== 'presentation') return false;
-    if (aria.hasGlobalAriaAttr(el)) return true;
+    if (aria.hasGlobalAriaAttr(el, { exceptDeprecated: true })) return true;
     return getFocusableInfo(el).focusable;
   }
 
@@ -130009,6 +130036,17 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
 
   const checks = new Map(); // ruleId -> merged check
   const occurrenceMaps = new Map(); // ruleId -> Map(key -> merged occurrence)
+  // The WCAG version the result reports, the highest of the profiles'.
+  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
+  let reportedWcag;
+  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
+  for (const r of targetingRuns.length ? targetingRuns : ran) {
+    const v = r.result.engine && r.result.engine.wcagVersion;
+    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
+  }
+  // Which occurrences took what a question needs from a scan of the WCAG
+  // version reported: that scan's text wins, in any order of the profiles.
+  const textOfReported = new WeakSet();
   for (const r of ran) {
     for (const check of Array.isArray(r.result.checksResults) ? r.result.checksResults : []) {
       if (!check || !check.ruleId) continue;
@@ -130040,17 +130078,24 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
         const nth = seenHere.get(base) || 0;
         seenHere.set(base, nth + 1);
         const key = base + '#' + nth;
+        const ofReported = !!r.result.engine && r.result.engine.wcagVersion === reportedWcag;
         let m = byKey.get(key);
         if (!m) {
           m = Object.assign({}, o, { verdicts: {} });
           byKey.set(key, m);
           merged.occurrences.push(m);
+          if (ofReported) textOfReported.add(m);
         } else {
           // What a question needs to be answered, from whichever profile
-          // asks it: the same whatever order the profiles were listed in.
+          // asks it, a scan of the WCAG version reported first ("WCAG 2.2
+          // removed the criterion", not 2.0's errata): the same whatever
+          // order the profiles were listed in.
+          const replace = ofReported && !textOfReported.has(m);
           for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
-            if (m[field] === undefined && o[field] !== undefined) m[field] = o[field];
+            if (o[field] === undefined) continue;
+            if (m[field] === undefined || replace) m[field] = o[field];
           }
+          if (ofReported) textOfReported.add(m);
         }
         m.verdicts[r.profile] = verdicts[i] || check.outcome;
       });
@@ -130082,14 +130127,6 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
           ? worst(verdicts.filter((v) => v !== 'notApplicable')) || 'pass'
           : check.outcome;
     }
-  }
-  // The WCAG version the result reports, the highest of the profiles'.
-  const WCAG_ORDER = ['2.0', '2.1', '2.2'];
-  let reportedWcag;
-  const targetingRuns = ran.filter((r) => r.result.engine && r.result.engine.wcagLevel);
-  for (const r of targetingRuns.length ? targetingRuns : ran) {
-    const v = r.result.engine && r.result.engine.wcagVersion;
-    if (WCAG_ORDER.indexOf(v) > WCAG_ORDER.indexOf(reportedWcag)) reportedWcag = v;
   }
   const checksResults = [];
   for (const merged of checks.values()) {
@@ -130148,8 +130185,11 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     }
     const standards = Array.isArray(r.result.standards) ? r.result.standards : [];
     const engine = r.result.engine || {};
+    // wcagLevel only for a profile that targets WCAG: one that doesn't
+    // (WAI-ARIA's) carries core's default version, which judges nothing.
     profiles[r.profile] = Object.assign(
       { wcagVersion: engine.wcagVersion },
+      engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
       { rulesResults: outcomes }
     );

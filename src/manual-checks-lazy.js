@@ -76,8 +76,10 @@ function scopeOf(result, packs, levels, profileId) {
     Object.prototype.hasOwnProperty.call(result.profiles, profileId)
       ? result.profiles[profileId]
       : null;
+  // A profile that targets no WCAG level (WAI-ARIA's) is read at the
+  // version the scan reports, not core's default it carries.
   const version =
-    own && typeof own.wcagVersion === 'string'
+    own && typeof own.wcagVersion === 'string' && own.wcagLevel
       ? own.wcagVersion
       : typeof engine.wcagVersion === 'string'
         ? engine.wcagVersion

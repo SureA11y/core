@@ -873,3 +873,28 @@ test("SARIF and JUnit give every frame's reason for a profile not run", () => {
   assert.match(sarif, /zed-1\.0/);
   assert.match(renderJunitReport(tree), /not run: pack-skipped, unknown-profile/);
 });
+
+test("the question a finding asks is the reported WCAG version's, in any order of the profiles", () => {
+  const page = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="d1">a</div><div id="d1">b</div></main></body></html>`;
+  const occ = (profile) =>
+    check(runa11yCoreOnHtml(page, { engineOptions: { profile } }), 'duplicate-id').occurrences[0];
+  const ab = occ(['section508', 'wcag22-aa']);
+  const ba = occ(['wcag22-aa', 'section508']);
+  assert.match(ab.lean.why, /WCAG 2\.2/);
+  for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
+    assert.deepEqual(ab[field], ba[field], field);
+  }
+});
+
+test("a profile that targets no WCAG level adds no WCAG version of its own to the report's manual checks", () => {
+  const { renderHtmlReport } = require('../../src/report.js');
+  const r = scan({ profile: ['section508', 'names-1.0'] });
+  assert.equal(r.engine.wcagVersion, '2.0');
+  assert.equal(r.profiles.section508.wcagLevel, 'AA');
+  assert.equal(r.profiles['names-1.0'].wcagLevel, undefined);
+  const intros = [...renderHtmlReport(r, {}).matchAll(/<p class="manual-intro">([\s\S]*?)<\/p>/g)]
+    .map((m) => m[1].replace(/<[^>]+>/g, ''))
+    .join(' ');
+  assert.match(intros, /of WCAG 2\.0/);
+  assert.doesNotMatch(intros, /of WCAG 2\.2/);
+});
