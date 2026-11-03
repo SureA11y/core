@@ -12391,6 +12391,8 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     embeddedAriaHidden: T.boolean,
+    embeddedInert: T.boolean,
+    topLevelDocument: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -12784,6 +12786,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // aria-hidden="true", so every element is read as under an aria-hidden
   // ancestor, out of the accessibility tree but for what overrides that.
   const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
+  // engineOptions.embeddedInert: the document is shown in a frame under
+  // [inert], so every element is read as inert content is.
+  const embeddedInert = !!(opts && opts.embeddedInert === true);
+  // engineOptions.topLevelDocument: whether the document is a page of its
+  // own, whatever window it is in (see isTopLevelDocument()); null detects it.
+  const topLevelDocumentOption =
+    opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -13397,6 +13406,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
+    if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
@@ -19869,7 +19879,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (an <iframe> or <frame> of another page): a page's title and language
   // are the top document's, and a frame is named by its <iframe>. Comparing
   // windows works across origins; a window that can't be read is a frame.
+  // engineOptions.topLevelDocument says it instead, for a page a test runner
+  // shows in a frame of its own.
   function isTopLevelDocument() {
+    if (topLevelDocumentOption !== null) return topLevelDocumentOption;
     const win = realmWindow;
     if (!win) return true;
     try {
@@ -22253,6 +22266,11 @@ const runCoreSettled = (function runCoreSettled(
     embeddedAriaHidden: !!(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
+    embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    topLevelDocument:
+      engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
+        ? engineOptionsResolved.topLevelDocument
+        : null,
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
@@ -118163,6 +118181,8 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeShadowDom: T.boolean,
     fragment: T.boolean,
     embeddedAriaHidden: T.boolean,
+    embeddedInert: T.boolean,
+    topLevelDocument: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -118556,6 +118576,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // aria-hidden="true", so every element is read as under an aria-hidden
   // ancestor, out of the accessibility tree but for what overrides that.
   const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
+  // engineOptions.embeddedInert: the document is shown in a frame under
+  // [inert], so every element is read as inert content is.
+  const embeddedInert = !!(opts && opts.embeddedInert === true);
+  // engineOptions.topLevelDocument: whether the document is a page of its
+  // own, whatever window it is in (see isTopLevelDocument()); null detects it.
+  const topLevelDocumentOption =
+    opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -119169,6 +119196,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
+    if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
@@ -125641,7 +125669,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (an <iframe> or <frame> of another page): a page's title and language
   // are the top document's, and a frame is named by its <iframe>. Comparing
   // windows works across origins; a window that can't be read is a frame.
+  // engineOptions.topLevelDocument says it instead, for a page a test runner
+  // shows in a frame of its own.
   function isTopLevelDocument() {
+    if (topLevelDocumentOption !== null) return topLevelDocumentOption;
     const win = realmWindow;
     if (!win) return true;
     try {
@@ -128025,6 +128056,11 @@ const runCoreSettled = (function runCoreSettled(
     embeddedAriaHidden: !!(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
+    embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    topLevelDocument:
+      engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
+        ? engineOptionsResolved.topLevelDocument
+        : null,
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
@@ -131240,7 +131276,7 @@ const resolveContextRoots = (function resolveContextRoots(document, contextSelec
   return { ctxSelector, roots, unmatchedSelectors };
 });
 
-function findChildFrameElements(roots) {
+function findChildFrameElements(roots, includeShadowDom) {
   const dom = createSafeDom();
   const seen = new Set();
   const out = [];
@@ -131271,7 +131307,7 @@ function findChildFrameElements(roots) {
     }
     for (const el of all) {
       if (isFrame(el)) add(el);
-      const shadow = dom.shadowRoot(el);
+      const shadow = includeShadowDom === false ? null : dom.shadowRoot(el);
       if (shadow) queue.push(shadow);
     }
   }
@@ -131303,17 +131339,36 @@ function isFrameShown(el) {
 
 function isFrameExcluded(el, excludeSelectors) {
   const dom = createSafeDom();
+  const chain = frameAncestors(el);
   for (const selector of normalizeSelectorList(excludeSelectors)) {
     try {
-      if (dom.closest(el, selector)) return true;
+      if (chain.some((node) => dom.matches(node, selector))) return true;
     } catch {}
   }
   return false;
 }
 
+function frameAncestors(el) {
+  const dom = createSafeDom();
+  const out = [];
+  let node = el;
+  while (node) {
+    if (dom.nodeType(node) === 1) out.push(node);
+    let next;
+    try {
+      next = (dom.nodeType(node) === 1 && dom.assignedSlot(node)) || dom.parentNode(node);
+    } catch {
+      next = null;
+    }
+    if (next && dom.nodeType(next) === 11) next = dom.host(next) || null;
+    node = next;
+  }
+  return out;
+}
+
 function isFrameAriaHidden(el) {
   const dom = createSafeDom();
-  for (let node = el; node && dom.nodeType(node) === 1; node = dom.parentElement(node)) {
+  for (const node of frameAncestors(el)) {
     try {
       const v = dom.getAttribute(node, 'aria-hidden');
       if (v != null && String(v).trim().toLowerCase() === 'true') return true;
@@ -131322,14 +131377,54 @@ function isFrameAriaHidden(el) {
   return false;
 }
 
+function isFrameInert(el) {
+  const dom = createSafeDom();
+  for (const node of frameAncestors(el)) {
+    try {
+      if (dom.hasAttribute(node, 'inert')) return true;
+    } catch {}
+  }
+  return false;
+}
+
+function isFrameBehindModal(el) {
+  const dom = createSafeDom();
+  const modals = [];
+  const visit = (root) => {
+    let dialogs = [];
+    try {
+      dialogs = dom.querySelectorAll(root, 'dialog');
+    } catch {}
+    for (const d of dialogs) {
+      try {
+        if (dom.matches(d, ':modal')) modals.push(d);
+      } catch {}
+    }
+    let all = [];
+    try {
+      all = dom.querySelectorAll(root, '*');
+    } catch {}
+    for (const n of all) {
+      const shadow = dom.shadowRoot(n);
+      if (shadow) visit(shadow);
+    }
+  };
+  const doc = dom.ownerDocument(el);
+  if (!doc) return false;
+  visit(doc);
+  if (!modals.length) return false;
+  const chain = frameAncestors(el);
+  return !modals.some((d) => chain.indexOf(d) !== -1);
+}
+
 function getFrameElementSelector(el) {
   const dom = createSafeDom();
-  const doc = dom.ownerDocument(el);
+  const root = (dom.get(el, 'getRootNode') && dom.getRootNode(el)) || dom.ownerDocument(el);
   const uniqueId = (node) => {
     const id = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'id') : null;
     if (!id || !/^[A-Za-z_][\w-]*$/.test(id)) return null;
     try {
-      return dom.querySelectorAll(doc, '#' + id).length === 1 ? '#' + id : null;
+      return dom.querySelectorAll(root, '#' + id).length === 1 ? '#' + id : null;
     } catch {
       return null;
     }
@@ -131368,10 +131463,19 @@ function describeFrameElement(el) {
   let title = dom.get(el, 'getAttribute') ? dom.getAttribute(el, 'title') : null;
   title = typeof title === 'string' && title.trim() ? title.trim() : null;
   let selector = null;
+  const hosts = [];
   try {
     selector = getFrameElementSelector(el) || null;
+    let root = dom.getRootNode(el);
+    while (root && dom.nodeType(root) === 11 && dom.host(root)) {
+      const host = dom.host(root);
+      hosts.unshift(getFrameElementSelector(host));
+      root = dom.getRootNode(host);
+    }
   } catch {}
-  return { selector: selector, title: title };
+  return hosts.length
+    ? { selector: selector, shadowHostSelectors: hosts, title: title }
+    : { selector: selector, title: title };
 }
 
 function getFrameElementUrl(el) {
@@ -131412,16 +131516,18 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
   const frameWaitTime = typeof eo.frameWaitTime === 'number' ? eo.frameWaitTime : undefined;
 
   const { roots } = resolveContextRoots(document, contextSelector);
-  const frameElements = findChildFrameElements(roots).filter(
+  const frameElements = findChildFrameElements(roots, eo.includeShadowDom).filter(
     (el) =>
-      (eo.includeHiddenElements === true || isFrameShown(el)) &&
+      (eo.includeHiddenElements === true || (isFrameShown(el) && !isFrameBehindModal(el))) &&
       !isFrameExcluded(el, eo.excludeSelectors)
   );
 
   const framePromises = frameElements.map(function (el) {
     const described = describeFrameElement(el);
     return scanFrame(el).then(function (entry) {
-      const out = { url: entry.url, selector: described.selector, title: described.title };
+      const out = { url: entry.url, selector: described.selector };
+      if (described.shadowHostSelectors) out.shadowHostSelectors = described.shadowHostSelectors;
+      out.title = described.title;
       for (const key of Object.keys(entry)) if (key !== 'url') out[key] = entry[key];
       return out;
     });
@@ -131455,10 +131561,10 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           contextSelector: null,
           // A frame under aria-hidden="true", or in a document that is, is
           // read as aria-hidden: what is seen still counts, names and roles
-          // don't.
-          engineOptions: isFrameAriaHidden(el)
-            ? { ...engineOptionsForFrames(eo), embeddedAriaHidden: true }
-            : engineOptionsForFrames(eo),
+          // don't. One under [inert] is read as inert content: only how it
+          // looks counts. A frame is no page of its own whatever this
+          // document is (topLevelDocument).
+          engineOptions: frameRunOptions(el),
           runOnly: runOnly
         },
         frameWaitTime
@@ -131470,6 +131576,14 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
           return { url: url, error: String(err && err.message ? err.message : err) };
         });
     });
+  }
+
+  function frameRunOptions(el) {
+    const out = { ...engineOptionsForFrames(eo) };
+    delete out.topLevelDocument;
+    if (isFrameAriaHidden(el)) out.embeddedAriaHidden = true;
+    if (isFrameInert(el)) out.embeddedInert = true;
+    return out;
   }
 
   return Promise.all(framePromises).then(function (frames) {

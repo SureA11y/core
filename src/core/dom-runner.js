@@ -2052,6 +2052,11 @@ function runCoreSettled(
     embeddedAriaHidden: !!(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
+    embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    topLevelDocument:
+      engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
+        ? engineOptionsResolved.topLevelDocument
+        : null,
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)

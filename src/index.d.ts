@@ -116,6 +116,19 @@ export interface EngineOptionFields {
    * seen and operated (contrast, focus, keyboard) still do.
    */
   embeddedAriaHidden?: boolean;
+  /**
+   * The document is shown in a frame under [inert]: its content is read as
+   * inert content is, out of the accessibility tree and taking no focus, so
+   * only rules about how it looks judge it.
+   */
+  embeddedInert?: boolean;
+  /**
+   * Whether the document is a page of its own. Unset, a document shown in a
+   * frame is not, and rules about the page (its title, language, main
+   * landmark, …) don't apply to it. A test runner that shows the page under
+   * test in a frame of its own sets it to true.
+   */
+  topLevelDocument?: boolean;
   excludeSelectors?: StringList;
   /**
    * The text of style sheets the page can't read (another origin's), by their
@@ -931,6 +944,12 @@ export interface ScannedFrame {
    * result carries it; optional so objects built for earlier versions still fit.
    */
   selector?: string | null;
+  /**
+   * For a frame element in a shadow root: `selector` holds in that root, and
+   * these are the selectors of the shadow hosts leading to it from the
+   * document, outermost first. Absent otherwise.
+   */
+  shadowHostSelectors?: string[];
   /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
   title?: string | null;
   topFrame: ScanResult;
@@ -945,6 +964,12 @@ export interface UnreachableFrame {
    * result carries it; optional so objects built for earlier versions still fit.
    */
   selector?: string | null;
+  /**
+   * For a frame element in a shadow root: `selector` holds in that root, and
+   * these are the selectors of the shadow hosts leading to it from the
+   * document, outermost first. Absent otherwise.
+   */
+  shadowHostSelectors?: string[];
   /** The frame element's title attribute, or null. Every result carries it; optional as selector. */
   title?: string | null;
   error: string;

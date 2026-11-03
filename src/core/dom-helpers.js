@@ -285,6 +285,13 @@ function createDomHelpers(opts) {
   // aria-hidden="true", so every element is read as under an aria-hidden
   // ancestor, out of the accessibility tree but for what overrides that.
   const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
+  // engineOptions.embeddedInert: the document is shown in a frame under
+  // [inert], so every element is read as inert content is.
+  const embeddedInert = !!(opts && opts.embeddedInert === true);
+  // engineOptions.topLevelDocument: whether the document is a page of its
+  // own, whatever window it is in (see isTopLevelDocument()); null detects it.
+  const topLevelDocumentOption =
+    opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -898,6 +905,7 @@ function createDomHelpers(opts) {
 
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
+    if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
@@ -7370,7 +7378,10 @@ function createDomHelpers(opts) {
   // (an <iframe> or <frame> of another page): a page's title and language
   // are the top document's, and a frame is named by its <iframe>. Comparing
   // windows works across origins; a window that can't be read is a frame.
+  // engineOptions.topLevelDocument says it instead, for a page a test runner
+  // shows in a frame of its own.
   function isTopLevelDocument() {
+    if (topLevelDocumentOption !== null) return topLevelDocumentOption;
     const win = realmWindow;
     if (!win) return true;
     try {
