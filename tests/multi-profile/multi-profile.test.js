@@ -726,3 +726,58 @@ test('in a page, an item of the packs list that is no name is left out, and the 
   assert.equal(r.engine.profilesNotRun, undefined);
   assert.ok(warnings.some((w) => /1 item is not a pack name/.test(w)));
 });
+
+test('the WCAG a scan reports is that of its profiles that target WCAG', () => {
+  const r = runa11yCoreOnHtml(PAGE, {
+    engineOptions: { packs: [pack], profile: ['section508', 'names-1.0'] }
+  });
+  // names-1.0 has no WCAG level of its own, and carries core's default 2.2.
+  assert.equal(r.engine.wcagVersion, '2.0');
+  assert.equal(r.engine.wcagLevel, 'AA');
+});
+
+test('a custom rule one profile ran is not skipped by the scan of several', () => {
+  const merged = mergeProfileResults([
+    {
+      profile: 'a',
+      result: {
+        engine: { profile: 'a' },
+        checksResults: [],
+        rulesResults: [],
+        skippedCustomRules: [
+          { id: 'org-x', reason: 'excluded by the selection.', excluded: true },
+          { id: 'org-bad', reason: 'invalid meta' }
+        ]
+      }
+    },
+    {
+      profile: 'b',
+      result: {
+        engine: { profile: 'b' },
+        checksResults: [],
+        rulesResults: [],
+        skippedCustomRules: [{ id: 'org-bad', reason: 'invalid meta' }]
+      }
+    }
+  ]);
+  assert.deepEqual(
+    merged.skippedCustomRules.map((r) => r.id),
+    ['org-bad']
+  );
+});
+
+test('a profile name with characters it may not have is told so', () => {
+  const { checkPack } = require('../../src/pack.js');
+  const problems = (name) => {
+    const r = checkPack({
+      name: 'p',
+      version: '1.0.0',
+      namespace: 'zed',
+      core: '*',
+      profiles: { [name]: { tags: ['wcag2a'] } }
+    });
+    return (r.problems || r).filter((x) => /profile name/.test(x));
+  };
+  assert.match(problems('zed-a,b')[0], /may have only lowercase letters, digits, dots and hyphens/);
+  assert.match(problems('foo-1')[0], /must start with "zed-"/);
+});

@@ -121,7 +121,7 @@ A scan of profiles A and B counts as a scan of one profile C with the rules of b
 - Each pack keeps its `core` range. A pack outside it is skipped, with the reason in `skippedPacks`, and the other profiles still run.
 - A profile asked for and not run (its pack skipped, or no such profile) is listed in `engine.profilesNotRun`, with the reason. A scan that ran fewer profiles than it was asked to has counted less than C, so SARIF, JUnit and the CLI treat it as an error by default, with an option to allow it. This applies to a list only: a scan of one profile behaves as it does today.
 - Two versions of one standard may run together, EN 301 549 V3.2.1 with V4.1.1, as may two standards built on different WCAG versions, `section508` (2.0) with `wcag22-aa`: useful while moving from one to the other, and nothing special to the mechanism.
-- Profile ids can't collide: each starts with its pack's namespace, and two packs in one scan can't share one (the first by name runs, the other is skipped, as today). A profile of the skipped pack is in `engine.profilesNotRun`.
+- Profile ids can't collide: each starts with its pack's namespace, and two packs in one scan can't share one (the first by name runs, the other is skipped, as today). A profile of the skipped pack is in `engine.profilesNotRun`, but for an EN 301 549 profile, which core still has built in (deprecated, until 2.0.0) and runs without its pack.
 - `engine` records what produced the result: core's version (`engine.version`), each pack's name and version (`engine.packs`) and each profile's id (`engine.profiles`); `profiles` has each one's WCAG version and the standards it names. A profile's own version is in its id (`wai-aria-1.2`).
 
 ### Settled while building it
