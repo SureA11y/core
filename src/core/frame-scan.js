@@ -182,8 +182,28 @@ function isFrameBehindModal(el) {
   if (!doc) return false;
   visit(doc);
   if (!modals.length) return false;
+  // With several open, only the topmost is reachable: the others are inert
+  // under it. The browser hit-tests none of an inert dialog, so the topmost
+  // is the one a point at its centre lands in. When that tells none apart
+  // (no layout), every open one counts.
+  const view = dom.defaultView(doc);
+  const top = modals.filter((d) => {
+    try {
+      const r = dom.getBoundingClientRect(d);
+      if (!r || !r.width || !r.height) return false;
+      const x = Math.min(Math.max(r.left + r.width / 2, 0), ((view && view.innerWidth) || 1) - 1);
+      const y = Math.min(Math.max(r.top + r.height / 2, 0), ((view && view.innerHeight) || 1) - 1);
+      const hit = dom.elementFromPoint(doc, x, y);
+      if (!hit) return false;
+      const shadow = dom.shadowRoot(hit);
+      return hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d));
+    } catch {
+      return false;
+    }
+  });
+  const reachable = top.length ? top : modals;
   const chain = frameAncestors(el);
-  return !modals.some((d) => chain.indexOf(d) !== -1);
+  return !reachable.some((d) => chain.indexOf(d) !== -1);
 }
 
 // A frame matching excludeSelectors, or inside an element that does, is

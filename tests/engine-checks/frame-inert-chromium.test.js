@@ -70,5 +70,18 @@ test(
         []
       );
     });
+    await t.test('in a modal dialog under another, topmost one', async () => {
+      const page = (frameIn) =>
+        `<dialog id="lower">${frameIn === 'lower' ? `<iframe title="x" srcdoc="${CHILD}"></iframe>` : '<p>Lower</p>'}</dialog>` +
+        `<dialog id="upper">${frameIn === 'upper' ? `<iframe title="x" srcdoc="${CHILD}"></iframe>` : '<p>Upper</p>'}</dialog>`;
+      const open = () => {
+        document.getElementById('lower').showModal();
+        document.getElementById('upper').showModal();
+      };
+      // Only the topmost modal is reachable: the lower one's frame is left out.
+      assert.deepEqual(await frameOutcomes(page('lower'), open), []);
+      // The topmost one's frame is scanned, as any.
+      assert.ok((await frameOutcomes(page('upper'), open)).length > 0);
+    });
   }
 );
