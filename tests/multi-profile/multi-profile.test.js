@@ -892,9 +892,10 @@ test("a profile that targets no WCAG level adds no WCAG version of its own to th
   assert.equal(r.engine.wcagVersion, '2.0');
   assert.equal(r.profiles.section508.wcagLevel, 'AA');
   assert.equal(r.profiles['names-1.0'].wcagLevel, undefined);
+  // The intro says which standard each part is of, outside its markup.
   const intros = [...renderHtmlReport(r, {}).matchAll(/<p class="manual-intro">([\s\S]*?)<\/p>/g)]
-    .map((m) => m[1].replace(/<[^>]+>/g, ''))
+    .map((m) => m[1])
     .join(' ');
-  assert.match(intros, /of WCAG 2\.0/);
-  assert.doesNotMatch(intros, /of WCAG 2\.2/);
+  assert.match(intros, /requirements of WCAG 2\.0 /);
+  assert.doesNotMatch(intros, /requirements of WCAG 2\.2 /);
 });
