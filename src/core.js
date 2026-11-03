@@ -12390,6 +12390,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
+    embeddedAriaHidden: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -12779,6 +12780,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // own), regardless of whether document.documentElement happens to be in
   // scope. See isWholeDocumentScope() below.
   const fragment = !!(opts && opts.fragment === true);
+  // engineOptions.embeddedAriaHidden: the document is shown in a frame under
+  // aria-hidden="true", so every element is read as under an aria-hidden
+  // ancestor, out of the accessibility tree but for what overrides that.
+  const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -15960,7 +15965,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     // 4) ARIA subtree hiding with exceptions with exceptions
-    let ariaHidden = false;
+    let ariaHidden = embeddedAriaHidden;
     for (const a of chain) {
       if (!isElement(a)) continue;
       const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
@@ -22245,6 +22250,9 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    embeddedAriaHidden: !!(
+      engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
+    ),
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
@@ -64040,6 +64048,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: (function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
@@ -80914,6 +80923,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: (function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
@@ -85699,7 +85709,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
     "meta-viewport-zoom-enabled": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -85825,7 +85837,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   );
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
     "meter-name-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -88332,6 +88346,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: (function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
@@ -88678,7 +88693,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
 }), applicability: (function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
     "page-title-present": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -89952,6 +89969,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   };
 }), applicability: (function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }) },
@@ -118144,6 +118162,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     includeHiddenElements: T.boolean,
     includeShadowDom: T.boolean,
     fragment: T.boolean,
+    embeddedAriaHidden: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -118533,6 +118552,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // own), regardless of whether document.documentElement happens to be in
   // scope. See isWholeDocumentScope() below.
   const fragment = !!(opts && opts.fragment === true);
+  // engineOptions.embeddedAriaHidden: the document is shown in a frame under
+  // aria-hidden="true", so every element is read as under an aria-hidden
+  // ancestor, out of the accessibility tree but for what overrides that.
+  const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -121714,7 +121737,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     // 4) ARIA subtree hiding with exceptions with exceptions
-    let ariaHidden = false;
+    let ariaHidden = embeddedAriaHidden;
     for (const a of chain) {
       if (!isElement(a)) continue;
       const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');
@@ -127999,6 +128022,9 @@ const runCoreSettled = (function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    embeddedAriaHidden: !!(
+      engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
+    ),
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)
@@ -131285,6 +131311,17 @@ function isFrameExcluded(el, excludeSelectors) {
   return false;
 }
 
+function isFrameAriaHidden(el) {
+  const dom = createSafeDom();
+  for (let node = el; node && dom.nodeType(node) === 1; node = dom.parentElement(node)) {
+    try {
+      const v = dom.getAttribute(node, 'aria-hidden');
+      if (v != null && String(v).trim().toLowerCase() === 'true') return true;
+    } catch {}
+  }
+  return false;
+}
+
 function getFrameElementSelector(el) {
   const dom = createSafeDom();
   const doc = dom.ownerDocument(el);
@@ -131416,7 +131453,12 @@ function runa11yCoreAcrossFrames(pageUrl, contextSelector, engineOptions, runOnl
         {
           pageUrl: url,
           contextSelector: null,
-          engineOptions: engineOptionsForFrames(eo),
+          // A frame under aria-hidden="true", or in a document that is, is
+          // read as aria-hidden: what is seen still counts, names and roles
+          // don't.
+          engineOptions: isFrameAriaHidden(el)
+            ? { ...engineOptionsForFrames(eo), embeddedAriaHidden: true }
+            : engineOptionsForFrames(eo),
           runOnly: runOnly
         },
         frameWaitTime

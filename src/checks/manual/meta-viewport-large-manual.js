@@ -9,7 +9,8 @@
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
  *   Applies to <meta name="viewport"> elements that carry a non-empty
- *   content attribute.
+ *   content attribute, in a page of its own: browsers ignore one in a
+ *   document shown in a frame.
  * @expectation
  *   The content attribute does not block zoom with user-scalable, and does
  *   not set maximum-scale below 5 (500%), read as browsers read it, the same
@@ -60,8 +61,12 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: a browser ignores its
+// viewport meta.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {

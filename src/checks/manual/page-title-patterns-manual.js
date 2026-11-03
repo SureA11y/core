@@ -10,7 +10,8 @@
  * @sc 2.4.2
  * @applicability
  *   Applies to a run over a whole document whose <title> resolves to
- *   non-empty text. The title element is the first HTML <title> anywhere in
+ *   non-empty text, and that is a page of its own: a document shown in a
+ *   frame is not applicable, as its frame is named by its <iframe>. The title element is the first HTML <title> anywhere in
  *   the document, as for document.title, so one the parser left in <body>
  *   counts; a missing or empty title is page-title-present's
  *   failure, not a pattern to review. A run narrowed by contextSelector or
@@ -100,8 +101,11 @@ const meta = {
 // property?), not evaluable per-subtree -- notApplicable when contextSelector
 // scoped this run narrower than the whole document, or when
 // engineOptions.fragment:true was set (see helpers.isWholeDocumentScope).
+// A document shown in a frame is no page of its own: the page's title is the top document's, and the frame is named by its <iframe>.
 function applicability(ctx) {
-  return ctx.helpers.isWholeDocumentScope ? ctx.helpers.isWholeDocumentScope() : true;
+  const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
+  return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }
 
 function runInPage(ctx) {

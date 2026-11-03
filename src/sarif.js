@@ -291,13 +291,18 @@ function automationDetails(category) {
 }
 
 // The profiles a scan of several asked for and didn't run, from every frame
-// that answered, each once.
+// that answered, each once, with every reason a frame gave for it.
 function profilesNotRunOf(frames) {
   const out = [];
   for (const f of frames) {
     const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
     for (const p of Array.isArray(list) ? list : []) {
-      if (p && !out.some((x) => x.profile === p.profile)) out.push(p);
+      if (!p) continue;
+      const held = out.find((x) => x.profile === p.profile);
+      if (!held) out.push({ ...p });
+      else if (p.reason && !String(held.reason).split(', ').includes(p.reason)) {
+        held.reason = `${held.reason}, ${p.reason}`;
+      }
     }
   }
   return out;

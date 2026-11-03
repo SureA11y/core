@@ -2049,6 +2049,9 @@ function runCoreSettled(
     includeHiddenElements,
     excludeSelectors,
     fragment,
+    embeddedAriaHidden: !!(
+      engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
+    ),
     styleSheetTexts: engineOptionsResolved && engineOptionsResolved.styleSheetTexts,
     // Optional perf counters (bench/debug only). Deterministic and per-run.
     perfStats: !!(engineOptionsResolved && switchOf(engineOptionsResolved.perfStats) === true)

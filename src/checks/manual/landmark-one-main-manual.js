@@ -8,7 +8,8 @@
  * @summary The page should have a main landmark
  * @standard Best Practices (no formal WCAG Success Criterion)
  * @applicability
- *   Always applicable to any HTML document with a <body> element:
+ *   Applicable to any HTML document with a <body> element that is a page
+ *   of its own (a document shown in a frame is not):
  *   "does the page have a main landmark" is a whole-page concern,
  *   matching bypass-blocks-present's pattern of evaluating the
  *   document directly.
@@ -68,8 +69,10 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the page's main landmark is the top document's.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }

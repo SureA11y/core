@@ -546,11 +546,17 @@ function renderJunitReport(result, options = {}) {
   // A scan of several profiles that ran fewer than it asked for counted less
   // than it was asked to: one error per profile not run, in a suite of its
   // own, unless allowProfilesNotRun accepts it (then a skip).
+  // Each profile once, with every reason a frame gave for it.
   const notRun = [];
   for (const f of frames) {
     const list = f.result && f.result.engine && f.result.engine.profilesNotRun;
     for (const p of Array.isArray(list) ? list : []) {
-      if (p && !notRun.some((x) => x.profile === p.profile)) notRun.push(p);
+      if (!p) continue;
+      const held = notRun.find((x) => x.profile === p.profile);
+      if (!held) notRun.push({ ...p });
+      else if (p.reason && !String(held.reason).split(', ').includes(p.reason)) {
+        held.reason = `${held.reason}, ${p.reason}`;
+      }
     }
   }
   if (notRun.length) {

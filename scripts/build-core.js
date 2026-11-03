@@ -136,6 +136,7 @@ const {
   engineOptionsForFrames,
   isFrameShown,
   isFrameExcluded,
+  isFrameAriaHidden,
   getFrameElementSelector,
   describeFrameElement,
   getFrameElementUrl,
@@ -2636,6 +2637,8 @@ ${engineOptionsForFrames.toString()}
 ${isFrameShown.toString()}
 
 ${isFrameExcluded.toString()}
+
+${isFrameAriaHidden.toString()}
 
 ${getFrameElementSelector.toString()}
 

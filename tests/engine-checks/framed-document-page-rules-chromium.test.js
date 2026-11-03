@@ -41,7 +41,17 @@ const skip = !chromium
 
 const { addBundle } = require('../helpers/browserBundle');
 
-const RULES = ['page-title-present', 'html-lang-attr-present'];
+const RULES = [
+  'page-title-present',
+  'html-lang-attr-present',
+  'meta-viewport-zoom-enabled',
+  'meta-viewport-large',
+  'page-title-patterns',
+  'bypass-blocks-present',
+  'landmark-one-main',
+  'page-has-heading-one',
+  'region'
+];
 
 const outcomes = (frame) =>
   frame.evaluate(
@@ -64,23 +74,22 @@ test(
     // The top page has neither, so both rules fail it.
     await page.setContent(
       '<!doctype html><html><head></head><body><main><p>x</p>' +
-        '<iframe title="Map" srcdoc="<p>map</p>"></iframe>' +
+        '<iframe title="Map" srcdoc="<meta name=viewport content=\'user-scalable=no\'><title>M</title><p>map</p>"></iframe>' +
         '<iframe aria-hidden="true" title="ad" srcdoc="<p>ad</p>"></iframe>' +
         '<iframe title="empty"></iframe></main></body></html>'
     );
     await addBundle(page);
-    assert.deepEqual(await outcomes(page), {
-      'page-title-present': 'fail',
-      'html-lang-attr-present': 'fail'
-    });
+    const top = await outcomes(page);
+    assert.equal(top['page-title-present'], 'fail');
+    assert.equal(top['html-lang-attr-present'], 'fail');
     const frames = page.frames().filter((f) => f !== page.mainFrame());
     assert.equal(frames.length, 3);
     for (const frame of frames) {
       await addBundle(frame);
-      assert.deepEqual(await outcomes(frame), {
-        'page-title-present': 'notApplicable',
-        'html-lang-attr-present': 'notApplicable'
-      });
+      assert.deepEqual(
+        await outcomes(frame),
+        Object.fromEntries(RULES.map((id) => [id, 'notApplicable']))
+      );
     }
   }
 );

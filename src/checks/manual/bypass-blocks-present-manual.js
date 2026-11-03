@@ -9,7 +9,9 @@
  * @standard WCAG 2.2
  * @sc 2.4.1
  * @applicability
- *   Always applicable to any HTML document with a <body> element:
+ *   Applicable to any HTML document with a <body> element that is a page
+ *   of its own (a document shown in a frame is not: the page's blocks and
+ *   the way past them are the top document's):
  *   "bypass blocks" is a whole-page concern, matching
  *   aria-hidden-body / page-title-present's pattern of
  *   evaluating the document directly rather than a scoped root.
@@ -134,8 +136,11 @@ const meta = {
 //
 // Also notApplicable while a modal dialog is open: the rest of the page is
 // inert then, so the scan saw the dialog, not the page's structure.
+// A document shown in a frame is no page of its own: the blocks repeated on
+// the page, and the way past them, are the top document's.
 function applicability(ctx) {
   const { helpers } = ctx;
+  if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   if (helpers.isWholeDocumentScope && !helpers.isWholeDocumentScope()) return false;
   return !(helpers.isModalDialogOpen && helpers.isModalDialogOpen());
 }

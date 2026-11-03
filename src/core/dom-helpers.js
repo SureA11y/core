@@ -281,6 +281,10 @@ function createDomHelpers(opts) {
   // own), regardless of whether document.documentElement happens to be in
   // scope. See isWholeDocumentScope() below.
   const fragment = !!(opts && opts.fragment === true);
+  // engineOptions.embeddedAriaHidden: the document is shown in a frame under
+  // aria-hidden="true", so every element is read as under an aria-hidden
+  // ancestor, out of the accessibility tree but for what overrides that.
+  const embeddedAriaHidden = !!(opts && opts.embeddedAriaHidden === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -3462,7 +3466,7 @@ function createDomHelpers(opts) {
     }
 
     // 4) ARIA subtree hiding with exceptions with exceptions
-    let ariaHidden = false;
+    let ariaHidden = embeddedAriaHidden;
     for (const a of chain) {
       if (!isElement(a)) continue;
       const v = dom.get(a, 'getAttribute') && dom.getAttribute(a, 'aria-hidden');

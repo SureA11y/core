@@ -109,6 +109,13 @@ export interface EngineOptionFields {
   includeHiddenElements?: boolean;
   includeShadowDom?: boolean;
   fragment?: boolean;
+  /**
+   * The document is shown in a frame under aria-hidden="true": its content is
+   * read as under an aria-hidden ancestor, out of the accessibility tree, so
+   * rules about names and roles don't apply to it, and those about what is
+   * seen and operated (contrast, focus, keyboard) still do.
+   */
+  embeddedAriaHidden?: boolean;
   excludeSelectors?: StringList;
   /**
    * The text of style sheets the page can't read (another origin's), by their
