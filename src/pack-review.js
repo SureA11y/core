@@ -239,6 +239,35 @@ function withPackReview(dictionaries, packs) {
   };
 }
 
+/**
+ * The steps a pack's standard gives for core rules' codes, in its own words
+ * (standard.review: { ruleId: { CODE: { steps, passWhen, failWhen } } }), by
+ * each of its profiles, lower case: a Map of profile -> { ruleId: { CODE:
+ * entry } }, with only the well-formed entries. The first pack to name a
+ * profile gives it, as it does the profile.
+ */
+function standardReviewsOf(packs) {
+  const out = new Map();
+  for (const pack of Array.isArray(packs) ? packs : []) {
+    const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
+    if (!st || !isObject(st.review) || !isObject(st.profiles)) continue;
+    const review = {};
+    for (const [ruleId, byCode] of Object.entries(st.review)) {
+      if (!isObject(byCode)) continue;
+      for (const [code, entry] of Object.entries(byCode)) {
+        if (!CODE.test(code) || !wellFormedReview(entry)) continue;
+        (review[ruleId] = review[ruleId] || {})[code] = entry;
+      }
+    }
+    if (!Object.keys(review).length) continue;
+    for (const profile of Object.keys(st.profiles)) {
+      const key = profile.toLowerCase();
+      if (!out.has(key)) out.set(key, review);
+    }
+  }
+  return out;
+}
+
 module.exports = {
   claimsOf,
   codesUnder,
@@ -246,5 +275,6 @@ module.exports = {
   packReviewDictionaries,
   prefixOfKey,
   reviewOf,
+  standardReviewsOf,
   withPackReview
 };

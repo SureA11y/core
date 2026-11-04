@@ -78,7 +78,8 @@ test('the how-to-check entry reaches no module outside core', () => {
       path.join(ROOT, 'src', 'how-to-check-core.js'),
       path.join(ROOT, 'src', 'hook-reason-codes.js'),
       path.join(ROOT, 'src', 'occurrence-outcome.js'),
-      path.join(ROOT, 'src', 'pack-review.js')
+      path.join(ROOT, 'src', 'pack-review.js'),
+      path.join(ROOT, 'src', 'review-placeholders.js')
     ].sort()
   );
 });
@@ -102,6 +103,8 @@ test('the procedures entry reaches no module outside core', () => {
       path.join(ROOT, 'src', 'coverage', 'wcag-titles.js'),
       path.join(ROOT, 'src', 'coverage', 'wcag-guidelines.js'),
       path.join(ROOT, 'src', 'pack-review.js'),
+      // A variant's steps read without a finding: each placeholder's text.
+      path.join(ROOT, 'src', 'review-placeholders.js'),
       // A pack's standard in its languages.
       path.join(ROOT, 'src', 'pack-languages.js'),
       // Reading the dictionaries, and writing a page from the procedures.

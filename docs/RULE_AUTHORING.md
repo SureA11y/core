@@ -617,6 +617,13 @@ module.
    (`src/i18n/review/<locale>.json`, published as
    `@surea11y/core/review/<locale>`) from them, and commit both.
 
+- Name what the finding found where the step needs it: `{{name|text}}` reads
+  as the finding's value for `name`, from its `i18n.params` or
+  `data.details`, and as `text` without one (a procedures page,
+  `howToCheckFor`). Write `text` so the step reads as it would without the
+  placeholder, and use the same placeholders in every locale
+  (`tests/review-placeholders.test.js` checks both). A change to an existing
+  step's text is a change to `tests/snapshots/how-to-check.json`'s record.
 - Two to five steps, each one action, starting from the element the report
   names (`npm run validate:rules` accepts one to six). Assume a browser, its developer tools, a keyboard and, where it
   matters, a screen reader; name no testing product.

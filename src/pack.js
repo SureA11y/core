@@ -49,6 +49,7 @@ const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
 const { PROCEDURES, TOOLS } = require('./procedures/registry.js');
 const { FACETS } = require('./coverage/wcag-facets.js');
 const { claimsOf, ownRulesOf, prefixOfKey } = require('./pack-review.js');
+const { placeholderProblems } = require('./review-placeholders.js');
 
 const PACK_KEYS = [
   'name',
@@ -459,7 +460,91 @@ function reviewProblems(rule, where) {
     }
     if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
     if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+    problems.push(...entryPlaceholderProblems(entry, at));
     problems.push(...filingProblems(rule, review, code, entry, at));
+  }
+  return problems;
+}
+
+// What is wrong with the placeholders ({{name|text}}) of a review entry's
+// steps, passWhen and failWhen.
+function entryPlaceholderProblems(entry, at) {
+  const problems = [];
+  const texts = [
+    ...(Array.isArray(entry.steps) ? entry.steps.map((t, i) => [`steps[${i}]`, t]) : []),
+    ['passWhen', entry.passWhen],
+    ['failWhen', entry.failWhen]
+  ];
+  for (const [field, t] of texts) {
+    for (const p of placeholderProblems(t)) problems.push(`${at}.${field}: ${p}`);
+  }
+  return problems;
+}
+
+// The codes of each core rule core gives steps for (src/procedures): the
+// codes a finding of it can be undecided with, by rule id.
+let coreReviewCodes = null;
+function coreReviewCodesOf() {
+  if (coreReviewCodes) return coreReviewCodes;
+  coreReviewCodes = new Map();
+  const visit = (node) => {
+    if (!isObject(node)) return;
+    if (isObject(node.variants)) {
+      for (const [ruleId, codes] of Object.entries(node.variants)) {
+        if (!coreReviewCodes.has(ruleId)) coreReviewCodes.set(ruleId, new Set());
+        for (const code of Array.isArray(codes) ? codes : []) coreReviewCodes.get(ruleId).add(code);
+      }
+    }
+    for (const [key, child] of Object.entries(node)) if (key !== 'variants') visit(child);
+  };
+  visit(PROCEDURES);
+  return coreReviewCodes;
+}
+
+// standard.review: the standard's own steps for core rules' undecided
+// codes, { ruleId: { CODE: { steps, passWhen, failWhen } } }, in English,
+// read in place of core's for a finding only the standard's profiles ask
+// about. Each rule is a core rule and each code one core gives steps for.
+function standardReviewProblems(review) {
+  if (review === undefined) return [];
+  const shape = 'standard.review must be { ruleId: { CODE: { steps, passWhen, failWhen } } }';
+  if (!isObject(review)) return [shape];
+  const problems = [];
+  const codes = coreReviewCodesOf();
+  const text = (v) => typeof v === 'string' && v.trim() !== '';
+  for (const [ruleId, byCode] of Object.entries(review)) {
+    if (!isObject(byCode)) {
+      problems.push(shape);
+      continue;
+    }
+    if (!codes.has(ruleId)) {
+      problems.push(
+        `standard.review.${ruleId}: no core rule of that id gives steps (src/procedures); a pack rule writes its own in meta.review`
+      );
+      continue;
+    }
+    for (const [code, entry] of Object.entries(byCode)) {
+      const at = `standard.review.${ruleId}.${code}`;
+      if (!codes.get(ruleId).has(code)) {
+        problems.push(`${at}: "${code}" is not a code ${ruleId} gives steps for`);
+        continue;
+      }
+      if (!isObject(entry)) {
+        problems.push(`${at} must be { steps, passWhen, failWhen }`);
+        continue;
+      }
+      if (
+        !Array.isArray(entry.steps) ||
+        entry.steps.length < 1 ||
+        entry.steps.length > 6 ||
+        !entry.steps.every(text)
+      ) {
+        problems.push(`${at}.steps must list 1 to 6 steps, each a non-empty string`);
+      }
+      if (!text(entry.passWhen)) problems.push(`${at}.passWhen must be a non-empty string`);
+      if (!text(entry.failWhen)) problems.push(`${at}.failWhen must be a non-empty string`);
+      problems.push(...entryPlaceholderProblems(entry, at));
+    }
   }
   return problems;
 }
@@ -969,6 +1054,7 @@ function packProblems(pack, withCoreVersion) {
     const versions = Array.isArray(st.versions) ? st.versions : [];
     problems.push(...proceduresProblems(st.procedures, versions));
     problems.push(...groupsProblems(st.groups, st.procedures, versions));
+    problems.push(...standardReviewProblems(st.review));
     problems.push(...notesProblems(st.notes, versions));
     problems.push(...languageProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {

@@ -274,6 +274,10 @@ A `fail` always has at least one: a custom rule's `fail` that names no element g
 | `lean` | Which way this undecided finding points, when the page gives evidence for one — see [Leans](#leans) below. |
 | `howToCheck` | How a person answers this undecided finding — see [How to check](#how-to-check) below. |
 
+**Steps that name the case.** A step, `passWhen` or `failWhen` may name what its finding found: `{{name|text}}` reads as the finding's value for `name`, from its `i18n.params` (the values its summary is written with) or its `data.details`, and as `text` where it has none. So a pack's step "Open the popup, which aria-haspopup says is a {{expectedRole|menu}}" reads "…is a listbox" on a finding whose details give `expectedRole: 'listbox'`, and "…is a menu" in `howToCheckFor`, which has no finding, and on a procedures page. A value is one line of at most 120 characters, and comes from the page: show it as text, as the HTML report does. A placeholder always gives its text: `definePack` refuses a bare `{{name}}`, and core's tests refuse one in core's steps and check that every locale names the placeholders English does. `howToCheckFor(ruleId, code, locale, { values })` fills them from the values given.
+
+**A standard's own words.** A pack's standard may give its own steps for a core rule's code (`standard.review`, [`PACKS.md`](./PACKS.md)): a finding that only the standard's profiles ask about reads them in place of core's, in English, so a WAI-ARIA scan's question names WAI-ARIA, not WCAG 4.1.2. Where a WCAG profile asks too, in a scan of several, the finding reads core's.
+
 ### Uncertainty codes
 
 A `cantTell` says the engine did not decide. `uncertainty` says **why**, from a closed vocabulary, so a consumer can branch on the reason rather than parse a summary string. It is present only on a `cantTell`-tier occurrence: a `fail`-tier one would be claiming the rule both decided and did not, so the engine drops it. An uncertainty whose `code` is not one of the codes below is left out too, and the rule's `error` names the code.

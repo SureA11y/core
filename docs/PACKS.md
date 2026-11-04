@@ -135,6 +135,45 @@ meta.review = {
 
 `definePack` checks its shape as core's rules are checked: an object of reason codes, each with 1 to 6 steps and a non-empty `passWhen` and `failWhen`, on a rule with a `meta.i18n.titleKey`. A rule that declares its reason codes in `meta.reasonCodes` (`['GENERIC_LINK_NAME']`) gives steps only for a code it declares there or names in its `runInPage`, so a mistyped code is refused; a rule that declares none is checked for shape alone, so a code a helper builds need not be written into `runInPage`. Declaring them is worth it for that check. The steps are English, and a pack's dictionary may translate them ([§6](#6-messages-and-languages)); they stay out of the page: `runDomRulesInPage` with `engineOptions.packs` adds them to the result, and for a result from a page `addHowToCheck(result, { packs })` does (or `applyHowToCheck(result, dictionaries, { packs })` from `@surea11y/core/how-to-check` in a browser bundle). A variant has its base rule's steps, translated where the base is core's, so it needs none; steps it gives for one of its base's codes replace the base's. An override, like a custom rule, has none.
 
+**Steps that name the case.** A step, `passWhen` or `failWhen` may name what the finding found, `{{name|text}}`: the finding's value for `name`, from the `params` of its `i18n` or the fields of its `data.details`, and `text` where it has none (a procedures page, `howToCheckFor`). Write `text` so the step reads as it would without placeholders. Give each value the step needs in the finding, so the person reads this case, not every case the code covers:
+
+```js
+reportOccurrence(el, {
+  summary: `This element has ${attrs}, which role ${role} cannot have.`,
+  i18n: { summaryKey: '…', params: { role, attributes: attrs } },
+  data: { details: { reasonCode: 'PRESENTATIONAL_ATTRIBUTE_UNSUPPORTED', role, attributes: attrs } }
+});
+
+meta.review = {
+  PRESENTATIONAL_ATTRIBUTE_UNSUPPORTED: {
+    steps: ['Find the element the report names, and read its {{attributes|aria-* attributes}}.'],
+    passWhen: 'The element is only for layout, and {{attributes|the attribute}} can be removed.',
+    failWhen: 'The element stands for a control, which role {{role|none}} hides.'
+  }
+};
+```
+
+`definePack` refuses a placeholder without its `text` (`{{role}}`) and a brace outside one. A pack's dictionary that translates the steps names the same placeholders.
+
+**Core's steps in the standard's words.** A standard that judges core's rules by their reason codes (`ruleMappedStandard`) may give its own steps for a core rule's code, in `standard.review`, by rule id and code, in English and with placeholders as above:
+
+```js
+standard: {
+  // …
+  review: {
+    'aria-valid-attr-value': {
+      ARIA_HASPOPUP_ROLE_MISMATCH: {
+        steps: ['Open the popup, which aria-haspopup says is a {{expectedRole|menu}}.'],
+        passWhen: 'It is a {{expectedRole|menu}}.',
+        failWhen: 'It is a {{popupRole|dialog}}, which fails Acme 4.2.'
+      }
+    }
+  }
+}
+```
+
+A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape.
+
 **Which facet each code tests.** A criterion's procedures ([`PROCEDURES.md`](./PROCEDURES.md#a-packs-rules)) list a rule under the facets it claims in `meta.coverage.facetsBySc`, the test objectives of each criterion in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), and its steps as variants under them, as core's are:
 
 ```js

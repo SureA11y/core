@@ -34,6 +34,7 @@ const {
   prefixOfKey,
   withPackReview
 } = require('./pack-review.js');
+const { fillHowToCheck } = require('./review-placeholders.js');
 
 const { reader } = require('./procedures-text.js');
 const { dictionaryFor } = require('./procedures-text.js');
@@ -85,8 +86,10 @@ function toolOf(id, read) {
 // them, with their language where it isn't the locale read.
 function variantOf(ruleId, reasonCode, prefix, read) {
   const stem = `${prefix}_review_${reasonCode}_`;
-  const how = read.procedure(stem);
-  if (!how) return null;
+  const raw = read.procedure(stem);
+  if (!raw) return null;
+  // No finding here: each placeholder reads as its own text.
+  const how = fillHowToCheck(raw, null);
   return { ruleId, reasonCode, ...how, ...withLang(langOf(read, `${stem}step1`, how.steps[0])) };
 }
 

@@ -74,6 +74,13 @@ export interface PackStandard {
    */
   groups?: Record<string, PackRequirementGroup[]>;
   /**
+   * The standard's own steps for core rules' undecided findings, by rule id
+   * and reason code, in English (docs/PACKS.md): a finding only the
+   * standard's profiles ask about reads them in place of core's. Each text
+   * may name what the finding found, {{name|text}}.
+   */
+  review?: Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>;
+  /**
    * The language the standard's own text is written in (its procedures,
    * titles, notes and rollups' titles): a language tag, 'en' by default.
    */
@@ -121,12 +128,7 @@ export type PackRequirementProcedures =
         label: string;
         automation?: 'full' | 'partial' | 'manual';
         tools?: (
-          | 'keyboard'
-          | 'pointer'
-          | 'screen-reader'
-          | 'zoom'
-          | 'contrast-theme'
-          | 'devtools'
+          'keyboard' | 'pointer' | 'screen-reader' | 'zoom' | 'contrast-theme' | 'devtools'
         )[];
         steps: string[];
         passWhen: string;
