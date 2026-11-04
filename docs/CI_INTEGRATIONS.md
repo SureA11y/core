@@ -32,7 +32,7 @@ This fails the job the moment any `fail` outcome is found. For an existing site 
 
 ```sh
 # Once, locally: record every current fail occurrence, commit the file.
-npx @surea11y/cli scan ./dist/index.html --write-baseline a11y-baseline.json
+npx surea11y scan ./dist/index.html --write-baseline a11y-baseline.json
 git add a11y-baseline.json
 ```
 

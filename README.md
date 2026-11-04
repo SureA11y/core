@@ -71,7 +71,7 @@ to run the engine on a DOM you already have, or to build a tool on it.
 | …**Cypress** | `@surea11y/core` and [`@surea11y/cypress`](https://github.com/SureA11y/cypress#readme) |
 | …**WebdriverIO** | `@surea11y/core` and [`@surea11y/webdriverio`](https://github.com/SureA11y/webdriverio#readme) |
 | Assert in **Jest or Vitest** component tests | `@surea11y/core` and [`@surea11y/test-matchers`](https://github.com/SureA11y/test-matchers#readme) |
-| Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) |
+| Scan static HTML from a **terminal or CI pipeline** | [`@surea11y/cli`](https://github.com/SureA11y/cli#readme) (or run it with `npx surea11y`) |
 | Run the engine against **a DOM I already have** | `@surea11y/core` (this package) |
 | **Build my own tool** on the engine (a CLI, an extension, a dashboard, a report generator) | `@surea11y/core`, with [`docs/BUILDING_ON_CORE.md`](./docs/BUILDING_ON_CORE.md) |
 
@@ -290,8 +290,8 @@ so that installing the engine never pulls a DOM implementation into
 projects that already have one:
 
 ```bash
-npx @surea11y/cli scan ./index.html
-npx @surea11y/cli scan https://example.com/
+npx surea11y scan ./index.html
+npx surea11y scan https://example.com/
 ```
 
 The CLI analyses static HTML. It does not execute client-side

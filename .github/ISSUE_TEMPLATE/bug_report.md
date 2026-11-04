@@ -17,7 +17,7 @@ labels: bug
 - [ ] Real browser via `runa11yCoreInPage` (Puppeteer/Playwright/Selenium/Cypress/WebdriverIO — say which)
 - [ ] Browser bundle in the page or the console (`a11ycore.run()`, `a11ycore.runa11yCoreInPage`)
 - [ ] Jest/Vitest via `@surea11y/test-matchers`
-- [ ] CLI (`npx @surea11y/cli scan ...`)
+- [ ] CLI (`npx surea11y scan ...`)
 
 Opt-in hooks installed, if any (internals, listener, live-region), and whether `engine.environment` reports them `early` or `late`:
 

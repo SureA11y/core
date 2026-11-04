@@ -4,7 +4,7 @@ A strict CI gate ("fail the build on any `fail` outcome") is an adoption blocker
 
 ```sh
 # Once: record every current fail occurrence, does not fail the build.
-npx @surea11y/cli scan ./dist/index.html --write-baseline baseline.json
+npx surea11y scan ./dist/index.html --write-baseline baseline.json
 
 # Commit baseline.json to git.
 
