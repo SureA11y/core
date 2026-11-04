@@ -13,12 +13,7 @@ type Open<T extends string> = T | (string & {});
 
 /** The conformance profiles core has itself; a pack's standard brings others. */
 type CoreProfileName =
-  | 'wcag22-a'
-  | 'wcag22-aa'
-  | 'wcag22-aaa'
-  | 'en301549-v4.1.1'
-  | 'en301549-v3.2.1'
-  | 'section508';
+  'wcag22-a' | 'wcag22-aa' | 'wcag22-aaa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508';
 
 // ---- Inputs ----
 
@@ -1118,6 +1113,12 @@ export interface HowToCheckOptions {
    * the fallback for every step a locale lacks.
    */
   locale?: string | readonly string[] | null;
+  /**
+   * howToCheckFor and howToCheckFrom only: the values to fill the steps'
+   * placeholders ({{name|text}}) with, as a finding's i18n.params and
+   * data.details give them; without them, each placeholder reads as its text.
+   */
+  values?: Readonly<Record<string, string>> | null;
 }
 
 /**

@@ -27,8 +27,11 @@ export type ReviewDictionaries =
  * dictionaries given. Needs no file system: for a binding whose code runs in
  * a browser. A variant's finding (variantOf) without steps of its own gets
  * its base rule's; with options.packs, a pack rule's gets its meta.review's,
- * in English or as its pack's dictionaries translate them. In Node, addHowToCheck from @surea11y/core does the same with
- * every dictionary core ships.
+ * in English or as its pack's dictionaries translate them. Each finding's
+ * steps are filled from its own values ({{name|text}}), and a finding only a
+ * pack standard's profiles ask about reads the standard's own steps where it
+ * gives them (standard.review). In Node, addHowToCheck from @surea11y/core
+ * does the same with every dictionary core ships.
  */
 export function applyHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
   result: T,
@@ -39,7 +42,8 @@ export function applyHowToCheck<T extends ScanResult | CrossFrameResult | Bindin
 /**
  * The steps for one finding, by its rule's prefix (its i18n.titleKey without
  * `_title`) and reason code, in the first of `locales` that has them (English
- * last), or null when the dictionaries have none.
+ * last), or null when the dictionaries have none. Placeholders are filled
+ * from options.values, or read as their own text.
  */
 export function howToCheckFrom(
   dictionaries: ReviewDictionaries,
@@ -53,4 +57,11 @@ export function howToCheckFrom(
  * The same as @surea11y/core's: an occurrence's outcome, where it goes in a
  * review, and the reason codes each opt-in hook decides or changes.
  */
-export { occurrenceOutcome, reviewGroupOf, ReviewGroup, HOOK_REASON_CODES, HookReasonCode, HookEffect } from './index';
+export {
+  occurrenceOutcome,
+  reviewGroupOf,
+  ReviewGroup,
+  HOOK_REASON_CODES,
+  HookReasonCode,
+  HookEffect
+} from './index';

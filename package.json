@@ -187,6 +187,7 @@
     "src/procedures-core.js",
     "src/procedures-render.js",
     "src/procedures-text.js",
+    "src/review-placeholders.js",
     "src/html-text.js",
     "src/procedures-core.d.ts",
     "src/procedures-dictionary.d.ts",

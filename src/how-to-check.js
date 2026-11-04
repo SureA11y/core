@@ -85,7 +85,8 @@ function howToCheckFor(ruleId, reasonCode, locale, options) {
   const base = rule.variantOf ? ruleOf(rule.variantOf, packs) : null;
   for (const prefix of [rule.prefix, base && base.prefix]) {
     if (!prefix) continue;
-    const how = howToCheckFrom(dictionary, prefix, reasonCode, locale, { packs });
+    const values = options && typeof options === 'object' ? options.values : null;
+    const how = howToCheckFrom(dictionary, prefix, reasonCode, locale, { packs, values });
     if (how) return how;
   }
   return null;
