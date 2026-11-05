@@ -19,7 +19,7 @@ On a branch `release-x.y.z` from `main`:
 
 ## 3. Publish
 
-- [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag vx.y.z && git push origin vx.y.z`.
+- [ ] Merge the pull request, then tag the merge on `main` and push the tag: `git tag -m "Release x.y.z" vx.y.z && git push origin vx.y.z`. Where git signs tags (`tag.gpgsign`) a tag needs a message, and a key with a passphrase needs a terminal to ask for it.
 - [ ] [`release.yml`](../.github/workflows/release.yml) runs on the tag. It checks that the tag matches `package.json`, runs lint and the full suite, checks that the committed build is what a clean build gives, and that W3C's ACT corpus gives no false positive, then publishes to npm with provenance. Any failure stops it before publishing: fix it on `main` and tag again.
 - [ ] **ACT reports:** once the version is on npm, run the "ACT implementation report" workflow in [SureA11y/act-report](https://github.com/SureA11y/act-report/actions/workflows/act-report.yml) (Run workflow, on `main`). It regenerates both implementation reports from the version npm serves as `latest`, and W3C reads them daily ([`EARL.md`](./EARL.md)); without it they wait for its Monday run. A false positive fails it and leaves the published reports as they were.
 
@@ -31,7 +31,7 @@ When `main` already holds work for the next minor release, fixes merged before i
 - [ ] **Cut the line:** push `release/x.y.x` at that commit (`git push origin <commit>:refs/heads/release/x.y.x`), and make `release-x.y.z` from it.
 - [ ] **Prepare** `release-x.y.z` as in step 1. The changelog's Unreleased section at that commit holds only what this release ships. Leave `src/baseline-moves.json` as it is: a patch keeps the minor release's moves.
 - [ ] **Check and open** `Release x.y.z` as in step 2, into `release/x.y.x`, not `main`. [`test.yml`](../.github/workflows/test.yml) runs on pull requests into `release/**`.
-- [ ] **Publish** as in step 3, but tag the merge on `release/x.y.x`: `git fetch origin release/x.y.x && git tag vx.y.z origin/release/x.y.x && git push origin vx.y.z`. A tag on `main` would publish the minor release's work too.
+- [ ] **Publish** as in step 3, but tag the merge on `release/x.y.x`: `git fetch origin release/x.y.x && git tag -m "Release x.y.z" vx.y.z origin/release/x.y.x && git push origin vx.y.z`. A tag on `main` would publish the minor release's work too.
 - [ ] **Bring it back into `main`** before the next minor release, on a branch from `main` that merges `origin/release/x.y.x`:
   - `CHANGELOG.md`: the released entries leave Unreleased for the `[x.y.z]` section, as released, between Unreleased and the release before. Git can merge it without a conflict and still put Unreleased's entries under `[x.y.z]`: check it by hand.
   - `package.json`, `package-lock.json`, `scripts/data/lean-measures.json` and `scripts/data/released-finding-ids.json` as released. The build is generated: take `main`'s and run `npm run build`.
