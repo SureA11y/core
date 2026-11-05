@@ -89,7 +89,7 @@ Missing keys fall back to English per-string (never a blank or broken result), s
 
 ## "After upgrading, my baseline reports known findings as new and their entries as stale"
 
-A finding's identity includes its reason code, and 1.14.0 gave codes to seventeen rules that had none and split a few codes by cause. A baseline written by 1.13 keeps matching those findings under 1.14.x, through `src/baseline-moves.json`; a finding whose outcome changed with the upgrade is new or gone all the same, and the changelog says why. Rewrite the file's codes with `migrateBaselineEntries` from `@surea11y/core/baseline`, or regenerate it and review the diff, before 1.15. See [`BASELINE.md`](./BASELINE.md#upgrading).
+A finding's identity includes its reason code, and 1.14.0 gave codes to seventeen rules that had none and split a few codes by cause. A baseline written by 1.13 keeps matching those findings under 1.14.x, through `src/baseline-moves.json`, but not under 1.15, which dropped those moves; a finding whose outcome changed with the upgrade is new or gone all the same, and the changelog says why. Rewrite the file's codes under 1.14.x with `migrateBaselineEntries` from `@surea11y/core/baseline`, or regenerate it and review the diff. See [`BASELINE.md`](./BASELINE.md#upgrading).
 
 ## "`css-orientation-lock` asks about `STYLESHEETS_NOT_READABLE`"
 
