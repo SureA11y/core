@@ -81,7 +81,7 @@ const id = 'focus-not-removed-by-script';
 const meta = {
   title: 'A script must not remove focus from an element as it receives it',
   description:
-    'Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).',
+    'Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it.',
   i18n: {
     titleKey: 'focusNotRemovedByScript_title',
     descriptionKey: 'focusNotRemovedByScript_description'
@@ -367,7 +367,7 @@ function runInPage(ctx) {
       fails.push(
         helpers.reportOccurrence(el, {
           summary: SUMMARIES.self,
-          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all (WCAG failure F55).',
+          hint: 'Remove the blur() call so focus stays on the element, or make the element unfocusable if it should not take focus at all.',
           i18n: {
             summaryKey: 'focusNotRemovedByScript_summary_fail_self',
             hintKey: 'focusNotRemovedByScript_hint_fail',
@@ -433,7 +433,7 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: SUMMARIES[kind],
-        hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it (WCAG failure F55): remove the blur() call, or make the element unfocusable if it should not take focus at all.',
+        hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it: remove the blur() call, or make the element unfocusable if it should not take focus at all.',
         i18n: {
           summaryKey: `focusNotRemovedByScript_summary_cantTell_${kind}`,
           hintKey: 'focusNotRemovedByScript_hint_cantTell',

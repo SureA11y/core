@@ -77,7 +77,7 @@ const id = 'duplicate-id';
 const meta = {
   title: 'IDs must be unique',
   description:
-    'Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).',
+    'Checks that every non-empty id attribute value is unique within its own document or shadow tree.',
   i18n: {
     titleKey: 'duplicateId_title',
     descriptionKey: 'duplicateId_description'

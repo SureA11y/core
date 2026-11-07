@@ -3467,7 +3467,7 @@ function createContrastHelpers(opts, shared) {
       if (!occ.data.details || typeof occ.data.details !== 'object') occ.data.details = {};
       occ.data.details.forcedColors = true;
       occ.hint =
-        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.';
+        'Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: contrast is judged in the page’s own colors.';
       if (occ.i18n && typeof occ.i18n === 'object') occ.i18n.hintKey = 'contrast_hint_forcedColors';
     }
     return occurrences;

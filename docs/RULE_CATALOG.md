@@ -35,7 +35,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`aria-valid-attr`](#aria-valid-attr) | aria-* attributes must be real, defined ARIA attributes | 4.1.2 | A | high | serious |
 | [`aria-valid-attr-value`](#aria-valid-attr-value) | aria-* attribute values must match their declared type | 4.1.2 | A | high | serious |
 | [`autocomplete-valid`](#autocomplete-valid) | autocomplete attribute must be a valid autofill value | 1.3.5 | AA | high | moderate |
-| [`avoid-inline-spacing`](#avoid-inline-spacing) | Inline style must not force text spacing below the WCAG metric | 1.4.12 | AA | high | moderate |
+| [`avoid-inline-spacing`](#avoid-inline-spacing) | Inline style must not keep users from increasing text spacing | 1.4.12 | AA | high | moderate |
 | [`binary-control-name-present`](#binary-control-name-present) | Binary controls have an accessible name | 4.1.2 | A | high | serious |
 | [`button-name-present`](#button-name-present) | Buttons have an accessible name | 4.1.2 | A | high | serious |
 | [`canvas-text-alternative-present`](#canvas-text-alternative-present) | &lt;canvas&gt; must provide a text alternative | 1.1.1 | A | high | serious |
@@ -846,11 +846,11 @@ Checks that a non-empty autocomplete attribute is "on"/"off" or a well-formed au
 
 ### `avoid-inline-spacing`
 
-**Inline style must not force text spacing below the WCAG metric**
+**Inline style must not keep users from increasing text spacing**
 
 automatic · WCAG 1.4.12 (AA) · confidence high · default severity moderate
 
-Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.
+Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already reaches the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so the user has nothing left to override.
 
 **Applies to.** Applies to a rendered element with visible text of its own whose style attribute declares line-height, letter-spacing or word-spacing as `!important` with a real value. A CSS-wide keyword (inherit, initial, unset, revert) specifies no spacing of its own and is out of scope.
 
@@ -864,7 +864,7 @@ Checks that where inline style forces line-height, letter-spacing or word-spacin
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `INLINE_SPACING_IMPORTANT` | fail | The element's style attribute forces line-height, letter-spacing or word-spacing with !important below the spacing WCAG 1.4.12 lets users apply, on text that wraps. | WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec; CSS Cascade important declarations |
+| `INLINE_SPACING_IMPORTANT` | fail | The element's style attribute forces line-height, letter-spacing or word-spacing with !important below the spacing users must be able to apply, on text that wraps. | WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec; CSS Cascade important declarations |
 | `INLINE_SPACING_NO_SOFT_WRAP` | cantTell | Spacing forced below the metric on text that does not appear able to wrap, which the criterion may not cover. It leans pass: the ACT rules apply only to text that can wrap. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
 | `INLINE_SPACING_SHORT_TEXT` | cantTell | Spacing forced below the metric on text short enough to fit on one line, which may never wrap. It leans fail when the text is drawn on more than one line, and pass when it is drawn on one and estimated at under half of 320 pixels; without layout, no lean. | WCAG 1.4.12 (not settled); ACT 78fd32; ACT 24afc2; ACT 9e45ec |
 | `INLINE_SPACING_NOT_RESOLVABLE` | cantTell | Spacing set with !important whose value could not be worked out, so whether it meets the metric is unknown. | WCAG 1.4.12 (not settled) |
@@ -919,7 +919,7 @@ Checks that buttons expose a non-empty accessible name.
 
 manual · WCAG 2.4.1 (A) · confidence medium · default severity moderate
 
-Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.
+Checks that the page has at least one recognized mechanism to bypass blocks of repeated content: a main landmark, a working skip link, or a heading.
 
 **Applies to.** Applicable to any HTML document with a &lt;body&gt; element that is a page of its own (a document shown in a frame is not: the page's blocks and the way past them are the top document's): "bypass blocks" is a whole-page concern, matching aria-hidden-body / page-title-present's pattern of evaluating the document directly rather than a scoped root. Not while a modal dialog is open: the rest of the page is inert then, so the scan sees the dialog, not the page. A custom element whose ElementInternals give it the main or heading role (this.attachInternals().role) counts as a &lt;main&gt; or a heading does.
 
@@ -1053,7 +1053,7 @@ Checks that elements with role="combobox" expose a non-empty accessible name.
 
 automatic · WCAG 1.4.3, 1.4.6 (AA, AAA) · confidence high · default severity serious
 
-Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).
+Determines whether sufficient information is available to compute the color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).
 
 **Applies to.** Applies to every visible text node in scope, plus the label of &lt;input type="button"&gt;/[type="submit"]/[type="reset"], which is rendered from the value attribute and so is invisible to a text-node walk, and the text a form field shows: the current value of a &lt;textarea&gt; or of an &lt;input&gt; that shows text (text, search, email, url, tel, password, number, the date and time types), or, while the value is empty, its placeholder, in the ::placeholder color, font, opacity and background (only where the browser computes that style; jsdom does not). The text of a drop-down &lt;select&gt; (no `multiple`, a size of 1 or none, not `appearance: base-select`) counts as the select's, drawn by the closed control in its colors, font and background: its shown option, and any other option with the select's colors. In a browser, so is the text a ::before or ::after `content` generates (strings, attr() as the browser resolves it, counters), and a list item's ::marker text (a number or a letter, or a string; a bullet or an image isn't text), each judged in the pseudo-element's color and font, on its element; jsdom computes no pseudo-element styles, so there it is left out. Text counts only when its element is DOM-visible under the run's visibility mode, is not clipped out of sight by the sr-only technique (clip or clip-path), and belongs neither to a disabled control nor to the label of one, WCAG's inactive-user-interface-component exception. Subtrees excluded via engineOptions.excludeSelectors are skipped, and open shadow roots are walked as roots in their own right.
 
@@ -1387,7 +1387,7 @@ Checks that &lt;dt&gt;/&lt;dd&gt; elements are contained by a &lt;dl&gt;, direct
 
 automatic · WCAG 4.1.1 (A) · confidence high · default severity moderate
 
-Checks that every non-empty id attribute value is unique within its own document or shadow tree (WCAG 2.0/2.1 SC 4.1.1, removed in WCAG 2.2).
+Checks that every non-empty id attribute value is unique within its own document or shadow tree.
 
 **Applies to.** Applies to any element carrying a non-empty id attribute. Visibility is irrelevant. A duplicate id breaks the same lookups whether the element renders or not, which is why ACT 3ea0c8 evaluates hidden elements too.
 
@@ -1529,7 +1529,7 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 automatic · WCAG 2.1.1, 2.4.7 (A, AA) · confidence medium · default severity serious
 
-Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it (WCAG failure F55).
+Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it.
 
 **Applies to.** Elements that can take focus, that the page renders, and whose inline `onfocus` handler calls `blur()`, or `focus()` on another element. Without such an element, or in a document where none can take focus, nothing is applicable.
 
@@ -2157,7 +2157,7 @@ Either way the label labels nothing. Check which control it was meant for: that 
 
 automatic · WCAG 2.5.3 (A) · confidence high · default severity serious
 
-Checks that when a control has a visible text label, the accessible name contains that visible label text (WCAG 2.5.3).
+Checks that when a control has a visible text label, the accessible name contains that visible label text.
 
 **Applies to.** Applies to controls named by aria-label or aria-labelledby, are visually rendered, and have visible label text this engine can extract deterministically, from an associated &lt;label&gt;, from the control's own rendered text, or from the elements aria-labelledby points at. The candidates are &lt;button&gt;, &lt;a href&gt;, &lt;summary&gt;, non-hidden form controls, and elements whose role attribute resolves (its first known, non-abstract token, in any case) to the button, link, checkbox, radio, switch, searchbox, tab, menuitem, menuitemcheckbox, menuitemradio, option, treeitem or gridcell role, and a &lt;td&gt; with no role attribute in a grid or treegrid, a gridcell by HTML-AAM, minus anything hidden or disabled. A button-type &lt;input&gt; (submit, reset, button) with a value shows that value as its label; without one it shows the browser's own default, which can't be known, and is out of scope. The visible label is the visible inner text: text in inline elements joins as written (&lt;b&gt;Down&lt;/b&gt;load reads "Download"), a block-level box or a &lt;br&gt; starts a new word, and text in a box nobody can see (clipped away, 1x1 px or fully transparent, as screen-reader-only text is) is left out, as are the options of a &lt;select&gt; and the text of a &lt;textarea&gt;, which are a field's value, not label text. aria-hidden is not excluded: it changes nothing about what is rendered on screen, which is what this SC is about. An aria-label that is empty once trimmed, or an aria-labelledby whose ids point at nothing or only at elements with no text, names nothing: the accessible name then comes from the next source (the content, a &lt;label&gt;, title...), as for a control without them, so the control is out of scope. A custom element whose ElementInternals give it one of those roles (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
@@ -2852,7 +2852,7 @@ Checks that an interactive control (link, button, form control, or ARIA widget r
 
 manual · WCAG 1.4.2 (A) · confidence low · default severity moderate
 
-Flags &lt;audio&gt;/&lt;video&gt; elements that autoplay unmuted with no native controls attribute, and &lt;embed&gt;, &lt;object&gt; or &lt;bgsound&gt; elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.
+Flags &lt;audio&gt;/&lt;video&gt; elements that autoplay unmuted with no native controls attribute, and &lt;embed&gt;, &lt;object&gt; or &lt;bgsound&gt; elements that may play sound, for manual review of whether the sound plays for more than 3 seconds.
 
 **Applies to.** Any &lt;audio autoplay&gt; or &lt;video autoplay&gt; element that is not `muted`. Also any &lt;bgsound&gt;, and any &lt;embed&gt; or &lt;object&gt; that loads sound or video, or a plugin (Flash) that may play it: its `type` is audio/*, video/* or a plugin type, or its `src`/`data` ends in a sound or video file extension. An &lt;embed&gt; or &lt;object&gt; with `autostart` or `autoplay` set to false (attribute or &lt;param&gt;) is left out.
 
@@ -3039,7 +3039,7 @@ Checks that the page includes a non-empty &lt;title&gt; element.
 
 manual · WCAG 3.3.8 (AA) · confidence medium · default severity serious
 
-Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.
+Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would take away the password manager or clipboard that spares users from remembering or retyping it.
 
 **Applies to.** Applies to any control whose autocomplete token is current-password, new-password or one-time-code, and to &lt;input type="password"&gt; unless its autocomplete names another purpose. A disabled or readonly field takes no input to block, and one outside the accessibility tree is not being asked for, so neither is in scope. Finding nothing to ask about, it reports notApplicable, not pass: it applies only to what its check flags, and finding nothing there doesn't show that all is well.
 
@@ -3624,7 +3624,7 @@ A header cell is a `<th>` with no other role, or any cell with role="columnheade
 
 automatic · WCAG 1.4.12 (AA) · confidence medium · default severity serious
 
-Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.
+Applies increased text spacing (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.
 
 **Applies to.** Applies to a page with visible text. The loss of content needs a layout (a browser): without one, only the style sheets are read.
 

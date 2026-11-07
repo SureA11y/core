@@ -991,7 +991,7 @@
       ],
       "wcagScInformative": [],
       "type": "automatic",
-      "title": "Inline style must not force text spacing below the WCAG metric",
+      "title": "Inline style must not keep users from increasing text spacing",
       "tags": [
         "wcag21aa",
         "wcag1412",

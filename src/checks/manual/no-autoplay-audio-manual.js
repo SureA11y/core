@@ -81,7 +81,7 @@ const id = 'no-autoplay-audio';
 const meta = {
   title: 'Autoplaying audio should provide a pause/stop or volume-control mechanism',
   description:
-    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review against the 3-second exemption in WCAG 1.4.2.',
+    'Flags <audio>/<video> elements that autoplay unmuted with no native controls attribute, and <embed>, <object> or <bgsound> elements that may play sound, for manual review of whether the sound plays for more than 3 seconds.',
   i18n: {
     titleKey: 'noAutoplayAudio_title',
     descriptionKey: 'noAutoplayAudio_description'
@@ -164,7 +164,7 @@ function runInPage(ctx) {
     if (seconds != null && seconds <= 3) {
       return {
         toward: 'pass',
-        why: 'It lasts 3 seconds or less, which WCAG 1.4.2 allows.',
+        why: 'It lasts 3 seconds or less, short enough to need no way to stop it.',
         signals: [{ signal: 'media-duration-s', value: seconds }],
         i18n: { whyKey: 'noAutoplayAudio_lean_why_short' }
       };

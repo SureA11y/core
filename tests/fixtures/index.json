@@ -459,7 +459,7 @@
     },
     {
       "ruleId": "avoid-inline-spacing",
-      "title": "Inline style must not force text spacing below the WCAG metric",
+      "title": "Inline style must not keep users from increasing text spacing",
       "type": "automatic",
       "wcagSc": [
         "1.4.12"

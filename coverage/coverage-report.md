@@ -308,7 +308,7 @@ Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| avoid-inline-spacing | automatic | Inline style must not keep users from increasing text spacing | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
 | text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1
@@ -1101,7 +1101,7 @@ Uncovered facets: text-spacing-functionality-kept, text-spacing-other-states
 
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
-| avoid-inline-spacing | automatic | Inline style must not force text spacing below the WCAG metric | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
+| avoid-inline-spacing | automatic | Inline style must not keep users from increasing text spacing | src/checks/automatic/avoid-inline-spacing.js | avoid-inline-spacing |  |
 | text-spacing-content-loss | automatic | Text stays readable when the user increases text spacing | src/checks/automatic/text-spacing-content-loss.js | text-spacing-content-loss |  |
 
 ### 2.1.1

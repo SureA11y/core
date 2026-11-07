@@ -196,7 +196,7 @@ const id = 'contrast-computable';
 const meta = {
   title: 'Color contrast is computable for rendered text',
   description:
-    'Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).',
+    'Determines whether sufficient information is available to compute the color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).',
   i18n: {
     titleKey: 'contrastComputable_title',
     descriptionKey: 'contrastComputable_description'

@@ -75,7 +75,7 @@ const id = 'password-paste-enabled';
 const meta = {
   title: 'Authentication fields must not block pasting',
   description:
-    'Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would remove the password manager or clipboard that WCAG 3.3.8 relies on as the assisting mechanism.',
+    'Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would take away the password manager or clipboard that spares users from remembering or retyping it.',
   i18n: {
     titleKey: 'passwordPasteEnabled_title',
     descriptionKey: 'passwordPasteEnabled_description'

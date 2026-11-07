@@ -191,7 +191,7 @@ const id = 'text-spacing-content-loss';
 const meta = {
   title: 'Text stays readable when the user increases text spacing',
   description:
-    'Applies the WCAG 1.4.12 text spacing in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.',
+    'Applies increased text spacing (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) in the browser and checks that no text is cut off or made to overlap, and asks about style sheet rules that force spacing with !important.',
   i18n: {
     titleKey: 'textSpacingContentLoss_title',
     descriptionKey: 'textSpacingContentLoss_description'
@@ -1416,73 +1416,73 @@ function runInPage(ctx) {
   const MESSAGES = {
     TEXT_CLIPPED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
-      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
+      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll.',
       key: 'fail_clipped'
     },
     // TEXT_CLIPPED by a box that clips only for its content-visibility: auto,
     // which nothing in its overflow or contain shows.
     TEXT_CLIPPED_CONTENT_VISIBILITY: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.`,
-      hint: 'content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge): its content-visibility: auto clips what goes past its edge, as overflow: clip does.`,
+      hint: 'content-visibility: auto clips the content of an element to its box, on screen as well as off it. Let the text wrap or the box grow with it, or leave content-visibility: auto off this element.',
       key: 'fail_clippedContentVisibility'
     },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full.',
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
     },
     TEXT_CLIPPED_MOVING: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this moving text can still be read in full as it passes (WCAG 1.4.12). Moving content also needs a way to pause it (WCAG 2.2.2).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, but it moves on a repeating animation, such as a marquee, and passes through that edge anyway.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this moving text can still be read in full as it passes. Moving content also needs a way to pause it.',
       key: 'cantTell_clippedMoving',
       needed: 'Whether the moving text can still be read in full with the spacing applied.'
     },
     TEXT_CLIPPED_SCRIPT_SIZED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge), but the page's script sized it to fit that text as it was, and may size it again once the text grows.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, once the page has had a moment to react, that this text shows in full; if it stays cut off, let the container grow with its text.',
       key: 'cantTell_clippedScriptSized',
       needed:
         "Whether the page's script resizes the element to fit the text once the spacing is applied."
     },
     TEXT_CLIPPED_FURTHER: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element shows ${p.linesAfter} of the ${p.linesBefore} lines of the text "${p.text}" it showed in full before.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that what this excerpt shows still serves its purpose, or let it grow with its text, as line-clamp does.',
       key: 'cantTell_clippedFurther',
       needed: 'Whether the excerpt still serves its purpose with fewer lines shown.'
     },
     VIEWPORT_SCROLL_LOCKED: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" moves ${p.overflowPx}px out of the viewport, which this element keeps from scrolling though content already lay beyond it, as a scroll lock behind a cookie banner or a menu does.`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can be reached once the page scrolls again; if the page never scrolls in this state, let it scroll.',
       key: 'cantTell_viewportScrollLocked',
       needed:
         'Whether the text pushed out of the viewport can be reached once the page scrolls again.'
     },
     TEXT_OVERLAPS: {
       summary: (p) =>
-        `With the text spacing of WCAG 1.4.12 applied at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
-      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that both texts can still be read (WCAG 1.4.12).',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" comes to overlap the text "${p.other}".`,
+      hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that both texts can still be read.',
       key: 'cantTell_overlaps',
       needed: 'Whether the overlapping texts can still be read.'
     },
     SPACING_NOT_APPLIED: {
       summary: () =>
         "The page's Content Security Policy kept the engine from applying the text spacing, so whether text is lost with it could not be measured.",
-      hint: 'Check the page by hand with the text spacing of WCAG 1.4.12 (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, or scan it with a browser setting or extension that applies it.',
+      hint: 'Check the page by hand with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied, or scan it with a browser setting or extension that applies it.',
       key: 'cantTell_spacingNotApplied',
       needed: 'Whether text is cut off or overlaps once the text spacing is applied.'
     },
     STYLESHEET_IMPORTANT: {
       summary: (p) =>
-        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing WCAG 1.4.12 lets users apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).`,
-      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it (WCAG 1.4.12).',
+        `A style sheet rule (${p.selector}) sets ${p.property}: ${p.value} with !important on this text, below the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em).`,
+      hint: 'Remove !important from the spacing declaration so users can increase it, or check that a user style sheet still overrides it.',
       key: 'cantTell_stylesheetImportant',
       needed: 'Whether users can still apply their own text spacing to this text.'
     }
@@ -1502,7 +1502,7 @@ function runInPage(ctx) {
     if (!/\s/.test(textOf(f.el))) return null;
     return {
       toward: 'fail',
-      why: 'The rule forces a spacing below the WCAG value with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
+      why: 'The rule forces a spacing below the value users must be able to apply, with !important on text that can wrap, so a tool that adds its own style sheet cannot increase it.',
       signals: [
         { signal: 'important-below-threshold', value: f.prop + ': ' + f.value },
         { signal: 'value-gap', value: Math.round((f.ratio / MIN_RATIO[f.prop]) * 100) / 100 }

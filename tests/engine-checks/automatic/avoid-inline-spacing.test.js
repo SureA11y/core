@@ -118,7 +118,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><body><p id="a" style="letter-spacing:1px !important">${LONG}</p></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1 });
-  assert.strictEqual(rule.title, 'Inline style must not force text spacing below the WCAG metric');
+  assert.strictEqual(rule.title, 'Inline style must not keep users from increasing text spacing');
 });
 
 test(`${RULE_ID}: fixture coverage (tests/fixtures/avoid-inline-spacing-all-scenarios.html)`, () => {

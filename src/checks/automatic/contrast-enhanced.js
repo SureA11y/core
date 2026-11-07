@@ -559,7 +559,7 @@ function runInPage(ctx) {
         const t = params && params.threshold;
         if (special.kind === 'logo') {
           occBase.data.details.looksLikeLogo = true;
-          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`;
+          occBase.hint = `If this text is part of a logo or brand name, it has no contrast requirement; otherwise change its colors so the ratio reaches ${t}:1.`;
           occBase.i18n.hintKey = 'contrast_hint_logo';
         } else if (special.kind === 'switch') {
           occBase.data.details.contrastSwitch = special.switchName;

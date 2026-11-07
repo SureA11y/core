@@ -516,7 +516,7 @@ function runInPage(ctx) {
       code: 'LOGO_TEXT_BELOW_THRESHOLD',
       key: 'logo',
       hint: (t) =>
-        `If this text is part of a logo or brand name, it has no contrast requirement (WCAG 1.4.3); otherwise change its colors so the ratio reaches ${t}:1.`,
+        `If this text is part of a logo or brand name, it has no contrast requirement; otherwise change its colors so the ratio reaches ${t}:1.`,
       needed:
         'Whether this text is part of a logo or brand name, which has no contrast requirement.'
     },

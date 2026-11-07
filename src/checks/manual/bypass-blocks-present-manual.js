@@ -105,7 +105,7 @@ const id = 'bypass-blocks-present';
 const meta = {
   title: 'Page must provide a way to bypass repeated blocks',
   description:
-    'Checks that the page has at least one recognized WCAG 2.4.1 bypass-blocks mechanism: a main landmark, a working skip link, or a heading.',
+    'Checks that the page has at least one recognized mechanism to bypass blocks of repeated content: a main landmark, a working skip link, or a heading.',
   i18n: {
     titleKey: 'bypassBlocksPresent_title',
     descriptionKey: 'bypassBlocksPresent_description'
