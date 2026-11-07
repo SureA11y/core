@@ -84864,6 +84864,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!role && String(dom.localName(el) || '').toLowerCase() === 'output') return 'polite';
     return '';
   }
+  // What kind of message the region declares it carries, from its role and
+  // its live-region attributes, never from its text: 'status' (role status,
+  // an <output>, or aria-live="polite" with aria-atomic="true"), 'alert'
+  // (role alert, or aria-live="assertive"), 'log' (role log), 'progress'
+  // (role progressbar, or a <progress>), else 'unknown'. The role
+  // attribute's, or the element's own, wins over aria-live.
+  const MESSAGE_KINDS = { status: 'status', alert: 'alert', log: 'log', progressbar: 'progress' };
+  function messageKind(el) {
+    const role = helpers.aria.getExplicitRole(el);
+    if (role && Object.prototype.hasOwnProperty.call(MESSAGE_KINDS, role)) {
+      return MESSAGE_KINDS[role];
+    }
+    if (!role) {
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      if (tag === 'output') return 'status';
+      if (tag === 'progress') return 'progress';
+    }
+    const live = attr(el, 'aria-live');
+    if (live === 'assertive') return 'alert';
+    if (live === 'polite' && attr(el, 'aria-atomic') === 'true') return 'status';
+    return 'unknown';
+  }
   // Whether display: none, [hidden] or visibility: hidden keeps the region
   // from being drawn, on it or above it.
   function drawn(el) {
@@ -85083,7 +85105,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
+            details: {
+              reasonCode: 'LIVE_REGION_HIDDEN',
+              politeness: level,
+              messageKind: messageKind(el),
+              hiddenBy: by
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -85102,7 +85129,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             hintKey: 'liveRegionAnnouncements_hint_cantTell_busy'
           },
           data: {
-            details: { reasonCode: 'LIVE_REGION_BUSY', politeness: level },
+            details: {
+              reasonCode: 'LIVE_REGION_BUSY',
+              politeness: level,
+              messageKind: messageKind(el)
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -85129,7 +85160,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const inserted = f.code === 'LIVE_REGION_INSERTED_WITH_CONTENT';
       const level = politeness(el) || 'polite';
-      const details = { reasonCode: f.code, politeness: level, text: f.text };
+      const details = {
+        reasonCode: f.code,
+        politeness: level,
+        messageKind: messageKind(el),
+        text: f.text
+      };
       if (!connected) {
         details.removed = true;
         details.region = {
