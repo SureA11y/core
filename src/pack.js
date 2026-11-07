@@ -48,8 +48,14 @@ const { ruleMappedStandard } = require('./profile-kit.js');
 const { wcagTags, WCAG_CRITERIA } = require('./wcag.js');
 const { PROCEDURES, TOOLS } = require('./procedures/registry.js');
 const { FACETS } = require('./coverage/wcag-facets.js');
-const { claimsOf, ownRulesOf, prefixOfKey } = require('./pack-review.js');
-const { placeholderProblems } = require('./review-placeholders.js');
+const {
+  claimsOf,
+  ownRulesOf,
+  prefixOfKey,
+  standardReviewKeys,
+  standardReviewStem
+} = require('./pack-review.js');
+const { placeholderNames, placeholderProblems } = require('./review-placeholders.js');
 
 const PACK_KEYS = [
   'name',
@@ -676,6 +682,92 @@ function reviewKeyProblems(pack, locale, dict) {
   return problems;
 }
 
+// A pack's dictionary may translate its standard's own steps for core
+// rules' codes (standard.review) under
+// `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and
+// `_fail`: an entry standard.review has, as a whole, since a finding reads
+// the entry in English where the locale lacks any of it, and with the
+// placeholders the English names. The English is standard.review itself,
+// so the English dictionary carries none.
+const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
+function standardReviewKeyProblems(pack, locale, dict) {
+  const st = isObject(pack.standard) ? pack.standard : null;
+  if (!st || typeof st.key !== 'string' || !st.key) return [];
+  const start = `${st.key}_standardReview_`;
+  const review = isObject(st.review) ? st.review : {};
+  const entryOf = (ruleId, code) =>
+    hasOwn(review, ruleId) && isObject(review[ruleId]) && hasOwn(review[ruleId], code)
+      ? review[ruleId][code]
+      : null;
+  const problems = [];
+  for (const key of Object.keys(dict)) {
+    if (!key.startsWith(start)) continue;
+    const at = `dictionaries.${locale}: ${key}`;
+    if (locale.toLowerCase() === 'en') {
+      problems.push(
+        `${at}: the standard's English steps are its standard.review, not a dictionary's`
+      );
+      continue;
+    }
+    // <rule id>_<CODE>_<suffix>: a core rule's id has no _.
+    const rest = key.slice(start.length);
+    const first = rest.indexOf('_');
+    const last = rest.lastIndexOf('_');
+    const ruleId = first > 0 ? rest.slice(0, first) : '';
+    const code = last > first + 1 ? rest.slice(first + 1, last) : '';
+    const suffix = REVIEW_SUFFIX.exec(last > first + 1 ? rest.slice(last + 1) : '');
+    const entry = entryOf(ruleId, code);
+    if (!suffix) {
+      problems.push(`${at}: a step's key ends in _step<n>, _pass or _fail`);
+    } else if (!isObject(entry)) {
+      problems.push(
+        `${at}: standard.review has no ${JSON.stringify(code)} for ${JSON.stringify(ruleId)}`
+      );
+    } else if (
+      suffix[2] &&
+      Number(suffix[2]) > (Array.isArray(entry.steps) ? entry.steps.length : 0)
+    ) {
+      problems.push(`${at}: standard.review.${ruleId}.${code} has no step ${suffix[2]}`);
+    }
+  }
+  if (locale.toLowerCase() === 'en') return problems;
+  // Each entry translated as a whole, or not at all, with its placeholders.
+  for (const [ruleId, byCode] of Object.entries(review)) {
+    if (!isObject(byCode)) continue;
+    for (const [code, entry] of Object.entries(byCode)) {
+      if (
+        !isObject(entry) ||
+        !Array.isArray(entry.steps) ||
+        !entry.steps.every((t) => typeof t === 'string')
+      ) {
+        continue;
+      }
+      const keys = standardReviewKeys(st.key, ruleId, code, entry);
+      const english = [...entry.steps, entry.passWhen, entry.failWhen];
+      const given = keys.filter((k) => hasOwn(dict, k));
+      if (!given.length) continue;
+      const stem = standardReviewStem(st.key, ruleId, code);
+      if (given.length < keys.length) {
+        const missing = keys.filter((k) => !hasOwn(dict, k)).map((k) => k.slice(stem.length));
+        problems.push(
+          `dictionaries.${locale}: ${stem}*: translates only part of standard.review.${ruleId}.${code}, which is then read in English; it lacks ${missing.join(', ')}`
+        );
+      }
+      keys.forEach((k, i) => {
+        if (!hasOwn(dict, k) || typeof dict[k] !== 'string') return;
+        const where = `dictionaries.${locale}: ${k}`;
+        if (!dict[k].trim()) problems.push(`${where} must be a non-empty string`);
+        for (const p of placeholderProblems(dict[k])) problems.push(`${where}: ${p}`);
+        const names = (t) => placeholderNames(t).sort().join(' ');
+        if (typeof english[i] === 'string' && names(dict[k]) !== names(english[i])) {
+          problems.push(`${where} must name the placeholders its English names`);
+        }
+      });
+    }
+  }
+  return problems;
+}
+
 // standard.procedures: how a person assesses each requirement by hand
 // (docs/PROCEDURES.md), by version and requirement. A requirement takes a
 // WCAG criterion's procedures ({ wcag: '1.4.3' }), and may replace the
@@ -1229,6 +1321,7 @@ function packProblems(pack, withCoreVersion) {
           problems.push(`dictionaries.${locale} must map keys to strings`);
         } else {
           problems.push(...reviewKeyProblems(pack, locale, dict));
+          problems.push(...standardReviewKeyProblems(pack, locale, dict));
         }
       }
     }

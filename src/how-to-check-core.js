@@ -28,12 +28,14 @@
  * A pack's standard may give its own steps for a core rule's code
  * (standard.review, docs/PACKS.md), in its own words: a finding only that
  * standard's profiles ask about reads them in place of core's, which name
- * WCAG.
+ * WCAG; the pack's dictionaries may translate them, under
+ * `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and
+ * `_fail` (src/pack-review.js).
  */
 
 const { occurrenceOutcome, reviewGroupOf } = require('./occurrence-outcome.js');
 const { HOOK_REASON_CODES } = require('./hook-reason-codes.js');
-const { withPackReview, standardReviewsOf } = require('./pack-review.js');
+const { withPackReview, standardReviewsOf, translatedStandardReview } = require('./pack-review.js');
 const { fillHowToCheck, placeholderValues } = require('./review-placeholders.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -168,25 +170,27 @@ function askingProfiles(result, occ) {
 // A standard's own steps for a finding of a core rule: those of the
 // standard of every profile that asks about it, where each of them gives
 // steps for the rule's code; null where any asking profile has none, such
-// as a WCAG profile, whose question core's steps answer.
-function standardSteps(reviews, profiles, ruleIds, code) {
+// as a WCAG profile, whose question core's steps answer. They are in the
+// first of `locales` the standard's pack translates the whole entry into
+// (standardReviewStem), and in English otherwise.
+function standardSteps(reviews, profiles, ruleIds, code, locales) {
   if (!reviews.size || !profiles.length || typeof code !== 'string') return null;
   let found = null;
   for (const profile of profiles) {
-    const review = reviews.get(profile);
-    let entry = null;
+    const source = reviews.get(profile);
+    let hit = null;
     for (const id of ruleIds) {
-      const byCode = review && review[id];
+      const byCode = source && source.review[id];
       if (byCode && Object.prototype.hasOwnProperty.call(byCode, code)) {
-        entry = byCode[code];
+        hit = { source, ruleId: id, entry: byCode[code] };
         break;
       }
     }
-    if (!entry) return null;
-    if (!found) found = entry;
+    if (!hit) return null;
+    if (!found) found = hit;
   }
   return found
-    ? { steps: [...found.steps], passWhen: found.passWhen, failWhen: found.failWhen }
+    ? translatedStandardReview(found.source, found.ruleId, code, found.entry, chainOf(locales))
     : null;
 }
 
@@ -208,7 +212,7 @@ function addToResult(result, dictionaries, wanted, reviews) {
       if (occ.howToCheck && !wanted) return occ;
       const code = occ.data && occ.data.details && occ.data.details.reasonCode;
       const ruleIds = [check.ruleId, check.variantOf].filter((id) => typeof id === 'string');
-      let how = standardSteps(reviews, askingProfiles(result, occ), ruleIds, code);
+      let how = standardSteps(reviews, askingProfiles(result, occ), ruleIds, code, locale);
       for (const prefix of how ? [] : prefixes) {
         how = stepsFrom(dictionaries, prefix, code, locale);
         if (how) break;
@@ -265,7 +269,9 @@ function wantedLocale(options) {
  * needs; English stays the fallback for every step a locale lacks.
  * Each finding's steps are filled from its own values ({{name|text}}), and
  * a finding only a pack standard's profiles ask about reads that standard's
- * steps for its code where it gives them (standard.review), in English.
+ * steps for its code where it gives them (standard.review), in the locale
+ * where the pack's dictionary for it translates the whole entry, and in
+ * English otherwise.
  */
 function applyHowToCheck(result, dictionaries, options) {
   const packs = options && typeof options === 'object' ? options.packs : null;

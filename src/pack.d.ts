@@ -77,7 +77,9 @@ export interface PackStandard {
    * The standard's own steps for core rules' undecided findings, by rule id
    * and reason code, in English (docs/PACKS.md): a finding only the
    * standard's profiles ask about reads them in place of core's. Each text
-   * may name what the finding found, {{name|text}}.
+   * may name what the finding found, {{name|text}}. The pack's dictionaries
+   * translate an entry, as a whole, under
+   * `<key>_standardReview_<ruleId>_<CODE>_step<n>`, `_pass` and `_fail`.
    */
   review?: Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>;
   /**

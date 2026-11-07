@@ -30,7 +30,9 @@ export type ReviewDictionaries =
  * in English or as its pack's dictionaries translate them. Each finding's
  * steps are filled from its own values ({{name|text}}), and a finding only a
  * pack standard's profiles ask about reads the standard's own steps where it
- * gives them (standard.review). In Node, addHowToCheck from @surea11y/core
+ * gives them (standard.review), in the locale where the pack's dictionary
+ * translates the whole entry (`<standard key>_standardReview_<rule id>_<CODE>_step<n>`,
+ * `_pass`, `_fail`), in English otherwise. In Node, addHowToCheck from @surea11y/core
  * does the same with every dictionary core ships.
  */
 export function applyHowToCheck<T extends ScanResult | CrossFrameResult | BindingFramesResult>(
