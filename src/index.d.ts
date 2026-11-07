@@ -124,6 +124,14 @@ export interface EngineOptionFields {
    * test in a frame of its own sets it to true.
    */
   topLevelDocument?: boolean;
+  /**
+   * Default false. Where the DOM cannot open a modal dialog (no showModal(),
+   * as in jsdom), take an open <dialog> with aria-modal="true" as modal, so
+   * the page behind it is inert and left out, for a test that stands in for
+   * showModal() with those attributes. A browser opens real modal dialogs and
+   * ignores it: there, only a dialog opened with showModal() is modal.
+   */
+  assumeModal?: boolean;
   excludeSelectors?: StringList;
   /**
    * The text of style sheets the page can't read (another origin's), by their
@@ -359,6 +367,7 @@ export interface RuleHelpers {
   isTopLevelDocument: RuleHelper;
   isModalDialogOpen: RuleHelper;
   getOpenModalDialogs: RuleHelper;
+  isModalInert: RuleHelper;
   getDocumentRoots: RuleHelper;
   getAriaLabelInfo: RuleHelper;
   getAriaLabelledByInfo: RuleHelper;
@@ -1687,6 +1696,12 @@ export interface LiveRegionHookOptions {
    * loading.
    */
   early?: boolean;
+  /**
+   * Where the DOM cannot open a modal dialog (jsdom), take an open <dialog>
+   * with aria-modal="true" as modal, as engineOptions.assumeModal does for
+   * the scan. Default false: only a dialog opened with showModal() is.
+   */
+  assumeModal?: boolean;
 }
 
 /** A text a live region was given while shown and reachable. */

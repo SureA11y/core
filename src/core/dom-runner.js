@@ -2113,6 +2113,7 @@ function runCoreSettled(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
     embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    assumeModal: !!(engineOptionsResolved && switchOf(engineOptionsResolved.assumeModal) === true),
     topLevelDocument:
       engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
         ? engineOptionsResolved.topLevelDocument

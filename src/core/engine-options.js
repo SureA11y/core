@@ -76,6 +76,7 @@ function engineOptionSpec() {
     embeddedAriaHidden: T.boolean,
     embeddedInert: T.boolean,
     topLevelDocument: T.boolean,
+    assumeModal: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {

@@ -328,9 +328,12 @@ top page's landmarks.
 ### `isModalDialogOpen()` → `boolean`
 
 `true` while a modal dialog is open: a `<dialog>` that matches `:modal` (opened with
-`showModal()`), in the document or in an open shadow root. Under jsdom, which has no top layer, an open `<dialog aria-modal="true">`
-stands in for it; in a browser, such a dialog opened without `showModal()` is not modal. The rest of the document is
-inert then, and `isAccTreeEligible` already leaves it out (reason `modalInert`). Also
+`showModal()`), in the document or in an open shadow root. A `<dialog>` opened with the
+`open` attribute or `show()` is not modal, `aria-modal="true"` or not, in a browser and under
+jsdom alike; jsdom can't open a modal dialog, so there none is open, unless
+`engineOptions.assumeModal` takes an open `<dialog aria-modal="true">` as one. The rest of
+the document is inert then, and `isAccTreeEligible` already leaves it out (reason
+`modalInert`). Also
 `true` while a script-made modal is shown: an element whose `role` attribute is `dialog` or
 `alertdialog`, with `aria-modal="true"`, drawn (no `display: none`, `[hidden]` or
 `visibility: hidden` on it or above it) and not inside or on `aria-hidden="true"` or
@@ -345,10 +348,25 @@ not.
 ### `getOpenModalDialogs()` → `Element[]`
 
 The modal `<dialog>` elements open in the document and its open shadow roots (the document's first, then each shadow root's): those that match
-`:modal` (opened with `showModal()`), or under jsdom, which has no top layer, those open with
-`aria-modal="true"`. The page outside them is what `isAccTreeEligible` leaves out with reason
-`modalInert`. A script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it
-makes nothing inert. Worked out once per run.
+`:modal` (opened with `showModal()`). Under jsdom, which can't open one, none, or with
+`engineOptions.assumeModal`, those open with `aria-modal="true"`. The page outside them is
+what `isModalInert` names and `isAccTreeEligible` leaves out with reason `modalInert`. A
+script-made modal (`role="dialog"` with `aria-modal="true"`) is not one: it makes nothing
+inert. Worked out once per run.
+
+### `isModalInert(el)` → `boolean`
+
+Whether `el` is behind an open modal dialog, which the browser makes inert: a dialog from
+`getOpenModalDialogs()` is open and `el` is in none of them (by the flat tree, so a shadow
+root's content inside the dialog, and what the page slots into it, counts as in it) and
+contains none (`<body>` or a wrapper around the dialog is not blocked). `false` for anything
+that isn't an element and while no modal dialog is open. Core's own view of modal blocking:
+`isAccTreeEligible` gives such an element reason `modalInert`, the default hidden-content
+policy leaves it out, and `getFocusableInfo` says it takes no focus (flag `modalInert`). A
+rule or pack that works out focus or tab order itself (which links a keyboard user reaches,
+in what order) asks this instead of deciding modality on its own, so it counts what core
+counts. Content under `[inert]` is another matter, which `getFocusableInfo` covers (flag
+`inert`).
 
 ### `getDocumentRoots()` → `(Document | ShadowRoot)[]`
 
@@ -777,7 +795,8 @@ default tab order. Native focusability covers links and image-map areas with `hr
 form controls, `<summary>`, editing hosts, `<iframe>`/`<frame>`, and `<audio>`/`<video>`
 with `controls`, as Chromium and Firefox both treat them. A `<video>` without controls
 (focusable in Firefox only) and `<embed>`/`<object>` (focusable or not depending on what
-they embed) are not counted.
+they embed) are not counted. Nothing under `[inert]` (flag `inert`) or behind an open modal
+dialog (flag `modalInert`, see `isModalInert`) takes focus.
 
 ### `hasLandmarkScopingAncestor(el, opts)` → `boolean`
 
