@@ -15185,6 +15185,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // asked next -- so which rule ran first decided the answer.
   let __accessibleNameCacheByKey = null;
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
+  // Map<string, WeakMap<Element, {text, touched}>>: the text an
+  // aria-labelledby or aria-describedby target gives, per computation
+  // options (see readIdRefTargetText).
+  let __idRefTargetTextCacheByKey = null;
 
   try {
     __ancestorsIncludingSelfCache =
@@ -15319,6 +15323,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         : (__domSharedCache.accessibleDescCacheByKey = new Map());
   } catch {
     __accessibleDescCacheByKey = null;
+  }
+
+  try {
+    __idRefTargetTextCacheByKey =
+      __domSharedCache.idRefTargetTextCacheByKey instanceof Map
+        ? __domSharedCache.idRefTargetTextCacheByKey
+        : (__domSharedCache.idRefTargetTextCacheByKey = new Map());
+  } catch {
+    __idRefTargetTextCacheByKey = null;
   }
 
   function __getScopeObj() {
@@ -16807,6 +16820,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // and would otherwise defeat that per-call guard on a genuine cycle.
   function computeIdRefTargetTextAlternative(el, visited, _ctx, opts) {
     if (!isElement(el)) return '';
+    if (__idRefTouched) __idRefTouched.add(el);
     if (visited.has(el)) return '';
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
@@ -16817,6 +16831,73 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } finally {
       __namingInProgress.delete(el);
     }
+  }
+
+  // The text of a referenced target, kept for the run: fields that share
+  // one aria-labelledby (a long label, a group's heading) or controls that
+  // share one aria-describedby (a tooltip) worked out the target's text
+  // again for each, which cost the target's size times their number.
+  //
+  // What a target gives depends on more than the element: on the options
+  // (the cache is keyed by every one that is a plain value; options holding
+  // an object, such as a node to skip, are not cached), and, through the
+  // cycle guards, on what the traversal has already met. So a text is kept
+  // and reused only at the top of a computation (no name being worked out
+  // around it), with the elements its traversal met (`touched`): it is
+  // reused only when the traversal's `visited` holds none of them, when the
+  // computation would meet the same answers again, and those elements are
+  // added to `visited` as the computation would have added them. The
+  // caches are cleared at the start of every run (dom-runner.js), so a page
+  // changed between scans is read again.
+  let __idRefTouched = null; // Set<Element> the computation being kept meets
+  function __idRefTargetOptsKey(opts) {
+    if (!opts) return '';
+    const parts = [];
+    for (const k of Object.keys(opts).sort()) {
+      if (k === '__idrefVisited') continue;
+      const v = opts[k];
+      if (v === undefined) continue;
+      if ((v !== null && typeof v === 'object') || typeof v === 'function') return null;
+      parts.push(k + '=' + typeof v + ':' + String(v));
+    }
+    return parts.join('|');
+  }
+
+  function readIdRefTargetText(el, visited, _ctx, opts) {
+    const atTop =
+      !!__idRefTargetTextCacheByKey &&
+      __idRefTouched === null &&
+      __nameComputationDepth === 0 &&
+      __namingInProgress.size === 0 &&
+      isElement(el);
+    const key = atTop ? __idRefTargetOptsKey(opts) : null;
+    if (key === null) return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    let byEl = __idRefTargetTextCacheByKey.get(key);
+    if (!(byEl instanceof WeakMap)) {
+      byEl = new WeakMap();
+      __idRefTargetTextCacheByKey.set(key, byEl);
+    }
+    const kept = byEl.get(el);
+    if (kept) {
+      if (kept.touched.some((n) => visited.has(n))) {
+        return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+      }
+      __perfInc('idRefTargetText.hit');
+      for (const n of kept.touched) visited.add(n);
+      return kept.text;
+    }
+    __perfInc('idRefTargetText.miss');
+    const before = new Set(visited);
+    const touched = new Set();
+    __idRefTouched = touched;
+    let text;
+    try {
+      text = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    } finally {
+      __idRefTouched = null;
+    }
+    if (![...touched].some((n) => before.has(n))) byEl.set(el, { text, touched: [...touched] });
+    return text;
   }
 
   function computeIdRefTargetTextOf(el, visited, _ctx, opts) {
@@ -16956,7 +17037,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       try {
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
@@ -17000,7 +17081,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // A repeated id is read again, as in getTextFromRefs.
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
@@ -121246,6 +121327,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // asked next -- so which rule ran first decided the answer.
   let __accessibleNameCacheByKey = null;
   let __accessibleDescCacheByKey = null; // Map<string, WeakMap<Element, Info>>
+  // Map<string, WeakMap<Element, {text, touched}>>: the text an
+  // aria-labelledby or aria-describedby target gives, per computation
+  // options (see readIdRefTargetText).
+  let __idRefTargetTextCacheByKey = null;
 
   try {
     __ancestorsIncludingSelfCache =
@@ -121380,6 +121465,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
         : (__domSharedCache.accessibleDescCacheByKey = new Map());
   } catch {
     __accessibleDescCacheByKey = null;
+  }
+
+  try {
+    __idRefTargetTextCacheByKey =
+      __domSharedCache.idRefTargetTextCacheByKey instanceof Map
+        ? __domSharedCache.idRefTargetTextCacheByKey
+        : (__domSharedCache.idRefTargetTextCacheByKey = new Map());
+  } catch {
+    __idRefTargetTextCacheByKey = null;
   }
 
   function __getScopeObj() {
@@ -122868,6 +122962,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // and would otherwise defeat that per-call guard on a genuine cycle.
   function computeIdRefTargetTextAlternative(el, visited, _ctx, opts) {
     if (!isElement(el)) return '';
+    if (__idRefTouched) __idRefTouched.add(el);
     if (visited.has(el)) return '';
     visited.add(el);
     if (__nameComputationDepth >= __NAME_COMPUTATION_MAX_DEPTH) return '';
@@ -122878,6 +122973,73 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } finally {
       __namingInProgress.delete(el);
     }
+  }
+
+  // The text of a referenced target, kept for the run: fields that share
+  // one aria-labelledby (a long label, a group's heading) or controls that
+  // share one aria-describedby (a tooltip) worked out the target's text
+  // again for each, which cost the target's size times their number.
+  //
+  // What a target gives depends on more than the element: on the options
+  // (the cache is keyed by every one that is a plain value; options holding
+  // an object, such as a node to skip, are not cached), and, through the
+  // cycle guards, on what the traversal has already met. So a text is kept
+  // and reused only at the top of a computation (no name being worked out
+  // around it), with the elements its traversal met (`touched`): it is
+  // reused only when the traversal's `visited` holds none of them, when the
+  // computation would meet the same answers again, and those elements are
+  // added to `visited` as the computation would have added them. The
+  // caches are cleared at the start of every run (dom-runner.js), so a page
+  // changed between scans is read again.
+  let __idRefTouched = null; // Set<Element> the computation being kept meets
+  function __idRefTargetOptsKey(opts) {
+    if (!opts) return '';
+    const parts = [];
+    for (const k of Object.keys(opts).sort()) {
+      if (k === '__idrefVisited') continue;
+      const v = opts[k];
+      if (v === undefined) continue;
+      if ((v !== null && typeof v === 'object') || typeof v === 'function') return null;
+      parts.push(k + '=' + typeof v + ':' + String(v));
+    }
+    return parts.join('|');
+  }
+
+  function readIdRefTargetText(el, visited, _ctx, opts) {
+    const atTop =
+      !!__idRefTargetTextCacheByKey &&
+      __idRefTouched === null &&
+      __nameComputationDepth === 0 &&
+      __namingInProgress.size === 0 &&
+      isElement(el);
+    const key = atTop ? __idRefTargetOptsKey(opts) : null;
+    if (key === null) return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    let byEl = __idRefTargetTextCacheByKey.get(key);
+    if (!(byEl instanceof WeakMap)) {
+      byEl = new WeakMap();
+      __idRefTargetTextCacheByKey.set(key, byEl);
+    }
+    const kept = byEl.get(el);
+    if (kept) {
+      if (kept.touched.some((n) => visited.has(n))) {
+        return computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+      }
+      __perfInc('idRefTargetText.hit');
+      for (const n of kept.touched) visited.add(n);
+      return kept.text;
+    }
+    __perfInc('idRefTargetText.miss');
+    const before = new Set(visited);
+    const touched = new Set();
+    __idRefTouched = touched;
+    let text;
+    try {
+      text = computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+    } finally {
+      __idRefTouched = null;
+    }
+    if (![...touched].some((n) => before.has(n))) byEl.set(el, { text, touched: [...touched] });
+    return text;
   }
 
   function computeIdRefTargetTextOf(el, visited, _ctx, opts) {
@@ -123017,7 +123179,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       try {
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
@@ -123061,7 +123223,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // A repeated id is read again, as in getTextFromRefs.
         const t = readHere.has(el)
           ? readHere.get(el)
-          : computeIdRefTargetTextAlternative(el, visited, _ctx, opts);
+          : readIdRefTargetText(el, visited, _ctx, opts);
         readHere.set(el, t);
         if (t) texts.push(t);
       } catch {}
