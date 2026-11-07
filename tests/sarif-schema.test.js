@@ -63,13 +63,16 @@ test('the SARIF of a scan of every fixture page is valid', () => {
   // The notes a rule leaves when it had nothing to judge: the next test.
 });
 
-// Text over a background image can't be measured, so the contrast rules
-// have nothing to judge and say why (a page with no background no longer
-// does: its text is measured on the canvas the browser paints).
+// A pack's or custom rule that had nothing to judge may say why in an
+// occurrence (core's rules attach none).
 test('notes from a rule that could not check are tool execution notifications', () => {
-  const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body style="background-image:url(bg.png)"><p>Hello world</p></body></html>'
-  );
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'explaining-rule',
+      outcome: 'notApplicable',
+      occurrences: [makeOccurrence({ selector: '', summary: 'Nothing here could be measured.' })]
+    })
+  ]);
   const sarif = assertValid(renderSarifReport(result), 'notes only');
   const invocation = sarif.runs[0].invocations[0];
   assert.ok(Array.isArray(invocation.toolExecutionNotifications));

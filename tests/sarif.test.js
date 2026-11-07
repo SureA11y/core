@@ -635,7 +635,10 @@ test('renderSarifReport: an occurrence carrying `outcome` instead of `occurrence
   );
 });
 
-test('a notApplicable check can carry an explanatory occurrence', () => {
+// Core's contrast rules used to explain a notApplicable with an occurrence;
+// they no longer do, and the text they couldn't measure reaches SARIF as
+// contrast-computable's results. A pack's or custom rule may still attach one.
+test('text no contrast rule could measure reaches SARIF as contrast-computable results', () => {
   const result = runa11yCoreOnHtml(
     '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
     { engineOptions: {} }
@@ -643,25 +646,33 @@ test('a notApplicable check can carry an explanatory occurrence', () => {
 
   const contrast = result.checksResults.find((c) => c.ruleId === 'contrast-minimum');
   assert.strictEqual(contrast.outcome, 'notApplicable');
-  assert.strictEqual(contrast.occurrences.length, 1, 'the rule says why it had nothing to judge');
-  assert.strictEqual(contrast.occurrences[0].selector, '', 'it describes the scan, not an element');
-});
+  assert.deepStrictEqual(contrast.occurrences, [], 'a notApplicable names no finding');
 
-test('a rule that could not check reaches SARIF as a notice, never as an alert', () => {
-  const result = runa11yCoreOnHtml(
-    '<!doctype html><html lang="en"><head><title>t</title></head><body><p style="background-image:linear-gradient(#fff,#000)">Hello world</p></body></html>',
-    { engineOptions: {} }
-  );
   const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
-
   const ids = sarif.runs[0].results.map((r) => r.ruleId);
   assert.ok(!ids.includes('contrast-minimum'), 'not evaluated is not a violation');
+  assert.ok(
+    ids.includes('contrast-computable'),
+    'a SARIF-only consumer still learns contrast went unchecked'
+  );
+});
 
+test('a rule that explains its notApplicable reaches SARIF as a notice, never as an alert', () => {
+  const result = makeScanResult([
+    makeCheckResult({
+      ruleId: 'explaining-rule',
+      outcome: 'notApplicable',
+      occurrences: [makeOccurrence({ selector: '', summary: 'Nothing here could be measured.' })]
+    })
+  ]);
+  const sarif = parse(renderSarifReport(result, { toolVersion: '1.2.3' }));
+
+  assert.deepStrictEqual(sarif.runs[0].results, []);
   const notices = sarif.runs[0].invocations[0].toolExecutionNotifications;
-  const contrast = notices.find((n) => n.associatedRule.id === 'contrast-minimum');
-  assert.ok(contrast, 'a SARIF-only consumer must still learn contrast went unchecked');
-  assert.strictEqual(contrast.level, 'note');
-  assert.match(contrast.message.text, /computable contrast/);
+  const notice = notices.find((n) => n.associatedRule.id === 'explaining-rule');
+  assert.ok(notice, 'the explanation is carried, not dropped');
+  assert.strictEqual(notice.level, 'note');
+  assert.strictEqual(notice.message.text, 'Nothing here could be measured.');
   assert.strictEqual(sarif.runs[0].invocations[0].executionSuccessful, true);
 });
 

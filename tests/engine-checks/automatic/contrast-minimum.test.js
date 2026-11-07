@@ -222,16 +222,13 @@ test(`${RULE_ID}: eligible text exists but none computable => notApplicable (noC
 
   const result = run(html);
 
+  // notApplicable names no finding: the counts are on the result itself.
   const rule = assertRule(result, RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastMinimum_notApplicable_noComputableText'
-  );
-  assert.ok(Number(rule.occurrences[0].data.details.eligibleTextCount) >= 1);
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.ok(Number(rule.data.details.eligibleTextCount) >= 1);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: strictConformance + root not opaque => measured on the page's white canvas`, () => {
@@ -268,14 +265,10 @@ test(`${RULE_ID}: root not opaque, the text's color in the page's dark scheme un
     <p>Hello</p>
   </body></html>`;
   const rule = assertRule(run(html), RULE_ID, 'notApplicable', {
-    minOccurrences: 1,
-    maxOccurrences: 1
+    minOccurrences: 0,
+    maxOccurrences: 0
   });
-  assert.strictEqual(
-    rule.occurrences[0].i18n.summaryKey,
-    'contrastMinimum_notApplicable_noComputableText'
-  );
-  assert.strictEqual(Number(rule.occurrences[0].data.details.computableTextCount), 0);
+  assert.strictEqual(Number(rule.data.details.computableTextCount), 0);
 });
 
 test(`${RULE_ID}: auditorAssist + root not opaque => pass using rootCanvasFallback`, () => {
@@ -1371,4 +1364,46 @@ test('contrast-minimum: text the dark scheme colors is measured in its colors, i
   assert.deepStrictEqual(light.occurrences.map((o) => o.data.details.colors.foregroundHex).sort(), [
     '#0000ee'
   ]);
+});
+
+// A page whose every text sits on a gradient has nothing this rule can
+// measure. Its notApplicable used to carry an occurrence with no reason
+// code, which a reader of the findings counted as one; the counts now go on
+// the result. The pass describes the scan in an occurrence with its reason
+// code and a hint, in each locale, a variant's too.
+test(`${RULE_ID}: notApplicable carries no occurrence, and the pass's occurrence has a hint`, () => {
+  const page = (body) =>
+    `<!doctype html><html lang="en"><head><title>t</title></head><body style="background:#fff"><main>${body}</main></body></html>`;
+  const gradient = page(
+    '<p style="color:#111;background-image:linear-gradient(#fff,#000)">Hello world</p>'
+  );
+  const plain = page('<p style="color:#111;background:#fff">Hello world</p>');
+  const variant = ratioVariant({ normalTextRatio: 5 });
+  for (const [ruleId, packs] of [
+    [RULE_ID, []],
+    ['ratios-contrast', [variant]]
+  ]) {
+    for (const locale of ['en', 'fr']) {
+      const scan = (html) =>
+        runa11yCoreOnHtml(html, {
+          runOnly: [ruleId, 'contrast-computable'],
+          engineOptions: { packs, locale }
+        }).checksResults.find((c) => c.ruleId === ruleId);
+
+      const na = scan(gradient);
+      assert.strictEqual(na.outcome, 'notApplicable', `${ruleId} ${locale}`);
+      assert.deepStrictEqual(na.occurrences, [], `${ruleId} ${locale}`);
+      assert.strictEqual(na.data.details.eligibleTextCount, 1);
+      assert.strictEqual(na.data.details.computableTextCount, 0);
+
+      const pass = scan(plain);
+      assert.strictEqual(pass.outcome, 'pass', `${ruleId} ${locale}`);
+      assert.strictEqual(pass.occurrences.length, 1);
+      const occ = pass.occurrences[0];
+      assert.strictEqual(occ.data.details.reasonCode, 'ALL_ABOVE_THRESHOLD');
+      assert.strictEqual(occ.i18n.hintKey, 'contrast_hint_pass');
+      assert.ok(occ.hint.trim().length > 20, `${ruleId} ${locale}: ${occ.hint}`);
+      if (locale === 'fr') assert.match(occ.hint, /^Rien à changer/);
+    }
+  }
 });

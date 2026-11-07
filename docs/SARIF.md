@@ -16,7 +16,7 @@ See [`CI_INTEGRATIONS.md`](./CI_INTEGRATIONS.md) for a ready-to-paste GitHub Act
 
 Only `fail`/`cantTell` occurrences produce SARIF results (same "violations only" framing as [`REPORT.md`](./REPORT.md)'s HTML report). So a log with no results says nothing failed or needs review among the checks that ran; it doesn't say what was checked, and it is not a conformance claim. Keep the JSON result for that.
 
-A `notApplicable` check is not always empty: a rule may attach one occurrence explaining why it had nothing to judge, which the contrast rules do when no text had a computable background. Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotifications`, each naming the rule it came from via `associatedRule.id`:
+A `notApplicable` check is not always empty: a pack's or custom rule may attach one occurrence explaining why it had nothing to judge (core's rules attach none). Those never become results — a consumer treats every result as an alert, and "this was not evaluated" is not one — but they are not dropped either. They are carried as `note`-level entries in `runs[0].invocations[0].toolExecutionNotifications`, each naming the rule it came from via `associatedRule.id`:
 
 ```json
 "invocations": [
@@ -25,8 +25,8 @@ A `notApplicable` check is not always empty: a rule may attach one occurrence ex
     "toolExecutionNotifications": [
       {
         "level": "note",
-        "message": { "text": "No eligible text had computable contrast (eligible text nodes: 13). See the contrast computability rule for details." },
-        "associatedRule": { "id": "contrast-minimum" }
+        "message": { "text": "No form on this page could be checked: each is inside a closed shadow root." },
+        "associatedRule": { "id": "acme-form-review" }
       }
     ]
   }
@@ -35,7 +35,7 @@ A `notApplicable` check is not always empty: a rule may attach one occurrence ex
 
 A rule that did not complete (it threw: `cantTell` with no occurrences and an `error`, see [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)) judged nothing, so it is no result either. It is an `error`-level notification in the same list, `"The rule <id> did not complete: <error>"`, naming the rule in `associatedRule.id`, so the gap in coverage doesn't read as a pass.
 
-That keeps a SARIF-only pipeline from reading silence as a clean bill of health: no contrast alerts can mean the page is fine, or that contrast was never computable, and only the notice separates the two. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
+That keeps a SARIF-only pipeline from reading silence as a clean bill of health. Core's contrast rules need no notice for it: text whose contrast could not be computed is a `contrast-computable` result. The block is emitted only when there is something to say, so a run with nothing to report has no `invocations` key at all.
 
 | Engine outcome | SARIF `level` | Meaning |
 |---|---|---|
