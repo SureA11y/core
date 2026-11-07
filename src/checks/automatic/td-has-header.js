@@ -165,7 +165,7 @@ function runInPage(ctx) {
   // (<td><b>Name</b></td>).
   function isBold(cell) {
     if (weightBold(cell)) return true;
-    const kids = Array.from(dom.children(cell) || []);
+    const kids = [...(dom.children(cell) || [])];
     return (
       kids.length === 1 &&
       trim(dom.textContent(kids[0])) === trim(dom.textContent(cell)) &&
@@ -227,10 +227,10 @@ function runInPage(ctx) {
     const tableRole = firstRole(table);
     if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
-    const rows = Array.from(table.rows);
+    const rows = [...table.rows];
     if (rows.length < MIN_SIZE) continue;
 
-    const rowCells = rows.map((r) => Array.from(r.cells || []));
+    const rowCells = rows.map((r) => [...(r.cells || [])]);
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
 

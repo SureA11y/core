@@ -104,7 +104,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -241,7 +241,7 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
+      return [...((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || [])];
     } catch {
       return queryAll('area');
     }

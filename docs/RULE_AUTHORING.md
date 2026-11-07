@@ -59,6 +59,10 @@ function runInPage(ctx) {
 
 `npm run lint` fails on a direct read of a DOM-only name in `src/core`, `src/checks` or a profile's rules, and `node scripts/codemods/use-safe-dom.js` rewrites one; a pack lints its rules with the same rules from `@surea11y/core/eslint-plugin` ([`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#packs--rules-and-standards-from-outside-core)). The Chromium test `tests/engine-checks/named-property-override-chromium.test.js` scans pages where every name is overridden and checks the results don't change.
 
+### 1.3 Make arrays with spread, not `Array.from`
+
+Old libraries still found on live sites replace `Array.from`: Prototype's gives an empty list for a `Set` or a `Map` iterator, ignores the mapping function and counts a string by UTF-16 code unit; MooTools' wraps a `Set` or a string in a list of one. Core's own code doesn't use it: write `[...x]` and `[...x].map(f)`, which go through the iterators those libraries leave alone, and read a list that need not be iterable (one a component gives, with only a `length`) by index. `npm run lint` fails on `Array.from` in `src/core`, `src/checks` and a profile's rules. A pack's or custom rule that uses it still runs, except on a page that replaced it, where the scan stops with `PAGE_BUILTINS_BROKEN` naming `Array.from` ([`LIMITATIONS.md`](./LIMITATIONS.md)).
+
 ---
 
 ## 2) Rule module contract (exact)

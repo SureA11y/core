@@ -422,13 +422,13 @@ function renderWcagRollup(rulesResults, standards, ui) {
           const ruleMappings = (rule.meta && rule.meta.normativeMappings) || [];
           const enLabel = standards
             .map((standard) => {
-              const requirements = Array.from(
-                new Set(
+              const requirements = [
+                ...new Set(
                   ruleMappings
                     .filter((m) => standardOfEntryIn(standards, m) === standard)
                     .map((m) => m.requirement)
                 )
-              );
+              ];
               return requirements.length
                 ? `<br><span class="note">${esc(standard.standard)} ${requirements.map(esc).join(', ')}</span>`
                 : '';
@@ -617,13 +617,13 @@ function renderStandardRollup(standard, results, ui, headingId, version) {
       const details = (rule.data && rule.data.details) || {};
       const metrics = details.metrics || {};
       const checksIds = idList(details.checksIds);
-      const tests = Array.from(
-        new Set(
+      const tests = [
+        ...new Set(
           ((rule.meta && rule.meta.normativeMappings) || [])
             .filter((m) => standardOfEntryIn([standard], m) === standard)
             .map((m) => m.requirement)
         )
-      );
+      ];
       const chip = `<span class="chip" style="background:${info.bg};color:${info.color}">${esc(info.label)}</span>`;
       const metricsLabel = ui.tr('report_rollup_breakdown', {
         pass: ui.num(metrics.passCount),
@@ -1006,7 +1006,7 @@ function renderHtmlReport(input, options = {}) {
   };
   const standardRollups = standards.flatMap((standard) => {
     const results = allRollups.filter((r) => ownStandard(r) === standard);
-    const versions = Array.from(new Set(results.map(versionOfRollup)));
+    const versions = [...new Set(results.map(versionOfRollup))];
     if (versions.length < 2) return results.length ? [{ standard, results }] : [];
     const known = Array.isArray(standard.versions) ? standard.versions : [];
     const at = (v) => (known.includes(v) ? known.indexOf(v) : known.length);

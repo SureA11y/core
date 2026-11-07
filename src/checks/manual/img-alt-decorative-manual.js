@@ -125,7 +125,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -386,7 +386,7 @@ function runInPage(ctx) {
   const els = (() => {
     const sel = 'img, canvas, svg';
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      return [...((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || [])];
     } catch {
       return queryAll(sel);
     }
@@ -423,7 +423,7 @@ function runInPage(ctx) {
       }
       if (tag === 'svg') {
         const parts = [];
-        for (const n of Array.from(dom.childNodes(el) || [])) {
+        for (const n of [...(dom.childNodes(el) || [])]) {
           const t = dom.nodeType(n);
           if (t === 1) parts.push(dom.outerHTML(n) || '');
           else if (t === 3) parts.push(dom.nodeValue(n) || '');
@@ -477,7 +477,7 @@ function runInPage(ctx) {
       if (other || visits++ > 2000) return;
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(n)
-        : Array.from(dom.childNodes(n) || []);
+        : [...(dom.childNodes(n) || [])];
       for (const k of kids) {
         if (other) return;
         const type = dom.nodeType(k);

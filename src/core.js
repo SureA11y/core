@@ -1260,7 +1260,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   }
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
-  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1359,7 +1359,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // runOnly takes one. As an object with neither key it ran every rule.
   const includeExclude = (v) =>
     Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: Array.from(typeof v === 'string' ? [v] : v) }
+      ? { include: typeof v === 'string' ? [v] : [...v] }
       : (v && typeof v === 'object' ? v : null);
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
@@ -3651,7 +3651,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             try {
               const found =
                 selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
-              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
+              hosts = [...(found || dom.querySelectorAll(walkRoot, selector))];
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -5513,9 +5513,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         // <style media="print"> or <link media="print">: not the screen's.
         if (sheet && sheet.disabled === true) continue;
@@ -6133,7 +6133,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // schemes").
       if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
         const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
-        for (const meta of Array.from(metas)) {
+        for (const meta of [...metas]) {
           const named = __schemesNamed(dom.getAttribute(meta, 'content'));
           if (named.length) {
             supported = named;
@@ -6360,9 +6360,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         const rules = rulesOf(sheet);
         if (!rules) {
@@ -7212,9 +7212,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
     let found = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -7292,9 +7292,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const bases = new Set();
     let all = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       const stack = [];
       for (const sheet of sheets) {
         try {
@@ -7343,7 +7343,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       all = true;
     }
-    let out = all ? '*' : Array.from(bases).join(', ');
+    let out = all ? '*' : [...bases].join(', ');
     if (out && out !== '*') {
       try {
         __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
@@ -8082,7 +8082,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         doc,
         'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
       );
-      for (const c of Array.from(candidates || [])) {
+      for (const c of [...(candidates || [])]) {
         // Cheap test first, on what can name it, before the name itself.
         const raw = [
           dom.textContent(c),
@@ -9027,7 +9027,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             cs &&
             String(cs.display).startsWith('inline') &&
             !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
-              ? Array.from(dom.getClientRects(node))
+              ? [...dom.getClientRects(node)]
               : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
@@ -12053,7 +12053,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   return {
     // Every concrete role token: the list the live-region hook keeps a copy
     // of, to resolve a role attribute as getExplicitRole does.
-    concreteRoles: () => Array.from(CONCRETE_ROLES),
+    concreteRoles: () => [...CONCRETE_ROLES],
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -13356,13 +13356,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __imageMapIndexByTree.set(tree, idx);
     try {
       const byName = new Map();
-      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+      for (const m of [...dom.querySelectorAll(tree, 'map')]) {
         for (const attr of ['id', 'name']) {
           const v = dom.getAttribute(m, attr);
           if (v && !byName.has(v)) byName.set(v, m);
         }
       }
-      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+      for (const img of [...dom.querySelectorAll(tree, 'img[usemap]')]) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
         const map = byName.get(ref.slice(1));
@@ -13686,6 +13686,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return rules;
   }
 
+  // The elements in a list the DOM or a component gave (an array, a
+  // FrozenArray, or any object with a length), read by index: such a list
+  // need not be iterable.
+  function __elementsIn(list) {
+    const out = [];
+    for (let i = 0; i < list.length; i++) if (isElement(list[i])) out.push(list[i]);
+    return out;
+  }
+
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
     if (getAttr(el, attr) == null) return [];
@@ -13694,7 +13703,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // aria-activedescendant reflects as one element, the others as lists.
       if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
-      return Array.from(list).filter(isElement);
+      return __elementsIn(list);
     } catch {
       return [];
     }
@@ -13874,7 +13883,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
-        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+        for (let i = 0; i < disabled.length; i++) {
+          if (String(disabled[i]) === 'internals') return none;
+        }
       }
       // The hook's registry in the element's own realm, checked first.
       const hook = win ? __internalsHookOf(win) : null;
@@ -13917,11 +13928,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     try {
       const refs = ei.internals.ariaLabelledByElements;
       if (refs && typeof refs.length === 'number' && refs.length) {
-        const t = getTextFromRefs(
-          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
-          _ctx,
-          opts
-        );
+        const t = getTextFromRefs({ refs: __elementsIn(refs), missing: [], flags: [] }, _ctx, opts);
         if (t.text) return { status: 'named', value: t.text };
       }
       const label = trim(ei.internals.ariaLabel);
@@ -14384,7 +14391,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
+      refs = [...dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]')];
     } catch {
       refs = [];
     }
@@ -14489,8 +14496,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
+        ...dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]'),
+        ...dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]')
       ];
     } catch {
       refs = [];
@@ -14636,7 +14643,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         els = [];
       }
-      // NodeList is iterable; avoid Array.from to reduce allocations.
+      // NodeList is iterable; no copy, to reduce allocations.
       for (const el of els) {
         if (el && !seen.has(el) && !isExcluded(el)) {
           seen.add(el);
@@ -16753,7 +16760,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
         const picked = [];
-        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+        for (const opt of [...dom.querySelectorAll(node, 'option')]) {
           let selected;
           try {
             selected = !!dom.get(opt, 'selected');
@@ -16766,7 +16773,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (tag === 'input') return trim(valueOf());
       if (role === 'listbox') {
-        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+        return [...dom.querySelectorAll(node, '[role~="option" i]')]
           .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
           .map(optionText)
           .filter(Boolean)
@@ -17693,7 +17700,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
     if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
 
-    const length = Array.from(String(rawAlt).trim()).length;
+    const length = [...String(rawAlt).trim()].length;
     if (length > TA_MAX_LENGTH) {
       return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
     }
@@ -18418,7 +18425,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const kids = assigned.length
           ? assigned
           : dom.childNodes(node)
-            ? Array.from(dom.childNodes(node))
+            ? [...dom.childNodes(node)]
             : [];
         for (const kid of kids) {
           collectChild(kid, parts);
@@ -19280,7 +19287,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const resolve = (sel) => {
         try {
           const root = dom.getRootNode(el);
-          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+          return root ? [...dom.querySelectorAll(root, sel)] : [];
         } catch {
           return [];
         }
@@ -19622,7 +19629,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
+      const kids = dom.children(el) ? [...dom.children(el)] : [];
       for (const kid of kids) {
         if (lower(dom.localName(kid)) === childTag) return kid;
       }
@@ -20406,7 +20413,7 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
       const req = String(m.requirement || '').trim();
       if (req) out.add(req);
     }
-    return Array.from(out).sort();
+    return [...out].sort();
   }
 
   const m = meta && typeof meta === 'object' ? meta : {};
@@ -21795,8 +21802,8 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
   };
   for (let i = 0; !named && i < roots.length; i++) {
     try {
-      const own = Array.from(dom.styleSheets(roots[i]) || []);
-      const adopted = Array.from(dom.get(roots[i], 'adoptedStyleSheets') || []);
+      const own = [...(dom.styleSheets(roots[i]) || [])];
+      const adopted = [...(dom.get(roots[i], 'adoptedStyleSheets') || [])];
       for (const sheet of own.concat(adopted)) {
         if (sheetNames(sheet, 0)) {
           named = true;
@@ -22448,9 +22455,9 @@ const runCoreSettled = (function runCoreSettled(
   const overriddenBuiltinIds = resolvedCustom.overriddenBuiltinIds;
   for (const id of resolvedCustom.defs.keys()) customRuleIds.add(id);
   if (resolvedCustom.defs.size) {
-    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat(
-      Array.from(resolvedCustom.defs.values())
-    );
+    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat([
+      ...resolvedCustom.defs.values()
+    ]);
     effectiveRuleImpls = { ...RULE_IMPLS, ...resolvedCustom.impls };
   }
   if (overriddenBuiltinIds.length) {
@@ -22879,9 +22886,9 @@ const runCoreSettled = (function runCoreSettled(
         return out;
       }
       if (kind === '[object Map]') {
-        return Array.from(v.entries(), ([k, x]) => [plainData(k, path), plainData(x, path)]);
+        return [...v.entries()].map(([k, x]) => [plainData(k, path), plainData(x, path)]);
       }
-      if (kind === '[object Set]') return Array.from(v.values(), (x) => plainData(x, path));
+      if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
       const out = {};
       for (const key of Object.keys(v)) {
@@ -22978,14 +22985,14 @@ const runCoreSettled = (function runCoreSettled(
         const added = new Set();
         const removed = new Set();
         for (const r of records) {
-          for (const n of Array.from(r.addedNodes || [])) added.add(n);
-          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+          for (const n of [...(r.addedNodes || [])]) added.add(n);
+          for (const n of [...(r.removedNodes || [])]) removed.add(n);
         }
         const transient = (n) => added.has(n) && removed.has(n);
         let n = 0;
         for (const r of records) {
           if (r.type === 'childList') {
-            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            const nodes = [...(r.addedNodes || [])].concat([...(r.removedNodes || [])]);
             if (nodes.length && nodes.every(transient)) continue;
           } else if (transient(r.target)) {
             continue;
@@ -23012,6 +23019,26 @@ const runCoreSettled = (function runCoreSettled(
         .filter((d) => !foreignCode.has(d.ruleId))
         .concat(effectiveCheckDefs.filter((d) => foreignCode.has(d.ruleId)))
     : effectiveCheckDefs;
+  // The pack's and caller's rules this selection runs, an override where its
+  // built-in would: those that use Array.from need it to work.
+  if (foreignCode.size) {
+    const foreignFns = [];
+    for (const def of runOrder) {
+      if (!foreignCode.has(def.ruleId)) continue;
+      const selected =
+        ruleMatchesRunOnly(resolveRuleDefI18n(def, engineOptionsResolved), runOnly, ENGINE_TAG) ||
+        (overriddenBuiltinIds.includes(def.ruleId) &&
+          CHECK_DEFS.some(
+            (d) =>
+              d &&
+              d.ruleId === def.ruleId &&
+              ruleMatchesRunOnly(resolveRuleDefI18n(d, engineOptionsResolved), runOnly, ENGINE_TAG)
+          ));
+      const impl = selected ? effectiveRuleImpls[def.ruleId] : null;
+      if (impl) foreignFns.push(impl.run, impl.applicability);
+    }
+    assertArrayFromFor(foreignFns);
+  }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
     engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
@@ -23705,7 +23732,21 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     for (const x of [1, 2]) sum += x;
     return sum === 3;
   });
-  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Set iteration', () => [...new Set([1, 2])].length === 2);
+  check('Map iteration', () => {
+    const [entry] = [...new Map([['a', 1]])];
+    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+  });
+  // Built at run time: a bundle loaded without its charset would read the
+  // character in a literal as several.
+  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+  check('NodeList iteration', () => {
+    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+    // Read from Node.prototype: a named element could stand in for
+    // document.childNodes.
+    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
+    return [...nodes].length === nodes.length;
+  });
   check('Map', () => {
     const m = new Map();
     m.set('a', 1);
@@ -23731,6 +23772,7 @@ const assertPageBuiltins = (function assertPageBuiltins() {
   });
   check('String.prototype.trim', () => '  a '.trim() === 'a');
   check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
   check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
   if (!broken.length) return;
   let names = '';
@@ -23743,6 +23785,40 @@ const assertPageBuiltins = (function assertPageBuiltins() {
   err.code = 'PAGE_BUILTINS_BROKEN';
   err.broken = broken;
   throw err;
+});
+const assertArrayFromFor = (function assertArrayFromFor(fns) {
+  let works;
+  /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
+  try {
+    const mapped = Array.from(new Set([1, 2]), (x) => x * 2);
+    works =
+      mapped.length === 2 &&
+      mapped[1] === 4 &&
+      Array.from(new Map([['a', 1]]).values())[0] === 1 &&
+      Array.from('a' + String.fromCodePoint(0x1f600)).length === 2 &&
+      Array.from({ length: 1, 0: 'a' })[0] === 'a';
+  } catch {
+    works = false;
+  }
+  /* eslint-enable no-restricted-properties */
+  if (works) return;
+  const toSource = Function.prototype.toString;
+  for (let i = 0; i < fns.length; i++) {
+    let source;
+    try {
+      source = typeof fns[i] === 'function' ? toSource.call(fns[i]) : '';
+    } catch {
+      source = '';
+    }
+    if (source.indexOf('Array.from') === -1) continue;
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (Array.from), ' +
+        "so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = ['Array.from'];
+    throw err;
+  }
 });
 const runCore = (function runCore(
   pageUrl,
@@ -24435,7 +24511,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const out = Object.assign({}, first, {
     engine,
     checksResults,
-    rulesResults: Array.from(rollups.values()),
+    rulesResults: [...rollups.values()],
     profiles
   });
   if (standards.length) out.standards = standards;
@@ -24478,7 +24554,7 @@ function catalogCheckDefs(engineOptions) {
   const custom = resolveCustomRules(eo.customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   if (!custom.defs.size) return { defs: CHECK_DEFS, overridden: [] };
   return {
-    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat(Array.from(custom.defs.values())),
+    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat([...custom.defs.values()]),
     overridden: custom.overriddenBuiltinIds
   };
 }
@@ -24656,7 +24732,7 @@ function rollupsForSelection(selection, engineOptions, defs, overridden, customD
   }
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
-  const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
+  const ran = [...selectedIds].map((ruleId) => ({ ruleId, outcome: 'notApplicable' }));
   const rolled = rollupCompositeResults(
     ran,
     COMPOSITE_RULES,
@@ -43714,7 +43790,21 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     for (const x of [1, 2]) sum += x;
     return sum === 3;
   });
-  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Set iteration', () => [...new Set([1, 2])].length === 2);
+  check('Map iteration', () => {
+    const [entry] = [...new Map([['a', 1]])];
+    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+  });
+  // Built at run time: a bundle loaded without its charset would read the
+  // character in a literal as several.
+  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+  check('NodeList iteration', () => {
+    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+    // Read from Node.prototype: a named element could stand in for
+    // document.childNodes.
+    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
+    return [...nodes].length === nodes.length;
+  });
   check('Map', () => {
     const m = new Map();
     m.set('a', 1);
@@ -43740,6 +43830,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   });
   check('String.prototype.trim', () => '  a '.trim() === 'a');
   check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
   check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
   if (!broken.length) return;
   let names = '';
@@ -55621,7 +55712,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -55657,7 +55748,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const areas = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
+      return [...((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || [])];
     } catch {
       return queryAll('area');
     }
@@ -55830,7 +55921,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -55967,7 +56058,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || []);
+      return [...((queryAllSmart ? queryAllSmart('area') : queryAll('area')) || [])];
     } catch {
       return queryAll('area');
     }
@@ -58223,14 +58314,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }
@@ -60921,7 +61012,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           try {
             const scope = rt || safeRoot;
             return scope && dom.get(scope, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(scope, sel))
+              ? [...dom.querySelectorAll(scope, sel)]
               : [];
           } catch {
             return [];
@@ -62651,7 +62742,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasVisibleTextChild(el) {
     let kids;
     try {
-      kids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
+      kids = dom.childNodes(el) ? [...dom.childNodes(el)] : [];
     } catch {
       return false;
     }
@@ -62769,7 +62860,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
     let most = 0;
     let measured = false;
-    for (const n of Array.from(dom.childNodes(el) || [])) {
+    for (const n of [...(dom.childNodes(el) || [])]) {
       if (dom.nodeType(n) !== 3) continue;
       const value = String(dom.nodeValue(n) || '');
       if (!value.trim() || (keepsNewlines && value.includes('\n'))) continue;
@@ -63780,7 +63871,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       target =
         typeof dom.get(root, 'querySelectorAll') === 'function'
-          ? Array.from(dom.querySelectorAll(root, 'a[name]')).find(
+          ? [...dom.querySelectorAll(root, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null
           : null;
@@ -64105,7 +64196,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -64202,7 +64293,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const canvases = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
+      return [...((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || [])];
     } catch {
       return queryAll('canvas');
     }
@@ -64329,7 +64420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -64400,7 +64491,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || []);
+      return [...((queryAllSmart ? queryAllSmart('canvas') : queryAll('canvas')) || [])];
     } catch {
       return queryAll('canvas');
     }
@@ -66174,7 +66265,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           details: {
             eligibleTextCount,
             assumptionsCount,
-            assumptionsApplied: Array.from(assumptionsAppliedSet).sort()
+            assumptionsApplied: [...assumptionsAppliedSet].sort()
           }
         }
       }
@@ -66397,7 +66488,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function symbolicCharacter(el) {
     try {
       const own = String(dom.textContent(el) || '').trim();
-      if (Array.from(own).length !== 1) return '';
+      if ([...own].length !== 1) return '';
       for (let node = el, depth = 0; node && depth < 8; depth += 1) {
         if (
           dom.getAttribute(node, 'aria-label') != null ||
@@ -67576,7 +67667,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function symbolicCharacter(el) {
     try {
       const own = String(dom.textContent(el) || '').trim();
-      if (Array.from(own).length !== 1) return '';
+      if ([...own].length !== 1) return '';
       for (let node = el, depth = 0; node && depth < 8; depth += 1) {
         if (
           dom.getAttribute(node, 'aria-label') != null ||
@@ -69313,14 +69404,14 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }
@@ -69605,7 +69696,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // root's, whose rules reach only the elements of that root.
       const sheets = helpers.getStyleSheets
         ? helpers.getStyleSheets()
-        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
         if (!conditionApplies(sheet)) continue;
         sheetRoot = root;
@@ -70567,7 +70658,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         hasLayout = !!(root && dom.getClientRects(root).length);
       }
       if (!hasLayout) return true;
-      return Array.from(dom.getClientRects(el)).some((r) => r.width > 0 && r.height > 0);
+      return [...dom.getClientRects(el)].some((r) => r.width > 0 && r.height > 0);
     } catch {
       return true;
     }
@@ -70581,7 +70672,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       return [];
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(root || document, selectorText));
+      matched = [...dom.querySelectorAll(root || document, selectorText)];
     } catch {
       return [];
     }
@@ -70598,7 +70689,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function isDecorative(el) {
     try {
       if (/[\p{L}\p{N}]/u.test(String(dom.textContent(el) || ''))) return false;
-      const media = [el].concat(Array.from(dom.querySelectorAll(el, CONTENT_MEDIA) || []));
+      const media = [el].concat([...(dom.querySelectorAll(el, CONTENT_MEDIA) || [])]);
       return !media.some((m) => {
         const tag = String(dom.localName(m) || '').toLowerCase();
         if (m === el && !dom.matches(el, CONTENT_MEDIA)) return false;
@@ -70700,7 +70791,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (sh.mediaText !== f.mediaText || sh.root !== f.root) continue;
       let matched;
       try {
-        matched = Array.from(dom.querySelectorAll(sh.root || document, sh.selectorText));
+        matched = [...dom.querySelectorAll(sh.root || document, sh.selectorText)];
       } catch {
         matched = [];
       }
@@ -70767,7 +70858,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       signals: [
         {
           signal: 'unreadable-sheet-hosts',
-          value: Array.from(new Set(unreadableSheetHosts)).join(' ')
+          value: [...new Set(unreadableSheetHosts)].join(' ')
         }
       ],
       i18n: { whyKey: 'cssOrientationLock_lean_why_fontSheets' }
@@ -70788,7 +70879,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // whose rules apply to the elements of that root.
     const sheets = helpers.getStyleSheets
       ? helpers.getStyleSheets()
-      : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+      : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
     for (const { sheet, root } of sheets) {
       // Another origin's sheet can't be read, unless engineOptions.styleSheetTexts
       // gives its text (helpers.cssRulesOf). One that stays unreadable is
@@ -70912,7 +71003,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   for (const h of hidings) {
     let matched;
     try {
-      matched = Array.from(dom.querySelectorAll(h.root || document, h.selectorText));
+      matched = [...dom.querySelectorAll(h.root || document, h.selectorText)];
     } catch {
       matched = [];
     }
@@ -71619,7 +71710,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (queryAllSmart) {
     try {
       const scoped = queryAllSmart('[id]', { inert: true });
-      const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
+      const list = Array.isArray(scoped) ? scoped : [...(scoped || [])];
       inScope = new Set(list);
       for (const el of list) all.add(el);
     } catch {
@@ -71781,7 +71872,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (helpers && typeof helpers.queryAllSmart === 'function') {
     try {
       const scoped = helpers.queryAllSmart('[id]', { inert: true });
-      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+      inScope = new Set(Array.isArray(scoped) ? scoped : [...(scoped || [])]);
     } catch {
       inScope = null;
     }
@@ -71917,7 +72008,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -71938,7 +72029,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const embeds = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || []);
+      return [...((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || [])];
     } catch {
       return queryAll('embed');
     }
@@ -72120,7 +72211,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -72171,7 +72262,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || []);
+      return [...((queryAllSmart ? queryAllSmart('embed') : queryAll('embed')) || [])];
     } catch {
       return queryAll('embed');
     }
@@ -72561,7 +72652,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           name = '';
         }
         if (!name && tag === 'svg') {
-          const title = Array.from(dom.childNodes(node) || []).find(
+          const title = [...(dom.childNodes(node) || [])].find(
             (c) => dom.nodeType(c) === 1 && String(dom.tagName(c) || '').toLowerCase() === 'title'
           );
           name = title ? String(dom.textContent(title) || '') : '';
@@ -72639,7 +72730,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const row = dom.parentElement(th);
     const table = row ? dom.closest(row, 'table') : null;
     if (!table || !table.rows) return null;
-    const rows = Array.from(table.rows).map((tr) => Array.from(tr.cells || []));
+    const rows = [...table.rows].map((tr) => [...(tr.cells || [])]);
     const r = rows.findIndex((cells) => cells.indexOf(th) !== -1);
     if (r === -1) return null;
     const c = rows[r].indexOf(th);
@@ -74550,9 +74641,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   function safeQueryAll(sel) {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart(sel) || []);
+      if (queryAllSmart) return [...(queryAllSmart(sel) || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, sel))
+        ? [...dom.querySelectorAll(safeRoot, sel)]
         : [];
     } catch {
       return [];
@@ -77281,7 +77372,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -77542,7 +77633,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const els = (() => {
     const sel = 'img, canvas, svg';
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || []);
+      return [...((queryAllSmart ? queryAllSmart(sel) : queryAll(sel)) || [])];
     } catch {
       return queryAll(sel);
     }
@@ -77579,7 +77670,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
       if (tag === 'svg') {
         const parts = [];
-        for (const n of Array.from(dom.childNodes(el) || [])) {
+        for (const n of [...(dom.childNodes(el) || [])]) {
           const t = dom.nodeType(n);
           if (t === 1) parts.push(dom.outerHTML(n) || '');
           else if (t === 3) parts.push(dom.nodeValue(n) || '');
@@ -77633,7 +77724,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (other || visits++ > 2000) return;
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(n)
-        : Array.from(dom.childNodes(n) || []);
+        : [...(dom.childNodes(n) || [])];
       for (const k of kids) {
         if (other) return;
         const type = dom.nodeType(k);
@@ -77832,7 +77923,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (queryAllSmart) {
         const r = queryAllSmart('img');
-        return Array.isArray(r) ? r : Array.from(r || []);
+        return Array.isArray(r) ? r : [...(r || [])];
       }
     } catch {
       // fall through
@@ -78023,7 +78114,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -78089,7 +78180,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const selector = 'img[alt]:not([alt=""])';
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart(selector) : queryAll(selector)) || []);
+      return [...((queryAllSmart ? queryAllSmart(selector) : queryAll(selector)) || [])];
     } catch {
       return queryAll(selector);
     }
@@ -78152,7 +78243,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (other || visits++ > 2000) return;
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(n)
-        : Array.from(dom.childNodes(n) || []);
+        : [...(dom.childNodes(n) || [])];
       for (const k of kids) {
         if (other) return;
         const type = dom.nodeType(k);
@@ -78335,7 +78426,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -78413,10 +78504,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from(
-        (queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) ||
-          []
-      );
+      return [
+        ...((queryAllSmart
+          ? queryAllSmart('input[type="image"]')
+          : queryAll('input[type="image"]')) || [])
+      ];
     } catch {
       return queryAll('input[type="image"]');
     }
@@ -78515,7 +78607,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -78539,10 +78631,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const inputs = (() => {
     try {
-      return Array.from(
-        (queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) ||
-          []
-      );
+      return [
+        ...((queryAllSmart
+          ? queryAllSmart('input[type="image"]')
+          : queryAll('input[type="image"]')) || [])
+      ];
     } catch {
       return queryAll('input[type="image"]');
     }
@@ -78707,7 +78800,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -78805,10 +78898,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from(
-        (queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) ||
-          []
-      );
+      return [
+        ...((queryAllSmart
+          ? queryAllSmart('input[type="image"]')
+          : queryAll('input[type="image"]')) || [])
+      ];
     } catch {
       return queryAll('input[type="image"]');
     }
@@ -79973,7 +80067,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // would say. Other letters give no direction. (A symbol alone has no
   // words to compare, so it is not reported; it is read here all the same.)
   function symbolicCharacterKind(text) {
-    const c = Array.from(norm(text))[0] || '';
+    const c = [...norm(text)][0] || '';
     if (c === 'x') return 'letter-x';
     if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
     if (/^\p{N}$/u.test(c)) return 'digit';
@@ -79991,7 +80085,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // symbol standing in for something else, and still fails outright.
   function isSingleSymbolicCharacter(text, accessibleNameNorm) {
     const t = norm(text);
-    if (!t || Array.from(t).length !== 1) return false;
+    if (!t || [...t].length !== 1) return false;
     return accessibleNameNorm.indexOf(t) === -1;
   }
 
@@ -80093,7 +80187,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // A stem of one or two letters ("N.", "No.") starts too many words to
       // stand for the one in the name; three or more ("Ave.", "Dept.") does.
       const longStems = new Set(
-        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+        [...abbreviatedWords(visibleLabel)].filter((w) => [...w].length >= 3)
       );
       if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
         lean = {
@@ -80103,7 +80197,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             { signal: 'abbreviation-prefix-match', value: true },
             {
               signal: 'shortest-abbreviation-stem',
-              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+              value: Math.min(...[...longStems].map((w) => [...w].length))
             }
           ],
           caution: 'A speech user may say the abbreviation as shown rather than the full word.',
@@ -81482,9 +81576,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(
-        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
-      ).filter((img) => {
+      imgs = [
+        ...dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
+      ].filter((img) => {
         const name = String(dom.localName(img) || '').toLowerCase();
         if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
         return explicitRole(img) === 'img';
@@ -81868,9 +81962,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -84016,7 +84110,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // list and its items, which leaves them items of no list.
   function wrapsDrawnItems(el) {
     try {
-      return Array.from(dom.querySelectorAll(el, 'li')).some((li) => drawnAsListItem(li));
+      return [...dom.querySelectorAll(el, 'li')].some((li) => drawnAsListItem(li));
     } catch {
       return false;
     }
@@ -85181,7 +85275,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const engineOptions = ctx.engineOptions || {};
     const deep =
       engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
-    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    const list = [...((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || [])];
     return typeof helpers.isExcluded === 'function'
       ? list.filter((el) => !helpers.isExcluded(el))
       : list;
@@ -85789,7 +85883,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Browsers apply the last viewport meta tag that has content; an earlier
   // one is overridden. One that restricts zoom fails; an earlier one that
   // restricts is asked about, since browsers have differed on merging them.
-  const withContent = Array.from(nodes).filter(
+  const withContent = [...nodes].filter(
     (el) =>
       el && dom.get(el, 'getAttribute') && String(dom.getAttribute(el, 'content') || '').trim()
   );
@@ -86143,7 +86237,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
     let descendants;
     try {
-      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+      descendants = [...dom.querySelectorAll(el, FOCUSABLE_CANDIDATES)];
     } catch {
       return true;
     }
@@ -86158,7 +86252,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function focusableInside(el) {
     let descendants;
     try {
-      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+      descendants = [...dom.querySelectorAll(el, FOCUSABLE_CANDIDATES)];
     } catch {
       return true;
     }
@@ -86777,7 +86871,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const engineOptions = ctx.engineOptions || {};
     const deep =
       engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
-    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    const list = [...((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || [])];
     return typeof helpers.isExcluded === 'function'
       ? list.filter((el) => !helpers.isExcluded(el))
       : list;
@@ -87065,7 +87159,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -87093,7 +87187,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const objects = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || []);
+      return [...((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || [])];
     } catch {
       return queryAll('object');
     }
@@ -87312,7 +87406,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -87363,7 +87457,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || []);
+      return [...((queryAllSmart ? queryAllSmart('object') : queryAll('object')) || [])];
     } catch {
       return queryAll('object');
     }
@@ -88256,9 +88350,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const grid = dom.parentElement(card);
       if (!grid) continue;
       let repeats = 0;
-      for (const sib of Array.from(dom.children(grid) || [])) {
+      for (const sib of [...(dom.children(grid) || [])]) {
         if (sib === card || shapeOf(sib) !== shapeOf(card) || hasRealHeading(sib)) continue;
-        if (Array.from(dom.children(sib) || []).some((k) => candidateEls.has(k))) repeats += 1;
+        if ([...(dom.children(sib) || [])].some((k) => candidateEls.has(k))) repeats += 1;
       }
       if (!repeats) continue;
       c.occurrence.lean = {
@@ -88379,7 +88473,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
+  const hasH1 = [...nodes].some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -88438,7 +88532,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <svg><title> is not the page title.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+  for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
@@ -88478,7 +88572,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
 
       // Duplicate titles across distinct URLs is a strong "review" signal (not a guaranteed failure)
-      const dupGroups = Array.from(groups.values()).filter((g) => g.urls.length >= 2);
+      const dupGroups = [...groups.values()].filter((g) => g.urls.length >= 2);
 
       // Boilerplate-ish: detect a long common suffix/prefix across most titles.
       // Keep conservative: only flag if the common part is long and shared by many.
@@ -88792,7 +88886,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // <title> counts: an inline <svg><title> names the graphic, not the page,
   // and document.title ignores it.
   let titleEl = null;
-  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+  for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
@@ -90052,7 +90146,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -90098,11 +90192,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       '[role~="img" i], [role~="image" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
     let found;
     try {
-      found = Array.from(
-        (queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || []
-      );
+      found = [
+        ...((queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || [])
+      ];
     } catch {
-      found = Array.from(queryAll(sel) || []);
+      found = [...(queryAll(sel) || [])];
     }
     // An <svg> is never in scope, and an <img> only by a graphics token
     // (<img role="graphics-symbol">), as the selector's :not(img) and
@@ -90980,7 +91074,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rects = [];
     const cs = styleOf(el);
     if (cs && cs.display === 'contents') {
-      for (const child of Array.from(dom.childNodes(el) || [])) {
+      for (const child of [...(dom.childNodes(el) || [])]) {
         if (dom.nodeType(child) === 1) {
           const r = drawnBox(child);
           if (r) rects.push(r);
@@ -90988,13 +91082,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           try {
             const range = dom.createRange(document);
             range.selectNodeContents(child);
-            rects.push(...Array.from(dom.getClientRects(range)));
+            rects.push(...dom.getClientRects(range));
           } catch {}
         }
       }
     } else {
       try {
-        rects.push(...Array.from(dom.getClientRects(el)));
+        rects.push(...dom.getClientRects(el));
       } catch {}
     }
     if (!rects.length) return null;
@@ -91066,7 +91160,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // (the first token naming a real role, in any case).
     // Failing that, a custom element whose internals make it the main.
     const main =
-      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+      [...(dom.querySelectorAll(document, 'main, [role~="main" i]') || [])].find(
         (el) =>
           String(dom.localName(el) || '').toLowerCase() === 'main' ||
           helpers.aria.getExplicitRole(el) === 'main'
@@ -91192,7 +91286,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         // selector, which a backslash or quote in the name would break.
         try {
           target =
-            Array.from(dom.querySelectorAll(document, 'a[name]')).find(
+            [...dom.querySelectorAll(document, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null;
         } catch {
@@ -91942,7 +92036,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -91985,7 +92079,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const rawImages = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || []);
+      return [...((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || [])];
     } catch {
       return queryAll('svg image');
     }
@@ -92171,7 +92265,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -92246,7 +92340,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const svgs = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || []);
+      return [...((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || [])];
     } catch {
       return queryAll('svg');
     }
@@ -92428,7 +92522,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -92502,7 +92596,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const els = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || []);
+      return [...((queryAllSmart ? queryAllSmart('svg') : queryAll('svg')) || [])];
     } catch {
       return queryAll('svg');
     }
@@ -92550,7 +92644,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (other || visits++ > 2000) return;
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(n)
-        : Array.from(dom.childNodes(n) || []);
+        : [...(dom.childNodes(n) || [])];
       for (const k of kids) {
         if (other) return;
         const type = dom.nodeType(k);
@@ -93224,13 +93318,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // structure at all -- it must not be treated as the table's "first
     // row" (or counted toward a row's cell count) for this positional
     // heuristic.
-    const rows = Array.from(table.rows).filter(isEligible);
+    const rows = [...table.rows].filter(isEligible);
     if (rows.length < 2) continue;
 
     applicableCount += 1;
 
     const firstRow = rows[0];
-    const firstRowCells = Array.from(firstRow.cells || []).filter(isEligible);
+    const firstRowCells = [...(firstRow.cells || [])].filter(isEligible);
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
@@ -93239,7 +93333,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const hasMultiCellRow = rows
       .slice(1)
-      .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
+      .some((r) => [...(r.cells || [])].filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
     // A lone cell spanning the table's full width, used once at the top, is
@@ -93249,7 +93343,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
       return Number.isFinite(n) && n > 0 ? n : 1;
     };
-    const laterRows = rows.slice(1).map((r) => Array.from(r.cells || []).filter(isEligible));
+    const laterRows = rows.slice(1).map((r) => [...(r.cells || [])].filter(isEligible));
     const width = laterRows.reduce(
       (m, cells) =>
         Math.max(
@@ -93463,12 +93557,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let found;
     try {
       found = scope
-        ? Array.from(dom.querySelectorAll(scope, selector))
-        : Array.from(
-            (helpers.queryAllSmart
+        ? [...dom.querySelectorAll(scope, selector)]
+        : [
+            ...((helpers.queryAllSmart
               ? helpers.queryAllSmart(selector, { internalsRoles: true })
-              : helpers.queryAll(selector)) || []
-          );
+              : helpers.queryAll(selector)) || [])
+          ];
       if (scope && typeof helpers.getInternalsRoleElements === 'function') {
         for (const { el, role } of helpers.getInternalsRoleElements()) {
           if (el !== scope && roles.includes(role) && dom.contains(scope, el)) found.push(el);
@@ -93621,7 +93715,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   function askUnassignedInTable(table, headers) {
-    const rowCells = Array.from(table.rows || []).map((row) => Array.from(row.cells || []));
+    const rowCells = [...(table.rows || [])].map((row) => [...(row.cells || [])]);
     // A rowspan of 0 spans too, as in td-has-header.
     const spans = rowCells.some((cells) =>
       cells.some((c) => spanOf(c, 'colspan') > 1 || spanOf(c, 'rowspan') !== 1)
@@ -93676,7 +93770,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     );
     const rowCells = [];
     for (const row of rows) {
-      const cells = Array.from(dom.children(row) || []);
+      const cells = [...(dom.children(row) || [])];
       const simple = cells.every((cell) => {
         const role = explicitRole(cell);
         return (
@@ -93713,7 +93807,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ths = [];
     }
 
-    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    const headers = [...ths].filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;
@@ -93827,9 +93921,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function qsa(sel, opts) {
     try {
       if (helpers && typeof helpers.queryAllSmart === 'function')
-        return Array.from(helpers.queryAllSmart(sel, opts) || []);
+        return [...(helpers.queryAllSmart(sel, opts) || [])];
       if (helpers && typeof helpers.queryAll === 'function')
-        return Array.from(helpers.queryAll(sel) || []);
+        return [...(helpers.queryAll(sel) || [])];
       return [];
     } catch {
       return [];
@@ -93940,13 +94034,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (dom.nodeType(node) === 1) {
         const sr = dom.shadowRoot(node);
-        if (sr) return Array.from(dom.childNodes(sr));
+        if (sr) return [...dom.childNodes(sr)];
         if (String(dom.localName(node) || '').toLowerCase() === 'slot') {
           const assigned = dom.assignedNodes(node, { flatten: true });
-          if (assigned && assigned.length) return Array.from(assigned);
+          if (assigned && assigned.length) return [...assigned];
         }
       }
-      return Array.from(dom.childNodes(node));
+      return [...dom.childNodes(node)];
     } catch {
       return [];
     }
@@ -94001,7 +94095,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
       const r = dom.getClientRects(el);
-      return r ? Array.from(r) : [];
+      return r ? [...r] : [];
     } catch {
       return [];
     }
@@ -94666,7 +94760,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       const range = dom.createRange(document);
       range.selectNodeContents(el);
-      return Array.from(dom.getClientRects(range));
+      return [...dom.getClientRects(range)];
     } catch {
       return [];
     }
@@ -94678,9 +94772,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let list = __contentCache.get(el);
     if (!list) {
       try {
-        list = Array.from(dom.querySelectorAll(el, '*'))
-          .slice(0, 500)
-          .filter((d) => !isCandidate(d));
+        list = [...dom.querySelectorAll(el, '*')].slice(0, 500).filter((d) => !isCandidate(d));
       } catch {
         list = [];
       }
@@ -95030,7 +95122,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inScope = new Set(applicable);
     let all;
     try {
-      all = Array.from(dom.querySelectorAll(document, CANDIDATE_SELECTOR));
+      all = [...dom.querySelectorAll(document, CANDIDATE_SELECTOR)];
     } catch {
       all = [];
     }
@@ -95539,7 +95631,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // (<td><b>Name</b></td>).
   function isBold(cell) {
     if (weightBold(cell)) return true;
-    const kids = Array.from(dom.children(cell) || []);
+    const kids = [...(dom.children(cell) || [])];
     return (
       kids.length === 1 &&
       trim(dom.textContent(kids[0])) === trim(dom.textContent(cell)) &&
@@ -95601,10 +95693,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const tableRole = firstRole(table);
     if (tableRole && !TABLE_ROLES.includes(tableRole)) continue;
 
-    const rows = Array.from(table.rows);
+    const rows = [...table.rows];
     if (rows.length < MIN_SIZE) continue;
 
-    const rowCells = rows.map((r) => Array.from(r.cells || []));
+    const rowCells = rows.map((r) => [...(r.cells || [])]);
     const maxCols = rowCells.reduce((m, cells) => Math.max(m, cells.length), 0);
     if (maxCols < MIN_SIZE) continue;
 
@@ -95988,7 +96080,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // finds elements in shadow roots, which a document rule doesn't style.
       const sheets = helpers.getStyleSheets
         ? helpers.getStyleSheets()
-        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
         if (!applies(sheet)) continue;
         sheetRoot = root;
@@ -98026,7 +98118,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(node)
         : dom.childNodes(node)
-          ? Array.from(dom.childNodes(node))
+          ? [...dom.childNodes(node)]
           : [];
       for (const kid of kids) {
         if (found) return;
@@ -98328,15 +98420,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
   const videos = (() => {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
-      if (queryAll) return Array.from(queryAll('video') || []);
+      if (queryAllSmart) return [...(queryAllSmart('video') || [])];
+      if (queryAll) return [...(queryAll('video') || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+        ? [...dom.querySelectorAll(safeRoot, 'video')]
         : [];
     } catch {
       try {
         return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-          ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+          ? [...dom.querySelectorAll(safeRoot, 'video')]
           : [];
       } catch {
         return [];
@@ -107117,7 +107209,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   }
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
-  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -107216,7 +107308,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // runOnly takes one. As an object with neither key it ran every rule.
   const includeExclude = (v) =>
     Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: Array.from(typeof v === 'string' ? [v] : v) }
+      ? { include: typeof v === 'string' ? [v] : [...v] }
       : (v && typeof v === 'object' ? v : null);
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
@@ -109508,7 +109600,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             try {
               const found =
                 selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
-              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
+              hosts = [...(found || dom.querySelectorAll(walkRoot, selector))];
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -111370,9 +111462,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         // <style media="print"> or <link media="print">: not the screen's.
         if (sheet && sheet.disabled === true) continue;
@@ -111990,7 +112082,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       // schemes").
       if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
         const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
-        for (const meta of Array.from(metas)) {
+        for (const meta of [...metas]) {
           const named = __schemesNamed(dom.getAttribute(meta, 'content'));
           if (named.length) {
             supported = named;
@@ -112217,9 +112309,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         const rules = rulesOf(sheet);
         if (!rules) {
@@ -113069,9 +113161,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {}
     let found = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -113149,9 +113241,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     const bases = new Set();
     let all = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       const stack = [];
       for (const sheet of sheets) {
         try {
@@ -113200,7 +113292,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     } catch {
       all = true;
     }
-    let out = all ? '*' : Array.from(bases).join(', ');
+    let out = all ? '*' : [...bases].join(', ');
     if (out && out !== '*') {
       try {
         __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
@@ -113939,7 +114031,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
         doc,
         'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
       );
-      for (const c of Array.from(candidates || [])) {
+      for (const c of [...(candidates || [])]) {
         // Cheap test first, on what can name it, before the name itself.
         const raw = [
           dom.textContent(c),
@@ -114884,7 +114976,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             cs &&
             String(cs.display).startsWith('inline') &&
             !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
-              ? Array.from(dom.getClientRects(node))
+              ? [...dom.getClientRects(node)]
               : [dom.getBoundingClientRect(node)];
         } catch {
           continue;
@@ -117910,7 +118002,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
   return {
     // Every concrete role token: the list the live-region hook keeps a copy
     // of, to resolve a role attribute as getExplicitRole does.
-    concreteRoles: () => Array.from(CONCRETE_ROLES),
+    concreteRoles: () => [...CONCRETE_ROLES],
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -119213,13 +119305,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __imageMapIndexByTree.set(tree, idx);
     try {
       const byName = new Map();
-      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+      for (const m of [...dom.querySelectorAll(tree, 'map')]) {
         for (const attr of ['id', 'name']) {
           const v = dom.getAttribute(m, attr);
           if (v && !byName.has(v)) byName.set(v, m);
         }
       }
-      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+      for (const img of [...dom.querySelectorAll(tree, 'img[usemap]')]) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
         const map = byName.get(ref.slice(1));
@@ -119543,6 +119635,15 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return rules;
   }
 
+  // The elements in a list the DOM or a component gave (an array, a
+  // FrozenArray, or any object with a length), read by index: such a list
+  // need not be iterable.
+  function __elementsIn(list) {
+    const out = [];
+    for (let i = 0; i < list.length; i++) if (isElement(list[i])) out.push(list[i]);
+    return out;
+  }
+
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
     if (getAttr(el, attr) == null) return [];
@@ -119551,7 +119652,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // aria-activedescendant reflects as one element, the others as lists.
       if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
-      return Array.from(list).filter(isElement);
+      return __elementsIn(list);
     } catch {
       return [];
     }
@@ -119731,7 +119832,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
-        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+        for (let i = 0; i < disabled.length; i++) {
+          if (String(disabled[i]) === 'internals') return none;
+        }
       }
       // The hook's registry in the element's own realm, checked first.
       const hook = win ? __internalsHookOf(win) : null;
@@ -119774,11 +119877,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     try {
       const refs = ei.internals.ariaLabelledByElements;
       if (refs && typeof refs.length === 'number' && refs.length) {
-        const t = getTextFromRefs(
-          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
-          _ctx,
-          opts
-        );
+        const t = getTextFromRefs({ refs: __elementsIn(refs), missing: [], flags: [] }, _ctx, opts);
         if (t.text) return { status: 'named', value: t.text };
       }
       const label = trim(ei.internals.ariaLabel);
@@ -120241,7 +120340,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
+      refs = [...dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]')];
     } catch {
       refs = [];
     }
@@ -120346,8 +120445,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
+        ...dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]'),
+        ...dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]')
       ];
     } catch {
       refs = [];
@@ -120493,7 +120592,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         els = [];
       }
-      // NodeList is iterable; avoid Array.from to reduce allocations.
+      // NodeList is iterable; no copy, to reduce allocations.
       for (const el of els) {
         if (el && !seen.has(el) && !isExcluded(el)) {
           seen.add(el);
@@ -122610,7 +122709,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
         const picked = [];
-        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+        for (const opt of [...dom.querySelectorAll(node, 'option')]) {
           let selected;
           try {
             selected = !!dom.get(opt, 'selected');
@@ -122623,7 +122722,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       if (tag === 'input') return trim(valueOf());
       if (role === 'listbox') {
-        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+        return [...dom.querySelectorAll(node, '[role~="option" i]')]
           .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
           .map(optionText)
           .filter(Boolean)
@@ -123550,7 +123649,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
     if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
 
-    const length = Array.from(String(rawAlt).trim()).length;
+    const length = [...String(rawAlt).trim()].length;
     if (length > TA_MAX_LENGTH) {
       return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
     }
@@ -124275,7 +124374,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         const kids = assigned.length
           ? assigned
           : dom.childNodes(node)
-            ? Array.from(dom.childNodes(node))
+            ? [...dom.childNodes(node)]
             : [];
         for (const kid of kids) {
           collectChild(kid, parts);
@@ -125137,7 +125236,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const resolve = (sel) => {
         try {
           const root = dom.getRootNode(el);
-          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+          return root ? [...dom.querySelectorAll(root, sel)] : [];
         } catch {
           return [];
         }
@@ -125479,7 +125578,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
+      const kids = dom.children(el) ? [...dom.children(el)] : [];
       for (const kid of kids) {
         if (lower(dom.localName(kid)) === childTag) return kid;
       }
@@ -126263,7 +126362,7 @@ const normalizeRuleMeta = (function normalizeRuleMeta(ruleId, id, meta, engineTa
       const req = String(m.requirement || '').trim();
       if (req) out.add(req);
     }
-    return Array.from(out).sort();
+    return [...out].sort();
   }
 
   const m = meta && typeof meta === 'object' ? meta : {};
@@ -127652,8 +127751,8 @@ const layOutSkippedContent = (function layOutSkippedContent(doc) {
   };
   for (let i = 0; !named && i < roots.length; i++) {
     try {
-      const own = Array.from(dom.styleSheets(roots[i]) || []);
-      const adopted = Array.from(dom.get(roots[i], 'adoptedStyleSheets') || []);
+      const own = [...(dom.styleSheets(roots[i]) || [])];
+      const adopted = [...(dom.get(roots[i], 'adoptedStyleSheets') || [])];
       for (const sheet of own.concat(adopted)) {
         if (sheetNames(sheet, 0)) {
           named = true;
@@ -128305,9 +128404,9 @@ const runCoreSettled = (function runCoreSettled(
   const overriddenBuiltinIds = resolvedCustom.overriddenBuiltinIds;
   for (const id of resolvedCustom.defs.keys()) customRuleIds.add(id);
   if (resolvedCustom.defs.size) {
-    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat(
-      Array.from(resolvedCustom.defs.values())
-    );
+    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat([
+      ...resolvedCustom.defs.values()
+    ]);
     effectiveRuleImpls = { ...RULE_IMPLS, ...resolvedCustom.impls };
   }
   if (overriddenBuiltinIds.length) {
@@ -128736,9 +128835,9 @@ const runCoreSettled = (function runCoreSettled(
         return out;
       }
       if (kind === '[object Map]') {
-        return Array.from(v.entries(), ([k, x]) => [plainData(k, path), plainData(x, path)]);
+        return [...v.entries()].map(([k, x]) => [plainData(k, path), plainData(x, path)]);
       }
-      if (kind === '[object Set]') return Array.from(v.values(), (x) => plainData(x, path));
+      if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
       const out = {};
       for (const key of Object.keys(v)) {
@@ -128835,14 +128934,14 @@ const runCoreSettled = (function runCoreSettled(
         const added = new Set();
         const removed = new Set();
         for (const r of records) {
-          for (const n of Array.from(r.addedNodes || [])) added.add(n);
-          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+          for (const n of [...(r.addedNodes || [])]) added.add(n);
+          for (const n of [...(r.removedNodes || [])]) removed.add(n);
         }
         const transient = (n) => added.has(n) && removed.has(n);
         let n = 0;
         for (const r of records) {
           if (r.type === 'childList') {
-            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            const nodes = [...(r.addedNodes || [])].concat([...(r.removedNodes || [])]);
             if (nodes.length && nodes.every(transient)) continue;
           } else if (transient(r.target)) {
             continue;
@@ -128869,6 +128968,26 @@ const runCoreSettled = (function runCoreSettled(
         .filter((d) => !foreignCode.has(d.ruleId))
         .concat(effectiveCheckDefs.filter((d) => foreignCode.has(d.ruleId)))
     : effectiveCheckDefs;
+  // The pack's and caller's rules this selection runs, an override where its
+  // built-in would: those that use Array.from need it to work.
+  if (foreignCode.size) {
+    const foreignFns = [];
+    for (const def of runOrder) {
+      if (!foreignCode.has(def.ruleId)) continue;
+      const selected =
+        ruleMatchesRunOnly(resolveRuleDefI18n(def, engineOptionsResolved), runOnly, ENGINE_TAG) ||
+        (overriddenBuiltinIds.includes(def.ruleId) &&
+          CHECK_DEFS.some(
+            (d) =>
+              d &&
+              d.ruleId === def.ruleId &&
+              ruleMatchesRunOnly(resolveRuleDefI18n(d, engineOptionsResolved), runOnly, ENGINE_TAG)
+          ));
+      const impl = selected ? effectiveRuleImpls[def.ruleId] : null;
+      if (impl) foreignFns.push(impl.run, impl.applicability);
+    }
+    assertArrayFromFor(foreignFns);
+  }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
     engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
@@ -129562,7 +129681,21 @@ const assertPageBuiltins = (function assertPageBuiltins() {
     for (const x of [1, 2]) sum += x;
     return sum === 3;
   });
-  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Set iteration', () => [...new Set([1, 2])].length === 2);
+  check('Map iteration', () => {
+    const [entry] = [...new Map([['a', 1]])];
+    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+  });
+  // Built at run time: a bundle loaded without its charset would read the
+  // character in a literal as several.
+  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+  check('NodeList iteration', () => {
+    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+    // Read from Node.prototype: a named element could stand in for
+    // document.childNodes.
+    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
+    return [...nodes].length === nodes.length;
+  });
   check('Map', () => {
     const m = new Map();
     m.set('a', 1);
@@ -129588,6 +129721,7 @@ const assertPageBuiltins = (function assertPageBuiltins() {
   });
   check('String.prototype.trim', () => '  a '.trim() === 'a');
   check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
   check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
   if (!broken.length) return;
   let names = '';
@@ -129600,6 +129734,40 @@ const assertPageBuiltins = (function assertPageBuiltins() {
   err.code = 'PAGE_BUILTINS_BROKEN';
   err.broken = broken;
   throw err;
+});
+const assertArrayFromFor = (function assertArrayFromFor(fns) {
+  let works;
+  /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
+  try {
+    const mapped = Array.from(new Set([1, 2]), (x) => x * 2);
+    works =
+      mapped.length === 2 &&
+      mapped[1] === 4 &&
+      Array.from(new Map([['a', 1]]).values())[0] === 1 &&
+      Array.from('a' + String.fromCodePoint(0x1f600)).length === 2 &&
+      Array.from({ length: 1, 0: 'a' })[0] === 'a';
+  } catch {
+    works = false;
+  }
+  /* eslint-enable no-restricted-properties */
+  if (works) return;
+  const toSource = Function.prototype.toString;
+  for (let i = 0; i < fns.length; i++) {
+    let source;
+    try {
+      source = typeof fns[i] === 'function' ? toSource.call(fns[i]) : '';
+    } catch {
+      source = '';
+    }
+    if (source.indexOf('Array.from') === -1) continue;
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (Array.from), ' +
+        "so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = ['Array.from'];
+    throw err;
+  }
 });
 const runCore = (function runCore(
   pageUrl,
@@ -130292,7 +130460,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
   const out = Object.assign({}, first, {
     engine,
     checksResults,
-    rulesResults: Array.from(rollups.values()),
+    rulesResults: [...rollups.values()],
     profiles
   });
   if (standards.length) out.standards = standards;
@@ -131781,7 +131949,7 @@ async function waitForPageReady(options) {
 
   function pendingImages() {
     if (!doc || typeof dom.get(doc, 'querySelectorAll') !== 'function') return [];
-    return Array.from(dom.querySelectorAll(doc, 'img')).filter(
+    return [...dom.querySelectorAll(doc, 'img')].filter(
       (img) =>
         !img.complete && String(dom.getAttribute(img, 'loading') || '').toLowerCase() !== 'lazy'
     );
@@ -131911,7 +132079,7 @@ async function preloadStyleSheets(options) {
       if (sheet.href && !hrefs.includes(sheet.href)) hrefs.push(sheet.href);
       return;
     }
-    for (const rule of Array.from(rules)) {
+    for (const rule of [...rules]) {
       // CSSImportRule
       if (rule && rule.type === 3) visit(rule.styleSheet, depth + 1);
     }
@@ -131923,7 +132091,7 @@ async function preloadStyleSheets(options) {
     const proto = view && view.Document ? view.Document.prototype : null;
     const getter = proto && Object.getOwnPropertyDescriptor(proto, 'styleSheets');
     const list = getter && getter.get ? getter.get.call(doc) : [];
-    for (const sheet of Array.from(list || [])) visit(sheet, 0);
+    for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
     return [];
   }

@@ -130,7 +130,7 @@ function runInPage(ctx) {
   // <svg><title> is not the page title.
   const HTML_NS = 'http://www.w3.org/1999/xhtml';
   let titleEl = null;
-  for (const t of Array.from(dom.getElementsByTagName(document, 'title'))) {
+  for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
       titleEl = t;
       break;
@@ -170,7 +170,7 @@ function runInPage(ctx) {
       }
 
       // Duplicate titles across distinct URLs is a strong "review" signal (not a guaranteed failure)
-      const dupGroups = Array.from(groups.values()).filter((g) => g.urls.length >= 2);
+      const dupGroups = [...groups.values()].filter((g) => g.urls.length >= 2);
 
       // Boilerplate-ish: detect a long common suffix/prefix across most titles.
       // Keep conservative: only flag if the common part is long and shared by many.

@@ -75,7 +75,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -118,7 +118,7 @@ function runInPage(ctx) {
 
   const rawImages = (() => {
     try {
-      return Array.from((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || []);
+      return [...((queryAllSmart ? queryAllSmart('image') : queryAll('image')) || [])];
     } catch {
       return queryAll('svg image');
     }

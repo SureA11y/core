@@ -138,13 +138,13 @@ function runInPage(ctx) {
     // structure at all -- it must not be treated as the table's "first
     // row" (or counted toward a row's cell count) for this positional
     // heuristic.
-    const rows = Array.from(table.rows).filter(isEligible);
+    const rows = [...table.rows].filter(isEligible);
     if (rows.length < 2) continue;
 
     applicableCount += 1;
 
     const firstRow = rows[0];
-    const firstRowCells = Array.from(firstRow.cells || []).filter(isEligible);
+    const firstRowCells = [...(firstRow.cells || [])].filter(isEligible);
     if (firstRowCells.length !== 1) continue;
 
     const candidateCell = firstRowCells[0];
@@ -153,7 +153,7 @@ function runInPage(ctx) {
 
     const hasMultiCellRow = rows
       .slice(1)
-      .some((r) => Array.from(r.cells || []).filter(isEligible).length > 1);
+      .some((r) => [...(r.cells || [])].filter(isEligible).length > 1);
     if (!hasMultiCellRow) continue;
 
     // A lone cell spanning the table's full width, used once at the top, is
@@ -163,7 +163,7 @@ function runInPage(ctx) {
       const n = Number.parseInt(dom.getAttribute(cell, 'colspan') || '1', 10);
       return Number.isFinite(n) && n > 0 ? n : 1;
     };
-    const laterRows = rows.slice(1).map((r) => Array.from(r.cells || []).filter(isEligible));
+    const laterRows = rows.slice(1).map((r) => [...(r.cells || [])].filter(isEligible));
     const width = laterRows.reduce(
       (m, cells) =>
         Math.max(

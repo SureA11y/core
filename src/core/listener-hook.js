@@ -228,7 +228,7 @@ const LISTENER_HOOK_SOURCE = [
   // window's onkeydown in Chromium), so the global is an owner too.
   '    var owners = [global.HTMLElement, global.SVGElement, global.MathMLElement, global.Document, global.Window, global];',
   '    var props = [];',
-  '    var typeList = Array.from(TYPES);',
+  `    var typeList = ${JSON.stringify(LISTENER_TYPES)};`,
   '    for (var o = 0; o < owners.length; o++) {',
   '      var owner = owners[o] === global ? global : typeof owners[o] === "function" ? owners[o].prototype : null;',
   '      if (!owner) continue;',

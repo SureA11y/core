@@ -50,6 +50,7 @@ const {
 const {
   isThenable,
   assertPageBuiltins,
+  assertArrayFromFor,
   resolveCustomRules,
   runCore,
   runCoreSettled,
@@ -1455,7 +1456,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   }
   // A Set of names is the list it holds; as an object it has no keys, which
   // read as no selection and ran every rule.
-  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = Array.from(runOnly);
+  if (Object.prototype.toString.call(runOnly) === '[object Set]') runOnly = [...runOnly];
   // Another kind of object (a Map, a Date) has no keys a selection reads,
   // and ran every rule.
   // By its type tag, which holds across realms (a page's object, read by
@@ -1554,7 +1555,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
   // runOnly takes one. As an object with neither key it ran every rule.
   const includeExclude = (v) =>
     Array.isArray(v) || typeof v === 'string' || Object.prototype.toString.call(v) === '[object Set]'
-      ? { include: Array.from(typeof v === 'string' ? [v] : v) }
+      ? { include: typeof v === 'string' ? [v] : [...v] }
       : (v && typeof v === 'object' ? v : null);
   const rules = includeExclude(eo.rules);
   const tags = includeExclude(eo.tags);
@@ -2317,6 +2318,7 @@ ${inlineConstFunction('resolveCustomRules', resolveCustomRules)}
 ${inlineConstFunction('runCoreSettled', runCoreSettled)}
 ${inlineConstFunction('isThenable', isThenable)}
 ${inlineConstFunction('assertPageBuiltins', assertPageBuiltins)}
+${inlineConstFunction('assertArrayFromFor', assertArrayFromFor)}
 ${inlineConstFunction('runCore', runCore)}
 
 // Inlined from src/core/frame-messaging.js -- postMessage RPC used by
@@ -2732,7 +2734,7 @@ function catalogCheckDefs(engineOptions) {
   const custom = resolveCustomRules(eo.customRules, CHECK_DEFS, COMPOSITE_RULES, ENGINE_TAG);
   if (!custom.defs.size) return { defs: CHECK_DEFS, overridden: [] };
   return {
-    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat(Array.from(custom.defs.values())),
+    defs: CHECK_DEFS.filter((d) => !custom.defs.has(d.ruleId)).concat([...custom.defs.values()]),
     overridden: custom.overriddenBuiltinIds
   };
 }
@@ -2910,7 +2912,7 @@ function rollupsForSelection(selection, engineOptions, defs, overridden, customD
   }
   // Every rule selected gives a result, whatever its outcome; the outcome
   // doesn't decide which rollups are reported.
-  const ran = Array.from(selectedIds, (ruleId) => ({ ruleId, outcome: 'notApplicable' }));
+  const ran = [...selectedIds].map((ruleId) => ({ ruleId, outcome: 'notApplicable' }));
   const rolled = rollupCompositeResults(
     ran,
     COMPOSITE_RULES,

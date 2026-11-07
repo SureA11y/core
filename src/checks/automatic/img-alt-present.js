@@ -86,7 +86,7 @@ function runInPage(ctx) {
     try {
       if (queryAllSmart) {
         const r = queryAllSmart('img');
-        return Array.isArray(r) ? r : Array.from(r || []);
+        return Array.isArray(r) ? r : [...(r || [])];
       }
     } catch {
       // fall through

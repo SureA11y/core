@@ -601,9 +601,9 @@ function runInPage(ctx) {
   function hasVisibleImageChild(el) {
     let imgs;
     try {
-      imgs = Array.from(
-        dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
-      ).filter((img) => {
+      imgs = [
+        ...dom.querySelectorAll(el, 'img, svg, picture, canvas, [role~="img" i], [role~="image" i]')
+      ].filter((img) => {
         const name = String(dom.localName(img) || '').toLowerCase();
         if (['img', 'svg', 'picture', 'canvas'].includes(name)) return true;
         return explicitRole(img) === 'img';
@@ -987,9 +987,9 @@ function runInPage(ctx) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {

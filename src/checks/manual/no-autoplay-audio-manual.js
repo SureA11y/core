@@ -114,7 +114,7 @@ function runInPage(ctx) {
     const engineOptions = ctx.engineOptions || {};
     const deep =
       engineOptions.includeShadowDom !== false && typeof helpers.queryAllDeep === 'function';
-    const list = Array.from((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || []);
+    const list = [...((deep ? helpers.queryAllDeep(sel) : helpers.queryAll(sel)) || [])];
     return typeof helpers.isExcluded === 'function'
       ? list.filter((el) => !helpers.isExcluded(el))
       : list;

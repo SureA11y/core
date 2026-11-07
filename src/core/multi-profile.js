@@ -491,7 +491,7 @@ function mergeProfileResults(runs, asked) {
   const out = Object.assign({}, first, {
     engine,
     checksResults,
-    rulesResults: Array.from(rollups.values()),
+    rulesResults: [...rollups.values()],
     profiles
   });
   if (standards.length) out.standards = standards;

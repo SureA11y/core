@@ -222,7 +222,7 @@ function runInPage(ctx) {
     try {
       target =
         typeof dom.get(root, 'querySelectorAll') === 'function'
-          ? Array.from(dom.querySelectorAll(root, 'a[name]')).find(
+          ? [...dom.querySelectorAll(root, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null
           : null;

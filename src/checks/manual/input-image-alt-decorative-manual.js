@@ -74,7 +74,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -152,10 +152,11 @@ function runInPage(ctx) {
 
   const els = (() => {
     try {
-      return Array.from(
-        (queryAllSmart ? queryAllSmart('input[type="image"]') : queryAll('input[type="image"]')) ||
-          []
-      );
+      return [
+        ...((queryAllSmart
+          ? queryAllSmart('input[type="image"]')
+          : queryAll('input[type="image"]')) || [])
+      ];
     } catch {
       return queryAll('input[type="image"]');
     }

@@ -467,7 +467,7 @@ function runInPage(ctx) {
       // finds elements in shadow roots, which a document rule doesn't style.
       const sheets = helpers.getStyleSheets
         ? helpers.getStyleSheets()
-        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
         if (!applies(sheet)) continue;
         sheetRoot = root;

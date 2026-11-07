@@ -398,7 +398,7 @@ function runInPage(ctx) {
   function symbolicCharacter(el) {
     try {
       const own = String(dom.textContent(el) || '').trim();
-      if (Array.from(own).length !== 1) return '';
+      if ([...own].length !== 1) return '';
       for (let node = el, depth = 0; node && depth < 8; depth += 1) {
         if (
           dom.getAttribute(node, 'aria-label') != null ||

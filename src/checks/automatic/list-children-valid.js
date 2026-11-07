@@ -177,7 +177,7 @@ function runInPage(ctx) {
   // list and its items, which leaves them items of no list.
   function wrapsDrawnItems(el) {
     try {
-      return Array.from(dom.querySelectorAll(el, 'li')).some((li) => drawnAsListItem(li));
+      return [...dom.querySelectorAll(el, 'li')].some((li) => drawnAsListItem(li));
     } catch {
       return false;
     }
