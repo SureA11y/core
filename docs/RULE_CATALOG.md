@@ -1078,6 +1078,7 @@ Determines whether sufficient information is available to compute the color cont
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
+| `ALL_TEXT_COMPUTABLE` | pass | Both colors could be worked out for all the text, so contrast-minimum and contrast-enhanced measure every ratio; whether each reaches it is theirs to say. | WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled) |
 | `BACKGROUND_IMAGE_OR_GRADIENT` | cantTell | A background image or gradient lies behind the text, so the color it sits on could not be worked out. | WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled) |
 | `BACKGROUND_OVERLAP` | cantTell | Another element paints under the text, so the background it sits on could not be worked out. | WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled) |
 | `BACKGROUND_NOT_COMPUTABLE` | cantTell | The background behind the text could not be worked out. | WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled) |
