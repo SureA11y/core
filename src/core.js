@@ -65722,6 +65722,47 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
+  // The size and weight of the text, as contrast-minimum reports them in
+  // its findings' `typography`: the font size as drawn (the computed size
+  // times CSS zoom, an SVG scale or font-size-adjust) in px and pt, the
+  // weight as a number and as written, and whether core counts it as bold
+  // and as large text (helpers.contrast.isLargeText: 24px, or 14pt and
+  // bold). A standard that sets a different threshold for large text routes
+  // the finding by them. Generated text has its pseudo-element's font.
+  function typographyOf(el, pseudo) {
+    try {
+      let cs = null;
+      if (pseudo) {
+        const view = dom.defaultView(dom.ownerDocument(el));
+        cs = view && view.getComputedStyle ? view.getComputedStyle(el, pseudo) : null;
+      } else if (typeof helpers.contrast.textStyleOf === 'function') {
+        cs = helpers.contrast.textStyleOf(el);
+      } else {
+        cs = helpers.computedStyle(el);
+      }
+      const declared = cs ? helpers.contrast.parsePx(cs.fontSize) : NaN;
+      if (!Number.isFinite(declared)) return null;
+      const weight = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
+      const drawn =
+        !pseudo && typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const px = declared * drawn.scale;
+      const fontWeight = Number.isFinite(weight) ? weight : null;
+      return {
+        fontSizePx: px,
+        fontSizePt: px * 0.75,
+        fontWeight,
+        fontWeightLabel: helpers.contrast.fontWeightLabel(weight),
+        isBold: fontWeight !== null && fontWeight >= 700,
+        isLargeText: !!helpers.contrast.isLargeText(px, weight),
+        ...(drawn.by.length ? { declaredFontSizePx: declared, sizeScaledBy: drawn.by } : {})
+      };
+    } catch {
+      return null;
+    }
+  }
+
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
   // lean: which way the evidence points, for the few blockers where the
@@ -65800,9 +65841,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
       else if (rc === 'SELECT_OPTION_COLOR') hintKind = 'selectOption';
 
+      const typography = typographyOf(el, pseudo);
       const details = Object.assign(
         { reasonCode: rc },
-        extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
+        extraDetails && typeof extraDetails === 'object' ? extraDetails : {},
+        typography ? { typography } : {}
       );
 
       const occBase = {
