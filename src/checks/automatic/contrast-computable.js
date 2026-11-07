@@ -985,11 +985,11 @@ function runInPage(ctx) {
       {
         selector: '',
         summary: '',
-        hint: '',
+        hint: 'Nothing to change. Whether this text reaches its ratio is for the minimum (AA) and enhanced (AAA) contrast rules to say.',
         html: '',
         i18n: {
           summaryKey: 'contrastComputable_pass_allComputable',
-          hintKey: '',
+          hintKey: 'contrastComputable_hint_pass',
           params: {
             eligibleTextCount: String(eligibleTextCount)
           }

@@ -220,7 +220,7 @@ const skipped = checked.skippedCustomRules; // [{ id: 'shop-cart-link', reason: 
 - Check that `engine.profile` is there when you asked for a profile.
 - Treat `contextMatch.elementCount === 0` as "not scanned".
 - Show `cantTell` as "needs review", with its uncertainty, its `howToCheck` steps and its lean, and a partly checked criterion as such; never fold either into a pass.
-- Don't count `occurrences.length` without looking at the outcome: a pass or `notApplicable` can carry an occurrence that describes the scan.
+- Don't count `occurrences.length` without looking at the outcome: a contrast rule's pass, or a pack's or custom rule's `notApplicable`, can carry an occurrence that describes the scan.
 - Show `skippedPacks` and `skippedCustomRules`.
 - Keep what the engine found apart from what your tool, or a model, adds to it.
 - Pass `strictOptions: true` for options your users write.

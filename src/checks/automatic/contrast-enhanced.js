@@ -101,12 +101,13 @@
  *     `::marker`, the pseudo-element whose text is measured; the selector
  *     names its element, and the colors and font are the pseudo-element's.
  *   - `eligibleTextCount`, `computableTextCount` (the pass, and the
- *     notApplicable result when no text was computable): how many text
- *     nodes were in scope, and how many of those had colors that could be
- *     worked out. The pass repeats both under `metrics`.
- *   - `forcedColors` (every occurrence, when the colors measured were
- *     forced): `true`, and the hint says to check the page again with
- *     forced colors off. A scan under forced colors measures the page's own
+ *     result's own `data.details` when it is notApplicable because no text
+ *     was computable, which lists no occurrence): how many text nodes were
+ *     in scope, and how many of those had colors that could be worked out.
+ *     The pass repeats both under `metrics`.
+ *   - `forcedColors` (every occurrence, and that notApplicable result's
+ *     details, when the colors measured were forced): `true`, and the hint
+ *     says to check the page again with forced colors off. A scan under forced colors measures the page's own
  *     colors, so this is there only where it could not keep the page in
  *     them.
  * @reason-codes
@@ -353,11 +354,11 @@ function runInPage(ctx) {
       occurrences.push({
         selector: '',
         summary: 'All computable text meets the enhanced (AAA) contrast threshold.',
-        hint: '',
+        hint: 'Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.',
         html: '',
         i18n: {
           summaryKey: 'contrastEnhanced_pass_allAboveThreshold',
-          hintKey: '',
+          hintKey: 'contrast_hint_pass',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
             computableTextCount: String(Number(computableCount) || 0)
@@ -1290,20 +1291,16 @@ function runInPage(ctx) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: helpers.contrast.noteForcedColors([
-        {
-          selector: '',
-          summary: '',
-          hint: '',
-          html: '',
-          i18n: {
-            summaryKey: 'contrastEnhanced_notApplicable_noComputableText',
-            hintKey: '',
-            params: { eligibleTextCount: String(eligibleTextCount) }
-          },
-          data: { details: { eligibleTextCount, computableTextCount } }
+      // No occurrence: a notApplicable result names no finding. The counts
+      // go on the result, for a reader who wants to know what was looked at.
+      occurrences: [],
+      data: {
+        details: {
+          eligibleTextCount,
+          computableTextCount,
+          ...(helpers.contrast.colorsForced() ? { forcedColors: true } : {})
         }
-      ])
+      }
     };
   }
 

@@ -36926,6 +36926,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
       "contrastComputable_pass_allComputable": "Der Kontrast ist für den gesamten für die Prüfung berücksichtigten Text berechenbar ({{eligibleTextCount}} Textknoten).",
+      "contrastComputable_hint_pass": "Nichts zu ändern. Ob dieser Text sein Kontrastverhältnis erreicht, prüfen die Regeln zum Mindestkontrast (AA) und zum erweiterten Kontrast (AAA).",
       "contrastComputable_cantTell_bgImageOrGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild oder einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild verwendet ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}).",
@@ -36954,6 +36955,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
+      "contrast_hint_pass": "Nichts zu ändern. Gezählt wird nur Text, dessen Farben berechnet werden konnten; die Regel zur Berechenbarkeit des Kontrasts nennt anderen Text, der von Hand zu messen ist.",
       "contrast_hint_colorScheme_dark": "Im dunklen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -36962,7 +36964,6 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
@@ -36981,7 +36982,6 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
@@ -38277,6 +38277,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
       "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
+      "contrastComputable_hint_pass": "Nothing to change. Whether this text reaches its ratio is for the minimum (AA) and enhanced (AAA) contrast rules to say.",
       "contrastComputable_cantTell_bgImageOrGradient": "Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Contrast is not computable because the background uses an image ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Contrast is not computable because the background uses a gradient ({{blockerProperty}}={{blockerValue}}).",
@@ -38305,6 +38306,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
+      "contrast_hint_pass": "Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.",
       "contrast_hint_colorScheme_dark": "In the page's dark color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -38313,7 +38315,6 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
       "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
@@ -38332,7 +38333,6 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
       "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
@@ -39628,6 +39628,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
       "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
+      "contrastComputable_hint_pass": "Nada que cambiar. Si este texto alcanza su relación de contraste lo dicen las reglas de contraste mínimo (AA) y mejorado (AAA).",
       "contrastComputable_cantTell_bgImageOrGradient": "El contraste no es computable porque el fondo usa una imagen o un degradado ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "El contraste no es computable porque el fondo usa una imagen ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "El contraste no es computable porque el fondo usa un degradado ({{blockerProperty}}={{blockerValue}}).",
@@ -39656,6 +39657,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
+      "contrast_hint_pass": "Nada que cambiar. Solo se cuenta el texto cuyos colores se pudieron calcular; la regla de computabilidad del contraste lista el resto del texto, para medirlo a mano.",
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -39664,7 +39666,6 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
@@ -39683,7 +39684,6 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
@@ -40979,6 +40979,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
       "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
+      "contrastComputable_hint_pass": "Rien à changer. Ce sont les règles de contraste minimum (AA) et renforcé (AAA) qui disent si ce texte atteint son ratio.",
       "contrastComputable_cantTell_bgImageOrGradient": "Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise un dégradé ({{blockerProperty}}={{blockerValue}}).",
@@ -41007,6 +41008,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
+      "contrast_hint_pass": "Rien à changer. Seul le texte dont les couleurs ont pu être calculées est compté ; la règle de calculabilité du contraste liste l’autre texte, à mesurer à la main.",
       "contrast_hint_colorScheme_dark": "Dans le jeu de couleurs sombre de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -41015,7 +41017,6 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
@@ -41034,7 +41035,6 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
@@ -42330,6 +42330,7 @@ const RUNTIME_CATALOG = {
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
       "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
+      "contrastComputable_hint_pass": "変更は不要です。このテキストがコントラスト比を満たすかどうかは、最低限 (AA) と高度 (AAA) のコントラストのルールが判定します。",
       "contrastComputable_cantTell_bgImageOrGradient": "背景に画像またはグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_bgImage": "背景に画像が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_bgGradient": "背景にグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
@@ -42358,6 +42359,7 @@ const RUNTIME_CATALOG = {
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
+      "contrast_hint_pass": "変更は不要です。数えているのは色を計算できたテキストだけです。それ以外のテキストは、コントラストの計算可否を判定するルールが一覧にしているので、手作業で測ってください。",
       "contrast_hint_colorScheme_dark": "ページのダークな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -42366,7 +42368,6 @@ const RUNTIME_CATALOG = {
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
-      "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
@@ -42385,7 +42386,6 @@ const RUNTIME_CATALOG = {
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
-      "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
@@ -66252,11 +66252,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         selector: '',
         summary: '',
-        hint: '',
+        hint: 'Nothing to change. Whether this text reaches its ratio is for the minimum (AA) and enhanced (AAA) contrast rules to say.',
         html: '',
         i18n: {
           summaryKey: 'contrastComputable_pass_allComputable',
-          hintKey: '',
+          hintKey: 'contrastComputable_hint_pass',
           params: {
             eligibleTextCount: String(eligibleTextCount)
           }
@@ -66443,11 +66443,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push({
         selector: '',
         summary: 'All computable text meets the enhanced (AAA) contrast threshold.',
-        hint: '',
+        hint: 'Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.',
         html: '',
         i18n: {
           summaryKey: 'contrastEnhanced_pass_allAboveThreshold',
-          hintKey: '',
+          hintKey: 'contrast_hint_pass',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
             computableTextCount: String(Number(computableCount) || 0)
@@ -67380,20 +67380,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: helpers.contrast.noteForcedColors([
-        {
-          selector: '',
-          summary: '',
-          hint: '',
-          html: '',
-          i18n: {
-            summaryKey: 'contrastEnhanced_notApplicable_noComputableText',
-            hintKey: '',
-            params: { eligibleTextCount: String(eligibleTextCount) }
-          },
-          data: { details: { eligibleTextCount, computableTextCount } }
+      // No occurrence: a notApplicable result names no finding. The counts
+      // go on the result, for a reader who wants to know what was looked at.
+      occurrences: [],
+      data: {
+        details: {
+          eligibleTextCount,
+          computableTextCount,
+          ...(helpers.contrast.colorsForced() ? { forcedColors: true } : {})
         }
-      ])
+      }
     };
   }
 
@@ -67622,11 +67618,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       occurrences.push({
         selector: '',
         summary: 'All computable text meets the minimum (AA) contrast threshold.',
-        hint: '',
+        hint: 'Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.',
         html: '',
         i18n: {
           summaryKey: 'contrastMinimum_pass_allAboveThreshold',
-          hintKey: '',
+          hintKey: 'contrast_hint_pass',
           params: {
             eligibleTextCount: String(Number(eligibleCount) || 0),
             computableTextCount: String(Number(computableCount) || 0)
@@ -68657,20 +68653,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       outcome: 'notApplicable',
       severity: rule.defaultSeverity || 'serious',
       confidence: rule.defaultConfidence || 'high',
-      occurrences: helpers.contrast.noteForcedColors([
-        {
-          selector: '',
-          summary: '',
-          hint: '',
-          html: '',
-          i18n: {
-            summaryKey: 'contrastMinimum_notApplicable_noComputableText',
-            hintKey: '',
-            params: { eligibleTextCount: String(eligibleTextCount) }
-          },
-          data: { details: { eligibleTextCount, computableTextCount } }
+      // No occurrence: a notApplicable result names no finding. The counts
+      // go on the result, for a reader who wants to know what was looked at.
+      occurrences: [],
+      data: {
+        details: {
+          eligibleTextCount,
+          computableTextCount,
+          ...(helpers.contrast.colorsForced() ? { forcedColors: true } : {})
         }
-      ])
+      }
     };
   }
 
@@ -99182,6 +99174,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den WCAG-Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
       "contrastComputable_pass_allComputable": "Der Kontrast ist für den gesamten für die Prüfung berücksichtigten Text berechenbar ({{eligibleTextCount}} Textknoten).",
+      "contrastComputable_hint_pass": "Nichts zu ändern. Ob dieser Text sein Kontrastverhältnis erreicht, prüfen die Regeln zum Mindestkontrast (AA) und zum erweiterten Kontrast (AAA).",
       "contrastComputable_cantTell_bgImageOrGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild oder einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Der Kontrast ist nicht berechenbar, weil der Hintergrund ein Bild verwendet ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Der Kontrast ist nicht berechenbar, weil der Hintergrund einen Verlauf verwendet ({{blockerProperty}}={{blockerValue}}).",
@@ -99210,6 +99203,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Dieser Text ist halbfett. Wirkt er fett, ist er großer Text und braucht nur {{largeTextRatio}}:1, das er erreicht; andernfalls ändern Sie seine Farben, sodass das Verhältnis {{threshold}}:1 erreicht.",
       "contrast_hint_symbol": "Prüfen Sie, ob {{character}} Text oder ein Symbol ist: Als Symbol braucht es 3:1 gegenüber seiner Umgebung, als Text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Beim Prüfen waren erzwungene Farben aktiv, daher sind die gemessenen Farben womöglich weder die der Seite noch die auf dem Bildschirm. Prüfen Sie die Seite erneut ohne erzwungene Farben: WCAG bewertet den Kontrast in den eigenen Farben der Seite.",
+      "contrast_hint_pass": "Nichts zu ändern. Gezählt wird nur Text, dessen Farben berechnet werden konnten; die Regel zur Berechenbarkeit des Kontrasts nennt anderen Text, der von Hand zu messen ist.",
       "contrast_hint_colorScheme_dark": "Im dunklen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrast_hint_colorScheme_light": "Im hellen Farbschema der Seite hat dieser Text ein Kontrastverhältnis von {{ratio}}:1 zu {{backgroundHex}}, unter {{threshold}}:1. Ändern Sie seine Farben in diesem Farbschema, sodass das Verhältnis diesen Wert erreicht.",
       "contrastMinimum_title": "Text erfüllt den Mindestfarbkontrast (AA)",
@@ -99218,7 +99212,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastMinimum_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den Mindestkontrast (AA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastMinimum_cantTell_engineFailure": "Der Mindestkontrast (AA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastMinimum_fail_placeholder": "Der Platzhaltertext hat einen Kontrast von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
@@ -99237,7 +99230,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_fail_generatedText": "Der Text, den {{pseudo}} dieses Elements erzeugt, weist einen unzureichenden Farbkontrast (AAA) von {{ratio}}:1 auf (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}, Schriftgröße: {{fontSizePx}}px, Schriftgewicht: {{fontWeightLabel}}). Erwartetes Kontrastverhältnis: {{threshold}}:1 ({{#isLargeText}}großer Text{{/isLargeText}}{{^isLargeText}}normaler Text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Ändern Sie die Textfarbe, die Hintergrundfarbe oder beide, sodass das Kontrastverhältnis mindestens {{threshold}}:1 erreicht.",
       "contrastEnhanced_pass_allAboveThreshold": "Der gesamte berechenbare Text erfüllt den erweiterten Kontrast (AAA). Zutreffende Textknoten: {{eligibleTextCount}}. Berechenbar: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Bei keinem für die Prüfung berücksichtigten Text war der Kontrast berechenbar (berücksichtigte Textknoten: {{eligibleTextCount}}). Details siehe Regel zur Kontrastberechenbarkeit.",
       "contrastEnhanced_cantTell_engineFailure": "Der erweiterte Kontrast (AAA) konnte aufgrund eines internen Engine-Fehlers nicht bestimmt werden ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1. Ob er am Verhältnis gemessen wird und ob die Seite seine Farben gewählt hat, muss eine Person entscheiden.",
       "contrastEnhanced_fail_placeholder": "Der Platzhaltertext hat einen Kontrast (AAA) von {{ratio}}:1 (Vordergrund: {{foregroundHex}}, Hintergrund: {{backgroundHex}}), unter {{threshold}}:1, in Farben, die die Seite gewählt hat.",
@@ -100533,6 +100525,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute WCAG color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
       "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
+      "contrastComputable_hint_pass": "Nothing to change. Whether this text reaches its ratio is for the minimum (AA) and enhanced (AAA) contrast rules to say.",
       "contrastComputable_cantTell_bgImageOrGradient": "Contrast is not computable because the background uses an image or gradient ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Contrast is not computable because the background uses an image ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Contrast is not computable because the background uses a gradient ({{blockerProperty}}={{blockerValue}}).",
@@ -100561,6 +100554,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "This text is semi-bold. If it reads as bold, it is large and needs only {{largeTextRatio}}:1, which it reaches; if it doesn't, change its colors so the ratio reaches {{threshold}}:1.",
       "contrast_hint_symbol": "Check whether {{character}} is text or an icon: as an icon it needs 3:1 against what is next to it, as text {{threshold}}:1.",
       "contrast_hint_forcedColors": "Forced colors were on when this page was checked, so the colors measured may be neither the page’s own nor the ones on screen. Check the page again with forced colors off: WCAG judges contrast in the page’s own colors.",
+      "contrast_hint_pass": "Nothing to change. Only text whose colors could be worked out is counted; the contrast computability rule lists any other text, to measure by hand.",
       "contrast_hint_colorScheme_dark": "In the page's dark color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrast_hint_colorScheme_light": "In the page's light color scheme, this text has a contrast ratio of {{ratio}}:1 against {{backgroundHex}}, below {{threshold}}:1. Change its colors in that scheme so the ratio reaches it.",
       "contrastMinimum_title": "Text meets minimum color contrast (AA)",
@@ -100569,7 +100563,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "All computable text meets minimum contrast (AA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastMinimum_cantTell_engineFailure": "Minimum contrast (AA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
       "contrastMinimum_fail_placeholder": "Placeholder text has a contrast of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
@@ -100588,7 +100581,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_fail_generatedText": "The text this element's {{pseudo}} generates has insufficient color contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}, font size: {{fontSizePx}}px, font weight: {{fontWeightLabel}}). Expected contrast ratio of {{threshold}}:1 ({{#isLargeText}}large text{{/isLargeText}}{{^isLargeText}}normal text{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Change the text color, the background color, or both, so the contrast ratio reaches at least {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "All computable text meets enhanced contrast (AAA). Eligible text nodes: {{eligibleTextCount}}. Computable: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "No eligible text had computable contrast (eligible text nodes: {{eligibleTextCount}}). See the contrast computability rule for details.",
       "contrastEnhanced_cantTell_engineFailure": "Enhanced contrast (AAA) could not be determined due to an internal engine error ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1. Whether it is held to the ratio, and whether the page chose its colors, needs a person to decide.",
       "contrastEnhanced_fail_placeholder": "Placeholder text has a contrast (AAA) of {{ratio}}:1 (foreground: {{foregroundHex}}, background: {{backgroundHex}}), below {{threshold}}:1, in colors the page chose.",
@@ -101884,6 +101876,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color WCAG del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
       "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
+      "contrastComputable_hint_pass": "Nada que cambiar. Si este texto alcanza su relación de contraste lo dicen las reglas de contraste mínimo (AA) y mejorado (AAA).",
       "contrastComputable_cantTell_bgImageOrGradient": "El contraste no es computable porque el fondo usa una imagen o un degradado ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "El contraste no es computable porque el fondo usa una imagen ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "El contraste no es computable porque el fondo usa un degradado ({{blockerProperty}}={{blockerValue}}).",
@@ -101912,6 +101905,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Este texto es seminegrita. Si se lee como negrita, es texto grande y solo necesita {{largeTextRatio}}:1, que alcanza; si no, cambiar sus colores para que la relación alcance {{threshold}}:1.",
       "contrast_hint_symbol": "Comprobar si {{character}} es texto o un icono: como icono necesita 3:1 frente a lo que lo rodea, como texto {{threshold}}:1.",
       "contrast_hint_forcedColors": "Los colores forzados estaban activos durante la comprobación, así que los colores medidos pueden no ser ni los de la página ni los que se ven en pantalla. Volver a comprobar la página sin colores forzados: WCAG evalúa el contraste con los colores propios de la página.",
+      "contrast_hint_pass": "Nada que cambiar. Solo se cuenta el texto cuyos colores se pudieron calcular; la regla de computabilidad del contraste lista el resto del texto, para medirlo a mano.",
       "contrast_hint_colorScheme_dark": "En el esquema de color oscuro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrast_hint_colorScheme_light": "En el esquema de color claro de la página, este texto tiene una relación de contraste de {{ratio}}:1 sobre {{backgroundHex}}, inferior a {{threshold}}:1. Cambiar sus colores en ese esquema para que la relación lo alcance.",
       "contrastMinimum_title": "El texto cumple el contraste de color mínimo (AA)",
@@ -101920,7 +101914,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mínimo (AA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastMinimum_cantTell_engineFailure": "No se pudo determinar el contraste mínimo (AA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastMinimum_fail_placeholder": "El texto del atributo placeholder tiene un contraste de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
@@ -101939,7 +101932,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_fail_generatedText": "El texto que genera el {{pseudo}} de este elemento tiene un contraste de color insuficiente (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}, tamaño de fuente: {{fontSizePx}}px, grosor de fuente: {{fontWeightLabel}}). Se esperaba una relación de contraste de {{threshold}}:1 ({{#isLargeText}}texto grande{{/isLargeText}}{{^isLargeText}}texto normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Cambiar el color del texto, el del fondo o ambos para que la relación de contraste alcance al menos {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Todo el texto computable cumple el contraste mejorado (AAA). Nodos de texto elegibles: {{eligibleTextCount}}. Computables: {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Ningún texto elegible tuvo contraste computable (nodos de texto elegibles: {{eligibleTextCount}}). Consultar la regla de computabilidad de contraste para más información.",
       "contrastEnhanced_cantTell_engineFailure": "No se pudo determinar el contraste mejorado (AAA) debido a un error interno del motor ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1. Una persona debe comprobar si este requisito de contraste se aplica y si la página define los colores del texto.",
       "contrastEnhanced_fail_placeholder": "El texto del atributo placeholder tiene un contraste (AAA) de {{ratio}}:1 (primer plano: {{foregroundHex}}, fondo: {{backgroundHex}}), inferior a {{threshold}}:1, con colores que eligió la página.",
@@ -103235,6 +103227,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste WCAG du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
       "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
+      "contrastComputable_hint_pass": "Rien à changer. Ce sont les règles de contraste minimum (AA) et renforcé (AAA) qui disent si ce texte atteint son ratio.",
       "contrastComputable_cantTell_bgImageOrGradient": "Le contraste n’est pas calculable car l’arrière-plan utilise une image ou un dégradé ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgImage": "Le contraste ne peut pas être calculé car l’arrière-plan utilise une image ({{blockerProperty}}={{blockerValue}}).",
       "contrastComputable_cantTell_bgGradient": "Le contraste ne peut pas être calculé car l’arrière-plan utilise un dégradé ({{blockerProperty}}={{blockerValue}}).",
@@ -103263,6 +103256,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "Ce texte est en demi-gras. S’il se lit comme du gras, c’est un grand texte qui n’a besoin que de {{largeTextRatio}}:1, qu’il atteint ; sinon, modifiez ses couleurs pour que le ratio atteigne {{threshold}}:1.",
       "contrast_hint_symbol": "Vérifiez si {{character}} est du texte ou une icône : une icône demande 3:1 par rapport à ce qui l’entoure, du texte {{threshold}}:1.",
       "contrast_hint_forcedColors": "Les couleurs forcées étaient actives lors de la vérification : les couleurs mesurées peuvent n’être ni celles de la page ni celles affichées à l’écran. Vérifiez à nouveau la page sans couleurs forcées : WCAG évalue le contraste dans les couleurs propres à la page.",
+      "contrast_hint_pass": "Rien à changer. Seul le texte dont les couleurs ont pu être calculées est compté ; la règle de calculabilité du contraste liste l’autre texte, à mesurer à la main.",
       "contrast_hint_colorScheme_dark": "Dans le jeu de couleurs sombre de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrast_hint_colorScheme_light": "Dans le jeu de couleurs clair de la page, ce texte a un ratio de contraste de {{ratio}}:1 sur {{backgroundHex}}, inférieur à {{threshold}}:1. Modifiez ses couleurs dans ce jeu de couleurs pour que le ratio l’atteigne.",
       "contrastMinimum_title": "Le texte respecte le contraste minimum (AA)",
@@ -103271,7 +103265,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastMinimum_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastMinimum_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste minimum (AA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-      "contrastMinimum_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastMinimum_cantTell_engineFailure": "Le contraste minimum (AA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastMinimum_cantTell_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastMinimum_fail_placeholder": "Le texte indicatif a un contraste de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
@@ -103290,7 +103283,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_fail_generatedText": "Le texte que génère le {{pseudo}} de cet élément présente un contraste de couleur insuffisant renforcé (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}, taille de police : {{fontSizePx}}px, graisse de police : {{fontWeightLabel}}). Le ratio de contraste attendu est de {{threshold}}:1 ({{#isLargeText}}texte de grande taille{{/isLargeText}}{{^isLargeText}}texte normal{{/isLargeText}}).",
       "contrastEnhanced_hint_fail": "Modifiez la couleur du texte, celle de l’arrière-plan, ou les deux, pour que le ratio de contraste atteigne au moins {{threshold}}:1.",
       "contrastEnhanced_pass_allAboveThreshold": "Tout le texte calculable respecte le contraste renforcé (AAA). Nœuds de texte éligibles : {{eligibleTextCount}}. Calculables : {{computableTextCount}}.",
-      "contrastEnhanced_notApplicable_noComputableText": "Aucun texte éligible n’avait un contraste calculable (nœuds de texte éligibles : {{eligibleTextCount}}). Voir la règle de calculabilité du contraste pour les détails.",
       "contrastEnhanced_cantTell_engineFailure": "Le contraste renforcé (AAA) n’a pas pu être déterminé en raison d’une erreur interne du moteur ({{reasonCode}}).",
       "contrastEnhanced_cantTell_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1. S’il est soumis à ce ratio, et si la page a choisi ses couleurs, c’est à une personne d’en décider.",
       "contrastEnhanced_fail_placeholder": "Le texte indicatif a un contraste (AAA) de {{ratio}}:1 (premier plan : {{foregroundHex}}, arrière-plan : {{backgroundHex}}), inférieur à {{threshold}}:1, dans des couleurs choisies par la page.",
@@ -104586,6 +104578,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、WCAG の色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
       "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
+      "contrastComputable_hint_pass": "変更は不要です。このテキストがコントラスト比を満たすかどうかは、最低限 (AA) と高度 (AAA) のコントラストのルールが判定します。",
       "contrastComputable_cantTell_bgImageOrGradient": "背景に画像またはグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_bgImage": "背景に画像が使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
       "contrastComputable_cantTell_bgGradient": "背景にグラデーションが使われているため、コントラストを計算できません ({{blockerProperty}}={{blockerValue}})。",
@@ -104614,6 +104607,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrast_hint_semiBold": "このテキストはセミボールドです。太字に見えるなら大きなテキストで {{largeTextRatio}}:1 だけが必要で、それは満たしています。そうでなければ、比が {{threshold}}:1 に達するよう色を変更してください。",
       "contrast_hint_symbol": "{{character}} がテキストかアイコンかを確認してください。アイコンなら隣接する色と 3:1、テキストなら {{threshold}}:1 が必要です。",
       "contrast_hint_forcedColors": "確認時に強制カラーが有効だったため、測定した色はページ本来の色とも画面に表示される色とも異なる可能性があります。強制カラーをオフにしてページを再確認してください。WCAG はページ本来の色でコントラストを評価します。",
+      "contrast_hint_pass": "変更は不要です。数えているのは色を計算できたテキストだけです。それ以外のテキストは、コントラストの計算可否を判定するルールが一覧にしているので、手作業で測ってください。",
       "contrast_hint_colorScheme_dark": "ページのダークな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrast_hint_colorScheme_light": "ページのライトな配色では、このテキストの {{backgroundHex}} に対するコントラスト比は {{ratio}}:1 で、{{threshold}}:1 を下回ります。比がこの値に達するよう、その配色でのテキストの色を変更してください。",
       "contrastMinimum_title": "テキストが最低限の色のコントラスト (AA) を満たしていること",
@@ -104622,7 +104616,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastMinimum_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastMinimum_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastMinimum_pass_allAboveThreshold": "計算できたすべてのテキストが、最低限のコントラスト (AA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
-      "contrastMinimum_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastMinimum_cantTell_engineFailure": "エンジン内部のエラーにより、最低限のコントラスト (AA) を判定できませんでした ({{reasonCode}})。",
       "contrastMinimum_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastMinimum_fail_placeholder": "プレースホルダーのテキストのコントラスト比は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",
@@ -104641,7 +104634,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "contrastEnhanced_fail_generatedText": "この要素の {{pseudo}} が生成するテキストの色のコントラスト比 (AAA) が {{ratio}}:1 で不十分です (前景: {{foregroundHex}}、背景: {{backgroundHex}}、フォントサイズ: {{fontSizePx}}px、フォントの太さ: {{fontWeightLabel}})。必要なコントラスト比は {{threshold}}:1 です ({{#isLargeText}}大きなテキスト{{/isLargeText}}{{^isLargeText}}通常のテキスト{{/isLargeText}})。",
       "contrastEnhanced_hint_fail": "コントラスト比が {{threshold}}:1 以上になるよう、テキストの色、背景色、またはその両方を変更してください。",
       "contrastEnhanced_pass_allAboveThreshold": "計算できたすべてのテキストが、高度なコントラスト (AAA) の基準値を満たしています。対象のテキストノード: {{eligibleTextCount}}。計算できたもの: {{computableTextCount}}。",
-      "contrastEnhanced_notApplicable_noComputableText": "対象となるテキストのうち、コントラストを計算できたものはありません (対象のテキストノード: {{eligibleTextCount}})。詳しくは、コントラストの計算可否を判定するルールを参照してください。",
       "contrastEnhanced_cantTell_engineFailure": "エンジン内部のエラーにより、高度なコントラスト (AAA) を判定できませんでした ({{reasonCode}})。",
       "contrastEnhanced_cantTell_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。このコントラスト比の要件が適用されるか、またページ側が色を指定しているかは、人による判断が必要です。",
       "contrastEnhanced_fail_placeholder": "プレースホルダーのテキストのコントラスト比 (AAA) は {{ratio}}:1 (前景: {{foregroundHex}}、背景: {{backgroundHex}}) で、{{threshold}}:1 未満です。色はページ側が指定しています。",

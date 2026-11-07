@@ -1120,8 +1120,8 @@ Checks that visible text has a contrast ratio of at least 7:1 (normal) or 4.5:1 
 - `colorScheme` (a FAIL on the canvas of a page that supports light and dark): `'light'` or `'dark'`, the scheme in which the text falls short, where it passes in the other; absent where it falls short in every scheme measured.
 - `colorSchemesChecked` (a FAIL, and the pass): the schemes the text on the canvas was measured in, where the page supports both and one could not be measured.
 - `generatedBy` (a FAIL on generated text): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colors and font are the pseudo-element's.
-- `eligibleTextCount`, `computableTextCount` (the pass, and the notApplicable result when no text was computable): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
-- `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them.
+- `eligibleTextCount`, `computableTextCount` (the pass, and the result's own `data.details` when it is notApplicable because no text was computable, which lists no occurrence): how many text nodes were in scope, and how many of those had colors that could be worked out. The pass repeats both under `metrics`.
+- `forcedColors` (every occurrence, and that notApplicable result's details, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them.
 
 **Reason codes.**
 
@@ -1163,8 +1163,8 @@ Checks that visible text has a contrast ratio of at least 4.5:1 (normal) or 3:1 
 - `colorScheme` (text below the threshold, on the canvas of a page that supports light and dark): `'light'` or `'dark'`, the scheme in which it falls short, where it passes in the other, and the hint names it; the ratio and colors are that scheme's. Absent where it falls short in every scheme measured (then reported in the scheme the page is drawn in) and on a page with one scheme.
 - `colorSchemesChecked` (text below the threshold, and the pass): the schemes the text on the canvas was measured in, `['light']` or `['dark']`, where the page supports both and one could not be measured. A binding can scan again with the browser in the other scheme. Absent where every scheme the page supports was measured.
 - `generatedBy` (generated text below the threshold): `::before`, `::after` or `::marker`, the pseudo-element whose text is measured; the selector names its element, and the colors and font are the pseudo-element's.
-- `eligibleTextCount`, `computableTextCount` (the summary when nothing fails): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
-- `forcedColors` (every occurrence, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them.
+- `eligibleTextCount`, `computableTextCount` (the pass, and the result's own `data.details` when it is notApplicable because no text was computable, which lists no occurrence): how many text nodes the rule looked at, and how many of them had colors it could compute. Repeated under `metrics` on a pass.
+- `forcedColors` (every occurrence, and that notApplicable result's details, when the colors measured were forced): `true`, and the hint says to check the page again with forced colors off. A scan under forced colors measures the page's own colors, so this is there only where it could not keep the page in them.
 
 **Reason codes.**
 
