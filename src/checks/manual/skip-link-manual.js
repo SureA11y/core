@@ -44,6 +44,10 @@
  *   its children's.
  * @reports
  *   - `href`: the link's `href`.
+ *   - `lean` (a finding with a lean): the lean's direction, `fail` or
+ *     `pass`, the same as the occurrence's `lean.toward`, so a standard's
+ *     mapping, which reads `data.details`, can route the finding by it.
+ *     Absent when the finding has no lean.
  *   - `unusableReasonCode` (a target that is not usable): why it is not:
  *     `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree,
  *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it,
@@ -375,6 +379,10 @@ function runInPage(ctx) {
     };
   }
 
+  // The lean's direction, in details too (`lean`), so a standard's mapping
+  // can route a finding by it: the routes read data.details.
+  const leanDetail = (lean) => (lean && lean.toward ? { lean: lean.toward } : {});
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -467,6 +475,7 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
               href,
+              ...leanDetail(unusableLean),
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
               geometryCheckEnabled: geometrySupported,
@@ -501,7 +510,7 @@ function runInPage(ctx) {
           params: { href }
         },
         data: {
-          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href, ...leanDetail(missingLean) }
         }
       })
     );

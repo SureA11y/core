@@ -91583,6 +91583,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
 
+  // The lean's direction, in details too (`lean`), so a standard's mapping
+  // can route a finding by it: the routes read data.details.
+  const leanDetail = (lean) => (lean && lean.toward ? { lean: lean.toward } : {});
+
   const occurrences = [];
   let applicableCount = 0;
 
@@ -91675,6 +91679,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
             details: {
               reasonCode: 'SKIP_LINK_TARGET_UNUSABLE',
               href,
+              ...leanDetail(unusableLean),
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
               geometryCheckEnabled: geometrySupported,
@@ -91709,7 +91714,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           params: { href }
         },
         data: {
-          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href }
+          details: { reasonCode: 'SKIP_LINK_TARGET_MISSING', href, ...leanDetail(missingLean) }
         }
       })
     );
