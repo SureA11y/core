@@ -196,6 +196,9 @@ test(`${RULE_ID}: a skip link to a missing target leans fail when nothing listen
     const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
     const occ = result.checksResults.find((c) => c.ruleId === RULE_ID).occurrences[0];
     assert.equal(occ.data.details.reasonCode, 'SKIP_LINK_TARGET_MISSING');
+    // The lean's direction is in details too, for a standard's routes.
+    assert.equal(occ.data.details.lean, occ.lean ? occ.lean.toward : undefined);
+    assert.ok(occ.lean || !('lean' in occ.data.details));
     return occ.lean;
   };
   const SKIP = '<a href="#main">Skip to content</a><main>Content</main>';
@@ -225,8 +228,10 @@ test(`${RULE_ID}: a target hidden by aria-hidden leans fail, one hidden by displ
   assert.equal(hidden.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
   assert.equal(hidden.lean.toward, 'fail');
   assert.equal(hidden.lean.i18n.whyKey, 'skipLink_lean_why_hiddenTarget');
+  assert.equal(hidden.data.details.lean, 'fail');
 
   const display = scan('<a href="#c">Skip to content</a><div hidden><main id="c">x</main></div>');
   assert.equal(display.data.details.reasonCode, 'SKIP_LINK_TARGET_UNUSABLE');
   assert.equal(display.lean, undefined);
+  assert.ok(!('lean' in display.data.details));
 });

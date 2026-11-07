@@ -3281,6 +3281,7 @@ Other same-page anchor links are not skip links and are left alone. Where the pa
 **What a finding reports.**
 
 - `href`: the link's `href`.
+- `lean` (a finding with a lean): the lean's direction, `fail` or `pass`, the same as the occurrence's `lean.toward`, so a standard's mapping, which reads `data.details`, can route the finding by it. Absent when the finding has no lean.
 - `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it, or for an empty target the content it marks, has no area or is cut to nothing.
 - `targetSelector` (a target that is not usable): a selector for the target.
 - `geometryCheckEnabled` (a target that is not usable): whether the target's geometry could be measured, which needs a browser.

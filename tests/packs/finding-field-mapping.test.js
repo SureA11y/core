@@ -152,3 +152,70 @@ test('validate refuses a findings entry it cannot use', () => {
     /outcome can only be 'cantTell' or 'fail'/
   );
 });
+
+// skip-link gives its lean's direction in details (details.lean), so a
+// standard can send a finding that leans fail to a test of its own.
+test("a finding's lean, copied into its details, routes it", () => {
+  const leanReqs = {
+    '1.0': {
+      'S.1': { title: 'A skip link that leans fail', wcagSc: ['2.4.1'] },
+      'S.2': { title: 'Another skip link to check', wcagSc: ['2.4.1'] }
+    }
+  };
+  const leanStd = ruleMappedStandard({
+    standard: 'Lean Standard',
+    tag: 'leanstd',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: leanReqs,
+    ruleMap: {
+      '1.0': {
+        'skip-link': {
+          requirements: ['S.1', 'S.2'],
+          findings: [
+            { when: { lean: 'fail' }, requirements: ['S.1'] },
+            { when: { reasonCode: 'SKIP_LINK_TARGET_UNUSABLE' }, requirements: ['S.2'] }
+          ]
+        }
+      }
+    }
+  });
+  const leanPack = definePack({
+    name: 'lean-pack',
+    version: '1.0.0',
+    namespace: 'leanstd',
+    core: '*',
+    standard: {
+      key: 'leanstd',
+      standard: 'Lean Standard',
+      versions: ['1.0'],
+      profiles: { 'leanstd-1.0': { version: '1.0', tags: ['leanstd'], mappedRules: true } },
+      ruleTag: 'leanstd',
+      ruleMapped: true,
+      mappingsFor: leanStd.mappingsFor,
+      composites: leanStd.composites,
+      validate: leanStd.validate
+    }
+  });
+  const leanOutcomes = (target) => {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><a href="#c">Skip to content</a>${target}</body></html>`,
+      { engineOptions: { packs: [leanPack], profile: 'leanstd-1.0' } }
+    );
+    return Object.fromEntries(
+      ['S.1', 'S.2'].map((id) => [
+        id,
+        result.rulesResults.find((r) => r.ruleId === `leanstd-1.0-${id}`).outcome
+      ])
+    );
+  };
+  // Hidden by aria-hidden, with no modal open: leans fail.
+  assert.deepEqual(leanOutcomes('<main id="c" aria-hidden="true">x</main>'), {
+    'S.1': 'cantTell',
+    'S.2': 'pass'
+  });
+  // Hidden by [hidden]: no lean, so the next entry takes it.
+  assert.deepEqual(leanOutcomes('<div hidden><main id="c">x</main></div>'), {
+    'S.1': 'pass',
+    'S.2': 'cantTell'
+  });
+});
