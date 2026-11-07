@@ -7513,6 +7513,49 @@ function createDomHelpers(opts) {
     return SKIP_LINK_WORDING.some((re) => re.test(s));
   }
 
+  // What a link is made of, for a standard that judges text links, image
+  // links and SVG links apart:
+  // - 'svg': an <a> in SVG (an SVG link), whatever it holds;
+  // - 'image': an <area> (a region of an image), or a link whose content is
+  //   one or more images and no text;
+  // - 'composite': a link whose content has both text and an image;
+  // - 'text': any other link: its content is text, or it has neither (its
+  //   name comes from its attributes).
+  // An image is an <img>, an <svg>, an <object>, a <canvas>, or an element
+  // whose role attribute is img (what is inside one is the image's). Text
+  // is a text node with more than white space. Content is read in the flat
+  // tree, leaving out what the default hidden-content policy hides
+  // (display:none, [hidden], ...); content hidden only from assistive
+  // technology (aria-hidden) is still drawn, and counts. Generated content
+  // (::before, ::after) is not read.
+  const LINK_KIND_IMAGES = new Set(['img', 'svg', 'object', 'canvas']);
+  function getLinkKind(el) {
+    if (!isElement(el)) return 'text';
+    const tag = String(dom.localName(el) || '').toLowerCase();
+    if (tag === 'a' && dom.namespaceURI(el) === 'http://www.w3.org/2000/svg') return 'svg';
+    if (tag === 'area') return 'image';
+    let text = false;
+    let image = false;
+    const visit = (node, depth) => {
+      if (depth > 64 || (text && image)) return;
+      for (const c of flatChildNodes(node)) {
+        if (dom.nodeType(c) === 3) {
+          if (/\S/.test(dom.nodeValue(c) || '')) text = true;
+          continue;
+        }
+        if (isHiddenContent(c)) continue;
+        const name = String(dom.localName(c) || '').toLowerCase();
+        if (LINK_KIND_IMAGES.has(name) || aria.getExplicitRole(c) === 'img') image = true;
+        else visit(c, depth + 1);
+      }
+    };
+    try {
+      visit(el, 0);
+    } catch {}
+    if (image) return text ? 'composite' : 'image';
+    return 'text';
+  }
+
   return {
     // DOM reads a page's named form controls and images can't redirect
     // (src/core/safe-dom.js): rules read the DOM through these.
@@ -7556,6 +7599,7 @@ function createDomHelpers(opts) {
     isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
+    getLinkKind,
 
     // Engine-internal: sets which rule's rule-scoped excludeSelectors
     // (engineOptions.rules[ruleId].excludeSelectors) are currently in

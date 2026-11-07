@@ -33,6 +33,13 @@
  *     lowercase, with spacing collapsed and trailing punctuation removed.
  *     It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name
  *     (`AMBIGUOUS_FORMAT_NAME`).
+ *   - `linkKind`: what the link is made of (`helpers.getLinkKind`): `svg`
+ *     for an `<a>` in SVG; `image` for an `<area>`, or a link whose content
+ *     is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`,
+ *     `role="img"`); `composite` for text and an image; `text` otherwise,
+ *     a link with no content (named by its attributes) included. Hidden
+ *     content (`display: none`, `[hidden]`) doesn't count; content hidden
+ *     only by `aria-hidden` is drawn, and does.
  * @reason-codes
  *   - `GENERIC_LINK_TEXT` (cantTell): the link's whole name is a generic
  *     phrase such as "read more" or "click here", with no adjacent context
@@ -780,6 +787,7 @@ function runInPage(ctx) {
       : null;
 
     const name = rawName.trim();
+    const linkKind = helpers.getLinkKind(el);
     const reportOpts = isGeneric
       ? {
           summary: `This link's name ("${name}") is a generic phrase that doesn't say where it leads.`,
@@ -790,7 +798,7 @@ function runInPage(ctx) {
             params: { name }
           },
           data: {
-            details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized },
+            details: { reasonCode: 'GENERIC_LINK_TEXT', normalizedName: normalized, linkKind },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         }
@@ -803,7 +811,7 @@ function runInPage(ctx) {
             params: { name }
           },
           data: {
-            details: { reasonCode: 'AMBIGUOUS_FORMAT_NAME', normalizedName: normalized },
+            details: { reasonCode: 'AMBIGUOUS_FORMAT_NAME', normalizedName: normalized, linkKind },
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         };
