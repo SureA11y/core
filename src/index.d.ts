@@ -1170,9 +1170,18 @@ export interface ProcedureFacet {
   macro?: true;
   /**
    * The rules that claim the facet (meta.coverage): core's, then, with
-   * options.packs, the packs' own rules and variants.
+   * options.packs, the packs' own rules and variants; on a pack's own facet,
+   * then the core rules its standard's mapping sends to what it assesses
+   * (mappedRules).
    */
   rules: string[];
+  /**
+   * A pack's own facet only, where there are any: the core rules its
+   * standard's mapping (mappingsFor) sends to the requirement ids the facet
+   * assesses (its mappedRequirements, or its requirement where it is the
+   * only facet), also in rules.
+   */
+  mappedRules?: string[];
   /** What its procedure needs besides a browser; empty without a procedure. */
   tools: ProcedureTool[];
   /**
@@ -1357,6 +1366,8 @@ export interface ProcedureChecklistItem {
   covers: string[];
   /** The rules that claim it or a facet it covers. */
   rules: string[];
+  /** Those of rules its facets list as mappedRules, where there are any. */
+  mappedRules?: string[];
   tools: ProcedureTool[];
   /** Naming every requirement it serves where it says what fails. */
   procedure: HowToCheck;

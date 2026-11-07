@@ -273,8 +273,10 @@ function bestPractices(read) {
 
 // A pack's own facet: its procedure is in English, and no core rule claims
 // it; the pack's rules that claim it (meta.coverage.facetsByRequirement) are
-// its rules, and their codes filed under it its variants.
-function packFacet(f, read, claims, requirement, tr) {
+// its rules, and their codes filed under it its variants, then the core
+// rules the standard's mapping sends to it (`mapped`, mappedRulesOf), which
+// are its mappedRules too.
+function packFacet(f, read, claims, requirement, tr, mapped = []) {
   // Its label and procedure, translated as a whole or not at all.
   const { texts, lang } = tr.all([f.label, ...f.steps, f.passWhen, f.failWhen]);
   const steps = texts.slice(1, -2);
@@ -287,7 +289,8 @@ function packFacet(f, read, claims, requirement, tr) {
     label: texts[0],
     ...packLang('lang', lang, tr, read),
     automation: f.automation || 'manual',
-    rules: claims.rules,
+    rules: claims.rules.concat(mapped.filter((r) => !claims.rules.includes(r))),
+    ...(mapped.length ? { mappedRules: mapped.slice() } : {}),
     tools: (Array.isArray(f.tools) ? f.tools : [])
       .filter((id) => TOOLS.includes(id))
       .map((id) => toolOf(id, read)),
@@ -353,6 +356,56 @@ function mappedTitle(st, version, id) {
     MAPPED_TITLES.set(st, titles);
   }
   return titles.get(`${version}\u0000${id}`) || null;
+}
+
+// The core rules a pack's standard maps to each requirement id of its
+// mapping in a version: what its mappingsFor gives each core rule, as a
+// scan's results name it (normativeMappings). A Map of requirement id ->
+// rule ids, in id order; read once per standard and version. A mapping that
+// throws maps nothing.
+const MAPPED_RULES = new WeakMap();
+function mappedByRequirement(st, version) {
+  let byVersion = MAPPED_RULES.get(st);
+  if (!byVersion) MAPPED_RULES.set(st, (byVersion = new Map()));
+  if (byVersion.has(version)) return byVersion.get(version);
+  const out = new Map();
+  if (typeof st.mappingsFor === 'function') {
+    for (const ruleId of Object.keys(RULES).sort(byId)) {
+      let entries;
+      try {
+        entries = st.mappingsFor({ id: ruleId, wcagSc: RULES[ruleId].criteria.slice() });
+      } catch {
+        entries = [];
+      }
+      for (const m of Array.isArray(entries) ? entries : []) {
+        if (!isObject(m) || m.standard !== st.standard || m.version !== version) continue;
+        if (typeof m.requirement !== 'string' || !m.requirement) continue;
+        if (!out.has(m.requirement)) out.set(m.requirement, []);
+        const list = out.get(m.requirement);
+        if (!list.includes(ruleId)) list.push(ruleId);
+      }
+    }
+  }
+  byVersion.set(version, out);
+  return out;
+}
+
+// The requirement ids of the standard's mapping a facet of requirement `id`
+// assesses: those its mappedRequirements names ('8.5.1', a test of the
+// requirement, say), or, where it names none, the requirement itself when
+// it is the requirement's only facet.
+function mappedRequirementsOf(f, id, facetCount) {
+  if (Array.isArray(f.mappedRequirements)) {
+    return f.mappedRequirements.filter((r) => typeof r === 'string' && r);
+  }
+  return facetCount === 1 ? [id] : [];
+}
+
+// The core rules the standard's mapping sends to any of `requirements`.
+function mappedRulesOf(mapped, requirements) {
+  const out = [];
+  for (const r of requirements) for (const ruleId of mapped.get(r) || []) out.push(ruleId);
+  return [...new Set(out)].sort(byId);
 }
 
 // A requirement's title: its entry's, or else the one its rollups give.
@@ -434,11 +487,23 @@ function packRequirement(packs, id, standard, version, readingOf, packRules) {
         facets
       };
     }
-    const facets = (Array.isArray(entry.facets) ? entry.facets : []).map((f) =>
-      packFacet(f, read, packClaims(packRules, id, f.id, true, read, pack), label, tr)
+    const own = (Array.isArray(entry.facets) ? entry.facets : []).filter(isObject);
+    const mapped = mappedByRequirement(st, v);
+    const facets = own.map((f) =>
+      packFacet(
+        f,
+        read,
+        packClaims(packRules, id, f.id, true, read, pack),
+        label,
+        tr,
+        mappedRulesOf(mapped, mappedRequirementsOf(f, id, own.length))
+      )
     );
+    // Its rules: its facets', and the core rules mapped to it as a whole.
     const rules = [];
-    for (const f of facets) for (const r of f.rules) if (!rules.includes(r)) rules.push(r);
+    for (const r of facets.flatMap((f) => f.rules).concat(mappedRulesOf(mapped, [id]))) {
+      if (!rules.includes(r)) rules.push(r);
+    }
     // The WCAG criteria it relates to without restating any.
     const relatesTo = Array.isArray(entry.relatesTo) ? { relatesTo: entry.relatesTo.slice() } : {};
     return { ...head, ...relatesTo, complete: facets.length > 0, rules, facets };
@@ -773,6 +838,11 @@ function procedureChecklistFrom(dictionaries, options) {
       for (const x of covered) if (!item.covers.includes(x.id)) item.covers.push(x.id);
       for (const id of [facet, ...covered].flatMap((x) => x.rules)) {
         if (!item.rules.includes(id)) item.rules.push(id);
+      }
+      // The core rules the standard's mapping sends to it, as its facets say.
+      for (const id of [facet, ...covered].flatMap((x) => x.mappedRules || [])) {
+        if (!item.mappedRules) item.mappedRules = [];
+        if (!item.mappedRules.includes(id)) item.mappedRules.push(id);
       }
     }
   }

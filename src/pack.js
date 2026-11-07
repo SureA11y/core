@@ -985,6 +985,20 @@ function proceduresProblems(procedures, versions) {
         if (f.automation !== undefined && !AUTOMATION.includes(f.automation)) {
           problems.push(`${fa}.automation must be one of ${AUTOMATION.join(', ')}`);
         }
+        // The requirement ids of the standard's mapping (its mappingsFor
+        // entries' requirement) the facet assesses, such as a test of the
+        // requirement: the core rules mapped to them are listed under it.
+        if (
+          f.mappedRequirements !== undefined &&
+          (!Array.isArray(f.mappedRequirements) ||
+            !f.mappedRequirements.length ||
+            !f.mappedRequirements.every(text) ||
+            new Set(f.mappedRequirements).size !== f.mappedRequirements.length)
+        ) {
+          problems.push(
+            `${fa}.mappedRequirements must list requirement ids of the standard's mapping, each once`
+          );
+        }
         problems.push(...packProcedureProblems(f, fa));
       });
     }

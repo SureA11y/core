@@ -432,6 +432,18 @@ standard: {
 meta.coverage = { facetsBySc: {}, facetsByRequirement: { '7.1': ['text-version'] } };
 ```
 
+**The core rules the standard maps.** A facet also lists the core rules the standard's mapping (`mappingsFor`, the rule map) sends to what it assesses, in its `rules` and its `mappedRules`. A requirement with one facet is assessed by it as a whole, so the core rules mapped to the requirement are listed there with nothing more. A standard whose map links rules to something finer than its procedures' requirements, a criterion's tests say, names in each facet the ids its mapping uses, in `mappedRequirements`:
+
+```js
+// rule-map.js links page-title-present to test 8.5.1; the procedures list criterion 8.5
+'8.5': {
+  title: 'Each page has a title',
+  facets: [{ id: 'test-8-5-1', mappedRequirements: ['8.5.1'], label: 'Test 8.5.1: …', steps: [/* … */], passWhen: '…', failWhen: '…' }]
+}
+```
+
+Core can't tell which facet assesses a test from the data alone: a facet id is the pack's choice, and a test only core's rules check has no rule of the pack to link the two. A facet that names nothing, in a requirement of several, lists only the pack's rules that claim it. `automation` stays what the facet says: say `partial` or `full` where core's rules decide part or all of it. `definePack` refuses `mappedRequirements` that isn't a list of ids, each once.
+
 **Related WCAG criteria.** A requirement of its own may name, in `relatesTo`, the WCAG criteria it relates to without restating any (`{ title, relatesTo: ['1.3.1', '4.1.2'], facets }`). `relatedRequirements` reads them both ways, with the criterion each restating requirement gives in `wcag`: from `'1.3.1'` to the standard's requirements, and from a requirement to its criteria ([`PROCEDURES.md`](./PROCEDURES.md#related-requirements)).
 
 **Notes.** What a reader of the standard's procedures should know before using them, such as the status of a version or how its results read in a report, goes in `standard.notes`, by version, in English: `listProcedures` and `procedureChecklist` give them as `notes`, and a page of procedures shows them in its header.
