@@ -134,7 +134,7 @@ function runInPage(ctx) {
           name = '';
         }
         if (!name && tag === 'svg') {
-          const title = Array.from(dom.childNodes(node) || []).find(
+          const title = [...(dom.childNodes(node) || [])].find(
             (c) => dom.nodeType(c) === 1 && String(dom.tagName(c) || '').toLowerCase() === 'title'
           );
           name = title ? String(dom.textContent(title) || '') : '';
@@ -212,7 +212,7 @@ function runInPage(ctx) {
     const row = dom.parentElement(th);
     const table = row ? dom.closest(row, 'table') : null;
     if (!table || !table.rows) return null;
-    const rows = Array.from(table.rows).map((tr) => Array.from(tr.cells || []));
+    const rows = [...table.rows].map((tr) => [...(tr.cells || [])]);
     const r = rows.findIndex((cells) => cells.indexOf(th) !== -1);
     if (r === -1) return null;
     const c = rows[r].indexOf(th);

@@ -153,7 +153,7 @@ function runInPage(ctx) {
   function hasVisibleTextChild(el) {
     let kids;
     try {
-      kids = dom.childNodes(el) ? Array.from(dom.childNodes(el)) : [];
+      kids = dom.childNodes(el) ? [...dom.childNodes(el)] : [];
     } catch {
       return false;
     }
@@ -271,7 +271,7 @@ function runInPage(ctx) {
     );
     let most = 0;
     let measured = false;
-    for (const n of Array.from(dom.childNodes(el) || [])) {
+    for (const n of [...(dom.childNodes(el) || [])]) {
       if (dom.nodeType(n) !== 3) continue;
       const value = String(dom.nodeValue(n) || '');
       if (!value.trim() || (keepsNewlines && value.includes('\n'))) continue;

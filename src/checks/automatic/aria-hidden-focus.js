@@ -148,14 +148,14 @@ function runInPage(ctx) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }

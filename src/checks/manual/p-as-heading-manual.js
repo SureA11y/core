@@ -584,9 +584,9 @@ function runInPage(ctx) {
       const grid = dom.parentElement(card);
       if (!grid) continue;
       let repeats = 0;
-      for (const sib of Array.from(dom.children(grid) || [])) {
+      for (const sib of [...(dom.children(grid) || [])]) {
         if (sib === card || shapeOf(sib) !== shapeOf(card) || hasRealHeading(sib)) continue;
-        if (Array.from(dom.children(sib) || []).some((k) => candidateEls.has(k))) repeats += 1;
+        if ([...(dom.children(sib) || [])].some((k) => candidateEls.has(k))) repeats += 1;
       }
       if (!repeats) continue;
       c.occurrence.lean = {

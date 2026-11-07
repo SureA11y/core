@@ -144,15 +144,15 @@ function runInPage(ctx) {
 
   const videos = (() => {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart('video') || []);
-      if (queryAll) return Array.from(queryAll('video') || []);
+      if (queryAllSmart) return [...(queryAllSmart('video') || [])];
+      if (queryAll) return [...(queryAll('video') || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+        ? [...dom.querySelectorAll(safeRoot, 'video')]
         : [];
     } catch {
       try {
         return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-          ? Array.from(dom.querySelectorAll(safeRoot, 'video'))
+          ? [...dom.querySelectorAll(safeRoot, 'video')]
           : [];
       } catch {
         return [];

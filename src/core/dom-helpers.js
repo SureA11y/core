@@ -852,13 +852,13 @@ function createDomHelpers(opts) {
     __imageMapIndexByTree.set(tree, idx);
     try {
       const byName = new Map();
-      for (const m of Array.from(dom.querySelectorAll(tree, 'map'))) {
+      for (const m of [...dom.querySelectorAll(tree, 'map')]) {
         for (const attr of ['id', 'name']) {
           const v = dom.getAttribute(m, attr);
           if (v && !byName.has(v)) byName.set(v, m);
         }
       }
-      for (const img of Array.from(dom.querySelectorAll(tree, 'img[usemap]'))) {
+      for (const img of [...dom.querySelectorAll(tree, 'img[usemap]')]) {
         const ref = String(dom.getAttribute(img, 'usemap') || '');
         if (ref.charAt(0) !== '#' || ref.length < 2) continue;
         const map = byName.get(ref.slice(1));
@@ -1182,6 +1182,15 @@ function createDomHelpers(opts) {
     return rules;
   }
 
+  // The elements in a list the DOM or a component gave (an array, a
+  // FrozenArray, or any object with a length), read by index: such a list
+  // need not be iterable.
+  function __elementsIn(list) {
+    const out = [];
+    for (let i = 0; i < list.length; i++) if (isElement(list[i])) out.push(list[i]);
+    return out;
+  }
+
   function getReflectedRefs(el, attr) {
     if (!isElement(el) || !Object.prototype.hasOwnProperty.call(REFLECTED_REFS, attr)) return [];
     if (getAttr(el, attr) == null) return [];
@@ -1190,7 +1199,7 @@ function createDomHelpers(opts) {
       // aria-activedescendant reflects as one element, the others as lists.
       if (isElement(list)) return [list];
       if (!list || typeof list.length !== 'number') return [];
-      return Array.from(list).filter(isElement);
+      return __elementsIn(list);
     } catch {
       return [];
     }
@@ -1370,7 +1379,9 @@ function createDomHelpers(opts) {
       if (!ctor) return none;
       const disabled = ctor.disabledFeatures;
       if (disabled && typeof disabled.length === 'number') {
-        for (const f of Array.from(disabled)) if (String(f) === 'internals') return none;
+        for (let i = 0; i < disabled.length; i++) {
+          if (String(disabled[i]) === 'internals') return none;
+        }
       }
       // The hook's registry in the element's own realm, checked first.
       const hook = win ? __internalsHookOf(win) : null;
@@ -1413,11 +1424,7 @@ function createDomHelpers(opts) {
     try {
       const refs = ei.internals.ariaLabelledByElements;
       if (refs && typeof refs.length === 'number' && refs.length) {
-        const t = getTextFromRefs(
-          { refs: Array.from(refs).filter(isElement), missing: [], flags: [] },
-          _ctx,
-          opts
-        );
+        const t = getTextFromRefs({ refs: __elementsIn(refs), missing: [], flags: [] }, _ctx, opts);
         if (t.text) return { status: 'named', value: t.text };
       }
       const label = trim(ei.internals.ariaLabel);
@@ -1880,7 +1887,7 @@ function createDomHelpers(opts) {
     const idx = new Map();
     let refs;
     try {
-      refs = Array.from(dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]'));
+      refs = [...dom.querySelectorAll(scopeObj, '[aria-labelledby],[aria-describedby]')];
     } catch {
       refs = [];
     }
@@ -1985,8 +1992,8 @@ function createDomHelpers(opts) {
     let refs;
     try {
       refs = [
-        ...Array.from(dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]')),
-        ...Array.from(dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]'))
+        ...dom.querySelectorAll(tree, '[aria-labelledby~="' + idSel + '"]'),
+        ...dom.querySelectorAll(tree, '[aria-describedby~="' + idSel + '"]')
       ];
     } catch {
       refs = [];
@@ -2132,7 +2139,7 @@ function createDomHelpers(opts) {
       } catch {
         els = [];
       }
-      // NodeList is iterable; avoid Array.from to reduce allocations.
+      // NodeList is iterable; no copy, to reduce allocations.
       for (const el of els) {
         if (el && !seen.has(el) && !isExcluded(el)) {
           seen.add(el);
@@ -4249,7 +4256,7 @@ function createDomHelpers(opts) {
     if (role === 'combobox' || role === 'listbox') {
       if (isSelect) {
         const picked = [];
-        for (const opt of Array.from(dom.querySelectorAll(node, 'option'))) {
+        for (const opt of [...dom.querySelectorAll(node, 'option')]) {
           let selected;
           try {
             selected = !!dom.get(opt, 'selected');
@@ -4262,7 +4269,7 @@ function createDomHelpers(opts) {
       }
       if (tag === 'input') return trim(valueOf());
       if (role === 'listbox') {
-        return Array.from(dom.querySelectorAll(node, '[role~="option" i]'))
+        return [...dom.querySelectorAll(node, '[role~="option" i]')]
           .filter((o) => lower(getAttr(o, 'aria-selected')) === 'true')
           .map(optionText)
           .filter(Boolean)
@@ -5189,7 +5196,7 @@ function createDomHelpers(opts) {
       TA_REDUNDANT_SUFFIXES_JA.some((x) => word.length > x.length && word.endsWith(x));
     if (prefixed || suffixed) return { altSignal: 'redundant-prefix' };
 
-    const length = Array.from(String(rawAlt).trim()).length;
+    const length = [...String(rawAlt).trim()].length;
     if (length > TA_MAX_LENGTH) {
       return { altSignal: 'too-long', length, limit: TA_MAX_LENGTH };
     }
@@ -5914,7 +5921,7 @@ function createDomHelpers(opts) {
         const kids = assigned.length
           ? assigned
           : dom.childNodes(node)
-            ? Array.from(dom.childNodes(node))
+            ? [...dom.childNodes(node)]
             : [];
         for (const kid of kids) {
           collectChild(kid, parts);
@@ -6776,7 +6783,7 @@ function createDomHelpers(opts) {
       const resolve = (sel) => {
         try {
           const root = dom.getRootNode(el);
-          return root ? Array.from(dom.querySelectorAll(root, sel)) : [];
+          return root ? [...dom.querySelectorAll(root, sel)] : [];
         } catch {
           return [];
         }
@@ -7118,7 +7125,7 @@ function createDomHelpers(opts) {
     } catch {}
 
     const firstChildOfType = (childTag) => {
-      const kids = dom.children(el) ? Array.from(dom.children(el)) : [];
+      const kids = dom.children(el) ? [...dom.children(el)] : [];
       for (const kid of kids) {
         if (lower(dom.localName(kid)) === childTag) return kid;
       }

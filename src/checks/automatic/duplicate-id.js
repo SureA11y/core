@@ -126,7 +126,7 @@ function runInPage(ctx) {
   if (queryAllSmart) {
     try {
       const scoped = queryAllSmart('[id]', { inert: true });
-      const list = Array.isArray(scoped) ? scoped : Array.from(scoped || []);
+      const list = Array.isArray(scoped) ? scoped : [...(scoped || [])];
       inScope = new Set(list);
       for (const el of list) all.add(el);
     } catch {

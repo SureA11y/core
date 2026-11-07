@@ -754,7 +754,7 @@ function runInPage(ctx) {
   // would say. Other letters give no direction. (A symbol alone has no
   // words to compare, so it is not reported; it is read here all the same.)
   function symbolicCharacterKind(text) {
-    const c = Array.from(norm(text))[0] || '';
+    const c = [...norm(text)][0] || '';
     if (c === 'x') return 'letter-x';
     if (/^[\p{S}\p{P}]$/u.test(c)) return 'symbol';
     if (/^\p{N}$/u.test(c)) return 'digit';
@@ -772,7 +772,7 @@ function runInPage(ctx) {
   // symbol standing in for something else, and still fails outright.
   function isSingleSymbolicCharacter(text, accessibleNameNorm) {
     const t = norm(text);
-    if (!t || Array.from(t).length !== 1) return false;
+    if (!t || [...t].length !== 1) return false;
     return accessibleNameNorm.indexOf(t) === -1;
   }
 
@@ -874,7 +874,7 @@ function runInPage(ctx) {
       // A stem of one or two letters ("N.", "No.") starts too many words to
       // stand for the one in the name; three or more ("Ave.", "Dept.") does.
       const longStems = new Set(
-        [...abbreviatedWords(visibleLabel)].filter((w) => Array.from(w).length >= 3)
+        [...abbreviatedWords(visibleLabel)].filter((w) => [...w].length >= 3)
       );
       if (longStems.size && containsWordRun(labelTokens, nameTokens, longStems)) {
         lean = {
@@ -884,7 +884,7 @@ function runInPage(ctx) {
             { signal: 'abbreviation-prefix-match', value: true },
             {
               signal: 'shortest-abbreviation-stem',
-              value: Math.min(...[...longStems].map((w) => Array.from(w).length))
+              value: Math.min(...[...longStems].map((w) => [...w].length))
             }
           ],
           caution: 'A speech user may say the abbreviation as shown rather than the full word.',

@@ -4,6 +4,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Fixed
+
+- A page that replaces `Array.from` (Prototype.js, MooTools) is scanned. Before, the scan stopped with `PAGE_BUILTINS_BROKEN`. Core's code makes its arrays with spread now, and a page's `Array.from` can't change a result: Prototype's gives an empty list for a `Set` or a `Map` iterator, ignores the mapping function and counts a string by UTF-16 code unit. A pack's or custom rule that uses `Array.from` still stops the scan on such a page, when the selection runs it (`docs/RULE_AUTHORING.md` §1.3). The HTML report no longer uses it either.
+- `PAGE_BUILTINS_BROKEN` also checks Set, Map, string and `NodeList` iteration, and `String.prototype.startsWith` with a position.
+
 ## [1.15.0] - 2026-11-05
 
 ### Added

@@ -127,7 +127,7 @@ function runInPage(ctx) {
   if (helpers && typeof helpers.queryAllSmart === 'function') {
     try {
       const scoped = helpers.queryAllSmart('[id]', { inert: true });
-      inScope = new Set(Array.isArray(scoped) ? scoped : Array.from(scoped || []));
+      inScope = new Set(Array.isArray(scoped) ? scoped : [...(scoped || [])]);
     } catch {
       inScope = null;
     }

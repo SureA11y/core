@@ -1058,7 +1058,7 @@ function createContrastHelpers(opts, shared) {
             try {
               const found =
                 selector === beforeOrAfter && __beforeOrAfterHostSetByRoot.get(walkRoot);
-              hosts = Array.from(found || dom.querySelectorAll(walkRoot, selector));
+              hosts = [...(found || dom.querySelectorAll(walkRoot, selector))];
               if (dom.nodeType(walkRoot) === 1 && dom.matches(walkRoot, selector))
                 hosts.unshift(walkRoot);
             } catch {
@@ -2920,9 +2920,9 @@ function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         // <style media="print"> or <link media="print">: not the screen's.
         if (sheet && sheet.disabled === true) continue;
@@ -3540,7 +3540,7 @@ function createContrastHelpers(opts, shared) {
       // schemes").
       if (!supported.length && (!rootValue || rootValue.toLowerCase() === 'normal')) {
         const metas = dom.call(doc, 'querySelectorAll', 'meta[name="color-scheme" i]') || [];
-        for (const meta of Array.from(metas)) {
+        for (const meta of [...metas]) {
           const named = __schemesNamed(dom.getAttribute(meta, 'content'));
           if (named.length) {
             supported = named;
@@ -3767,9 +3767,9 @@ function createContrastHelpers(opts, shared) {
       }
     };
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         const rules = rulesOf(sheet);
         if (!rules) {
@@ -4619,9 +4619,9 @@ function createContrastHelpers(opts, shared) {
     } catch {}
     let found = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       for (const sheet of sheets) {
         let rules;
         try {
@@ -4699,9 +4699,9 @@ function createContrastHelpers(opts, shared) {
     const bases = new Set();
     let all = false;
     try {
-      const sheets = Array.from(dom.get(root, 'styleSheets') || []).concat(
-        Array.from(dom.get(root, 'adoptedStyleSheets') || [])
-      );
+      const sheets = [...(dom.get(root, 'styleSheets') || [])].concat([
+        ...(dom.get(root, 'adoptedStyleSheets') || [])
+      ]);
       const stack = [];
       for (const sheet of sheets) {
         try {
@@ -4750,7 +4750,7 @@ function createContrastHelpers(opts, shared) {
     } catch {
       all = true;
     }
-    let out = all ? '*' : Array.from(bases).join(', ');
+    let out = all ? '*' : [...bases].join(', ');
     if (out && out !== '*') {
       try {
         __beforeOrAfterHostSetByRoot.set(root, new Set(dom.querySelectorAll(root, out)));
@@ -5489,7 +5489,7 @@ function createContrastHelpers(opts, shared) {
         doc,
         'button, a[href], input[type="checkbox"], input[type="button"], [role="button"], [role="switch"], [role="checkbox"], [role="menuitemcheckbox"]'
       );
-      for (const c of Array.from(candidates || [])) {
+      for (const c of [...(candidates || [])]) {
         // Cheap test first, on what can name it, before the name itself.
         const raw = [
           dom.textContent(c),
@@ -6434,7 +6434,7 @@ function createContrastHelpers(opts, shared) {
             cs &&
             String(cs.display).startsWith('inline') &&
             !__REPLACED_PAINT.has(String(dom.localName(node) || '').toLowerCase())
-              ? Array.from(dom.getClientRects(node))
+              ? [...dom.getClientRects(node)]
               : [dom.getBoundingClientRect(node)];
         } catch {
           continue;

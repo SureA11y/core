@@ -113,7 +113,7 @@ function runInPage(ctx) {
       : (sel) => {
           try {
             return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(safeRoot, sel))
+              ? [...dom.querySelectorAll(safeRoot, sel)]
               : [];
           } catch {
             return [];
@@ -159,11 +159,11 @@ function runInPage(ctx) {
       '[role~="img" i], [role~="image" i], [role~="graphics-symbol" i], [role~="graphics-document" i]';
     let found;
     try {
-      found = Array.from(
-        (queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || []
-      );
+      found = [
+        ...((queryAllSmart ? queryAllSmart(sel, { internalsRoles: true }) : queryAll(sel)) || [])
+      ];
     } catch {
-      found = Array.from(queryAll(sel) || []);
+      found = [...(queryAll(sel) || [])];
     }
     // An <svg> is never in scope, and an <img> only by a graphics token
     // (<img role="graphics-symbol">), as the selector's :not(img) and

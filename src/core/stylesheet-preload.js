@@ -48,7 +48,7 @@ async function preloadStyleSheets(options) {
       if (sheet.href && !hrefs.includes(sheet.href)) hrefs.push(sheet.href);
       return;
     }
-    for (const rule of Array.from(rules)) {
+    for (const rule of [...rules]) {
       // CSSImportRule
       if (rule && rule.type === 3) visit(rule.styleSheet, depth + 1);
     }
@@ -60,7 +60,7 @@ async function preloadStyleSheets(options) {
     const proto = view && view.Document ? view.Document.prototype : null;
     const getter = proto && Object.getOwnPropertyDescriptor(proto, 'styleSheets');
     const list = getter && getter.get ? getter.get.call(doc) : [];
-    for (const sheet of Array.from(list || [])) visit(sheet, 0);
+    for (const sheet of [...(list || [])]) visit(sheet, 0);
   } catch {
     return [];
   }

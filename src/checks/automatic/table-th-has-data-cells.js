@@ -137,12 +137,12 @@ function runInPage(ctx) {
     let found;
     try {
       found = scope
-        ? Array.from(dom.querySelectorAll(scope, selector))
-        : Array.from(
-            (helpers.queryAllSmart
+        ? [...dom.querySelectorAll(scope, selector)]
+        : [
+            ...((helpers.queryAllSmart
               ? helpers.queryAllSmart(selector, { internalsRoles: true })
-              : helpers.queryAll(selector)) || []
-          );
+              : helpers.queryAll(selector)) || [])
+          ];
       if (scope && typeof helpers.getInternalsRoleElements === 'function') {
         for (const { el, role } of helpers.getInternalsRoleElements()) {
           if (el !== scope && roles.includes(role) && dom.contains(scope, el)) found.push(el);
@@ -295,7 +295,7 @@ function runInPage(ctx) {
   }
 
   function askUnassignedInTable(table, headers) {
-    const rowCells = Array.from(table.rows || []).map((row) => Array.from(row.cells || []));
+    const rowCells = [...(table.rows || [])].map((row) => [...(row.cells || [])]);
     // A rowspan of 0 spans too, as in td-has-header.
     const spans = rowCells.some((cells) =>
       cells.some((c) => spanOf(c, 'colspan') > 1 || spanOf(c, 'rowspan') !== 1)
@@ -350,7 +350,7 @@ function runInPage(ctx) {
     );
     const rowCells = [];
     for (const row of rows) {
-      const cells = Array.from(dom.children(row) || []);
+      const cells = [...(dom.children(row) || [])];
       const simple = cells.every((cell) => {
         const role = explicitRole(cell);
         return (
@@ -387,7 +387,7 @@ function runInPage(ctx) {
       ths = [];
     }
 
-    const headers = Array.from(ths).filter(isHeaderCellInScope);
+    const headers = [...ths].filter(isHeaderCellInScope);
     if (!headers.length) continue;
 
     applicableCount += 1;

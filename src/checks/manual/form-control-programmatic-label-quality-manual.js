@@ -135,9 +135,9 @@ function runInPage(ctx) {
 
   function safeQueryAll(sel) {
     try {
-      if (queryAllSmart) return Array.from(queryAllSmart(sel) || []);
+      if (queryAllSmart) return [...(queryAllSmart(sel) || [])];
       return safeRoot && dom.get(safeRoot, 'querySelectorAll')
-        ? Array.from(dom.querySelectorAll(safeRoot, sel))
+        ? [...dom.querySelectorAll(safeRoot, sel)]
         : [];
     } catch {
       return [];

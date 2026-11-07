@@ -122,7 +122,7 @@ function runInPage(ctx) {
           try {
             const scope = rt || safeRoot;
             return scope && dom.get(scope, 'querySelectorAll')
-              ? Array.from(dom.querySelectorAll(scope, sel))
+              ? [...dom.querySelectorAll(scope, sel)]
               : [];
           } catch {
             return [];

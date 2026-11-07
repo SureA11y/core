@@ -175,7 +175,7 @@ function runInPage(ctx) {
       const kids = helpers.flatChildNodes
         ? helpers.flatChildNodes(node)
         : dom.childNodes(node)
-          ? Array.from(dom.childNodes(node))
+          ? [...dom.childNodes(node)]
           : [];
       for (const kid of kids) {
         if (found) return;

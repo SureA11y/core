@@ -132,14 +132,14 @@ function runInPage(ctx) {
       if (queryAllSmart) {
         const r = queryAllSmart(sel);
         if (Array.isArray(r)) return r;
-        return Array.from(r || []);
+        return [...(r || [])];
       }
     } catch {
       // fall through
     }
     try {
       if (safeRoot && typeof dom.get(safeRoot, 'querySelectorAll') === 'function')
-        return Array.from(dom.querySelectorAll(safeRoot, sel));
+        return [...dom.querySelectorAll(safeRoot, sel)];
     } catch {
       // fall through
     }
@@ -424,7 +424,7 @@ function runInPage(ctx) {
       // root's, whose rules reach only the elements of that root.
       const sheets = helpers.getStyleSheets
         ? helpers.getStyleSheets()
-        : Array.from(dom.styleSheets(document) || []).map((sheet) => ({ sheet, root: document }));
+        : [...(dom.styleSheets(document) || [])].map((sheet) => ({ sheet, root: document }));
       for (const { sheet, root } of sheets) {
         if (!conditionApplies(sheet)) continue;
         sheetRoot = root;

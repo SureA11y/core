@@ -998,7 +998,7 @@ function runInPage(ctx) {
           details: {
             eligibleTextCount,
             assumptionsCount,
-            assumptionsApplied: Array.from(assumptionsAppliedSet).sort()
+            assumptionsApplied: [...assumptionsAppliedSet].sort()
           }
         }
       }

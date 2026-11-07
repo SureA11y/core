@@ -176,7 +176,7 @@ function runInPage(ctx) {
     nodes = [];
   }
 
-  const hasH1 = Array.from(nodes).some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
+  const hasH1 = [...nodes].some((el) => el && isLevelOneHeading(el) && isExposedToAt(el));
 
   if (hasH1) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

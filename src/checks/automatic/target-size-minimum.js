@@ -232,9 +232,9 @@ function runInPage(ctx) {
   function qsa(sel, opts) {
     try {
       if (helpers && typeof helpers.queryAllSmart === 'function')
-        return Array.from(helpers.queryAllSmart(sel, opts) || []);
+        return [...(helpers.queryAllSmart(sel, opts) || [])];
       if (helpers && typeof helpers.queryAll === 'function')
-        return Array.from(helpers.queryAll(sel) || []);
+        return [...(helpers.queryAll(sel) || [])];
       return [];
     } catch {
       return [];
@@ -345,13 +345,13 @@ function runInPage(ctx) {
     try {
       if (dom.nodeType(node) === 1) {
         const sr = dom.shadowRoot(node);
-        if (sr) return Array.from(dom.childNodes(sr));
+        if (sr) return [...dom.childNodes(sr)];
         if (String(dom.localName(node) || '').toLowerCase() === 'slot') {
           const assigned = dom.assignedNodes(node, { flatten: true });
-          if (assigned && assigned.length) return Array.from(assigned);
+          if (assigned && assigned.length) return [...assigned];
         }
       }
-      return Array.from(dom.childNodes(node));
+      return [...dom.childNodes(node)];
     } catch {
       return [];
     }
@@ -406,7 +406,7 @@ function runInPage(ctx) {
     try {
       if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
       const r = dom.getClientRects(el);
-      return r ? Array.from(r) : [];
+      return r ? [...r] : [];
     } catch {
       return [];
     }
@@ -1071,7 +1071,7 @@ function runInPage(ctx) {
     try {
       const range = dom.createRange(document);
       range.selectNodeContents(el);
-      return Array.from(dom.getClientRects(range));
+      return [...dom.getClientRects(range)];
     } catch {
       return [];
     }
@@ -1083,9 +1083,7 @@ function runInPage(ctx) {
     let list = __contentCache.get(el);
     if (!list) {
       try {
-        list = Array.from(dom.querySelectorAll(el, '*'))
-          .slice(0, 500)
-          .filter((d) => !isCandidate(d));
+        list = [...dom.querySelectorAll(el, '*')].slice(0, 500).filter((d) => !isCandidate(d));
       } catch {
         list = [];
       }
@@ -1435,7 +1433,7 @@ function runInPage(ctx) {
     const inScope = new Set(applicable);
     let all;
     try {
-      all = Array.from(dom.querySelectorAll(document, CANDIDATE_SELECTOR));
+      all = [...dom.querySelectorAll(document, CANDIDATE_SELECTOR)];
     } catch {
       all = [];
     }

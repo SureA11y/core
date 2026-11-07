@@ -99,7 +99,7 @@ function runInPage(ctx) {
   // Browsers apply the last viewport meta tag that has content; an earlier
   // one is overridden. One that restricts zoom fails; an earlier one that
   // restricts is asked about, since browsers have differed on merging them.
-  const withContent = Array.from(nodes).filter(
+  const withContent = [...nodes].filter(
     (el) =>
       el && dom.get(el, 'getAttribute') && String(dom.getAttribute(el, 'content') || '').trim()
   );

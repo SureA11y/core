@@ -196,7 +196,7 @@ function runInPage(ctx) {
     const rects = [];
     const cs = styleOf(el);
     if (cs && cs.display === 'contents') {
-      for (const child of Array.from(dom.childNodes(el) || [])) {
+      for (const child of [...(dom.childNodes(el) || [])]) {
         if (dom.nodeType(child) === 1) {
           const r = drawnBox(child);
           if (r) rects.push(r);
@@ -204,13 +204,13 @@ function runInPage(ctx) {
           try {
             const range = dom.createRange(document);
             range.selectNodeContents(child);
-            rects.push(...Array.from(dom.getClientRects(range)));
+            rects.push(...dom.getClientRects(range));
           } catch {}
         }
       }
     } else {
       try {
-        rects.push(...Array.from(dom.getClientRects(el)));
+        rects.push(...dom.getClientRects(el));
       } catch {}
     }
     if (!rects.length) return null;
@@ -282,7 +282,7 @@ function runInPage(ctx) {
     // (the first token naming a real role, in any case).
     // Failing that, a custom element whose internals make it the main.
     const main =
-      Array.from(dom.querySelectorAll(document, 'main, [role~="main" i]') || []).find(
+      [...(dom.querySelectorAll(document, 'main, [role~="main" i]') || [])].find(
         (el) =>
           String(dom.localName(el) || '').toLowerCase() === 'main' ||
           helpers.aria.getExplicitRole(el) === 'main'
@@ -408,7 +408,7 @@ function runInPage(ctx) {
         // selector, which a backslash or quote in the name would break.
         try {
           target =
-            Array.from(dom.querySelectorAll(document, 'a[name]')).find(
+            [...dom.querySelectorAll(document, 'a[name]')].find(
               (a) => dom.getAttribute(a, 'name') === fragment
             ) || null;
         } catch {

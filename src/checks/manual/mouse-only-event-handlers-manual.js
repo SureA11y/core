@@ -196,7 +196,7 @@ function runInPage(ctx) {
     if (keyboardAttrs.every((a) => FOCUS_ATTRS.indexOf(a) !== -1)) return false;
     let descendants;
     try {
-      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+      descendants = [...dom.querySelectorAll(el, FOCUSABLE_CANDIDATES)];
     } catch {
       return true;
     }
@@ -211,7 +211,7 @@ function runInPage(ctx) {
   function focusableInside(el) {
     let descendants;
     try {
-      descendants = Array.from(dom.querySelectorAll(el, FOCUSABLE_CANDIDATES));
+      descendants = [...dom.querySelectorAll(el, FOCUSABLE_CANDIDATES)];
     } catch {
       return true;
     }

@@ -1427,8 +1427,8 @@ function layOutSkippedContent(doc) {
   };
   for (let i = 0; !named && i < roots.length; i++) {
     try {
-      const own = Array.from(dom.styleSheets(roots[i]) || []);
-      const adopted = Array.from(dom.get(roots[i], 'adoptedStyleSheets') || []);
+      const own = [...(dom.styleSheets(roots[i]) || [])];
+      const adopted = [...(dom.get(roots[i], 'adoptedStyleSheets') || [])];
       for (const sheet of own.concat(adopted)) {
         if (sheetNames(sheet, 0)) {
           named = true;
@@ -1746,7 +1746,10 @@ function isThenable(value) {
 // broken one it relies on (Array.prototype.filter returning its input, a
 // Map that doesn't keep what it is given) would give a result that reads
 // well and is wrong, an empty one even; so the scan stops instead, with a
-// coded error naming each.
+// coded error naming each. Core's own code makes arrays with spread, not
+// Array.from, which old libraries replace with one that drops Sets, Map
+// iterators and the mapping function; assertArrayFromFor checks Array.from
+// for the rules of a pack or caller that use it.
 function assertPageBuiltins() {
   // Recorded by index and joined by hand, as push or join may be what is
   // broken.
@@ -1773,7 +1776,21 @@ function assertPageBuiltins() {
     for (const x of [1, 2]) sum += x;
     return sum === 3;
   });
-  check('Array.from', () => Array.from(new Set([1, 2])).length === 2);
+  check('Set iteration', () => [...new Set([1, 2])].length === 2);
+  check('Map iteration', () => {
+    const [entry] = [...new Map([['a', 1]])];
+    return entry[0] === 'a' && entry[1] === 1 && [...new Map([['a', 1]]).values()][0] === 1;
+  });
+  // Built at run time: a bundle loaded without its charset would read the
+  // character in a literal as several.
+  check('String iteration', () => [...('a' + String.fromCodePoint(0x1f600))].length === 2);
+  check('NodeList iteration', () => {
+    if (typeof Node === 'undefined' || typeof document === 'undefined' || !document) return true;
+    // Read from Node.prototype: a named element could stand in for
+    // document.childNodes.
+    const nodes = Object.getOwnPropertyDescriptor(Node.prototype, 'childNodes').get.call(document);
+    return [...nodes].length === nodes.length;
+  });
   check('Map', () => {
     const m = new Map();
     m.set('a', 1);
@@ -1799,6 +1816,7 @@ function assertPageBuiltins() {
   });
   check('String.prototype.trim', () => '  a '.trim() === 'a');
   check('String.prototype.toLowerCase', () => 'AbC'.toLowerCase() === 'abc');
+  check('String.prototype.startsWith', () => 'abc'.startsWith('b', 1) && !'abc'.startsWith('b'));
   check('Number.isFinite', () => Number.isFinite(1) && !Number.isFinite(Infinity));
   if (!broken.length) return;
   let names = '';
@@ -1811,6 +1829,48 @@ function assertPageBuiltins() {
   err.code = 'PAGE_BUILTINS_BROKEN';
   err.broken = broken;
   throw err;
+}
+
+// Whether Array.from works as the language defines it, for the rules of a
+// pack or caller that use it: on a page whose scripts replaced it (Prototype
+// gives an empty list for a Set or a Map iterator and ignores the mapping
+// function; others wrap anything that is not an array in one), such a rule
+// would give a result that reads well and is wrong, so the scan stops, as
+// for any other broken built-in. Core's own rules don't use it, and a scan
+// that runs no rule using it goes ahead. fns: the rules' functions.
+function assertArrayFromFor(fns) {
+  let works;
+  /* eslint-disable no-restricted-properties -- the check is of Array.from itself */
+  try {
+    const mapped = Array.from(new Set([1, 2]), (x) => x * 2);
+    works =
+      mapped.length === 2 &&
+      mapped[1] === 4 &&
+      Array.from(new Map([['a', 1]]).values())[0] === 1 &&
+      Array.from('a' + String.fromCodePoint(0x1f600)).length === 2 &&
+      Array.from({ length: 1, 0: 'a' })[0] === 'a';
+  } catch {
+    works = false;
+  }
+  /* eslint-enable no-restricted-properties */
+  if (works) return;
+  const toSource = Function.prototype.toString;
+  for (let i = 0; i < fns.length; i++) {
+    let source;
+    try {
+      source = typeof fns[i] === 'function' ? toSource.call(fns[i]) : '';
+    } catch {
+      source = '';
+    }
+    if (source.indexOf('Array.from') === -1) continue;
+    const err = new Error(
+      'The page has changed JavaScript built-ins the engine relies on (Array.from), ' +
+        "so a scan of it can't be trusted. Scan it before its scripts change them."
+    );
+    err.code = 'PAGE_BUILTINS_BROKEN';
+    err.broken = ['Array.from'];
+    throw err;
+  }
 }
 
 function runCore(
@@ -2228,9 +2288,9 @@ function runCoreSettled(
   const overriddenBuiltinIds = resolvedCustom.overriddenBuiltinIds;
   for (const id of resolvedCustom.defs.keys()) customRuleIds.add(id);
   if (resolvedCustom.defs.size) {
-    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat(
-      Array.from(resolvedCustom.defs.values())
-    );
+    effectiveCheckDefs = CHECK_DEFS.filter((d) => !resolvedCustom.defs.has(d.ruleId)).concat([
+      ...resolvedCustom.defs.values()
+    ]);
     effectiveRuleImpls = { ...RULE_IMPLS, ...resolvedCustom.impls };
   }
   if (overriddenBuiltinIds.length) {
@@ -2659,9 +2719,9 @@ function runCoreSettled(
         return out;
       }
       if (kind === '[object Map]') {
-        return Array.from(v.entries(), ([k, x]) => [plainData(k, path), plainData(x, path)]);
+        return [...v.entries()].map(([k, x]) => [plainData(k, path), plainData(x, path)]);
       }
-      if (kind === '[object Set]') return Array.from(v.values(), (x) => plainData(x, path));
+      if (kind === '[object Set]') return [...v.values()].map((x) => plainData(x, path));
       if (typeof v.toJSON === 'function') return plainData(v.toJSON(), path);
       const out = {};
       for (const key of Object.keys(v)) {
@@ -2758,14 +2818,14 @@ function runCoreSettled(
         const added = new Set();
         const removed = new Set();
         for (const r of records) {
-          for (const n of Array.from(r.addedNodes || [])) added.add(n);
-          for (const n of Array.from(r.removedNodes || [])) removed.add(n);
+          for (const n of [...(r.addedNodes || [])]) added.add(n);
+          for (const n of [...(r.removedNodes || [])]) removed.add(n);
         }
         const transient = (n) => added.has(n) && removed.has(n);
         let n = 0;
         for (const r of records) {
           if (r.type === 'childList') {
-            const nodes = Array.from(r.addedNodes || []).concat(Array.from(r.removedNodes || []));
+            const nodes = [...(r.addedNodes || [])].concat([...(r.removedNodes || [])]);
             if (nodes.length && nodes.every(transient)) continue;
           } else if (transient(r.target)) {
             continue;
@@ -2792,6 +2852,26 @@ function runCoreSettled(
         .filter((d) => !foreignCode.has(d.ruleId))
         .concat(effectiveCheckDefs.filter((d) => foreignCode.has(d.ruleId)))
     : effectiveCheckDefs;
+  // The pack's and caller's rules this selection runs, an override where its
+  // built-in would: those that use Array.from need it to work.
+  if (foreignCode.size) {
+    const foreignFns = [];
+    for (const def of runOrder) {
+      if (!foreignCode.has(def.ruleId)) continue;
+      const selected =
+        ruleMatchesRunOnly(resolveRuleDefI18n(def, engineOptionsResolved), runOnly, ENGINE_TAG) ||
+        (overriddenBuiltinIds.includes(def.ruleId) &&
+          CHECK_DEFS.some(
+            (d) =>
+              d &&
+              d.ruleId === def.ruleId &&
+              ruleMatchesRunOnly(resolveRuleDefI18n(d, engineOptionsResolved), runOnly, ENGINE_TAG)
+          ));
+      const impl = selected ? effectiveRuleImpls[def.ruleId] : null;
+      if (impl) foreignFns.push(impl.run, impl.applicability);
+    }
+    assertArrayFromFor(foreignFns);
+  }
   const readOnlyViews = new WeakMap();
   const ruleEngineOptions =
     engineOptionsResolved && typeof engineOptionsResolved === 'object' ? engineOptionsResolved : {};
@@ -3458,6 +3538,7 @@ function runCoreSettled(
 module.exports = {
   isThenable,
   assertPageBuiltins,
+  assertArrayFromFor,
   resolveCustomRules,
   runCore,
   runCoreSettled,
