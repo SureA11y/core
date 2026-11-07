@@ -135,6 +135,14 @@ export type PackRequirementProcedures =
         steps: string[];
         passWhen: string;
         failWhen: string;
+        /**
+         * The requirement ids of the standard's mapping (the requirement of
+         * its mappingsFor entries) the facet assesses, such as a test of the
+         * requirement ('8.5.1'): the core rules mapped to them are listed
+         * under it, in rules and mappedRules. Without it, the only facet of
+         * a requirement assesses the requirement itself.
+         */
+        mappedRequirements?: string[];
       }[];
     };
 

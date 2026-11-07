@@ -7,6 +7,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Added
 
 - A pack's dictionaries translate its standard's own steps for core's codes (`standard.review`), under `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and `_fail`. A finding that reads them has them in the scan's locale, or the one `addHowToCheck` and `applyHowToCheck` are given, where the dictionary translates the whole entry, and in English otherwise. `checkPack` and `definePack` refuse a dictionary that translates part of an entry, or names a rule, code or step `standard.review` doesn't have.
+- A pack's standard's procedures list, under each facet of its own, the core rules its mapping sends to what the facet assesses, in `rules` and in `mappedRules` (on checklist items too), so a test only core's rules check no longer looks unchecked. A facet names the ids its mapping uses in `mappedRequirements` (`['8.5.1']`, a test of criterion 8.5); the only facet of a requirement takes the requirement's own.
 
 ### Fixed
 
