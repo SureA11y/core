@@ -23,12 +23,13 @@ const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
 
 const { JUDGED_WHEN_INERT, inertPage } = require('../helpers/inertContent.js');
 
-function outcome(html, ruleId) {
+function outcome(html, ruleId, engineOptions) {
   const warn = console.warn;
   console.warn = () => {};
   try {
     const result = runa11yCoreOnHtml(html, {
       runOnly: { includeRuleIds: [ruleId] },
+      engineOptions,
       entryPointParity: false
     });
     return result.checksResults.find((c) => c.ruleId === ruleId);
@@ -87,13 +88,19 @@ test('inert content inside an open modal dialog is left out, and so is the page 
   const modal =
     '<dialog open aria-modal="true" aria-label="Sign in"><p id="in" lang="yy-invalid-tag-zz">Sign in</p>' +
     '<div inert><p id="inert-in" lang="zz-invalid-tag-zz">Later</p></div></dialog>';
+  // jsdom can't open a modal dialog: assumeModal takes the open dialog with
+  // aria-modal="true" as one (modal-dialog.test.js).
+  const assume = { assumeModal: true };
   // A rule about how content looks judges inert content, but not behind a modal.
   const spaced =
     '<div inert><p id="spaced" style="line-height:1.2 !important">The toy brought back fond memories of being lost in the rain forest.</p></div>';
   assert.equal(outcome(page(spaced), 'avoid-inline-spacing').outcome, 'fail');
-  assert.equal(outcome(page(spaced + modal), 'avoid-inline-spacing').outcome, 'notApplicable');
+  assert.equal(
+    outcome(page(spaced + modal), 'avoid-inline-spacing', assume).outcome,
+    'notApplicable'
+  );
 
-  const rule = outcome(page(modal), 'valid-lang');
+  const rule = outcome(page(modal), 'valid-lang', assume);
   assert.deepEqual(
     rule.occurrences.map((o) => /id="([^"]+)"/.exec(o.html)[1]),
     ['in']

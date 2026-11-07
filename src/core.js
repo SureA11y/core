@@ -12396,6 +12396,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     embeddedAriaHidden: T.boolean,
     embeddedInert: T.boolean,
     topLevelDocument: T.boolean,
+    assumeModal: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -12796,6 +12797,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // own, whatever window it is in (see isTopLevelDocument()); null detects it.
   const topLevelDocumentOption =
     opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
+  // engineOptions.assumeModal: where the DOM cannot open a modal dialog (no
+  // showModal(), as in jsdom), take an open <dialog aria-modal="true"> as
+  // one, for a test that stands in for showModal() with those attributes.
+  // Without it, only a dialog matching :modal makes the page behind inert.
+  const assumeModal = !!(opts && opts.assumeModal === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -13154,13 +13160,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // A <dialog> opened with showModal() matches :modal in every current
     // engine, whether or not it carries aria-modal; HTML then makes the rest
-    // of the document inert ("blocked by a modal dialog"). Where the DOM has
-    // a top layer, :modal is the whole answer: a dialog opened with the open
-    // attribute or show() leaves the page reachable by keyboard and in
-    // Chromium's accessibility tree, aria-modal="true" or not, so treating
-    // it as modal would hide a live page from every rule. A DOM without a
-    // top layer (jsdom: no showModal(), :modal never matches) falls back to
-    // an open dialog with aria-modal="true", the closest it can tell.
+    // of the document inert ("blocked by a modal dialog"). That is the whole
+    // answer: a dialog opened with the open attribute or show() leaves the
+    // page reachable by keyboard and in the accessibility tree,
+    // aria-modal="true" or not, so treating it as modal would hide a live
+    // page from every rule. A DOM without a top layer (jsdom: no
+    // showModal(), :modal never matches) can't open a modal dialog, so
+    // nothing there is behind one, unless engineOptions.assumeModal takes an
+    // open dialog with aria-modal="true" as modal there.
     // The whole document is searched, not the scan's scope: a modal outside
     // a scoped scan still blocks what is inside it. Open shadow roots are
     // searched too: a dialog opened with showModal() in a shadow tree is in
@@ -13175,8 +13182,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
-    for (const root of documentRoots()) {
+    const sel = hasTopLayer
+      ? 'dialog:modal'
+      : assumeModal
+        ? 'dialog[open][aria-modal="true"]'
+        : null;
+    for (const root of sel ? documentRoots() : []) {
       try {
         for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
@@ -13194,6 +13205,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     return list;
   };
+
+  // Whether `el` is behind an open modal dialog, which the browser makes
+  // inert: a modal dialog is open (getOpenModalDialogs) and `el` is in none
+  // of them by the flat tree, so content of a shadow root inside the dialog
+  // counts as in it, and contains none (<body>, a wrapper: a container of the
+  // dialog is not what is blocked). With several modals open, inside any of
+  // them counts, since the DOM does not say which one is topmost. Such an
+  // element is out of the accessibility tree (isAccTreeEligible's
+  // `modalInert`) and takes no focus (getFocusableInfo).
+  function isModalInert(el) {
+    if (!isElement(el)) return false;
+    const openModals = getOpenModalDialogs();
+    if (!openModals.length) return false;
+    const chain = ancestorsIncludingSelf(el);
+    return !openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
+  }
 
   // Flat-tree (composed) parent: a distributed/slotted node's real rendered
   // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
@@ -13487,6 +13514,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
     } else if (hasBlockingInert(el)) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
+    } else if (isModalInert(el)) {
+      // Behind an open modal dialog: inert, as the browser makes it.
+      result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['modalInert'] };
     } else {
       const flags = [];
       const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
@@ -14815,12 +14845,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // node is still hidden, or behind the modal, and is excluded by the
       // default hidden-content policy.
       if (reasons.includes('inert')) {
-        const openModals = getOpenModalDialogs();
-        if (openModals.length) {
-          const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
-          if (!reachable) return true;
-        }
+        if (isModalInert(el)) return true;
         const domVis = isDomVisibleEligible(el, null, {
           visibilityMode: 'styleOnly',
           disableGeometry: true,
@@ -15882,24 +15907,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (hasBlockingInert(node)) {
       return __cacheAndReturn({ eligible: false, reasons: ['inert'] });
     }
-    // An open modal dialog blocks the rest of the document. An element is
-    // blocked unless it is in a modal dialog (by the flat tree, so content of
-    // a shadow root inside the dialog counts) or contains one (<body>, a
-    // wrapper): a container of the dialog is not what assistive technology
-    // is denied. With several modals open, inside any of them counts, since
-    // the DOM does not say which one is topmost.
+    // An open modal dialog blocks the rest of the document (isModalInert).
     try {
-      const openModals = getOpenModalDialogs();
-      if (openModals.length) {
-        let reachable = false;
-        for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
-            reachable = true;
-            break;
-          }
-        }
-        if (!reachable) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
-      }
+      if (isModalInert(node)) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
     } catch {}
 
     // 3) CSS rendering suppression
@@ -20048,6 +20058,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
+    isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
@@ -22361,6 +22372,7 @@ const runCoreSettled = (function runCoreSettled(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
     embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    assumeModal: !!(engineOptionsResolved && switchOf(engineOptionsResolved.assumeModal) === true),
     topLevelDocument:
       engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
         ? engineOptionsResolved.topLevelDocument
@@ -118538,6 +118550,7 @@ const engineOptionSpec = (function engineOptionSpec() {
     embeddedAriaHidden: T.boolean,
     embeddedInert: T.boolean,
     topLevelDocument: T.boolean,
+    assumeModal: T.boolean,
     excludeSelectors: T.list,
     // The text of style sheets the page can't read (preloadStyleSheets).
     styleSheetTexts: {
@@ -118938,6 +118951,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // own, whatever window it is in (see isTopLevelDocument()); null detects it.
   const topLevelDocumentOption =
     opts && typeof opts.topLevelDocument === 'boolean' ? opts.topLevelDocument : null;
+  // engineOptions.assumeModal: where the DOM cannot open a modal dialog (no
+  // showModal(), as in jsdom), take an open <dialog aria-modal="true"> as
+  // one, for a test that stands in for showModal() with those attributes.
+  // Without it, only a dialog matching :modal makes the page behind inert.
+  const assumeModal = !!(opts && opts.assumeModal === true);
 
   // Rule-scoped excludes (engineOptions.rules[ruleId].excludeSelectors), set
   // by dom-runner.js immediately before invoking each rule's applicability/
@@ -119296,13 +119314,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     // A <dialog> opened with showModal() matches :modal in every current
     // engine, whether or not it carries aria-modal; HTML then makes the rest
-    // of the document inert ("blocked by a modal dialog"). Where the DOM has
-    // a top layer, :modal is the whole answer: a dialog opened with the open
-    // attribute or show() leaves the page reachable by keyboard and in
-    // Chromium's accessibility tree, aria-modal="true" or not, so treating
-    // it as modal would hide a live page from every rule. A DOM without a
-    // top layer (jsdom: no showModal(), :modal never matches) falls back to
-    // an open dialog with aria-modal="true", the closest it can tell.
+    // of the document inert ("blocked by a modal dialog"). That is the whole
+    // answer: a dialog opened with the open attribute or show() leaves the
+    // page reachable by keyboard and in the accessibility tree,
+    // aria-modal="true" or not, so treating it as modal would hide a live
+    // page from every rule. A DOM without a top layer (jsdom: no
+    // showModal(), :modal never matches) can't open a modal dialog, so
+    // nothing there is behind one, unless engineOptions.assumeModal takes an
+    // open dialog with aria-modal="true" as modal there.
     // The whole document is searched, not the scan's scope: a modal outside
     // a scoped scan still blocks what is inside it. Open shadow roots are
     // searched too: a dialog opened with showModal() in a shadow tree is in
@@ -119317,8 +119336,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       hasTopLayer = false;
     }
     let list = [];
-    const sel = hasTopLayer ? 'dialog:modal' : 'dialog[open][aria-modal="true"]';
-    for (const root of documentRoots()) {
+    const sel = hasTopLayer
+      ? 'dialog:modal'
+      : assumeModal
+        ? 'dialog[open][aria-modal="true"]'
+        : null;
+    for (const root of sel ? documentRoots() : []) {
       try {
         for (const el of dom.querySelectorAll(root, sel)) {
           if (list.indexOf(el) === -1) list.push(el);
@@ -119336,6 +119359,22 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
     return list;
   };
+
+  // Whether `el` is behind an open modal dialog, which the browser makes
+  // inert: a modal dialog is open (getOpenModalDialogs) and `el` is in none
+  // of them by the flat tree, so content of a shadow root inside the dialog
+  // counts as in it, and contains none (<body>, a wrapper: a container of the
+  // dialog is not what is blocked). With several modals open, inside any of
+  // them counts, since the DOM does not say which one is topmost. Such an
+  // element is out of the accessibility tree (isAccTreeEligible's
+  // `modalInert`) and takes no focus (getFocusableInfo).
+  function isModalInert(el) {
+    if (!isElement(el)) return false;
+    const openModals = getOpenModalDialogs();
+    if (!openModals.length) return false;
+    const chain = ancestorsIncludingSelf(el);
+    return !openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
+  }
 
   // Flat-tree (composed) parent: a distributed/slotted node's real rendered
   // parent is the <slot> it's assigned to, NOT its own light-DOM parentNode
@@ -119629,6 +119668,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['notElement'] };
     } else if (hasBlockingInert(el)) {
       result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['inert'] };
+    } else if (isModalInert(el)) {
+      // Behind an open modal dialog: inert, as the browser makes it.
+      result = { focusable: false, tabbable: false, mechanism: 'none', flags: ['modalInert'] };
     } else {
       const flags = [];
       const disabled = !!(dom.get(el, 'matches') && dom.matches(el, ':disabled'));
@@ -120957,12 +120999,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // node is still hidden, or behind the modal, and is excluded by the
       // default hidden-content policy.
       if (reasons.includes('inert')) {
-        const openModals = getOpenModalDialogs();
-        if (openModals.length) {
-          const chain = ancestorsIncludingSelf(el);
-          const reachable = openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
-          if (!reachable) return true;
-        }
+        if (isModalInert(el)) return true;
         const domVis = isDomVisibleEligible(el, null, {
           visibilityMode: 'styleOnly',
           disableGeometry: true,
@@ -122024,24 +122061,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (hasBlockingInert(node)) {
       return __cacheAndReturn({ eligible: false, reasons: ['inert'] });
     }
-    // An open modal dialog blocks the rest of the document. An element is
-    // blocked unless it is in a modal dialog (by the flat tree, so content of
-    // a shadow root inside the dialog counts) or contains one (<body>, a
-    // wrapper): a container of the dialog is not what assistive technology
-    // is denied. With several modals open, inside any of them counts, since
-    // the DOM does not say which one is topmost.
+    // An open modal dialog blocks the rest of the document (isModalInert).
     try {
-      const openModals = getOpenModalDialogs();
-      if (openModals.length) {
-        let reachable = false;
-        for (const d of openModals) {
-          if (chain.indexOf(d) !== -1 || containsModal(node, d)) {
-            reachable = true;
-            break;
-          }
-        }
-        if (!reachable) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
-      }
+      if (isModalInert(node)) return __cacheAndReturn({ eligible: false, reasons: ['modalInert'] });
     } catch {}
 
     // 3) CSS rendering suppression
@@ -126190,6 +126212,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isTopLevelDocument,
     isModalDialogOpen,
     getOpenModalDialogs,
+    isModalInert,
     getDocumentRoots: documentRoots,
     hasSkipLinkWording,
 
@@ -128503,6 +128526,7 @@ const runCoreSettled = (function runCoreSettled(
       engineOptionsResolved && engineOptionsResolved.embeddedAriaHidden === true
     ),
     embeddedInert: !!(engineOptionsResolved && engineOptionsResolved.embeddedInert === true),
+    assumeModal: !!(engineOptionsResolved && switchOf(engineOptionsResolved.assumeModal) === true),
     topLevelDocument:
       engineOptionsResolved && typeof engineOptionsResolved.topLevelDocument === 'boolean'
         ? engineOptionsResolved.topLevelDocument

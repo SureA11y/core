@@ -235,14 +235,16 @@ test(`${RULE_ID}: text given to a region behind an open modal dialog was not ann
 
 // A live region behind an open modal <dialog>: the browser makes it inert,
 // so what the page writes to it while the dialog is open is not announced.
-// jsdom has no top layer: an open dialog with aria-modal="true" stands in
-// for one opened with showModal() (modal-dialog.test.js).
+// jsdom can't open a modal dialog: with engineOptions.assumeModal, an open
+// dialog with aria-modal="true" stands in for one opened with showModal()
+// (modal-dialog.test.js).
+const ASSUME = { assumeModal: true };
 const MODAL_DIALOG =
   '<dialog open aria-modal="true" aria-label="Sign in"><div id="in" role="status"></div><button>OK</button></dialog>';
 
 test(`${RULE_ID}: a live region behind an open modal dialog is asked about, with no lean`, () => {
   const rule = assertRule(
-    run('<div id="behind" role="status"></div>' + MODAL_DIALOG),
+    run('<div id="behind" role="status"></div>' + MODAL_DIALOG, ASSUME),
     RULE_ID,
     'cantTell',
     { minOccurrences: 1, maxOccurrences: 1 }
@@ -272,7 +274,7 @@ test(`${RULE_ID}: behind an open modal dialog, the dialog is what hides a region
     // Inside the dialog, inert hides it.
     ['#inside', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'inert' }]
   ];
-  for (const engineOptions of [undefined, { includeHiddenElements: true }]) {
+  for (const engineOptions of [ASSUME, { ...ASSUME, includeHiddenElements: true }]) {
     const rule = assertRule(run(body, engineOptions), RULE_ID, 'cantTell', {
       minOccurrences: 4,
       maxOccurrences: 4
@@ -289,7 +291,7 @@ test(`${RULE_ID}: behind an open modal dialog, the dialog is what hides a region
 });
 
 test(`${RULE_ID}: a live region inside the open modal dialog is judged as before`, () => {
-  assertRule(run('<p>Page</p>' + MODAL_DIALOG), RULE_ID, 'pass', { maxOccurrences: 0 });
+  assertRule(run('<p>Page</p>' + MODAL_DIALOG, ASSUME), RULE_ID, 'pass', { maxOccurrences: 0 });
 });
 
 test(`${RULE_ID}: with no modal dialog open, a live region is judged as before`, () => {
@@ -338,10 +340,15 @@ test(`${RULE_ID}: behind an open modal dialog, the hook's record decides the lea
         dropped: { announcements: 0, findings: 0, dialogsOpened: dropped }
       })
     });
-    const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-      minOccurrences: 1,
-      maxOccurrences: 1
-    });
+    const rule = assertRule(
+      runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: ASSUME }),
+      RULE_ID,
+      'cantTell',
+      {
+        minOccurrences: 1,
+        maxOccurrences: 1
+      }
+    );
     assert.equal(rule.occurrences[0].data.details.hiddenBy, 'modal');
     return rule.occurrences[0].lean;
   }
@@ -389,9 +396,14 @@ test(`${RULE_ID}: the hook's findings on a region behind an open modal dialog st
       dropped: { announcements: 0, findings: 0 }
     })
   });
-  const rule = assertRule(runa11yCoreOnDom(dom, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
-    minOccurrences: 1,
-    maxOccurrences: 1
-  });
+  const rule = assertRule(
+    runa11yCoreOnDom(dom, { runOnly: [RULE_ID], engineOptions: ASSUME }),
+    RULE_ID,
+    'cantTell',
+    {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    }
+  );
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIVE_REGION_HIDDEN');
 });

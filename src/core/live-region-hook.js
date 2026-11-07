@@ -363,20 +363,26 @@ const LIVE_REGION_HOOK_SOURCE = [
   // with the text it had: the box showed it, not the page filling it, so
   // only text given after counts. ready says whether the region is shown
   // once the box is; skip, whether it is left as it is.
-  // The modal dialogs open now: :modal where the browser has a top layer,
-  // else an open dialog with aria-modal="true", as the engine reads them. In
-  // the document only, as the hook does not look inside shadow roots.
+  // The modal dialogs open now: those matching :modal (opened with
+  // showModal()), as the engine reads them. A DOM without a top layer
+  // (jsdom) can't open one, so there are none there, unless the hook was
+  // asked to take an open dialog with aria-modal="true" as modal
+  // (assumeModal, as engineOptions.assumeModal does). In the document only,
+  // as the hook does not look inside shadow roots.
+  '    var assumeModal = false;',
   '    var modalSelector = null;',
   '    function openModals() {',
   '      if (modalSelector === null) {',
   '        var proto = global.HTMLDialogElement && global.HTMLDialogElement.prototype;',
-  "        modalSelector = proto && typeof proto.showModal === 'function' ? 'dialog:modal' : 'dialog[open][aria-modal=true]';",
+  "        modalSelector = proto && typeof proto.showModal === 'function' ? 'dialog:modal' : '';",
   '        try {',
-  '          doc.querySelector(modalSelector);',
+  '          if (modalSelector) doc.querySelector(modalSelector);',
   '        } catch (e) {',
-  "          modalSelector = 'dialog[open][aria-modal=true]';",
+  "          modalSelector = '';",
   '        }',
+  "        if (!modalSelector && assumeModal) modalSelector = 'dialog[open][aria-modal=true]';",
   '      }',
+  '      if (!modalSelector) return [];',
   '      try {',
   '        return doc.querySelectorAll(modalSelector);',
   '      } catch (e) {',
@@ -612,34 +618,45 @@ const LIVE_REGION_HOOK_SOURCE = [
 ].join('\n');
 
 const EARLY_LINE = "      early = doc.readyState !== 'complete';";
-const LIVE_REGION_HOOK_SOURCE_EARLY = LIVE_REGION_HOOK_SOURCE.replace(
-  EARLY_LINE,
-  '      early = true;'
-);
+const ASSUME_MODAL_LINE = '    var assumeModal = false;';
+// The source with the options given: `early` and `assumeModal` each
+// replace one line of it.
+function liveRegionHookSource(early, assumeModal) {
+  let source = LIVE_REGION_HOOK_SOURCE;
+  if (early) source = source.replace(EARLY_LINE, '      early = true;');
+  if (assumeModal) source = source.replace(ASSUME_MODAL_LINE, '    var assumeModal = true;');
+  return source;
+}
 
 // The hook's script, to run in every frame of a page before the page's own
 // scripts. `early: true` is a promise the caller makes: that no change the
 // test cares about has happened yet, for a hook installed after the document
-// loaded (a jsdom test's setup file). Only the first copy installed in a
-// realm counts.
+// loaded (a jsdom test's setup file). `assumeModal: true` takes an open
+// <dialog> with aria-modal="true" as modal where the DOM can't open one
+// (jsdom), as engineOptions.assumeModal does for the scan. Only the first
+// copy installed in a realm counts.
 const checked = new Set();
 function liveRegionHookScript(options) {
   if (options !== undefined) {
     if (options === null || typeof options !== 'object' || Array.isArray(options)) {
       throw new TypeError('liveRegionHookScript(options): options must be an object.');
     }
-    const unknown = Object.keys(options).filter((k) => k !== 'early');
+    const unknown = Object.keys(options).filter((k) => k !== 'early' && k !== 'assumeModal');
     if (unknown.length) {
       throw new TypeError(
-        `liveRegionHookScript(options): no option named ${unknown.map((k) => `"${k}"`).join(', ')}; use early.`
+        `liveRegionHookScript(options): no option named ${unknown.map((k) => `"${k}"`).join(', ')}; use early or assumeModal.`
       );
     }
-    if (options.early !== undefined && typeof options.early !== 'boolean') {
-      throw new TypeError('liveRegionHookScript(options): early must be true or false.');
+    for (const name of ['early', 'assumeModal']) {
+      if (options[name] !== undefined && typeof options[name] !== 'boolean') {
+        throw new TypeError(`liveRegionHookScript(options): ${name} must be true or false.`);
+      }
     }
   }
-  const source =
-    options && options.early === true ? LIVE_REGION_HOOK_SOURCE_EARLY : LIVE_REGION_HOOK_SOURCE;
+  const source = liveRegionHookSource(
+    !!(options && options.early === true),
+    !!(options && options.assumeModal === true)
+  );
   if (!checked.has(source)) {
     const nodeRequire =
       typeof module === 'object' && module && typeof module.require === 'function'

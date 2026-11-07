@@ -12,6 +12,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const path = require('node:path');
 
 let chromium;
 try {
@@ -38,6 +39,26 @@ const skip = !chromium
     : false;
 
 const { addBundle } = require('../helpers/browserBundle');
+const { runa11yCoreOnHtml } = require('../helpers/runDomRulesOnHtml.js');
+
+// The helpers alone, to ask them about one element in the page.
+function helpersBundle() {
+  const esbuild = require('esbuild');
+  return esbuild.buildSync({
+    stdin: {
+      contents:
+        "const { createDomHelpers } = require('./src/core/dom-helpers.js');\n" +
+        'globalThis.__modalTest = { createDomHelpers };\n',
+      resolveDir: path.join(__dirname, '../..'),
+      sourcefile: 'modal-dialog-chromium-helpers.js'
+    },
+    bundle: true,
+    format: 'iife',
+    platform: 'browser',
+    write: false,
+    logLevel: 'error'
+  }).outputFiles[0].text;
+}
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>Shop</title></head><body>' +
@@ -224,4 +245,152 @@ test('a modal dialog in Chromium', { skip }, async (t) => {
       assert.equal(r[id].outcome, 'notApplicable', id);
     }
   });
+});
+
+// The same markup gets the same verdicts in jsdom and in Chromium: only a
+// dialog opened with showModal() is modal, and markup alone can't open one.
+// A <dialog open aria-modal="true"> and a role="dialog" with
+// aria-modal="true" leave the page behind judged in both.
+const MARKUP = {
+  'dialog-open-aria-modal': PAGE.replace('<dialog id="d"', '<dialog id="d" open aria-modal="true"'),
+  'div-role-dialog-aria-modal': PAGE.replace(
+    /<dialog id="d"([^>]*)>([\s\S]*)<\/dialog>/,
+    '<div role="dialog" aria-modal="true"$1>$2</div>'
+  )
+};
+
+// What a scan says of each rule: its outcome and the ids of what it reported.
+function verdicts(result, rules) {
+  const o = {};
+  for (const id of rules) {
+    const c = result.checksResults.find((x) => x.ruleId === id);
+    o[id] = {
+      outcome: c.outcome,
+      ids: c.occurrences.map((x) => (/id="([^"]+)"/.exec(x.html || '') || [])[1] || null).sort()
+    };
+  }
+  return o;
+}
+
+test(
+  'a modal dialog: the same markup, the same verdicts in jsdom and Chromium',
+  { skip },
+  async (t) => {
+    const browser = await chromium.launch({ executablePath });
+    t.after(() => browser.close());
+
+    for (const [name, html] of Object.entries(MARKUP)) {
+      await t.test(name, async () => {
+        const jsdom = verdicts(runa11yCoreOnHtml(html, { runOnly: RULES }), RULES);
+        const p = await browser.newPage();
+        await p.setContent(html);
+        await addBundle(p);
+        const inChromium = await p.evaluate(
+          ({ rules, src }) => {
+            const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, null);
+            return (0, eval)(src)(r, rules);
+          },
+          { rules: RULES, src: '(' + verdicts.toString() + ')' }
+        );
+        await p.close();
+        assert.deepEqual(inChromium, jsdom);
+        assert.ok(jsdom['img-alt-present'].ids.includes('behind'), 'the page behind is judged');
+        // A shown role="dialog" with aria-modal="true" makes the rules about
+        // the page's structure notApplicable, in both; a <dialog> opened
+        // without showModal() does not.
+        assert.equal(
+          jsdom['landmark-one-main'].outcome,
+          name === 'dialog-open-aria-modal' ? 'pass' : 'notApplicable'
+        );
+      });
+    }
+
+    // engineOptions.assumeModal stands in for showModal() where the DOM can't
+    // open a modal dialog. A browser can, so it ignores it.
+    await t.test('assumeModal is for jsdom: Chromium ignores it', async () => {
+      const html = MARKUP['dialog-open-aria-modal'];
+      const opts = { runOnly: RULES, engineOptions: { assumeModal: true } };
+      const jsdom = verdicts(runa11yCoreOnHtml(html, opts), RULES);
+      assert.ok(!jsdom['img-alt-present'].ids.includes('behind'), 'jsdom: behind left out');
+      assert.equal(jsdom['landmark-one-main'].outcome, 'notApplicable');
+
+      const p = await browser.newPage();
+      await p.setContent(html);
+      await addBundle(p);
+      const inChromium = await p.evaluate(
+        ({ rules, src }) => {
+          const r = window.a11ycore.runa11yCoreInPage(
+            location.href,
+            null,
+            { assumeModal: true },
+            null
+          );
+          return (0, eval)(src)(r, rules);
+        },
+        { rules: RULES, src: '(' + verdicts.toString() + ')' }
+      );
+      await p.close();
+      assert.ok(inChromium['img-alt-present'].ids.includes('behind'), 'Chromium: behind judged');
+      assert.equal(inChromium['landmark-one-main'].outcome, 'pass');
+    });
+  }
+);
+
+// Behind a dialog opened with showModal(), nothing takes focus: Chromium
+// moves focus to none of it, and the helpers say so (isModalInert,
+// getFocusableInfo), as they leave it out of the accessibility tree.
+test('showModal(): the page behind is inert and takes no focus', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const bundle = helpersBundle();
+
+  const p = await browser.newPage();
+  await p.setContent(
+    '<!doctype html><html lang="en"><body><a id="link" href="/">Home</a>' +
+      '<div id="tab" tabindex="0">Tab stop</div>' +
+      '<div id="wrap"><dialog id="d"><button id="ok">OK</button></dialog></div></body></html>'
+  );
+  await p.addScriptTag({ content: bundle });
+  const read = () =>
+    p.evaluate(() => {
+      // A scan clears the helpers' shared cache when it starts; so does each read.
+      window.__a11ycoreSharedCache = {};
+      const helpers = window.__modalTest.createDomHelpers({ window, document, root: document });
+      const out = {};
+      for (const id of ['link', 'tab', 'ok', 'wrap']) {
+        const el = document.getElementById(id);
+        el.focus();
+        out[id] = {
+          browser: document.activeElement === el,
+          modalInert: helpers.isModalInert(el),
+          focusable: helpers.getFocusableInfo(el).focusable,
+          flags: helpers.getFocusableInfo(el).flags,
+          eligible: helpers.isAccTreeEligible(el).eligible
+        };
+        el.blur();
+      }
+      return out;
+    });
+
+  const before = await read();
+  for (const id of ['link', 'tab']) {
+    assert.equal(before[id].browser, true, id);
+    assert.equal(before[id].modalInert, false, id);
+    assert.equal(before[id].focusable, true, id);
+  }
+
+  await p.evaluate(() => document.getElementById('d').showModal());
+  const open = await read();
+  for (const id of ['link', 'tab']) {
+    assert.equal(open[id].browser, false, `${id}: Chromium gives it no focus`);
+    assert.equal(open[id].modalInert, true, id);
+    assert.equal(open[id].focusable, false, id);
+    assert.deepEqual(open[id].flags, ['modalInert'], id);
+    assert.equal(open[id].eligible, false, id);
+  }
+  assert.equal(open.ok.browser, true);
+  assert.equal(open.ok.modalInert, false);
+  assert.equal(open.ok.focusable, true);
+  assert.equal(open.wrap.modalInert, false, 'a wrapper of the dialog is not behind it');
+  await p.close();
 });

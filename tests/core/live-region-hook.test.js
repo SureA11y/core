@@ -42,9 +42,14 @@ const loaded = (d) =>
 
 // A loaded jsdom page with the hook installed before it loaded, unless said
 // otherwise; then each script in turn, each as a task of its own.
-async function page(body, scripts = [], { hook = true, early } = {}) {
+async function page(body, scripts = [], { hook = true, early, assumeModal } = {}) {
   const d = dom(body);
-  if (hook) d.window.eval(liveRegionHookScript(early === undefined ? undefined : { early }));
+  if (hook) {
+    const options = {};
+    if (early !== undefined) options.early = early;
+    if (assumeModal !== undefined) options.assumeModal = assumeModal;
+    d.window.eval(liveRegionHookScript(Object.keys(options).length ? options : undefined));
+  }
   await loaded(d);
   for (const script of [].concat(scripts)) {
     d.window.eval(script);
@@ -253,19 +258,34 @@ test('the last time each dialog was opened is recorded, in the order of the page
   assert.equal(read.dropped.dialogsOpened, 0);
 });
 
-test('a text given to a region behind an open modal dialog is left out, or kept marked on request', async () => {
-  // jsdom has no top layer: an open dialog with aria-modal="true" stands in
-  // for one opened with showModal().
-  const d = await page(
-    '<div id="b" role="status"></div><dialog id="d" aria-modal="true"><div id="i" role="status"></div></dialog>',
+const MODAL_STEPS = [
+  "document.getElementById('b').textContent = 'Before'; document.getElementById('d').setAttribute('open', '');",
+  "document.getElementById('i').textContent = 'Inside';",
+  "document.getElementById('b').textContent = 'Behind';",
+  "document.getElementById('d').removeAttribute('open');",
+  "document.getElementById('b').textContent = 'Closed';"
+];
+const MODAL_BODY =
+  '<div id="b" role="status"></div><dialog id="d" aria-modal="true"><div id="i" role="status"></div></dialog>';
+
+test('jsdom opens no modal dialog: a text given to a region behind an open <dialog aria-modal="true"> is announced', async () => {
+  const d = await page(MODAL_BODY, MODAL_STEPS);
+  assert.deepEqual(
+    getAnnouncements(d.window, { includeBehindModal: true }).map((a) => [a.text, a.behindModal]),
     [
-      "document.getElementById('b').textContent = 'Before'; document.getElementById('d').setAttribute('open', '');",
-      "document.getElementById('i').textContent = 'Inside';",
-      "document.getElementById('b').textContent = 'Behind';",
-      "document.getElementById('d').removeAttribute('open');",
-      "document.getElementById('b').textContent = 'Closed';"
+      ['Before', false],
+      ['Inside', false],
+      ['Behind', false],
+      ['Closed', false]
     ]
   );
+  assert.throws(() => liveRegionHookScript({ assumeModal: 'yes' }), TypeError);
+});
+
+test('a text given to a region behind an open modal dialog is left out, or kept marked on request', async () => {
+  // jsdom can't open a modal dialog: with assumeModal, an open dialog with
+  // aria-modal="true" stands in for one opened with showModal().
+  const d = await page(MODAL_BODY, MODAL_STEPS, { assumeModal: true });
   assert.deepEqual(
     getAnnouncements(d.window).map((a) => a.text),
     ['Before', 'Inside', 'Closed']
