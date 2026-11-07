@@ -293,7 +293,12 @@ export function describePacks(
   packs: unknown[]
 ): (PackDescription | { name: string | null; problems: string[] })[];
 
-/** What is wrong with a pack's shape; empty when it can be prepared. */
+/**
+ * What is wrong with a pack's shape; empty when it can be prepared. Also
+ * reports a rule's steps (`meta.review`) that a dictionary translates only
+ * in part, which `definePack` and a scan accept, reading each missing key in
+ * English.
+ */
 export function checkPack(pack: unknown): string[];
 
 /** How far one translation of a pack's standard covers its texts. */

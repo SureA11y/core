@@ -22,7 +22,7 @@ const {
 } = require('../src/review-placeholders.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 const { addHowToCheck, howToCheckFor } = require('../src/index.js');
-const { definePack, ruleMappedStandard, checkPack } = require('../src/pack.js');
+const { definePack, ruleMappedStandard, checkPack, describePacks } = require('../src/pack.js');
 const { renderHtmlReport } = require('../src/report.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -202,6 +202,48 @@ test('definePack refuses a pack rule’s placeholder without its text', () => {
     ),
     /needs the text it reads as without a value/
   );
+});
+
+test('checkPack reports a pack rule’s steps translated in part; definePack and a scan load the pack', () => {
+  const pack = (fr) => ({
+    name: 'acme-ask',
+    version: '1.0.0',
+    namespace: 'acme',
+    core: '*',
+    rules: [askRule],
+    dictionaries: { en: askPack.dictionaries.en, fr }
+  });
+  const stem = 'acmeAsk_review_ACME_ASK_';
+  const whole = {
+    [`${stem}step1`]:
+      'Trouvez l’élément dont data-ask vaut {{ask|une valeur}}, un {{tag|élément}}.',
+    [`${stem}pass`]: '{{ask|La valeur}} est juste.',
+    [`${stem}fail`]: '{{ask|La valeur}} est fausse.'
+  };
+  assert.deepEqual(checkPack(pack(whole)), []);
+  assert.deepEqual(checkPack(pack({})), []);
+  const { [`${stem}fail`]: _, ...part } = whole;
+  assert.deepEqual(checkPack(pack(part)), [
+    "dictionaries.fr: acmeAsk_review_ACME_ASK_*: translates only part of acme-ask's meta.review.ACME_ASK, whose other keys are read in English; it lacks fail"
+  ]);
+  const { [`${stem}step1`]: __, ...passOnly } = part;
+  assert.match(checkPack(pack(passOnly)).join('\n'), /it lacks step1, fail$/);
+
+  // The pack still loads and runs, and each key the locale lacks is read
+  // in English.
+  const loaded = definePack(pack(part));
+  assert.equal(describePacks([loaded])[0].problems, undefined);
+  const raw = runa11yCoreOnHtml(page('<p data-ask="menu">x</p>'), {
+    engineOptions: { packs: [loaded], locale: 'fr' },
+    runOnly: ['acme-ask']
+  });
+  assert.deepEqual(raw.skippedPacks || [], []);
+  const how = addHowToCheck(raw, { packs: [loaded] }).checksResults[0].occurrences[0].howToCheck;
+  assert.deepEqual(how, {
+    steps: ['Trouvez l’élément dont data-ask vaut menu, un p.'],
+    passWhen: 'menu est juste.',
+    failWhen: 'menu is wrong, which fails Acme 1.'
+  });
 });
 
 const HASPOPUP = page(
