@@ -93,6 +93,20 @@
  *     is content whose text can't be read (a counter in a style of the
  *     page's own), `GENERATED_TEXT_POSITIONED` a pseudo-element taken out
  *     of the flow with no opaque background of its own.
+ *   - `typography.fontSizePx`, `typography.fontSizePt` (each text asked
+ *     about): the font size as drawn, in CSS pixels and in points, as
+ *     contrast-minimum reports it: the computed size times CSS zoom, an SVG
+ *     scale or font-size-adjust. `typography.declaredFontSizePx` and
+ *     `typography.sizeScaledBy` where it is drawn at another size than its
+ *     font-size.
+ *   - `typography.fontWeight`, `typography.fontWeightLabel`: the computed
+ *     font weight as a number (400, 700) and as written.
+ *   - `typography.isBold`, `typography.isLargeText`: whether the text
+ *     counts as bold (700 or more), and as large text by core's definition
+ *     (24px, or 14pt and bold), the size that only needs 3:1. Generated
+ *     text has its pseudo-element's font, at its computed size.
+ *   - The typography fields are a stable contract, as they are in
+ *     contrast-minimum, unlike the rest of `data.details`.
  *   - `forcedColors` (every occurrence, when the colors measured were
  *     forced): `true`, and the hint says to check the page again with
  *     forced colors off. A scan under forced colors measures the page's own
@@ -318,6 +332,47 @@ function runInPage(ctx) {
   // text and the text its ::before generates are reported apart.
   const seenGenerated = new Map();
 
+  // The size and weight of the text, as contrast-minimum reports them in
+  // its findings' `typography`: the font size as drawn (the computed size
+  // times CSS zoom, an SVG scale or font-size-adjust) in px and pt, the
+  // weight as a number and as written, and whether core counts it as bold
+  // and as large text (helpers.contrast.isLargeText: 24px, or 14pt and
+  // bold). A standard that sets a different threshold for large text routes
+  // the finding by them. Generated text has its pseudo-element's font.
+  function typographyOf(el, pseudo) {
+    try {
+      let cs = null;
+      if (pseudo) {
+        const view = dom.defaultView(dom.ownerDocument(el));
+        cs = view && view.getComputedStyle ? view.getComputedStyle(el, pseudo) : null;
+      } else if (typeof helpers.contrast.textStyleOf === 'function') {
+        cs = helpers.contrast.textStyleOf(el);
+      } else {
+        cs = helpers.computedStyle(el);
+      }
+      const declared = cs ? helpers.contrast.parsePx(cs.fontSize) : NaN;
+      if (!Number.isFinite(declared)) return null;
+      const weight = cs ? helpers.contrast.normalizeFontWeight(cs.fontWeight) : 400;
+      const drawn =
+        !pseudo && typeof helpers.contrast.renderedTextSize === 'function'
+          ? helpers.contrast.renderedTextSize(el, cs)
+          : { scale: 1, by: [] };
+      const px = declared * drawn.scale;
+      const fontWeight = Number.isFinite(weight) ? weight : null;
+      return {
+        fontSizePx: px,
+        fontSizePt: px * 0.75,
+        fontWeight,
+        fontWeightLabel: helpers.contrast.fontWeightLabel(weight),
+        isBold: fontWeight !== null && fontWeight >= 700,
+        isLargeText: !!helpers.contrast.isLargeText(px, weight),
+        ...(drawn.by.length ? { declaredFontSizePx: declared, sizeScaledBy: drawn.by } : {})
+      };
+    } catch {
+      return null;
+    }
+  }
+
   // extraDetails.generatedBy: the text is what el's ::before, ::after or
   // ::marker generates, and the summary says so.
   // lean: which way the evidence points, for the few blockers where the
@@ -396,9 +451,11 @@ function runInPage(ctx) {
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
       else if (rc === 'SELECT_OPTION_COLOR') hintKind = 'selectOption';
 
+      const typography = typographyOf(el, pseudo);
       const details = Object.assign(
         { reasonCode: rc },
-        extraDetails && typeof extraDetails === 'object' ? extraDetails : {}
+        extraDetails && typeof extraDetails === 'object' ? extraDetails : {},
+        typography ? { typography } : {}
       );
 
       const occBase = {

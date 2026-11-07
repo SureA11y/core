@@ -799,3 +799,38 @@ test(`${RULE_ID}: colors an emulator can't read in the page's scheme are asked a
     maxOccurrences: 1
   });
 });
+
+// details.typography: the size and weight of the text asked about, with the
+// names and meaning contrast-minimum's findings give them, so a standard
+// that judges large and small text apart can route each finding.
+test(`${RULE_ID}: each text asked about says its size and weight (typography)`, () => {
+  const gradient = 'background-image: linear-gradient(rgb(255, 255, 255), rgb(0, 0, 0))';
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <p id="small" style="color: rgb(17, 17, 17); font-size: 16px; ${gradient}">Small</p>
+  <p id="large" style="color: rgb(17, 17, 17); font-size: 24px; ${gradient}">Large</p>
+  <p id="bold" style="color: rgb(17, 17, 17); font-size: 19px; font-weight: 700; ${gradient}">Bold</p>
+  <p id="bold-small" style="color: rgb(17, 17, 17); font-size: 18px; font-weight: bold; ${gradient}">Bold, small</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 4, maxOccurrences: 4 });
+  const byId = Object.fromEntries(
+    rule.occurrences.map((o) => [/id="([\w-]+)"/.exec(o.html)[1], o.data.details.typography])
+  );
+  assert.deepStrictEqual(byId.small, {
+    fontSizePx: 16,
+    fontSizePt: 12,
+    fontWeight: 400,
+    fontWeightLabel: 'normal',
+    isBold: false,
+    isLargeText: false
+  });
+  assert.strictEqual(byId.large.fontSizePx, 24);
+  assert.strictEqual(byId.large.isLargeText, true);
+  assert.strictEqual(byId.bold.fontWeight, 700);
+  assert.strictEqual(byId.bold.isBold, true);
+  assert.strictEqual(byId.bold.isLargeText, true, '19px bold is above 14pt');
+  assert.strictEqual(byId['bold-small'].isBold, true);
+  assert.strictEqual(byId['bold-small'].isLargeText, false, '18px bold is below 14pt');
+});
