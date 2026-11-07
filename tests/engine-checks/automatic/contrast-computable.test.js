@@ -501,6 +501,16 @@ test(`${RULE_ID}: strictConformance + root not opaque => pass, measured on the p
   assert.deepStrictEqual(own.occurrences[0].data.details.assumptionsApplied, []);
 });
 
+test(`${RULE_ID}: the pass says why, with a reason code of its own`, () => {
+  const html = `<!doctype html><html><body style="background:#fff">
+  <p style="color:#111">Hello</p></body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'pass', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ALL_TEXT_COMPUTABLE');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_pass_allComputable');
+  assert.strictEqual(occ.data.details.eligibleTextCount, 1);
+});
+
 test(`${RULE_ID}: the text's color in the page's dark scheme unknown => COLOR_SCHEME_NOT_RENDERED`, () => {
   // jsdom applies no prefers-color-scheme rule; the page is drawn only in
   // dark, where the rule makes the text white.

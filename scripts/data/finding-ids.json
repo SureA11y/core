@@ -285,6 +285,7 @@
       "name_missing"
     ],
     "contrast-computable": [
+      "ALL_TEXT_COMPUTABLE",
       "ANCESTOR_OPACITY",
       "BACKGROUND_FILTER_OR_BACKDROP_FILTER",
       "BACKGROUND_IMAGE_OR_GRADIENT",

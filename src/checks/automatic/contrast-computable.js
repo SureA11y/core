@@ -113,6 +113,10 @@
  *     colors, so this is there only where it could not keep the page in
  *     them.
  * @reason-codes
+ *   - `ALL_TEXT_COMPUTABLE` (pass): both colors could be worked out for all
+ *     the text, so contrast-minimum and contrast-enhanced measure every
+ *     ratio; whether each reaches it is theirs to say.
+ *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
  *   - `BACKGROUND_IMAGE_OR_GRADIENT` (cantTell): a background image or gradient
  *     lies behind the text, so the color it sits on could not be worked out.
  *     Basis: WCAG 1.4.3 (not settled); WCAG 1.4.6 (not settled).
@@ -1053,6 +1057,7 @@ function runInPage(ctx) {
         },
         data: {
           details: {
+            reasonCode: 'ALL_TEXT_COMPUTABLE',
             eligibleTextCount,
             assumptionsCount,
             assumptionsApplied: [...assumptionsAppliedSet].sort()

@@ -66443,6 +66443,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         },
         data: {
           details: {
+            reasonCode: 'ALL_TEXT_COMPUTABLE',
             eligibleTextCount,
             assumptionsCount,
             assumptionsApplied: [...assumptionsAppliedSet].sort()
