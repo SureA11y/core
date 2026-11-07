@@ -172,7 +172,7 @@ standard: {
 }
 ```
 
-A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape.
+A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape. The pack's dictionaries translate them, under keys of their own ([§6](#6-messages-and-languages)).
 
 **Which facet each code tests.** A criterion's procedures ([`PROCEDURES.md`](./PROCEDURES.md#a-packs-rules)) list a rule under the facets it claims in `meta.coverage.facetsBySc`, the test objectives of each criterion in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), and its steps as variants under them, as core's are:
 
@@ -514,7 +514,19 @@ A rule's steps ([§3](#3-write-its-rules)) are translated the same way, under th
 }
 ```
 
-A finding's `howToCheck` and the procedures show them in that locale, and in English each text the locale lacks; English, `meta.review`, says how many steps there are. `definePack` refuses such a key in the English dictionary, for a code the rule's `meta.review` doesn't have, for a step its English doesn't have, and with an ending other than `step<n>`, `pass` or `fail`. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
+A finding's `howToCheck` and the procedures show them in that locale, and in English each text the locale lacks; English, `meta.review`, says how many steps there are.
+
+A standard's own steps for core's codes (`standard.review`, [§3](#3-write-its-rules)) are translated under keys made of the standard's `key`, `_standardReview_`, the core rule's id and the reason code, then `step<n>`, `pass` or `fail`. A core rule's id has no `_` and a rule's keys say `_review_`, so they can't be taken for a rule's:
+
+```json
+{
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_step1": "Ouvrez la fenêtre, qu'aria-haspopup dit être un {{expectedRole|menu}}.",
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_pass": "C'est un {{expectedRole|menu}}.",
+  "acme_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_fail": "C'est un {{popupRole|dialog}}, ce qui enfreint l'exigence 4.2 d'Acme."
+}
+```
+
+A finding that reads the standard's steps, in a scan with that locale or from `addHowToCheck` and `applyHowToCheck` with `locale`, has them in it where the dictionary for it (`fr-CA`, then `fr`) translates the whole entry, and the English of `standard.review` otherwise, so a person never reads one step in each language. `checkPack` and `definePack` refuse a dictionary that translates part of an entry, saying which keys it lacks; a key for a rule or code `standard.review` doesn't have, for a step its English doesn't have or with another ending; a translation that names other placeholders than the English; and such a key in the English dictionary. A standard whose `standard.review` has no translations is read as before. `definePack` refuses such a key in the English dictionary, for a code the rule's `meta.review` doesn't have, for a step its English doesn't have, and with an ending other than `step<n>`, `pass` or `fail`. The pack's keys are its own: start them with the namespace in camel case (`acmeLinkTextSpecific_title`). A pack can't change a core message in a locale core ships; for a locale core doesn't ship (`pt`), its dictionary may also give core's keys, which translates core's rules there. A variant's messages are its own keys under its prefix (`acmeContrastEnhanced_fail_belowThreshold` for core's `contrastMinimum_fail_belowThreshold`); one its pack doesn't define reads the core rule's text in the scan's language, so a variant needs only its title and description.
 
 ## 7. Test, lint and document it
 

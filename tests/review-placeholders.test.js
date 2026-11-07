@@ -320,3 +320,102 @@ test('definePack refuses standard steps it cannot use', () => {
     /1 to 6 steps/
   );
 });
+
+// The French of OWN, under the keys a pack's dictionary translates a
+// standard's steps with.
+const STEM = 'attrs_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_';
+const FRENCH = {
+  [`${STEM}step1`]:
+    'Ouvrez le menu contextuel, qu’aria-haspopup dit être un {{expectedRole|menu}}.',
+  [`${STEM}pass`]: 'C’est un {{expectedRole|menu}}.',
+  [`${STEM}fail`]: 'C’est un {{popupRole|dialog}}, ce qui enfreint l’exigence A1 d’Attr Standard.'
+};
+const translatedPack = (fr) => ({ ...attrsPack(OWN), dictionaries: { en: {}, fr } });
+const ownSteps = (pack, locale) =>
+  addHowToCheck(
+    runa11yCoreOnHtml(HASPOPUP, {
+      engineOptions: { packs: [pack], profile: 'attrs-1.0', ...(locale ? { locale } : {}) }
+    }),
+    { packs: [pack] }
+  )
+    .checksResults.find((c) => c.ruleId === 'aria-valid-attr-value')
+    .occurrences.find((o) => o.data.details.reasonCode === 'ARIA_HASPOPUP_ROLE_MISMATCH')
+    .howToCheck;
+
+test("a standard's own steps are read in the scan's locale where its pack translates them", () => {
+  const pack = definePack(translatedPack(FRENCH));
+  assert.deepEqual(ownSteps(pack, 'fr'), {
+    steps: ['Ouvrez le menu contextuel, qu’aria-haspopup dit être un menu.'],
+    passWhen: 'C’est un menu.',
+    failWhen: 'C’est un dialog, ce qui enfreint l’exigence A1 d’Attr Standard.'
+  });
+  // fr-CA reads fr; English stays English.
+  assert.match(ownSteps(pack, 'fr-CA').passWhen, /^C’est un menu\.$/);
+  assert.equal(ownSteps(pack, 'en').passWhen, 'It is a menu.');
+  assert.equal(ownSteps(pack).passWhen, 'It is a menu.');
+  // Asked again in another locale, as a report in that language does.
+  const raw = runa11yCoreOnHtml(HASPOPUP, {
+    engineOptions: { packs: [pack], profile: 'attrs-1.0' }
+  });
+  const again = addHowToCheck(addHowToCheck(raw, { packs: [pack] }), {
+    packs: [pack],
+    locale: 'fr'
+  });
+  const how = again.checksResults
+    .find((c) => c.ruleId === 'aria-valid-attr-value')
+    .occurrences.find(
+      (o) => o.data.details.reasonCode === 'ARIA_HASPOPUP_ROLE_MISMATCH'
+    ).howToCheck;
+  assert.equal(how.passWhen, 'C’est un menu.');
+});
+
+test("a standard's steps a locale doesn't translate are read in English, as a whole", () => {
+  // No dictionary for the locale, no key for the entry, or only part of it.
+  const none = definePack(translatedPack({ attrs_other: 'x' }));
+  assert.equal(ownSteps(none, 'fr').passWhen, 'It is a menu.');
+  assert.equal(ownSteps(definePack(translatedPack(FRENCH)), 'de').passWhen, 'It is a menu.');
+  // A pack that translates part of the entry is refused (below); read
+  // anyway, the entry is in English, not half French.
+  const { [`${STEM}fail`]: _, ...part } = FRENCH;
+  const raw = runa11yCoreOnHtml(HASPOPUP, {
+    engineOptions: { packs: [none], profile: 'attrs-1.0', locale: 'fr' }
+  });
+  const how = addHowToCheck(raw, { packs: [translatedPack(part)] })
+    .checksResults.find((c) => c.ruleId === 'aria-valid-attr-value')
+    .occurrences.find(
+      (o) => o.data.details.reasonCode === 'ARIA_HASPOPUP_ROLE_MISMATCH'
+    ).howToCheck;
+  assert.deepEqual(how, {
+    steps: ['Open the popup, which aria-haspopup says is a menu.'],
+    passWhen: 'It is a menu.',
+    failWhen: 'It is a dialog, which fails Attr Standard A1.'
+  });
+});
+
+test("checkPack reports a standard's steps translated in part, or under keys it doesn't have", () => {
+  const problems = (fr, en = {}) =>
+    checkPack({ ...attrsPack(OWN), dictionaries: { en, fr } }).join('\n');
+  assert.equal(problems(FRENCH), '');
+  const { [`${STEM}fail`]: _, ...part } = FRENCH;
+  assert.match(
+    problems(part),
+    /translates only part of standard\.review\.aria-valid-attr-value\.ARIA_HASPOPUP_ROLE_MISMATCH.*lacks fail/
+  );
+  assert.match(problems({ ...FRENCH, [`${STEM}step2`]: 'Deux.' }), /has no step 2/);
+  assert.match(
+    problems({ 'attrs_standardReview_aria-valid-attr-value_ARIA_ATTR_VALUE_INVALID_pass': 'x' }),
+    /standard\.review has no "ARIA_ATTR_VALUE_INVALID" for "aria-valid-attr-value"/
+  );
+  assert.match(
+    problems({ 'attrs_standardReview_link-name-present_X_pass': 'x' }),
+    /has no "X" for "link-name-present"/
+  );
+  assert.match(problems({ ...FRENCH, [`${STEM}after`]: 'x' }), /ends in _step<n>, _pass or _fail/);
+  assert.match(problems({}, FRENCH), /English steps are its standard\.review/);
+  assert.match(
+    problems({ ...FRENCH, [`${STEM}pass`]: 'C’est un {{role|menu}}.' }),
+    /must name the placeholders its English names/
+  );
+  // definePack refuses the same.
+  assert.throws(() => definePack({ ...attrsPack(OWN), dictionaries: { fr: part } }), /only part/);
+});

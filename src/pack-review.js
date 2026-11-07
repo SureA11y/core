@@ -17,7 +17,11 @@
  * in facetsBySc, a requirement of its pack's own standard's in
  * facetsByRequirement. Its codes go under the one facet it claims, or under
  * the one meta.review[code].facet (and .criterion, where it claims that
- * facet under several) names.
+ * facet under several) names. *
+ * A pack's standard may give its own steps for core rules' codes
+ * (standard.review), in English; its dictionaries may translate each entry
+ * under `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass`
+ * and `_fail` (standardReviewStem), read as a whole or not at all.
  */
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
@@ -240,11 +244,51 @@ function withPackReview(dictionaries, packs) {
 }
 
 /**
+ * The key stem of a standard's own steps for a core rule's code, in a pack's
+ * dictionaries: `<standard key>_standardReview_<rule id>_<CODE>_`, followed
+ * by `step<n>`, `pass` or `fail`. A rule's steps are keyed
+ * `<prefix>_review_<CODE>_`, and neither a standard's key nor a core rule's
+ * id holds `_`, so the two never share a key.
+ */
+const standardReviewStem = (key, ruleId, code) => `${key}_standardReview_${ruleId}_${code}_`;
+
+// The keys an entry of standard.review is translated under, in order: its
+// steps', then pass and fail.
+function standardReviewKeys(key, ruleId, code, entry) {
+  const stem = standardReviewStem(key, ruleId, code);
+  return [...entry.steps.map((_, i) => `${stem}step${i + 1}`), `${stem}pass`, `${stem}fail`];
+}
+
+/**
+ * An entry of standard.review in the first of `locales` (lower case, most
+ * wanted first) whose dictionary of the pack translates all of it: its
+ * steps, passWhen and failWhen, as a whole, so a person never reads one
+ * step in another language. The English entry where none does.
+ */
+function translatedStandardReview(source, ruleId, code, entry, locales) {
+  const keys = isText(source.key) ? standardReviewKeys(source.key, ruleId, code, entry) : null;
+  for (const locale of keys ? locales : []) {
+    if (locale === 'en') break;
+    const dict = dictionaryFor(source.dictionaries, locale);
+    if (!dict || !keys.every((k) => hasOwn(dict, k) && isText(dict[k]))) continue;
+    const texts = keys.map((k) => dict[k]);
+    return {
+      steps: texts.slice(0, -2),
+      passWhen: texts[texts.length - 2],
+      failWhen: texts[texts.length - 1]
+    };
+  }
+  return { steps: [...entry.steps], passWhen: entry.passWhen, failWhen: entry.failWhen };
+}
+
+/**
  * The steps a pack's standard gives for core rules' codes, in its own words
  * (standard.review: { ruleId: { CODE: { steps, passWhen, failWhen } } }), by
- * each of its profiles, lower case: a Map of profile -> { ruleId: { CODE:
- * entry } }, with only the well-formed entries. The first pack to name a
- * profile gives it, as it does the profile.
+ * each of its profiles, lower case: a Map of profile -> { review, key,
+ * dictionaries }, review being { ruleId: { CODE: entry } } with only the
+ * well-formed entries, in English, key the standard's and dictionaries the
+ * pack's, which may translate them (standardReviewStem). The first pack to
+ * name a profile gives it, as it does the profile.
  */
 function standardReviewsOf(packs) {
   const out = new Map();
@@ -260,9 +304,14 @@ function standardReviewsOf(packs) {
       }
     }
     if (!Object.keys(review).length) continue;
+    const source = {
+      review,
+      key: typeof st.key === 'string' ? st.key : null,
+      dictionaries: isObject(pack.dictionaries) ? pack.dictionaries : null
+    };
     for (const profile of Object.keys(st.profiles)) {
       const key = profile.toLowerCase();
-      if (!out.has(key)) out.set(key, review);
+      if (!out.has(key)) out.set(key, source);
     }
   }
   return out;
@@ -275,6 +324,9 @@ module.exports = {
   packReviewDictionaries,
   prefixOfKey,
   reviewOf,
+  standardReviewKeys,
+  standardReviewStem,
   standardReviewsOf,
+  translatedStandardReview,
   withPackReview
 };

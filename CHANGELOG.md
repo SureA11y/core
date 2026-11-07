@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- A pack's dictionaries translate its standard's own steps for core's codes (`standard.review`), under `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass` and `_fail`. A finding that reads them has them in the scan's locale, or the one `addHowToCheck` and `applyHowToCheck` are given, where the dictionary translates the whole entry, and in English otherwise. `checkPack` and `definePack` refuse a dictionary that translates part of an entry, or names a rule, code or step `standard.review` doesn't have.
+
 ### Fixed
 
 - A page that replaces `Array.from` (Prototype.js, MooTools) is scanned. Before, the scan stopped with `PAGE_BUILTINS_BROKEN`. Core's code makes its arrays with spread now, and a page's `Array.from` can't change a result: Prototype's gives an empty list for a `Set` or a `Map` iterator, ignores the mapping function and counts a string by UTF-16 code unit. A pack's or custom rule that uses `Array.from` still stops the scan on such a page, when the selection runs it (`docs/RULE_AUTHORING.md` §1.3). The HTML report no longer uses it either.

@@ -1101,8 +1101,9 @@ export function addHowToCheck<T extends ScanResult | CrossFrameResult | BindingF
 ): T;
 
 /**
- * The packs a result was scanned with: their rules' meta.review give steps,
- * in English or as their dictionaries translate them, and their variants are known for howToCheckFor.
+ * The packs a result was scanned with: their rules' meta.review, and their
+ * standards' standard.review, give steps, in English or as their
+ * dictionaries translate them, and their variants are known for howToCheckFor.
  */
 export interface HowToCheckOptions {
   packs?: readonly unknown[] | null;
