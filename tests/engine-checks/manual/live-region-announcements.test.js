@@ -53,8 +53,24 @@ test(`${RULE_ID}: a live region inside or on aria-hidden is asked about`, () => 
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#a', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'aria-hidden' }],
-    ['#b', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'assertive', hiddenBy: 'aria-hidden' }]
+    [
+      '#a',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'aria-hidden'
+      }
+    ],
+    [
+      '#b',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'assertive',
+        messageKind: 'alert',
+        hiddenBy: 'aria-hidden'
+      }
+    ]
   ]);
   assert.equal(rule.occurrences[0].uncertainty, undefined, 'a manual rule carries no uncertainty');
   assert.equal(
@@ -66,7 +82,15 @@ test(`${RULE_ID}: a live region inside or on aria-hidden is asked about`, () => 
 test(`${RULE_ID}: a live region in inert content is asked about`, () => {
   const rule = assertRule(run('<div inert><output id="o"></output></div>'), RULE_ID, 'cantTell');
   assert.deepEqual(details(rule), [
-    ['#o', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'inert' }]
+    [
+      '#o',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'inert'
+      }
+    ]
   ]);
 });
 
@@ -77,7 +101,7 @@ test(`${RULE_ID}: a live region left busy is asked about`, () => {
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#l', { reasonCode: 'LIVE_REGION_BUSY', politeness: 'polite' }]
+    ['#l', { reasonCode: 'LIVE_REGION_BUSY', politeness: 'polite', messageKind: 'log' }]
   ]);
 });
 
@@ -90,7 +114,15 @@ test(`${RULE_ID}: aria-live decides over the role, either way`, () => {
     'cantTell'
   );
   assert.deepEqual(details(rule), [
-    ['#p', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'aria-hidden' }]
+    [
+      '#p',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'unknown',
+        hiddenBy: 'aria-hidden'
+      }
+    ]
   ]);
 });
 
@@ -250,7 +282,15 @@ test(`${RULE_ID}: a live region behind an open modal dialog is asked about, with
     { minOccurrences: 1, maxOccurrences: 1 }
   );
   assert.deepEqual(details(rule), [
-    ['#behind', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }]
+    [
+      '#behind',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ]
   ]);
   const occ = rule.occurrences[0];
   assert.equal(occ.i18n.summaryKey, 'liveRegionAnnouncements_summary_cantTell_modal');
@@ -268,11 +308,43 @@ test(`${RULE_ID}: behind an open modal dialog, the dialog is what hides a region
       '<div inert><div id="inside" role="status"></div></div><button>'
     );
   const expected = [
-    ['#inert', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
-    ['#hidden', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
-    ['#both', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'modal' }],
+    [
+      '#inert',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
+    [
+      '#hidden',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
+    [
+      '#both',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'modal'
+      }
+    ],
     // Inside the dialog, inert hides it.
-    ['#inside', { reasonCode: 'LIVE_REGION_HIDDEN', politeness: 'polite', hiddenBy: 'inert' }]
+    [
+      '#inside',
+      {
+        reasonCode: 'LIVE_REGION_HIDDEN',
+        politeness: 'polite',
+        messageKind: 'status',
+        hiddenBy: 'inert'
+      }
+    ]
   ];
   for (const engineOptions of [ASSUME, { ...ASSUME, includeHiddenElements: true }]) {
     const rule = assertRule(run(body, engineOptions), RULE_ID, 'cantTell', {
@@ -406,4 +478,32 @@ test(`${RULE_ID}: the hook's findings on a region behind an open modal dialog st
     }
   );
   assert.equal(rule.occurrences[0].data.details.reasonCode, 'LIVE_REGION_HIDDEN');
+});
+
+// details.messageKind: the kind of message a region declares it carries, from
+// its role and live-region attributes, never from its text.
+test(`${RULE_ID}: each finding says what kind of message its region declares (messageKind)`, () => {
+  const cases = [
+    ['status', '<div id="x" role="status"></div>'],
+    ['status', '<output id="x"></output>'],
+    ['status', '<div id="x" aria-live="polite" aria-atomic="true"></div>'],
+    ['alert', '<div id="x" role="alert"></div>'],
+    ['alert', '<div id="x" aria-live="assertive"></div>'],
+    ['log', '<div id="x" role="log"></div>'],
+    ['log', '<div id="x" role="log" aria-live="assertive"></div>'],
+    ['progress', '<div id="x" role="progressbar" aria-live="polite"></div>'],
+    ['progress', '<progress id="x" aria-live="polite"></progress>'],
+    ['unknown', '<div id="x" aria-live="polite"></div>'],
+    ['unknown', '<div id="x" aria-live="polite" aria-atomic="false">Saved</div>'],
+    ['unknown', '<div id="x" role="timer" aria-live="polite"></div>']
+  ];
+  for (const [kind, region] of cases) {
+    const rule = assertRule(run(`<div aria-hidden="true">${region}</div>`), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.strictEqual(rule.occurrences[0].data.details.messageKind, kind, region);
+  }
+  const busy = assertRule(run('<div role="alert" aria-busy="true"></div>'), RULE_ID, 'cantTell');
+  assert.strictEqual(busy.occurrences[0].data.details.messageKind, 'alert');
 });

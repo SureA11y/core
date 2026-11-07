@@ -2595,6 +2595,7 @@ Check whether the page uses the region for status messages, and that it is in th
 **What a finding reports.**
 
 - `politeness`: the region's, `polite` or `assertive`.
+- `messageKind`: the kind of message the region declares it carries, from its role and live-region attributes, never from its text: `status` (role status, an &lt;output&gt;, or aria-live="polite" with aria-atomic="true"), `alert` (role alert, or aria-live="assertive"), `log` (role log), `progress` (role progressbar, or a &lt;progress&gt;), or `unknown` (any other live region, such as a plain aria-live="polite"). A role, given or the element's own, wins over aria-live.
 - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or `modal` for a region behind an open modal &lt;dialog&gt;. A region behind the dialog is `modal` whatever else hides it (inert or aria-hidden on it or above it, with or without includeHiddenElements): while the dialog is open, it is the cause in effect.
 - `text`: for the hook's two findings, the text the region was given (up to 300 characters).
 - `removed`: for the hook's two findings, true when the region was no longer on the page when it was scanned; the occurrence is then on the document element, and `region` describes it (`tag`, `role`, `id`).

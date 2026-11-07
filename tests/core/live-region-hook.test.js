@@ -483,9 +483,22 @@ test(`${RULE_ID}: the hook's findings are asked about on the region`, async () =
     [
       [
         '#t',
-        { reasonCode: 'LIVE_REGION_INSERTED_WITH_CONTENT', politeness: 'polite', text: 'Saved' }
+        {
+          reasonCode: 'LIVE_REGION_INSERTED_WITH_CONTENT',
+          politeness: 'polite',
+          messageKind: 'status',
+          text: 'Saved'
+        }
       ],
-      ['#h', { reasonCode: 'LIVE_REGION_SHOWN_AND_FILLED', politeness: 'polite', text: 'Shown' }]
+      [
+        '#h',
+        {
+          reasonCode: 'LIVE_REGION_SHOWN_AND_FILLED',
+          politeness: 'polite',
+          messageKind: 'status',
+          text: 'Shown'
+        }
+      ]
     ]
   );
   assert.equal(
@@ -510,6 +523,7 @@ test(`${RULE_ID}: a region no longer on the page is reported on the document, on
   assert.deepEqual(rule.occurrences[0].data.details, {
     reasonCode: 'LIVE_REGION_INSERTED_WITH_CONTENT',
     politeness: 'polite',
+    messageKind: 'status',
     text: 'Copied',
     removed: true,
     region: { tag: 'div', role: 'status', id: null }

@@ -45,6 +45,13 @@
  *   it is in the page, shown and reachable, before its text changes.
  * @reports
  *   - `politeness`: the region's, `polite` or `assertive`.
+ *   - `messageKind`: the kind of message the region declares it carries,
+ *     from its role and live-region attributes, never from its text:
+ *     `status` (role status, an <output>, or aria-live="polite" with
+ *     aria-atomic="true"), `alert` (role alert, or aria-live="assertive"),
+ *     `log` (role log), `progress` (role progressbar, or a <progress>), or
+ *     `unknown` (any other live region, such as a plain aria-live="polite").
+ *     A role, given or the element's own, wins over aria-live.
  *   - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or
  *     `modal` for a region behind an open modal <dialog>. A region behind
  *     the dialog is `modal` whatever else hides it (inert or aria-hidden on
@@ -159,6 +166,28 @@ function runInPage(ctx) {
     if (role && Object.prototype.hasOwnProperty.call(ROLES, role)) return ROLES[role];
     if (!role && String(dom.localName(el) || '').toLowerCase() === 'output') return 'polite';
     return '';
+  }
+  // What kind of message the region declares it carries, from its role and
+  // its live-region attributes, never from its text: 'status' (role status,
+  // an <output>, or aria-live="polite" with aria-atomic="true"), 'alert'
+  // (role alert, or aria-live="assertive"), 'log' (role log), 'progress'
+  // (role progressbar, or a <progress>), else 'unknown'. The role
+  // attribute's, or the element's own, wins over aria-live.
+  const MESSAGE_KINDS = { status: 'status', alert: 'alert', log: 'log', progressbar: 'progress' };
+  function messageKind(el) {
+    const role = helpers.aria.getExplicitRole(el);
+    if (role && Object.prototype.hasOwnProperty.call(MESSAGE_KINDS, role)) {
+      return MESSAGE_KINDS[role];
+    }
+    if (!role) {
+      const tag = String(dom.localName(el) || '').toLowerCase();
+      if (tag === 'output') return 'status';
+      if (tag === 'progress') return 'progress';
+    }
+    const live = attr(el, 'aria-live');
+    if (live === 'assertive') return 'alert';
+    if (live === 'polite' && attr(el, 'aria-atomic') === 'true') return 'status';
+    return 'unknown';
   }
   // Whether display: none, [hidden] or visibility: hidden keeps the region
   // from being drawn, on it or above it.
@@ -379,7 +408,12 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode: 'LIVE_REGION_HIDDEN', politeness: level, hiddenBy: by },
+            details: {
+              reasonCode: 'LIVE_REGION_HIDDEN',
+              politeness: level,
+              messageKind: messageKind(el),
+              hiddenBy: by
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -398,7 +432,11 @@ function runInPage(ctx) {
             hintKey: 'liveRegionAnnouncements_hint_cantTell_busy'
           },
           data: {
-            details: { reasonCode: 'LIVE_REGION_BUSY', politeness: level },
+            details: {
+              reasonCode: 'LIVE_REGION_BUSY',
+              politeness: level,
+              messageKind: messageKind(el)
+            },
             visibilityFilter: eligibility(el)
           }
         })
@@ -425,7 +463,12 @@ function runInPage(ctx) {
 
       const inserted = f.code === 'LIVE_REGION_INSERTED_WITH_CONTENT';
       const level = politeness(el) || 'polite';
-      const details = { reasonCode: f.code, politeness: level, text: f.text };
+      const details = {
+        reasonCode: f.code,
+        politeness: level,
+        messageKind: messageKind(el),
+        text: f.text
+      };
       if (!connected) {
         details.removed = true;
         details.region = {
