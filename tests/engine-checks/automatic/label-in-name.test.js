@@ -354,6 +354,24 @@ test(`${RULE_ID}: an aria-labelledby that resolves to text is still compared`, (
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
 
+test(`${RULE_ID}: fields sharing an aria-labelledby target each get the target's text`, () => {
+  // The target's text is read once per run and kept per element; every
+  // field pointing at it is judged on it, and a field pointing elsewhere
+  // on its own target's text.
+  const html = `<!doctype html><html><body>
+    <span id="s">Download <span aria-hidden="true">gizmo</span> specification</span>
+    <span id="t">Search</span>
+    <input id="a" aria-labelledby="s"><input id="b" aria-labelledby="s">
+    <input id="c" aria-labelledby="t"><input id="d" aria-labelledby="s">
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const id of ['a', 'b', 'd']) assert.ok(hasOccurrenceForId(rule, id), id);
+  assert.ok(!hasOccurrenceForId(rule, 'c'));
+  for (const occ of rule.occurrences)
+    assert.strictEqual(occ.data.details.labelSource, 'aria-labelledby');
+});
+
 test(`${RULE_ID}: fixture coverage (tests/fixtures/label-in-name-all-scenarios.html)`, () => {
   const fixturePath = path.join(__dirname, '../..', 'fixtures', 'label-in-name-all-scenarios.html');
   const html = fs.readFileSync(fixturePath, 'utf8');

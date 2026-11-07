@@ -366,8 +366,22 @@ function runInPage(ctx) {
   // screen: a break between two boxes that sit on one line with nothing
   // drawn between them (two touching flex items, "sure" and "a11y") joins
   // their words, as a person reads them. It is '' when no break was joined.
+  //
+  // Kept per element for this run: fields that point at one aria-labelledby
+  // target, or share a <label>, read its text once. Nothing in the run
+  // changes the page, and the result is never modified, only read.
+  const visibleTextCache = new Map();
   function collectVisibleTextUnder(container) {
     if (!container) return { text: '', asShown: '' };
+    let known = visibleTextCache.get(container);
+    if (!known) {
+      known = readVisibleTextUnder(container);
+      visibleTextCache.set(container, known);
+    }
+    return known;
+  }
+
+  function readVisibleTextUnder(container) {
     if (!isDomVisible(container)) return { text: '', asShown: '' };
 
     const boundaryOf = (n) =>
