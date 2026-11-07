@@ -407,9 +407,17 @@ function keepsParsingProblems(keepsParsing, where) {
 
 // What is wrong with a pack's shape, as messages; none for a pack that can be
 // prepared. Whether its rules, standard and dictionaries hold together with
-// core's is found by preparing it (preparePacks).
+// core's is found by preparing it (preparePacks). It also reports what
+// doesn't keep the pack from loading but reads wrong: a rule's steps that a
+// dictionary translates only in part (reviewPartialProblems).
 function checkPack(pack) {
-  return packProblems(pack, true);
+  return packProblems(pack, true, true);
+}
+
+// What keeps a pack from being loaded: checkPack's problems without those it
+// only reports. A scan and describePacks go by it.
+function loadProblems(pack) {
+  return packProblems(pack, true, false);
 }
 
 // What is wrong with a rule's meta.review, the steps a person follows to
@@ -677,6 +685,33 @@ function reviewKeyProblems(pack, locale, dict) {
       Number(suffix[2]) > (Array.isArray(entry.steps) ? entry.steps.length : 0)
     ) {
       problems.push(`${at}: ${owner.rule.id}'s meta.review.${code} has no step ${suffix[2]}`);
+    }
+  }
+  return problems;
+}
+
+// A rule's steps that a dictionary translates in part: some of an entry's
+// keys (`<prefix>_review_<CODE>_step<n>`, `_pass`, `_fail`) and not the
+// others. The pack still loads, and each key the locale lacks is read in
+// English, so a person reads the steps in two languages: checkPack reports
+// it, naming the keys missing, and definePack and a scan accept it.
+function reviewPartialProblems(pack, locale, dict) {
+  if (locale.toLowerCase() === 'en') return [];
+  const problems = [];
+  for (const rule of ownRulesOf(pack)) {
+    const meta = isObject(rule.meta) ? rule.meta : null;
+    const prefix = prefixOfKey(meta && isObject(meta.i18n) ? meta.i18n.titleKey : null);
+    if (!prefix || !isObject(meta.review)) continue;
+    for (const [code, entry] of Object.entries(meta.review)) {
+      if (!isObject(entry) || !Array.isArray(entry.steps)) continue;
+      const stem = `${prefix}_review_${code}_`;
+      const suffixes = entry.steps.map((_, i) => `step${i + 1}`).concat(['pass', 'fail']);
+      const missing = suffixes.filter((x) => !hasOwn(dict, stem + x));
+      if (missing.length && missing.length < suffixes.length) {
+        problems.push(
+          `dictionaries.${locale}: ${stem}*: translates only part of ${rule.id}'s meta.review.${code}, whose other keys are read in English; it lacks ${missing.join(', ')}`
+        );
+      }
     }
   }
   return problems;
@@ -1026,8 +1061,9 @@ function variantProblems(pack, rule, where) {
 // withCoreVersion: whether this core's version must be in the pack's range.
 // definePack leaves that to the scan, which skips the pack: a range that
 // leaves out the core a host installed is no mistake in the pack, and must
-// not stop the host from loading it.
-function packProblems(pack, withCoreVersion) {
+// not stop the host from loading it. withReported: whether to include what
+// checkPack reports but doesn't keep the pack from loading.
+function packProblems(pack, withCoreVersion, withReported) {
   if (typeof pack === 'string') {
     return [
       `"${pack}" is a pack's name: in Node, pass the pack itself; names are for a page where packScript registered it`
@@ -1336,6 +1372,7 @@ function packProblems(pack, withCoreVersion) {
         } else {
           problems.push(...reviewKeyProblems(pack, locale, dict));
           problems.push(...standardReviewKeyProblems(pack, locale, dict));
+          if (withReported) problems.push(...reviewPartialProblems(pack, locale, dict));
         }
       }
     }
@@ -1345,7 +1382,7 @@ function packProblems(pack, withCoreVersion) {
 
 // A pack, checked: returns it, or throws a TypeError listing what is wrong.
 function definePack(pack) {
-  const problems = packProblems(pack, false);
+  const problems = packProblems(pack, false, false);
   if (problems.length) {
     const name = isObject(pack) && typeof pack.name === 'string' ? pack.name : 'pack';
     throw new TypeError(`${name}: ${problems.join('; ')}`);
@@ -1375,7 +1412,7 @@ const describePack = (pack) => `${pack.name}@${pack.version}`;
 // rules read. A pack that is not valid is described by its problems.
 function describePacks(packs) {
   return (Array.isArray(packs) ? packs : [packs]).map((pack) => {
-    const problems = checkPack(pack);
+    const problems = loadProblems(pack);
     if (problems.length) {
       return { name: isObject(pack) && typeof pack.name === 'string' ? pack.name : null, problems };
     }
@@ -1839,7 +1876,7 @@ function preparePacks(list, { strict = false } = {}) {
   const valid = [];
   const skipped = [];
   for (const pack of list) {
-    let problems = checkPack(pack);
+    let problems = loadProblems(pack);
     if (!problems.length) {
       try {
         prepareCatalog([pack]);

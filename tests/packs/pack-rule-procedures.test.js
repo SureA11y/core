@@ -399,21 +399,22 @@ test('definePack checks facetsByRequirement', () => {
 });
 
 test('definePack checks a dictionary’s translated steps', () => {
-  const problems = (dictionaries) =>
-    checkPack({
-      name: '@acme/p',
-      version: '1.0.0',
-      namespace: 'acme',
-      core: '*',
-      rules: [linkRule()],
-      dictionaries
-    }).join('\n');
-  assert.equal(
-    problems({
-      fr: { acmeLinkWords_review_VAGUE_step2: 'x', acmeLinkWords_review_VAGUE_fail: 'y' }
-    }),
-    ''
-  );
+  const pack = (dictionaries) => ({
+    name: '@acme/p',
+    version: '1.0.0',
+    namespace: 'acme',
+    core: '*',
+    rules: [linkRule()],
+    dictionaries
+  });
+  const problems = (dictionaries) => checkPack(pack(dictionaries)).join('\n');
+  // Part of an entry: reported, naming what is missing, which is read in
+  // English; definePack still takes the pack.
+  const part = {
+    fr: { acmeLinkWords_review_VAGUE_step2: 'x', acmeLinkWords_review_VAGUE_fail: 'y' }
+  };
+  assert.match(problems(part), /translates only part of .*VAGUE.*it lacks step1, pass$/);
+  assert.doesNotThrow(() => definePack(pack(part)));
   assert.match(
     problems({ en: { acmeLinkWords_review_VAGUE_step1: 'x' } }),
     /English steps are its meta\.review/
