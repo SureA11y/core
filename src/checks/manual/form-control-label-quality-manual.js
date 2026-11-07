@@ -595,7 +595,28 @@ function runInPage(ctx) {
     }
   })();
 
+  // Each element's place in the document's tree order, read once.
+  // Chromium answers compareDocumentPosition by walking siblings, so a
+  // comparison per field and heading made this rule quadratic on a form
+  // whose fields are siblings; their places are compared instead. An
+  // element without one (in a shadow tree) is compared as before.
+  let treeOrder = null;
+  function treeOrderOf(node) {
+    if (!treeOrder) {
+      treeOrder = new Map();
+      try {
+        const all = dom.querySelectorAll(document, '*');
+        for (let i = 0; i < all.length; i++) treeOrder.set(all[i], i);
+      } catch {}
+    }
+    const p = treeOrder.get(node);
+    return p === undefined ? -1 : p;
+  }
+
   function precedes(a, b) {
+    const pa = treeOrderOf(a);
+    const pb = treeOrderOf(b);
+    if (pa >= 0 && pb >= 0) return pa < pb;
     try {
       // DOCUMENT_POSITION_PRECEDING (2) on b relative to a.
       return !!(dom.compareDocumentPosition(b, a) & 2);
@@ -877,7 +898,9 @@ function runInPage(ctx) {
       orderedFields.push(field);
     }
 
+    const placed = orderedFields.every((field) => treeOrderOf(field.el) >= 0);
     orderedFields.sort((a, b) => {
+      if (placed) return treeOrderOf(a.el) - treeOrderOf(b.el);
       try {
         const bits = dom.compareDocumentPosition(a.el, b.el);
         if (bits & 4) return -1; // b follows a
@@ -941,7 +964,15 @@ function runInPage(ctx) {
   // (different names) with nothing visible apart are G131's shape. Radio
   // buttons and checkboxes are left out: their question may be in text the
   // context doesn't reach, such as a group with no element of its own.
+  //
+  // Worked out once per set: every field of a set shares it, so working it
+  // out per field made a page of same-labelled fields quadratic.
+  const duplicateLeanCache = new Map();
   function duplicateLean(shared) {
+    if (!duplicateLeanCache.has(shared)) duplicateLeanCache.set(shared, readDuplicateLean(shared));
+    return duplicateLeanCache.get(shared);
+  }
+  function readDuplicateLean(shared) {
     const shapes = shared.map((f) => shapeOf(f.el));
     if (shapes.some((x) => !x.form)) return null;
     const forms = new Set(shapes.map((x) => x.form));

@@ -491,3 +491,59 @@ test(`${RULE_ID}: duplicate labels lean pass for copies of one widget, fail for 
     ]
   );
 });
+
+// Every field of a set sharing a label worked out the set's lean, and the
+// fields were sorted, and placed under their headings, by comparing their
+// positions, which Chromium answers by walking siblings: 4,000 checkboxes
+// named "Option" took 4.9 s there. Counted rather than timed, so the test
+// doesn't flake under load: the attribute reads and position comparisons
+// grow with the page, and the findings and leans are those of each field.
+test(`${RULE_ID}: the work grows linearly with fields sharing a label, with the same findings`, () => {
+  const scan = (body) => {
+    const dom = createDom(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><main>${body}</main></body></html>`
+    );
+    const proto = dom.window.Element.prototype;
+    const getAttribute = proto.getAttribute;
+    const compare = dom.window.Node.prototype.compareDocumentPosition;
+    let work = 0;
+    proto.getAttribute = function (...args) {
+      work++;
+      return getAttribute.apply(this, args);
+    };
+    dom.window.Node.prototype.compareDocumentPosition = function (...args) {
+      work++;
+      return compare.apply(this, args);
+    };
+    const result = runa11yCoreOnDom(dom, { runOnly: [RULE_ID], entryPointParity: false });
+    return { rule: result.checksResults.find((c) => c.ruleId === RULE_ID), work };
+  };
+  const repeat = (n, f) => Array.from({ length: n }, (_, i) => f(i)).join('');
+  const pages = {
+    sameName: (n) =>
+      `<form>${repeat(n, (i) => `<label for="f${i}">Name</label><input id="f${i}" name="f${i}"> `)}</form>`,
+    checkboxes: (n) =>
+      `<form><p>Choose</p>${repeat(n, () => '<label><input type="checkbox" name="c"> Option</label>')}</form>`,
+    headed: (n) =>
+      `<form>${repeat(
+        n / 2,
+        (i) =>
+          `<h2>Section ${i}</h2><label for="a${i}">Name</label><input id="a${i}" name="a${i}">` +
+          `<label for="b${i}">Name</label><input id="b${i}" name="b${i}">`
+      )}</form>`
+  };
+  for (const [name, page] of Object.entries(pages)) {
+    const small = scan(page(100));
+    const large = scan(page(200));
+    assert.ok(
+      large.work <= small.work * 2.5,
+      `${name}: ${small.work} for 100, ${large.work} for 200`
+    );
+    assert.equal(large.rule.occurrences.length, 200, name);
+    const shared = large.rule.occurrences.map((o) => o.data.details.sharedWith);
+    // Under its own heading each field shares its label with one other.
+    assert.deepEqual(new Set(shared), new Set([name === 'headed' ? 1 : 199]), name);
+    const toward = new Set(large.rule.occurrences.map((o) => (o.lean ? o.lean.toward : null)));
+    assert.deepEqual(toward, new Set([name === 'checkboxes' ? null : 'fail']), name);
+  }
+});
