@@ -5292,7 +5292,7 @@ function createDomHelpers(opts) {
     'file-name': [
       'FileName',
       'The text alternative of this <{{element}}> looks like a file name.',
-      'A file name tells someone who can’t see the image nothing about it (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
+      'A file name tells someone who can’t see the image nothing about it. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
     ],
     url: [
       'Url',
@@ -5302,7 +5302,7 @@ function createDomHelpers(opts) {
     placeholder: [
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
-      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does (WCAG failure F30). Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
+      'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
     ],
     symbols: [
       'Symbols',

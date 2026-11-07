@@ -142,7 +142,7 @@ function runInPage(ctx) {
         summary: entry.loops
           ? `This <${tag}> moves by itself without end${name ? ` (animation "${name}")` : ''}.`
           : `This <${tag}> moves by itself for more than five seconds${name ? ` (animation "${name}")` : ''}.`,
-        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential (WCAG 2.2.2). Movement that stops by itself within five seconds needs none.',
+        hint: 'Check that a control lets users pause, stop or hide this movement, unless it is essential. Movement that stops by itself within five seconds needs none.',
         i18n: {
           summaryKey: entry.loops
             ? 'movingContentPausable_summary_cantTell_loops'

@@ -5,7 +5,7 @@
 /**
  * @check avoid-inline-spacing
  * @atomic true
- * @summary Inline style must not force text spacing below the WCAG metric
+ * @summary Inline style must not keep users from increasing text spacing
  * @standard WCAG 2.2
  * @sc 1.4.12
  * @applicability
@@ -27,7 +27,7 @@
  * @reason-codes
  *   - `INLINE_SPACING_IMPORTANT` (fail): the element's style attribute
  *     forces line-height, letter-spacing or word-spacing with !important
- *     below the spacing WCAG 1.4.12 lets users apply, on text that wraps.
+ *     below the spacing users must be able to apply, on text that wraps.
  *     Basis: WCAG 1.4.12; ACT 78fd32; ACT 24afc2; ACT 9e45ec;
  *     CSS Cascade important declarations.
  *   - `INLINE_SPACING_NO_SOFT_WRAP` (cantTell): spacing forced below the
@@ -73,9 +73,9 @@
 const id = 'avoid-inline-spacing';
 
 const meta = {
-  title: 'Inline style must not force text spacing below the WCAG metric',
+  title: 'Inline style must not keep users from increasing text spacing',
   description:
-    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already meets WCAG 1.4.12, so the user has nothing left to override.',
+    'Checks that where inline style forces line-height, letter-spacing or word-spacing with !important, the value already reaches the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so the user has nothing left to override.',
   i18n: {
     titleKey: 'avoidInlineSpacing_title',
     descriptionKey: 'avoidInlineSpacing_description'
@@ -443,7 +443,7 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing WCAG 1.4.12 lets users apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so they can't increase it.`,
+        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so they can't increase it.`,
         hint: 'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em.',
         i18n: {
           summaryKey: 'avoidInlineSpacing_summary_fail',
@@ -586,7 +586,7 @@ function runInPage(ctx) {
       undecided.map(({ el, props }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing WCAG 1.4.12 asks for (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
+          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
           hint: "Check the value by hand against line-height 1.5, letter-spacing 0.12em and word-spacing 0.16em, or use a unit the engine can work out from the element's font size.",
           i18n: {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
