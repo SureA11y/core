@@ -399,7 +399,23 @@ function runInPage(ctx) {
   // and counting it would let a row of bare "PDF" and "HTML" links, or of
   // "Read more" links, give each other context. Links met on the way are
   // collected in `links` when it is given.
+  //
+  // Read once per element: every link in a block asks for that block's
+  // text, and every link under one parent for the parent's, so reading it
+  // again for each made the rule quadratic in the links a block holds.
+  const contextCache = new Map();
   function contextTextOutsideLinks(el, links) {
+    let entry = contextCache.get(el);
+    if (!entry) {
+      entry = readContextOutsideLinks(el);
+      contextCache.set(el, entry);
+    }
+    if (links) for (const l of entry.links) links.push(l);
+    return entry.text;
+  }
+
+  function readContextOutsideLinks(el) {
+    const links = [];
     let out = '';
     // Bounded as a safety net only: a context block holds a few nodes.
     let budget = 5000;
@@ -415,7 +431,7 @@ function runInPage(ctx) {
         }
         if (type !== 1 || !dom.get(n, 'getAttribute')) continue;
         if (isLinkCandidate(n)) {
-          if (links) links.push(n);
+          links.push(n);
           continue;
         }
         const tag = String(dom.localName(n) || '').toLowerCase();
@@ -425,7 +441,7 @@ function runInPage(ctx) {
         out += ' ';
       }
     })(el);
-    return out.replace(/\s+/g, ' ').trim();
+    return { text: out.replace(/\s+/g, ' ').trim(), links };
   }
 
   function isSubstantiveContext(text) {
@@ -526,16 +542,80 @@ function runInPage(ctx) {
     return headingList;
   }
 
+  // Each element's place in its document's tree order, read once. Asking
+  // compareDocumentPosition of every heading for every link made the rule
+  // quadratic in the headings and links, and Chromium walks the siblings
+  // to answer it, which made it cubic on a long flat page.
+  let treeOrder = null;
+  function treeOrderOf(node) {
+    if (!treeOrder) {
+      treeOrder = new Map();
+      try {
+        const all = dom.querySelectorAll(dom.ownerDocument(node), '*');
+        for (let i = 0; i < all.length; i++) treeOrder.set(all[i], i);
+      } catch {}
+    }
+    const p = treeOrder.get(node);
+    return p === undefined ? -1 : p;
+  }
+
+  // The exposed headings with their places: those in the document's own
+  // tree, which follow tree order when the list does (it may not, with
+  // several scan roots), and the others (in a shadow tree), by index.
+  let headingPlaces = null;
+  function placedHeadings() {
+    if (headingPlaces) return headingPlaces;
+    const list = exposedHeadings();
+    const inTree = [];
+    const others = [];
+    let ordered = true;
+    for (let i = 0; i < list.length; i++) {
+      const pos = treeOrderOf(list[i]);
+      if (pos < 0) {
+        others.push(i);
+        continue;
+      }
+      if (inTree.length && pos <= inTree[inTree.length - 1].pos) ordered = false;
+      inTree.push({ i, pos });
+    }
+    headingPlaces = { list, inTree, others, ordered };
+    return headingPlaces;
+  }
+
   // The last heading before the link in document order (or the heading it
   // sits in), which H80 lets serve as the link's context; null when none.
+  // That is the heading before the first one in the list the link doesn't
+  // follow (compareDocumentPosition's 4: the link follows the heading or is
+  // inside it), found by a binary search among the headings of the
+  // document's own tree, where following is a smaller place in tree order.
   function nearestPrecedingHeading(el) {
-    let last = null;
-    for (const h of exposedHeadings()) {
-      // 4: the link follows the heading or is inside it.
-      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
-      last = h;
+    const { list, inTree, others, ordered } = placedHeadings();
+    const elPos = treeOrderOf(el);
+    if (!ordered || elPos < 0) {
+      let last = null;
+      for (const h of list) {
+        if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) break;
+        last = h;
+      }
+      return last;
     }
-    return last;
+    let lo = 0;
+    let hi = inTree.length;
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (inTree[mid].pos < elPos) lo = mid + 1;
+      else hi = mid;
+    }
+    let stop = lo < inTree.length ? inTree[lo].i : list.length;
+    for (const i of others) {
+      if (i >= stop) break;
+      const h = list[i];
+      if (h === el || !(dom.compareDocumentPosition(h, el) & 4)) {
+        stop = i;
+        break;
+      }
+    }
+    return stop > 0 ? list[stop - 1] : null;
   }
 
   // Context the rule doesn't look for but a person may read: a table row's
@@ -593,6 +673,17 @@ function runInPage(ctx) {
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(f);
     }
+    // The places each group's links go, per nearest heading, gathered once
+    // rather than for each link of the group.
+    const hrefsByHeading = new Map();
+    for (const [key, group] of groups) {
+      const byHeading = new Map();
+      for (const g of group) {
+        if (!byHeading.has(g.heading)) byHeading.set(g.heading, new Set());
+        byHeading.get(g.heading).add(g.href);
+      }
+      hrefsByHeading.set(key, byHeading);
+    }
     for (const f of list) {
       if (f.tier === 'format') {
         const sibling = descriptiveSiblingLink(f.el);
@@ -611,10 +702,8 @@ function runInPage(ctx) {
         }
       }
       if (!f.href || f.heading === undefined) continue;
-      const peers = (groups.get(f.tier + '\u0000' + f.normalized) || []).filter(
-        (g) => g.heading === f.heading
-      );
-      const hrefs = new Set(peers.map((g) => g.href));
+      const byHeading = hrefsByHeading.get(f.tier + '\u0000' + f.normalized);
+      const hrefs = (byHeading && byHeading.get(f.heading)) || new Set();
       if (hrefs.size < 2) continue;
       f.occurrence.lean = {
         toward: 'fail',
