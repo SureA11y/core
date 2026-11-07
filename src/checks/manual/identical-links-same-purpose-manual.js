@@ -32,6 +32,11 @@
  *   - `href`: the full URL this link leads to.
  *   - `distinctDestinationCount`: how many different URLs the links with
  *     this name lead to, a count of 2 or more.
+ *   - `linkKind`: what this link is made of (`helpers.getLinkKind`): `svg`
+ *     for an `<a>` in SVG; `image` for an `<area>`, or a link whose content
+ *     is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`,
+ *     `role="img"`); `composite` for text and an image; `text` otherwise,
+ *     a link with no content (named by its attributes) included.
  * @reason-codes
  *   - `SAME_NAME_DIFFERENT_DESTINATION` (cantTell): links that share an
  *     accessible name lead to two or more different URLs; a person judges
@@ -319,7 +324,8 @@ function runInPage(ctx) {
             reasonCode: 'SAME_NAME_DIFFERENT_DESTINATION',
             name,
             href,
-            distinctDestinationCount: distinctHrefs.size
+            distinctDestinationCount: distinctHrefs.size,
+            linkKind: helpers.getLinkKind(el)
           }
         }
       };

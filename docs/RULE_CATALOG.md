@@ -1839,6 +1839,7 @@ Flags groups of links that share the same accessible name but resolve to more th
 - `name`: the accessible name the links share, trimmed, with whitespace collapsed and in lower case.
 - `href`: the full URL this link leads to.
 - `distinctDestinationCount`: how many different URLs the links with this name lead to, a count of 2 or more.
+- `linkKind`: what this link is made of (`helpers.getLinkKind`): `svg` for an `<a>` in SVG; `image` for an `<area>`, or a link whose content is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`, `role="img"`); `composite` for text and an image; `text` otherwise, a link with no content (named by its attributes) included.
 
 **Reason codes.**
 
@@ -2488,6 +2489,7 @@ Flags links whose full accessible name is a known non-descriptive phrase (e.g. "
 **What a finding reports.**
 
 - `normalizedName`: the link's accessible name as it was matched: in lowercase, with spacing collapsed and trailing punctuation removed. It is a generic phrase (`GENERIC_LINK_TEXT`) or a bare format name (`AMBIGUOUS_FORMAT_NAME`).
+- `linkKind`: what the link is made of (`helpers.getLinkKind`): `svg` for an `<a>` in SVG; `image` for an `<area>`, or a link whose content is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`, `role="img"`); `composite` for text and an image; `text` otherwise, a link with no content (named by its attributes) included. Hidden content (`display: none`, `[hidden]`) doesn't count; content hidden only by `aria-hidden` is drawn, and does.
 
 **Reason codes.**
 

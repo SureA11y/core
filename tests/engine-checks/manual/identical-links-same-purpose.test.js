@@ -177,3 +177,28 @@ test(`${RULE_ID}: tracking-parameter variants lean pass, a generic name to diffe
   assert.deepEqual(leans('<a href="/a">Contact us</a><a href="/b">Contact us</a>'), [null, null]);
   assert.deepEqual(leans('<a href="/p#reviews">More</a><a href="/p#specs">More</a>'), [null, null]);
 });
+
+// details.linkKind says what each link is made of (helpers.getLinkKind), so
+// a standard that judges text, image and SVG links apart can tell them.
+test(`${RULE_ID}: each finding says what its link is made of (linkKind)`, () => {
+  const html =
+    '<!doctype html><html lang="en"><body><main>' +
+    '<a id="text" href="/a">Brochure</a>' +
+    '<a id="image" href="/b"><img src="b.png" alt="Brochure"></a>' +
+    '<a id="composite" href="/c"><img src="c.png" alt="">Brochure</a>' +
+    '<svg><a id="svg" href="/d"><text>Brochure</text></a></svg>' +
+    '</main></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  assert.deepStrictEqual(
+    rule.occurrences.map((o) => [/id="(\w+)"/.exec(o.html)[1], o.data.details.linkKind]),
+    [
+      ['text', 'text'],
+      ['image', 'image'],
+      ['composite', 'composite'],
+      ['svg', 'svg']
+    ]
+  );
+});

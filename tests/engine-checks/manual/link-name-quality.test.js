@@ -379,3 +379,44 @@ test(`${RULE_ID}: the nearest heading, with a link inside a heading and roots ou
     expected
   );
 });
+
+// details.linkKind says what the link is made of (helpers.getLinkKind): an
+// <a> in SVG is svg; an <area>, or content of images only, is image; text and
+// an image is composite; anything else is text. Hidden content doesn't count;
+// aria-hidden content is drawn, and does.
+test('link-name-quality: each finding says what its link is made of (linkKind)', () => {
+  const cases = [
+    ['text', '<a id="x" href="/a">Read more</a>'],
+    ['text', '<a id="x" href="/a" aria-label="Read more"></a>'],
+    ['text', '<a id="x" href="/a"><span hidden><img src="i.png" alt=""></span>Read more</a>'],
+    ['image', '<a id="x" href="/a"><img src="i.png" alt="Read more"></a>'],
+    ['image', '<a id="x" href="/a"><img src="i.png" alt="Read"> <img src="j.png" alt="more"></a>'],
+    [
+      'image',
+      '<a id="x" href="/a" aria-label="Read more"><svg viewBox="0 0 1 1"><text>Go</text></svg></a>'
+    ],
+    ['image', '<a id="x" href="/a"><span role="img" aria-label="Read more">*</span></a>'],
+    ['image', '<a id="x" href="/a" aria-label="Read more"><canvas></canvas></a>'],
+    ['image', '<a id="x" href="/a" aria-label="Read more"><object data="o.svg"></object></a>'],
+    [
+      'image',
+      '<img src="m.png" usemap="#m" alt="Map"><map name="m"><area id="x" href="/a" alt="Read more" shape="rect" coords="0,0,1,1"></map>'
+    ],
+    ['composite', '<a id="x" href="/a"><img src="i.png" alt="">Read more</a>'],
+    [
+      'composite',
+      '<a id="x" href="/a"><span aria-hidden="true">Read</span><img src="i.png" alt="more"></a>'
+    ],
+    ['svg', '<svg><a id="x" href="/a"><text>Read more</text></a></svg>']
+  ];
+  for (const [kind, link] of cases) {
+    const html = `<!doctype html><html lang="en"><body><main><p>${link}</p></main></body></html>`;
+    const rule = assertRule(
+      runa11yCoreOnHtml(html, { runOnly: ['link-name-quality'] }),
+      'link-name-quality',
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.strictEqual(rule.occurrences[0].data.details.linkKind, kind, link);
+  }
+});

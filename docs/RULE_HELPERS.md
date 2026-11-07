@@ -871,6 +871,21 @@ One list for every rule that looks for a skip link, core's `skip-link` and any a
 profile brings, so they recognise the same links; add a phrasing here, not in a
 rule.
 
+### `getLinkKind(el)` → `'text' | 'image' | 'composite' | 'svg'`
+
+What a link is made of, for a standard that judges text links, image links and SVG links
+apart. `svg`: an `<a>` in SVG, whatever it holds. `image`: an `<area>` (a region of an
+image), or a link whose content is one or more images and no text. `composite`: content
+with both text and an image. `text`: any other link, one whose content is text or that has
+no content at all (named by `aria-label`, `aria-labelledby` or `title`). An image is an
+`<img>`, an `<svg>`, an `<object>`, a `<canvas>` or an element whose `role` attribute is
+`img`; what is inside one is the image's, not the link's. Text is a text node with more than
+white space. The content is read in the flat tree, leaving out what the default
+hidden-content policy hides (`display: none`, `[hidden]`, …); content hidden only from
+assistive technology (`aria-hidden="true"`) is still drawn, and counts. Generated content
+(`::before`, `::after`) is not read. `link-name-quality` and `identical-links-same-purpose`
+report it as `data.details.linkKind`.
+
 ### `reportOccurrence(node, partial)` → occurrence object
 
 **Use this to build every occurrence.** Attaches the element so the engine fills in
