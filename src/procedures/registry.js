@@ -706,7 +706,10 @@ const PROCEDURES = {
     },
     '2.5.8': {
       'target-size-minimum-pointer': {
-        tools: ['devtools']
+        tools: ['devtools'],
+        variants: {
+          'target-size-minimum': ['undersized-inline-link-run', 'undersized-plausibly-essential']
+        }
       }
     },
     '3.1.1': {
