@@ -459,12 +459,18 @@ function createDomHelpers(opts) {
     );
   // Whether a selector can name an attribute value, or an id, exactly: CSS
   // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
-  // selector holding one never matches the element it was built from.
-  const __valueSelectable = (s) =>
-    // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
-    !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(
-      String(s)
+  // selector holding one never matches the element it was built from. A
+  // value longer than SELECTOR_VALUE_MAX is not used either, so a 2 MB
+  // aria-label doesn't make a 2 MB selector: the element's path names it.
+  const SELECTOR_VALUE_MAX = 256;
+  const __valueSelectable = (s) => {
+    const v = String(s);
+    return (
+      v.length <= SELECTOR_VALUE_MAX &&
+      // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+      !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(v)
     );
+  };
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;

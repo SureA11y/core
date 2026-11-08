@@ -12982,12 +12982,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     );
   // Whether a selector can name an attribute value, or an id, exactly: CSS
   // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
-  // selector holding one never matches the element it was built from.
-  const __valueSelectable = (s) =>
-    // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
-    !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(
-      String(s)
+  // selector holding one never matches the element it was built from. A
+  // value longer than SELECTOR_VALUE_MAX is not used either, so a 2 MB
+  // aria-label doesn't make a 2 MB selector: the element's path names it.
+  const SELECTOR_VALUE_MAX = 256;
+  const __valueSelectable = (s) => {
+    const v = String(s);
+    return (
+      v.length <= SELECTOR_VALUE_MAX &&
+      // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+      !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(v)
     );
+  };
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
@@ -79980,6 +79986,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return r ? `${tag}[role="${r}"]` : tag;
   }
 
+  // A text a finding carries, cut as an occurrence's html is: at 2,000
+  // characters, at a code point, with "…" after it. A control's name can be
+  // any length (a 2 MB aria-label), and the finding would carry it whole
+  // several times over. A word list keeps its first 200 words.
+  function capText(s) {
+    const v = s == null ? '' : String(s);
+    if (v.length <= 2000) return v;
+    const code = v.charCodeAt(1999);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
+  }
+  function capWords(list) {
+    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
+  }
+
   function clipForSummary(s) {
     const v = (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim();
     if (v.length <= 80) return v;
@@ -80671,8 +80691,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
                   needed:
                     'Whether the accessible name and the visible label say the same thing to a user.',
                   evidence: {
-                    visibleLabel,
-                    accessibleName: accName,
+                    visibleLabel: capText(visibleLabel),
+                    accessibleName: capText(accName),
                     difference: uncertainReason
                   }
                 }
@@ -80681,10 +80701,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           data: {
             details: {
               reasonCode: uncertainReason || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-              visibleLabel,
-              accessibleName: accName,
-              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              visibleLabel: capText(visibleLabel),
+              accessibleName: capText(accName),
+              normalized: { visibleLabel: capText(visibleNorm), accessibleName: capText(accNorm) },
+              tokenized: {
+                visibleLabel: capWords(labelTokens),
+                accessibleName: capWords(nameTokens)
+              },
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
               nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
             }
@@ -119445,12 +119468,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     );
   // Whether a selector can name an attribute value, or an id, exactly: CSS
   // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
-  // selector holding one never matches the element it was built from.
-  const __valueSelectable = (s) =>
-    // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
-    !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(
-      String(s)
+  // selector holding one never matches the element it was built from. A
+  // value longer than SELECTOR_VALUE_MAX is not used either, so a 2 MB
+  // aria-label doesn't make a 2 MB selector: the element's path names it.
+  const SELECTOR_VALUE_MAX = 256;
+  const __valueSelectable = (s) => {
+    const v = String(s);
+    return (
+      v.length <= SELECTOR_VALUE_MAX &&
+      // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+      !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(v)
     );
+  };
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
