@@ -1118,9 +1118,24 @@ function runInPage(ctx) {
           .trim()
           .split(/\s+/)[0];
         const name = String(dom.localName(source) || '').toLowerCase();
+        // The id, else the first class, escaped, where the selector so made
+        // names the element: an id holding a NUL or a lone surrogate, which
+        // CSS reads as U+FFFD, names none, and the class or the tag stands.
+        const named = (part) => {
+          try {
+            const sel = name + part(helpers.cssEscape);
+            return dom.matches(source, sel) ? sel : '';
+          } catch {
+            return '';
+          }
+        };
+        const base =
+          (blockId && named((esc) => '#' + esc(blockId))) ||
+          (cls && named((esc) => '.' + esc(cls))) ||
+          name;
         out = {
           color,
-          selector: name + (blockId ? '#' + blockId : cls ? '.' + cls : '') + '::first-line',
+          selector: base + '::first-line',
           otherCue:
             c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||

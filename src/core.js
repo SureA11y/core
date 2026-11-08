@@ -14617,6 +14617,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The elements of an element root (a scoped or detached subtree, which
+  // has no getElementById) by id, the root itself included, the first in
+  // tree order for each id, as getElementById gives it. Built once per root
+  // per run, and read by the id attribute's value, so any id resolves: a
+  // selector can't name an id with a NUL or a lone surrogate, which CSS
+  // reads as U+FFFD.
+  const __rootIdMap = (r) => {
+    let maps;
+    try {
+      maps = __domSharedCache.idMapsByRoot || (__domSharedCache.idMapsByRoot = new WeakMap());
+    } catch {
+      maps = null;
+    }
+    const cached = maps && maps.get(r);
+    if (cached) return cached;
+    const map = new Map();
+    const add = (el) => {
+      const v = dom.getAttribute(el, 'id');
+      if (v && !map.has(v)) map.set(v, el);
+    };
+    if (isElement(r)) add(r);
+    for (const el of dom.querySelectorAll(r, '[id]')) add(el);
+    try {
+      if (maps) maps.set(r, map);
+    } catch {}
+    return map;
+  };
+
   const safeRootQueryById = (id) => {
     // Best-effort for cases where root is not the document (e.g. shadow root-like, fragment roots).
     // Note: IDs are document-global in HTML, but test harnesses may use scoped roots.
@@ -14638,9 +14666,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !dom.get(r, 'querySelector')) continue;
+      if (!r) continue;
       try {
-        el = dom.querySelector(r, '#' + key);
+        el =
+          typeof dom.get(r, 'getElementById') === 'function'
+            ? dom.getElementById(r, key)
+            : __rootIdMap(r).get(key) || null;
       } catch {
         el = null;
       }
@@ -20548,6 +20579,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
+    cssEscape: __cssEscapeIdent,
     buildStructuralPath,
 
     // Existing (back-compat)
@@ -67325,7 +67357,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           el && typeof dom.get(el, 'getAttribute') === 'function'
             ? dom.getAttribute(el, 'id') || ''
             : '';
-        if (elementId) nodeSelector = `#${elementId}`;
+        // Escaped, and only where it names the element: CSS reads a NUL or
+        // a lone surrogate as U+FFFD, so such an id names nothing.
+        const byId = elementId ? '#' + helpers.cssEscape(elementId) : '';
+        if (byId && dom.matches(el, byId)) nodeSelector = byId;
       } catch {
         // no-throw
       }
@@ -68530,7 +68565,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           el && typeof dom.get(el, 'getAttribute') === 'function'
             ? dom.getAttribute(el, 'id') || ''
             : '';
-        if (elementId) nodeSelector = `#${elementId}`;
+        // Escaped, and only where it names the element: CSS reads a NUL or
+        // a lone surrogate as U+FFFD, so such an id names nothing.
+        const byId = elementId ? '#' + helpers.cssEscape(elementId) : '';
+        if (byId && dom.matches(el, byId)) nodeSelector = byId;
       } catch {
         // no-throw
       }
@@ -82805,9 +82843,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           .trim()
           .split(/\s+/)[0];
         const name = String(dom.localName(source) || '').toLowerCase();
+        // The id, else the first class, escaped, where the selector so made
+        // names the element: an id holding a NUL or a lone surrogate, which
+        // CSS reads as U+FFFD, names none, and the class or the tag stands.
+        const named = (part) => {
+          try {
+            const sel = name + part(helpers.cssEscape);
+            return dom.matches(source, sel) ? sel : '';
+          } catch {
+            return '';
+          }
+        };
+        const base =
+          (blockId && named((esc) => '#' + esc(blockId))) ||
+          (cls && named((esc) => '.' + esc(cls))) ||
+          name;
         out = {
           color,
-          selector: name + (blockId ? '#' + blockId : cls ? '.' + cls : '') + '::first-line',
+          selector: base + '::first-line',
           otherCue:
             c.normalizeFontWeight(ps.fontWeight) !== c.normalizeFontWeight(blockCs.fontWeight) ||
             String(ps.fontStyle || '') !== String(blockCs.fontStyle || '') ||
@@ -94954,8 +95007,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     try {
       if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
     } catch {}
+    // Without the engine's builder, the id, escaped as CSS reads it, where
+    // the selector so made names the element.
     try {
-      if (el && dom.get(el, 'id')) return `#${dom.get(el, 'id')}`;
+      const elId = el ? dom.getAttribute(el, 'id') : '';
+      const view = dom.defaultView(dom.ownerDocument(el));
+      const esc =
+        helpers && typeof helpers.cssEscape === 'function'
+          ? helpers.cssEscape
+          : view && view.CSS && typeof view.CSS.escape === 'function'
+            ? (s) => view.CSS.escape(s)
+            : null;
+      const sel = elId && esc ? '#' + esc(elId) : '';
+      if (sel && dom.matches(el, sel)) return sel;
     } catch {}
     return 'html';
   }
@@ -121586,6 +121650,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The elements of an element root (a scoped or detached subtree, which
+  // has no getElementById) by id, the root itself included, the first in
+  // tree order for each id, as getElementById gives it. Built once per root
+  // per run, and read by the id attribute's value, so any id resolves: a
+  // selector can't name an id with a NUL or a lone surrogate, which CSS
+  // reads as U+FFFD.
+  const __rootIdMap = (r) => {
+    let maps;
+    try {
+      maps = __domSharedCache.idMapsByRoot || (__domSharedCache.idMapsByRoot = new WeakMap());
+    } catch {
+      maps = null;
+    }
+    const cached = maps && maps.get(r);
+    if (cached) return cached;
+    const map = new Map();
+    const add = (el) => {
+      const v = dom.getAttribute(el, 'id');
+      if (v && !map.has(v)) map.set(v, el);
+    };
+    if (isElement(r)) add(r);
+    for (const el of dom.querySelectorAll(r, '[id]')) add(el);
+    try {
+      if (maps) maps.set(r, map);
+    } catch {}
+    return map;
+  };
+
   const safeRootQueryById = (id) => {
     // Best-effort for cases where root is not the document (e.g. shadow root-like, fragment roots).
     // Note: IDs are document-global in HTML, but test harnesses may use scoped roots.
@@ -121607,9 +121699,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !dom.get(r, 'querySelector')) continue;
+      if (!r) continue;
       try {
-        el = dom.querySelector(r, '#' + key);
+        el =
+          typeof dom.get(r, 'getElementById') === 'function'
+            ? dom.getElementById(r, key)
+            : __rootIdMap(r).get(key) || null;
       } catch {
         el = null;
       }
@@ -127517,6 +127612,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
+    cssEscape: __cssEscapeIdent,
     buildStructuralPath,
 
     // Existing (back-compat)

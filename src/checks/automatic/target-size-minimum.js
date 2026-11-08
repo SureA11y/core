@@ -245,8 +245,19 @@ function runInPage(ctx) {
     try {
       if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
     } catch {}
+    // Without the engine's builder, the id, escaped as CSS reads it, where
+    // the selector so made names the element.
     try {
-      if (el && dom.get(el, 'id')) return `#${dom.get(el, 'id')}`;
+      const elId = el ? dom.getAttribute(el, 'id') : '';
+      const view = dom.defaultView(dom.ownerDocument(el));
+      const esc =
+        helpers && typeof helpers.cssEscape === 'function'
+          ? helpers.cssEscape
+          : view && view.CSS && typeof view.CSS.escape === 'function'
+            ? (s) => view.CSS.escape(s)
+            : null;
+      const sel = elId && esc ? '#' + esc(elId) : '';
+      if (sel && dom.matches(el, sel)) return sel;
     } catch {}
     return 'html';
   }

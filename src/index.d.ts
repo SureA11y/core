@@ -351,6 +351,7 @@ export interface RuleHelpers {
   flatParentElement: RuleHelper;
   buildSimpleSelector: RuleHelper;
   buildSelector: RuleHelper;
+  cssEscape: RuleHelper;
   getOuterHtmlSnippet: RuleHelper;
   isExcluded: RuleHelper;
   buildStructuralPath: RuleHelper;

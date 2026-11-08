@@ -1961,6 +1961,34 @@ function createDomHelpers(opts) {
     return el || null;
   };
 
+  // The elements of an element root (a scoped or detached subtree, which
+  // has no getElementById) by id, the root itself included, the first in
+  // tree order for each id, as getElementById gives it. Built once per root
+  // per run, and read by the id attribute's value, so any id resolves: a
+  // selector can't name an id with a NUL or a lone surrogate, which CSS
+  // reads as U+FFFD.
+  const __rootIdMap = (r) => {
+    let maps;
+    try {
+      maps = __domSharedCache.idMapsByRoot || (__domSharedCache.idMapsByRoot = new WeakMap());
+    } catch {
+      maps = null;
+    }
+    const cached = maps && maps.get(r);
+    if (cached) return cached;
+    const map = new Map();
+    const add = (el) => {
+      const v = dom.getAttribute(el, 'id');
+      if (v && !map.has(v)) map.set(v, el);
+    };
+    if (isElement(r)) add(r);
+    for (const el of dom.querySelectorAll(r, '[id]')) add(el);
+    try {
+      if (maps) maps.set(r, map);
+    } catch {}
+    return map;
+  };
+
   const safeRootQueryById = (id) => {
     // Best-effort for cases where root is not the document (e.g. shadow root-like, fragment roots).
     // Note: IDs are document-global in HTML, but test harnesses may use scoped roots.
@@ -1982,9 +2010,12 @@ function createDomHelpers(opts) {
     __perfInc('idLookup.root.miss');
     let el = null;
     for (const r of roots) {
-      if (!r || !dom.get(r, 'querySelector')) continue;
+      if (!r) continue;
       try {
-        el = dom.querySelector(r, '#' + key);
+        el =
+          typeof dom.get(r, 'getElementById') === 'function'
+            ? dom.getElementById(r, key)
+            : __rootIdMap(r).get(key) || null;
       } catch {
         el = null;
       }
@@ -7892,6 +7923,7 @@ function createDomHelpers(opts) {
     buildShadowHostSelectors,
     buildSimpleSelector,
     buildSelector,
+    cssEscape: __cssEscapeIdent,
     buildStructuralPath,
 
     // Existing (back-compat)
