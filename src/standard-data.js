@@ -455,7 +455,8 @@ function checkStandardData(data) {
   return out;
 }
 
-const byNumber = (a, b) => String(a).localeCompare(String(b), 'en', { numeric: true });
+const ID_ORDER = new Intl.Collator('en', { numeric: true });
+const byNumber = (a, b) => ID_ORDER.compare(String(a), String(b));
 const facetIdOf = (id) => String(id).toLowerCase();
 
 // A facet of core's procedures from a procedure in the data.

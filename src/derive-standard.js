@@ -210,19 +210,24 @@ function deriveStandard(bases, own) {
     // Rule 3: the derived units for a base unit. A derived requirement based
     // on it that has tests of its own, none of them based on anything,
     // stands for it through those tests.
-    const counterparts = (standard, version, id) => {
-      const outIds = [];
-      for (const [unit, sources] of prov) {
-        if (!sources.some((s) => s.standard === standard && s.version === version && s.id === id))
-          continue;
-        const req = requirements[unit];
-        const ownTests =
-          req && Array.isArray(req.tests) ? req.tests.filter((t) => !prov.has(t)) : [];
-        if (ownTests.length && req.tests.every((t) => !prov.has(t))) outIds.push(...ownTests);
-        else outIds.push(unit);
+    // Built once per version: for each base unit (standard, version, id),
+    // the derived units it stands for.
+    const forBase = new Map();
+    const baseKey = (standard, version, id) => `${standard}\u0000${version}\u0000${id}`;
+    for (const [unit, sources] of prov) {
+      const req = requirements[unit];
+      const ownTests =
+        req && Array.isArray(req.tests) && req.tests.every((t) => !prov.has(t)) ? req.tests : [];
+      const stands = ownTests.length ? ownTests : [unit];
+      for (const src of sources) {
+        const k = baseKey(src.standard, src.version, src.id);
+        if (!forBase.has(k)) forBase.set(k, new Set());
+        for (const u of stands) forBase.get(k).add(u);
       }
-      return [...new Set(outIds)];
-    };
+    }
+    const counterparts = (standard, version, id) => [
+      ...(forBase.get(baseKey(standard, version, id)) || [])
+    ];
     const mapUnits = (list, standard, version) => [
       ...new Set(listOf(list).flatMap((u) => counterparts(standard, version, u)))
     ];
@@ -335,8 +340,14 @@ function deriveStandard(bases, own) {
     // Rule 6: translations through provenance, where the source is the base's.
     const mineSource = sourceTexts(mine);
     const texts = isObject(mine.texts) ? copy(mine.texts) : {};
+    // Each base's source texts, read once.
+    const sourceOfBase = new Map();
+    const baseSourceOf = (baseD) => {
+      if (!sourceOfBase.has(baseD)) sourceOfBase.set(baseD, sourceTexts(baseD));
+      return sourceOfBase.get(baseD);
+    };
     const inherit = (baseD, baseKey, key) => {
-      const baseSource = sourceTexts(baseD);
+      const baseSource = baseSourceOf(baseD);
       if (!Object.prototype.hasOwnProperty.call(mineSource, key)) return;
       if (JSON.stringify(baseSource[baseKey]) !== JSON.stringify(mineSource[key])) return;
       for (const [locale, dict] of Object.entries(isObject(baseD.texts) ? baseD.texts : {})) {
