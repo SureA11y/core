@@ -11,7 +11,8 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
 
-const { runa11yCoreOnHtml } = require('../src/testing.js');
+const { runa11yCoreOnHtml, createDom } = require('../src/testing.js');
+const { runDomRulesInPage } = require('../src/index.js');
 
 const PAGE =
   '<!doctype html><html lang="en"><head><title>t</title></head><body><main><h1>x</h1></main></body></html>';
@@ -52,8 +53,16 @@ function warningsFor(engineOptions) {
   console.warn = (...a) => warnings.push(a.join(' '));
   console.info = () => {};
   try {
-    // Both entry points run, so a warning lost in the page would show here.
-    runa11yCoreOnHtml(PAGE, { engineOptions, runOnly: ['page-title-present'] });
+    // Each entry point on its own, so a warning lost in either would show
+    // here (the testing helper's own second run says only what the first
+    // didn't).
+    runa11yCoreOnHtml(PAGE, {
+      engineOptions,
+      runOnly: ['page-title-present'],
+      entryPointParity: false
+    });
+    createDom(PAGE);
+    runDomRulesInPage(null, null, engineOptions, ['page-title-present']);
   } finally {
     console.warn = warn;
     console.info = info;
