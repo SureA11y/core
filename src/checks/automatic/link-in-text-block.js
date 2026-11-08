@@ -208,7 +208,9 @@
  *     available in this run, so the link could not be checked.
  *     Basis: WCAG 1.4.1 (not settled).
  *   - `ENGINE_EXCEPTION` (cantTell): the rule stopped on an internal error
- *     for this link; it is to be checked by hand.
+ *     for this link, or could not read its style (jsdom throws reading the
+ *     computed style of an element a few thousand levels deep); it is to be
+ *     checked by hand.
  *     Basis: WCAG 1.4.1 (not settled).
  * @implementation-notes
  * - "Surrounding text style" is approximated as the link's immediate
@@ -438,15 +440,13 @@ function runInPage(ctx) {
       : true;
   }
 
-  function resolveUnderlineFromCssom(el) {
-    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
-    if (!doc || typeof dom.get(el, 'matches') !== 'function')
-      return { underlined: false, resolved: false };
-
-    let best = null; // { rank, order, underlined }
-    let order = 0;
-    let unreadableSheet = false;
-    let unparsableSelector = false;
+  // The style rule parts that set an underline on an element at rest, in
+  // the sheets' order, found once per run: { parts, unreadableSheet,
+  // broken }. Each part is { part, rank, underlined }.
+  const underlineRulesByDoc = new Map();
+  function underlineRulesOf(doc) {
+    if (underlineRulesByDoc.has(doc)) return underlineRulesByDoc.get(doc);
+    const found = { parts: [], unreadableSheet: false, broken: false };
 
     function consider(cssRule) {
       const decl = underlineFromDeclaration(cssRule.style);
@@ -460,17 +460,8 @@ function runInPage(ctx) {
         if (/:(hover|focus|focus-visible|focus-within|active|target|visited)\b/i.test(part)) {
           continue;
         }
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unparsableSelector = true;
-          continue;
-        }
-        if (!matched) continue;
-        order += 1;
         const rank = (decl.important ? 1e9 : 0) + specificityOf(part);
-        if (!best || rank >= best.rank) best = { rank, order, underlined: decl.underlined };
+        found.parts.push({ part, rank, underlined: decl.underlined });
       }
     }
 
@@ -499,13 +490,39 @@ function runInPage(ctx) {
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
         } catch {
-          unreadableSheet = true; // cross-origin, not inspectable
+          found.unreadableSheet = true; // cross-origin, not inspectable
           continue;
         }
         if (rules) walk(rules, 0);
       }
     } catch {
+      found.broken = true;
+    }
+    underlineRulesByDoc.set(doc, found);
+    return found;
+  }
+
+  // Whether the style sheets underline el at rest (see underlineFromDeclaration
+  // for which declaration wins): { underlined, resolved }.
+  function resolveUnderlineFromCssom(el) {
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function')
       return { underlined: false, resolved: false };
+
+    const found = underlineRulesOf(doc);
+    if (found.broken) return { underlined: false, resolved: false };
+    let best = null; // { rank, underlined }
+    let unparsableSelector = false;
+    for (const { part, rank, underlined } of found.parts) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unparsableSelector = true;
+        continue;
+      }
+      if (!matched) continue;
+      if (!best || rank >= best.rank) best = { rank, underlined };
     }
 
     // The inline style attribute outranks every stylesheet declaration.
@@ -517,7 +534,7 @@ function runInPage(ctx) {
     // No author declaration reached this element. If a sheet or selector was
     // unreadable, one of them might have, so the answer is unknown; otherwise
     // the UA default stands, and for a link that means underlined.
-    if (unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
+    if (found.unreadableSheet || unparsableSelector) return { underlined: false, resolved: false };
     return { underlined: uaUnderlines(el), resolved: true };
   }
 
@@ -1436,18 +1453,15 @@ function runInPage(ctx) {
     return false;
   }
 
-  function hoverFocusCues(el) {
-    const out = { onHover: false, onFocus: false, readable: true };
-    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
-    if (!doc || typeof dom.get(el, 'matches') !== 'function') return { ...out, readable: false };
-    try {
-      const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
-      if (root && root !== doc) return { ...out, readable: false };
-      const adopted = dom.get(doc, 'adoptedStyleSheets');
-      if (adopted && adopted.length) out.readable = false;
-    } catch {
-      out.readable = false;
-    }
+  // The :hover and :focus parts of every style rule in a document, with the
+  // state taken out, found once per run: { parts, readable }. Each part is
+  // { base, onHover, onFocus, cue, cueError, valid }: cue whether its
+  // declarations give a non-color cue, cueError where they can't be read.
+  // readable is false when a sheet can't be read.
+  const stateRulesByDoc = new Map();
+  function stateRulesOf(doc) {
+    if (stateRulesByDoc.has(doc)) return stateRulesByDoc.get(doc);
+    const found = { parts: [], readable: true };
     const consider = (cssRule, selectorText) => {
       for (const part of splitSelectorList(selectorText)) {
         if (!/:(hover|focus|focus-visible|focus-within)\b/i.test(part)) continue;
@@ -1459,16 +1473,16 @@ function runInPage(ctx) {
         if (/::[a-z-]+/i.test(base)) continue;
         base = base.trim() || '*';
         if (/[>+~]$/.test(base)) base += ' *';
-        let matched;
+        let cue = false;
+        let cueError = false;
         try {
-          matched = dom.matches(el, base);
+          cue = declaresCue(cssRule.style, onPseudo);
         } catch {
-          out.readable = false;
-          continue;
+          cueError = true;
         }
-        if (!matched || !declaresCue(cssRule.style, onPseudo)) continue;
-        if (hover) out.onHover = true;
-        if (focus) out.onFocus = true;
+        // valid: whether the selector parses, learnt from the first link
+        // matched against it (a selector that doesn't throws for none).
+        found.parts.push({ base, onHover: hover, onFocus: focus, cue, cueError, valid: null });
       }
     };
     // A nested rule's selector, resolved against its parent's: `&` stands
@@ -1512,13 +1526,54 @@ function runInPage(ctx) {
         try {
           rules = sheet && sheet.cssRules ? sheet.cssRules : null;
         } catch {
-          out.readable = false;
+          found.readable = false;
           continue;
         }
         if (rules) walk(rules, 0, '');
       }
     } catch {
+      found.readable = false;
+    }
+    stateRulesByDoc.set(doc, found);
+    return found;
+  }
+
+  function hoverFocusCues(el) {
+    const out = { onHover: false, onFocus: false, readable: true };
+    const doc = el && dom.ownerDocument(el) ? dom.ownerDocument(el) : null;
+    if (!doc || typeof dom.get(el, 'matches') !== 'function') return { ...out, readable: false };
+    try {
+      const root = dom.get(el, 'getRootNode') ? dom.getRootNode(el) : null;
+      if (root && root !== doc) return { ...out, readable: false };
+      const adopted = dom.get(doc, 'adoptedStyleSheets');
+      if (adopted && adopted.length) out.readable = false;
+    } catch {
       out.readable = false;
+    }
+    const found = stateRulesOf(doc);
+    if (!found.readable) out.readable = false;
+    for (const part of found.parts) {
+      // A part that gives no cue matters only as a selector that can't be
+      // read, which it is for every link or none.
+      if (part.valid === false) {
+        out.readable = false;
+        continue;
+      }
+      if (part.valid === true && !part.cue && !part.cueError) continue;
+      let matched;
+      try {
+        matched = dom.matches(el, part.base);
+        part.valid = true;
+      } catch {
+        part.valid = false;
+        out.readable = false;
+        continue;
+      }
+      if (!matched) continue;
+      if (part.cueError) throw new Error('style rule unreadable');
+      if (!part.cue) continue;
+      if (part.onHover) out.onHover = true;
+      if (part.onFocus) out.onFocus = true;
     }
     return out;
   }
@@ -1741,18 +1796,30 @@ function runInPage(ctx) {
     }
   }
 
-  for (const el of nodes) {
-    if (!el || !dom.get(el, 'getAttribute')) continue;
+  // The link's visibility filter, as the finding reports it.
+  function eligibilityInfoOf(el) {
+    const none = { targetSet: 'acc', accEligible: null, reasons: [] };
+    try {
+      return (
+        (helpers.getEligibilityInfo && helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })) ||
+        none
+      );
+    } catch {
+      return none;
+    }
+  }
 
+  // One link in the loop below.
+  function judgeLink(el) {
     const eligResult = helpers.isAccTreeEligible ? helpers.isAccTreeEligible(el, ctx) : true;
     const eligible =
       typeof eligResult === 'boolean' ? eligResult : !!(eligResult && eligResult.eligible);
-    if (!eligible) continue;
+    if (!eligible) return;
 
-    if (!drawsText(el)) continue;
+    if (!drawsText(el)) return;
 
     const parent = textParentOf(el);
-    if (!hasSurroundingText(el, parent)) continue;
+    if (!hasSurroundingText(el, parent)) return;
 
     applicableCount += 1;
 
@@ -1768,14 +1835,14 @@ function runInPage(ctx) {
     const parentWeight = c && parentCs ? c.normalizeFontWeight(parentCs.fontWeight) : 400;
     if (linkWeight !== parentWeight) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     const linkStyle = (linkCs && linkCs.fontStyle) || 'normal';
     const parentStyle = (parentCs && parentCs.fontStyle) || 'normal';
     if (linkStyle !== parentStyle) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // An underline the computed style vouches for settles the link before
@@ -1787,19 +1854,19 @@ function runInPage(ctx) {
       !isTransparentColor(linkCs && linkCs.textDecorationColor)
     ) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // A border, box-shadow, outline, background image, icon or generated
     // content marks the link without relying on color.
     if (hasNonColorMark(el, linkCs) || cueOnContent(el, parent, parentCs)) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     if (!c) {
       markUndecided(el, 'CONTRAST_HELPERS_UNAVAILABLE');
-      continue;
+      return;
     }
 
     // An underline is a non-color cue: once it is found, the colors do not
@@ -1819,7 +1886,7 @@ function runInPage(ctx) {
     }
     if (underlined === true) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // The colors of the link or of the text around it in the color scheme
@@ -1831,7 +1898,7 @@ function runInPage(ctx) {
       (c.colorSchemeUnread(el) || c.colorSchemeUnread(textEl))
     ) {
       markUndecided(el, 'COLOR_NOT_COMPUTABLE');
-      continue;
+      return;
     }
 
     let flagged = false;
@@ -2017,7 +2084,7 @@ function runInPage(ctx) {
       const known = knownFromTextColors(undecidedReason, info);
       if (!known) {
         markUndecided(el, undecidedReason, undecidedLean(undecidedReason, info), undecidedDetail);
-        continue;
+        return;
       }
       ratio = known.ratio;
       beforeOpacity = undecidedReason === 'ANCESTOR_OPACITY';
@@ -2038,21 +2105,21 @@ function runInPage(ctx) {
 
     if (backgroundDiffers) {
       decidedCount += 1;
-      continue;
+      return;
     }
 
     // No underline was found. If this environment could not tell, the
     // colors cannot settle it either.
     if (underlined === null) {
       markUndecided(el, 'TEXT_DECORATION_NOT_RESOLVABLE');
-      continue;
+      return;
     }
 
     // Below 3:1, a highlight of the link's own would set it apart, but
     // whether it differs from the canvas the page is drawn on is unknown.
     if (flagged && rootUnknown) {
       markUndecided(el, 'BACKGROUND_NOT_OPAQUE_AT_ROOT');
-      continue;
+      return;
     }
 
     // Color is the only cue at rest. At 3:1 or more, G183 also needs a
@@ -2060,14 +2127,12 @@ function runInPage(ctx) {
     colorCompared += 1;
     if (!flagged) {
       contrastOnly.push({ el, ratio, fgLinkHex, fgParentHex, beforeOpacity, schemeDetail });
-      continue;
+      return;
     }
 
     decidedCount += 1;
 
-    const eligInfo = helpers.getEligibilityInfo
-      ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-      : null;
+    const eligInfo = eligibilityInfoOf(el);
     const tag = (dom.tagName(el) || '').toLowerCase();
     const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
 
@@ -2082,7 +2147,7 @@ function runInPage(ctx) {
           params: { element: tag, ratio: String(ratioStr), threshold: '3' }
         },
         data: {
-          visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
+          visibilityFilter: eligInfo,
           details: {
             reasonCode: 'COLOR_ONLY_DIFFERENTIATION',
             // Faded with the text by an ancestor's opacity, the ratio is the
@@ -2097,6 +2162,22 @@ function runInPage(ctx) {
         }
       })
     );
+  }
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    const counts = { applicableCount, decidedCount, colorCompared };
+    try {
+      judgeLink(el);
+    } catch {
+      // A link whose style can't be read (jsdom runs out of stack reading
+      // the computed style of an element a few thousand levels deep) is left
+      // for a person to check, and the other links are still judged.
+      decidedCount = counts.decidedCount;
+      colorCompared = counts.colorCompared;
+      applicableCount = counts.applicableCount + 1;
+      markUndecided(el, 'ENGINE_EXCEPTION');
+    }
   }
 
   if (applicableCount === 0) {
@@ -2121,9 +2202,7 @@ function runInPage(ctx) {
         evidence: { reasonCode }
       },
       data: {
-        visibilityFilter: helpers.getEligibilityInfo
-          ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-          : { targetSet: 'acc', accEligible: null, reasons: [] },
+        visibilityFilter: eligibilityInfoOf(el),
         details: { reasonCode, ...(detail || {}) }
       }
     })
@@ -2159,9 +2238,7 @@ function runInPage(ctx) {
             : { reasonCode: 'LINK_COLOR_CONTRAST_ONLY', ratio }
         },
         data: {
-          visibilityFilter: helpers.getEligibilityInfo
-            ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
-            : { targetSet: 'acc', accEligible: null, reasons: [] },
+          visibilityFilter: eligibilityInfoOf(el),
           details: {
             reasonCode: 'LINK_COLOR_CONTRAST_ONLY',
             metrics: beforeOpacity
