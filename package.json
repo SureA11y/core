@@ -225,6 +225,7 @@
     "src/pack.js",
     "src/experimental.js",
     "src/standard-data.js",
+    "src/derive-standard.js",
     "src/schemas/standard.schema.json",
     "src/pack.d.ts",
     "src/testing.js",

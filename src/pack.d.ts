@@ -492,3 +492,15 @@ export function standardFromData(
  * @experimental Until 1.18.0.
  */
 export function standardDataOf(standard: unknown): StandardData | null;
+
+/**
+ * The complete data of a standard built on others: each version, requirement
+ * and test of `own` may say what it is based on (`basedOn`); fields, tests
+ * and rule-map rows are inherited from the `bases` through it, the derived
+ * standard's own fields and rows replacing them (a row `null` drops one).
+ * Only what `own` declares exists. Throws a TypeError naming each basedOn the
+ * bases can't answer, and each rule inherited from two bases without a row of
+ * its own. Results' entries carry each requirement's and test's `basedOn`.
+ * @experimental Until 1.18.0.
+ */
+export function deriveStandard(bases: StandardData[], own: Record<string, unknown>): StandardData;

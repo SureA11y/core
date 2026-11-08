@@ -70,6 +70,22 @@ const EXPERIMENTAL = [
       !!(pack && pack.standard && pack.standard[Symbol.for('surea11y.standardData')])
   },
   {
+    id: 'standard derivation',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: "deriveStandard, a standard built on others through basedOn, and the basedOn its results' entries carry.",
+    usedBy: (pack) => {
+      const data = pack && pack.standard && pack.standard[Symbol.for('surea11y.standardData')];
+      if (!data) return false;
+      if ((data.versions || []).some((v) => Array.isArray(v.basedOn))) return true;
+      return Object.values(data.data || {}).some((d) =>
+        [...Object.values(d.requirements || {}), ...Object.values(d.tests || {})].some((e) =>
+          Array.isArray(e.basedOn)
+        )
+      );
+    }
+  },
+  {
     id: 'ruleMappedStandard tests',
     since: '1.16.0',
     until: '1.18.0',

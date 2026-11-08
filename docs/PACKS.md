@@ -319,7 +319,43 @@ module.exports = definePack({ name, version, namespace: 'city', core: '~1.16.0',
   standard: standardFromData(data, { report: { noteKey: 'city_report_note' } }) });
 ```
 
-`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and, with `applicability: 'wcag'`, procedures and the groups; `extras` adds what the data doesn't give yet (`report`, `review`, `translations`, `notes`, a `mappingsFor` of the pack's own). It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`, which a later release reads to build one standard on another.
+`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and, with `applicability: 'wcag'`, procedures and the groups; `extras` adds what the data doesn't give yet (`report`, `review`, `translations`, `notes`, a `mappingsFor` of the pack's own). It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`.
+
+**A standard built on others** (experimental until 1.18.0). `deriveStandard(bases, own)` gives the complete data of a standard built on one or more others, as RAWeb is on RGAA and EN 301 549, and BITV-Test on EN 301 549 split into steps. The bases are their packs' data (`standardDataOf(base.standard)`, or their JSON); `own` declares only what the derived standard keeps and changes:
+
+```js
+const { deriveStandard, standardFromData, standardDataOf } = require('@surea11y/core/pack');
+const en301549 = require('@surea11y/pack-en301549');
+
+const data = deriveStandard([standardDataOf(en301549.standard)], {
+  format: 'surea11y-standard/1', key: 'city', standard: 'City Standard',
+  versions: [{ version: '1.0', wcagVersion: '2.1', basedOn: [{ standard: 'en301549', version: 'V3.2.1' }] }],
+  data: { '1.0': {
+    requirements: {
+      // As the base has it.
+      '9.1.4.3': { basedOn: [{ standard: 'en301549', id: '9.1.4.3' }] },
+      // Split into steps of its own.
+      '9.1.1.1': { basedOn: [{ standard: 'en301549', id: '9.1.1.1' }], tests: ['9.1.1.1a', '9.1.1.1b'] }
+    },
+    tests: {
+      '9.1.1.1a': { title: 'Controls have a text alternative', requirements: ['9.1.1.1'] },
+      '9.1.1.1b': { title: 'Images have a text alternative', requirements: ['9.1.1.1'] }
+    },
+    ruleMap: {
+      'input-image-alt-present': { requirements: ['9.1.1.1a'] },   // narrowed
+      'some-rule': null                                           // dropped
+    }
+  } }
+});
+```
+
+- **Fields:** a requirement or test takes the fields of the entry it is based on, and its own replace them; one with only `basedOn` is the base's as it is.
+- **Only what is declared exists.** A base requirement no derived entry is based on is left out. A derived requirement based on a base requirement with tests has those tests too, unless it lists its own.
+- **Rule rows flow through `basedOn`.** A base row for clause X applies to every derived entry based on X, and to its own steps when the derived standard splits X into them; routes, `asks` and `outsideCorrespondence` follow. A row that reaches nothing is dropped. The derived standard's own row for a rule replaces the inherited one whole, and `null` drops it. A rule that reaches the derived standard from two bases needs a row of its own.
+- **Drift is an error.** A `basedOn` naming a standard, version, requirement or test the bases don't have throws, naming it: when a base changes, the derived pack's tests fail rather than its results.
+- **Results name the base.** Each entry in a result carries the `basedOn` of its requirement or test, so a step's result names the clause it comes from, whether or not the base's pack is in the scan.
+
+The derived pack depends on its bases as npm dependencies and builds its data when it is required; a scan still takes each pack alone.
 
 A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none; `outcome: 'cantTell'` makes a failing one a question there, and `outcome: 'fail'` makes a question a failure there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, be certain of one where WCAG asks, or file two causes under two tests:
 
