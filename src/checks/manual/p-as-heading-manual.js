@@ -83,6 +83,9 @@
  *   link (`<h3><a>`). Nor does a number: a year, an issue number or a
  *   section number can title a section. Text beside a control, or inside
  *   a focusable element that is not a widget, is still asked about.
+ * - A block whose style can't be read is not asked about, and the rule
+ *   goes on to the next: jsdom throws reading the computed style of an
+ *   element a few thousand levels deep.
  */
 
 const id = 'p-as-heading';
@@ -495,14 +498,14 @@ function runInPage(ctx) {
   // grid repeats them.
   const linkCandidates = [];
 
-  for (const el of nodes) {
-    if (!el || !dom.get(el, 'getAttribute')) continue;
-    if (!isCandidate(el)) continue;
+  // One <p> or <div>: a heading-like occurrence for it, or nothing.
+  function judgeBlock(el) {
+    if (!isCandidate(el)) return;
 
     const pieces = headingLikePieces(el);
     // Not heading-like, or nothing a sighted reader sees (screen-reader-only text).
-    if (!pieces || !pieces.length) continue;
-    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) continue;
+    if (!pieces || !pieces.length) return;
+    if (shownTextOf(pieces).length > MAX_HEADING_LIKE_CHARS) return;
 
     const fontSizePx = minFontSize(pieces);
     // Two kinds a reader may set aside as a group: text that is only a
@@ -516,7 +519,7 @@ function runInPage(ctx) {
         : '';
 
     // A control's own label is not a heading; text beside the control is.
-    if (pieces.every((piece) => isInsideControl(piece.holder, el))) continue;
+    if (pieces.every((piece) => isInsideControl(piece.holder, el))) return;
 
     const isParagraph = (dom.tagName(el) || '').toLowerCase() === 'p';
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
@@ -568,6 +571,17 @@ function runInPage(ctx) {
         : baseOccurrence;
     occurrences.push(occurrence);
     if (kindCode === 'HEADING_LIKE_LINK') linkCandidates.push({ el, occurrence, fontSizePx });
+  }
+
+  for (const el of nodes) {
+    if (!el || !dom.get(el, 'getAttribute')) continue;
+    try {
+      judgeBlock(el);
+    } catch {
+      // A block whose style can't be read (jsdom runs out of stack reading
+      // the computed style of an element a few thousand levels deep) is not
+      // judged to look like a heading; the other blocks still are.
+    }
   }
 
   // A bold link followed by a teaser in its own container, where sibling
