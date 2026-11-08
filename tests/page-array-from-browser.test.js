@@ -51,7 +51,7 @@ test('a page whose script replaced Array.from, in Chromium', { skip }, async (t)
     const optionSets = [
       {},
       { customRules: [customRule('acme-data', DATA_RULE_SOURCE)] },
-      { profile: ['wcag22-aa', 'section508'] }
+      { profile: ['wcag22-aa', 'wcag20-aa'] }
     ];
     for (const engineOptions of optionSets) {
       const expected = stable(await withPage(CLEAN, runInPage(engineOptions)));

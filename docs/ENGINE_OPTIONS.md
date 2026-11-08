@@ -12,8 +12,9 @@ Name what you are testing against, and the engine picks the rules. With no selec
 | A WCAG conformance target: the rules for the criteria of a version at a level and below | `runOnly: { wcag: { version: '2.2', level: 'AA' } }` |
 | The same, and the best-practice rules, which test no WCAG criterion | `runOnly: { wcag: { version: '2.2', level: 'AA' }, bestPractices: true }` |
 | The best-practice rules only | `runOnly: { bestPractices: true }` |
-| A standard built on WCAG (EN 301 549, Section 508) | `engineOptions: { profile: 'en301549-v4.1.1' }` |
-| The same, and the best-practice rules | `engineOptions: { profile: 'en301549-v4.1.1' }`, `runOnly: { bestPractices: true }` |
+| A WCAG version and level by name | `engineOptions: { profile: 'wcag21-aa' }` |
+| A standard built on WCAG, from a pack (EN 301 549, RGAA) | `engineOptions: { packs: [en301549], profile: 'en301549-v4.1.1' }` |
+| The same, and the best-practice rules | `engineOptions: { packs: [en301549], profile: 'en301549-v4.1.1' }`, `runOnly: { bestPractices: true }` |
 
 ```js
 // WCAG 2.2 AA, with the best practices:
@@ -64,16 +65,24 @@ runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
 
 ### Conformance profiles
 
-`engineOptions.profile` names a conformance target instead of spelling out its tag set:
+`engineOptions.profile` names a conformance target instead of spelling out its tag set. Each WCAG version has a profile per level, named `wcag<version>-<level>`:
 
 | Profile | Runs the rules tagged | WCAG target | `getProfileWcagTarget` | Why |
 |---|---|---|---|---|
+| `wcag20-a` | `wcag2a` | 2.0 | `{ version: '2.0', level: 'A' }` | WCAG 2.0 Level A |
+| `wcag20-aa` | `wcag2a`, `wcag2aa` | 2.0 | `{ version: '2.0', level: 'AA' }` | WCAG 2.0 Level A and AA |
+| `wcag20-aaa` | `wcag2a`, `wcag2aa`, `wcag2aaa` | 2.0 | `{ version: '2.0', level: 'AAA' }` | WCAG 2.0 Level A, AA and AAA |
+| `wcag21-a` | `wcag2a`, `wcag21a` | 2.1 | `{ version: '2.1', level: 'A' }` | WCAG 2.1 Level A |
+| `wcag21-aa` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` | 2.1 | `{ version: '2.1', level: 'AA' }` | WCAG 2.1 Level A and AA |
+| `wcag21-aaa` | the `wcag21-aa` tags and `wcag2aaa`, `wcag21aaa` | 2.1 | `{ version: '2.1', level: 'AAA' }` | WCAG 2.1 Level A, AA and AAA |
 | `wcag22-a` | `wcag2a`, `wcag21a`, `wcag22a` | 2.2 | `{ version: '2.2', level: 'A' }` | WCAG 2.2 Level A |
 | `wcag22-aa` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22a`, `wcag22aa` | 2.2 | `{ version: '2.2', level: 'AA' }` | WCAG 2.2 Level A and AA |
 | `wcag22-aaa` | the `wcag22-aa` tags and `wcag2aaa`, `wcag21aaa`, `wcag22aaa` | 2.2 | `{ version: '2.2', level: 'AAA' }` | WCAG 2.2 Level A, AA and AAA |
-| `en301549-v4.1.1` | same as `wcag22-aa` | 2.2 | `{ version: '2.2', level: 'AA' }` | EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA |
-| `en301549-v3.2.1` | `wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa` | 2.1 | `{ version: '2.1', level: 'AA' }` | EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA, including 4.1.1 Parsing |
-| `section508` | `wcag2a`, `wcag2aa` | 2.0 | `{ version: '2.0', level: 'AA' }` | The Revised 508 Standards incorporate WCAG 2.0 A and AA |
+| `en301549-v4.1.1` | same as `wcag22-aa` | 2.2 | `{ version: '2.2', level: 'AA' }` | Deprecated since 1.13.0, removed in 2.0.0: use `@surea11y/pack-en301549`, or `wcag22-aa` for WCAG alone. EN 301 549 V4.1.1 chapter 9 restates WCAG 2.2 A and AA |
+| `en301549-v3.2.1` | same as `wcag21-aa` | 2.1 | `{ version: '2.1', level: 'AA' }` | Deprecated since 1.13.0, removed in 2.0.0: use `@surea11y/pack-en301549`, or `wcag21-aa` for WCAG alone (which counts 4.1.1 Parsing as satisfied, as WCAG 2.1's errata do). EN 301 549 V3.2.1 chapter 9 restates WCAG 2.1 A and AA, including 4.1.1 Parsing |
+| `section508` | same as `wcag20-aa` | 2.0 | `{ version: '2.0', level: 'AA' }` | Deprecated since 1.16.0, removed in 2.0.0: use `wcag20-aa`, which runs the same rules and gives the same results. A scan that names it says so once per process |
+
+Core's own profiles are WCAG's: once the deprecated ones go in 2.0.0, every other standard's profile comes from a pack ([`PACKS.md`](./PACKS.md)).
 
 `getProfileWcagTarget(profile)` gives the `runOnly.wcag` target a profile's tag set comes to, or `null` for a name that is no profile. Each WCAG level includes the ones below it, as WCAG's levels do: `wcag22-aaa` runs every rule of `wcag22-aa` and adds the AAA ones, so a scan names one level, not several. A profile still selects by its tags, as in the table: under `wcag22-aa` (and `wcag22-a` and `wcag22-aaa`), `duplicate-id` (4.1.1) runs and cannot `fail`, while `{ wcag: getProfileWcagTarget('wcag22-aa') }` leaves it out (see [Selecting by WCAG target](#selecting-by-wcag-target-runonlywcag)).
 
@@ -374,7 +383,7 @@ const engineOptions = {
 | `locale` | Any string. A code with a subtag falls back to its base language first, so `de-DE` uses `de`; failing that, English. Individual strings then fall back the same way (chosen locale → `en` → the rule's literal English text), so a partly-translated locale never produces missing text. All of that is silent in the strings themselves, so the result reports what actually happened in `engine.locale` — check it if you need to know whether you got the language you asked for. See [`I18N.md`](./I18N.md). |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'` — which version of WCAG the run is conformance-testing against. Defaults to the version the run's pack profile names (its `wcagVersion`), else to whatever your version-origin tags imply, and to `'2.2'` when they imply nothing. What it changes is which criteria a scan reports and, for SC 4.1.1 Parsing, why a rule tagged `wcag22-removed` cannot `fail`: removed in 2.2, and always satisfied in 2.0 and 2.1 by their errata, except under a profile whose standard keeps it, such as `en301549-v3.2.1` — see ["Filtering by WCAG version"](#filtering-by-wcag-version-21-vs-22) above. Any other value, of any type (the number `2.1`, `'3.0'`), is ignored with a `console.warn` naming the version the run targets instead. |
 | `wcagLevel` | Optional: `'A'`, `'AA'` or `'AAA'`, in any case — the WCAG level of the criteria a run reports. WCAG rollups above it are left out of `rulesResults` while their rules still run; it never changes what runs. It wins over the level the selection implies; a rollup named by id is reported as named. Reported back as `engine.wcagLevel`, which without the option holds the level the selection implies, if any. Any other value is ignored with a `console.warn`, and throws under `strictOptions`. See ["Giving the level of a scan that names checks"](#giving-the-level-of-a-scan-that-names-checks-wcaglevel) above. |
-| `profile` | Optional named conformance target: `'wcag22-a'`, `'wcag22-aa'`, `'wcag22-aaa'`, `'en301549-v4.1.1'`, `'en301549-v3.2.1'`, `'section508'`, or a registered standard's own; or a list of them, for a scan of several profiles at once. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect (for a list, the first that ran, with every one in `engine.profiles`); otherwise ignored with a console warning. A name no profile has throws `INVALID_ENGINE_OPTIONS` under `strictOptions`, in a list too, with a message naming the profiles there are (also in the error's `knownProfiles`): without a profile, the scan would run every rule. See ["Conformance profiles"](#conformance-profiles) above. |
+| `profile` | Optional named conformance target: `'wcag20-a'`, `'wcag20-aa'`, `'wcag20-aaa'`, `'wcag21-a'`, `'wcag21-aa'`, `'wcag21-aaa'`, `'wcag22-a'`, `'wcag22-aa'`, `'wcag22-aaa'`, the deprecated `'en301549-v4.1.1'`, `'en301549-v3.2.1'` and `'section508'`, or a registered standard's own; or a list of them, for a scan of several profiles at once. Selects rules by the matching tag set when nothing else includes any, and the WCAG target follows from those tags. Reported back as `engine.profile` when it took effect (for a list, the first that ran, with every one in `engine.profiles`); otherwise ignored with a console warning. A name no profile has throws `INVALID_ENGINE_OPTIONS` under `strictOptions`, in a list too, with a message naming the profiles there are (also in the error's `knownProfiles`): without a profile, the scan would run every rule. See ["Conformance profiles"](#conformance-profiles) above. |
 | `mappings` | Optional standards besides WCAG whose requirements `meta.normativeMappings` names: `'en301549'`, `'en301549:V3.2.1'`, `'en301549:V4.1.1'`, or a registered standard's key, as an array or comma-separated string. Default none, so results name WCAG only; an EN 301 549 profile adds its own version. Reported back as `engine.mappings` when any applies. See ["Other standards"](#other-standards-mappings) above. |
 | `logUntestedWcag` | Default `true`. `false` leaves out the `console.info` note for a WCAG version/level tag no rule carries (`wcag22a`), in an include list beside others; see ["Via `runOnly`"](#via-runonly-4th-argument). |
 | `optInRules` | Optional: `'all'`, or a list of opt-in rule tags, as an array or comma-separated string. Unlocks those rules outside their standard's profile; the rest of the selection still decides what runs. Reported back as `engine.optInRules` when it ran a rule the selection would not have run otherwise; unknown tags are ignored with a console warning. See ["Running every rule"](#running-every-rule-optinrules) above. |

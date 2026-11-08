@@ -96,7 +96,7 @@ Results from jsdom and from a browser differ for rules that need a layout (`targ
 
 [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md) is the reference.
 
-**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile (`engineOptions.profile: 'section508'`, or a pack's) names a standard instead, and a list of them judges the page by each at once ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
+**A conformance target.** `runOnly: { wcag: { version: '2.2', level: 'AA' } }` runs the rules for that target's criteria, and `bestPractices: true` adds the rules that test no criterion ([Selecting which rules run](./ENGINE_OPTIONS.md#selecting-which-rules-run)). A profile names the same by name (`engineOptions.profile: 'wcag21-aa'`), or a pack's standard instead, and a list of them judges the page by each at once ([Conformance profiles](./ENGINE_OPTIONS.md#conformance-profiles)).
 
 **Letting users pick checks.** Name the checks, and say the conformance target with `wcagVersion` and `wcagLevel`: they decide which criteria are reported without changing what runs. Version and level tags beside the rule ids would also drop named checks that carry no WCAG tag, such as best-practice or custom ones ([Which criteria a scan reports](./ENGINE_OPTIONS.md#which-criteria-a-scan-reports)).
 

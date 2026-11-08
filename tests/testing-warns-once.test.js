@@ -29,9 +29,9 @@ function warningsOf(fn) {
 
 test('an unknown profile is warned about once per scan', () => {
   const said = warningsOf(() =>
-    runa11yCoreOnHtml(HTML, { engineOptions: { profile: 'wcag21-aa' }, runOnly: ['region'] })
+    runa11yCoreOnHtml(HTML, { engineOptions: { profile: 'wcag23-aa' }, runOnly: ['region'] })
   );
-  assert.equal(said.filter((w) => w.includes('"wcag21-aa"')).length, 1, said.join('\n'));
+  assert.equal(said.filter((w) => w.includes('"wcag23-aa"')).length, 1, said.join('\n'));
 });
 
 test('a warning about the options is said once, and the rest pass through', () => {

@@ -44,7 +44,7 @@ function withPagePatch(source, fn) {
 
 const DATA_RULE = customRule('acme-data', new Function(`return (${DATA_RULE_SOURCE})`)());
 
-const OPTION_SETS = [{}, { customRules: [DATA_RULE] }, { profile: ['wcag22-aa', 'section508'] }];
+const OPTION_SETS = [{}, { customRules: [DATA_RULE] }, { profile: ['wcag22-aa', 'wcag20-aa'] }];
 
 function scans(engineOptions) {
   const dom = createDom(pageHtml(''));

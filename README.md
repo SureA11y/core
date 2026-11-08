@@ -388,12 +388,12 @@ findings, `a11ycore.highlight(result)` boxes them and
 
 ### Choosing what to check
 
-Name a WCAG version and level in `runOnly`, or pass a profile for a
-standard built on WCAG:
+Name a WCAG version and level in `runOnly`, or pass the profile of a
+WCAG version and level:
 
 ```js
 runDomRulesInPage(url, null, {}, { wcag: { version: '2.2', level: 'AA' } });
-runDomRulesInPage(url, null, { profile: 'section508' }, null);
+runDomRulesInPage(url, null, { profile: 'wcag21-aa' }, null);
 ```
 
 Either one only chooses which rules run; it does not certify conformance.
@@ -415,9 +415,11 @@ result.checksResults.find((c) => c.ruleId === 'aria-allowed-attr').verdicts;
 // { 'wcag22-aa': 'cantTell', 'wai-aria-1.2': 'fail' }
 ```
 
-The profiles (`wcag22-a`, `wcag22-aa`, `wcag22-aaa`, `section508`, and `en301549-v4.1.1` and
-`en301549-v3.2.1`, deprecated since 1.13.0 in favour of
-`@surea11y/pack-en301549`), best-practice rules, EN 301 549 clauses in
+The profiles (`wcag20-a`, `wcag20-aa`, `wcag20-aaa`, `wcag21-a`,
+`wcag21-aa`, `wcag21-aaa`, `wcag22-a`, `wcag22-aa` and `wcag22-aaa`;
+`en301549-v4.1.1` and `en301549-v3.2.1`, deprecated since 1.13.0 in favour of
+`@surea11y/pack-en301549`; and `section508`, deprecated since 1.16.0 in
+favour of `wcag20-aa`), best-practice rules, EN 301 549 clauses in
 results, finer selections and scans of several profiles are in
 [`docs/ENGINE_OPTIONS.md`](./docs/ENGINE_OPTIONS.md#selecting-which-rules-run).
 
