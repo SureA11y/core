@@ -440,6 +440,16 @@ function runInPage(ctx) {
       : true;
   }
 
+  // The parts of a set of style rules (found.parts, each selector at
+  // `field`) that may match el, in order: every part a selector in them
+  // could match, as helpers.selectorIndex finds them, so a page with many
+  // rules costs links x the rules that could apply. The index is made once.
+  function candidatePartsOf(found, el, field) {
+    if (typeof helpers.selectorIndex !== 'function') return found.parts;
+    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    return found.index.candidates(el).map((i) => found.parts[i]);
+  }
+
   // The style rule parts that set an underline on an element at rest, in
   // the sheets' order, found once per run: { parts, unreadableSheet,
   // broken }. Each part is { part, rank, underlined }.
@@ -513,7 +523,7 @@ function runInPage(ctx) {
     if (found.broken) return { underlined: false, resolved: false };
     let best = null; // { rank, underlined }
     let unparsableSelector = false;
-    for (const { part, rank, underlined } of found.parts) {
+    for (const { part, rank, underlined } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -1552,7 +1562,7 @@ function runInPage(ctx) {
     }
     const found = stateRulesOf(doc);
     if (!found.readable) out.readable = false;
-    for (const part of found.parts) {
+    for (const part of candidatePartsOf(found, el, 'base')) {
       // A part that gives no cue matters only as a selector that can't be
       // read, which it is for every link or none.
       if (part.valid === false) {

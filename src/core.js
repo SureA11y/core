@@ -2725,6 +2725,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const computedStyle = shared.computedStyle;
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
+  const selectorIndex = shared.selectorIndex;
 
   const clamp01 = (n) => {
     const x = Number(n);
@@ -5659,6 +5660,27 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // The parts of a root's rules for prop (__colorRulesOf) that may match el,
+  // in the rules' order (selectorIndex): a page with many color rules costs
+  // elements x the rules that could apply, not elements x rules. Each entry
+  // is { rule, part }; a pseudo-element's part is left out.
+  function __colorPartsFor(found, el) {
+    if (!found.index) {
+      const entries = [];
+      for (const rule of found.rules) {
+        for (const part of rule.parts) {
+          // A pseudo-element paints another box; :visited isn't known here,
+          // and the link is taken as not visited, as jsdom takes it.
+          if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+          entries.push({ rule, part });
+        }
+      }
+      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+    }
+    const { entries, index } = found.index;
+    return index.candidates(el).map((i) => entries[i]);
+  }
+
   // The author's declaration of `color` (or of prop) that wins for el in a
   // browser: { value }, null where none applies, or { unknown: true } where
   // it can't be told.
@@ -5670,31 +5692,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) return { unknown: true };
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        // A pseudo-element paints another box; :visited isn't known here,
-        // and the link is taken as not visited, as jsdom takes it.
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        if (rule.uncertain) {
-          unknown = true;
-          continue;
-        }
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      if (rule.uncertain) {
+        unknown = true;
+        continue;
+      }
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     // The style attribute outranks every rule of its importance.
     try {
@@ -5722,29 +5739,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     root = root || dom.ownerDocument(el);
     const out = { values: [], winner: null, uncertain: false, unknown: false };
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) {
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) {
       out.unknown = true;
       return out;
     }
     let best = null;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          out.unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        out.values.push(rule.value);
-        if (rule.uncertain) out.uncertain = true;
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        out.unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      out.values.push(rule.value);
+      if (rule.uncertain) out.uncertain = true;
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     try {
       const style = dom.get(el, 'style');
@@ -13824,6 +13838,161 @@ const createDomHelpers = (function createDomHelpers(opts) {
     });
   }
 
+  // What a selector part requires of the element it matches, read from its
+  // text without a selector engine: `key`, an id ('#x'), a class ('.x') or a
+  // tag ('x') the element itself must have, and `above`, the ids, classes
+  // and tags some ancestor of it must have (the compounds a descendant or
+  // child combinator joins to it). Only what is certain is taken: nothing
+  // inside parentheses or brackets, nothing past a sibling combinator, and
+  // nothing at all from a part with an escape, a namespace or `&`. Names
+  // are lower-cased, which can only widen the match (quirks mode compares
+  // ids and classes so, HTML tags always). { key: null, above: [] } where
+  // nothing is certain.
+  const __IDENT_CHAR = /[A-Za-z0-9_\-\u00a0-\uffff]/;
+  function __selectorNeeds(part) {
+    const none = { key: null, above: [] };
+    if (/[\\|&]/.test(part)) return none;
+    // The compounds, rightmost last, with the combinator before each.
+    const compounds = [];
+    let cur = '';
+    let comb = '';
+    let depth = 0;
+    let quote = '';
+    const flush = (next) => {
+      if (cur.trim()) compounds.push({ text: cur.trim(), comb });
+      cur = '';
+      comb = next;
+    };
+    for (let i = 0; i < part.length; i++) {
+      const ch = part[i];
+      if (quote) {
+        if (ch === quote) quote = '';
+        cur += ch;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        cur += ch;
+      } else if (ch === '(' || ch === '[') {
+        depth++;
+        cur += ch;
+      } else if (ch === ')' || ch === ']') {
+        depth = Math.max(0, depth - 1);
+        cur += ch;
+      } else if (depth === 0 && (ch === '>' || ch === '+' || ch === '~')) {
+        flush(ch);
+      } else if (depth === 0 && /\s/.test(ch)) {
+        if (cur.trim()) flush(' ');
+      } else cur += ch;
+    }
+    flush('');
+    if (!compounds.length) return none;
+    // The ids, classes and tag of a compound, outside parentheses and brackets.
+    const namesOf = (text) => {
+      const out = [];
+      let d = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(' || ch === '[') d++;
+        else if (ch === ')' || ch === ']') d = Math.max(0, d - 1);
+        else if (d === 0 && (ch === '#' || ch === '.' || (i === 0 && __IDENT_CHAR.test(ch)))) {
+          // A ':' before it makes it a pseudo-class's name.
+          let j = ch === '#' || ch === '.' ? i + 1 : i;
+          const start = j;
+          while (j < text.length && __IDENT_CHAR.test(text[j])) j++;
+          if (j > start) {
+            const name = text.slice(start, j).toLowerCase();
+            out.push(ch === '#' ? '#' + name : ch === '.' ? '.' + name : name);
+          }
+          i = j - 1;
+        } else if (d === 0 && ch === ':') {
+          // Skip the pseudo-class's name, so `:hover` is no tag.
+          let j = i + 1;
+          while (j < text.length && (text[j] === ':' || __IDENT_CHAR.test(text[j]))) j++;
+          i = j - 1;
+        }
+      }
+      return out;
+    };
+    const own = namesOf(compounds[compounds.length - 1].text);
+    const key = own.find((n) => n[0] === '#') || own.find((n) => n[0] === '.') || own[0] || null;
+    const above = [];
+    for (let k = compounds.length - 1; k > 0; k--) {
+      const combinator = compounds[k].comb;
+      if (combinator !== ' ' && combinator !== '>') break;
+      for (const n of namesOf(compounds[k - 1].text)) above.push(n);
+    }
+    return { key, above };
+  }
+
+  // An index of selector parts (a list of complex selectors, each without a
+  // comma) by what each needs of the element it matches (__selectorNeeds).
+  // candidates(el) gives the indices, in order, of the parts that may match
+  // el: those whose element name el has and whose ancestor names its
+  // ancestors have, and every part with no such name or that doesn't parse,
+  // since matching that one throws for any element. A rule matching each
+  // element against many selectors matches only these, with the same
+  // results, so a page's many style rules cost elements x the rules that
+  // could apply. The parse test runs on the first element asked about.
+  function selectorIndex(parts) {
+    const list = Array.isArray(parts) ? parts.map((p) => String(p)) : [];
+    let byKey = null;
+    let needsOf = null;
+    const build = (probe) => {
+      byKey = new Map();
+      needsOf = list.map((part, i) => {
+        let valid = true;
+        try {
+          dom.matches(probe, part);
+        } catch {
+          valid = false;
+        }
+        const needs = valid ? __selectorNeeds(part) : { key: null, above: [] };
+        const key = needs.key || '';
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(i);
+        return needs;
+      });
+    };
+    const addNames = (node, names) => {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (tag) names.add(tag);
+      const id = dom.getAttribute(node, 'id');
+      if (id) names.add('#' + String(id).toLowerCase());
+      for (const c of String(dom.getAttribute(node, 'class') || '').split(/\s+/)) {
+        if (c) names.add('.' + c.toLowerCase());
+      }
+      return names;
+    };
+    function candidates(el) {
+      if (!list.length) return [];
+      if (!byKey) build(el);
+      if (byKey.size === 1 && byKey.has('')) return byKey.get('').slice();
+      const own = addNames(el, new Set());
+      const lists = [];
+      for (const name of [''].concat([...own])) {
+        if (byKey.has(name)) lists.push(byKey.get(name));
+      }
+      // The names on el's ancestors, read the first time a part needs them.
+      let above = null;
+      const out = [];
+      for (const ids of lists) {
+        for (const i of ids) {
+          const need = needsOf[i].above;
+          if (need.length) {
+            if (!above) {
+              above = new Set();
+              for (let p = dom.parentElement(el); p; p = dom.parentElement(p)) addNames(p, above);
+            }
+            if (!need.every((n) => above.has(n))) continue;
+          }
+          out.push(i);
+        }
+      }
+      if (lists.length > 1) out.sort((a, b) => a - b);
+      return out;
+    }
+    return { candidates };
+  }
+
   // Whether a style sheet or an @import, @media or @supports rule applies to
   // the page as it is drawn now: its media list matches (window.matchMedia)
   // and its @supports condition holds (CSS.supports). A disabled sheet
@@ -20160,6 +20329,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     escapeAttrValue: __escapeAttrValue,
     getLabelControl,
     cssRulesOf,
+    selectorIndex,
     __contrastSharedCache
   };
 
@@ -20390,6 +20560,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getStyleSheets,
     cssRulesOf,
     cssConditionApplies,
+    selectorIndex,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,
@@ -81932,6 +82103,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : true;
   }
 
+  // The parts of a set of style rules (found.parts, each selector at
+  // `field`) that may match el, in order: every part a selector in them
+  // could match, as helpers.selectorIndex finds them, so a page with many
+  // rules costs links x the rules that could apply. The index is made once.
+  function candidatePartsOf(found, el, field) {
+    if (typeof helpers.selectorIndex !== 'function') return found.parts;
+    if (!found.index) found.index = helpers.selectorIndex(found.parts.map((p) => p[field]));
+    return found.index.candidates(el).map((i) => found.parts[i]);
+  }
+
   // The style rule parts that set an underline on an element at rest, in
   // the sheets' order, found once per run: { parts, unreadableSheet,
   // broken }. Each part is { part, rank, underlined }.
@@ -82005,7 +82186,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (found.broken) return { underlined: false, resolved: false };
     let best = null; // { rank, underlined }
     let unparsableSelector = false;
-    for (const { part, rank, underlined } of found.parts) {
+    for (const { part, rank, underlined } of candidatePartsOf(found, el, 'part')) {
       let matched;
       try {
         matched = dom.matches(el, part);
@@ -83044,7 +83225,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     const found = stateRulesOf(doc);
     if (!found.readable) out.readable = false;
-    for (const part of found.parts) {
+    for (const part of candidatePartsOf(found, el, 'base')) {
       // A part that gives no cue matters only as a selector that can't be
       // read, which it is for every link or none.
       if (part.valid === false) {
@@ -109489,6 +109670,7 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const computedStyle = shared.computedStyle;
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
+  const selectorIndex = shared.selectorIndex;
 
   const clamp01 = (n) => {
     const x = Number(n);
@@ -112423,6 +112605,27 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // The parts of a root's rules for prop (__colorRulesOf) that may match el,
+  // in the rules' order (selectorIndex): a page with many color rules costs
+  // elements x the rules that could apply, not elements x rules. Each entry
+  // is { rule, part }; a pseudo-element's part is left out.
+  function __colorPartsFor(found, el) {
+    if (!found.index) {
+      const entries = [];
+      for (const rule of found.rules) {
+        for (const part of rule.parts) {
+          // A pseudo-element paints another box; :visited isn't known here,
+          // and the link is taken as not visited, as jsdom takes it.
+          if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+          entries.push({ rule, part });
+        }
+      }
+      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+    }
+    const { entries, index } = found.index;
+    return index.candidates(el).map((i) => entries[i]);
+  }
+
   // The author's declaration of `color` (or of prop) that wins for el in a
   // browser: { value }, null where none applies, or { unknown: true } where
   // it can't be told.
@@ -112434,31 +112637,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) return { unknown: true };
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        // A pseudo-element paints another box; :visited isn't known here,
-        // and the link is taken as not visited, as jsdom takes it.
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        if (rule.uncertain) {
-          unknown = true;
-          continue;
-        }
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      if (rule.uncertain) {
+        unknown = true;
+        continue;
+      }
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     // The style attribute outranks every rule of its importance.
     try {
@@ -112486,29 +112684,26 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     }
     root = root || dom.ownerDocument(el);
     const out = { values: [], winner: null, uncertain: false, unknown: false };
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) {
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) {
       out.unknown = true;
       return out;
     }
     let best = null;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          out.unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        out.values.push(rule.value);
-        if (rule.uncertain) out.uncertain = true;
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        out.unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      out.values.push(rule.value);
+      if (rule.uncertain) out.uncertain = true;
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     try {
       const style = dom.get(el, 'style');
@@ -120588,6 +120783,161 @@ const createDomHelpers = (function createDomHelpers(opts) {
     });
   }
 
+  // What a selector part requires of the element it matches, read from its
+  // text without a selector engine: `key`, an id ('#x'), a class ('.x') or a
+  // tag ('x') the element itself must have, and `above`, the ids, classes
+  // and tags some ancestor of it must have (the compounds a descendant or
+  // child combinator joins to it). Only what is certain is taken: nothing
+  // inside parentheses or brackets, nothing past a sibling combinator, and
+  // nothing at all from a part with an escape, a namespace or `&`. Names
+  // are lower-cased, which can only widen the match (quirks mode compares
+  // ids and classes so, HTML tags always). { key: null, above: [] } where
+  // nothing is certain.
+  const __IDENT_CHAR = /[A-Za-z0-9_\-\u00a0-\uffff]/;
+  function __selectorNeeds(part) {
+    const none = { key: null, above: [] };
+    if (/[\\|&]/.test(part)) return none;
+    // The compounds, rightmost last, with the combinator before each.
+    const compounds = [];
+    let cur = '';
+    let comb = '';
+    let depth = 0;
+    let quote = '';
+    const flush = (next) => {
+      if (cur.trim()) compounds.push({ text: cur.trim(), comb });
+      cur = '';
+      comb = next;
+    };
+    for (let i = 0; i < part.length; i++) {
+      const ch = part[i];
+      if (quote) {
+        if (ch === quote) quote = '';
+        cur += ch;
+      } else if (ch === '"' || ch === "'") {
+        quote = ch;
+        cur += ch;
+      } else if (ch === '(' || ch === '[') {
+        depth++;
+        cur += ch;
+      } else if (ch === ')' || ch === ']') {
+        depth = Math.max(0, depth - 1);
+        cur += ch;
+      } else if (depth === 0 && (ch === '>' || ch === '+' || ch === '~')) {
+        flush(ch);
+      } else if (depth === 0 && /\s/.test(ch)) {
+        if (cur.trim()) flush(' ');
+      } else cur += ch;
+    }
+    flush('');
+    if (!compounds.length) return none;
+    // The ids, classes and tag of a compound, outside parentheses and brackets.
+    const namesOf = (text) => {
+      const out = [];
+      let d = 0;
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '(' || ch === '[') d++;
+        else if (ch === ')' || ch === ']') d = Math.max(0, d - 1);
+        else if (d === 0 && (ch === '#' || ch === '.' || (i === 0 && __IDENT_CHAR.test(ch)))) {
+          // A ':' before it makes it a pseudo-class's name.
+          let j = ch === '#' || ch === '.' ? i + 1 : i;
+          const start = j;
+          while (j < text.length && __IDENT_CHAR.test(text[j])) j++;
+          if (j > start) {
+            const name = text.slice(start, j).toLowerCase();
+            out.push(ch === '#' ? '#' + name : ch === '.' ? '.' + name : name);
+          }
+          i = j - 1;
+        } else if (d === 0 && ch === ':') {
+          // Skip the pseudo-class's name, so `:hover` is no tag.
+          let j = i + 1;
+          while (j < text.length && (text[j] === ':' || __IDENT_CHAR.test(text[j]))) j++;
+          i = j - 1;
+        }
+      }
+      return out;
+    };
+    const own = namesOf(compounds[compounds.length - 1].text);
+    const key = own.find((n) => n[0] === '#') || own.find((n) => n[0] === '.') || own[0] || null;
+    const above = [];
+    for (let k = compounds.length - 1; k > 0; k--) {
+      const combinator = compounds[k].comb;
+      if (combinator !== ' ' && combinator !== '>') break;
+      for (const n of namesOf(compounds[k - 1].text)) above.push(n);
+    }
+    return { key, above };
+  }
+
+  // An index of selector parts (a list of complex selectors, each without a
+  // comma) by what each needs of the element it matches (__selectorNeeds).
+  // candidates(el) gives the indices, in order, of the parts that may match
+  // el: those whose element name el has and whose ancestor names its
+  // ancestors have, and every part with no such name or that doesn't parse,
+  // since matching that one throws for any element. A rule matching each
+  // element against many selectors matches only these, with the same
+  // results, so a page's many style rules cost elements x the rules that
+  // could apply. The parse test runs on the first element asked about.
+  function selectorIndex(parts) {
+    const list = Array.isArray(parts) ? parts.map((p) => String(p)) : [];
+    let byKey = null;
+    let needsOf = null;
+    const build = (probe) => {
+      byKey = new Map();
+      needsOf = list.map((part, i) => {
+        let valid = true;
+        try {
+          dom.matches(probe, part);
+        } catch {
+          valid = false;
+        }
+        const needs = valid ? __selectorNeeds(part) : { key: null, above: [] };
+        const key = needs.key || '';
+        if (!byKey.has(key)) byKey.set(key, []);
+        byKey.get(key).push(i);
+        return needs;
+      });
+    };
+    const addNames = (node, names) => {
+      const tag = String(dom.localName(node) || '').toLowerCase();
+      if (tag) names.add(tag);
+      const id = dom.getAttribute(node, 'id');
+      if (id) names.add('#' + String(id).toLowerCase());
+      for (const c of String(dom.getAttribute(node, 'class') || '').split(/\s+/)) {
+        if (c) names.add('.' + c.toLowerCase());
+      }
+      return names;
+    };
+    function candidates(el) {
+      if (!list.length) return [];
+      if (!byKey) build(el);
+      if (byKey.size === 1 && byKey.has('')) return byKey.get('').slice();
+      const own = addNames(el, new Set());
+      const lists = [];
+      for (const name of [''].concat([...own])) {
+        if (byKey.has(name)) lists.push(byKey.get(name));
+      }
+      // The names on el's ancestors, read the first time a part needs them.
+      let above = null;
+      const out = [];
+      for (const ids of lists) {
+        for (const i of ids) {
+          const need = needsOf[i].above;
+          if (need.length) {
+            if (!above) {
+              above = new Set();
+              for (let p = dom.parentElement(el); p; p = dom.parentElement(p)) addNames(p, above);
+            }
+            if (!need.every((n) => above.has(n))) continue;
+          }
+          out.push(i);
+        }
+      }
+      if (lists.length > 1) out.sort((a, b) => a - b);
+      return out;
+    }
+    return { candidates };
+  }
+
   // Whether a style sheet or an @import, @media or @supports rule applies to
   // the page as it is drawn now: its media list matches (window.matchMedia)
   // and its @supports condition holds (CSS.supports). A disabled sheet
@@ -126924,6 +127274,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     escapeAttrValue: __escapeAttrValue,
     getLabelControl,
     cssRulesOf,
+    selectorIndex,
     __contrastSharedCache
   };
 
@@ -127154,6 +127505,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getStyleSheets,
     cssRulesOf,
     cssConditionApplies,
+    selectorIndex,
     getCustomElementInternals,
     getInternalsNameInfo,
     getInternalsStateInfo,

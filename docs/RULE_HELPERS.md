@@ -667,6 +667,18 @@ apply. Anything else, `@container` among them, is taken to apply. A rule that re
 from style sheets rather than from computed styles skips the sheets and rules for which this is
 `false`: an `@media print` rule changes nothing on the screen the scan checks.
 
+### `selectorIndex(parts)` → `{ candidates(el) }`
+
+An index of selectors (each one complex selector, without a comma) for a rule that matches many
+elements against many of a page's style rules. `candidates(el)` gives the indices, in the order
+given, of the selectors that may match `el`: those whose element part names an id, class or tag
+`el` has and whose ancestors' parts name ids, classes or tags its ancestors have, and every
+selector it can't read that way (a pseudo-class only, an escape, a namespace) or that doesn't
+parse, since matching that one throws for any element. Match `el` against those only, with
+`dom.matches`: the results are the same as matching every selector, and a page with thousands of
+rules costs elements times the rules that could apply instead of elements times rules. Names are
+compared without case, which can only add candidates. Build it once per run and set of rules.
+
 ### `getStyleSheets()` → `Array<{ sheet, root }>`
 
 Every style sheet that styles the page, with the root it applies in: the document's, linked
