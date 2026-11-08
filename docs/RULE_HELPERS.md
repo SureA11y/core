@@ -250,9 +250,13 @@ its result straight through.
 Style-only visibility _hints_ for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
 `clipped` is `isClipHidden` below. Without a layout (jsdom), whose CSS parser turns a
-space-separated `clip: rect(0 0 0 0)` into `auto`, the clip is read as declared: in the
-`style` attribute, else in the last rule of a `<style>` element of the element's tree that
-matches it (specificity is not weighed), and `metrics.clip` is that value.
+space-separated `clip: rect(0 0 0 0)` into `auto`, the clip is read as declared, from every
+style sheet of the element's tree core can read: a `<style>` element's text, the text
+`engineOptions.styleSheetTexts` gives for a sheet, the sheets they `@import`, and the parsed
+rules of a sheet with no text to read. The declaration that applies is the cascade's:
+`!important` first, then the `style` attribute over any rule, then cascade layers,
+specificity and order, counting only rules whose `@media` and `@supports` apply.
+`metrics.clip` is that value.
 
 ### `computedStyle(el)` → `CSSStyleDeclaration | object`
 

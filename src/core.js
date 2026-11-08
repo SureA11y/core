@@ -5558,6 +5558,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
+  // The specificity (__specificityOf) of the most specific selector of a
+  // list that el matches, which is what the cascade weighs for a rule with
+  // that list; -1 where none matches or none can be read.
+  function matchedSpecificity(el, selectorText) {
+    let best = -1;
+    for (const part of __splitTopLevel(String(selectorText || '')).filter(Boolean)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        matched = false;
+      }
+      if (matched) best = Math.max(best, __specificityOf(part));
+    }
+    return best;
+  }
+
   // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
@@ -10701,7 +10718,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     colorSchemeMeasurable,
     colorSchemeUnread,
     useNamedCanvas,
-    isPinned: __isPinned
+    isPinned: __isPinned,
+    matchedSpecificity
   };
 });
 
@@ -19139,31 +19157,184 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // and its computed clip reads `auto`: jsdom's CSS parser drops a
   // space-separated rect() (rect(0 0 0 0) computes as auto, and a style
   // rule keeps only its first edge, rect(0px)), the visually hidden pattern
-  // most sites use. Read as written: the style attribute's declaration, else
-  // the last one in a <style> element of the element's tree whose selector
-  // matches it, in document order, without weighing specificity. null where
-  // a browser computed the value, or nothing declares one.
+  // most sites use. Read as written, from every style sheet of the
+  // element's tree that core can read (getStyleSheets): a <style> element's
+  // text, a sheet's text engineOptions.styleSheetTexts gives, the sheets
+  // either imports, and, for a sheet with no text to read (one jsdom loaded
+  // itself, a constructed one), its rules as parsed. The declaration that
+  // applies is the cascade's: the page's own declarations (the browser's
+  // style sheet sets no clip), !important first, then the style attribute
+  // over any rule, then cascade layers, specificity and order. Only rules
+  // whose @media and @supports apply count (cssConditionApplies). null
+  // where a browser computed the value, or nothing declares one.
+  const __CLIP_PROP = '--surea11y-declared-clip';
   const __declaredClipRulesByRoot = new WeakMap();
+  // A style sheet's text parsed apart from the page, as cssRulesOf parses a
+  // supplied one; null where it can't be.
+  function __parsedRulesOf(text) {
+    try {
+      const view = window || (document && dom.defaultView(document));
+      if (view && typeof view.CSSStyleSheet === 'function') {
+        const parsed = new view.CSSStyleSheet();
+        parsed.replaceSync(text);
+        return parsed.cssRules;
+      }
+      if (document && dom.get(document, 'implementation')) {
+        const doc = dom.get(document, 'implementation').createHTMLDocument('');
+        const style = dom.createElement(doc, 'style');
+        style.textContent = text;
+        dom.appendChild(dom.head(doc), style);
+        return style.sheet ? style.sheet.cssRules : null;
+      }
+    } catch {}
+    return null;
+  }
+  // The rules of a root's sheets that declare a clip, in cascade order:
+  // [{ selector, value, important, layer, order }], `layer` a list of
+  // indices (each layer's place among its siblings, in the order they are
+  // first named), [] outside any layer. Once per root.
   function declaredClipRules(root) {
     if (__declaredClipRulesByRoot.has(root)) return __declaredClipRulesByRoot.get(root);
     const rules = [];
-    let styles = [];
-    try {
-      styles = dom.querySelectorAll(root, 'style');
-    } catch {}
-    for (const style of styles) {
-      const text = String(dom.get(style, 'textContent') || '').replace(/\/\*[\s\S]*?\*\//g, '');
-      if (!/\bclip\s*:/i.test(text)) continue;
-      // The innermost blocks: a style rule's, inside an at-rule or not.
-      for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-        const selector = m[1].trim();
-        if (!selector || selector[0] === '@') continue;
-        const decl = [...m[2].matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)].pop();
-        if (decl) rules.push([selector, decl[1].replace(/!\s*important\s*$/i, '').trim()]);
+    let order = 0;
+    // Layer names, dotted from the outermost, to their indices.
+    const layerPaths = new Map();
+    let anonymous = 0;
+    const layerOf = (parent, name) => {
+      const parentName = parent.name;
+      const full = name ? (parentName ? parentName + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layerPaths.has(key)) {
+        const siblings = [...layerPaths.values()].filter(
+          (l) => l.path.length === parent.path.length + 1 && l.parent === parentName
+        ).length;
+        layerPaths.set(key, { path: parent.path.concat(siblings), parent: parentName, name: full });
       }
+      const l = layerPaths.get(key);
+      return { path: l.path, name: full || key };
+    };
+    const NO_LAYER = { path: [], name: '' };
+    const walk = (list, layer, fromText, imports, base, depth) => {
+      const n = (list && list.length) || 0;
+      let importIndex = 0;
+      for (let i = 0; i < n && depth < 10; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const kind = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          // A nested style rule's selector is relative to its parent's:
+          // not followed.
+          const prop = fromText ? __CLIP_PROP : 'clip';
+          const value = String(rule.style.getPropertyValue(prop) || '').trim();
+          if (value) {
+            rules.push({
+              selector: rule.selectorText,
+              value,
+              important: rule.style.getPropertyPriority(prop) === 'important',
+              layer: layer.path,
+              order: order++
+            });
+          }
+        } else if (kind === 'CSSImportRule' || rule.type === 3) {
+          const own = imports ? imports[importIndex] : rule;
+          importIndex++;
+          if (!cssConditionApplies(rule)) continue;
+          const name = typeof rule.layerName === 'string' ? rule.layerName : null;
+          const inner = name === null ? layer : layerOf(layer, name);
+          let sheet = null;
+          try {
+            sheet = own ? own.styleSheet : null;
+          } catch {}
+          if (sheet) walkSheet(sheet, inner, depth + 1);
+          else {
+            let href = '';
+            try {
+              href = new URL(String(rule.href || ''), base).href;
+            } catch {}
+            const text = href ? suppliedTextFor(href) : null;
+            if (text != null) walkText(text, href, null, inner, depth + 1);
+          }
+        } else if (kind === 'CSSLayerStatementRule') {
+          for (const name of rule.nameList || []) layerOf(layer, String(name));
+        } else if (kind === 'CSSLayerBlockRule') {
+          walk(
+            rule.cssRules,
+            layerOf(layer, rule.name ? String(rule.name) : ''),
+            fromText,
+            null,
+            base,
+            depth + 1
+          );
+        } else if (
+          kind === 'CSSMediaRule' ||
+          kind === 'CSSSupportsRule' ||
+          rule.type === 4 ||
+          rule.type === 12
+        ) {
+          if (cssConditionApplies(rule))
+            walk(rule.cssRules, layer, fromText, null, base, depth + 1);
+        }
+      }
+    };
+    // A sheet's text, with each clip declaration renamed to a custom
+    // property, which the parser keeps as written. `imports`: the page's own
+    // @import rules of the sheet, which have the imported sheets.
+    const walkText = (text, base, imports, layer, depth) => {
+      const renamed = String(text).replace(/(^|[{;\s])clip(\s*:)/gi, '$1' + __CLIP_PROP + '$2');
+      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth);
+    };
+    const walkSheet = (sheet, layer, depth) => {
+      if (!sheet || depth > 10 || !cssConditionApplies(sheet)) return;
+      const owner = sheet.ownerNode;
+      const href = typeof sheet.href === 'string' ? sheet.href : '';
+      const base = href || (document && dom.get(document, 'baseURI')) || '';
+      let text = null;
+      if (owner && String(dom.localName(owner) || '').toLowerCase() === 'style')
+        text = String(dom.get(owner, 'textContent') || '');
+      else if (href) text = suppliedTextFor(href);
+      let own;
+      try {
+        own = sheet.cssRules;
+      } catch {
+        own = null;
+      }
+      if (text != null) {
+        const imports = own
+          ? [...own].filter(
+              (r) =>
+                r && (r.type === 3 || (r.constructor && r.constructor.name) === 'CSSImportRule')
+            )
+          : null;
+        walkText(text, base, imports, layer, depth);
+      } else {
+        walk(cssRulesOf(sheet), layer, false, null, base, depth);
+      }
+    };
+    for (const { sheet, root: r } of getStyleSheets()) {
+      if (r === root) walkSheet(sheet, NO_LAYER, 0);
     }
     __declaredClipRulesByRoot.set(root, rules);
     return rules;
+  }
+  // Which of two declarations the cascade applies: each { important,
+  // inline, layer, specificity, order }; true when `a` wins over `b`.
+  function __clipDeclWins(a, b) {
+    if (a.important !== b.important) return a.important;
+    if (a.inline !== b.inline) return a.inline;
+    // Cascade layers: for normal declarations a later layer wins, and
+    // declarations outside any layer (or directly in a layer, over its
+    // sublayers) win over those in one; !important reverses both.
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order > b.order;
   }
   function declaredClipOf(el, cs) {
     try {
@@ -19175,18 +19346,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!doc) return null;
       if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
       if (__layoutByDoc.get(doc)) return null;
-      const inline = [
-        ...String(getAttr(el, 'style') || '').matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)
-      ].pop();
-      if (inline) return inline[1].replace(/!\s*important\s*$/i, '').trim();
-      const root = dom.getRootNode(el);
-      let found = null;
-      for (const [selector, value] of root ? declaredClipRules(root) : []) {
-        try {
-          if (dom.matches(el, selector)) found = value;
-        } catch {}
+      let best = null;
+      const consider = (decl) => {
+        if (!best || __clipDeclWins(decl, best)) best = decl;
+      };
+      // The style attribute: its last declaration of each importance.
+      let n = 0;
+      for (const m of String(getAttr(el, 'style') || '').matchAll(
+        /(?:^|;)\s*clip\s*:\s*([^;]+)/gi
+      )) {
+        const important = /!\s*important\s*$/i.test(m[1]);
+        consider({
+          value: m[1].replace(/!\s*important\s*$/i, '').trim(),
+          important,
+          inline: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
       }
-      return found;
+      const root = dom.getRootNode(el);
+      for (const rule of root ? declaredClipRules(root) : []) {
+        // Only a rule that could still win is matched.
+        if (best && best.important && (best.inline || !rule.important)) continue;
+        const specificity = contrast.matchedSpecificity(el, rule.selector);
+        if (specificity < 0) continue;
+        consider({ ...rule, inline: false, specificity });
+      }
+      return best ? best.value : null;
     } catch {
       return null;
     }
@@ -112608,6 +112795,23 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
+  // The specificity (__specificityOf) of the most specific selector of a
+  // list that el matches, which is what the cascade weighs for a rule with
+  // that list; -1 where none matches or none can be read.
+  function matchedSpecificity(el, selectorText) {
+    let best = -1;
+    for (const part of __splitTopLevel(String(selectorText || '')).filter(Boolean)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        matched = false;
+      }
+      if (matched) best = Math.max(best, __specificityOf(part));
+    }
+    return best;
+  }
+
   // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
@@ -117751,7 +117955,8 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     colorSchemeMeasurable,
     colorSchemeUnread,
     useNamedCanvas,
-    isPinned: __isPinned
+    isPinned: __isPinned,
+    matchedSpecificity
   };
 });
 
@@ -126189,31 +126394,184 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // and its computed clip reads `auto`: jsdom's CSS parser drops a
   // space-separated rect() (rect(0 0 0 0) computes as auto, and a style
   // rule keeps only its first edge, rect(0px)), the visually hidden pattern
-  // most sites use. Read as written: the style attribute's declaration, else
-  // the last one in a <style> element of the element's tree whose selector
-  // matches it, in document order, without weighing specificity. null where
-  // a browser computed the value, or nothing declares one.
+  // most sites use. Read as written, from every style sheet of the
+  // element's tree that core can read (getStyleSheets): a <style> element's
+  // text, a sheet's text engineOptions.styleSheetTexts gives, the sheets
+  // either imports, and, for a sheet with no text to read (one jsdom loaded
+  // itself, a constructed one), its rules as parsed. The declaration that
+  // applies is the cascade's: the page's own declarations (the browser's
+  // style sheet sets no clip), !important first, then the style attribute
+  // over any rule, then cascade layers, specificity and order. Only rules
+  // whose @media and @supports apply count (cssConditionApplies). null
+  // where a browser computed the value, or nothing declares one.
+  const __CLIP_PROP = '--surea11y-declared-clip';
   const __declaredClipRulesByRoot = new WeakMap();
+  // A style sheet's text parsed apart from the page, as cssRulesOf parses a
+  // supplied one; null where it can't be.
+  function __parsedRulesOf(text) {
+    try {
+      const view = window || (document && dom.defaultView(document));
+      if (view && typeof view.CSSStyleSheet === 'function') {
+        const parsed = new view.CSSStyleSheet();
+        parsed.replaceSync(text);
+        return parsed.cssRules;
+      }
+      if (document && dom.get(document, 'implementation')) {
+        const doc = dom.get(document, 'implementation').createHTMLDocument('');
+        const style = dom.createElement(doc, 'style');
+        style.textContent = text;
+        dom.appendChild(dom.head(doc), style);
+        return style.sheet ? style.sheet.cssRules : null;
+      }
+    } catch {}
+    return null;
+  }
+  // The rules of a root's sheets that declare a clip, in cascade order:
+  // [{ selector, value, important, layer, order }], `layer` a list of
+  // indices (each layer's place among its siblings, in the order they are
+  // first named), [] outside any layer. Once per root.
   function declaredClipRules(root) {
     if (__declaredClipRulesByRoot.has(root)) return __declaredClipRulesByRoot.get(root);
     const rules = [];
-    let styles = [];
-    try {
-      styles = dom.querySelectorAll(root, 'style');
-    } catch {}
-    for (const style of styles) {
-      const text = String(dom.get(style, 'textContent') || '').replace(/\/\*[\s\S]*?\*\//g, '');
-      if (!/\bclip\s*:/i.test(text)) continue;
-      // The innermost blocks: a style rule's, inside an at-rule or not.
-      for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
-        const selector = m[1].trim();
-        if (!selector || selector[0] === '@') continue;
-        const decl = [...m[2].matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)].pop();
-        if (decl) rules.push([selector, decl[1].replace(/!\s*important\s*$/i, '').trim()]);
+    let order = 0;
+    // Layer names, dotted from the outermost, to their indices.
+    const layerPaths = new Map();
+    let anonymous = 0;
+    const layerOf = (parent, name) => {
+      const parentName = parent.name;
+      const full = name ? (parentName ? parentName + '.' + name : name) : null;
+      const key = full || '\u0000anonymous' + anonymous++;
+      if (!layerPaths.has(key)) {
+        const siblings = [...layerPaths.values()].filter(
+          (l) => l.path.length === parent.path.length + 1 && l.parent === parentName
+        ).length;
+        layerPaths.set(key, { path: parent.path.concat(siblings), parent: parentName, name: full });
       }
+      const l = layerPaths.get(key);
+      return { path: l.path, name: full || key };
+    };
+    const NO_LAYER = { path: [], name: '' };
+    const walk = (list, layer, fromText, imports, base, depth) => {
+      const n = (list && list.length) || 0;
+      let importIndex = 0;
+      for (let i = 0; i < n && depth < 10; i++) {
+        const rule = list[i];
+        if (!rule) continue;
+        const kind = (rule.constructor && rule.constructor.name) || '';
+        if (typeof rule.selectorText === 'string' && rule.style) {
+          // A nested style rule's selector is relative to its parent's:
+          // not followed.
+          const prop = fromText ? __CLIP_PROP : 'clip';
+          const value = String(rule.style.getPropertyValue(prop) || '').trim();
+          if (value) {
+            rules.push({
+              selector: rule.selectorText,
+              value,
+              important: rule.style.getPropertyPriority(prop) === 'important',
+              layer: layer.path,
+              order: order++
+            });
+          }
+        } else if (kind === 'CSSImportRule' || rule.type === 3) {
+          const own = imports ? imports[importIndex] : rule;
+          importIndex++;
+          if (!cssConditionApplies(rule)) continue;
+          const name = typeof rule.layerName === 'string' ? rule.layerName : null;
+          const inner = name === null ? layer : layerOf(layer, name);
+          let sheet = null;
+          try {
+            sheet = own ? own.styleSheet : null;
+          } catch {}
+          if (sheet) walkSheet(sheet, inner, depth + 1);
+          else {
+            let href = '';
+            try {
+              href = new URL(String(rule.href || ''), base).href;
+            } catch {}
+            const text = href ? suppliedTextFor(href) : null;
+            if (text != null) walkText(text, href, null, inner, depth + 1);
+          }
+        } else if (kind === 'CSSLayerStatementRule') {
+          for (const name of rule.nameList || []) layerOf(layer, String(name));
+        } else if (kind === 'CSSLayerBlockRule') {
+          walk(
+            rule.cssRules,
+            layerOf(layer, rule.name ? String(rule.name) : ''),
+            fromText,
+            null,
+            base,
+            depth + 1
+          );
+        } else if (
+          kind === 'CSSMediaRule' ||
+          kind === 'CSSSupportsRule' ||
+          rule.type === 4 ||
+          rule.type === 12
+        ) {
+          if (cssConditionApplies(rule))
+            walk(rule.cssRules, layer, fromText, null, base, depth + 1);
+        }
+      }
+    };
+    // A sheet's text, with each clip declaration renamed to a custom
+    // property, which the parser keeps as written. `imports`: the page's own
+    // @import rules of the sheet, which have the imported sheets.
+    const walkText = (text, base, imports, layer, depth) => {
+      const renamed = String(text).replace(/(^|[{;\s])clip(\s*:)/gi, '$1' + __CLIP_PROP + '$2');
+      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth);
+    };
+    const walkSheet = (sheet, layer, depth) => {
+      if (!sheet || depth > 10 || !cssConditionApplies(sheet)) return;
+      const owner = sheet.ownerNode;
+      const href = typeof sheet.href === 'string' ? sheet.href : '';
+      const base = href || (document && dom.get(document, 'baseURI')) || '';
+      let text = null;
+      if (owner && String(dom.localName(owner) || '').toLowerCase() === 'style')
+        text = String(dom.get(owner, 'textContent') || '');
+      else if (href) text = suppliedTextFor(href);
+      let own;
+      try {
+        own = sheet.cssRules;
+      } catch {
+        own = null;
+      }
+      if (text != null) {
+        const imports = own
+          ? [...own].filter(
+              (r) =>
+                r && (r.type === 3 || (r.constructor && r.constructor.name) === 'CSSImportRule')
+            )
+          : null;
+        walkText(text, base, imports, layer, depth);
+      } else {
+        walk(cssRulesOf(sheet), layer, false, null, base, depth);
+      }
+    };
+    for (const { sheet, root: r } of getStyleSheets()) {
+      if (r === root) walkSheet(sheet, NO_LAYER, 0);
     }
     __declaredClipRulesByRoot.set(root, rules);
     return rules;
+  }
+  // Which of two declarations the cascade applies: each { important,
+  // inline, layer, specificity, order }; true when `a` wins over `b`.
+  function __clipDeclWins(a, b) {
+    if (a.important !== b.important) return a.important;
+    if (a.inline !== b.inline) return a.inline;
+    // Cascade layers: for normal declarations a later layer wins, and
+    // declarations outside any layer (or directly in a layer, over its
+    // sublayers) win over those in one; !important reverses both.
+    const la = a.layer;
+    const lb = b.layer;
+    let layerCmp = 0;
+    for (let i = 0; i < Math.max(la.length, lb.length) && !layerCmp; i++) {
+      if (i >= la.length) layerCmp = 1;
+      else if (i >= lb.length) layerCmp = -1;
+      else if (la[i] !== lb[i]) layerCmp = la[i] > lb[i] ? 1 : -1;
+    }
+    if (layerCmp) return a.important ? layerCmp < 0 : layerCmp > 0;
+    if (a.specificity !== b.specificity) return a.specificity > b.specificity;
+    return a.order > b.order;
   }
   function declaredClipOf(el, cs) {
     try {
@@ -126225,18 +126583,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
       if (!doc) return null;
       if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
       if (__layoutByDoc.get(doc)) return null;
-      const inline = [
-        ...String(getAttr(el, 'style') || '').matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)
-      ].pop();
-      if (inline) return inline[1].replace(/!\s*important\s*$/i, '').trim();
-      const root = dom.getRootNode(el);
-      let found = null;
-      for (const [selector, value] of root ? declaredClipRules(root) : []) {
-        try {
-          if (dom.matches(el, selector)) found = value;
-        } catch {}
+      let best = null;
+      const consider = (decl) => {
+        if (!best || __clipDeclWins(decl, best)) best = decl;
+      };
+      // The style attribute: its last declaration of each importance.
+      let n = 0;
+      for (const m of String(getAttr(el, 'style') || '').matchAll(
+        /(?:^|;)\s*clip\s*:\s*([^;]+)/gi
+      )) {
+        const important = /!\s*important\s*$/i.test(m[1]);
+        consider({
+          value: m[1].replace(/!\s*important\s*$/i, '').trim(),
+          important,
+          inline: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
       }
-      return found;
+      const root = dom.getRootNode(el);
+      for (const rule of root ? declaredClipRules(root) : []) {
+        // Only a rule that could still win is matched.
+        if (best && best.important && (best.inline || !rule.important)) continue;
+        const specificity = contrast.matchedSpecificity(el, rule.selector);
+        if (specificity < 0) continue;
+        consider({ ...rule, inline: false, specificity });
+      }
+      return best ? best.value : null;
     } catch {
       return null;
     }
