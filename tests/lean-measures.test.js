@@ -12,7 +12,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { leansIn, tally } = require('../scripts/measure-leans.js');
+const { incompleteRun, leansIn, tally } = require('../scripts/measure-leans.js');
 const { runa11yCoreOnHtml } = require('./helpers/runDomRulesOnHtml.js');
 
 const MEASURES_PATH = path.join(__dirname, '..', 'scripts', 'data', 'lean-measures.json');
@@ -120,4 +120,12 @@ test('a lean carries the counts of its rule, code and direction from minCases ca
       assert.equal(lean.measured, undefined, ruleId);
     }
   }
+});
+
+test('a run that could not scan every case writes nothing, and says which', () => {
+  assert.equal(incompleteRun([], 676), null);
+  const why = incompleteRun(['https://example.test/a.html: 429 Too Many Requests'], 676);
+  assert.match(why, /^1 of 676 case\(s\) could not be scanned, so nothing was written:/);
+  assert.match(why, /a\.html: 429 Too Many Requests/);
+  assert.match(why, /Run it again/);
 });

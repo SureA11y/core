@@ -35,7 +35,10 @@
  * than 80% of 5 or more cases: such a lean is to be reconsidered, or removed.
  * A lean carries its counts (`measured`) only from 5 cases up: fewer say
  * little, and a lean shown as 1/1 would read as proven.
- * Exit: 0 written · 2 the corpus could not be read.
+ * Exit: 0 written · 2 the corpus could not be read · 3 a case could not be
+ * scanned, so nothing is written: a count that leaves cases out would read as
+ * the corpus's. W3C answers 429 to many requests at once; run it again, and
+ * only the cases not yet cached are fetched.
  */
 
 const fs = require('node:fs');
@@ -204,6 +207,12 @@ async function main() {
   }).finally(() => options.browserRunner && options.browserRunner.close());
   if (process.stderr.isTTY) process.stderr.write('\r\x1b[K');
 
+  const incomplete = incompleteRun(skipped, cases.length);
+  if (incomplete) {
+    console.error(incomplete);
+    return 3;
+  }
+
   const date = typeof args.date === 'string' ? args.date : new Date().toISOString().slice(0, 10);
   const leans = tally(records);
   const out = {
@@ -232,15 +241,24 @@ async function main() {
     }
   }
   console.log(`\n${measured} leans measured on ${cases.length} test cases; written to ${outPath}`);
-  if (skipped.length) {
-    console.log(`\n${skipped.length} case(s) could not be scanned, and count for nothing:`);
-    for (const s of skipped) console.log(`  ${s}`);
-  }
   if (weak.length) {
     console.log(`\nRight in fewer than ${WARN_BELOW * 100}% of their cases, to reconsider:`);
     for (const w of weak) console.log(`  ${w}`);
   }
   return 0;
+}
+
+// Why a run that left cases out writes nothing, or null when it scanned them
+// all: the counts would read as the corpus's, a lean could fall under
+// minCases and lose its `measured`, and the file names no missing case.
+function incompleteRun(skipped, total) {
+  if (!skipped.length) return null;
+  const lines = [
+    `${skipped.length} of ${total} case(s) could not be scanned, so nothing was written:`,
+    ...skipped.map((s) => `  ${s}`),
+    'Run it again: the cases already fetched are cached, so only these are fetched again.'
+  ];
+  return lines.join('\n');
 }
 
 if (require.main === module) {
@@ -255,4 +273,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { leansIn, tally };
+module.exports = { incompleteRun, leansIn, tally };
