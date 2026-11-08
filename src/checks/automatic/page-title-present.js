@@ -118,7 +118,6 @@ function runInPage(ctx) {
     const reasonCode = missingTitleEl ? 'missingTitleElement' : 'emptyTitleText';
 
     const occBase = {
-      selector: 'head > title',
       html: '',
       summary: missingTitleEl
         ? 'This page has no <title> element.'
@@ -144,8 +143,16 @@ function runInPage(ctx) {
       // empty title: we have a node, so engine can attach html
       occurrences.push(helpers.reportOccurrence(titleEl, occBase));
     } else {
-      // missing title element: no node exists, keep deterministic html string
-      occurrences.push({ ...occBase, html: '<title>(missing)</title>' });
+      // missing title element: no node exists, keep deterministic html string,
+      // and point at where the title belongs: <head>, or <html> without one.
+      let where = 'html';
+      try {
+        const head = dom.head(document);
+        if (head && typeof helpers.buildSelector === 'function')
+          where = helpers.buildSelector(head);
+        else if (head) where = 'head';
+      } catch {}
+      occurrences.push({ ...occBase, selector: where, html: '<title>(missing)</title>' });
     }
   }
 

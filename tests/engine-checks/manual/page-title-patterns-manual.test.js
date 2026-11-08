@@ -4,6 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
+const { JSDOM } = require('jsdom');
 
 const { assertRule } = require('../../helpers/assertRule.js');
 const { runa11yCoreOnHtml } = require('../../helpers/runDomRulesOnHtml.js');
@@ -23,7 +24,10 @@ function getFirstOccurrence(rule) {
 
 function assertOccShape(occ) {
   assert.ok(occ && typeof occ === 'object', 'occurrence must be an object');
-  assert.strictEqual(occ.selector, 'head > title', 'selector should be "head > title"');
+  assert.ok(
+    typeof occ.selector === 'string' && occ.selector,
+    'selector must be a non-empty string'
+  );
 
   assert.ok(occ.i18n && typeof occ.i18n === 'object', 'occurrence.i18n must exist');
   assert.ok(
@@ -358,4 +362,16 @@ test(`page-title-patterns: notApplicable when engineOptions.fragment is true, ev
     minOccurrences: 0,
     maxOccurrences: 0
   });
+});
+
+// With two <title> elements, the finding names the one it is about, the
+// first, which document.title reads, not both.
+test(`${RULE_ID}: the selector names the title element the finding is about`, () => {
+  const html =
+    '<!doctype html><html lang="en"><head><title id="a">Home</title><title id="b">Home</title></head><body>Hi</body></html>';
+  const occ = getFirstOccurrence(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }).checksResults[0]);
+  assert.deepEqual(
+    [...new JSDOM(html).window.document.querySelectorAll(occ.selector)].map((e) => e.id),
+    ['a']
+  );
 });
