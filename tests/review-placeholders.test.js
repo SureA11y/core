@@ -411,6 +411,17 @@ test("a standard's own steps are read in the scan's locale where its pack transl
   assert.equal(how.passWhen, 'C’est un menu.');
 });
 
+test('a standard in French reads its own steps in French in a French scan', () => {
+  // standard.review is English whatever the standard's language, so a scan in
+  // that language reads the pack's translation, as any other locale does.
+  const base = translatedPack(FRENCH);
+  const pack = definePack({ ...base, standard: { ...base.standard, lang: 'fr' } });
+  assert.equal(ownSteps(pack, 'fr').passWhen, 'C’est un menu.');
+  assert.equal(ownSteps(pack, 'fr-CA').passWhen, 'C’est un menu.');
+  assert.equal(ownSteps(pack, 'en').passWhen, 'It is a menu.');
+  assert.equal(ownSteps(pack, 'de').passWhen, 'It is a menu.');
+});
+
 test("a standard's steps a locale doesn't translate are read in English, as a whole", () => {
   // No dictionary for the locale, no key for the entry, or only part of it.
   const none = definePack(translatedPack({ attrs_other: 'x' }));
