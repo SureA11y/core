@@ -1688,8 +1688,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // A variant (src/core/rule-variants.js) names the rule it runs, and that
   // rule's titleKey, whose prefix keys the base's messages and steps.
   const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
-  // A rule's own result can't claim one.
+  // A rule's own result can't claim one, nor what the engine says of the
+  // walk up from its elements (ancestorWalkLimit, below).
   delete out.variantOf;
+  delete out.ancestorWalkLimit;
   if (variant && typeof variant.of === 'string' && variant.of) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
@@ -1815,10 +1817,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   else delete out.margin;
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
-  let __truncatedOccurrences = 0;
+  // Fail-tier occurrences made questions because the walk up from their
+  // element stopped at its limit (helpers.hasTruncatedAncestorWalk).
+  let __beyondWalkLimit = 0;
+  const __walkLimit =
+    helpers && typeof helpers.hasTruncatedAncestorWalk === 'function'
+      ? helpers.hasTruncatedAncestorWalk.limit
+      : null;
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
-  let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
 
@@ -1826,13 +1833,40 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const node = o.__node || null;
     if (node) delete o.__node;
 
-    // A 200-step ancestor walk that stopped short cannot show the element is
-    // exposed, so a fail resting only on such elements is not certain enough.
-    if (node && helpers && typeof helpers.hasTruncatedAncestorWalk === 'function') {
+    // An element nested deeper than the walk up from it goes: the engine has
+    // not seen every element around it, any of which may hide it, so a fail
+    // on it becomes a question. The rule's verdict on every other element
+    // stands.
+    if (
+      node &&
+      out.outcome === 'fail' &&
+      o.occurrenceOutcome !== 'cantTell' &&
+      typeof __walkLimit === 'number'
+    ) {
+      let beyond = false;
       try {
-        if (helpers.hasTruncatedAncestorWalk(node)) __truncatedOccurrences += 1;
+        beyond = helpers.hasTruncatedAncestorWalk(node) === true;
       } catch {}
-      __placedOccurrences += 1;
+      if (beyond) {
+        __beyondWalkLimit += 1;
+        o.occurrenceOutcome = 'cantTell';
+        o.uncertainty = {
+          code: 'not-computable',
+          needed:
+            'Whether this element is exposed: it is nested deeper than the ' +
+            __walkLimit +
+            ' ancestors the engine reads, so it could not check the elements around it.',
+          evidence: { ancestorWalkLimit: __walkLimit }
+        };
+        delete o.lean;
+        const eo = out.engineOptions || null;
+        const key = 'engine_review_ancestorWalkLimit_';
+        o.howToCheck = {
+          steps: [1, 2, 3].map((n) => t(key + 'step' + n, '', null, eo)),
+          passWhen: t(key + 'pass', '', null, eo),
+          failWhen: t(key + 'fail', '', null, eo)
+        };
+      }
     }
 
     if (needsDetails && node && helpers && typeof helpers === 'object') {
@@ -1947,19 +1981,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     return o;
   });
 
-  // Downgrade only when every reported element was out of reach of its own
-  // walk. One element the engine could see through justifies the fail; the
-  // rest ride along as occurrences of it, same as any mixed-confidence result.
-  if (
-    out.outcome === 'fail' &&
-    __placedOccurrences > 0 &&
-    __truncatedOccurrences === __placedOccurrences
-  ) {
-    out.outcome = 'cantTell';
-    out.outcomeNormalized = 'cantTell';
-    out.error =
-      (out.error ? String(out.error) + ' | ' : '') +
-      'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  // Said beside the result, not in error: the rule completed. The result is
+  // a question only when no fail-tier occurrence is left.
+  if (__beyondWalkLimit > 0) {
+    out.ancestorWalkLimit = { limit: __walkLimit, occurrences: __beyondWalkLimit };
+    if (!out.occurrences.some((o) => (o.occurrenceOutcome || out.outcome) === 'fail')) {
+      out.outcome = 'cantTell';
+      out.outcomeNormalized = 'cantTell';
+      out.ancestorWalkLimit.coercedFrom = 'fail';
+    }
   }
 
   if (__invalidUncertaintyCodes.length) {
@@ -2726,15 +2756,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
   const selectorIndex = shared.selectorIndex;
-  // An element and its ancestors in the flat tree, nearest first, as a walk
-  // of 200 composedParent steps meets them, kept per element for the run
-  // (dom-helpers' ancestorsIncludingSelf); walked here where it isn't given.
+  // An element and its ancestors in the flat tree, nearest first, up to
+  // the walk's limit, kept per element for the run (dom-helpers'
+  // ancestorsIncludingSelf); walked here where it isn't given.
   const ancestorsOf =
     typeof shared.ancestorsIncludingSelf === 'function'
       ? shared.ancestorsIncludingSelf
       : (el) => {
           const out = [];
-          for (let cur = el, guard = 0; cur && guard++ < 200; cur = composedParent(cur))
+          for (let cur = el, guard = 0; cur && guard++ < 10000; cur = composedParent(cur))
             out.push(cur);
           return out;
         };
@@ -10857,7 +10887,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const includeMain = !!(opts && opts.includeMain);
     let cur = dom.parentElement(el);
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
       // Don't climb past the scanned scope -- a contextSelector-scoped
       // (or fragment) scan should never let ancestry OUTSIDE the
@@ -11624,7 +11654,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const tags = context.tags;
     let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
@@ -12166,7 +12196,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
     let table = dom.parentElement(el);
     let guard = 0;
-    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+    while (table && guard++ < 10000 && lower(dom.tagName(table) || '') !== 'table') {
       table = dom.parentElement(table);
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
@@ -13595,10 +13625,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return null;
   };
 
-  const ancestorsIncludingSelf = (n) => {
-    if (!n) return [];
-    // Cache ancestor chains per node, per run, to avoid repeated composed-parent walks.
-    // Deterministic: purely memoized within the current run, no cross-run persistence.
+  // How far up the flat tree a walk from an element goes: far past any
+  // nesting a browser renders (Chromium's parser stops nesting at 512),
+  // a bound on the time a hostile page can cost, not a limit a real page
+  // meets. An element deeper than this is one whose ancestors beyond it the
+  // engine has not seen (hasTruncatedAncestorWalk).
+  const ANCESTOR_WALK_LIMIT = 10000;
+  // Each node keeps the first ANCESTOR_CHUNK nodes of its chain, itself
+  // first, and where the chain goes on, the node it goes on from (`next`)
+  // and how long it is in all (`depth`). A chunk is built from its parent's,
+  // so each node's parent is read once per run, and the memory kept is at
+  // most ANCESTOR_CHUNK entries a node however deep the page is.
+  const ANCESTOR_CHUNK = 200;
+
+  const makeAncestorChunk = (node, base) => {
+    const out = [node];
+    if (base) for (let k = 0; k < base.length && k < ANCESTOR_CHUNK - 1; k++) out.push(base[k]);
+    out.next = base ? (base.length >= ANCESTOR_CHUNK ? base[ANCESTOR_CHUNK - 1] : base.next) : null;
+    out.depth = base ? base.depth + 1 : 1;
+    return out;
+  };
+
+  const ancestorChunk = (n) => {
+    if (!n) return null;
     try {
       if (
         __ancestorsIncludingSelfCache &&
@@ -13610,44 +13659,64 @@ const createDomHelpers = (function createDomHelpers(opts) {
           return cached;
         }
         __perfInc('ancestorsIncludingSelf.miss');
-        // Built from the parent's chain: the node, then the first 199 of
-        // its parent's, the same nodes a walk of 200 steps meets. So each
-        // node's parent is read once per run, and a deep page costs its
-        // nodes, not nodes x depth. The ancestors on the way up that have
-        // no chain yet get theirs too.
+        // The ancestors on the way up that have no chunk yet get theirs too.
         const path = [];
         let base = null;
-        for (let cur = n; cur && path.length < 1e6; cur = composedParent(cur)) {
+        for (let cur = n; cur; cur = composedParent(cur)) {
           const known = cur === n ? null : __ancestorsIncludingSelfCache.get(cur);
           if (known) {
             base = known;
             break;
           }
           path.push(cur);
+          // Far deeper than the limit: the rest is not read, and the chain
+          // counts as going on past it.
+          if (path.length > ANCESTOR_WALK_LIMIT * 10) {
+            base = Object.assign([], { next: null, depth: Infinity });
+            break;
+          }
         }
         for (let i = path.length - 1; i >= 0; i--) {
-          const out = [path[i]];
-          if (base) for (let k = 0; k < base.length && k < 199; k++) out.push(base[k]);
-          // Still more to walk: callers must not read "no blocking ancestor
-          // found" from a chain that never reached the root.
-          if (base && base.length >= 200) {
-            out.truncated = true;
-            __perfInc('ancestorsIncludingSelf.truncated');
-          }
-          __ancestorsIncludingSelfCache.set(path[i], out);
-          base = out;
+          base = makeAncestorChunk(path[i], base);
+          __ancestorsIncludingSelfCache.set(path[i], base);
         }
         return base;
       }
     } catch {
       /* fall through */
     }
+    return null;
+  };
+
+  // The node and its ancestors in the flat tree, nearest first, up to
+  // ANCESTOR_WALK_LIMIT of them; `truncated` when there are more. Within
+  // one chunk (nearly every page) it is the kept array itself.
+  const ancestorsIncludingSelf = (n) => {
+    if (!n) return [];
+    const head = ancestorChunk(n);
+    if (head) {
+      if (!head.next) return head;
+      const out = head.slice();
+      for (let nx = head.next; nx;) {
+        const chunk = ancestorChunk(nx);
+        if (!chunk) break;
+        for (let k = 0; k < chunk.length; k++) {
+          if (out.length >= ANCESTOR_WALK_LIMIT) {
+            out.truncated = true;
+            __perfInc('ancestorsIncludingSelf.truncated');
+            return out;
+          }
+          out.push(chunk[k]);
+        }
+        nx = chunk.next;
+      }
+      return out;
+    }
 
     __perfInc('ancestorsIncludingSelf.nocache');
     const out = [];
-    let cur = n,
-      guard = 0;
-    while (cur && guard++ < 200) {
+    let cur = n;
+    while (cur && out.length < ANCESTOR_WALK_LIMIT) {
       out.push(cur);
       cur = composedParent(cur);
     }
@@ -13658,17 +13727,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   };
 
-  // Whether the 200-step ancestor walk for this node stopped short of the
-  // root. A rule cannot see this, so normalization uses it to decide how much
-  // confidence an occurrence on that node deserves.
+  // Whether the walk up from this node stopped at ANCESTOR_WALK_LIMIT
+  // short of the root. A rule cannot see this, so normalization uses it to
+  // decide how much confidence an occurrence on that node deserves.
   function hasTruncatedAncestorWalk(node) {
     try {
       if (!node || typeof node !== 'object') return false;
+      const head = ancestorChunk(node);
+      if (head) return head.depth > ANCESTOR_WALK_LIMIT;
       return ancestorsIncludingSelf(node).truncated === true;
     } catch {
       return false;
     }
   }
+  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
 
   function getClosestMap(el) {
     try {
@@ -13743,28 +13815,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     );
   }
 
+  // Whether something holds for a node or any of its ancestors in the flat
+  // tree, where `own(n, parent)` says whether it holds at n: kept per node
+  // for the run, so each ancestor is asked once however deep the page is.
+  function holdsUpFlatTree(cache, node, own) {
+    const path = [];
+    let cur = node;
+    let held = false;
+    while (cur) {
+      if (cache.has(cur)) {
+        held = cache.get(cur);
+        break;
+      }
+      path.push(cur);
+      cur = composedParent(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (!held) held = own(path[i], i + 1 < path.length ? path[i + 1] : cur) === true;
+      cache.set(path[i], held);
+    }
+    return held;
+  }
+
+  const __inertAttrUp = new WeakMap();
+  const inertAttrUp = (node) =>
+    holdsUpFlatTree(
+      __inertAttrUp,
+      node,
+      (n) => isElement(n) && !!dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')
+    );
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
     if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
-    const isArea = tag === 'area';
-    const mapEl = isArea ? getClosestMap(node) : null;
+    if (tag !== 'area') return inertAttrUp(node);
 
-    const chain = ancestorsIncludingSelf(node);
-
-    for (const a of chain) {
-      if (!isElement(a)) continue;
-
-      // <area>/<map> generate no box, so a real browser's image-map
-      // hit-testing sits outside the pipeline inert operates on. Verified
-      // against Chromium and Firefox: inert on the area or its map does
-      // not remove it from the tab order. Only inert on a genuine ancestor
-      // of the <img>+<map> pairing does.
-      if (isArea && (a === node || a === mapEl)) continue;
-
-      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
+    // <area>/<map> generate no box, so a real browser's image-map
+    // hit-testing sits outside the pipeline inert operates on. Verified
+    // against Chromium and Firefox: inert on the area or its map does
+    // not remove it from the tab order. Only inert on a genuine ancestor
+    // of the <img>+<map> pairing does.
+    const mapEl = getClosestMap(node);
+    for (let a = composedParent(node); a; a = composedParent(a)) {
+      if (a === mapEl) {
+        const above = composedParent(a);
+        return !!above && inertAttrUp(above);
+      }
+      if (isElement(a) && dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -14808,21 +14908,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // it. The walk is over the composed ancestors, so a shadow root's content
   // inside a closed <details>, and light-DOM content slotted into one, count
   // too. The <details> element itself is not hidden by its own state.
+  const __inClosedDetails = new WeakMap();
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const chain = ancestorsIncludingSelf(node);
-      for (let i = 1; i < chain.length; i++) {
-        const a = chain[i];
-        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
-        if (dom.hasAttribute(a, 'open')) continue;
-        const child = chain[i - 1];
+      return holdsUpFlatTree(__inClosedDetails, node, (child, a) => {
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') return false;
+        if (dom.hasAttribute(a, 'open')) return false;
         const isToggle =
           (dom.localName(child) || '').toLowerCase() === 'summary' &&
           dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
-        if (!isToggle) return true;
-      }
+        return !isToggle;
+      });
     } catch {}
     return false;
   }
@@ -16657,6 +16755,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           __perfInc('ancestorBlockerDom.structFinal.hit');
           const r = __ancBlockStructFinalCache.get(a);
           const rr = r != null && r !== '' ? String(r) : null;
+          // An element whose own walk to the root met no structural
+          // blocker: there is none further up either.
+          if (!rr) break;
           if (rr) {
             // Propagate to nodes we've seen on this walk (including `node`)
             try {
@@ -39006,6 +39107,11 @@ const RUNTIME_CATALOG = {
       "engine_lean_why_removedSc": "WCAG {{version}} hat das Kriterium gestrichen, nach dem dies gefunden wurde.",
       "engine_lean_why_errata": "Die Errata von 2023 zu WCAG {{version}} werten das Kriterium, nach dem dies gefunden wurde, für HTML und XML als erfüllt.",
       "engine_lean_caution_scopedSc": "Der Fehler selbst beeinträchtigt weiterhin, was davon abhängt, und eine Norm, die das Kriterium beibehält, wertet ihn als Verstoß.",
+      "engine_review_ancestorWalkLimit_step1": "Suchen Sie dieses Element auf der Seite, in den Entwicklerwerkzeugen des Browsers, wenn es nicht angezeigt wird.",
+      "engine_review_ancestorWalkLimit_step2": "Prüfen Sie, ob es selbst oder ein Element, das es enthält, verborgen ist: display: none, visibility: hidden, das Attribut hidden, aria-hidden=\"true\" oder inert.",
+      "engine_review_ancestorWalkLimit_step3": "Prüfen Sie im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader, ob das Element bereitgestellt wird.",
+      "engine_review_ancestorWalkLimit_pass": "Das Element ist für alle verborgen, assistive Technologien eingeschlossen: Der Befund trifft auf es nicht zu.",
+      "engine_review_ancestorWalkLimit_fail": "Das Element wird bereitgestellt: Der Befund gilt so, wie die Regel ihn gemeldet hat.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
@@ -40357,6 +40463,11 @@ const RUNTIME_CATALOG = {
       "engine_lean_why_removedSc": "WCAG {{version}} removed the criterion this was found against.",
       "engine_lean_why_errata": "WCAG {{version}}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.",
       "engine_lean_caution_scopedSc": "The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.",
+      "engine_review_ancestorWalkLimit_step1": "Find this element on the page, in the browser's developer tools if it is not shown.",
+      "engine_review_ancestorWalkLimit_step2": "Check whether it or any element around it is hidden: display: none, visibility: hidden, the hidden attribute, aria-hidden=\"true\" or inert.",
+      "engine_review_ancestorWalkLimit_step3": "Check in the browser's accessibility tree, or with a screen reader, whether the element is exposed.",
+      "engine_review_ancestorWalkLimit_pass": "The element is hidden from everyone, assistive technologies included: the finding does not apply to it.",
+      "engine_review_ancestorWalkLimit_fail": "The element is exposed: the finding stands as the rule reported it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
@@ -41708,6 +41819,11 @@ const RUNTIME_CATALOG = {
       "engine_lean_why_removedSc": "WCAG {{version}} eliminó el criterio con el que se detectó esto.",
       "engine_lean_why_errata": "La fe de erratas de 2023 de WCAG {{version}} da por cumplido para HTML y XML el criterio con el que se detectó esto.",
       "engine_lean_caution_scopedSc": "El defecto en sí sigue rompiendo lo que depende de él, y una norma que mantiene el criterio lo da por incumplido.",
+      "engine_review_ancestorWalkLimit_step1": "Buscar este elemento en la página, en las herramientas de desarrollo del navegador si no se muestra.",
+      "engine_review_ancestorWalkLimit_step2": "Comprobar si el elemento o alguno que lo contiene está oculto: display: none, visibility: hidden, el atributo hidden, aria-hidden=\"true\" o inert.",
+      "engine_review_ancestorWalkLimit_step3": "Comprobar en el árbol de accesibilidad del navegador, o con un lector de pantalla, si el elemento está expuesto.",
+      "engine_review_ancestorWalkLimit_pass": "El elemento está oculto para todos, productos de apoyo incluidos: el hallazgo no se aplica a él.",
+      "engine_review_ancestorWalkLimit_fail": "El elemento está expuesto: el hallazgo se mantiene tal como lo informó la regla.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
@@ -43059,6 +43175,11 @@ const RUNTIME_CATALOG = {
       "engine_lean_why_removedSc": "Les WCAG {{version}} ont supprimé le critère au regard duquel ce point a été relevé.",
       "engine_lean_why_errata": "Les errata de 2023 des WCAG {{version}} considèrent le critère au regard duquel ce point a été relevé comme satisfait pour HTML et XML.",
       "engine_lean_caution_scopedSc": "Le défaut lui-même casse toujours ce qui en dépend, et une norme qui conserve le critère le considère comme un échec.",
+      "engine_review_ancestorWalkLimit_step1": "Trouvez cet élément dans la page, dans les outils de développement du navigateur s'il n'est pas affiché.",
+      "engine_review_ancestorWalkLimit_step2": "Vérifiez si lui-même ou un élément qui le contient est masqué : display: none, visibility: hidden, l'attribut hidden, aria-hidden=\"true\" ou inert.",
+      "engine_review_ancestorWalkLimit_step3": "Vérifiez dans l'arbre d'accessibilité du navigateur, ou avec un lecteur d'écran, si l'élément est exposé.",
+      "engine_review_ancestorWalkLimit_pass": "L'élément est masqué pour tous, technologies d'assistance comprises : le constat ne s'applique pas à lui.",
+      "engine_review_ancestorWalkLimit_fail": "L'élément est exposé : le constat vaut tel que la règle l'a rapporté.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
@@ -44410,6 +44531,11 @@ const RUNTIME_CATALOG = {
       "engine_lean_why_removedSc": "WCAG {{version}} では、これを検出した達成基準が削除されています。",
       "engine_lean_why_errata": "WCAG {{version}} の 2023 年の正誤表では、これを検出した達成基準は HTML と XML について満たされているとみなされます。",
       "engine_lean_caution_scopedSc": "欠陥そのものは、それに依存する機能を引き続き損ない、この達成基準を維持する規格では不適合となります。",
+      "engine_review_ancestorWalkLimit_step1": "ページ上でこの要素を見つけてください。表示されていない場合は、ブラウザーの開発者ツールで探してください。",
+      "engine_review_ancestorWalkLimit_step2": "この要素またはそれを含む要素が非表示になっていないか確認してください：display: none、visibility: hidden、hidden 属性、aria-hidden=\"true\"、inert。",
+      "engine_review_ancestorWalkLimit_step3": "ブラウザーのアクセシビリティツリーで、またはスクリーンリーダーを使って、この要素が公開されているか確認してください。",
+      "engine_review_ancestorWalkLimit_pass": "この要素は支援技術を含むすべての利用者から隠されています：この指摘は当てはまりません。",
+      "engine_review_ancestorWalkLimit_fail": "この要素は公開されています：この指摘はルールが報告したとおりに有効です。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
@@ -101706,6 +101832,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_lean_why_removedSc": "WCAG {{version}} hat das Kriterium gestrichen, nach dem dies gefunden wurde.",
       "engine_lean_why_errata": "Die Errata von 2023 zu WCAG {{version}} werten das Kriterium, nach dem dies gefunden wurde, für HTML und XML als erfüllt.",
       "engine_lean_caution_scopedSc": "Der Fehler selbst beeinträchtigt weiterhin, was davon abhängt, und eine Norm, die das Kriterium beibehält, wertet ihn als Verstoß.",
+      "engine_review_ancestorWalkLimit_step1": "Suchen Sie dieses Element auf der Seite, in den Entwicklerwerkzeugen des Browsers, wenn es nicht angezeigt wird.",
+      "engine_review_ancestorWalkLimit_step2": "Prüfen Sie, ob es selbst oder ein Element, das es enthält, verborgen ist: display: none, visibility: hidden, das Attribut hidden, aria-hidden=\"true\" oder inert.",
+      "engine_review_ancestorWalkLimit_step3": "Prüfen Sie im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader, ob das Element bereitgestellt wird.",
+      "engine_review_ancestorWalkLimit_pass": "Das Element ist für alle verborgen, assistive Technologien eingeschlossen: Der Befund trifft auf es nicht zu.",
+      "engine_review_ancestorWalkLimit_fail": "Das Element wird bereitgestellt: Der Befund gilt so, wie die Regel ihn gemeldet hat.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
@@ -103057,6 +103188,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_lean_why_removedSc": "WCAG {{version}} removed the criterion this was found against.",
       "engine_lean_why_errata": "WCAG {{version}}'s 2023 errata count the criterion this was found against as satisfied for HTML and XML.",
       "engine_lean_caution_scopedSc": "The defect itself still breaks what relies on it, and a standard that keeps the criterion fails it.",
+      "engine_review_ancestorWalkLimit_step1": "Find this element on the page, in the browser's developer tools if it is not shown.",
+      "engine_review_ancestorWalkLimit_step2": "Check whether it or any element around it is hidden: display: none, visibility: hidden, the hidden attribute, aria-hidden=\"true\" or inert.",
+      "engine_review_ancestorWalkLimit_step3": "Check in the browser's accessibility tree, or with a screen reader, whether the element is exposed.",
+      "engine_review_ancestorWalkLimit_pass": "The element is hidden from everyone, assistive technologies included: the finding does not apply to it.",
+      "engine_review_ancestorWalkLimit_fail": "The element is exposed: the finding stands as the rule reported it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
@@ -104408,6 +104544,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_lean_why_removedSc": "WCAG {{version}} eliminó el criterio con el que se detectó esto.",
       "engine_lean_why_errata": "La fe de erratas de 2023 de WCAG {{version}} da por cumplido para HTML y XML el criterio con el que se detectó esto.",
       "engine_lean_caution_scopedSc": "El defecto en sí sigue rompiendo lo que depende de él, y una norma que mantiene el criterio lo da por incumplido.",
+      "engine_review_ancestorWalkLimit_step1": "Buscar este elemento en la página, en las herramientas de desarrollo del navegador si no se muestra.",
+      "engine_review_ancestorWalkLimit_step2": "Comprobar si el elemento o alguno que lo contiene está oculto: display: none, visibility: hidden, el atributo hidden, aria-hidden=\"true\" o inert.",
+      "engine_review_ancestorWalkLimit_step3": "Comprobar en el árbol de accesibilidad del navegador, o con un lector de pantalla, si el elemento está expuesto.",
+      "engine_review_ancestorWalkLimit_pass": "El elemento está oculto para todos, productos de apoyo incluidos: el hallazgo no se aplica a él.",
+      "engine_review_ancestorWalkLimit_fail": "El elemento está expuesto: el hallazgo se mantiene tal como lo informó la regla.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
@@ -105759,6 +105900,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_lean_why_removedSc": "Les WCAG {{version}} ont supprimé le critère au regard duquel ce point a été relevé.",
       "engine_lean_why_errata": "Les errata de 2023 des WCAG {{version}} considèrent le critère au regard duquel ce point a été relevé comme satisfait pour HTML et XML.",
       "engine_lean_caution_scopedSc": "Le défaut lui-même casse toujours ce qui en dépend, et une norme qui conserve le critère le considère comme un échec.",
+      "engine_review_ancestorWalkLimit_step1": "Trouvez cet élément dans la page, dans les outils de développement du navigateur s'il n'est pas affiché.",
+      "engine_review_ancestorWalkLimit_step2": "Vérifiez si lui-même ou un élément qui le contient est masqué : display: none, visibility: hidden, l'attribut hidden, aria-hidden=\"true\" ou inert.",
+      "engine_review_ancestorWalkLimit_step3": "Vérifiez dans l'arbre d'accessibilité du navigateur, ou avec un lecteur d'écran, si l'élément est exposé.",
+      "engine_review_ancestorWalkLimit_pass": "L'élément est masqué pour tous, technologies d'assistance comprises : le constat ne s'applique pas à lui.",
+      "engine_review_ancestorWalkLimit_fail": "L'élément est exposé : le constat vaut tel que la règle l'a rapporté.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
@@ -107110,6 +107256,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_lean_why_removedSc": "WCAG {{version}} では、これを検出した達成基準が削除されています。",
       "engine_lean_why_errata": "WCAG {{version}} の 2023 年の正誤表では、これを検出した達成基準は HTML と XML について満たされているとみなされます。",
       "engine_lean_caution_scopedSc": "欠陥そのものは、それに依存する機能を引き続き損ない、この達成基準を維持する規格では不適合となります。",
+      "engine_review_ancestorWalkLimit_step1": "ページ上でこの要素を見つけてください。表示されていない場合は、ブラウザーの開発者ツールで探してください。",
+      "engine_review_ancestorWalkLimit_step2": "この要素またはそれを含む要素が非表示になっていないか確認してください：display: none、visibility: hidden、hidden 属性、aria-hidden=\"true\"、inert。",
+      "engine_review_ancestorWalkLimit_step3": "ブラウザーのアクセシビリティツリーで、またはスクリーンリーダーを使って、この要素が公開されているか確認してください。",
+      "engine_review_ancestorWalkLimit_pass": "この要素は支援技術を含むすべての利用者から隠されています：この指摘は当てはまりません。",
+      "engine_review_ancestorWalkLimit_fail": "この要素は公開されています：この指摘はルールが報告したとおりに有効です。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
@@ -108995,8 +109146,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // A variant (src/core/rule-variants.js) names the rule it runs, and that
   // rule's titleKey, whose prefix keys the base's messages and steps.
   const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
-  // A rule's own result can't claim one.
+  // A rule's own result can't claim one, nor what the engine says of the
+  // walk up from its elements (ancestorWalkLimit, below).
   delete out.variantOf;
+  delete out.ancestorWalkLimit;
   if (variant && typeof variant.of === 'string' && variant.of) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
@@ -109122,10 +109275,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   else delete out.margin;
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
-  let __truncatedOccurrences = 0;
+  // Fail-tier occurrences made questions because the walk up from their
+  // element stopped at its limit (helpers.hasTruncatedAncestorWalk).
+  let __beyondWalkLimit = 0;
+  const __walkLimit =
+    helpers && typeof helpers.hasTruncatedAncestorWalk === 'function'
+      ? helpers.hasTruncatedAncestorWalk.limit
+      : null;
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
-  let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
 
@@ -109133,13 +109291,40 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const node = o.__node || null;
     if (node) delete o.__node;
 
-    // A 200-step ancestor walk that stopped short cannot show the element is
-    // exposed, so a fail resting only on such elements is not certain enough.
-    if (node && helpers && typeof helpers.hasTruncatedAncestorWalk === 'function') {
+    // An element nested deeper than the walk up from it goes: the engine has
+    // not seen every element around it, any of which may hide it, so a fail
+    // on it becomes a question. The rule's verdict on every other element
+    // stands.
+    if (
+      node &&
+      out.outcome === 'fail' &&
+      o.occurrenceOutcome !== 'cantTell' &&
+      typeof __walkLimit === 'number'
+    ) {
+      let beyond = false;
       try {
-        if (helpers.hasTruncatedAncestorWalk(node)) __truncatedOccurrences += 1;
+        beyond = helpers.hasTruncatedAncestorWalk(node) === true;
       } catch {}
-      __placedOccurrences += 1;
+      if (beyond) {
+        __beyondWalkLimit += 1;
+        o.occurrenceOutcome = 'cantTell';
+        o.uncertainty = {
+          code: 'not-computable',
+          needed:
+            'Whether this element is exposed: it is nested deeper than the ' +
+            __walkLimit +
+            ' ancestors the engine reads, so it could not check the elements around it.',
+          evidence: { ancestorWalkLimit: __walkLimit }
+        };
+        delete o.lean;
+        const eo = out.engineOptions || null;
+        const key = 'engine_review_ancestorWalkLimit_';
+        o.howToCheck = {
+          steps: [1, 2, 3].map((n) => t(key + 'step' + n, '', null, eo)),
+          passWhen: t(key + 'pass', '', null, eo),
+          failWhen: t(key + 'fail', '', null, eo)
+        };
+      }
     }
 
     if (needsDetails && node && helpers && typeof helpers === 'object') {
@@ -109254,19 +109439,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     return o;
   });
 
-  // Downgrade only when every reported element was out of reach of its own
-  // walk. One element the engine could see through justifies the fail; the
-  // rest ride along as occurrences of it, same as any mixed-confidence result.
-  if (
-    out.outcome === 'fail' &&
-    __placedOccurrences > 0 &&
-    __truncatedOccurrences === __placedOccurrences
-  ) {
-    out.outcome = 'cantTell';
-    out.outcomeNormalized = 'cantTell';
-    out.error =
-      (out.error ? String(out.error) + ' | ' : '') +
-      'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  // Said beside the result, not in error: the rule completed. The result is
+  // a question only when no fail-tier occurrence is left.
+  if (__beyondWalkLimit > 0) {
+    out.ancestorWalkLimit = { limit: __walkLimit, occurrences: __beyondWalkLimit };
+    if (!out.occurrences.some((o) => (o.occurrenceOutcome || out.outcome) === 'fail')) {
+      out.outcome = 'cantTell';
+      out.outcomeNormalized = 'cantTell';
+      out.ancestorWalkLimit.coercedFrom = 'fail';
+    }
   }
 
   if (__invalidUncertaintyCodes.length) {
@@ -110033,15 +110214,15 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
   const selectorIndex = shared.selectorIndex;
-  // An element and its ancestors in the flat tree, nearest first, as a walk
-  // of 200 composedParent steps meets them, kept per element for the run
-  // (dom-helpers' ancestorsIncludingSelf); walked here where it isn't given.
+  // An element and its ancestors in the flat tree, nearest first, up to
+  // the walk's limit, kept per element for the run (dom-helpers'
+  // ancestorsIncludingSelf); walked here where it isn't given.
   const ancestorsOf =
     typeof shared.ancestorsIncludingSelf === 'function'
       ? shared.ancestorsIncludingSelf
       : (el) => {
           const out = [];
-          for (let cur = el, guard = 0; cur && guard++ < 200; cur = composedParent(cur))
+          for (let cur = el, guard = 0; cur && guard++ < 10000; cur = composedParent(cur))
             out.push(cur);
           return out;
         };
@@ -118164,7 +118345,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const includeMain = !!(opts && opts.includeMain);
     let cur = dom.parentElement(el);
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
       // Don't climb past the scanned scope -- a contextSelector-scoped
       // (or fragment) scan should never let ancestry OUTSIDE the
@@ -118931,7 +119112,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     const tags = context.tags;
     let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
@@ -119473,7 +119654,7 @@ const createAriaHelpers = (function createAriaHelpers(opts, shared) {
     if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
     let table = dom.parentElement(el);
     let guard = 0;
-    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+    while (table && guard++ < 10000 && lower(dom.tagName(table) || '') !== 'table') {
       table = dom.parentElement(table);
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
@@ -120902,10 +121083,29 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return null;
   };
 
-  const ancestorsIncludingSelf = (n) => {
-    if (!n) return [];
-    // Cache ancestor chains per node, per run, to avoid repeated composed-parent walks.
-    // Deterministic: purely memoized within the current run, no cross-run persistence.
+  // How far up the flat tree a walk from an element goes: far past any
+  // nesting a browser renders (Chromium's parser stops nesting at 512),
+  // a bound on the time a hostile page can cost, not a limit a real page
+  // meets. An element deeper than this is one whose ancestors beyond it the
+  // engine has not seen (hasTruncatedAncestorWalk).
+  const ANCESTOR_WALK_LIMIT = 10000;
+  // Each node keeps the first ANCESTOR_CHUNK nodes of its chain, itself
+  // first, and where the chain goes on, the node it goes on from (`next`)
+  // and how long it is in all (`depth`). A chunk is built from its parent's,
+  // so each node's parent is read once per run, and the memory kept is at
+  // most ANCESTOR_CHUNK entries a node however deep the page is.
+  const ANCESTOR_CHUNK = 200;
+
+  const makeAncestorChunk = (node, base) => {
+    const out = [node];
+    if (base) for (let k = 0; k < base.length && k < ANCESTOR_CHUNK - 1; k++) out.push(base[k]);
+    out.next = base ? (base.length >= ANCESTOR_CHUNK ? base[ANCESTOR_CHUNK - 1] : base.next) : null;
+    out.depth = base ? base.depth + 1 : 1;
+    return out;
+  };
+
+  const ancestorChunk = (n) => {
+    if (!n) return null;
     try {
       if (
         __ancestorsIncludingSelfCache &&
@@ -120917,44 +121117,64 @@ const createDomHelpers = (function createDomHelpers(opts) {
           return cached;
         }
         __perfInc('ancestorsIncludingSelf.miss');
-        // Built from the parent's chain: the node, then the first 199 of
-        // its parent's, the same nodes a walk of 200 steps meets. So each
-        // node's parent is read once per run, and a deep page costs its
-        // nodes, not nodes x depth. The ancestors on the way up that have
-        // no chain yet get theirs too.
+        // The ancestors on the way up that have no chunk yet get theirs too.
         const path = [];
         let base = null;
-        for (let cur = n; cur && path.length < 1e6; cur = composedParent(cur)) {
+        for (let cur = n; cur; cur = composedParent(cur)) {
           const known = cur === n ? null : __ancestorsIncludingSelfCache.get(cur);
           if (known) {
             base = known;
             break;
           }
           path.push(cur);
+          // Far deeper than the limit: the rest is not read, and the chain
+          // counts as going on past it.
+          if (path.length > ANCESTOR_WALK_LIMIT * 10) {
+            base = Object.assign([], { next: null, depth: Infinity });
+            break;
+          }
         }
         for (let i = path.length - 1; i >= 0; i--) {
-          const out = [path[i]];
-          if (base) for (let k = 0; k < base.length && k < 199; k++) out.push(base[k]);
-          // Still more to walk: callers must not read "no blocking ancestor
-          // found" from a chain that never reached the root.
-          if (base && base.length >= 200) {
-            out.truncated = true;
-            __perfInc('ancestorsIncludingSelf.truncated');
-          }
-          __ancestorsIncludingSelfCache.set(path[i], out);
-          base = out;
+          base = makeAncestorChunk(path[i], base);
+          __ancestorsIncludingSelfCache.set(path[i], base);
         }
         return base;
       }
     } catch {
       /* fall through */
     }
+    return null;
+  };
+
+  // The node and its ancestors in the flat tree, nearest first, up to
+  // ANCESTOR_WALK_LIMIT of them; `truncated` when there are more. Within
+  // one chunk (nearly every page) it is the kept array itself.
+  const ancestorsIncludingSelf = (n) => {
+    if (!n) return [];
+    const head = ancestorChunk(n);
+    if (head) {
+      if (!head.next) return head;
+      const out = head.slice();
+      for (let nx = head.next; nx;) {
+        const chunk = ancestorChunk(nx);
+        if (!chunk) break;
+        for (let k = 0; k < chunk.length; k++) {
+          if (out.length >= ANCESTOR_WALK_LIMIT) {
+            out.truncated = true;
+            __perfInc('ancestorsIncludingSelf.truncated');
+            return out;
+          }
+          out.push(chunk[k]);
+        }
+        nx = chunk.next;
+      }
+      return out;
+    }
 
     __perfInc('ancestorsIncludingSelf.nocache');
     const out = [];
-    let cur = n,
-      guard = 0;
-    while (cur && guard++ < 200) {
+    let cur = n;
+    while (cur && out.length < ANCESTOR_WALK_LIMIT) {
       out.push(cur);
       cur = composedParent(cur);
     }
@@ -120965,17 +121185,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return out;
   };
 
-  // Whether the 200-step ancestor walk for this node stopped short of the
-  // root. A rule cannot see this, so normalization uses it to decide how much
-  // confidence an occurrence on that node deserves.
+  // Whether the walk up from this node stopped at ANCESTOR_WALK_LIMIT
+  // short of the root. A rule cannot see this, so normalization uses it to
+  // decide how much confidence an occurrence on that node deserves.
   function hasTruncatedAncestorWalk(node) {
     try {
       if (!node || typeof node !== 'object') return false;
+      const head = ancestorChunk(node);
+      if (head) return head.depth > ANCESTOR_WALK_LIMIT;
       return ancestorsIncludingSelf(node).truncated === true;
     } catch {
       return false;
     }
   }
+  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
 
   function getClosestMap(el) {
     try {
@@ -121050,28 +121273,56 @@ const createDomHelpers = (function createDomHelpers(opts) {
     );
   }
 
+  // Whether something holds for a node or any of its ancestors in the flat
+  // tree, where `own(n, parent)` says whether it holds at n: kept per node
+  // for the run, so each ancestor is asked once however deep the page is.
+  function holdsUpFlatTree(cache, node, own) {
+    const path = [];
+    let cur = node;
+    let held = false;
+    while (cur) {
+      if (cache.has(cur)) {
+        held = cache.get(cur);
+        break;
+      }
+      path.push(cur);
+      cur = composedParent(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (!held) held = own(path[i], i + 1 < path.length ? path[i + 1] : cur) === true;
+      cache.set(path[i], held);
+    }
+    return held;
+  }
+
+  const __inertAttrUp = new WeakMap();
+  const inertAttrUp = (node) =>
+    holdsUpFlatTree(
+      __inertAttrUp,
+      node,
+      (n) => isElement(n) && !!dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')
+    );
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
     if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
-    const isArea = tag === 'area';
-    const mapEl = isArea ? getClosestMap(node) : null;
+    if (tag !== 'area') return inertAttrUp(node);
 
-    const chain = ancestorsIncludingSelf(node);
-
-    for (const a of chain) {
-      if (!isElement(a)) continue;
-
-      // <area>/<map> generate no box, so a real browser's image-map
-      // hit-testing sits outside the pipeline inert operates on. Verified
-      // against Chromium and Firefox: inert on the area or its map does
-      // not remove it from the tab order. Only inert on a genuine ancestor
-      // of the <img>+<map> pairing does.
-      if (isArea && (a === node || a === mapEl)) continue;
-
-      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
+    // <area>/<map> generate no box, so a real browser's image-map
+    // hit-testing sits outside the pipeline inert operates on. Verified
+    // against Chromium and Firefox: inert on the area or its map does
+    // not remove it from the tab order. Only inert on a genuine ancestor
+    // of the <img>+<map> pairing does.
+    const mapEl = getClosestMap(node);
+    for (let a = composedParent(node); a; a = composedParent(a)) {
+      if (a === mapEl) {
+        const above = composedParent(a);
+        return !!above && inertAttrUp(above);
+      }
+      if (isElement(a) && dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -122115,21 +122366,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // it. The walk is over the composed ancestors, so a shadow root's content
   // inside a closed <details>, and light-DOM content slotted into one, count
   // too. The <details> element itself is not hidden by its own state.
+  const __inClosedDetails = new WeakMap();
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const chain = ancestorsIncludingSelf(node);
-      for (let i = 1; i < chain.length; i++) {
-        const a = chain[i];
-        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
-        if (dom.hasAttribute(a, 'open')) continue;
-        const child = chain[i - 1];
+      return holdsUpFlatTree(__inClosedDetails, node, (child, a) => {
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') return false;
+        if (dom.hasAttribute(a, 'open')) return false;
         const isToggle =
           (dom.localName(child) || '').toLowerCase() === 'summary' &&
           dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
-        if (!isToggle) return true;
-      }
+        return !isToggle;
+      });
     } catch {}
     return false;
   }
@@ -123964,6 +124213,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
           __perfInc('ancestorBlockerDom.structFinal.hit');
           const r = __ancBlockStructFinalCache.get(a);
           const rr = r != null && r !== '' ? String(r) : null;
+          // An element whose own walk to the root met no structural
+          // blocker: there is none further up either.
+          if (!rr) break;
           if (rr) {
             // Propagate to nodes we've seen on this walk (including `node`)
             try {

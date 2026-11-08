@@ -897,10 +897,29 @@ function createDomHelpers(opts) {
     return null;
   };
 
-  const ancestorsIncludingSelf = (n) => {
-    if (!n) return [];
-    // Cache ancestor chains per node, per run, to avoid repeated composed-parent walks.
-    // Deterministic: purely memoized within the current run, no cross-run persistence.
+  // How far up the flat tree a walk from an element goes: far past any
+  // nesting a browser renders (Chromium's parser stops nesting at 512),
+  // a bound on the time a hostile page can cost, not a limit a real page
+  // meets. An element deeper than this is one whose ancestors beyond it the
+  // engine has not seen (hasTruncatedAncestorWalk).
+  const ANCESTOR_WALK_LIMIT = 10000;
+  // Each node keeps the first ANCESTOR_CHUNK nodes of its chain, itself
+  // first, and where the chain goes on, the node it goes on from (`next`)
+  // and how long it is in all (`depth`). A chunk is built from its parent's,
+  // so each node's parent is read once per run, and the memory kept is at
+  // most ANCESTOR_CHUNK entries a node however deep the page is.
+  const ANCESTOR_CHUNK = 200;
+
+  const makeAncestorChunk = (node, base) => {
+    const out = [node];
+    if (base) for (let k = 0; k < base.length && k < ANCESTOR_CHUNK - 1; k++) out.push(base[k]);
+    out.next = base ? (base.length >= ANCESTOR_CHUNK ? base[ANCESTOR_CHUNK - 1] : base.next) : null;
+    out.depth = base ? base.depth + 1 : 1;
+    return out;
+  };
+
+  const ancestorChunk = (n) => {
+    if (!n) return null;
     try {
       if (
         __ancestorsIncludingSelfCache &&
@@ -912,44 +931,64 @@ function createDomHelpers(opts) {
           return cached;
         }
         __perfInc('ancestorsIncludingSelf.miss');
-        // Built from the parent's chain: the node, then the first 199 of
-        // its parent's, the same nodes a walk of 200 steps meets. So each
-        // node's parent is read once per run, and a deep page costs its
-        // nodes, not nodes x depth. The ancestors on the way up that have
-        // no chain yet get theirs too.
+        // The ancestors on the way up that have no chunk yet get theirs too.
         const path = [];
         let base = null;
-        for (let cur = n; cur && path.length < 1e6; cur = composedParent(cur)) {
+        for (let cur = n; cur; cur = composedParent(cur)) {
           const known = cur === n ? null : __ancestorsIncludingSelfCache.get(cur);
           if (known) {
             base = known;
             break;
           }
           path.push(cur);
+          // Far deeper than the limit: the rest is not read, and the chain
+          // counts as going on past it.
+          if (path.length > ANCESTOR_WALK_LIMIT * 10) {
+            base = Object.assign([], { next: null, depth: Infinity });
+            break;
+          }
         }
         for (let i = path.length - 1; i >= 0; i--) {
-          const out = [path[i]];
-          if (base) for (let k = 0; k < base.length && k < 199; k++) out.push(base[k]);
-          // Still more to walk: callers must not read "no blocking ancestor
-          // found" from a chain that never reached the root.
-          if (base && base.length >= 200) {
-            out.truncated = true;
-            __perfInc('ancestorsIncludingSelf.truncated');
-          }
-          __ancestorsIncludingSelfCache.set(path[i], out);
-          base = out;
+          base = makeAncestorChunk(path[i], base);
+          __ancestorsIncludingSelfCache.set(path[i], base);
         }
         return base;
       }
     } catch {
       /* fall through */
     }
+    return null;
+  };
+
+  // The node and its ancestors in the flat tree, nearest first, up to
+  // ANCESTOR_WALK_LIMIT of them; `truncated` when there are more. Within
+  // one chunk (nearly every page) it is the kept array itself.
+  const ancestorsIncludingSelf = (n) => {
+    if (!n) return [];
+    const head = ancestorChunk(n);
+    if (head) {
+      if (!head.next) return head;
+      const out = head.slice();
+      for (let nx = head.next; nx;) {
+        const chunk = ancestorChunk(nx);
+        if (!chunk) break;
+        for (let k = 0; k < chunk.length; k++) {
+          if (out.length >= ANCESTOR_WALK_LIMIT) {
+            out.truncated = true;
+            __perfInc('ancestorsIncludingSelf.truncated');
+            return out;
+          }
+          out.push(chunk[k]);
+        }
+        nx = chunk.next;
+      }
+      return out;
+    }
 
     __perfInc('ancestorsIncludingSelf.nocache');
     const out = [];
-    let cur = n,
-      guard = 0;
-    while (cur && guard++ < 200) {
+    let cur = n;
+    while (cur && out.length < ANCESTOR_WALK_LIMIT) {
       out.push(cur);
       cur = composedParent(cur);
     }
@@ -960,17 +999,20 @@ function createDomHelpers(opts) {
     return out;
   };
 
-  // Whether the 200-step ancestor walk for this node stopped short of the
-  // root. A rule cannot see this, so normalization uses it to decide how much
-  // confidence an occurrence on that node deserves.
+  // Whether the walk up from this node stopped at ANCESTOR_WALK_LIMIT
+  // short of the root. A rule cannot see this, so normalization uses it to
+  // decide how much confidence an occurrence on that node deserves.
   function hasTruncatedAncestorWalk(node) {
     try {
       if (!node || typeof node !== 'object') return false;
+      const head = ancestorChunk(node);
+      if (head) return head.depth > ANCESTOR_WALK_LIMIT;
       return ancestorsIncludingSelf(node).truncated === true;
     } catch {
       return false;
     }
   }
+  hasTruncatedAncestorWalk.limit = ANCESTOR_WALK_LIMIT;
 
   function getClosestMap(el) {
     try {
@@ -1045,28 +1087,56 @@ function createDomHelpers(opts) {
     );
   }
 
+  // Whether something holds for a node or any of its ancestors in the flat
+  // tree, where `own(n, parent)` says whether it holds at n: kept per node
+  // for the run, so each ancestor is asked once however deep the page is.
+  function holdsUpFlatTree(cache, node, own) {
+    const path = [];
+    let cur = node;
+    let held = false;
+    while (cur) {
+      if (cache.has(cur)) {
+        held = cache.get(cur);
+        break;
+      }
+      path.push(cur);
+      cur = composedParent(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (!held) held = own(path[i], i + 1 < path.length ? path[i + 1] : cur) === true;
+      cache.set(path[i], held);
+    }
+    return held;
+  }
+
+  const __inertAttrUp = new WeakMap();
+  const inertAttrUp = (node) =>
+    holdsUpFlatTree(
+      __inertAttrUp,
+      node,
+      (n) => isElement(n) && !!dom.get(n, 'hasAttribute') && dom.hasAttribute(n, 'inert')
+    );
+
   function hasBlockingInert(node) {
     if (!isElement(node)) return false;
     if (embeddedInert) return true;
     if (isSelectButton(node)) return true;
 
     const tag = (dom.tagName(node) || '').toLowerCase();
-    const isArea = tag === 'area';
-    const mapEl = isArea ? getClosestMap(node) : null;
+    if (tag !== 'area') return inertAttrUp(node);
 
-    const chain = ancestorsIncludingSelf(node);
-
-    for (const a of chain) {
-      if (!isElement(a)) continue;
-
-      // <area>/<map> generate no box, so a real browser's image-map
-      // hit-testing sits outside the pipeline inert operates on. Verified
-      // against Chromium and Firefox: inert on the area or its map does
-      // not remove it from the tab order. Only inert on a genuine ancestor
-      // of the <img>+<map> pairing does.
-      if (isArea && (a === node || a === mapEl)) continue;
-
-      if (dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
+    // <area>/<map> generate no box, so a real browser's image-map
+    // hit-testing sits outside the pipeline inert operates on. Verified
+    // against Chromium and Firefox: inert on the area or its map does
+    // not remove it from the tab order. Only inert on a genuine ancestor
+    // of the <img>+<map> pairing does.
+    const mapEl = getClosestMap(node);
+    for (let a = composedParent(node); a; a = composedParent(a)) {
+      if (a === mapEl) {
+        const above = composedParent(a);
+        return !!above && inertAttrUp(above);
+      }
+      if (isElement(a) && dom.get(a, 'hasAttribute') && dom.hasAttribute(a, 'inert')) return true;
     }
     return false;
   }
@@ -2110,21 +2180,19 @@ function createDomHelpers(opts) {
   // it. The walk is over the composed ancestors, so a shadow root's content
   // inside a closed <details>, and light-DOM content slotted into one, count
   // too. The <details> element itself is not hidden by its own state.
+  const __inClosedDetails = new WeakMap();
   function inClosedDetailsContent(node) {
     try {
       if (!isElement(node)) return false;
-      const chain = ancestorsIncludingSelf(node);
-      for (let i = 1; i < chain.length; i++) {
-        const a = chain[i];
-        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') continue;
-        if (dom.hasAttribute(a, 'open')) continue;
-        const child = chain[i - 1];
+      return holdsUpFlatTree(__inClosedDetails, node, (child, a) => {
+        if (!isElement(a) || (dom.localName(a) || '').toLowerCase() !== 'details') return false;
+        if (dom.hasAttribute(a, 'open')) return false;
         const isToggle =
           (dom.localName(child) || '').toLowerCase() === 'summary' &&
           dom.parentNode(child) === a &&
           firstSummaryChild(a) === child;
-        if (!isToggle) return true;
-      }
+        return !isToggle;
+      });
     } catch {}
     return false;
   }
@@ -3959,6 +4027,9 @@ function createDomHelpers(opts) {
           __perfInc('ancestorBlockerDom.structFinal.hit');
           const r = __ancBlockStructFinalCache.get(a);
           const rr = r != null && r !== '' ? String(r) : null;
+          // An element whose own walk to the root met no structural
+          // blocker: there is none further up either.
+          if (!rr) break;
           if (rr) {
             // Propagate to nodes we've seen on this walk (including `node`)
             try {

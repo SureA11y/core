@@ -96,6 +96,11 @@ function stepsFrom(dictionaries, prefix, code, locales) {
   return { steps, passWhen, failWhen };
 }
 
+function isPastWalkLimit(occ) {
+  const evidence = occ.uncertainty && occ.uncertainty.evidence;
+  return !!evidence && typeof evidence === 'object' && 'ancestorWalkLimit' in evidence;
+}
+
 function isUndecided(check, occ) {
   return occurrenceOutcome(check, occ) === 'cantTell';
 }
@@ -163,7 +168,9 @@ function addToResult(result, dictionaries, wanted, reviews) {
     let changed = false;
     const occurrences = check.occurrences.map((occ) => {
       if (!occ || typeof occ !== 'object' || !isUndecided(check, occ)) return occ;
-      if (occ.howToCheck && !wanted) return occ;
+      // Steps the engine gave itself, for an element deeper than it walks
+      // (OUTPUT_SCHEMA.md, ancestorWalkLimit), are in the scan's locale.
+      if (occ.howToCheck && (!wanted || isPastWalkLimit(occ))) return occ;
       const code = occ.data && occ.data.details && occ.data.details.reasonCode;
       const ruleIds = [check.ruleId, check.variantOf].filter((id) => typeof id === 'string');
       let how = standardSteps(reviews, askingProfiles(result, occ), ruleIds, code, locale);

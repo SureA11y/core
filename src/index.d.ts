@@ -770,6 +770,18 @@ export interface CheckResult {
     by?: 'errata';
   };
   /**
+   * Present only when an element the rule failed is nested deeper than the
+   * engine walks up from it: its occurrences became cantTell-tier, with steps.
+   */
+  ancestorWalkLimit?: {
+    /** How many ancestors, the element included, the walk reads: 10000. */
+    limit: number;
+    /** How many fail-tier occurrences it made cantTell-tier. */
+    occurrences: number;
+    /** Present when no fail-tier occurrence was left, so the outcome went from fail to cantTell. */
+    coercedFrom?: 'fail';
+  };
+  /**
    * Present when the rule did not complete (cantTell with no occurrences),
    * or with the engine's notes on what it changed in what the rule returned
    * (docs/OUTPUT_SCHEMA.md, `error`).

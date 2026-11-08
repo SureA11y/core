@@ -1884,8 +1884,10 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   // A variant (src/core/rule-variants.js) names the rule it runs, and that
   // rule's titleKey, whose prefix keys the base's messages and steps.
   const variant = def.variant && typeof def.variant === 'object' ? def.variant : null;
-  // A rule's own result can't claim one.
+  // A rule's own result can't claim one, nor what the engine says of the
+  // walk up from its elements (ancestorWalkLimit, below).
   delete out.variantOf;
+  delete out.ancestorWalkLimit;
   if (variant && typeof variant.of === 'string' && variant.of) {
     out.variantOf = variant.of;
     if (out.i18n && variant.messages && typeof variant.messages.from === 'string') {
@@ -2011,10 +2013,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
   else delete out.margin;
 
   const occ = Array.isArray(out.occurrences) ? out.occurrences : [];
-  let __truncatedOccurrences = 0;
+  // Fail-tier occurrences made questions because the walk up from their
+  // element stopped at its limit (helpers.hasTruncatedAncestorWalk).
+  let __beyondWalkLimit = 0;
+  const __walkLimit =
+    helpers && typeof helpers.hasTruncatedAncestorWalk === 'function'
+      ? helpers.hasTruncatedAncestorWalk.limit
+      : null;
   // Uncertainty codes outside the closed set, dropped and noted in error.
   const __invalidUncertaintyCodes = [];
-  let __placedOccurrences = 0;
   out.occurrences = occ.map((item) => {
     const o = item && typeof item === 'object' ? { ...item } : {};
 
@@ -2022,13 +2029,40 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     const node = o.__node || null;
     if (node) delete o.__node;
 
-    // A 200-step ancestor walk that stopped short cannot show the element is
-    // exposed, so a fail resting only on such elements is not certain enough.
-    if (node && helpers && typeof helpers.hasTruncatedAncestorWalk === 'function') {
+    // An element nested deeper than the walk up from it goes: the engine has
+    // not seen every element around it, any of which may hide it, so a fail
+    // on it becomes a question. The rule's verdict on every other element
+    // stands.
+    if (
+      node &&
+      out.outcome === 'fail' &&
+      o.occurrenceOutcome !== 'cantTell' &&
+      typeof __walkLimit === 'number'
+    ) {
+      let beyond = false;
       try {
-        if (helpers.hasTruncatedAncestorWalk(node)) __truncatedOccurrences += 1;
+        beyond = helpers.hasTruncatedAncestorWalk(node) === true;
       } catch {}
-      __placedOccurrences += 1;
+      if (beyond) {
+        __beyondWalkLimit += 1;
+        o.occurrenceOutcome = 'cantTell';
+        o.uncertainty = {
+          code: 'not-computable',
+          needed:
+            'Whether this element is exposed: it is nested deeper than the ' +
+            __walkLimit +
+            ' ancestors the engine reads, so it could not check the elements around it.',
+          evidence: { ancestorWalkLimit: __walkLimit }
+        };
+        delete o.lean;
+        const eo = out.engineOptions || null;
+        const key = 'engine_review_ancestorWalkLimit_';
+        o.howToCheck = {
+          steps: [1, 2, 3].map((n) => t(key + 'step' + n, '', null, eo)),
+          passWhen: t(key + 'pass', '', null, eo),
+          failWhen: t(key + 'fail', '', null, eo)
+        };
+      }
     }
 
     if (needsDetails && node && helpers && typeof helpers === 'object') {
@@ -2143,19 +2177,15 @@ function normalizeRuleResult(def, raw, schemaVersion, policy, helpers) {
     return o;
   });
 
-  // Downgrade only when every reported element was out of reach of its own
-  // walk. One element the engine could see through justifies the fail; the
-  // rest ride along as occurrences of it, same as any mixed-confidence result.
-  if (
-    out.outcome === 'fail' &&
-    __placedOccurrences > 0 &&
-    __truncatedOccurrences === __placedOccurrences
-  ) {
-    out.outcome = 'cantTell';
-    out.outcomeNormalized = 'cantTell';
-    out.error =
-      (out.error ? String(out.error) + ' | ' : '') +
-      'Ancestor walk hit its depth limit, so the engine could not confirm this content is exposed; coerced to cantTell.';
+  // Said beside the result, not in error: the rule completed. The result is
+  // a question only when no fail-tier occurrence is left.
+  if (__beyondWalkLimit > 0) {
+    out.ancestorWalkLimit = { limit: __walkLimit, occurrences: __beyondWalkLimit };
+    if (!out.occurrences.some((o) => (o.occurrenceOutcome || out.outcome) === 'fail')) {
+      out.outcome = 'cantTell';
+      out.outcomeNormalized = 'cantTell';
+      out.ancestorWalkLimit.coercedFrom = 'fail';
+    }
   }
 
   if (__invalidUncertaintyCodes.length) {
