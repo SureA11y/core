@@ -66,13 +66,23 @@ const HEADINGS =
   '<!doctype html><html lang="en"><head><title>T</title></head><body><main>' +
   '<h1>A</h1><h3>Details</h3></main></body></html>';
 
-test('occurrenceOutcome: the occurrence tier, else the check outcome when it is fail or cantTell', () => {
+test('occurrenceOutcome: the occurrence tier, else the check outcome when it is fail, cantTell or pass', () => {
   const fail = { outcome: 'fail' };
   assert.equal(occurrenceOutcome(fail, { occurrenceOutcome: 'cantTell' }), 'cantTell');
   assert.equal(occurrenceOutcome(fail, {}), 'fail');
   // The outcome an older label-in-name wrote on its occurrences.
   assert.equal(occurrenceOutcome({ outcome: 'cantTell' }, { outcome: 'fail' }), 'fail');
-  assert.equal(occurrenceOutcome({ outcome: 'pass' }, {}), null);
+  // A passing check's summary occurrence (contrast-computable's
+  // ALL_TEXT_COMPUTABLE) reads pass, as its verdict in a scan of several
+  // profiles does.
+  assert.equal(
+    occurrenceOutcome(
+      { outcome: 'pass' },
+      { data: { details: { reasonCode: 'ALL_TEXT_COMPUTABLE' } } }
+    ),
+    'pass'
+  );
+  assert.equal(occurrenceOutcome({ outcome: 'notApplicable' }, {}), null);
   assert.equal(occurrenceOutcome({ outcome: 'notApplicable' }, null), null);
   assert.equal(occurrenceOutcome(null, null), null);
 });

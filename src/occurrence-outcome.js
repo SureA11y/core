@@ -19,11 +19,14 @@ function tierOf(occurrence) {
 }
 
 // Its own tier when that is fail or cantTell, or else its check's outcome
-// when that is; null otherwise.
+// when that is fail, cantTell or pass (the summary occurrence a passing
+// check gives, such as contrast-computable's ALL_TEXT_COMPUTABLE, reads
+// pass, as a scan of several profiles gives it); null otherwise.
 function occurrenceOutcome(check, occurrence) {
   const own = tierOf(occurrence);
   if (own) return own;
-  return check && (check.outcome === 'fail' || check.outcome === 'cantTell') ? check.outcome : null;
+  const outcome = check && check.outcome;
+  return outcome === 'fail' || outcome === 'cantTell' || outcome === 'pass' ? outcome : null;
 }
 
 // Where an occurrence goes in a review: 'fail' for a failure; for an
@@ -33,6 +36,7 @@ function occurrenceOutcome(check, occurrence) {
 // person"), so every tool that sorts a review queue sorts it the same way.
 function reviewGroupOf(check, occurrence) {
   const outcome = occurrenceOutcome(check, occurrence);
+  if (outcome === 'pass') return null;
   if (outcome !== 'cantTell') return outcome;
   const toward = occurrence && occurrence.lean && occurrence.lean.toward;
   if (toward === 'fail') return 'leanFail';
