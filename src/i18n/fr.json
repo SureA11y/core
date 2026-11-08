@@ -1242,6 +1242,7 @@
   "report_meta_schemaVersion": "version du schéma",
   "report_meta_target": "cible",
   "report_meta_profile": "profil",
+  "report_meta_law": "loi",
   "report_meta_profileNotRun": "non exécuté",
   "report_meta_optInRules": "règles activées explicitement",
   "report_meta_viewport": "zone d’affichage",

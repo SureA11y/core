@@ -25206,6 +25206,12 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // The law the profile serves (standard.laws, experimental).
+      ...(appliedProfile &&
+      Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
+      PROFILE_TARGETS[appliedProfile].law
+        ? { law: { ...PROFILE_TARGETS[appliedProfile].law } }
+        : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
         ? { profileExcludes: runOnly.profileExcludes }
@@ -25973,6 +25979,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     profiles[r.profile] = Object.assign(
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
+      engine.law ? { law: engine.law } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
       { rulesResults: outcomes },
       // Each profile's own timings, where they were asked for: the result's
@@ -39519,6 +39526,7 @@ const RUNTIME_CATALOG = {
       "report_meta_schemaVersion": "Schemaversion",
       "report_meta_target": "Ziel",
       "report_meta_profile": "Profil",
+      "report_meta_law": "Gesetz",
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_viewport": "Viewport",
@@ -40875,6 +40883,7 @@ const RUNTIME_CATALOG = {
       "report_meta_schemaVersion": "schema version",
       "report_meta_target": "target",
       "report_meta_profile": "profile",
+      "report_meta_law": "law",
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_viewport": "viewport",
@@ -42231,6 +42240,7 @@ const RUNTIME_CATALOG = {
       "report_meta_schemaVersion": "versión del esquema",
       "report_meta_target": "objetivo",
       "report_meta_profile": "perfil",
+      "report_meta_law": "ley",
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_viewport": "área de visualización",
@@ -43587,6 +43597,7 @@ const RUNTIME_CATALOG = {
       "report_meta_schemaVersion": "version du schéma",
       "report_meta_target": "cible",
       "report_meta_profile": "profil",
+      "report_meta_law": "loi",
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_viewport": "zone d’affichage",
@@ -44943,6 +44954,7 @@ const RUNTIME_CATALOG = {
       "report_meta_schemaVersion": "スキーマバージョン",
       "report_meta_target": "対象",
       "report_meta_profile": "プロファイル",
+      "report_meta_law": "法令",
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_viewport": "ビューポート",
@@ -102268,6 +102280,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_schemaVersion": "Schemaversion",
       "report_meta_target": "Ziel",
       "report_meta_profile": "Profil",
+      "report_meta_law": "Gesetz",
       "report_meta_profileNotRun": "nicht ausgeführt",
       "report_meta_optInRules": "Opt-in-Regeln",
       "report_meta_viewport": "Viewport",
@@ -103624,6 +103637,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_schemaVersion": "schema version",
       "report_meta_target": "target",
       "report_meta_profile": "profile",
+      "report_meta_law": "law",
       "report_meta_profileNotRun": "not run",
       "report_meta_optInRules": "opt-in rules",
       "report_meta_viewport": "viewport",
@@ -104980,6 +104994,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_schemaVersion": "versión del esquema",
       "report_meta_target": "objetivo",
       "report_meta_profile": "perfil",
+      "report_meta_law": "ley",
       "report_meta_profileNotRun": "no ejecutado",
       "report_meta_optInRules": "reglas activadas explícitamente",
       "report_meta_viewport": "área de visualización",
@@ -106336,6 +106351,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_schemaVersion": "version du schéma",
       "report_meta_target": "cible",
       "report_meta_profile": "profil",
+      "report_meta_law": "loi",
       "report_meta_profileNotRun": "non exécuté",
       "report_meta_optInRules": "règles activées explicitement",
       "report_meta_viewport": "zone d’affichage",
@@ -107692,6 +107708,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "report_meta_schemaVersion": "スキーマバージョン",
       "report_meta_target": "対象",
       "report_meta_profile": "プロファイル",
+      "report_meta_law": "法令",
       "report_meta_profileNotRun": "未実行",
       "report_meta_optInRules": "オプトインルール",
       "report_meta_viewport": "ビューポート",
@@ -133226,6 +133243,12 @@ const runCoreSettled = (function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // The law the profile serves (standard.laws, experimental).
+      ...(appliedProfile &&
+      Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
+      PROFILE_TARGETS[appliedProfile].law
+        ? { law: { ...PROFILE_TARGETS[appliedProfile].law } }
+        : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
         ? { profileExcludes: runOnly.profileExcludes }
@@ -133993,6 +134016,7 @@ const mergeProfileResults = (function mergeProfileResults(runs, asked) {
     profiles[r.profile] = Object.assign(
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
+      engine.law ? { law: engine.law } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
       { rulesResults: outcomes },
       // Each profile's own timings, where they were asked for: the result's

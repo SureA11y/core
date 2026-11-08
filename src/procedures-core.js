@@ -45,6 +45,7 @@ const {
   procedureKeys,
   translator
 } = require('./pack-languages.js');
+const { appliesUnder, lawOf } = require('./laws.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -605,6 +606,18 @@ function packStandards(packs, standard) {
   return out;
 }
 
+// The pack whose standard has a profile of that name (case aside):
+// { pack, st, name, profile }, or null.
+function profileIn(packs, name) {
+  const wanted = String(name).trim().toLowerCase();
+  for (const { pack, st } of packStandards(packs, null)) {
+    for (const [n, p] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
+      if (n.toLowerCase() === wanted && isObject(p)) return { pack, st, name: n, profile: p };
+    }
+  }
+  return null;
+}
+
 // The latest of a standard's versions that gives procedures, or `version`
 // where it does; null otherwise.
 function versionOf(st, version) {
@@ -712,7 +725,10 @@ function listing(dictionaries, options, wrap = same) {
   const opts = isObject(options) ? options : {};
   const read = wrap(reader(withPackReview(dictionaries, opts.packs), opts.locale));
   const packRules = packRulesOf(opts.packs);
-  const standard = typeof opts.standard === 'string' && opts.standard ? opts.standard : 'wcag';
+  // A profile names its pack's standard, so it needs no standard of its own.
+  const byProfile = typeof opts.profile === 'string' && opts.profile;
+  const standard =
+    typeof opts.standard === 'string' && opts.standard ? opts.standard : byProfile ? null : 'wcag';
   const asked = typeof opts.version === 'string' && opts.version ? opts.version : null;
   const f = filtersOf(opts);
   // Each as proceduresFrom gives it, with the locale it was read in.
@@ -758,15 +774,24 @@ function listing(dictionaries, options, wrap = same) {
       read
     };
   }
-  const [found] = packStandards(opts.packs, standard);
+  // With a profile, the standard and version it targets, and only the
+  // requirements its law asks for (standard.laws, experimental).
+  const chosen =
+    typeof opts.profile === 'string' && opts.profile ? profileIn(opts.packs, opts.profile) : null;
+  if (opts.profile !== undefined && !chosen) return null;
+  if (chosen && standard && standard !== chosen.st.key && standard !== chosen.st.standard)
+    return null;
+  const [found] = chosen ? [chosen] : packStandards(opts.packs, standard);
   if (!found) return null;
   const { pack, st } = found;
-  const version = versionOf(st, asked);
+  const version = versionOf(st, asked || (chosen ? chosen.profile.version : null));
   if (!version) return null;
+  const law = chosen && typeof chosen.profile.law === 'string' ? chosen.profile.law : null;
   // The standard in its one language, where it declares its languages.
   const reading = readingFor(dictionaries, opts.packs, opts.locale, wrap)(st);
   const requirements = keep(
     Object.keys(st.procedures[version])
+      .filter((id) => !chosen || appliesUnder(st.procedures[version][id], law))
       .sort(compareIds)
       .map((id) => packRequirement([pack], id, st.key, version, () => reading, packRules))
       .filter(Boolean),
@@ -796,6 +821,8 @@ function listing(dictionaries, options, wrap = same) {
     standard: st.standard,
     key: st.key,
     version,
+    ...(chosen ? { profile: chosen.name } : {}),
+    ...(law ? { law: lawOf(st, law, reading.locale || reading.read.locale) } : {}),
     ...(notes ? { notes: notes.texts } : {}),
     ...(notes ? packLang('notesLang', notes.lang, reading.tr, reading.read) : {}),
     ...shaped()

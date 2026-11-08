@@ -1242,6 +1242,7 @@
   "report_meta_schemaVersion": "Schemaversion",
   "report_meta_target": "Ziel",
   "report_meta_profile": "Profil",
+  "report_meta_law": "Gesetz",
   "report_meta_profileNotRun": "nicht ausgeführt",
   "report_meta_optInRules": "Opt-in-Regeln",
   "report_meta_viewport": "Viewport",

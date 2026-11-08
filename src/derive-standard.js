@@ -169,11 +169,13 @@ function deriveStandard(bases, own) {
       if (resolved.some((r) => !r)) continue;
       prov.set(id, resolved);
       const first = resolved[0];
-      // A test's own requirements are the base's structure, not a field.
+      // A test's own requirements are the base's structure, not a field, and
+      // a base's laws are its own: a derived standard names its laws itself.
       const {
         tests: baseTests,
         basedOn: _ignored,
         requirements: _of,
+        laws: _laws,
         ...fields
       } = copy(first.entry);
       requirements[id] = { ...fields, ...req };

@@ -240,6 +240,7 @@ A rule runs under the profile when it carries one of its `tags` **or** its id is
 | `severity` | `{ ruleId: level }`: another severity under the profile. Results show it and keep the rule's own as `ruleSeverity`; baselines and finding ids don't change. |
 | `wcagVersion` | `'2.0'`, `'2.1'` or `'2.2'`: the WCAG version the profile's scans are judged by (`engine.wcagVersion`). Without it, the WCAG tags in `tags` imply the version, and a profile with none is judged by 2.2. A scan's own `engineOptions.wcagVersion` still wins. |
 | `keepsParsing` | `true` when the standard requires 4.1.1 Parsing as written, as EN 301 549 V3.2.1 does. A failure of it then stays a failure under a 2.0 or 2.1 target; under a profile without it, the 2023 errata to WCAG 2.0 and 2.1 count 4.1.1 as satisfied for HTML and XML, and `duplicate-id` asks instead (under 2.2, which removed 4.1.1, it asks whatever the profile says). Only the profile's own field counts: a pack's profile that takes the place of one of core's (a standard moving out of core, such as `en301549-v3.2.1`) doesn't inherit it, and core warns once when the profile it replaces kept 4.1.1 and the pack's doesn't say so. It is a profile's field only: `engineOptions.mappings` names a standard's requirements and never changes an outcome, so a scan judged by a standard that keeps 4.1.1 runs its profile. |
+| `law` | A standard's profile only, experimental: the id of the law the profile serves, one of the standard's `laws` ([below](#the-laws-a-standard-is-assessed-under)). |
 | `version`, `mappedRules` | A standard's profile only: the standard's version it targets, and `mappedRules: true` to run every rule the standard maps for that version. |
 
 **A profile that runs only what its standard asks for.** A standard's profile with `tags: [<ns>]` and `mappedRules: true` runs the pack's own rules and the core rules its map links to a requirement, and nothing else: no rule checks what the standard doesn't, and results hold no WCAG criteria. With no WCAG tag, though, nothing says which WCAG version the standard is built on, and the run is judged by 2.2. For a standard built on 2.1 that is wrong: the run reports 2.2's criteria, such as 2.5.8, which the standard doesn't have. Give the version, and `keepsParsing: true` if the standard still requires 4.1.1 Parsing. The scaffold's `index.js` reads it from `requirements.js`, where each version of the standard names the WCAG version it is built on (`{ version: '1.0', wcagVersion: '2.2' }`, see [section 5](#5-group-results-checklist-items-or-requirements)):
@@ -610,6 +611,29 @@ A standard that declares neither is read as it always was: its own text as writt
 For a locale core doesn't ship (`ca`), the pack's dictionary for it may give core's procedures as well, under core's keys (`wcag_2.4.7_focus-visible_step1`), as it may give core's messages ([§6](#6-messages-and-languages)): with the standard translated into it too, a page of the standard in that locale is in that language throughout. A text it doesn't give is English, as any text a locale lacks.
 
 `packTranslationCoverage(pack)` from `@surea11y/core/pack` says how far each translation goes: `[{ locale, total, translated, missing }]`, `missing` the texts it doesn't translate yet, and `languagesOf(pack.standard)` the standard's languages, its own first. `procedureLanguages({ packs: [pack], standard })` says which languages a reader can choose for it, each `complete` or not, with core's text counted too, so an app's language picker never leads to a page in two languages ([`PROCEDURES.md`](./PROCEDURES.md#their-languages)). `definePack` and `checkPack` refuse a `lang` that isn't a language tag, a translation into the standard's own language, a key that is no text of the standard, an empty translation, and one that loses or adds a `{{placeholder}}`. Core's procedures name the requirement they are read as: read under a pack's requirement 4.3 restating WCAG 1.4.3, "which fails WCAG 1.4.3" becomes "which fails City Standard 4.3". The steps of a finding (variants) keep naming WCAG.
+
+### The laws a standard is assessed under
+
+*Experimental ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)).* One standard can serve more than one law: RGAA is what France's public sector is assessed by, and what its law on the European Accessibility Act points private companies to. The standard says which laws it serves in `standard.laws`, and each profile names the one it is for:
+
+```js
+laws: {
+  'fr-rgaa-public': {
+    name: 'Loi n° 2005-102, article 47',
+    jurisdiction: 'FR',                                   // 'FR', 'DE-BY', 'EU'…
+    appliesTo: 'Public bodies, and companies over €250 M turnover',
+    exemptions: ['Disproportionate burden, assessed and stated'],
+    since: '2005-02-11',
+    enforcement: ['Arcom'],
+    sources: [{ title: 'Légifrance', url: 'https://www.legifrance.gouv.fr/…' }]   // https only
+  }
+},
+profiles: { 'rgaa-4.1.2': { version: '4.1.2', tags: ['rgaa'], mappedRules: true, law: 'fr-rgaa-public' } }
+```
+
+Only `name` and `jurisdiction` are required. They are facts to show, never logic: core never decides whom a law applies to. A requirement only some of the laws ask for lists them (`laws: ['fr-rgaa-public']` in its procedures entry); one without `laws` is asked for by all. Translations go in `standard.lawTexts`, by id: `{ en: { 'laws.fr-rgaa-public.name': '…', 'laws.fr-rgaa-public.exemptions': ['…'] } }`, a list as long as its source. `checkPack` checks all of it.
+
+What it changes: results name the profile's law (`engine.law: { id, name, jurisdiction, lang }`, and `profiles[name].law` in a scan of several), the HTML report shows it beside the profile, `listProcedures({ profile })` lists only the requirements the profile's law asks for, and its head names the law. `lawOf(standard, id, locale)` from `@surea11y/core/pack` gives a law in a language, and `describePacks` lists each standard's laws with the profiles that serve them. In standard data, they are the top-level `laws` and `texts`, a profile's `law` and a requirement's `laws`. A standard derived from another doesn't inherit its laws or its requirements' `laws`: it names its own.
 
 ## 6. Messages and languages
 

@@ -51,6 +51,11 @@ export interface PackStandard {
        * A profile that takes the place of one of core's doesn't inherit it.
        */
       keepsParsing?: boolean;
+      /**
+       * The id of the law the profile serves, one of `laws`.
+       * @experimental Until 1.18.0.
+       */
+      law?: string;
     }
   >;
   mappingsFor: (rule: { id: string; wcagSc?: string[]; checksIds?: string[] }) => object[];
@@ -113,7 +118,55 @@ export interface PackStandard {
     string,
     Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>
   >;
+  /**
+   * The laws the standard is assessed under, by id: facts to show, never
+   * logic (docs/PACKS.md, "The laws a standard is assessed under").
+   * @experimental Until 1.18.0.
+   */
+  laws?: Record<string, PackLaw>;
+  /**
+   * The laws' texts in other languages, by locale and id: { en:
+   * { 'laws.<id>.name': '…', 'laws.<id>.exemptions': ['…'] } }.
+   * @experimental Until 1.18.0.
+   */
+  lawTexts?: Record<string, Record<string, string | string[]>>;
 }
+
+/**
+ * A law a standard is assessed under.
+ * @experimental Until 1.18.0.
+ */
+export interface PackLaw {
+  name: string;
+  /** A country ('FR'), a subdivision ('DE-BY') or a region ('EU'). */
+  jurisdiction: string;
+  appliesTo?: string;
+  exemptions?: string[];
+  /** YYYY-MM-DD. */
+  since?: string;
+  enforcement?: string[];
+  /** Its official texts, at https addresses. */
+  sources?: { title: string; url: string }[];
+}
+
+/**
+ * A law in a language (lawOf).
+ * @experimental Until 1.18.0.
+ */
+export interface LawText extends PackLaw {
+  id: string;
+  /** The language its texts are in. */
+  lang: string;
+  /** Where they are in more than one: each field's. */
+  langs?: Record<string, string>;
+}
+
+/**
+ * A standard's law in `locale`, read from standard.lawTexts for it or its
+ * base language, else as written; null for a law it doesn't have.
+ * @experimental Until 1.18.0.
+ */
+export function lawOf(standard: PackStandard, id: string, locale?: string): LawText | null;
 
 /** A group of a standard's requirements, such as a theme or a chapter. */
 export interface PackRequirementGroup {
@@ -140,9 +193,17 @@ export interface PackProcedure {
  * rollups give the requirement, or only its number where none does.
  */
 export type PackRequirementProcedures =
-  | { title?: string; wcag: string; replace?: Record<string, PackProcedure> }
   | {
       title?: string;
+      wcag: string;
+      replace?: Record<string, PackProcedure>;
+      /** The laws that ask for it; without it, all do. @experimental Until 1.18.0. */
+      laws?: string[];
+    }
+  | {
+      title?: string;
+      /** The laws that ask for it; without it, all do. @experimental Until 1.18.0. */
+      laws?: string[];
       /** The WCAG criteria it relates to, without restating any (relatedRequirements). */
       relatesTo?: string[];
       facets: {
@@ -303,6 +364,8 @@ export interface PackDescription {
     versions: string[];
     profiles: string[];
     rollups: string[];
+    /** Its laws, in English, with the profiles that serve each. @experimental Until 1.18.0. */
+    laws?: (LawText & { profiles: string[] })[];
   } | null;
   locales: string[];
   probes: { path: string; description: string; readBy: string[] }[];

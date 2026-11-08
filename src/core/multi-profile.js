@@ -424,6 +424,7 @@ function mergeProfileResults(runs, asked) {
     profiles[r.profile] = Object.assign(
       { wcagVersion: engine.wcagVersion },
       engine.wcagLevel ? { wcagLevel: engine.wcagLevel } : {},
+      engine.law ? { law: engine.law } : {},
       standards.length ? { standards: standards.map((s) => s.key || s.standard) } : {},
       { rulesResults: outcomes },
       // Each profile's own timings, where they were asked for: the result's
