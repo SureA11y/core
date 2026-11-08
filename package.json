@@ -222,6 +222,7 @@
     "src/wcag.js",
     "src/profile-kit.js",
     "src/pack.js",
+    "src/experimental.js",
     "src/pack.d.ts",
     "src/testing.js",
     "src/testing.d.ts",
