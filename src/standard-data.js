@@ -34,9 +34,26 @@ const STANDARD_DATA = Symbol.for('surea11y.standardData');
 const TOP_KEYS = ['format', 'key', 'standard', 'lang', 'versions', 'options', 'data', 'profiles'];
 const VERSION_KEYS = ['version', 'wcagVersion', 'published', 'basedOn'];
 const OPTION_KEYS = ['applicability', 'wcagCorrespondence', 'ruleMapped'];
-const DATA_KEYS = ['groups', 'requirements', 'tests', 'ruleMap'];
-const REQUIREMENT_KEYS = ['title', 'wcagSc', 'tests', 'partial', 'scope', 'basedOn'];
-const TEST_KEYS = ['title', 'requirements', 'wcagSc', 'scope', 'basedOn'];
+const DATA_KEYS = ['groups', 'requirements', 'tests', 'ruleMap', 'notes', 'review', 'texts'];
+const REQUIREMENT_KEYS = [
+  'title',
+  'wcagSc',
+  'tests',
+  'partial',
+  'scope',
+  'basedOn',
+  'note',
+  'procedure',
+  'replace'
+];
+const TEST_KEYS = ['title', 'requirements', 'wcagSc', 'scope', 'basedOn', 'procedure'];
+const PROCEDURE_KEYS = ['steps', 'passWhen', 'failWhen', 'tools', 'automation'];
+const AUTOMATION = ['full', 'partial', 'manual'];
+// A language tag, as a locale file is named: 'fr', 'pt-BR'.
+const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
+// A facet id, as core's procedures take it (a test's or a requirement's id,
+// lower case).
+const FACET_ID = /^[a-z0-9]+(\.[a-z0-9]+)*(-[a-z0-9]+(\.[a-z0-9]+)*)*$/;
 const GROUP_KEYS = ['id', 'title', 'requirements', 'groups'];
 const BASED_ON_KEYS = ['standard', 'version', 'id'];
 const SCOPES = ['page', 'site'];
@@ -137,6 +154,123 @@ function groupsProblems(groups, requirements, at, out) {
   walk(groups, at);
 }
 
+// A procedure (a requirement's, a test's or a replacement's): 1 to 8 steps,
+// passWhen and failWhen, tools and automation where given. `own` says
+// whether it may give automation (a replacement takes the facet's).
+function procedureProblems(p, at, out, own = true) {
+  if (!isObject(p)) return out.push(`${at} must be { steps, passWhen, failWhen }`);
+  unknownKeys(p, own ? PROCEDURE_KEYS : PROCEDURE_KEYS.filter((k) => k !== 'automation'), at, out);
+  if (
+    !Array.isArray(p.steps) ||
+    p.steps.length < 1 ||
+    p.steps.length > 8 ||
+    !p.steps.every(isText)
+  ) {
+    out.push(`${at}.steps must list 1 to 8 steps, each a non-empty string`);
+  }
+  for (const k of ['passWhen', 'failWhen'])
+    if (!isText(p[k])) out.push(`${at}.${k} must be a non-empty string`);
+  if (p.tools !== undefined && !(Array.isArray(p.tools) && p.tools.every(isText))) {
+    out.push(`${at}.tools must be a list of tools`);
+  }
+  if (p.automation !== undefined && !AUTOMATION.includes(p.automation)) {
+    out.push(`${at}.automation must be one of ${AUTOMATION.join(', ')}`);
+  }
+}
+
+const placeholdersOf = (text) => (String(text).match(/\{\{\w+\}\}/g) || []).sort().join(' ');
+
+// The texts of a version that a translation can give, by their key in the
+// data: { key: text | [texts] } (docs/PACKS.md, "Texts").
+function sourceTexts(d) {
+  const out = {};
+  const procedure = (stem, p) => {
+    if (!isObject(p)) return;
+    if (Array.isArray(p.steps)) out[`${stem}.steps`] = p.steps;
+    for (const k of ['passWhen', 'failWhen']) if (isText(p[k])) out[`${stem}.${k}`] = p[k];
+  };
+  for (const [id, r] of Object.entries(isObject(d.requirements) ? d.requirements : {})) {
+    if (!isObject(r)) continue;
+    if (isText(r.title)) out[`requirements.${id}.title`] = r.title;
+    if (isText(r.note)) out[`requirements.${id}.note`] = r.note;
+    procedure(`requirements.${id}.procedure`, r.procedure);
+    for (const [f, p] of Object.entries(isObject(r.replace) ? r.replace : {})) {
+      procedure(`requirements.${id}.replace.${f}`, p);
+    }
+  }
+  for (const [id, t] of Object.entries(isObject(d.tests) ? d.tests : {})) {
+    if (!isObject(t)) continue;
+    if (isText(t.title)) out[`tests.${id}.title`] = t.title;
+    procedure(`tests.${id}.procedure`, t.procedure);
+  }
+  const walk = (groups) => {
+    for (const g of Array.isArray(groups) ? groups : []) {
+      if (!isObject(g)) continue;
+      if (isText(g.title)) out[`groups.${g.id}.title`] = g.title;
+      walk(g.groups);
+    }
+  };
+  walk(d.groups);
+  if (Array.isArray(d.notes)) out.notes = d.notes;
+  for (const [rule, byCode] of Object.entries(isObject(d.review) ? d.review : {})) {
+    for (const [code, e] of Object.entries(isObject(byCode) ? byCode : {})) {
+      procedure(`review.${rule}.${code}`, e);
+    }
+  }
+  return out;
+}
+
+// What is wrong with a version's translations (texts), against its source
+// texts: a locale that is no tag or is the standard's own, a key that is no
+// text of the version, a list of another length, an empty text, or other
+// {{placeholders}}.
+function textsProblems(d, lang, at, out) {
+  if (d.texts === undefined) return;
+  if (!isObject(d.texts)) return out.push(`${at}.texts must be { locale: { key: text } }`);
+  const source = sourceTexts(d);
+  for (const [tag, dict] of Object.entries(d.texts)) {
+    const lAt = `${at}.texts.${tag}`;
+    if (!TAG.test(tag)) {
+      out.push(`${at}.texts: "${tag}" is not a language tag`);
+      continue;
+    }
+    if (tag.toLowerCase() === lang) {
+      out.push(`${lAt}: the standard is written in ${lang}, so it needs no translation into it`);
+      continue;
+    }
+    if (!isObject(dict)) {
+      out.push(`${lAt} must map keys to their translation`);
+      continue;
+    }
+    for (const [key, value] of Object.entries(dict)) {
+      const kAt = `${lAt}: ${key}`;
+      if (!Object.prototype.hasOwnProperty.call(source, key)) {
+        out.push(`${kAt} is no text of the version`);
+        continue;
+      }
+      const src = source[key];
+      if (Array.isArray(src)) {
+        if (!Array.isArray(value) || value.length !== src.length) {
+          out.push(
+            `${kAt} must be a list of ${src.length} ${src.length === 1 ? 'text' : 'texts'}, as the source is`
+          );
+          continue;
+        }
+        value.forEach((v, i) => {
+          if (!isText(v)) out.push(`${kAt}[${i}] must be a non-empty string`);
+          else if (placeholdersOf(v) !== placeholdersOf(src[i])) {
+            out.push(`${kAt}[${i}] must keep the same {{placeholders}}`);
+          }
+        });
+      } else if (!isText(value)) {
+        out.push(`${kAt} must be a non-empty string`);
+      } else if (placeholdersOf(value) !== placeholdersOf(src)) {
+        out.push(`${kAt} must keep the same {{placeholders}}`);
+      }
+    }
+  }
+}
+
 /**
  * The problems with a standard's data: its shape, as the schema gives it, and
  * what the schema can't say (a version's data for a version not listed, a
@@ -228,6 +362,20 @@ function checkStandardData(data) {
         out.push(`${rAt}.scope must be ${SCOPES.map((s) => `"${s}"`).join(' or ')}`);
       }
       basedOnProblems(req.basedOn, rAt, out);
+      if (req.note !== undefined && !isText(req.note))
+        out.push(`${rAt}.note must be a non-empty string`);
+      if (req.procedure !== undefined) {
+        procedureProblems(req.procedure, `${rAt}.procedure`, out);
+        if (!FACET_ID.test(id.toLowerCase()))
+          out.push(`${rAt}: its id can't name a facet of its procedure`);
+      }
+      if (req.replace !== undefined) {
+        if (!isObject(req.replace)) out.push(`${rAt}.replace must be { facet: procedure }`);
+        else
+          for (const [f, p] of Object.entries(req.replace)) {
+            procedureProblems(p, `${rAt}.replace.${f}`, out, false);
+          }
+      }
     }
     for (const [id, t] of Object.entries(tests || {})) {
       const tAt = `${at}.tests.${id}`;
@@ -252,8 +400,34 @@ function checkStandardData(data) {
         out.push(`${tAt}.scope must be ${SCOPES.map((s) => `"${s}"`).join(' or ')}`);
       }
       basedOnProblems(t.basedOn, tAt, out);
+      if (t.procedure !== undefined) {
+        procedureProblems(t.procedure, `${tAt}.procedure`, out);
+        if (!FACET_ID.test(id.toLowerCase()))
+          out.push(`${tAt}: its id can't name a facet of its procedure`);
+      }
     }
     if (requirements) groupsProblems(d.groups, requirements, `${at}.groups`, out);
+    if (
+      d.notes !== undefined &&
+      !(Array.isArray(d.notes) && d.notes.length && d.notes.every(isText))
+    ) {
+      out.push(`${at}.notes must be a non-empty list of texts`);
+    }
+    if (d.review !== undefined) {
+      if (!isObject(d.review))
+        out.push(`${at}.review must be { rule: { CODE: { steps, passWhen, failWhen } } }`);
+      else
+        for (const [rule, byCode] of Object.entries(d.review)) {
+          if (!isObject(byCode)) {
+            out.push(`${at}.review.${rule} must be { CODE: { steps, passWhen, failWhen } }`);
+            continue;
+          }
+          for (const [code, e] of Object.entries(byCode)) {
+            procedureProblems(e, `${at}.review.${rule}.${code}`, out, false);
+          }
+        }
+    }
+    textsProblems(d, isText(data.lang) ? data.lang.toLowerCase() : 'en', at, out);
   }
   if (withTests && withTests !== listed.length) {
     out.push('a standard with tests has them in every version');
@@ -269,6 +443,134 @@ function checkStandardData(data) {
           );
         }
       }
+  }
+  return out;
+}
+
+const byNumber = (a, b) => String(a).localeCompare(String(b), 'en', { numeric: true });
+const facetIdOf = (id) => String(id).toLowerCase();
+
+// A facet of core's procedures from a procedure in the data.
+function facetOf(id, label, p, mapped) {
+  return {
+    id: facetIdOf(id),
+    label,
+    automation: p.automation || 'manual',
+    ...(Array.isArray(p.tools) ? { tools: p.tools.slice() } : {}),
+    steps: p.steps.slice(),
+    passWhen: p.passWhen,
+    failWhen: p.failWhen,
+    ...(mapped ? { mappedRequirements: [String(id)] } : {})
+  };
+}
+
+/**
+ * Core's procedures for the data (standard.procedures, docs/PACKS.md), by
+ * version, or null where nothing in it gives one. A requirement with a
+ * procedure of its own is one facet; one that restates a WCAG criterion
+ * (options.applicability 'wcag', one criterion) takes its procedures, with
+ * its replacements; one with tests that give procedures has a facet per
+ * test, each naming the test as what the mapping sends rules to; one with
+ * only a note is listed with it. Requirements in number order.
+ */
+function proceduresOf(data, options) {
+  let any = false;
+  const out = {};
+  for (const { version } of data.versions) {
+    const d = data.data[version];
+    const tests = d.tests || {};
+    const own = {};
+    for (const id of Object.keys(d.requirements).sort(byNumber)) {
+      const r = d.requirements[id];
+      const sc = Array.isArray(r.wcagSc) ? r.wcagSc : [];
+      const head = { title: r.title, ...(r.note ? { note: r.note } : {}) };
+      const restates = options.applicability === 'wcag' && sc.length === 1;
+      if (r.procedure) {
+        any = true;
+        own[id] = {
+          ...head,
+          ...(sc.length ? { relatesTo: sc.slice() } : {}),
+          facets: [facetOf(id, r.title, r.procedure, false)]
+        };
+        continue;
+      }
+      if (restates) {
+        own[id] = {
+          ...head,
+          wcag: sc[0],
+          ...(isObject(r.replace) ? { replace: copy(r.replace) } : {})
+        };
+        continue;
+      }
+      const facets = (
+        Array.isArray(r.tests)
+          ? r.tests
+          : Object.keys(tests)
+              .filter((t) => (tests[t].requirements || []).includes(id))
+              .sort(byNumber)
+      )
+        .filter((t) => tests[t] && tests[t].procedure)
+        .map((t) => facetOf(t, tests[t].title, tests[t].procedure, true));
+      if (facets.length) {
+        any = true;
+        own[id] = { ...head, ...(sc.length ? { relatesTo: sc.slice() } : {}), facets };
+      } else if (r.note) {
+        any = true;
+        own[id] = head;
+      }
+    }
+    out[version] = own;
+  }
+  return any || options.applicability === 'wcag' ? out : null;
+}
+
+const copy = (v) => JSON.parse(JSON.stringify(v));
+
+/**
+ * The data's translations (texts, by version and locale, keyed as the data
+ * names its texts) as core reads them (standard.texts: { locale: { version:
+ * { key } } }, src/pack-languages.js): a test's title and procedure become
+ * those of its facet in each requirement it belongs to, a requirement's
+ * procedure that of its own facet, whose label is its title.
+ */
+function engineTexts(data) {
+  const out = {};
+  for (const { version } of data.versions) {
+    const d = data.data[version];
+    if (!isObject(d.texts)) continue;
+    const tests = d.tests || {};
+    const reqsOf = (t) =>
+      Object.keys(d.requirements).filter((r) =>
+        (Array.isArray(d.requirements[r].tests)
+          ? d.requirements[r].tests
+          : (tests[t] && tests[t].requirements) || []
+        ).includes(t)
+      );
+    for (const [locale, dict] of Object.entries(d.texts)) {
+      const target = ((out[locale] = out[locale] || {})[version] = {});
+      for (const [key, value] of Object.entries(dict)) {
+        let m;
+        if ((m = /^requirements\.(.+?)\.procedure\.(steps|passWhen|failWhen)$/.exec(key))) {
+          target[`requirements.${m[1]}.facets.${facetIdOf(m[1])}.${m[2]}`] = value;
+        } else if ((m = /^tests\.(.+?)\.title$/.exec(key))) {
+          for (const r of reqsOf(m[1]))
+            target[`requirements.${r}.facets.${facetIdOf(m[1])}.label`] = value;
+        } else if ((m = /^tests\.(.+?)\.procedure\.(steps|passWhen|failWhen)$/.exec(key))) {
+          for (const r of reqsOf(m[1]))
+            target[`requirements.${r}.facets.${facetIdOf(m[1])}.${m[2]}`] = value;
+        } else {
+          target[key] = value;
+          // A requirement's own facet is labelled with its title.
+          if (
+            (m = /^requirements\.(.+?)\.title$/.exec(key)) &&
+            d.requirements[m[1]] &&
+            d.requirements[m[1]].procedure
+          ) {
+            target[`requirements.${m[1]}.facets.${facetIdOf(m[1])}.label`] = value;
+          }
+        }
+      }
+    }
   }
   return out;
 }
@@ -316,12 +618,22 @@ function standardFromData(data, extras = {}) {
     ...(options.applicability ? { applicability: options.applicability } : {}),
     ...(options.wcagCorrespondence ? { wcagCorrespondence: true } : {})
   });
-  const procedures = extras.procedures !== undefined ? extras.procedures : kit.procedures;
+  const built = proceduresOf(frozen, options);
+  const procedures = extras.procedures !== undefined ? extras.procedures : built || kit.procedures;
   const groups = Object.fromEntries(
     frozen.versions
       .filter(({ version }) => Array.isArray(frozen.data[version].groups))
       .map(({ version }) => [version, frozen.data[version].groups])
   );
+  const byVersion = (field) =>
+    Object.fromEntries(
+      frozen.versions
+        .filter(({ version }) => frozen.data[version][field] !== undefined)
+        .map(({ version }) => [version, frozen.data[version][field]])
+    );
+  const notes = byVersion('notes');
+  const review = byVersion('review');
+  const texts = engineTexts(frozen);
   const entry = {
     key: frozen.key,
     standard: frozen.standard,
@@ -334,7 +646,10 @@ function standardFromData(data, extras = {}) {
     validate: kit.validate,
     ...(procedures ? { procedures } : {}),
     ...(procedures && Object.keys(groups).length ? { groups } : {}),
+    ...(procedures && Object.keys(notes).length ? { notes } : {}),
+    ...(Object.keys(review).length ? { reviewByVersion: review } : {}),
     ...(frozen.lang ? { lang: frozen.lang } : {}),
+    ...(Object.keys(texts).length ? { texts } : {}),
     ...extras
   };
   Object.defineProperty(entry, STANDARD_DATA, { value: frozen, enumerable: false });
@@ -346,4 +661,4 @@ function standardDataOf(standard) {
   return (standard && standard[STANDARD_DATA]) || null;
 }
 
-module.exports = { FORMAT, checkStandardData, standardFromData, standardDataOf };
+module.exports = { FORMAT, checkStandardData, standardFromData, standardDataOf, sourceTexts };

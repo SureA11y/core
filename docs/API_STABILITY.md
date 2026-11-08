@@ -119,6 +119,7 @@ There is no switch to turn them on: they work as any other API does.
 | `ruleMappedStandard`'s `tests` | A second level: tests under requirements, many to many, rule-map rows naming tests, `asks`, `wcagCorrespondence` and `outsideCorrespondence` ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements)). | 1.16.0 | 1.18.0 |
 | Standard data | The format `surea11y-standard/1` and its schema (`@surea11y/core/schemas/standard.schema.json`), and `checkStandardData`, `standardFromData` and `standardDataOf` from `@surea11y/core/pack`. | 1.16.0 | 1.18.0 |
 | Standard derivation | `deriveStandard` from `@surea11y/core/pack`, and the `basedOn` that results' entries carry from a standard's requirements and tests ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements)). | 1.16.0 | 1.18.0 |
+| Standard texts | A standard's translations by id and version (`standard.texts`), its own review steps per version (`standard.reviewByVersion`), and, in standard data, `procedure`, `note`, `replace`, `notes`, `review` and `texts` ([`PACKS.md`](./PACKS.md#6-messages-and-languages)). | 1.16.0 | 1.18.0 |
 
 The list is `src/experimental.js`, which `checkPack` and `describePacks` read.
 

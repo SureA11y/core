@@ -1217,6 +1217,23 @@ function packProblems(pack, withCoreVersion, withReported) {
     problems.push(...proceduresProblems(st.procedures, versions));
     problems.push(...groupsProblems(st.groups, st.procedures, versions));
     problems.push(...standardReviewProblems(st.review));
+    if (st.reviewByVersion !== undefined) {
+      if (!isObject(st.reviewByVersion)) {
+        problems.push('standard.reviewByVersion must be { version: { ruleId: { CODE: entry } } }');
+      } else {
+        for (const [version, review] of Object.entries(st.reviewByVersion)) {
+          if (!versions.includes(version)) {
+            problems.push(`standard.reviewByVersion: the standard has no version ${version}`);
+            continue;
+          }
+          problems.push(
+            ...standardReviewProblems(review).map((p) =>
+              p.replace(/^standard\.review/, `standard.reviewByVersion.${version}`)
+            )
+          );
+        }
+      }
+    }
     problems.push(...notesProblems(st.notes, versions));
     problems.push(...languageProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {

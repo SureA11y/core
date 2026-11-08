@@ -319,7 +319,13 @@ module.exports = definePack({ name, version, namespace: 'city', core: '~1.16.0',
   standard: standardFromData(data, { report: { noteKey: 'city_report_note' } }) });
 ```
 
-`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and, with `applicability: 'wcag'`, procedures and the groups; `extras` adds what the data doesn't give yet (`report`, `review`, `translations`, `notes`, a `mappingsFor` of the pack's own). It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`.
+The data also holds the standard's texts, in its own language (`lang`), and their translations:
+
+- A requirement's `note`, and its `procedure` (`{ steps, passWhen, failWhen, tools, automation }`) where it is assessed as a whole; a test's `procedure`; `replace: { [facet]: { steps, passWhen, failWhen } }` on a requirement that restates a WCAG criterion.
+- Per version, `notes` (a list) and `review` (the standard's own steps for core's codes, `{ [rule]: { [CODE]: { steps, passWhen, failWhen } } }`).
+- Per version, `texts: { [locale]: { [key]: text | [texts] } }`, keyed as the data names its texts: `requirements.<id>.title`, `.note`, `.procedure.steps`, `.procedure.passWhen`, `.procedure.failWhen`, `.replace.<facet>.steps`…; `tests.<id>.title`, `tests.<id>.procedure.steps`…; `groups.<id>.title`; `notes`; `review.<rule>.<CODE>.steps`…. `checkStandardData` names a key that is no text of the version, a list of another length, an empty text or other `{{placeholders}}`.
+
+`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and the procedures (a requirement with a procedure is one facet labelled with its title; one with tests has a facet per test, labelled with the test's title, that lists the core rules the mapping sends to the test; one that restates a WCAG criterion, with `applicability: 'wcag'`, takes its procedures and replacements; one with only a note is listed with it), the groups, the notes, the per-version review and the translations by id (`texts`, above), as core reads them. `extras` adds or replaces what the data doesn't give (`report`, `translations` keyed by text, a `mappingsFor` of the pack's own). It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`.
 
 **A standard built on others** (experimental until 1.18.0). `deriveStandard(bases, own)` gives the complete data of a standard built on one or more others, as RAWeb is on RGAA and EN 301 549, and BITV-Test on EN 301 549 split into steps. The bases are their packs' data (`standardDataOf(base.standard)`, or their JSON); `own` declares only what the derived standard keeps and changes:
 
@@ -354,6 +360,7 @@ const data = deriveStandard([standardDataOf(en301549.standard)], {
 - **Rule rows flow through `basedOn`.** A base row for clause X applies to every derived entry based on X, and to its own steps when the derived standard splits X into them; routes, `asks` and `outsideCorrespondence` follow. A row that reaches nothing is dropped. The derived standard's own row for a rule replaces the inherited one whole, and `null` drops it. A rule that reaches the derived standard from two bases needs a row of its own.
 - **Drift is an error.** A `basedOn` naming a standard, version, requirement or test the bases don't have throws, naming it: when a base changes, the derived pack's tests fail rather than its results.
 - **Results name the base.** Each entry in a result carries the `basedOn` of its requirement or test, so a step's result names the clause it comes from, whether or not the base's pack is in the scan.
+- **Review and texts follow.** A version's review comes from its bases', the derived standard's own entry for a rule and code replacing theirs (`null` drops it); two bases giving the same code differently need an entry of its own. A derived entry takes its base's translations under its own id where its source text is the base's; a text it rewords keeps only its own translations, never the base's of another wording. Groups and notes are its own.
 
 The derived pack depends on its bases as npm dependencies and builds its data when it is required; a scan still takes each pack alone.
 
@@ -569,6 +576,32 @@ Keyed by its text, a translation follows it. A text two versions share is transl
 A standard that declares its languages, `lang` or `translations`, is read in one of them: the first the reader asks for that it has (`fr-CA` tries `fr-ca`, then `fr`), or else its own. Everything about it is then in that language: its own text, and core's that it uses, the procedures of the WCAG criteria its requirements restate and the tools' names, read in that locale as if asked for it. A standard written in French and translated into English, read in Spanish, is all French, core's procedures included, rather than French beside Spanish. `listProcedures` and `procedureChecklist` say which language in `locale`.
 
 A facet is translated as a whole, its label, steps, `passWhen` and `failWhen`, or shown as written, so a person never meets one step in another language; a title, a note or a group's title, on its own; the notes of a version, together. Where a text is shown as written in a page or a report in another language, it says so (`lang`, `titleLang`, `noteLang`, `procedureLang`, `notesLang` on what `listProcedures` gives, [`PROCEDURES.md`](./PROCEDURES.md#the-shape)) and is marked `lang` there, as WCAG 3.1.2 asks.
+
+**Translations by id** (experimental until 1.18.0, [`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)). `texts` gives translations by what each text is, per version, rather than by its wording. Two texts worded alike can then be translated apart, and a version can word an id its own way:
+
+```js
+standard: {
+  // ...
+  lang: 'en',
+  texts: {
+    fr: {
+      '1.0': {
+        'requirements.4.2.title': 'Les images ont une alternative textuelle',
+        'requirements.4.2.facets.alt-present.label': 'Chaque image a un attribut alt',
+        'requirements.4.2.facets.alt-present.steps': ['Ouvrez les outils de développement.', 'Inspectez chaque image.'],
+        'requirements.4.2.facets.alt-present.passWhen': 'Chaque image en a un.',
+        'requirements.4.2.facets.alt-present.failWhen': 'Une image n’en a pas, ce qui enfreint {{requirement}}.',
+        'groups.4.title': 'Images et couleur',
+        notes: ['…']
+      }
+    }
+  }
+}
+```
+
+The keys: `requirements.<id>.title` and `.note`; `requirements.<id>.facets.<facet>.label`, `.steps`, `.passWhen`, `.failWhen`; `requirements.<id>.replace.<facet>.steps`, `.passWhen`, `.failWhen`; `groups.<id>.title`; `notes`; and `review.<rule>.<CODE>.steps`, `.passWhen`, `.failWhen` for the standard's own steps for core's codes. A list (steps, notes) is given as a list, in the source's order, and is read as a whole, as a translation keyed by text is. A text with its key in the locale and version is read from `texts`; one without is read from `translations`, by its wording; so a standard can move from one to the other text by text. `definePack` refuses a key that names no text of the version, a list of another length, an empty text, other `{{placeholders}}`, a version the standard doesn't have, and a translation into the standard's own language. `packTranslationCoverage` and `procedureLanguages` count each text where it is.
+
+**The standard's own steps per version.** `reviewByVersion: { [version]: { [rule]: { [CODE]: { steps, passWhen, failWhen } } } }` gives a version steps of its own for a core rule's code, replacing `review`'s for the same rule and code under that version's profiles: steps that name a requirement ("which fails RGAA 7.1") can follow the version's numbering. `texts` translates them by id in that version (`review.<rule>.<CODE>.steps`), read before the `_standardReview_` dictionary keys.
 
 A scan shows the standard's rollups by the titles its translations give, in the scan's locale where the standard has it; core makes their keys. In another locale they show as written, or as the standard's English translation where it has one, and `result.standards[].titleLang` says in which language.
 

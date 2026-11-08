@@ -132,7 +132,8 @@ function prepareStandards(registry, { where = '' } = {}) {
       const report = (s && s.report) || {};
       // A standard that declares its languages (docs/PACKS.md) has its
       // rollups' titles in each of them: the scan works out which it shows.
-      const declared = s && (s.lang !== undefined || s.translations !== undefined);
+      const declared =
+        s && (s.lang !== undefined || s.translations !== undefined || s.texts !== undefined);
       return {
         key: s.key,
         standard: s.standard,
