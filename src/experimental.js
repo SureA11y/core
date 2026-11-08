@@ -20,7 +20,48 @@
  * A pack that uses one declares a `core` range no wider than `~` (checkPack
  * reports a wider one), and describePacks lists what it uses.
  */
-const EXPERIMENTAL = [];
+const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// The rollups a pack's standard writes, or [] when it can't give them.
+function rollupsOf(pack) {
+  const standard = pack && pack.standard;
+  if (!standard || typeof standard.composites !== 'function') return [];
+  const rollups = standard.composites();
+  return Array.isArray(rollups) ? rollups : [];
+}
+
+const EXPERIMENTAL = [
+  {
+    id: 'skip-link details.lean',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: "skip-link's data.details.lean, the direction of a finding's lean, which a standard's mapping routes by: a lean may change in a minor, so a verdict built on it may too.",
+    // A rollup that sends skip-link's findings by their lean.
+    usedBy: (pack) =>
+      rollupsOf(pack).some((rollup) => {
+        const c = isObject(rollup && rollup.meta) && rollup.meta.contributions;
+        const entry = isObject(c) && c['skip-link'];
+        return (
+          isObject(entry) &&
+          Array.isArray(entry.findings) &&
+          entry.findings.some(
+            (f) => isObject(f) && isObject(f.when) && Object.keys(f.when).includes('lean')
+          )
+        );
+      })
+  },
+  {
+    id: 'standard.review dictionary keys',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: "The keys a pack's dictionaries translate its standard's own steps under, <standard key>_standardReview_<rule id>_<CODE>_step<n>, _pass and _fail: they name no version of the standard yet.",
+    usedBy: (pack) =>
+      isObject(pack && pack.dictionaries) &&
+      Object.values(pack.dictionaries).some(
+        (dict) => isObject(dict) && Object.keys(dict).some((k) => k.includes('_standardReview_'))
+      )
+  }
+];
 
 // Whether a pack uses an entry's API; an entry whose check throws counts it
 // as unused.

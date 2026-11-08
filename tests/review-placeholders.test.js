@@ -482,8 +482,13 @@ test("howToCheckFor reads a standard's own steps for a profile that asks, as add
 });
 
 test("checkPack reports a standard's steps translated in part, or under keys it doesn't have", () => {
+  // Translated standard steps are experimental (src/experimental.js): a pack
+  // with them takes no later minor of core than the one it is checked with.
+  const [major, minor] = require('../package.json').version.split('.');
   const problems = (fr, en = {}) =>
-    checkPack({ ...attrsPack(OWN), dictionaries: { en, fr } }).join('\n');
+    checkPack({ ...attrsPack(OWN), core: `~${major}.${minor}.0`, dictionaries: { en, fr } }).join(
+      '\n'
+    );
   assert.equal(problems(FRENCH), '');
   const { [`${STEM}fail`]: _, ...part } = FRENCH;
   assert.match(
