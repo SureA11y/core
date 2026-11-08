@@ -21,8 +21,16 @@
  * A pack's standard may give its own steps for core rules' codes
  * (standard.review), in English; its dictionaries may translate each entry
  * under `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass`
- * and `_fail` (standardReviewStem), read as a whole or not at all.
+ * and `_fail` (standardReviewStem), read as a whole or not at all. A version
+ * may give steps of its own (standard.reviewByVersion), replacing the
+ * standard's for the same rule and code under its profiles, and
+ * standard.texts may translate them by id in that version
+ * (`review.<rule>.<CODE>.steps`, `.passWhen`, `.failWhen`), read first.
+ * Experimental (src/experimental.js).
  */
+
+// Self-contained too: no file system and no engine.
+const { idTextsOf } = require('./pack-languages.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
@@ -267,8 +275,27 @@ function standardReviewKeys(key, ruleId, code, entry) {
  */
 function translatedStandardReview(source, ruleId, code, entry, locales) {
   const keys = isText(source.key) ? standardReviewKeys(source.key, ruleId, code, entry) : null;
-  for (const locale of keys ? locales : []) {
-    if (locale === 'en') break;
+  // By id first (standard.texts, in the profile's version): the whole entry
+  // in a locale, or none of it.
+  const ids = source.texts || null;
+  const stem = `review.${ruleId}.${code}`;
+  const idKeys = [
+    ...entry.steps.map((_, i) => `${stem}.steps.${i}`),
+    `${stem}.passWhen`,
+    `${stem}.failWhen`
+  ];
+  for (const locale of locales) {
+    if (locale === 'en' || locale === source.lang) break;
+    const byVersion = ids && isObject(ids[locale]) ? ids[locale][source.version] : null;
+    if (isObject(byVersion) && idKeys.every((k) => hasOwn(byVersion, k) && isText(byVersion[k]))) {
+      const texts = idKeys.map((k) => byVersion[k]);
+      return {
+        steps: texts.slice(0, -2),
+        passWhen: texts[texts.length - 2],
+        failWhen: texts[texts.length - 1]
+      };
+    }
+    if (!keys) continue;
     const dict = dictionaryFor(source.dictionaries, locale);
     if (!dict || !keys.every((k) => hasOwn(dict, k) && isText(dict[k]))) continue;
     const texts = keys.map((k) => dict[k]);
@@ -294,27 +321,46 @@ function standardReviewsOf(packs) {
   const out = new Map();
   for (const pack of Array.isArray(packs) ? packs : []) {
     const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
-    if (!st || !isObject(st.review) || !isObject(st.profiles)) continue;
-    const review = {};
-    for (const [ruleId, byCode] of Object.entries(st.review)) {
+    if (!st || !isObject(st.profiles)) continue;
+    if (!isObject(st.review) && !isObject(st.reviewByVersion)) continue;
+    for (const [profile, p] of Object.entries(st.profiles)) {
+      const version = isObject(p) && typeof p.version === 'string' ? p.version : null;
+      const review = reviewForVersion(st, version);
+      if (!Object.keys(review).length) continue;
+      const key = profile.toLowerCase();
+      if (out.has(key)) continue;
+      out.set(key, {
+        review,
+        key: typeof st.key === 'string' ? st.key : null,
+        dictionaries: isObject(pack.dictionaries) ? pack.dictionaries : null,
+        version,
+        lang: typeof st.lang === 'string' ? st.lang.trim().toLowerCase() : 'en',
+        texts: idTextsOf(st)
+      });
+    }
+  }
+  return out;
+}
+
+/**
+ * A standard's own steps for core's codes in a version: standard.review,
+ * with the version's entries in standard.reviewByVersion replacing those of
+ * the same rule and code. Only well-formed entries: { ruleId: { CODE: entry } }.
+ */
+function reviewForVersion(st, version) {
+  const review = {};
+  const take = (table) => {
+    for (const [ruleId, byCode] of Object.entries(isObject(table) ? table : {})) {
       if (!isObject(byCode)) continue;
       for (const [code, entry] of Object.entries(byCode)) {
         if (!CODE.test(code) || !wellFormedReview(entry)) continue;
         (review[ruleId] = review[ruleId] || {})[code] = entry;
       }
     }
-    if (!Object.keys(review).length) continue;
-    const source = {
-      review,
-      key: typeof st.key === 'string' ? st.key : null,
-      dictionaries: isObject(pack.dictionaries) ? pack.dictionaries : null
-    };
-    for (const profile of Object.keys(st.profiles)) {
-      const key = profile.toLowerCase();
-      if (!out.has(key)) out.set(key, source);
-    }
-  }
-  return out;
+  };
+  take(st.review);
+  if (version && isObject(st.reviewByVersion)) take(st.reviewByVersion[version]);
+  return review;
 }
 
 // 'fr-CA' reads fr-ca, then fr; English last.
@@ -364,6 +410,7 @@ function standardSteps(reviews, profiles, ruleIds, code, locales) {
 }
 
 module.exports = {
+  reviewForVersion,
   chainOf,
   claimsOf,
   codesUnder,

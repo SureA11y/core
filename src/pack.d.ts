@@ -93,6 +93,26 @@ export interface PackStandard {
    * one of its languages, core's procedures included (docs/PACKS.md).
    */
   translations?: Record<string, Record<string, string>>;
+  /**
+   * Translations by what each text is, per version, read before
+   * `translations`: { fr: { '1.0': { 'requirements.4.2.title': '…',
+   * 'requirements.4.2.facets.alt.steps': ['…'] } } }. Keys:
+   * requirements.<id>.title | note, requirements.<id>.facets.<facet>.label |
+   * steps | passWhen | failWhen, requirements.<id>.replace.<facet>.steps |
+   * passWhen | failWhen, groups.<id>.title, notes, review.<rule>.<CODE>.steps
+   * | passWhen | failWhen. A list is given as a list.
+   * @experimental Until 1.18.0 (docs/API_STABILITY.md).
+   */
+  texts?: Record<string, Record<string, Record<string, string | string[]>>>;
+  /**
+   * A version's own steps for core's codes, replacing `review`'s for the
+   * same rule and code under the profiles of that version.
+   * @experimental Until 1.18.0.
+   */
+  reviewByVersion?: Record<
+    string,
+    Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>
+  >;
 }
 
 /** A group of a standard's requirements, such as a theme or a chapter. */

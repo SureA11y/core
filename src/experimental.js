@@ -86,6 +86,18 @@ const EXPERIMENTAL = [
     }
   },
   {
+    id: 'standard texts',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: "A standard's translations by id and version (standard.texts), and its own review steps per version (standard.reviewByVersion).",
+    usedBy: (pack) =>
+      !!(
+        pack &&
+        pack.standard &&
+        (pack.standard.texts !== undefined || pack.standard.reviewByVersion !== undefined)
+      )
+  },
+  {
     id: 'ruleMappedStandard tests',
     since: '1.16.0',
     until: '1.18.0',

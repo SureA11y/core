@@ -31,11 +31,18 @@
  * 5. Validation. A `basedOn` naming a standard, version or id the bases
  *    don't have is an error, so a change in a base can't drift in silently.
  *
- * Texts come with the texts layer; groups and profiles are the derived
- * standard's own.
+ * 6. Review and texts. A version's review (a standard's own steps for core's
+ *    codes) comes from its bases', the derived standard's own entry for a
+ *    rule and code replacing theirs (null drops it); two bases giving the
+ *    same rule and code differently is an error it resolves with its own.
+ *    A derived entry takes its base's translations (texts) under its own id
+ *    where its source text is the base's, and its own translations replace
+ *    them; a text it rewords is not translated by the base.
+ *
+ * Groups, notes and profiles are the derived standard's own.
  */
 
-const { checkStandardData } = require('./standard-data.js');
+const { checkStandardData, sourceTexts } = require('./standard-data.js');
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const listOf = (v) => (Array.isArray(v) ? v : []);
@@ -269,6 +276,85 @@ function deriveStandard(bases, own) {
     mine.ruleMap = Object.fromEntries(
       Object.entries(ruleMap).sort(([a], [b]) => a.localeCompare(b))
     );
+
+    // Rule 6: review from the bases, own entries replacing them.
+    const ownReview = isObject(mine.review) ? mine.review : {};
+    const review = {};
+    const reviewFrom = {};
+    for (const [standard, version] of Object.entries(baseVersion)) {
+      const tables = baseTables(byKey, standard, version);
+      for (const [rule, byCode] of Object.entries(isObject(tables.review) ? tables.review : {})) {
+        for (const [code, entry] of Object.entries(isObject(byCode) ? byCode : {})) {
+          const mineGives =
+            isObject(ownReview[rule]) &&
+            Object.prototype.hasOwnProperty.call(ownReview[rule], code);
+          const seen = review[rule] && review[rule][code];
+          if (seen && JSON.stringify(seen) !== JSON.stringify(entry) && !mineGives) {
+            problems.push(
+              `${at}.review: ${rule} ${code} comes from both ${reviewFrom[`${rule} ${code}`]} and ${standard}; give it a review of its own`
+            );
+            continue;
+          }
+          (review[rule] = review[rule] || {})[code] = copy(entry);
+          reviewFrom[`${rule} ${code}`] = standard;
+        }
+      }
+    }
+    for (const [rule, byCode] of Object.entries(ownReview)) {
+      for (const [code, entry] of Object.entries(isObject(byCode) ? byCode : {})) {
+        if (entry === null) {
+          if (review[rule]) delete review[rule][code];
+        } else (review[rule] = review[rule] || {})[code] = entry;
+      }
+    }
+    for (const rule of Object.keys(review))
+      if (!Object.keys(review[rule]).length) delete review[rule];
+    if (Object.keys(review).length) mine.review = review;
+    else delete mine.review;
+
+    // Rule 6: translations through provenance, where the source is the base's.
+    const mineSource = sourceTexts(mine);
+    const texts = isObject(mine.texts) ? copy(mine.texts) : {};
+    const inherit = (baseD, baseKey, key) => {
+      const baseSource = sourceTexts(baseD);
+      if (!Object.prototype.hasOwnProperty.call(mineSource, key)) return;
+      if (JSON.stringify(baseSource[baseKey]) !== JSON.stringify(mineSource[key])) return;
+      for (const [locale, dict] of Object.entries(isObject(baseD.texts) ? baseD.texts : {})) {
+        if (!isObject(dict) || !Object.prototype.hasOwnProperty.call(dict, baseKey)) continue;
+        const target = (texts[locale] = texts[locale] || {});
+        if (!Object.prototype.hasOwnProperty.call(target, key)) target[key] = copy(dict[baseKey]);
+      }
+    };
+    const prefixOf = (kind, id) => `${kind === 'test' ? 'tests' : 'requirements'}.${id}`;
+    for (const [unit, sources] of prov) {
+      const s0 = sources[0];
+      const kind = Object.prototype.hasOwnProperty.call(tests, unit) ? 'test' : 'requirement';
+      for (const suffix of [
+        'title',
+        'note',
+        'procedure.steps',
+        'procedure.passWhen',
+        'procedure.failWhen'
+      ]) {
+        inherit(
+          s0.tables,
+          `${prefixOf(s0.kind, s0.id)}.${suffix}`,
+          `${prefixOf(kind, unit)}.${suffix}`
+        );
+      }
+    }
+    for (const [standard, version] of Object.entries(baseVersion)) {
+      const tables = baseTables(byKey, standard, version);
+      for (const [rule, byCode] of Object.entries(isObject(mine.review) ? mine.review : {})) {
+        for (const code of Object.keys(byCode)) {
+          for (const f of ['steps', 'passWhen', 'failWhen']) {
+            inherit(tables, `review.${rule}.${code}.${f}`, `review.${rule}.${code}.${f}`);
+          }
+        }
+      }
+    }
+    for (const l of Object.keys(texts)) if (!Object.keys(texts[l]).length) delete texts[l];
+    if (Object.keys(texts).length) mine.texts = texts;
   }
 
   if (problems.length) throw new TypeError(`deriveStandard: ${problems.join('; ')}`);
