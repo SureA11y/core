@@ -266,6 +266,20 @@ can't be read. Without a layout (jsdom), an element of a formula (`<math>`) has 
 of the element around the formula: jsdom can't compute a formula's style, and reading it
 throws. A browser computes it, and it is read as any other.
 
+Also without a layout, the properties core reads to tell whether an element is shown
+(`display`, `visibility`, `position`, `clip-path`, `opacity`, `width`, `height`,
+`overflow`, `overflow-x`, `overflow-y`, `content-visibility`, `pointer-events`, `left`,
+`top`, `text-indent`, `transform`, `scale` and `contain`) take the rules jsdom's
+`getComputedStyle` leaves out: those inside `@layer`, `@supports` and `@container`, and
+those nested in another at-rule. Where the declaration that wins the cascade for the
+element is one of those, its value is read in place of jsdom's, by property
+(`cs.display`, `cs['clip-path']`, `getPropertyValue('display')`); `visibility`,
+`pointer-events` and `text-indent` come down to an element that declares none. `@media` is
+taken as jsdom takes it (only `all` and `screen` apply), `@supports` holds for a property
+test and for a `selector()` that parses, and `@container` doesn't apply without a layout.
+A value of `revert`, `revert-layer` or with `var()` leaves jsdom's. Only the document's own
+style sheets count, as for jsdom; `clip` is read by `isClipHidden`'s own reader below.
+
 ### `isClipHidden(style)` → `boolean`
 
 Whether a clip leaves nothing of a box visible, from a computed style or from declared

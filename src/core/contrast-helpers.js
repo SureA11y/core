@@ -8030,7 +8030,9 @@ function createContrastHelpers(opts, shared) {
     colorSchemeUnread,
     useNamedCanvas,
     isPinned: __isPinned,
-    matchedSpecificity
+    matchedSpecificity,
+    // A selector list's complex selectors, split at its top-level commas.
+    splitSelectorList: (text) => __splitTopLevel(String(text || '')).filter(Boolean)
   };
 }
 
