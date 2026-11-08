@@ -30,16 +30,11 @@
  */
 
 // Self-contained too: no file system and no engine.
-const { idTextsOf } = require('./pack-languages.js');
+const { idTextsOf, isUnsafeKey } = require('./texts-by-id.js');
 
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
-
-// Keys that would reach Object.prototype through an assignment: data can
-// carry them (JSON keeps "__proto__" as a key), so nothing written by key
-// takes them.
-const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
 
 const CODE = /^[A-Za-z0-9_]+$/;
 

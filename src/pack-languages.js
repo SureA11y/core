@@ -36,14 +36,11 @@
  * with it.
  */
 
+const { idTextsOf, isUnsafeKey } = require('./texts-by-id.js');
+
 const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
-
-// Keys that would reach Object.prototype through an assignment: data can
-// carry them (JSON keeps "__proto__" as a key), so nothing written by key
-// takes them.
-const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
 
 // A language tag, as a locale file is named: 'fr', 'pt-BR', 'zh-Hant'.
 const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
@@ -62,28 +59,6 @@ function translationsOf(st) {
   if (!isObject(st) || !isObject(st.translations)) return out;
   for (const [tag, dict] of Object.entries(st.translations)) {
     if (TAG.test(tag) && isObject(dict)) out[tag.toLowerCase()] = dict;
-  }
-  return out;
-}
-
-// The standard's translations by id, by lower-case locale and version, each
-// list flattened to one key per text ('…steps.0'): { locale: { version: {
-// key: text } } }.
-function idTextsOf(st) {
-  const out = {};
-  if (!isObject(st) || !isObject(st.texts)) return out;
-  for (const [tag, byVersion] of Object.entries(st.texts)) {
-    if (!TAG.test(tag) || !isObject(byVersion)) continue;
-    const locale = (out[tag.toLowerCase()] = {});
-    for (const [version, dict] of Object.entries(byVersion)) {
-      if (!isObject(dict) || isUnsafeKey(version)) continue;
-      const flat = (locale[version] = {});
-      for (const [key, value] of Object.entries(dict)) {
-        if (isUnsafeKey(key)) continue;
-        if (Array.isArray(value)) value.forEach((v, i) => (flat[`${key}.${i}`] = v));
-        else flat[key] = value;
-      }
-    }
   }
   return out;
 }
