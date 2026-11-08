@@ -36,6 +36,11 @@ const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
+// Keys that would reach Object.prototype through an assignment: data can
+// carry them (JSON keeps "__proto__" as a key), so nothing written by key
+// takes them.
+const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
+
 const CODE = /^[A-Za-z0-9_]+$/;
 
 function dictionaryFor(dictionaries, locale) {
@@ -353,7 +358,7 @@ function reviewForVersion(st, version) {
     for (const [ruleId, byCode] of Object.entries(isObject(table) ? table : {})) {
       if (!isObject(byCode)) continue;
       for (const [code, entry] of Object.entries(byCode)) {
-        if (!CODE.test(code) || !wellFormedReview(entry)) continue;
+        if (isUnsafeKey(ruleId) || !CODE.test(code) || !wellFormedReview(entry)) continue;
         (review[ruleId] = review[ruleId] || {})[code] = entry;
       }
     }
