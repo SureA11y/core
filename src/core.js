@@ -10773,7 +10773,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     colorSchemeUnread,
     useNamedCanvas,
     isPinned: __isPinned,
-    matchedSpecificity
+    matchedSpecificity,
+    // A selector list's complex selectors, split at its top-level commas.
+    splitSelectorList: (text) => __splitTopLevel(String(text || '')).filter(Boolean)
   };
 });
 
@@ -13301,6 +13303,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         cs = {};
       }
+      // Without a layout (jsdom), with the layered and conditional rules
+      // jsdom leaves out (layeredOverridesOf).
+      try {
+        if (cs && isElement(el)) {
+          const doc = dom.ownerDocument(el);
+          if (doc && !__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
+          if (doc && !__layoutByDoc.get(doc)) {
+            const overrides = layeredOverridesOf(el);
+            if (overrides) cs = withLayeredOverrides(cs, overrides);
+          }
+        }
+      } catch {}
     }
 
     try {
@@ -14203,9 +14217,64 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { candidates };
   }
 
+  // An @supports condition where there is no CSS.supports (jsdom): a
+  // property and value test holds, as in the current browsers a page tests
+  // for; selector() holds where the selector parses; not, and and or
+  // combine them. A condition this can't read holds.
+  function __supportsHolds(text) {
+    const s = String(text || '').trim();
+    if (!s) return true;
+    // The top-level pieces joined by and/or.
+    const pieces = [];
+    const ops = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (depth === 0 && /\s/.test(ch)) {
+        const m = /^\s+(and|or)\s+/i.exec(s.slice(i));
+        if (m) {
+          pieces.push(s.slice(start, i));
+          ops.push(m[1].toLowerCase());
+          i += m[0].length - 1;
+          start = i + 1;
+        }
+      }
+    }
+    pieces.push(s.slice(start));
+    if (pieces.length > 1) {
+      const values = pieces.map(__supportsHolds);
+      return ops.every((o) => o === 'and')
+        ? values.every(Boolean)
+        : ops.every((o) => o === 'or')
+          ? values.some(Boolean)
+          : true;
+    }
+    const not = /^not\s*(\(.*\))$/is.exec(s);
+    if (not) return !__supportsHolds(not[1]);
+    const selector = /^selector\((.*)\)$/is.exec(s);
+    if (selector) {
+      try {
+        dom.matches(dom.documentElement(document), selector[1]);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (s[0] === '(' && s[s.length - 1] === ')') {
+      const inner = s.slice(1, -1).trim();
+      // A nested condition, or a declaration, which holds.
+      if (/^(\(|not\b|selector\()/i.test(inner)) return __supportsHolds(inner);
+      return true;
+    }
+    return true;
+  }
   // Whether a style sheet or an @import, @media or @supports rule applies to
   // the page as it is drawn now: its media list matches (window.matchMedia)
-  // and its @supports condition holds (CSS.supports). A disabled sheet
+  // and its @supports condition holds (CSS.supports, or __supportsHolds
+  // without it). A disabled sheet
   // applies to nothing, and an @starting-style block applies only to the
   // first frame of a transition, so neither does. Without matchMedia
   // (jsdom), only a media list that names nothing but media other than the
@@ -14234,9 +14303,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         ruleOrSheet.type === 12 ||
         (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
       const css = view && view.CSS;
-      if (isSupports && css && typeof css.supports === 'function') {
+      if (isSupports) {
         const condition = String(ruleOrSheet.conditionText || '').trim();
-        if (condition && !css.supports(condition)) return false;
+        if (css && typeof css.supports === 'function') {
+          if (condition && !css.supports(condition)) return false;
+        } else if (condition && !__supportsHolds(condition)) return false;
       }
     } catch {
       // unreadable: taken to apply
@@ -19336,8 +19407,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // over any rule, then cascade layers, specificity and order. Only rules
   // whose @media and @supports apply count (cssConditionApplies). null
   // where a browser computed the value, or nothing declares one.
-  const __CLIP_PROP = '--surea11y-declared-clip';
-  const __declaredClipRulesByRoot = new WeakMap();
   // A style sheet's text parsed apart from the page, as cssRulesOf parses a
   // supplied one; null where it can't be.
   function __parsedRulesOf(text) {
@@ -19358,12 +19427,84 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     return null;
   }
-  // The rules of a root's sheets that declare a clip, in cascade order:
-  // [{ selector, value, important, layer, order }], `layer` a list of
-  // indices (each layer's place among its siblings, in the order they are
-  // first named), [] outside any layer. Once per root.
-  function declaredClipRules(root) {
-    if (__declaredClipRulesByRoot.has(root)) return __declaredClipRulesByRoot.get(root);
+  // The properties read as declared under jsdom (declaredRules), each by
+  // its name in a style sheet; `overflow` and `inset` are shorthands of
+  // the ones core reads (expandDeclared).
+  const __DECLARED_PROPS = [
+    'clip-path',
+    'clip',
+    'display',
+    'visibility',
+    'position',
+    'opacity',
+    'width',
+    'height',
+    'overflow-x',
+    'overflow-y',
+    'overflow',
+    'content-visibility',
+    'pointer-events',
+    'inset',
+    'left',
+    'top',
+    'text-indent',
+    'transform',
+    'scale',
+    'contain'
+  ];
+  const __DECLARED_PREFIX = '--surea11y-declared-';
+  const __DECLARED_NAME_RE = new RegExp(
+    '(^|[{;\\s])(' + __DECLARED_PROPS.join('|') + ')(\\s*:)',
+    'gi'
+  );
+  // A declaration as the longhands core reads: [[prop, value]].
+  function expandDeclared(prop, value) {
+    const words = /^(inherit|initial|unset|revert|revert-layer)$/i.test(value)
+      ? null
+      : value.split(/\s+/).filter(Boolean);
+    if (prop === 'overflow') {
+      return [
+        ['overflow-x', words ? words[0] : value],
+        ['overflow-y', words ? words[1] || words[0] : value]
+      ];
+    }
+    if (prop === 'inset') {
+      if (!words)
+        return [
+          ['top', value],
+          ['left', value]
+        ];
+      return [
+        ['top', words[0]],
+        ['left', words[3] || words[1] || words[0]]
+      ];
+    }
+    return [[prop, value]];
+  }
+  // Whether jsdom applies a media list: only "all" or "screen" as a whole
+  // query, or an empty list (its evaluateMediaList).
+  function jsdomMediaApplies(ruleOrSheet) {
+    try {
+      const media = ruleOrSheet && ruleOrSheet.media;
+      const items = [];
+      for (let i = 0; media && i < media.length; i++) items.push(String(media[i]).trim());
+      return !items.length || items.some((q) => q === 'all' || q === 'screen');
+    } catch {
+      return true;
+    }
+  }
+  const __declaredRulesByRoot = new WeakMap();
+  // The declarations of __DECLARED_PROPS in a root's sheets, in cascade
+  // order: [{ selector, prop, value, important, layer, order, jsdom, media }],
+  // `layer` a list of indices (each layer's place among its siblings, in
+  // the order they are first named), [] outside any layer. `jsdom`: jsdom's
+  // own getComputedStyle applies the rule (a top-level rule of a document
+  // sheet it read, one in a top-level @media it applies, or a top-level one
+  // of a sheet that sheet imports); `media`: every @media around it is one
+  // jsdom applies. A rule under @container is left out: without a layout
+  // there is no container to query. Once per root.
+  function declaredRules(root) {
+    if (__declaredRulesByRoot.has(root)) return __declaredRulesByRoot.get(root);
     const rules = [];
     let order = 0;
     // Layer names, dotted from the outermost, to their indices.
@@ -19383,7 +19524,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return { path: l.path, name: full || key };
     };
     const NO_LAYER = { path: [], name: '' };
-    const walk = (list, layer, fromText, imports, base, depth) => {
+    const NOT_JSDOM = { top: false, jsdom: false, media: true };
+    // ctx: { top: at the top level of a sheet jsdom reads, jsdom: jsdom
+    // applies a style rule here, media: as above }.
+    const walk = (list, layer, fromText, imports, base, depth, ctx) => {
       const n = (list && list.length) || 0;
       let importIndex = 0;
       for (let i = 0; i < n && depth < 10; i++) {
@@ -19393,16 +19537,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (typeof rule.selectorText === 'string' && rule.style) {
           // A nested style rule's selector is relative to its parent's:
           // not followed.
-          const prop = fromText ? __CLIP_PROP : 'clip';
-          const value = String(rule.style.getPropertyValue(prop) || '').trim();
-          if (value) {
-            rules.push({
-              selector: rule.selectorText,
-              value,
-              important: rule.style.getPropertyPriority(prop) === 'important',
-              layer: layer.path,
-              order: order++
-            });
+          for (const name of __DECLARED_PROPS) {
+            const prop = fromText ? __DECLARED_PREFIX + name : name;
+            const value = String(rule.style.getPropertyValue(prop) || '').trim();
+            if (!value) continue;
+            const important = rule.style.getPropertyPriority(prop) === 'important';
+            for (const [longhand, v] of expandDeclared(name, value)) {
+              rules.push({
+                selector: rule.selectorText,
+                prop: longhand,
+                value: v,
+                important,
+                layer: layer.path,
+                order: order++,
+                jsdom: ctx.jsdom,
+                media: ctx.media
+              });
+            }
           }
         } else if (kind === 'CSSImportRule' || rule.type === 3) {
           const own = imports ? imports[importIndex] : rule;
@@ -19410,18 +19561,27 @@ const createDomHelpers = (function createDomHelpers(opts) {
           if (!cssConditionApplies(rule)) continue;
           const name = typeof rule.layerName === 'string' ? rule.layerName : null;
           const inner = name === null ? layer : layerOf(layer, name);
+          // jsdom applies an imported sheet's top-level rules, whatever
+          // its layer.
+          const media = jsdomMediaApplies(rule);
+          const innerCtx = {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          };
           let sheet = null;
           try {
             sheet = own ? own.styleSheet : null;
           } catch {}
-          if (sheet) walkSheet(sheet, inner, depth + 1);
+          if (sheet) walkSheet(sheet, inner, depth + 1, innerCtx);
           else {
             let href = '';
             try {
               href = new URL(String(rule.href || ''), base).href;
             } catch {}
             const text = href ? suppliedTextFor(href) : null;
-            if (text != null) walkText(text, href, null, inner, depth + 1);
+            if (text != null)
+              walkText(text, href, null, inner, depth + 1, { ...innerCtx, jsdom: false });
           }
         } else if (kind === 'CSSLayerStatementRule') {
           for (const name of rule.nameList || []) layerOf(layer, String(name));
@@ -19432,27 +19592,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
             fromText,
             null,
             base,
-            depth + 1
+            depth + 1,
+            { ...NOT_JSDOM, media: ctx.media }
           );
-        } else if (
-          kind === 'CSSMediaRule' ||
-          kind === 'CSSSupportsRule' ||
-          rule.type === 4 ||
-          rule.type === 12
-        ) {
+        } else if (kind === 'CSSMediaRule' || rule.type === 4) {
+          if (!cssConditionApplies(rule)) continue;
+          const media = jsdomMediaApplies(rule);
+          walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          });
+        } else if (kind === 'CSSSupportsRule' || rule.type === 12) {
           if (cssConditionApplies(rule))
-            walk(rule.cssRules, layer, fromText, null, base, depth + 1);
+            walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+              ...NOT_JSDOM,
+              media: ctx.media
+            });
         }
       }
     };
-    // A sheet's text, with each clip declaration renamed to a custom
+    // A sheet's text, with each declaration read renamed to a custom
     // property, which the parser keeps as written. `imports`: the page's own
     // @import rules of the sheet, which have the imported sheets.
-    const walkText = (text, base, imports, layer, depth) => {
-      const renamed = String(text).replace(/(^|[{;\s])clip(\s*:)/gi, '$1' + __CLIP_PROP + '$2');
-      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth);
+    const walkText = (text, base, imports, layer, depth, ctx) => {
+      const renamed = String(text).replace(__DECLARED_NAME_RE, '$1' + __DECLARED_PREFIX + '$2$3');
+      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth, ctx);
     };
-    const walkSheet = (sheet, layer, depth) => {
+    const walkSheet = (sheet, layer, depth, ctx) => {
       if (!sheet || depth > 10 || !cssConditionApplies(sheet)) return;
       const owner = sheet.ownerNode;
       const href = typeof sheet.href === 'string' ? sheet.href : '';
@@ -19467,6 +19634,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         own = null;
       }
+      // A sheet jsdom has no rules of (a link it didn't load, whose text
+      // the run supplies) is one it applies nothing from.
+      const read = !!own && own.length > 0;
+      const sheetCtx = read
+        ? { ...ctx, media: ctx.media && jsdomMediaApplies(sheet) }
+        : { ...ctx, jsdom: false };
+      if (read && !jsdomMediaApplies(sheet)) sheetCtx.jsdom = false;
       if (text != null) {
         const imports = own
           ? [...own].filter(
@@ -19474,16 +19648,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
                 r && (r.type === 3 || (r.constructor && r.constructor.name) === 'CSSImportRule')
             )
           : null;
-        walkText(text, base, imports, layer, depth);
+        walkText(text, base, imports, layer, depth, sheetCtx);
       } else {
-        walk(cssRulesOf(sheet), layer, false, null, base, depth);
+        walk(cssRulesOf(sheet), layer, false, null, base, depth, sheetCtx);
       }
     };
+    // jsdom's getComputedStyle reads the document's own sheets: not a
+    // shadow root's, nor adopted ones.
+    let docSheets = [];
+    try {
+      docSheets = root && dom.nodeType(root) === 9 ? [...(dom.get(root, 'styleSheets') || [])] : [];
+    } catch {}
     for (const { sheet, root: r } of getStyleSheets()) {
-      if (r === root) walkSheet(sheet, NO_LAYER, 0);
+      if (r !== root) continue;
+      const read = docSheets.includes(sheet);
+      walkSheet(sheet, NO_LAYER, 0, { top: read, jsdom: read, media: true });
     }
-    __declaredClipRulesByRoot.set(root, rules);
+    __declaredRulesByRoot.set(root, rules);
     return rules;
+  }
+  // The rules of a root's sheets that declare a clip (declaredRules).
+  const __declaredClipRulesByRoot = new WeakMap();
+  function declaredClipRules(root) {
+    if (!__declaredClipRulesByRoot.has(root))
+      __declaredClipRulesByRoot.set(
+        root,
+        declaredRules(root).filter((r) => r.prop === 'clip')
+      );
+    return __declaredClipRulesByRoot.get(root);
   }
   // Which of two declarations the cascade applies: each { important,
   // inline, layer, specificity, order }; true when `a` wins over `b`.
@@ -19552,6 +19744,226 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (isClipHidden(cs)) return true;
     const clip = declaredClipOf(el, cs);
     return !!clip && isClipHidden({ position: cs && cs.position, clip, clipPath: '' });
+  }
+
+  // Under jsdom, the properties core reads to tell whether an element is
+  // shown, with the cascade jsdom's getComputedStyle leaves out applied:
+  // it reads no rule inside @layer, @supports or @container, nor one
+  // nested in another at-rule, so a Tailwind v4 page's `hidden` and
+  // `sr-only`, in @layer utilities, hid nothing there. Where the
+  // declaration that wins the cascade for el (declaredRules: !important,
+  // the style attribute, layers, specificity, order) is one jsdom left
+  // out, its value stands in for jsdom's; where one jsdom read wins, or
+  // none is declared, jsdom's value is right. @media is taken as jsdom
+  // takes it (only "all" and "screen" apply), so a page's rules count the
+  // same whether they are in a layer or not. visibility, pointer-events
+  // and text-indent are inherited: an element that declares none takes
+  // its parent's. Only the document's own tree, as jsdom styles it.
+  const __INHERITED_DECLARED = new Set(['visibility', 'pointer-events', 'text-indent']);
+  const __INITIAL_DECLARED = {
+    display: 'inline',
+    visibility: 'visible',
+    position: 'static',
+    'clip-path': 'none',
+    opacity: '1',
+    width: 'auto',
+    height: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'content-visibility': 'visible',
+    'pointer-events': 'auto',
+    left: 'auto',
+    top: 'auto',
+    'text-indent': '0px',
+    transform: 'none',
+    scale: 'none',
+    contain: 'none'
+  };
+  const __layeredIndexByDoc = new WeakMap();
+  // The rules that could win over what jsdom computed, indexed by what
+  // their selectors need (selectorIndex); null where no rule jsdom left
+  // out declares one of the properties.
+  function layeredIndexOf(doc) {
+    if (__layeredIndexByDoc.has(doc)) return __layeredIndexByDoc.get(doc);
+    let out = null;
+    try {
+      const records = declaredRules(doc).filter((r) => r.media && r.prop !== 'clip');
+      if (records.some((r) => !r.jsdom)) {
+        const bySelector = new Map();
+        for (const r of records) {
+          if (!bySelector.has(r.selector)) bySelector.set(r.selector, []);
+          bySelector.get(r.selector).push(r);
+        }
+        const selectors = [...bySelector.keys()];
+        const parts = [];
+        const partOwner = [];
+        selectors.forEach((sel, i) => {
+          for (const part of contrast.splitSelectorList(sel)) {
+            parts.push(part);
+            partOwner.push(i);
+          }
+        });
+        out = {
+          selectors,
+          bySelector,
+          partOwner,
+          index: selectorIndex(parts),
+          inherited: records.some((r) => !r.jsdom && __INHERITED_DECLARED.has(r.prop))
+        };
+      }
+    } catch {
+      out = null;
+    }
+    __layeredIndexByDoc.set(doc, out);
+    return out;
+  }
+  // el's own winning declaration of each property: Map prop -> decl.
+  function __declaredWinners(el, idx) {
+    const best = new Map();
+    const consider = (decl) => {
+      const cur = best.get(decl.prop);
+      if (!cur || __clipDeclWins(decl, cur)) best.set(decl.prop, decl);
+    };
+    let n = 0;
+    for (const m of String(getAttr(el, 'style') || '').matchAll(
+      /(?:^|;)\s*([a-z-]+)\s*:\s*([^;]+)/gi
+    )) {
+      const name = m[1].toLowerCase();
+      if (!__DECLARED_PROPS.includes(name) || name === 'clip') continue;
+      const important = /!\s*important\s*$/i.test(m[2]);
+      const value = m[2].replace(/!\s*important\s*$/i, '').trim();
+      for (const [prop, v] of expandDeclared(name, value)) {
+        consider({
+          prop,
+          value: v,
+          important,
+          inline: true,
+          jsdom: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
+      }
+    }
+    const seen = new Set();
+    for (const i of idx.index.candidates(el)) {
+      const s = idx.partOwner[i];
+      if (seen.has(s)) continue;
+      seen.add(s);
+      const selector = idx.selectors[s];
+      const specificity = contrast.matchedSpecificity(el, selector);
+      if (specificity < 0) continue;
+      for (const r of idx.bySelector.get(selector)) consider({ ...r, inline: false, specificity });
+    }
+    return best;
+  }
+  const __layeredOverridesCache = new WeakMap();
+  // Map prop -> value that replaces jsdom's for el, or null.
+  function layeredOverridesOf(el) {
+    if (__layeredOverridesCache.has(el)) return __layeredOverridesCache.get(el);
+    let doc;
+    try {
+      doc = dom.ownerDocument(el);
+      if (!doc || dom.getRootNode(el) !== doc) doc = null;
+    } catch {
+      doc = null;
+    }
+    const idx = doc ? layeredIndexOf(doc) : null;
+    if (!idx) {
+      __layeredOverridesCache.set(el, null);
+      return null;
+    }
+    // Elements up to the nearest one with an answer, when an inherited
+    // property may come down from above; their answers are worked out
+    // from the top.
+    const path = [el];
+    if (idx.inherited) {
+      for (
+        let p = dom.parentElement(el);
+        p && !__layeredOverridesCache.has(p);
+        p = dom.parentElement(p)
+      )
+        path.push(p);
+    }
+    const view = window || dom.defaultView(doc);
+    for (let k = path.length - 1; k >= 0; k--) {
+      const node = path[k];
+      const parent = dom.parentElement(node);
+      const fromParent = parent ? __layeredOverridesCache.get(parent) || null : null;
+      // A property's value on the parent, as corrected here.
+      const parentValue = (prop) => {
+        if (fromParent && fromParent.has(prop)) return fromParent.get(prop);
+        if (!parent) return __INITIAL_DECLARED[prop];
+        try {
+          return String(view.getComputedStyle(parent).getPropertyValue(prop) || '');
+        } catch {
+          return null;
+        }
+      };
+      let out = null;
+      const set = (prop, value) => {
+        if (value == null || value === '') return;
+        if (!out) out = new Map();
+        out.set(prop, value);
+      };
+      let winners;
+      try {
+        winners = __declaredWinners(node, idx);
+      } catch {
+        winners = new Map();
+      }
+      for (const [prop, decl] of winners) {
+        if (decl.jsdom) continue;
+        const v = String(decl.value);
+        const kw = v.toLowerCase();
+        if (kw === 'inherit' || (kw === 'unset' && __INHERITED_DECLARED.has(prop)))
+          set(prop, parentValue(prop));
+        else if (kw === 'initial' || kw === 'unset') set(prop, __INITIAL_DECLARED[prop]);
+        // revert, revert-layer, var() and env() can't be resolved here:
+        // jsdom's value stays.
+        else if (kw === 'revert' || kw === 'revert-layer' || /\b(var|env|attr)\(/i.test(v))
+          continue;
+        else set(prop, v);
+      }
+      if (fromParent) {
+        for (const [prop, value] of fromParent) {
+          if (__INHERITED_DECLARED.has(prop) && !winners.has(prop)) set(prop, value);
+        }
+      }
+      __layeredOverridesCache.set(node, out);
+    }
+    return __layeredOverridesCache.get(el);
+  }
+  // jsdom's computed style with the overrides read in its place, through
+  // every way core reads it (cs.visibility, cs['clip-path'],
+  // getPropertyValue).
+  function withLayeredOverrides(cs, overrides) {
+    const byName = new Map();
+    for (const [prop, value] of overrides) {
+      byName.set(prop, value);
+      byName.set(
+        prop.replace(/-([a-z])/g, (m, c) => c.toUpperCase()),
+        value
+      );
+    }
+    if (overrides.has('overflow-x') || overrides.has('overflow-y')) {
+      const x = byName.get('overflow-x') || String(cs.overflowX || '');
+      const y = byName.get('overflow-y') || String(cs.overflowY || '');
+      byName.set('overflow', x === y ? x : x + ' ' + y);
+    }
+    return new Proxy(cs, {
+      get(target, key) {
+        if (typeof key === 'string' && byName.has(key)) return byName.get(key);
+        if (key === 'getPropertyValue') {
+          return (name) => {
+            const k = String(name).toLowerCase();
+            return byName.has(k) ? byName.get(k) : target.getPropertyValue(name);
+          };
+        }
+        const v = Reflect.get(target, key, target);
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
   }
 
   // An element's containing block: the box its position is resolved
@@ -118231,7 +118643,9 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
     colorSchemeUnread,
     useNamedCanvas,
     isPinned: __isPinned,
-    matchedSpecificity
+    matchedSpecificity,
+    // A selector list's complex selectors, split at its top-level commas.
+    splitSelectorList: (text) => __splitTopLevel(String(text || '')).filter(Boolean)
   };
 });
 
@@ -120759,6 +121173,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         cs = {};
       }
+      // Without a layout (jsdom), with the layered and conditional rules
+      // jsdom leaves out (layeredOverridesOf).
+      try {
+        if (cs && isElement(el)) {
+          const doc = dom.ownerDocument(el);
+          if (doc && !__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
+          if (doc && !__layoutByDoc.get(doc)) {
+            const overrides = layeredOverridesOf(el);
+            if (overrides) cs = withLayeredOverrides(cs, overrides);
+          }
+        }
+      } catch {}
     }
 
     try {
@@ -121661,9 +122087,64 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { candidates };
   }
 
+  // An @supports condition where there is no CSS.supports (jsdom): a
+  // property and value test holds, as in the current browsers a page tests
+  // for; selector() holds where the selector parses; not, and and or
+  // combine them. A condition this can't read holds.
+  function __supportsHolds(text) {
+    const s = String(text || '').trim();
+    if (!s) return true;
+    // The top-level pieces joined by and/or.
+    const pieces = [];
+    const ops = [];
+    let depth = 0;
+    let start = 0;
+    for (let i = 0; i < s.length; i++) {
+      const ch = s[i];
+      if (ch === '(') depth++;
+      else if (ch === ')') depth = Math.max(0, depth - 1);
+      else if (depth === 0 && /\s/.test(ch)) {
+        const m = /^\s+(and|or)\s+/i.exec(s.slice(i));
+        if (m) {
+          pieces.push(s.slice(start, i));
+          ops.push(m[1].toLowerCase());
+          i += m[0].length - 1;
+          start = i + 1;
+        }
+      }
+    }
+    pieces.push(s.slice(start));
+    if (pieces.length > 1) {
+      const values = pieces.map(__supportsHolds);
+      return ops.every((o) => o === 'and')
+        ? values.every(Boolean)
+        : ops.every((o) => o === 'or')
+          ? values.some(Boolean)
+          : true;
+    }
+    const not = /^not\s*(\(.*\))$/is.exec(s);
+    if (not) return !__supportsHolds(not[1]);
+    const selector = /^selector\((.*)\)$/is.exec(s);
+    if (selector) {
+      try {
+        dom.matches(dom.documentElement(document), selector[1]);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    if (s[0] === '(' && s[s.length - 1] === ')') {
+      const inner = s.slice(1, -1).trim();
+      // A nested condition, or a declaration, which holds.
+      if (/^(\(|not\b|selector\()/i.test(inner)) return __supportsHolds(inner);
+      return true;
+    }
+    return true;
+  }
   // Whether a style sheet or an @import, @media or @supports rule applies to
   // the page as it is drawn now: its media list matches (window.matchMedia)
-  // and its @supports condition holds (CSS.supports). A disabled sheet
+  // and its @supports condition holds (CSS.supports, or __supportsHolds
+  // without it). A disabled sheet
   // applies to nothing, and an @starting-style block applies only to the
   // first frame of a transition, so neither does. Without matchMedia
   // (jsdom), only a media list that names nothing but media other than the
@@ -121692,9 +122173,11 @@ const createDomHelpers = (function createDomHelpers(opts) {
         ruleOrSheet.type === 12 ||
         (ruleOrSheet.constructor && ruleOrSheet.constructor.name === 'CSSSupportsRule');
       const css = view && view.CSS;
-      if (isSupports && css && typeof css.supports === 'function') {
+      if (isSupports) {
         const condition = String(ruleOrSheet.conditionText || '').trim();
-        if (condition && !css.supports(condition)) return false;
+        if (css && typeof css.supports === 'function') {
+          if (condition && !css.supports(condition)) return false;
+        } else if (condition && !__supportsHolds(condition)) return false;
       }
     } catch {
       // unreadable: taken to apply
@@ -126794,8 +127277,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // over any rule, then cascade layers, specificity and order. Only rules
   // whose @media and @supports apply count (cssConditionApplies). null
   // where a browser computed the value, or nothing declares one.
-  const __CLIP_PROP = '--surea11y-declared-clip';
-  const __declaredClipRulesByRoot = new WeakMap();
   // A style sheet's text parsed apart from the page, as cssRulesOf parses a
   // supplied one; null where it can't be.
   function __parsedRulesOf(text) {
@@ -126816,12 +127297,84 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     return null;
   }
-  // The rules of a root's sheets that declare a clip, in cascade order:
-  // [{ selector, value, important, layer, order }], `layer` a list of
-  // indices (each layer's place among its siblings, in the order they are
-  // first named), [] outside any layer. Once per root.
-  function declaredClipRules(root) {
-    if (__declaredClipRulesByRoot.has(root)) return __declaredClipRulesByRoot.get(root);
+  // The properties read as declared under jsdom (declaredRules), each by
+  // its name in a style sheet; `overflow` and `inset` are shorthands of
+  // the ones core reads (expandDeclared).
+  const __DECLARED_PROPS = [
+    'clip-path',
+    'clip',
+    'display',
+    'visibility',
+    'position',
+    'opacity',
+    'width',
+    'height',
+    'overflow-x',
+    'overflow-y',
+    'overflow',
+    'content-visibility',
+    'pointer-events',
+    'inset',
+    'left',
+    'top',
+    'text-indent',
+    'transform',
+    'scale',
+    'contain'
+  ];
+  const __DECLARED_PREFIX = '--surea11y-declared-';
+  const __DECLARED_NAME_RE = new RegExp(
+    '(^|[{;\\s])(' + __DECLARED_PROPS.join('|') + ')(\\s*:)',
+    'gi'
+  );
+  // A declaration as the longhands core reads: [[prop, value]].
+  function expandDeclared(prop, value) {
+    const words = /^(inherit|initial|unset|revert|revert-layer)$/i.test(value)
+      ? null
+      : value.split(/\s+/).filter(Boolean);
+    if (prop === 'overflow') {
+      return [
+        ['overflow-x', words ? words[0] : value],
+        ['overflow-y', words ? words[1] || words[0] : value]
+      ];
+    }
+    if (prop === 'inset') {
+      if (!words)
+        return [
+          ['top', value],
+          ['left', value]
+        ];
+      return [
+        ['top', words[0]],
+        ['left', words[3] || words[1] || words[0]]
+      ];
+    }
+    return [[prop, value]];
+  }
+  // Whether jsdom applies a media list: only "all" or "screen" as a whole
+  // query, or an empty list (its evaluateMediaList).
+  function jsdomMediaApplies(ruleOrSheet) {
+    try {
+      const media = ruleOrSheet && ruleOrSheet.media;
+      const items = [];
+      for (let i = 0; media && i < media.length; i++) items.push(String(media[i]).trim());
+      return !items.length || items.some((q) => q === 'all' || q === 'screen');
+    } catch {
+      return true;
+    }
+  }
+  const __declaredRulesByRoot = new WeakMap();
+  // The declarations of __DECLARED_PROPS in a root's sheets, in cascade
+  // order: [{ selector, prop, value, important, layer, order, jsdom, media }],
+  // `layer` a list of indices (each layer's place among its siblings, in
+  // the order they are first named), [] outside any layer. `jsdom`: jsdom's
+  // own getComputedStyle applies the rule (a top-level rule of a document
+  // sheet it read, one in a top-level @media it applies, or a top-level one
+  // of a sheet that sheet imports); `media`: every @media around it is one
+  // jsdom applies. A rule under @container is left out: without a layout
+  // there is no container to query. Once per root.
+  function declaredRules(root) {
+    if (__declaredRulesByRoot.has(root)) return __declaredRulesByRoot.get(root);
     const rules = [];
     let order = 0;
     // Layer names, dotted from the outermost, to their indices.
@@ -126841,7 +127394,10 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return { path: l.path, name: full || key };
     };
     const NO_LAYER = { path: [], name: '' };
-    const walk = (list, layer, fromText, imports, base, depth) => {
+    const NOT_JSDOM = { top: false, jsdom: false, media: true };
+    // ctx: { top: at the top level of a sheet jsdom reads, jsdom: jsdom
+    // applies a style rule here, media: as above }.
+    const walk = (list, layer, fromText, imports, base, depth, ctx) => {
       const n = (list && list.length) || 0;
       let importIndex = 0;
       for (let i = 0; i < n && depth < 10; i++) {
@@ -126851,16 +127407,23 @@ const createDomHelpers = (function createDomHelpers(opts) {
         if (typeof rule.selectorText === 'string' && rule.style) {
           // A nested style rule's selector is relative to its parent's:
           // not followed.
-          const prop = fromText ? __CLIP_PROP : 'clip';
-          const value = String(rule.style.getPropertyValue(prop) || '').trim();
-          if (value) {
-            rules.push({
-              selector: rule.selectorText,
-              value,
-              important: rule.style.getPropertyPriority(prop) === 'important',
-              layer: layer.path,
-              order: order++
-            });
+          for (const name of __DECLARED_PROPS) {
+            const prop = fromText ? __DECLARED_PREFIX + name : name;
+            const value = String(rule.style.getPropertyValue(prop) || '').trim();
+            if (!value) continue;
+            const important = rule.style.getPropertyPriority(prop) === 'important';
+            for (const [longhand, v] of expandDeclared(name, value)) {
+              rules.push({
+                selector: rule.selectorText,
+                prop: longhand,
+                value: v,
+                important,
+                layer: layer.path,
+                order: order++,
+                jsdom: ctx.jsdom,
+                media: ctx.media
+              });
+            }
           }
         } else if (kind === 'CSSImportRule' || rule.type === 3) {
           const own = imports ? imports[importIndex] : rule;
@@ -126868,18 +127431,27 @@ const createDomHelpers = (function createDomHelpers(opts) {
           if (!cssConditionApplies(rule)) continue;
           const name = typeof rule.layerName === 'string' ? rule.layerName : null;
           const inner = name === null ? layer : layerOf(layer, name);
+          // jsdom applies an imported sheet's top-level rules, whatever
+          // its layer.
+          const media = jsdomMediaApplies(rule);
+          const innerCtx = {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          };
           let sheet = null;
           try {
             sheet = own ? own.styleSheet : null;
           } catch {}
-          if (sheet) walkSheet(sheet, inner, depth + 1);
+          if (sheet) walkSheet(sheet, inner, depth + 1, innerCtx);
           else {
             let href = '';
             try {
               href = new URL(String(rule.href || ''), base).href;
             } catch {}
             const text = href ? suppliedTextFor(href) : null;
-            if (text != null) walkText(text, href, null, inner, depth + 1);
+            if (text != null)
+              walkText(text, href, null, inner, depth + 1, { ...innerCtx, jsdom: false });
           }
         } else if (kind === 'CSSLayerStatementRule') {
           for (const name of rule.nameList || []) layerOf(layer, String(name));
@@ -126890,27 +127462,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
             fromText,
             null,
             base,
-            depth + 1
+            depth + 1,
+            { ...NOT_JSDOM, media: ctx.media }
           );
-        } else if (
-          kind === 'CSSMediaRule' ||
-          kind === 'CSSSupportsRule' ||
-          rule.type === 4 ||
-          rule.type === 12
-        ) {
+        } else if (kind === 'CSSMediaRule' || rule.type === 4) {
+          if (!cssConditionApplies(rule)) continue;
+          const media = jsdomMediaApplies(rule);
+          walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+            top: false,
+            jsdom: ctx.top && ctx.jsdom && media,
+            media: ctx.media && media
+          });
+        } else if (kind === 'CSSSupportsRule' || rule.type === 12) {
           if (cssConditionApplies(rule))
-            walk(rule.cssRules, layer, fromText, null, base, depth + 1);
+            walk(rule.cssRules, layer, fromText, null, base, depth + 1, {
+              ...NOT_JSDOM,
+              media: ctx.media
+            });
         }
       }
     };
-    // A sheet's text, with each clip declaration renamed to a custom
+    // A sheet's text, with each declaration read renamed to a custom
     // property, which the parser keeps as written. `imports`: the page's own
     // @import rules of the sheet, which have the imported sheets.
-    const walkText = (text, base, imports, layer, depth) => {
-      const renamed = String(text).replace(/(^|[{;\s])clip(\s*:)/gi, '$1' + __CLIP_PROP + '$2');
-      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth);
+    const walkText = (text, base, imports, layer, depth, ctx) => {
+      const renamed = String(text).replace(__DECLARED_NAME_RE, '$1' + __DECLARED_PREFIX + '$2$3');
+      walk(__parsedRulesOf(renamed), layer, true, imports, base, depth, ctx);
     };
-    const walkSheet = (sheet, layer, depth) => {
+    const walkSheet = (sheet, layer, depth, ctx) => {
       if (!sheet || depth > 10 || !cssConditionApplies(sheet)) return;
       const owner = sheet.ownerNode;
       const href = typeof sheet.href === 'string' ? sheet.href : '';
@@ -126925,6 +127504,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
       } catch {
         own = null;
       }
+      // A sheet jsdom has no rules of (a link it didn't load, whose text
+      // the run supplies) is one it applies nothing from.
+      const read = !!own && own.length > 0;
+      const sheetCtx = read
+        ? { ...ctx, media: ctx.media && jsdomMediaApplies(sheet) }
+        : { ...ctx, jsdom: false };
+      if (read && !jsdomMediaApplies(sheet)) sheetCtx.jsdom = false;
       if (text != null) {
         const imports = own
           ? [...own].filter(
@@ -126932,16 +127518,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
                 r && (r.type === 3 || (r.constructor && r.constructor.name) === 'CSSImportRule')
             )
           : null;
-        walkText(text, base, imports, layer, depth);
+        walkText(text, base, imports, layer, depth, sheetCtx);
       } else {
-        walk(cssRulesOf(sheet), layer, false, null, base, depth);
+        walk(cssRulesOf(sheet), layer, false, null, base, depth, sheetCtx);
       }
     };
+    // jsdom's getComputedStyle reads the document's own sheets: not a
+    // shadow root's, nor adopted ones.
+    let docSheets = [];
+    try {
+      docSheets = root && dom.nodeType(root) === 9 ? [...(dom.get(root, 'styleSheets') || [])] : [];
+    } catch {}
     for (const { sheet, root: r } of getStyleSheets()) {
-      if (r === root) walkSheet(sheet, NO_LAYER, 0);
+      if (r !== root) continue;
+      const read = docSheets.includes(sheet);
+      walkSheet(sheet, NO_LAYER, 0, { top: read, jsdom: read, media: true });
     }
-    __declaredClipRulesByRoot.set(root, rules);
+    __declaredRulesByRoot.set(root, rules);
     return rules;
+  }
+  // The rules of a root's sheets that declare a clip (declaredRules).
+  const __declaredClipRulesByRoot = new WeakMap();
+  function declaredClipRules(root) {
+    if (!__declaredClipRulesByRoot.has(root))
+      __declaredClipRulesByRoot.set(
+        root,
+        declaredRules(root).filter((r) => r.prop === 'clip')
+      );
+    return __declaredClipRulesByRoot.get(root);
   }
   // Which of two declarations the cascade applies: each { important,
   // inline, layer, specificity, order }; true when `a` wins over `b`.
@@ -127010,6 +127614,226 @@ const createDomHelpers = (function createDomHelpers(opts) {
     if (isClipHidden(cs)) return true;
     const clip = declaredClipOf(el, cs);
     return !!clip && isClipHidden({ position: cs && cs.position, clip, clipPath: '' });
+  }
+
+  // Under jsdom, the properties core reads to tell whether an element is
+  // shown, with the cascade jsdom's getComputedStyle leaves out applied:
+  // it reads no rule inside @layer, @supports or @container, nor one
+  // nested in another at-rule, so a Tailwind v4 page's `hidden` and
+  // `sr-only`, in @layer utilities, hid nothing there. Where the
+  // declaration that wins the cascade for el (declaredRules: !important,
+  // the style attribute, layers, specificity, order) is one jsdom left
+  // out, its value stands in for jsdom's; where one jsdom read wins, or
+  // none is declared, jsdom's value is right. @media is taken as jsdom
+  // takes it (only "all" and "screen" apply), so a page's rules count the
+  // same whether they are in a layer or not. visibility, pointer-events
+  // and text-indent are inherited: an element that declares none takes
+  // its parent's. Only the document's own tree, as jsdom styles it.
+  const __INHERITED_DECLARED = new Set(['visibility', 'pointer-events', 'text-indent']);
+  const __INITIAL_DECLARED = {
+    display: 'inline',
+    visibility: 'visible',
+    position: 'static',
+    'clip-path': 'none',
+    opacity: '1',
+    width: 'auto',
+    height: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'content-visibility': 'visible',
+    'pointer-events': 'auto',
+    left: 'auto',
+    top: 'auto',
+    'text-indent': '0px',
+    transform: 'none',
+    scale: 'none',
+    contain: 'none'
+  };
+  const __layeredIndexByDoc = new WeakMap();
+  // The rules that could win over what jsdom computed, indexed by what
+  // their selectors need (selectorIndex); null where no rule jsdom left
+  // out declares one of the properties.
+  function layeredIndexOf(doc) {
+    if (__layeredIndexByDoc.has(doc)) return __layeredIndexByDoc.get(doc);
+    let out = null;
+    try {
+      const records = declaredRules(doc).filter((r) => r.media && r.prop !== 'clip');
+      if (records.some((r) => !r.jsdom)) {
+        const bySelector = new Map();
+        for (const r of records) {
+          if (!bySelector.has(r.selector)) bySelector.set(r.selector, []);
+          bySelector.get(r.selector).push(r);
+        }
+        const selectors = [...bySelector.keys()];
+        const parts = [];
+        const partOwner = [];
+        selectors.forEach((sel, i) => {
+          for (const part of contrast.splitSelectorList(sel)) {
+            parts.push(part);
+            partOwner.push(i);
+          }
+        });
+        out = {
+          selectors,
+          bySelector,
+          partOwner,
+          index: selectorIndex(parts),
+          inherited: records.some((r) => !r.jsdom && __INHERITED_DECLARED.has(r.prop))
+        };
+      }
+    } catch {
+      out = null;
+    }
+    __layeredIndexByDoc.set(doc, out);
+    return out;
+  }
+  // el's own winning declaration of each property: Map prop -> decl.
+  function __declaredWinners(el, idx) {
+    const best = new Map();
+    const consider = (decl) => {
+      const cur = best.get(decl.prop);
+      if (!cur || __clipDeclWins(decl, cur)) best.set(decl.prop, decl);
+    };
+    let n = 0;
+    for (const m of String(getAttr(el, 'style') || '').matchAll(
+      /(?:^|;)\s*([a-z-]+)\s*:\s*([^;]+)/gi
+    )) {
+      const name = m[1].toLowerCase();
+      if (!__DECLARED_PROPS.includes(name) || name === 'clip') continue;
+      const important = /!\s*important\s*$/i.test(m[2]);
+      const value = m[2].replace(/!\s*important\s*$/i, '').trim();
+      for (const [prop, v] of expandDeclared(name, value)) {
+        consider({
+          prop,
+          value: v,
+          important,
+          inline: true,
+          jsdom: true,
+          layer: [],
+          specificity: 0,
+          order: n++
+        });
+      }
+    }
+    const seen = new Set();
+    for (const i of idx.index.candidates(el)) {
+      const s = idx.partOwner[i];
+      if (seen.has(s)) continue;
+      seen.add(s);
+      const selector = idx.selectors[s];
+      const specificity = contrast.matchedSpecificity(el, selector);
+      if (specificity < 0) continue;
+      for (const r of idx.bySelector.get(selector)) consider({ ...r, inline: false, specificity });
+    }
+    return best;
+  }
+  const __layeredOverridesCache = new WeakMap();
+  // Map prop -> value that replaces jsdom's for el, or null.
+  function layeredOverridesOf(el) {
+    if (__layeredOverridesCache.has(el)) return __layeredOverridesCache.get(el);
+    let doc;
+    try {
+      doc = dom.ownerDocument(el);
+      if (!doc || dom.getRootNode(el) !== doc) doc = null;
+    } catch {
+      doc = null;
+    }
+    const idx = doc ? layeredIndexOf(doc) : null;
+    if (!idx) {
+      __layeredOverridesCache.set(el, null);
+      return null;
+    }
+    // Elements up to the nearest one with an answer, when an inherited
+    // property may come down from above; their answers are worked out
+    // from the top.
+    const path = [el];
+    if (idx.inherited) {
+      for (
+        let p = dom.parentElement(el);
+        p && !__layeredOverridesCache.has(p);
+        p = dom.parentElement(p)
+      )
+        path.push(p);
+    }
+    const view = window || dom.defaultView(doc);
+    for (let k = path.length - 1; k >= 0; k--) {
+      const node = path[k];
+      const parent = dom.parentElement(node);
+      const fromParent = parent ? __layeredOverridesCache.get(parent) || null : null;
+      // A property's value on the parent, as corrected here.
+      const parentValue = (prop) => {
+        if (fromParent && fromParent.has(prop)) return fromParent.get(prop);
+        if (!parent) return __INITIAL_DECLARED[prop];
+        try {
+          return String(view.getComputedStyle(parent).getPropertyValue(prop) || '');
+        } catch {
+          return null;
+        }
+      };
+      let out = null;
+      const set = (prop, value) => {
+        if (value == null || value === '') return;
+        if (!out) out = new Map();
+        out.set(prop, value);
+      };
+      let winners;
+      try {
+        winners = __declaredWinners(node, idx);
+      } catch {
+        winners = new Map();
+      }
+      for (const [prop, decl] of winners) {
+        if (decl.jsdom) continue;
+        const v = String(decl.value);
+        const kw = v.toLowerCase();
+        if (kw === 'inherit' || (kw === 'unset' && __INHERITED_DECLARED.has(prop)))
+          set(prop, parentValue(prop));
+        else if (kw === 'initial' || kw === 'unset') set(prop, __INITIAL_DECLARED[prop]);
+        // revert, revert-layer, var() and env() can't be resolved here:
+        // jsdom's value stays.
+        else if (kw === 'revert' || kw === 'revert-layer' || /\b(var|env|attr)\(/i.test(v))
+          continue;
+        else set(prop, v);
+      }
+      if (fromParent) {
+        for (const [prop, value] of fromParent) {
+          if (__INHERITED_DECLARED.has(prop) && !winners.has(prop)) set(prop, value);
+        }
+      }
+      __layeredOverridesCache.set(node, out);
+    }
+    return __layeredOverridesCache.get(el);
+  }
+  // jsdom's computed style with the overrides read in its place, through
+  // every way core reads it (cs.visibility, cs['clip-path'],
+  // getPropertyValue).
+  function withLayeredOverrides(cs, overrides) {
+    const byName = new Map();
+    for (const [prop, value] of overrides) {
+      byName.set(prop, value);
+      byName.set(
+        prop.replace(/-([a-z])/g, (m, c) => c.toUpperCase()),
+        value
+      );
+    }
+    if (overrides.has('overflow-x') || overrides.has('overflow-y')) {
+      const x = byName.get('overflow-x') || String(cs.overflowX || '');
+      const y = byName.get('overflow-y') || String(cs.overflowY || '');
+      byName.set('overflow', x === y ? x : x + ' ' + y);
+    }
+    return new Proxy(cs, {
+      get(target, key) {
+        if (typeof key === 'string' && byName.has(key)) return byName.get(key);
+        if (key === 'getPropertyValue') {
+          return (name) => {
+            const k = String(name).toLowerCase();
+            return byName.has(k) ? byName.get(k) : target.getPropertyValue(name);
+          };
+        }
+        const v = Reflect.get(target, key, target);
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
   }
 
   // An element's containing block: the box its position is resolved
