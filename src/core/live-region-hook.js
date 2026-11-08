@@ -851,7 +851,11 @@ function selectAnnouncements(read, fallbackWin, first, second) {
   const escapeId = (id) =>
     cssEscape
       ? call(cssEscape, undefined, [id])
-      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) => '\\' + c);
+      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) =>
+          // A control character as a hex escape: a backslash before a newline
+          // is no escape in CSS.
+          c < ' ' || c === '\u007f' ? '\\' + c.charCodeAt(0).toString(16) + ' ' : '\\' + c
+        );
   const uniqueIn = (root, selector) => {
     const query = call(via.nodeType, root) === 9 ? via.queryInDocument : via.queryInFragment;
     const found = call(query, root, [selector]);

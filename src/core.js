@@ -2908,7 +2908,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
         if (tree && labelId) {
-          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
+          const referrers = dom.querySelectorAll(
+            tree,
+            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+          );
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -12902,15 +12905,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Shared escaping helpers (reduce per-call allocations, deterministic)
   // -------------------------------------------------------------------------
   const __w = realmWindow || window;
-  const __cssEscapeSafe = (s) => {
-    try {
-      return __w && __w.CSS && typeof __w.CSS.escape === 'function'
-        ? __w.CSS.escape(String(s))
-        : String(s);
-    } catch {
-      return String(s);
-    }
-  };
   // Spec-accurate CSS.escape() fallback (CSSOM "serialize an identifier"
   // algorithm) for environments without a native window.CSS.escape, such
   // as jsdom. Must handle CSS identifiers that start with a digit or a
@@ -12961,7 +12955,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     return __cssEscapeIdentFallback(s);
   };
-  const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  // A value for a quoted CSS attribute selector (`[attr="..."]`): a
+  // backslash and a double quote escaped with a backslash, and a control
+  // character as a hex escape ("\a " for a newline), which CSS reads back
+  // as that character, where a raw newline ends the string and the selector
+  // doesn't parse.
+  const __escapeAttrValue = (s) =>
+    // eslint-disable-next-line no-control-regex -- control characters are what it escapes
+    String(s).replace(/[\\"\u0001-\u001f\u007f]/g, (c) =>
+      c === '\\' || c === '"' ? '\\' + c : '\\' + c.charCodeAt(0).toString(16) + ' '
+    );
+  // Whether a selector can name an attribute value, or an id, exactly: CSS
+  // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
+  // selector holding one never matches the element it was built from.
+  const __valueSelectable = (s) =>
+    // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+    !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(
+      String(s)
+    );
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
@@ -14521,8 +14532,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     // Fallback to querySelectorAll when cache is unavailable.
-    const esc = __cssEscapeSafe;
-    const idSel = esc(idTok);
+    const idSel = __escapeAttrValue(idTok);
     let refs;
     try {
       refs = [
@@ -19032,16 +19042,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
+      const usable = __valueSelectable;
       const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
-      if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
+      if (elementId && elementId.trim() && usable(elementId))
+        return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
         const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
-        if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
+        if (v && v.trim() && usable(v)) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
       const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
-      if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
+      if (name && name.trim() && usable(name))
+        return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
     } catch {
@@ -19101,6 +19114,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
+    const usable = __valueSelectable;
     try {
       if (!el || dom.nodeType(el) !== 1) return 'html';
 
@@ -19130,7 +19144,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
-        if (!elementId || !elementId.trim()) return null;
+        if (!elementId || !elementId.trim() || !usable(elementId)) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
         return null;
@@ -19139,7 +19153,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
           const v = dom.getAttribute(el, a);
-          if (!v || !v.trim()) continue;
+          if (!v || !v.trim() || !usable(v)) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
             return '[' + a + '="' + escapeAttrValue(v) + '"]';
@@ -19150,7 +19164,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueNameSel = () => {
         const v = dom.getAttribute(el, 'name');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
           return tag + '[name="' + escapeAttrValue(v) + '"]';
@@ -19159,7 +19173,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueAriaSel = () => {
         const v = dom.getAttribute(el, 'aria-label');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
           return tag + '[aria-label="' + escapeAttrValue(v) + '"]';
@@ -19169,7 +19183,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const uniqueRoleAriaSel = () => {
         const role = dom.getAttribute(el, 'role');
         const aria = dom.getAttribute(el, 'aria-label');
-        if (!role || !role.trim() || !aria || !aria.trim()) return null;
+        if (!role || !role.trim() || !aria || !aria.trim() || !usable(role) || !usable(aria))
+          return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
           return (
@@ -19186,7 +19201,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         uniqueNameSel() ||
         uniqueAriaSel();
 
-      if (direct) return direct;
+      // A direct anchor stands for the element only if the selector engine
+      // reads it back as naming it.
+      let directMatches = false;
+      try {
+        directMatches = !!direct && dom.matches(el, direct);
+      } catch {}
+      if (directMatches) return direct;
 
       const parts = [];
       // Each element on the path with the part of its step that names it
@@ -19256,12 +19277,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // Same trimmed-key-lookup / raw-value-embed split as the direct
             // anchor builders above -- see this function's header comment.
             const id = dom.getAttribute(node, 'id');
-            if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
+            if (id && id.trim() && usable(id) && idx && (idx.idCount.get(id.trim()) || 0) === 1)
               anchor = '#' + cssEscape(id);
             if (!anchor) {
               for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = dom.getAttribute(node, a);
-                if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
+                if (
+                  v &&
+                  v.trim() &&
+                  usable(v) &&
+                  idx &&
+                  (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1
+                ) {
                   anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                   break;
                 }
@@ -19272,6 +19299,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               if (
                 name &&
                 name.trim() &&
+                usable(name) &&
                 t &&
                 idx &&
                 (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
@@ -19284,6 +19312,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               if (
                 aria &&
                 aria.trim() &&
+                usable(aria) &&
                 t &&
                 idx &&
                 (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
@@ -19893,6 +19922,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    escapeAttrValue: __escapeAttrValue,
     getLabelControl,
     cssRulesOf,
     __contrastSharedCache
@@ -109207,7 +109237,10 @@ const createContrastHelpers = (function createContrastHelpers(opts, shared) {
             : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
         if (tree && labelId) {
-          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
+          const referrers = dom.querySelectorAll(
+            tree,
+            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+          );
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
@@ -119201,15 +119234,6 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // Shared escaping helpers (reduce per-call allocations, deterministic)
   // -------------------------------------------------------------------------
   const __w = realmWindow || window;
-  const __cssEscapeSafe = (s) => {
-    try {
-      return __w && __w.CSS && typeof __w.CSS.escape === 'function'
-        ? __w.CSS.escape(String(s))
-        : String(s);
-    } catch {
-      return String(s);
-    }
-  };
   // Spec-accurate CSS.escape() fallback (CSSOM "serialize an identifier"
   // algorithm) for environments without a native window.CSS.escape, such
   // as jsdom. Must handle CSS identifiers that start with a digit or a
@@ -119260,7 +119284,24 @@ const createDomHelpers = (function createDomHelpers(opts) {
     } catch {}
     return __cssEscapeIdentFallback(s);
   };
-  const __escapeAttrValue = (s) => String(s).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+  // A value for a quoted CSS attribute selector (`[attr="..."]`): a
+  // backslash and a double quote escaped with a backslash, and a control
+  // character as a hex escape ("\a " for a newline), which CSS reads back
+  // as that character, where a raw newline ends the string and the selector
+  // doesn't parse.
+  const __escapeAttrValue = (s) =>
+    // eslint-disable-next-line no-control-regex -- control characters are what it escapes
+    String(s).replace(/[\\"\u0001-\u001f\u007f]/g, (c) =>
+      c === '\\' || c === '"' ? '\\' + c : '\\' + c.charCodeAt(0).toString(16) + ' '
+    );
+  // Whether a selector can name an attribute value, or an id, exactly: CSS
+  // reads a NUL or a lone surrogate, escaped or not, as U+FFFD, so a
+  // selector holding one never matches the element it was built from.
+  const __valueSelectable = (s) =>
+    // eslint-disable-next-line no-control-regex -- a NUL is what it looks for
+    !/\u0000|[\ud800-\udbff](?![\udc00-\udfff])|(?:^|[^\ud800-\udbff])[\udc00-\udfff]/.test(
+      String(s)
+    );
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
@@ -120820,8 +120861,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
 
     // Fallback to querySelectorAll when cache is unavailable.
-    const esc = __cssEscapeSafe;
-    const idSel = esc(idTok);
+    const idSel = __escapeAttrValue(idTok);
     let refs;
     try {
       refs = [
@@ -125331,16 +125371,19 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // anchor builders (see that function's header comment): a CSS
       // attribute/ID selector must match the DOM attribute's real,
       // untrimmed value exactly, so only the truthiness check may trim.
+      const usable = __valueSelectable;
       const elementId = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'id');
-      if (elementId && elementId.trim()) return '#' + cssEscapeIdent(elementId);
+      if (elementId && elementId.trim() && usable(elementId))
+        return '#' + cssEscapeIdent(elementId);
 
       for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
         const v = dom.get(el, 'getAttribute') && dom.getAttribute(el, a);
-        if (v && v.trim()) return '[' + a + '="' + escapeAttrValue(v) + '"]';
+        if (v && v.trim() && usable(v)) return '[' + a + '="' + escapeAttrValue(v) + '"]';
       }
 
       const name = dom.get(el, 'getAttribute') && dom.getAttribute(el, 'name');
-      if (name && name.trim()) return tag + '[name="' + escapeAttrValue(name) + '"]';
+      if (name && name.trim() && usable(name))
+        return tag + '[name="' + escapeAttrValue(name) + '"]';
 
       return tag;
     } catch {
@@ -125400,6 +125443,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
   function buildSelectorUncached(el) {
     const escapeAttrValue = __escapeAttrValue;
+    const usable = __valueSelectable;
     try {
       if (!el || dom.nodeType(el) !== 1) return 'html';
 
@@ -125429,7 +125473,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       // error.
       const uniqueIdSel = () => {
         const elementId = dom.getAttribute(el, 'id');
-        if (!elementId || !elementId.trim()) return null;
+        if (!elementId || !elementId.trim() || !usable(elementId)) return null;
         if (idx && (idx.idCount.get(elementId.trim()) || 0) === 1)
           return '#' + cssEscape(elementId);
         return null;
@@ -125438,7 +125482,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const uniqueTestSel = () => {
         for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
           const v = dom.getAttribute(el, a);
-          if (!v || !v.trim()) continue;
+          if (!v || !v.trim() || !usable(v)) continue;
           const key = a + '=' + v.trim();
           if (idx && (idx.testIdCount.get(key) || 0) === 1) {
             return '[' + a + '="' + escapeAttrValue(v) + '"]';
@@ -125449,7 +125493,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueNameSel = () => {
         const v = dom.getAttribute(el, 'name');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.nameCount.get(key) || 0) === 1)
           return tag + '[name="' + escapeAttrValue(v) + '"]';
@@ -125458,7 +125502,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
 
       const uniqueAriaSel = () => {
         const v = dom.getAttribute(el, 'aria-label');
-        if (!v || !v.trim() || !tag) return null;
+        if (!v || !v.trim() || !tag || !usable(v)) return null;
         const key = tag + '|' + v.trim();
         if (idx && (idx.ariaLabelCount.get(key) || 0) === 1)
           return tag + '[aria-label="' + escapeAttrValue(v) + '"]';
@@ -125468,7 +125512,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
       const uniqueRoleAriaSel = () => {
         const role = dom.getAttribute(el, 'role');
         const aria = dom.getAttribute(el, 'aria-label');
-        if (!role || !role.trim() || !aria || !aria.trim()) return null;
+        if (!role || !role.trim() || !aria || !aria.trim() || !usable(role) || !usable(aria))
+          return null;
         const key = role.trim() + '|' + aria.trim();
         if (idx && (idx.roleAriaLabelCount.get(key) || 0) === 1) {
           return (
@@ -125485,7 +125530,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
         uniqueNameSel() ||
         uniqueAriaSel();
 
-      if (direct) return direct;
+      // A direct anchor stands for the element only if the selector engine
+      // reads it back as naming it.
+      let directMatches = false;
+      try {
+        directMatches = !!direct && dom.matches(el, direct);
+      } catch {}
+      if (directMatches) return direct;
 
       const parts = [];
       // Each element on the path with the part of its step that names it
@@ -125555,12 +125606,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
             // Same trimmed-key-lookup / raw-value-embed split as the direct
             // anchor builders above -- see this function's header comment.
             const id = dom.getAttribute(node, 'id');
-            if (id && id.trim() && idx && (idx.idCount.get(id.trim()) || 0) === 1)
+            if (id && id.trim() && usable(id) && idx && (idx.idCount.get(id.trim()) || 0) === 1)
               anchor = '#' + cssEscape(id);
             if (!anchor) {
               for (const a of ['data-testid', 'data-test', 'data-cy', 'data-qa']) {
                 const v = dom.getAttribute(node, a);
-                if (v && v.trim() && idx && (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1) {
+                if (
+                  v &&
+                  v.trim() &&
+                  usable(v) &&
+                  idx &&
+                  (idx.testIdCount.get(a + '=' + v.trim()) || 0) === 1
+                ) {
                   anchor = '[' + a + '="' + escapeAttrValue(v) + '"]';
                   break;
                 }
@@ -125571,6 +125628,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               if (
                 name &&
                 name.trim() &&
+                usable(name) &&
                 t &&
                 idx &&
                 (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
@@ -125583,6 +125641,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
               if (
                 aria &&
                 aria.trim() &&
+                usable(aria) &&
                 t &&
                 idx &&
                 (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
@@ -126192,6 +126251,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     computedStyle,
     composedParent,
     buildSimpleSelector,
+    escapeAttrValue: __escapeAttrValue,
     getLabelControl,
     cssRulesOf,
     __contrastSharedCache
@@ -132849,7 +132909,11 @@ function getAnnouncements(win, options) {
   const escapeId = (id) =>
     cssEscape
       ? call(cssEscape, undefined, [id])
-      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) => '\\' + c);
+      : String(id).replace(/[^a-zA-Z0-9_\u00A0-\uFFFF-]/g, (c) =>
+          // A control character as a hex escape: a backslash before a newline
+          // is no escape in CSS.
+          c < ' ' || c === '\u007f' ? '\\' + c.charCodeAt(0).toString(16) + ' ' : '\\' + c
+        );
   const uniqueIn = (root, selector) => {
     const query = call(via.nodeType, root) === 9 ? via.queryInDocument : via.queryInFragment;
     const found = call(query, root, [selector]);
