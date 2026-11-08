@@ -20,23 +20,28 @@ const { resolveVariants, describeSettings } = require('./rule-variants');
 const { wcagTags } = require('../wcag');
 const { languagesOf, sourceOf } = require('../pack-languages');
 
-// The WCAG profiles core defines itself, by tag set; a standard's profiles
-// come from the registry.
-const WCAG_PROFILE_TAGS = {
-  'wcag22-a': ['wcag2a', 'wcag21a', 'wcag22a'],
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'wcag22-aaa': [
-    'wcag2a',
-    'wcag2aa',
-    'wcag2aaa',
-    'wcag21a',
-    'wcag21aa',
-    'wcag21aaa',
-    'wcag22a',
-    'wcag22aa',
-    'wcag22aaa'
-  ],
-  section508: ['wcag2a', 'wcag2aa']
+// The WCAG profiles core defines itself, by tag set: one per WCAG version
+// and level, named wcag<version>-<level> (wcag20-aa is WCAG 2.0 Level A and
+// AA), each the tags wcagTags gives. A standard's profiles come from the
+// registry.
+const WCAG_PROFILE_TAGS = Object.fromEntries([
+  ...['2.0', '2.1', '2.2'].flatMap((version) =>
+    [['A'], ['A', 'AA'], ['A', 'AA', 'AAA']].map((levels) => [
+      'wcag' + version.replace('.', '') + '-' + levels[levels.length - 1].toLowerCase(),
+      wcagTags(version, levels)
+    ])
+  ),
+  // Deprecated (DEPRECATED_PROFILES): WCAG 2.0 A and AA under another name.
+  ['section508', wcagTags('2.0', ['A', 'AA'])]
+]);
+
+// Profiles core defines that are on their way out: each keeps working, and a
+// scan that names one says so once per process, naming the profile that
+// replaces it and the version that removes it (docs/API_STABILITY.md,
+// "Deprecating a standard, a profile or an entry point"). A deprecated
+// standard's profiles are marked in the registry instead.
+const DEPRECATED_PROFILES = {
+  section508: { replacedBy: 'wcag20-aa', removal: '2.0.0' }
 };
 
 const tagged = (where, message) => (where ? `${where} ${message}` : message);
@@ -593,6 +598,7 @@ function mergeDictionaries(files) {
 
 module.exports = {
   WCAG_PROFILE_TAGS,
+  DEPRECATED_PROFILES,
   profileWcagTarget,
   prepareStandards,
   prepareRules,

@@ -131,7 +131,7 @@ test('engineOptions.wcagVersion other than "2.0", "2.1" or "2.2" is ignored, and
     );
   }
   // The version a profile implies is the one named.
-  const { warned } = scan({ wcagVersion: 2, profile: 'section508' }, null);
+  const { warned } = scan({ wcagVersion: 2, profile: 'wcag20-aa' }, null);
   assert.ok(
     warned.some((w) => w.endsWith('The run targets WCAG 2.0.')),
     warned.join('\n')

@@ -365,7 +365,7 @@ test('what each profile says of a rule is kept, whichever is listed first', () =
   );
   // The WCAG the scan is judged by: the highest level and version asked.
   assert.equal(scan({ profile: ['wcag22-a', 'wcag22-aaa'] }).engine.wcagLevel, 'AAA');
-  assert.equal(scan({ profile: ['section508', 'wcag22-aa'] }).engine.wcagVersion, '2.2');
+  assert.equal(scan({ profile: ['wcag20-aa', 'wcag22-aa'] }).engine.wcagVersion, '2.2');
 });
 
 test('the HTML report names a profile asked for and not run', () => {
@@ -729,7 +729,7 @@ test('in a page, an item of the packs list that is no name is left out, and the 
 
 test('the WCAG a scan reports is that of its profiles that target WCAG', () => {
   const r = runa11yCoreOnHtml(PAGE, {
-    engineOptions: { packs: [pack], profile: ['section508', 'names-1.0'] }
+    engineOptions: { packs: [pack], profile: ['wcag20-aa', 'names-1.0'] }
   });
   // names-1.0 has no WCAG level of its own, and carries core's default 2.2.
   assert.equal(r.engine.wcagVersion, '2.0');
@@ -901,8 +901,8 @@ test("the question a finding asks is the reported WCAG version's, in any order o
   const page = `<!doctype html><html lang="en"><head><title>t</title></head><body><main><div id="d1">a</div><div id="d1">b</div></main></body></html>`;
   const occ = (profile) =>
     check(runa11yCoreOnHtml(page, { engineOptions: { profile } }), 'duplicate-id').occurrences[0];
-  const ab = occ(['section508', 'wcag22-aa']);
-  const ba = occ(['wcag22-aa', 'section508']);
+  const ab = occ(['wcag20-aa', 'wcag22-aa']);
+  const ba = occ(['wcag22-aa', 'wcag20-aa']);
   assert.match(ab.lean.why, /WCAG 2\.2/);
   for (const field of ['uncertainty', 'lean', 'howToCheck', 'hint']) {
     assert.deepEqual(ab[field], ba[field], field);
@@ -911,9 +911,9 @@ test("the question a finding asks is the reported WCAG version's, in any order o
 
 test("a profile that targets no WCAG level adds no WCAG version of its own to the report's manual checks", () => {
   const { renderHtmlReport } = require('../../src/report.js');
-  const r = scan({ profile: ['section508', 'names-1.0'] });
+  const r = scan({ profile: ['wcag20-aa', 'names-1.0'] });
   assert.equal(r.engine.wcagVersion, '2.0');
-  assert.equal(r.profiles.section508.wcagLevel, 'AA');
+  assert.equal(r.profiles['wcag20-aa'].wcagLevel, 'AA');
   assert.equal(r.profiles['names-1.0'].wcagLevel, undefined);
   // The intro says which standard each part is of, outside its markup.
   const intros = [...renderHtmlReport(r, {}).matchAll(/<p class="manual-intro">([\s\S]*?)<\/p>/g)]

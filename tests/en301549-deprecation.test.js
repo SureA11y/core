@@ -76,7 +76,7 @@ test('a scan that names no EN 301 549 does not warn', () => {
   const { warnings } = deprecationWarnings(() => [
     scan({}),
     scan({ profile: 'wcag22-aa' }),
-    scan({ profile: 'section508' })
+    scan({ profile: 'wcag20-aa' })
   ]);
   assert.deepEqual(warnings, []);
   // Nor does it leave its record on the global object, a page's window in a

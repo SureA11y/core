@@ -11,9 +11,25 @@
 
 type Open<T extends string> = T | (string & {});
 
-/** The conformance profiles core has itself; a pack's standard brings others. */
+/**
+ * The conformance profiles core has itself; a pack's standard brings others.
+ * `en301549-v4.1.1`, `en301549-v3.2.1` and `section508` are deprecated and go
+ * in 2.0.0: use `@surea11y/pack-en301549`, or `wcag22-aa`, `wcag21-aa` and
+ * `wcag20-aa` for the WCAG targets they come to.
+ */
 type CoreProfileName =
-  'wcag22-a' | 'wcag22-aa' | 'wcag22-aaa' | 'en301549-v4.1.1' | 'en301549-v3.2.1' | 'section508';
+  | 'wcag20-a'
+  | 'wcag20-aa'
+  | 'wcag20-aaa'
+  | 'wcag21-a'
+  | 'wcag21-aa'
+  | 'wcag21-aaa'
+  | 'wcag22-a'
+  | 'wcag22-aa'
+  | 'wcag22-aaa'
+  | 'en301549-v4.1.1'
+  | 'en301549-v3.2.1'
+  | 'section508';
 
 // ---- Inputs ----
 

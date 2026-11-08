@@ -72,8 +72,7 @@ carries one level tag per Success Criterion it maps to, and nothing more: a rule
 mapped only to an AA criterion is tagged `wcag2aa` and *not* `wcag2a`. Asking for
 `{ tags: ['wcag2aa'] }` on its own therefore runs the 11 rules mapped to a 2.0 AA
 criterion, not the 105 that make up a 2.0 A + AA target. List every level you mean, or
-use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag22-a`, `wcag22-aa`, `wcag22-aaa`,
-`en301549-v4.1.1`, `en301549-v3.2.1`, `section508`) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
+use `runOnly.wcag`, which does not have the problem. `engineOptions.profile` (`wcag20-aa`, `wcag21-aa`, `wcag22-aa` and the other WCAG versions and levels) does it for you too; see [`ENGINE_OPTIONS.md`](./ENGINE_OPTIONS.md#conformance-profiles).
 
 The same applies across WCAG versions — a criterion introduced in 2.1 or 2.2 carries
 only its own origin tag — so a full conformance target is a union of tag sets. See

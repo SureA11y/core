@@ -193,6 +193,9 @@ test('a profile names its WCAG target', () => {
   assert.deepEqual(core.getProfileWcagTarget('wcag22-a'), { version: '2.2', level: 'A' });
   assert.deepEqual(core.getProfileWcagTarget('wcag22-aa'), { version: '2.2', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('wcag22-aaa'), { version: '2.2', level: 'AAA' });
+  assert.deepEqual(core.getProfileWcagTarget('wcag21-aa'), { version: '2.1', level: 'AA' });
+  assert.deepEqual(core.getProfileWcagTarget('wcag20-aa'), { version: '2.0', level: 'AA' });
+  // Deprecated, and still the target it came to.
   assert.deepEqual(core.getProfileWcagTarget('section508'), { version: '2.0', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('en301549-v4.1.1'), { version: '2.2', level: 'AA' });
   assert.deepEqual(core.getProfileWcagTarget('en301549-v3.2.1'), { version: '2.1', level: 'AA' });

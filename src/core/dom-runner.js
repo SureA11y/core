@@ -14,6 +14,7 @@
  *   normalizeRuleMeta (src/core/rule-meta.js -- used for engineOptions.customRules),
  *   resolveMappingSelection, filterNormativeMappings (engineOptions.mappings),
  *   warnDeprecatedStandards (a deprecated built-in standard's notice, once),
+ *   warnDeprecatedProfile (a deprecated profile of core's notice, once),
  *   RULE_MAPPED_STANDARDS (standards mapped rule by rule, for rollups),
  *   RESTATED_PREFIXES (their requirements that restate a WCAG criterion),
  *   OPT_IN_RULE_TAGS (for the engineOptions.optInRules warning),
@@ -43,7 +44,7 @@ const { readLiveRegionHook } = require('./live-region-hook');
 /* global resolvePolicy, POLICY_CONTRACTS, resolveRuleDefI18n, ruleMatchesRunOnly,
    normalizeRuleResult, normalizeLocale, resolveLocale, createDomHelpers, normalizeSelectorList,
    resolveContextRoots, normalizeRuleMeta, resolveMappingSelection, filterNormativeMappings,
-   warnDeprecatedStandards, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
+   warnDeprecatedStandards, warnDeprecatedProfile, RULE_MAPPED_STANDARDS, RESTATED_PREFIXES, OPT_IN_RULE_TAGS, rollupInProfileVersion,
    profileStandardOf, ENGINE_VERSION, describeOptionValue, enforceEngineOptions, strictOf,
    STANDARD_REPORTS, t, PROFILE_SEVERITY, PROFILE_WCAG_VERSIONS, CATALOG, switchOf,
    WCAG_MAPPING_BY_SC, normalizeRunOnly, ruleExcludedByRunOnly, ruleNamedOnItsOwn,
@@ -2414,6 +2415,8 @@ function runCoreSettled(
       );
     } catch {}
   }
+  // A deprecated profile of core's (section508) still runs, and says so once.
+  if (typeof requestedProfile === 'string') warnDeprecatedProfile(requestedProfile);
 
   // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
   // The result names those that added a rule the rest of the selection would

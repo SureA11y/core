@@ -205,6 +205,8 @@ A standard built into core, a conformance profile, an `engineOptions.mappings` v
 
 EN 301 549 is the first: deprecated in 1.13.0 in favour of `@surea11y/pack-en301549`, with its profiles `en301549-v4.1.1` and `en301549-v3.2.1`, the `en301549` key of `engineOptions.mappings` and the `@surea11y/core/en301549` entry point, for removal in 2.0.0. Given the pack, a scan takes the same names and shows no notice: `mappings` gives every result the same entries, and the profiles report a result per clause in place of the WCAG rollups, as the pack's README explains.
 
+The `section508` profile is the second: deprecated in 1.16.0 in favour of `wcag20-aa`, which runs the same rules and gives the same results, for removal in 2.0.0. Core's profiles are WCAG's (`wcag20-a` to `wcag22-aaa`); a standard's come from a pack.
+
 ## See also
 
 - [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) — the full result shape this document's stability rules apply to.

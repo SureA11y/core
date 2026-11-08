@@ -608,27 +608,49 @@ function normalizeRunOnly(runOnly) {
  * see docs/WCAG_CONFORMANCE.md). The WCAG target version then follows from the
  * tags the usual way, so a profile needs no version of its own.
  *
- * - wcag22-a: WCAG 2.2 Level A.
- * - wcag22-aa: WCAG 2.2 Level A and AA.
- * - wcag22-aaa: WCAG 2.2 Level A, AA and AAA.
- * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
+ * - wcag20-a, wcag20-aa, wcag20-aaa: WCAG 2.0 up to Level A, AA or AAA.
+ * - wcag21-a, wcag21-aa, wcag21-aaa: WCAG 2.1 up to Level A, AA or AAA.
+ * - wcag22-a, wcag22-aa, wcag22-aaa: WCAG 2.2 up to Level A, AA or AAA.
+ * - section508: deprecated, WCAG 2.0 A and AA under another name
+ *   (DEPRECATED_PROFILES).
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
  *   such as en301549-v4.1.1 and en301549-v3.2.1.
  *
+ * Core's own are built in src/core/prepare-catalog.js (WCAG_PROFILE_TAGS).
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.
  */
 const CONFORMANCE_PROFILES = {
-  'wcag22-a': ['wcag2a', 'wcag21a', 'wcag22a'],
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'wcag22-aaa': [
-    'wcag2a', 'wcag2aa', 'wcag2aaa',
-    'wcag21a', 'wcag21aa', 'wcag21aaa',
-    'wcag22a', 'wcag22aa', 'wcag22aaa'
-  ],
-  'section508': ['wcag2a', 'wcag2aa'],
+  ...{"wcag20-a":["wcag2a"],"wcag20-aa":["wcag2a","wcag2aa"],"wcag20-aaa":["wcag2a","wcag2aa","wcag2aaa"],"wcag21-a":["wcag2a","wcag21a"],"wcag21-aa":["wcag2a","wcag2aa","wcag21a","wcag21aa"],"wcag21-aaa":["wcag2a","wcag2aa","wcag2aaa","wcag21a","wcag21aa","wcag21aaa"],"wcag22-a":["wcag2a","wcag21a","wcag22a"],"wcag22-aa":["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22a","wcag22aa"],"wcag22-aaa":["wcag2a","wcag2aa","wcag2aaa","wcag21a","wcag21aa","wcag21aaa","wcag22a","wcag22aa","wcag22aaa"],"section508":["wcag2a","wcag2aa"]},
   ...CATALOG.profileTags
 };
+
+// Core's profiles on their way out, { [name]: { replacedBy, removal } }.
+const DEPRECATED_PROFILES = {"section508":{"replacedBy":"wcag20-aa","removal":"2.0.0"}};
+
+// A deprecated profile of core's says so the first time a scan names it, once
+// per process, as a deprecated standard does (warnDeprecatedStandards): the
+// record lives on the global object, made only when a scan names one.
+function warnDeprecatedProfile(name) {
+  const key = normalizeProfileName(name);
+  if (!key || !Object.prototype.hasOwnProperty.call(DEPRECATED_PROFILES, key)) return;
+  let warned;
+  try {
+    const slot = Symbol.for('surea11y.deprecatedProfilesWarned');
+    warned = globalThis[slot] || (globalThis[slot] = new Set());
+  } catch {
+    warned = new Set();
+  }
+  if (warned.has(key)) return;
+  warned.add(key);
+  const d = DEPRECATED_PROFILES[key];
+  try {
+    console.warn(
+      '[surea11y] engineOptions.profile "' + key + '" is deprecated and goes in ' + d.removal +
+        ': use "' + d.replacedBy + '", which runs the same rules and gives the same results. Shown once.'
+    );
+  } catch {}
+}
 
 // The WCAG target each profile's tag set comes to, { version, level }, for a
 // caller that selects by runOnly.wcag instead: { 'wcag22-aa': { version:
@@ -24067,6 +24089,8 @@ const runCoreSettled = (function runCoreSettled(
       );
     } catch {}
   }
+  // A deprecated profile of core's (section508) still runs, and says so once.
+  if (typeof requestedProfile === 'string') warnDeprecatedProfile(requestedProfile);
 
   // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
   // The result names those that added a rule the rest of the selection would
@@ -45057,6 +45081,30 @@ const RUNTIME_CATALOG = {
     ]
   },
   "profileWcagTargets": {
+    "wcag20-a": {
+      "version": "2.0",
+      "level": "A"
+    },
+    "wcag20-aa": {
+      "version": "2.0",
+      "level": "AA"
+    },
+    "wcag20-aaa": {
+      "version": "2.0",
+      "level": "AAA"
+    },
+    "wcag21-a": {
+      "version": "2.1",
+      "level": "A"
+    },
+    "wcag21-aa": {
+      "version": "2.1",
+      "level": "AA"
+    },
+    "wcag21-aaa": {
+      "version": "2.1",
+      "level": "AAA"
+    },
     "wcag22-a": {
       "version": "2.2",
       "level": "A"
@@ -107782,6 +107830,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ]
   },
   "profileWcagTargets": {
+    "wcag20-a": {
+      "version": "2.0",
+      "level": "A"
+    },
+    "wcag20-aa": {
+      "version": "2.0",
+      "level": "AA"
+    },
+    "wcag20-aaa": {
+      "version": "2.0",
+      "level": "AAA"
+    },
+    "wcag21-a": {
+      "version": "2.1",
+      "level": "A"
+    },
+    "wcag21-aa": {
+      "version": "2.1",
+      "level": "AA"
+    },
+    "wcag21-aaa": {
+      "version": "2.1",
+      "level": "AAA"
+    },
     "wcag22-a": {
       "version": "2.2",
       "level": "A"
@@ -108556,27 +108628,49 @@ function normalizeRunOnly(runOnly) {
  * see docs/WCAG_CONFORMANCE.md). The WCAG target version then follows from the
  * tags the usual way, so a profile needs no version of its own.
  *
- * - wcag22-a: WCAG 2.2 Level A.
- * - wcag22-aa: WCAG 2.2 Level A and AA.
- * - wcag22-aaa: WCAG 2.2 Level A, AA and AAA.
- * - section508: the Revised 508 Standards incorporate WCAG 2.0 A and AA.
+ * - wcag20-a, wcag20-aa, wcag20-aaa: WCAG 2.0 up to Level A, AA or AAA.
+ * - wcag21-a, wcag21-aa, wcag21-aaa: WCAG 2.1 up to Level A, AA or AAA.
+ * - wcag22-a, wcag22-aa, wcag22-aaa: WCAG 2.2 up to Level A, AA or AAA.
+ * - section508: deprecated, WCAG 2.0 A and AA under another name
+ *   (DEPRECATED_PROFILES).
  * - plus the profiles a registered standard brings (src/coverage/standards.js),
  *   such as en301549-v4.1.1 and en301549-v3.2.1.
  *
+ * Core's own are built in src/core/prepare-catalog.js (WCAG_PROFILE_TAGS).
  * A profile only selects which rules run. It is not a claim that passing them
  * satisfies the standard it is named after.
  */
 const CONFORMANCE_PROFILES = {
-  'wcag22-a': ['wcag2a', 'wcag21a', 'wcag22a'],
-  'wcag22-aa': ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'],
-  'wcag22-aaa': [
-    'wcag2a', 'wcag2aa', 'wcag2aaa',
-    'wcag21a', 'wcag21aa', 'wcag21aaa',
-    'wcag22a', 'wcag22aa', 'wcag22aaa'
-  ],
-  'section508': ['wcag2a', 'wcag2aa'],
+  ...{"wcag20-a":["wcag2a"],"wcag20-aa":["wcag2a","wcag2aa"],"wcag20-aaa":["wcag2a","wcag2aa","wcag2aaa"],"wcag21-a":["wcag2a","wcag21a"],"wcag21-aa":["wcag2a","wcag2aa","wcag21a","wcag21aa"],"wcag21-aaa":["wcag2a","wcag2aa","wcag2aaa","wcag21a","wcag21aa","wcag21aaa"],"wcag22-a":["wcag2a","wcag21a","wcag22a"],"wcag22-aa":["wcag2a","wcag2aa","wcag21a","wcag21aa","wcag22a","wcag22aa"],"wcag22-aaa":["wcag2a","wcag2aa","wcag2aaa","wcag21a","wcag21aa","wcag21aaa","wcag22a","wcag22aa","wcag22aaa"],"section508":["wcag2a","wcag2aa"]},
   ...CATALOG.profileTags
 };
+
+// Core's profiles on their way out, { [name]: { replacedBy, removal } }.
+const DEPRECATED_PROFILES = {"section508":{"replacedBy":"wcag20-aa","removal":"2.0.0"}};
+
+// A deprecated profile of core's says so the first time a scan names it, once
+// per process, as a deprecated standard does (warnDeprecatedStandards): the
+// record lives on the global object, made only when a scan names one.
+function warnDeprecatedProfile(name) {
+  const key = normalizeProfileName(name);
+  if (!key || !Object.prototype.hasOwnProperty.call(DEPRECATED_PROFILES, key)) return;
+  let warned;
+  try {
+    const slot = Symbol.for('surea11y.deprecatedProfilesWarned');
+    warned = globalThis[slot] || (globalThis[slot] = new Set());
+  } catch {
+    warned = new Set();
+  }
+  if (warned.has(key)) return;
+  warned.add(key);
+  const d = DEPRECATED_PROFILES[key];
+  try {
+    console.warn(
+      '[surea11y] engineOptions.profile "' + key + '" is deprecated and goes in ' + d.removal +
+        ': use "' + d.replacedBy + '", which runs the same rules and gives the same results. Shown once.'
+    );
+  } catch {}
+}
 
 // The WCAG target each profile's tag set comes to, { version, level }, for a
 // caller that selects by runOnly.wcag instead: { 'wcag22-aa': { version:
@@ -132015,6 +132109,8 @@ const runCoreSettled = (function runCoreSettled(
       );
     } catch {}
   }
+  // A deprecated profile of core's (section508) still runs, and says so once.
+  if (typeof requestedProfile === 'string') warnDeprecatedProfile(requestedProfile);
 
   // engineOptions.optInRules: the opt-in rule tags unlocked for this run.
   // The result names those that added a rule the rest of the selection would
