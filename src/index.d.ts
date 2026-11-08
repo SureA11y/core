@@ -77,7 +77,8 @@ export type ContextSelector = string | string[];
 export interface EngineOptionFields {
   /**
    * true throws INVALID_ENGINE_OPTIONS on an option the engine doesn't read,
-   * or a value of the wrong type; without it, only a key that looks like a
+   * a value of the wrong type, or a profile it doesn't have (the error's
+   * `knownProfiles` lists those it has); without it, only a key that looks like a
    * typo of a known one is warned about. 'true', '1' and 1 count as true,
    * as a command line or an environment variable spells it.
    */
