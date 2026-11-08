@@ -2012,6 +2012,24 @@ function runCoreSettled(
   // which child <iframe>/<frame> elements fall within the same scan scope).
   // An unparseable selector throws here, before any rule runs.
   const { ctxSelector, roots, unmatchedSelectors } = resolveContextRoots(document, contextSelector);
+  // An empty selector or list ('', [], ['  ']) names no scope, so the whole
+  // page is scanned, as with null; it may be a list built empty by mistake,
+  // which a caller would read as "nothing to scan". Said so, and thrown
+  // under strictOptions.
+  if (contextSelector != null && !ctxSelector) {
+    const message =
+      'contextSelector: ' +
+      (Array.isArray(contextSelector) ? 'an empty list' : 'an empty selector') +
+      ' names no part of the page; pass null to scan the whole page, or a selector';
+    if (strictOf(engineOptions)) {
+      const err = new Error(message + '. (strictOptions)');
+      err.code = 'INVALID_CONTEXT_SELECTOR';
+      throw err;
+    }
+    try {
+      console.warn('[surea11y] ' + message + '; the whole page was scanned.');
+    } catch {}
+  }
   // Reported on the result whenever a selector was given, so a caller can
   // tell a scope that matched nothing (every rule notApplicable) from a clean
   // scan of what it asked for.

@@ -67,8 +67,52 @@ test('a selector, an array of them, or none still scope the scan as before', () 
   assert.deepEqual(ids('main'), ['#m1']);
   assert.deepEqual(ids(['main']), ['#m1']);
   assert.deepEqual(ids(null), ['#f1', '#m1']);
-  assert.deepEqual(ids(''), ['#f1', '#m1']);
-  assert.deepEqual(ids([]), ['#f1', '#m1']);
+});
+
+test('an empty contextSelector scans the whole page, and says so', () => {
+  for (const [contextSelector, shown] of [
+    ['', /an empty selector/],
+    ['   ', /an empty selector/],
+    [[], /an empty list/],
+    [['', '  '], /an empty list/]
+  ]) {
+    const { value, warned } = withConsole(() =>
+      runa11yCoreOnHtml(PAGE, {
+        contextSelector,
+        runOnly: ['img-alt-present'],
+        entryPointParity: false
+      })
+    );
+    assert.deepEqual(value.checksResults[0].occurrences.map((o) => o.selector).sort(), [
+      '#f1',
+      '#m1'
+    ]);
+    assert.equal(value.contextMatch, null);
+    assert.equal(warned.length, 1);
+    assert.match(warned[0], shown);
+    assert.match(warned[0], /the whole page was scanned/);
+  }
+  // null and a missing selector are the whole page, with nothing to say.
+  for (const contextSelector of [null, undefined]) {
+    const { warned } = withConsole(() =>
+      runa11yCoreOnHtml(PAGE, { contextSelector, runOnly: ['img-alt-present'] })
+    );
+    assert.deepEqual(warned, []);
+  }
+});
+
+test('an empty contextSelector throws under strictOptions, in both entry points', () => {
+  createDom(PAGE);
+  for (const run of [runa11yCoreInPage, runDomRulesInPage]) {
+    for (const value of ['', [], ['  ']]) {
+      assert.throws(
+        () => run(null, value, { strictOptions: true }, ['img-alt-present']),
+        (err) =>
+          err.code === 'INVALID_CONTEXT_SELECTOR' &&
+          /^contextSelector: an empty (selector|list) names no part of the page/.test(err.message)
+      );
+    }
+  }
 });
 
 test('engineOptions.wcagVersion other than "2.0", "2.1" or "2.2" is ignored, and said so', () => {
