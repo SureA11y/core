@@ -2636,10 +2636,10 @@
       "testFile": "tests/engine-checks/automatic/valid-lang.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/valid-lang-all-scenarios.html",
-      "totalCases": 4,
+      "totalCases": 5,
       "caseCounts": {
         "PASS": 2,
-        "FAIL": 1,
+        "FAIL": 2,
         "CANTTELL": 0,
         "OTHER": 1
       }

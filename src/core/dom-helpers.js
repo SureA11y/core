@@ -4041,8 +4041,18 @@ function createDomHelpers(opts) {
     // hard block was found anywhere in the chain.
     const __cssInfoByAncestor = new Map();
 
+    // An <area> draws nothing of its own: it is a region of the image that
+    // uses its map, and that image renders it. So its own display, which
+    // HTML's default style sheet sets to none (jsdom follows it; Chromium
+    // computes inline), and its <map>'s don't hide it, as in
+    // isAccTreeEligible: in Chromium and Firefox a used map's region stays
+    // on the page under display:none on the area or the map.
+    const __isAreaNode = String(dom.localName(node) || '').toLowerCase() === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
+
     for (const a of chain) {
       if (!isElement(a)) continue;
+      if (__isAreaNode && (a === node || a === __ownMapEl)) continue;
 
       let cssBlock = null;
       let cssKnown = false;

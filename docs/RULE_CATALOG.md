@@ -3756,7 +3756,7 @@ Applies to any element other than the root &lt;html&gt; with a non-empty lang at
 
 - Descendant text/alt is governed by the nearest lang-carrying ancestor only, a nested descendant with its own non-empty lang re-scopes everything inside it, so that subtree no longer counts toward the outer element's applicability (it counts toward the nested element's own, if that one is also being evaluated).
 - A non-empty alt attribute on img/area/input[type=image] counts as governed text, the same as a text node.
-- Text (or alt) that CSS keeps out of the render tree (display:none, the hidden attribute, ...) does not count. aria-hidden and offscreen positioning do NOT exempt text, per ACT's own failed examples for both, only actual non-rendering does.
+- Text (or alt) that CSS keeps out of the render tree (display:none, the hidden attribute, ...) does not count. An &lt;area&gt; is drawn by the image that uses its map, so its own display and its map's don't keep its alt out. aria-hidden and offscreen positioning do NOT exempt text, per ACT's own failed examples for both, only actual non-rendering does.
 
 **Expectation.** The primary language subtag of the lang value (the part before the first hyphen) is a registered language subtag, as ACT de46e4 requires. WCAG 3.1.2 (Language of Parts) requires that when a passage's language differs from the page's default, it is identified programmatically. A tag whose primary subtag is unknown fails to identify a real language at all; a malformed later subtag (lang="en-US_x") still identifies English and passes here, since it is a markup validity error rather than a missing language.
 

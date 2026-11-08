@@ -156,7 +156,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | textbox-name-present | automatic | `tests/fixtures/textbox-name-present-all-scenarios.html` | 28 | 7 | 10 | 0 | 11 |
 | tooltip-name-present | automatic | `tests/fixtures/tooltip-name-present-all-scenarios.html` | 7 | 4 | 0 | 2 | 1 |
 | treeitem-name-present | automatic | `tests/fixtures/treeitem-name-present-all-scenarios.html` | 17 | 4 | 5 | 0 | 8 |
-| valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 4 | 2 | 1 | 0 | 1 |
+| valid-lang | automatic | `tests/fixtures/valid-lang-all-scenarios.html` | 5 | 2 | 2 | 0 | 1 |
 | video-caption | manual | `tests/fixtures/video-caption-all-scenarios.html` | 5 | 0 | 0 | 5 | 0 |
 | video-poster-text-alternative-present | automatic | `tests/fixtures/video-poster-text-alternative-present-all-scenarios.html` | 12 | 3 | 5 | 0 | 4 |
 | widget-keyboard-focusable | manual | `tests/fixtures/widget-keyboard-focusable-all-scenarios.html` | 24 | 8 | 0 | 9 | 7 |
