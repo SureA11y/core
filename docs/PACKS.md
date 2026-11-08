@@ -316,7 +316,7 @@ A row can send findings by what they record as well, with `findings: [{ when, re
 }
 ```
 
-Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, `contrast-computable`'s typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`, the link rules' `linkKind`, `live-region-announcements`' `messageKind`, `skip-link`'s `lean`, the direction of its lean). A field that changes or disappears matches nothing, and the finding goes by its code or the row.
+Match only fields a rule keeps stable: `reasonCode` on every rule, and those [`API_STABILITY.md`](./API_STABILITY.md) names (`contrast-minimum`'s ratio, threshold and typography, `contrast-computable`'s typography, the list rules' `element` and `parentElement`, `aria-role-name-present`'s `role`, the link rules' `linkKind`, `live-region-announcements`' `messageKind`, and, experimental until 1.18.0, `skip-link`'s `lean`, the direction of its lean). `linkKind` and `messageKind` may gain values in a minor: name the ones you route, and the others go by their code or the row. A field that changes or disappears matches nothing, and the finding goes by its code or the row. A pack that routes by an experimental field declares a `core` range that takes no later minor ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)).
 
 Each rollup's contributors then say `byReasonCode: true`, with the rule's own outcome in `checkOutcome`.
 
@@ -528,7 +528,7 @@ A rule's steps ([§3](#3-write-its-rules)) are translated the same way, under th
 
 A finding's `howToCheck` and the procedures show them in that locale, and in English each text the locale lacks; English, `meta.review`, says how many steps there are. A dictionary that translates only part of an entry, some of its `step<n>`, `pass` and `fail` and not the others, has a person read its steps in two languages: `checkPack` reports it, naming the keys it lacks (`dictionaries.fr: acmeLinkTextSpecific_review_GENERIC_LINK_NAME_*: translates only part of acme-link-text-specific's meta.review.GENERIC_LINK_NAME, whose other keys are read in English; it lacks step2, fail`), while `definePack` and a scan still load the pack, and read each key the locale lacks in English. A standard's own steps are stricter (below).
 
-A standard's own steps for core's codes (`standard.review`, [§3](#3-write-its-rules)) are translated under keys made of the standard's `key`, `_standardReview_`, the core rule's id and the reason code, then `step<n>`, `pass` or `fail`. A core rule's id has no `_` and a rule's keys say `_review_`, so they can't be taken for a rule's:
+A standard's own steps for core's codes (`standard.review`, [§3](#3-write-its-rules)) are translated under keys made of the standard's `key`, `_standardReview_`, the core rule's id and the reason code, then `step<n>`, `pass` or `fail`. These keys are experimental until 1.18.0 ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)): they name no version of the standard, which a standard whose steps differ between versions may need, so a pack that uses them declares a `core` range that takes no later minor (`'~1.16.0'`). A core rule's id has no `_` and a rule's keys say `_review_`, so they can't be taken for a rule's:
 
 ```json
 {

@@ -135,3 +135,69 @@ test('an entry whose check throws counts as unused', () => {
     EXPERIMENTAL.splice(EXPERIMENTAL.indexOf(entry), 1);
   }
 });
+
+// The entries 1.16 lists, each detected from what a pack holds.
+const { definePack, ruleMappedStandard } = require('../src/pack.js');
+
+function skipPack(row) {
+  const std = ruleMappedStandard({
+    standard: 'Skip Standard',
+    tag: 'skipstd',
+    versions: [{ version: '1.0', wcagVersion: '2.2' }],
+    requirements: {
+      '1.0': {
+        S1: { title: 'Skip links work', wcagSc: ['2.4.1'] },
+        S2: { title: 'Skip links are there', wcagSc: ['2.4.1'] }
+      }
+    },
+    ruleMap: { '1.0': { 'skip-link': row } }
+  });
+  return definePack({
+    name: 'skip-pack',
+    version: '1.0.0',
+    namespace: 'skipstd',
+    core: TILDE,
+    standard: {
+      key: 'skipstd',
+      standard: 'Skip Standard',
+      versions: ['1.0'],
+      profiles: { 'skipstd-1.0': { version: '1.0', tags: ['skipstd'], mappedRules: true } },
+      ruleTag: 'skipstd',
+      ruleMapped: true,
+      mappingsFor: std.mappingsFor,
+      composites: std.composites,
+      validate: std.validate
+    }
+  });
+}
+
+const ids = (pack) => experimentalUses(pack).map((u) => u.id);
+
+test("routing skip-link's findings by their lean uses an experimental field", () => {
+  const byLean = skipPack({
+    requirements: ['S1'],
+    findings: [{ when: { lean: 'fail' }, requirements: ['S2'] }]
+  });
+  assert.deepEqual(ids(byLean), ['skip-link details.lean']);
+  // By the row alone, it doesn't.
+  assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
+});
+
+test("translating a standard's own steps uses experimental dictionary keys", () => {
+  const pack = { ...sample, core: TILDE };
+  assert.deepEqual(ids(pack), []);
+  const translated = {
+    ...pack,
+    dictionaries: {
+      ...pack.dictionaries,
+      fr: { 'sample_standardReview_aria-valid-attr-value_ARIA_HASPOPUP_ROLE_MISMATCH_pass': 'x' }
+    }
+  };
+  assert.deepEqual(ids(translated), ['standard.review dictionary keys']);
+});
+
+test('the experimental APIs of 1.16 are settled by 1.18.0', () => {
+  const listed = Object.fromEntries(EXPERIMENTAL.map((e) => [e.id, [e.since, e.until]]));
+  assert.deepEqual(listed['skip-link details.lean'], ['1.16.0', '1.18.0']);
+  assert.deepEqual(listed['standard.review dictionary keys'], ['1.16.0', '1.18.0']);
+});

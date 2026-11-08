@@ -937,7 +937,7 @@ white space. The content is read in the flat tree, leaving out what the default
 hidden-content policy hides (`display: none`, `[hidden]`, …); content hidden only from
 assistive technology (`aria-hidden="true"`) is still drawn, and counts. Generated content
 (`::before`, `::after`) is not read. `link-name-quality` and `identical-links-same-purpose`
-report it as `data.details.linkKind`.
+report it as `data.details.linkKind`. The set of kinds is open: a minor release may add one, and a kind never changes meaning.
 
 ### `reportOccurrence(node, partial)` → occurrence object
 
