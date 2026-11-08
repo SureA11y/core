@@ -278,24 +278,20 @@ function runInPage(ctx) {
   // decides it, whatever else hides it: while the dialog is open, the dialog
   // is the cause in effect, so such a region is reported with hiddenBy
   // 'modal' even under inert or aria-hidden, with or without
-  // includeHiddenElements.
+  // includeHiddenElements. With several open, a region in one under the
+  // topmost is behind it too (helpers.isModalInert).
   function insideOf(box, el) {
     for (let n = el, guard = 0; n && guard < 500; n = helpers.composedParent(n), guard++) {
       if (n === box) return true;
     }
     return false;
   }
-  let openModals = null;
   function behindModal(el) {
-    if (openModals === null) {
-      try {
-        openModals = helpers.getOpenModalDialogs() || [];
-      } catch {
-        openModals = [];
-      }
+    try {
+      return helpers.isModalInert(el);
+    } catch {
+      return false;
     }
-    if (!openModals.length) return false;
-    return !openModals.some((d) => insideOf(d, el) || insideOf(el, d));
   }
   // The hook records the last time each <dialog> in the document was opened
   // (record.dialogsOpened), and the order in which the page made each change

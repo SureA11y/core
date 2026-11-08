@@ -13217,17 +13217,65 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return list;
   };
 
+  // The open modal dialogs whose content is live: the topmost one, the last
+  // in the top layer, since HTML makes every other one inert under it ("blocked
+  // by a modal dialog"). No DOM API gives the top layer's order, and :modal
+  // matches every dialog in it, so the topmost is found as frame-scan.js finds
+  // it: the browser hit-tests nothing inert, and the topmost dialog's backdrop
+  // covers the rest, so a point at each dialog's centre lands in the topmost.
+  // Where that tells none apart (one dialog, no layout, as in jsdom with
+  // assumeModal, or a topmost dialog the pointer passes through) every open
+  // one counts. Worked out once per run, with the open dialogs.
+  const __topModalsByList = new WeakMap();
+  const getTopModalDialogs = () => {
+    const modals = getOpenModalDialogs();
+    if (modals.length < 2) return modals;
+    try {
+      const cached = __topModalsByList.get(modals);
+      if (cached) return cached;
+    } catch {}
+    const view = window || dom.defaultView(document);
+    const width = (view && view.innerWidth) || 0;
+    const height = (view && view.innerHeight) || 0;
+    const top =
+      !width || !height
+        ? []
+        : modals.filter((d) => {
+            try {
+              const r = dom.getBoundingClientRect(d);
+              if (!r || !r.width || !r.height) return false;
+              const x = Math.min(Math.max(r.left + r.width / 2, 0), width - 1);
+              const y = Math.min(Math.max(r.top + r.height / 2, 0), height - 1);
+              const hit = dom.elementFromPoint(document, x, y);
+              if (!hit) return false;
+              // A hit in a shadow tree is retargeted to its host.
+              return (
+                hit === d ||
+                dom.contains(d, hit) ||
+                (!!dom.shadowRoot(hit) && containsModal(hit, d))
+              );
+            } catch {
+              return false;
+            }
+          });
+    const out = top.length ? top : modals;
+    try {
+      __topModalsByList.set(modals, out);
+    } catch {}
+    return out;
+  };
+
   // Whether `el` is behind an open modal dialog, which the browser makes
   // inert: a modal dialog is open (getOpenModalDialogs) and `el` is in none
-  // of them by the flat tree, so content of a shadow root inside the dialog
-  // counts as in it, and contains none (<body>, a wrapper: a container of the
-  // dialog is not what is blocked). With several modals open, inside any of
-  // them counts, since the DOM does not say which one is topmost. Such an
+  // of the topmost ones (getTopModalDialogs) by the flat tree, so content of
+  // a shadow root inside the dialog counts as in it, and contains none
+  // (<body>, a wrapper: a container of the dialog is not what is blocked).
+  // A dialog under the topmost one is inert with all it holds. Such an
   // element is out of the accessibility tree (isAccTreeEligible's
   // `modalInert`) and takes no focus (getFocusableInfo).
   function isModalInert(el) {
     if (!isElement(el)) return false;
-    const openModals = getOpenModalDialogs();
+    const openModals = getTopModalDialogs();
     if (!openModals.length) return false;
     const chain = ancestorsIncludingSelf(el);
     return !openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
@@ -85063,24 +85111,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // decides it, whatever else hides it: while the dialog is open, the dialog
   // is the cause in effect, so such a region is reported with hiddenBy
   // 'modal' even under inert or aria-hidden, with or without
-  // includeHiddenElements.
+  // includeHiddenElements. With several open, a region in one under the
+  // topmost is behind it too (helpers.isModalInert).
   function insideOf(box, el) {
     for (let n = el, guard = 0; n && guard < 500; n = helpers.composedParent(n), guard++) {
       if (n === box) return true;
     }
     return false;
   }
-  let openModals = null;
   function behindModal(el) {
-    if (openModals === null) {
-      try {
-        openModals = helpers.getOpenModalDialogs() || [];
-      } catch {
-        openModals = [];
-      }
+    try {
+      return helpers.isModalInert(el);
+    } catch {
+      return false;
     }
-    if (!openModals.length) return false;
-    return !openModals.some((d) => insideOf(d, el) || insideOf(el, d));
   }
   // The hook records the last time each <dialog> in the document was opened
   // (record.dialogsOpened), and the order in which the page made each change
@@ -119546,17 +119590,65 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return list;
   };
 
+  // The open modal dialogs whose content is live: the topmost one, the last
+  // in the top layer, since HTML makes every other one inert under it ("blocked
+  // by a modal dialog"). No DOM API gives the top layer's order, and :modal
+  // matches every dialog in it, so the topmost is found as frame-scan.js finds
+  // it: the browser hit-tests nothing inert, and the topmost dialog's backdrop
+  // covers the rest, so a point at each dialog's centre lands in the topmost.
+  // Where that tells none apart (one dialog, no layout, as in jsdom with
+  // assumeModal, or a topmost dialog the pointer passes through) every open
+  // one counts. Worked out once per run, with the open dialogs.
+  const __topModalsByList = new WeakMap();
+  const getTopModalDialogs = () => {
+    const modals = getOpenModalDialogs();
+    if (modals.length < 2) return modals;
+    try {
+      const cached = __topModalsByList.get(modals);
+      if (cached) return cached;
+    } catch {}
+    const view = window || dom.defaultView(document);
+    const width = (view && view.innerWidth) || 0;
+    const height = (view && view.innerHeight) || 0;
+    const top =
+      !width || !height
+        ? []
+        : modals.filter((d) => {
+            try {
+              const r = dom.getBoundingClientRect(d);
+              if (!r || !r.width || !r.height) return false;
+              const x = Math.min(Math.max(r.left + r.width / 2, 0), width - 1);
+              const y = Math.min(Math.max(r.top + r.height / 2, 0), height - 1);
+              const hit = dom.elementFromPoint(document, x, y);
+              if (!hit) return false;
+              // A hit in a shadow tree is retargeted to its host.
+              return (
+                hit === d ||
+                dom.contains(d, hit) ||
+                (!!dom.shadowRoot(hit) && containsModal(hit, d))
+              );
+            } catch {
+              return false;
+            }
+          });
+    const out = top.length ? top : modals;
+    try {
+      __topModalsByList.set(modals, out);
+    } catch {}
+    return out;
+  };
+
   // Whether `el` is behind an open modal dialog, which the browser makes
   // inert: a modal dialog is open (getOpenModalDialogs) and `el` is in none
-  // of them by the flat tree, so content of a shadow root inside the dialog
-  // counts as in it, and contains none (<body>, a wrapper: a container of the
-  // dialog is not what is blocked). With several modals open, inside any of
-  // them counts, since the DOM does not say which one is topmost. Such an
+  // of the topmost ones (getTopModalDialogs) by the flat tree, so content of
+  // a shadow root inside the dialog counts as in it, and contains none
+  // (<body>, a wrapper: a container of the dialog is not what is blocked).
+  // A dialog under the topmost one is inert with all it holds. Such an
   // element is out of the accessibility tree (isAccTreeEligible's
   // `modalInert`) and takes no focus (getFocusableInfo).
   function isModalInert(el) {
     if (!isElement(el)) return false;
-    const openModals = getOpenModalDialogs();
+    const openModals = getTopModalDialogs();
     if (!openModals.length) return false;
     const chain = ancestorsIncludingSelf(el);
     return !openModals.some((d) => chain.indexOf(d) !== -1 || containsModal(el, d));
