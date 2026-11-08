@@ -1368,6 +1368,24 @@
       "fr-CA": "2c712dc9416bae80",
       "pt": "cb5f039a1032cec5"
     },
+    "target-size-minimum undersized-inline-link-run": {
+      "en": "7ed6c6f4568ce0a3",
+      "de": "646a7a39809df6b2",
+      "es": "13800f6d425f4526",
+      "fr": "2545cab5e5de4f47",
+      "ja": "9263c8d12febf437",
+      "fr-CA": "2545cab5e5de4f47",
+      "pt": "7ed6c6f4568ce0a3"
+    },
+    "target-size-minimum undersized-plausibly-essential": {
+      "en": "9a48146a7628121c",
+      "de": "3e589d93c31f28c6",
+      "es": "9c479d61d2835221",
+      "fr": "7e2d2b0fb9abf205",
+      "ja": "7847961a90fdb29c",
+      "fr-CA": "7e2d2b0fb9abf205",
+      "pt": "9a48146a7628121c"
+    },
     "td-has-header TD_TABLE_NO_HEADERS": {
       "en": "c5c9a9d830cf2fdc",
       "de": "d4d2a93b66693541",
@@ -2492,7 +2510,7 @@
     "tab-name-present": "b78d06b9a3e9102e",
     "table-headers-attr-valid": null,
     "table-th-has-data-cells": "f9a6090ac2d2994c",
-    "target-size-minimum": null,
+    "target-size-minimum": "2d5bb23f932cec5c",
     "td-has-header": "b8674789d28b9b80",
     "text-spacing-content-loss": "a4366e97a28b8268",
     "textbox-name-present": "104625d1cf121a51",
@@ -2561,10 +2579,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "42fce66a3fde36a87fdb9e0851b3a8bf9d3f61ea12beec8975f719e3d5c47343",
-    "en": "20b4c07e0bf080d3a1731ac34bc2bba975f45fd78cb8b4bd3953a1c7bbebd95a",
-    "es": "a5d7bc5a80f707c74e6f700d537ea702683c54a87530718c51089e47254eaf0a",
-    "fr": "2f5282f93728253befc4eb85fed78b633b49b0d6d43ea0690759bb746d2cd694",
-    "ja": "7732b17cb243288116b081f3fa53573926134b43ab421bd2388b6eaa45fcd9de"
+    "de": "6d18f57515c375335a2321558db7472fabaec94b745bb7456aea38f93ac54278",
+    "en": "87165c2394102c3b1e6c5297f1d93664f214842a035981929259751417ebb4e6",
+    "es": "6f4f8bb45aa11b65c8b893bb40cab50bde39b9048cae856508e32e98452ca728",
+    "fr": "1b0a4cb2178cc5bd44e91478ac90c2f0f6386bf079df1fbce21006e7e458cc75",
+    "ja": "64f56423c808a5de82a28480d43a7ade90f70d3d455033f322adc02c675f36fa"
   }
 }

@@ -29,7 +29,8 @@ const { proceduresFrom } = require('../src/procedures-core.js');
 const { FACETS } = require('../src/coverage/wcag-facets.js');
 const { WCAG_PRINCIPLES, WCAG_GUIDELINES } = require('../src/coverage/wcag-guidelines.js');
 
-const { ruleTypeDirs } = require('../scripts/lib/rule-dirs.js');
+const { ruleTypeDirs, ruleDirs } = require('../scripts/lib/rule-dirs.js');
+const { readRuleProse } = require('../src/rule-docs.js');
 
 const ROOT = path.join(__dirname, '..');
 // Core's rules and an in-repo profile's (profiles/<key>/rules), held to the
@@ -83,19 +84,41 @@ test('each reason code is under one facet, and is one its rule gives', () => {
   }
 });
 
+// Every code a rule's header lists as cantTell, read by the parser the rule
+// catalog uses, so a code of any spelling (`undersized-inline-link-run` as
+// well as `CODE_NAME`) is counted.
+const HEADER_CANT_TELL = [...new Map(ruleDirs().flatMap((dir) => [...readRuleProse(dir)]))]
+  .filter(([id]) => RULES.has(id))
+  .flatMap(([id, p]) =>
+    (p.reasonCodes || [])
+      .filter((c) => (c.outcomes || []).includes('cantTell'))
+      .map((c) => ({ ruleId: id, code: c.code }))
+  );
+
 test('every reason code a rule header lists as cantTell has steps', () => {
   const have = new Set(ALL.map((v) => `${v.ruleId} ${v.code}`));
+  assert.ok(HEADER_CANT_TELL.length > 150, `only ${HEADER_CANT_TELL.length} cantTell codes found`);
+  const missing = HEADER_CANT_TELL.map((c) => `${c.ruleId} ${c.code}`).filter(
+    (at) => !have.has(at)
+  );
+  assert.deepEqual(missing, []);
+});
+
+test('every cantTell code of every rule gives a finding steps in every locale', () => {
   const missing = [];
-  let codes = 0;
-  for (const [id, file] of RULES) {
-    const src = fs.readFileSync(file, 'utf8');
-    for (const m of src.matchAll(/^ \* {3}- `([A-Za-z0-9_]+)` \(([^)]*)\)/gm)) {
-      if (!/cantTell/.test(m[2])) continue;
-      codes += 1;
-      if (!have.has(`${id} ${m[1]}`)) missing.push(`${id} ${m[1]}`);
+  for (const { ruleId, code } of HEADER_CANT_TELL) {
+    for (const locale of LOCALES) {
+      const steps = howToCheckFor(ruleId, code, locale);
+      if (
+        !steps ||
+        !steps.steps.length ||
+        steps.steps.some((s) => typeof s !== 'string' || !s) ||
+        !steps.passWhen ||
+        !steps.failWhen
+      )
+        missing.push(`${ruleId} ${code} ${locale}`);
     }
   }
-  assert.ok(codes > 150, `only ${codes} cantTell codes found`);
   assert.deepEqual(missing, []);
 });
 

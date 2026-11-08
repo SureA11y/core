@@ -45,7 +45,7 @@ function ruleFiles() {
 // reads them.
 function headerCantTellCodes(src) {
   const codes = [];
-  for (const m of src.matchAll(/^ \* {3}- `([A-Za-z0-9_]+)` \(([^)]*)\)/gm)) {
+  for (const m of src.matchAll(/^ \* {3}- `([A-Za-z0-9_-]+)` \(([^)]*)\)/gm)) {
     if (/cantTell/.test(m[2])) codes.push(m[1]);
   }
   return codes;
