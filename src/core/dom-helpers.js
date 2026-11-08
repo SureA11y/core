@@ -7724,6 +7724,12 @@ function createDomHelpers(opts) {
       const steps = [];
       let countsUnsure = false;
 
+      // jsdom's selector engine matches no camelCase type selector of an
+      // SVG element (foreignObject, linearGradient) followed by a
+      // combinator, though browsers do: `svg > foreignObject > div` finds
+      // nothing in jsdom. With a pseudo-class beside it, both match it, so
+      // such a step above the element always has its :nth-of-type.
+      const isCamelCase = (t) => t !== t.toLowerCase();
       function nthOfType(node) {
         const t = typeSelectorOf(node) || '*';
         steps.push([node, t]);
@@ -7734,8 +7740,17 @@ function createDomHelpers(opts) {
         const info = __siblingInfo(node);
         if (!info) return t;
         if (info.mixed) countsUnsure = true;
-        return info.sameType > 1 ? t + ':nth-of-type(' + info.ofType + ')' : t;
+        return info.sameType > 1 || (node !== el && isCamelCase(t))
+          ? t + ':nth-of-type(' + info.ofType + ')'
+          : t;
       }
+      // An anchor's type selector, with the :nth-of-type jsdom needs.
+      const anchorType = (node, t) => {
+        if (!isCamelCase(t)) return t;
+        const info = __siblingInfo(node);
+        if (info && info.mixed) countsUnsure = true;
+        return info ? t + ':nth-of-type(' + info.ofType + ')' : t;
+      };
 
       let node = el;
       let safety = 0;
@@ -7811,7 +7826,7 @@ function createDomHelpers(opts) {
                 idx &&
                 (idx.nameCount.get(t + '|' + name.trim()) || 0) === 1
               ) {
-                anchor = t + '[name="' + escapeAttrValue(name) + '"]';
+                anchor = anchorType(node, t) + '[name="' + escapeAttrValue(name) + '"]';
               }
             }
             if (!anchor) {
@@ -7824,7 +7839,7 @@ function createDomHelpers(opts) {
                 idx &&
                 (idx.ariaLabelCount.get(t + '|' + aria.trim()) || 0) === 1
               ) {
-                anchor = t + '[aria-label="' + escapeAttrValue(aria) + '"]';
+                anchor = anchorType(node, t) + '[aria-label="' + escapeAttrValue(aria) + '"]';
               }
             }
           }
