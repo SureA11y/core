@@ -206,7 +206,8 @@ export interface PolicyContract {
 
 /**
  * The `code` on an error the engine throws: a contextSelector that is not a
- * selector, or one that can't be parsed, a runOnly that names nothing,
+ * selector, one that can't be parsed, or, under strictOptions, an empty one
+ * ('' or []), a runOnly that names nothing,
  * under strictOptions an option the engine doesn't read or a value of the
  * wrong type, or, in a page whose scripts broke a JavaScript built-in the
  * engine relies on, PAGE_BUILTINS_BROKEN (its `broken` lists them).
