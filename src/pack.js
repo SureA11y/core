@@ -27,6 +27,7 @@ const { version: CORE_VERSION } = require('../package.json');
 const { experimentalUses } = require('./experimental.js');
 const { checkStandardData, standardFromData, standardDataOf } = require('./standard-data.js');
 const { deriveStandard } = require('./derive-standard.js');
+const { standardLawProblems, lawOf } = require('./laws.js');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
 const {
   languageProblems,
@@ -1236,6 +1237,7 @@ function packProblems(pack, withCoreVersion, withReported) {
     }
     problems.push(...notesProblems(st.notes, versions));
     problems.push(...languageProblems(st));
+    problems.push(...standardLawProblems(st));
     for (const [name, profile] of Object.entries(isObject(st.profiles) ? st.profiles : {})) {
       if (!name.startsWith(ns + '-') || !ID.test(name)) {
         problems.push(`standard.profiles: ${profileNameProblem(name, ns)}`);
@@ -1477,6 +1479,18 @@ function describePacks(packs) {
             standard: standard.standard,
             versions: standard.versions.slice(),
             profiles: Object.keys(standard.profiles || {}),
+            // Its laws as written, each with the profiles that serve it
+            // (experimental), where it has any.
+            ...(isObject(standard.laws) && Object.keys(standard.laws).length
+              ? {
+                  laws: Object.keys(standard.laws).map((id) => ({
+                    ...lawOf(standard, id),
+                    profiles: Object.entries(standard.profiles || {})
+                      .filter(([, p]) => isObject(p) && p.law === id)
+                      .map(([name]) => name)
+                  }))
+                }
+              : {}),
             rollups:
               typeof standard.composites === 'function'
                 ? standard.composites().map((c) => c.id)
@@ -2167,5 +2181,6 @@ module.exports = {
   standardFromData,
   standardDataOf,
   deriveStandard,
+  lawOf,
   wcagTags
 };

@@ -3532,6 +3532,12 @@ function runCoreSettled(
       wcagVersion: targetWcagVersion,
       ...(wcagLevel ? { wcagLevel } : {}),
       ...(appliedProfile ? { profile: appliedProfile } : {}),
+      // The law the profile serves (standard.laws, experimental).
+      ...(appliedProfile &&
+      Object.prototype.hasOwnProperty.call(PROFILE_TARGETS, appliedProfile) &&
+      PROFILE_TARGETS[appliedProfile].law
+        ? { law: { ...PROFILE_TARGETS[appliedProfile].law } }
+        : {}),
       // What the profile left out, when it excludes anything.
       ...(appliedProfile && runOnly && runOnly.profileExcludes
         ? { profileExcludes: runOnly.profileExcludes }

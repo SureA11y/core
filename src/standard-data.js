@@ -27,11 +27,23 @@
  */
 
 const { ruleMappedStandard } = require('./profile-kit.js');
+const { standardLawProblems } = require('./laws.js');
 
 const FORMAT = 'surea11y-standard/1';
 const STANDARD_DATA = Symbol.for('surea11y.standardData');
 
-const TOP_KEYS = ['format', 'key', 'standard', 'lang', 'versions', 'options', 'data', 'profiles'];
+const TOP_KEYS = [
+  'format',
+  'key',
+  'standard',
+  'lang',
+  'versions',
+  'options',
+  'data',
+  'profiles',
+  'laws',
+  'texts'
+];
 const VERSION_KEYS = ['version', 'wcagVersion', 'published', 'basedOn'];
 const OPTION_KEYS = ['applicability', 'wcagCorrespondence', 'ruleMapped'];
 const DATA_KEYS = ['groups', 'requirements', 'tests', 'ruleMap', 'notes', 'review', 'texts'];
@@ -44,7 +56,8 @@ const REQUIREMENT_KEYS = [
   'basedOn',
   'note',
   'procedure',
-  'replace'
+  'replace',
+  'laws'
 ];
 const TEST_KEYS = ['title', 'requirements', 'wcagSc', 'scope', 'basedOn', 'procedure'];
 const PROCEDURE_KEYS = ['steps', 'passWhen', 'failWhen', 'tools', 'automation'];
@@ -440,6 +453,37 @@ function checkStandardData(data) {
   if (withTests && withTests !== listed.length) {
     out.push('a standard with tests has them in every version');
   }
+  // Laws (and their translations, the top-level texts), the law of each
+  // profile and the laws a requirement is asked for under, checked as core
+  // checks a standard's (src/laws.js).
+  if (data.laws !== undefined || data.texts !== undefined || hasLawRefs(data)) {
+    const procedures = {};
+    for (const v of listed) {
+      const reqs =
+        isObject(data.data) && isObject(data.data[v]) && isObject(data.data[v].requirements)
+          ? data.data[v].requirements
+          : {};
+      procedures[v] = Object.fromEntries(
+        Object.entries(reqs)
+          .filter(([, r]) => isObject(r) && r.laws !== undefined)
+          .map(([id, r]) => [id, { laws: r.laws }])
+      );
+    }
+    out.push(
+      ...standardLawProblems({
+        lang: data.lang,
+        laws: data.laws,
+        lawTexts: data.texts,
+        profiles: data.profiles,
+        procedures
+      }).map((p) =>
+        p
+          .replace(/^standard\.lawTexts/, 'texts')
+          .replace(/^standard\.procedures\.([^.]+)\./, 'data.$1.requirements.')
+          .replace(/^standard\./, '')
+      )
+    );
+  }
   if (data.profiles !== undefined) {
     if (!isObject(data.profiles)) out.push('profiles must be an object of profiles');
     else
@@ -492,7 +536,11 @@ function proceduresOf(data, options) {
     for (const id of Object.keys(d.requirements).sort(byNumber)) {
       const r = d.requirements[id];
       const sc = Array.isArray(r.wcagSc) ? r.wcagSc : [];
-      const head = { title: r.title, ...(r.note ? { note: r.note } : {}) };
+      const head = {
+        title: r.title,
+        ...(r.note ? { note: r.note } : {}),
+        ...(Array.isArray(r.laws) ? { laws: r.laws.slice() } : {})
+      };
       const restates = options.applicability === 'wcag' && sc.length === 1;
       if (r.procedure) {
         any = true;
@@ -586,6 +634,22 @@ function engineTexts(data) {
   return out;
 }
 
+// Whether a profile or a requirement names a law.
+function hasLawRefs(data) {
+  if (
+    isObject(data.profiles) &&
+    Object.values(data.profiles).some((p) => isObject(p) && p.law !== undefined)
+  ) {
+    return true;
+  }
+  return Object.values(isObject(data.data) ? data.data : {}).some(
+    (d) =>
+      isObject(d) &&
+      isObject(d.requirements) &&
+      Object.values(d.requirements).some((r) => isObject(r) && r.laws !== undefined)
+  );
+}
+
 function deepFreeze(value) {
   if (value && typeof value === 'object' && !Object.isFrozen(value)) {
     Object.freeze(value);
@@ -661,6 +725,8 @@ function standardFromData(data, extras = {}) {
     ...(Object.keys(review).length ? { reviewByVersion: review } : {}),
     ...(frozen.lang ? { lang: frozen.lang } : {}),
     ...(Object.keys(texts).length ? { texts } : {}),
+    ...(isObject(frozen.laws) ? { laws: frozen.laws } : {}),
+    ...(isObject(frozen.texts) ? { lawTexts: frozen.texts } : {}),
     ...extras
   };
   Object.defineProperty(entry, STANDARD_DATA, { value: frozen, enumerable: false });

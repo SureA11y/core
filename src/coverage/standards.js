@@ -134,6 +134,19 @@ const NORMATIVE_STANDARDS = [
   ...PROFILES.map((p) => p.standard)
 ];
 
+// The law a profile serves, as a result names it ({ law: { id, name,
+// jurisdiction, lang } }), or nothing: the standard's laws are checked when
+// its pack is defined (src/laws.js).
+function lawOfProfile(s, p) {
+  const id = p && p.law;
+  const laws = s && s.laws && typeof s.laws === 'object' ? s.laws : null;
+  if (typeof id !== 'string' || !laws || !Object.prototype.hasOwnProperty.call(laws, id)) return {};
+  const law = laws[id];
+  if (!law || typeof law.name !== 'string') return {};
+  const lang = typeof s.lang === 'string' && s.lang.trim() ? s.lang.trim().toLowerCase() : 'en';
+  return { law: { id, name: law.name, jurisdiction: String(law.jurisdiction), lang } };
+}
+
 // A profile's `exclude`, as lists: { rules: [...], criteria: [...] }.
 function normalizeExclude(exclude) {
   const list = (v) => (Array.isArray(v) ? v.map((x) => String(x).trim()).filter(Boolean) : []);
@@ -269,7 +282,9 @@ function createRegistry(standards) {
             ...(p.exclude ? { exclude: normalizeExclude(p.exclude) } : {}),
             ...(p.severity && typeof p.severity === 'object' ? { severity: { ...p.severity } } : {}),
             ...(p.wcagVersion ? { wcagVersion: p.wcagVersion } : {}),
-            ...(p.keepsParsing ? { keepsParsing: true } : {})
+            ...(p.keepsParsing ? { keepsParsing: true } : {}),
+            // The law it serves, as a result names it: experimental.
+            ...lawOfProfile(s, p)
           }
         ])
       ),

@@ -98,7 +98,12 @@ function prepareStandards(registry, { where = '' } = {}) {
         {
           tags: p.tags,
           mappings: [s.key + ':' + p.version],
-          target: { key: s.key, standard: s.standard, version: p.version }
+          target: {
+            key: s.key,
+            standard: s.standard,
+            version: p.version,
+            ...(p.law ? { law: { ...p.law } } : {})
+          }
         }
       ])
     )

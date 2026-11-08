@@ -109,6 +109,8 @@ test('the procedures entry reaches no module outside core', () => {
       // A pack's standard in its languages.
       path.join(ROOT, 'src', 'pack-languages.js'),
       path.join(ROOT, 'src', 'texts-by-id.js'),
+      // The law a profile serves, to list what it asks for.
+      path.join(ROOT, 'src', 'laws.js'),
       // Reading the dictionaries, and writing a page from the procedures.
       path.join(ROOT, 'src', 'procedures-text.js'),
       path.join(ROOT, 'src', 'procedures-render.js'),

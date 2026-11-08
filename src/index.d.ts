@@ -552,6 +552,11 @@ export interface EngineInfo {
     reason: 'unknown-profile' | 'pack-skipped' | 'overridden-by-selection' | string;
   }[];
   profileExcludes?: { rules: string[]; criteria: string[] };
+  /**
+   * The law the applied profile serves, when it names one.
+   * @experimental Until 1.18.0.
+   */
+  law?: EngineLaw;
   optInRules?: string[];
   mappings?: string[];
   /** 'findings' when output.detail made pass and notApplicable results compact. */
@@ -955,6 +960,8 @@ export interface ScanResult {
       wcagLevel?: string;
       standards?: string[];
       rulesResults: Record<string, Outcome>;
+      /** The law the profile serves, when it names one. @experimental Until 1.18.0. */
+      law?: EngineLaw;
       /** This profile's scan timings, with engineOptions.perfStats. */
       perfStats?: Record<string, unknown>;
     }
@@ -1370,6 +1377,23 @@ export interface ProcedureListOptions {
   automation?: ProcedureFacet['automation'] | readonly ProcedureFacet['automation'][];
   /** Keep only the facets one of these rules claims. */
   rules?: string | readonly string[];
+  /**
+   * A pack's profile: lists its standard at its version, only the
+   * requirements its law asks for. @experimental Until 1.18.0.
+   */
+  profile?: string;
+}
+
+/**
+ * The law a profile serves, as results name it.
+ * @experimental Until 1.18.0.
+ */
+export interface EngineLaw {
+  id: string;
+  name: string;
+  jurisdiction: string;
+  /** The language name is in. */
+  lang: string;
 }
 
 /** Every requirement of a standard, in its order, and the groups it puts them in. */
@@ -1380,6 +1404,13 @@ export interface ProcedureList {
   key?: string;
   /** The version listed; null for the best practices. */
   version: string | null;
+  /** Listed for a pack's profile: its name. @experimental Until 1.18.0. */
+  profile?: string;
+  /**
+   * Listed for a pack's profile that serves a law: the law, in the locale
+   * read where its texts are translated (lawOf). @experimental Until 1.18.0.
+   */
+  law?: import('./pack').LawText;
   /**
    * The locale the text was read in: the first of options.locale a
    * dictionary was given for, or 'en'; for a pack's standard that declares

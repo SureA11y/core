@@ -174,7 +174,7 @@ function isWcagCriterion(m) {
 // What the scan was tested against, and any opt-in rules it added. A result
 // from an engine older than the WCAG-version target carries none of these
 // fields and gets no chips.
-function renderTargetChips(engine, ui) {
+function renderTargetChips(engine, ui, profileResults) {
   if (!engine) return '';
   const chips = [];
   if (engine.wcagVersion)
@@ -193,6 +193,32 @@ function renderTargetChips(engine, ui) {
     chips.push(
       `<div><b>${esc(profiles.join(' + '))}</b>${esc(ui.tr('report_meta_profile'))}</div>`
     );
+  // The laws the profiles serve (standard.laws), each once, in the
+  // standard's language, marked as such where it isn't the report's (WCAG
+  // 3.1.2). A scan of several profiles names each profile's.
+  const isLaw = (l) => !!l && typeof l === 'object' && typeof l.name === 'string' && l.name;
+  const laws = [];
+  const seen = new Set();
+  const lawsOf = [engine.law, ...Object.values(profileResults || {}).map((p) => p && p.law)];
+  for (const l of lawsOf) {
+    if (!isLaw(l) || seen.has(l.id || l.name)) continue;
+    seen.add(l.id || l.name);
+    laws.push(l);
+  }
+  if (laws.length) {
+    const base = (l) =>
+      String(l || '')
+        .toLowerCase()
+        .split('-')[0];
+    const named = laws.map((law) => {
+      const lang =
+        law.lang && base(law.lang) !== base(ui.uiLocale) ? ` lang="${esc(law.lang)}"` : '';
+      const where =
+        typeof law.jurisdiction === 'string' && law.jurisdiction ? ` (${law.jurisdiction})` : '';
+      return `<span${lang}>${esc(law.name + where)}</span>`;
+    });
+    chips.push(`<div><b>${named.join(' + ')}</b>${esc(ui.tr('report_meta_law'))}</div>`);
+  }
   // The profiles a scan of several asked for that did not run.
   const notRun = Array.isArray(engine.profilesNotRun)
     ? engine.profilesNotRun.map((p) => p && p.profile).filter(Boolean)
@@ -1182,7 +1208,7 @@ function renderHtmlReport(input, options = {}) {
   <div><b>${ui.num(rows.length)}</b>${esc(ui.tr('report_meta_totalOccurrences'))}</div>
   <div><b>${esc((engine && engine.tag) || '?')}</b>${esc(ui.tr('report_meta_engine'))}</div>
   <div><b>${esc((engine && engine.schemaVersion) || '?')}</b>${esc(ui.tr('report_meta_schemaVersion'))}</div>
-  ${renderTargetChips(engine, ui)}
+  ${renderTargetChips(engine, ui, result && result.profiles)}
   ${renderEnvironmentChips(engine, ui)}
   ${renderLocaleChip(engine, ui)}
 </div>
