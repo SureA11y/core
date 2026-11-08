@@ -233,3 +233,40 @@ test('a pack built from standard data, or on two levels, uses experimental APIs'
   // A pack whose standard is written by hand uses neither.
   assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
 });
+
+test('a pack built on another standard uses the experimental derivation', () => {
+  const { standardFromData } = require('../src/standard-data.js');
+  const { deriveStandard } = require('../src/derive-standard.js');
+  const base = {
+    format: 'surea11y-standard/1',
+    key: 'basestd',
+    standard: 'Base',
+    versions: [{ version: '1', wcagVersion: '2.2' }],
+    data: {
+      1: {
+        requirements: { A: { title: 'Images', wcagSc: ['1.1.1'] } },
+        ruleMap: { 'img-alt-present': { requirements: ['A'] } }
+      }
+    }
+  };
+  const derived = deriveStandard([base], {
+    format: 'surea11y-standard/1',
+    key: 'derivedstd',
+    standard: 'Derived',
+    versions: [
+      { version: '1', wcagVersion: '2.2', basedOn: [{ standard: 'basestd', version: '1' }] }
+    ],
+    data: {
+      1: { requirements: { A: { basedOn: [{ standard: 'basestd', id: 'A' }] } }, ruleMap: {} }
+    },
+    profiles: { 'derivedstd-1': { version: '1', tags: ['derivedstd'], mappedRules: true } }
+  });
+  const pack = definePack({
+    name: 'derived-pack',
+    version: '1.0.0',
+    namespace: 'derivedstd',
+    core: TILDE,
+    standard: standardFromData(derived)
+  });
+  assert.deepEqual(ids(pack), ['standard data', 'standard derivation']);
+});

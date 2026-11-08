@@ -71,6 +71,14 @@
 
 const { WCAG_VERSIONS, wcagCriterion, wcagTags } = require('./wcag.js');
 
+// What an entry is based on in other standards (a requirement's or test's
+// basedOn), carried into its results so a derived standard's result names
+// its base's requirement too. Experimental (src/experimental.js).
+function basedOnOf(item) {
+  const list = item && Array.isArray(item.basedOn) ? item.basedOn : null;
+  return list && list.length ? { basedOn: list.map((b) => ({ ...b })) } : {};
+}
+
 // Requirement ids in their natural order: '1.2' before '1.10'.
 function compareIds(a, b) {
   return String(a).localeCompare(String(b), 'en', { numeric: true });
@@ -172,7 +180,8 @@ function ruleMappedStandard({
         version,
         requirement: id,
         title: req.title,
-        wcagSc: Array.isArray(req.wcagSc) ? req.wcagSc.slice() : []
+        wcagSc: Array.isArray(req.wcagSc) ? req.wcagSc.slice() : [],
+        ...basedOnOf(req)
       };
     }
 
@@ -526,7 +535,8 @@ function twoLevelStandard({
       requirement: id,
       title: test ? test.title : reqsOf(version)[id].title,
       ...(test ? { criterion } : {}),
-      wcagSc: sc
+      wcagSc: sc,
+      ...basedOnOf(test || reqsOf(version)[id])
     };
   }
 
