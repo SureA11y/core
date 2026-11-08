@@ -89033,12 +89033,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       break;
     }
   }
-  // Kept as the stable selector for the usual place; a <title> elsewhere gets
-  // the selector the engine builds for the node.
-  const titleSelector =
-    titleEl && dom.parentElement(titleEl) && dom.localName(dom.parentElement(titleEl)) === 'head'
-      ? 'head > title'
-      : undefined;
+  // The selector of the title element itself, which the engine builds for
+  // the node (a second <title> makes `head > title` name both); without one,
+  // where the title belongs: <head>, or <html> without one.
+  let titleSelector;
+  if (!titleEl) {
+    titleSelector = 'html';
+    try {
+      const head = dom.head(document);
+      if (head && typeof helpers.buildSelector === 'function')
+        titleSelector = helpers.buildSelector(head);
+      else if (head) titleSelector = 'head';
+    } catch {}
+  }
   const rawTitle = dom.get(document, 'title') || '';
   const titleText = rawTitle.replace(/\s+/g, ' ').trim();
   const titleLc = titleText.toLowerCase();
@@ -89396,7 +89403,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const reasonCode = missingTitleEl ? 'missingTitleElement' : 'emptyTitleText';
 
     const occBase = {
-      selector: 'head > title',
       html: '',
       summary: missingTitleEl
         ? 'This page has no <title> element.'
@@ -89422,8 +89428,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       // empty title: we have a node, so engine can attach html
       occurrences.push(helpers.reportOccurrence(titleEl, occBase));
     } else {
-      // missing title element: no node exists, keep deterministic html string
-      occurrences.push({ ...occBase, html: '<title>(missing)</title>' });
+      // missing title element: no node exists, keep deterministic html string,
+      // and point at where the title belongs: <head>, or <html> without one.
+      let where = 'html';
+      try {
+        const head = dom.head(document);
+        if (head && typeof helpers.buildSelector === 'function')
+          where = helpers.buildSelector(head);
+        else if (head) where = 'head';
+      } catch {}
+      occurrences.push({ ...occBase, selector: where, html: '<title>(missing)</title>' });
     }
   }
 
