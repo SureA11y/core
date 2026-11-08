@@ -577,7 +577,10 @@ function runInPage(ctx) {
           el && typeof dom.get(el, 'getAttribute') === 'function'
             ? dom.getAttribute(el, 'id') || ''
             : '';
-        if (elementId) nodeSelector = `#${elementId}`;
+        // Escaped, and only where it names the element: CSS reads a NUL or
+        // a lone surrogate as U+FFFD, so such an id names nothing.
+        const byId = elementId ? '#' + helpers.cssEscape(elementId) : '';
+        if (byId && dom.matches(el, byId)) nodeSelector = byId;
       } catch {
         // no-throw
       }

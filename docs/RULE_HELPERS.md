@@ -142,6 +142,16 @@ The engine's real, best-effort-unique CSS selector builder (cached per element p
 run). Used internally by `reportOccurrence`'s finalization; rules generally don't need
 to call this directly.
 
+### `cssEscape(value)` → `string`
+
+`value` as a CSS identifier, escaped as `CSS.escape()` escapes it (CSSOM's "serialize an
+identifier"), in jsdom too, which has no `CSS.escape`: a leading digit, a dot, a colon or a
+control character, which would otherwise end or change the selector. For a selector a rule
+builds by hand from an id or a class (`'#' + helpers.cssEscape(id)`), so it names the element
+it was built from. CSS reads a NUL or a lone surrogate as U+FFFD, so an id holding one names
+no element however it is escaped: check the selector with `dom.matches(el, selector)` before
+reporting it. An occurrence's own `selector` needs none of this: `reportOccurrence` builds it.
+
 ### `buildShadowHostSelectors` (internal)
 
 For an element in a shadow tree, the selectors of the shadow hosts that lead to it,

@@ -906,19 +906,50 @@ test('safeRootQueryById: resolving the same id again under a different idref str
   assert.deepEqual(second.missing, ['other']);
 });
 
-test('safeRootQueryById: an id that is not valid CSS-selector syntax (e.g. leading digit) resolves as missing instead of throwing', () => {
+test('safeRootQueryById: an id that is no valid CSS identifier (a leading digit, a dot, a quote, a NUL) resolves in a root without getElementById', () => {
   const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
   const { window } = dom;
   const { document } = window;
-  // Detached so document.getElementById can't shortcut around the
-  // querySelector('#1abc') call that would otherwise throw a SyntaxError.
+  // Detached, so document.getElementById can't find these and the lookup
+  // goes through the root's own. An id is any string without white space
+  // (HTML), so each of these names its element, as getElementById finds it;
+  // '#1abc' isn't a selector at all, and no selector can name an id holding
+  // a NUL or a lone surrogate, which CSS reads as U+FFFD.
   const detached = document.createElement('div');
-  detached.innerHTML = '<span id="1abc">Text</span>';
+  detached.id = 'scope';
+  const ids = ['1abc', 'a.b', 'say"hi"', 'nul\u0000x', 'lone\ud800x', 'x\\y'];
+  for (const id of ids) {
+    const span = detached.appendChild(document.createElement('span'));
+    span.id = id;
+    span.textContent = `Text ${id}`;
+  }
+  // A second element with the same id: the first in tree order is the one.
+  const dupe = detached.appendChild(document.createElement('span'));
+  dupe.id = '1abc';
   const helpers = createDomHelpers({ window, document, root: detached });
 
-  const r = helpers.resolveIdRefs('1abc', {});
-  assert.deepEqual(r.missing, ['1abc']);
-  assert.equal(r.refs.length, 0);
+  for (const id of ids) {
+    const r = helpers.resolveIdRefs(id, {});
+    assert.deepEqual(r.missing, [], id);
+    assert.equal(r.refs.length, 1, id);
+    assert.equal(r.refs[0].id, id);
+    assert.notEqual(r.refs[0], dupe);
+  }
+  // The scoped root itself has an id an element in it can point to.
+  assert.equal(helpers.resolveIdRefs('scope', {}).refs[0], detached);
+  assert.deepEqual(helpers.resolveIdRefs('nope', {}).missing, ['nope']);
+});
+
+test('safeRootQueryById: a document fragment root is searched with its own getElementById', () => {
+  const dom = new JSDOM('<!doctype html><html><body></body></html>', { pretendToBeVisual: true });
+  const { window } = dom;
+  const { document } = window;
+  const frag = document.createDocumentFragment();
+  const span = frag.appendChild(document.createElement('span'));
+  span.id = '9 lives'.replace(' ', '-');
+  const helpers = createDomHelpers({ window, document, root: frag });
+  const r = helpers.resolveIdRefs('9-lives', {});
+  assert.equal(r.refs[0], span);
 });
 
 // ===== computeIdRefTargetTextAlternative / __getElementValueLikeName =====
