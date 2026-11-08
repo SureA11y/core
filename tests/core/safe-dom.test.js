@@ -240,3 +240,69 @@ test('the page check looks inside open shadow roots', () => {
     restore();
   }
 });
+
+// jsdom answers an element's querySelectorAll with a case-flagged attribute
+// selector ([role~="img" i]) by walking the whole document, so a rule asking
+// it of every link cost links x elements; it also returned such matches out
+// of document order, and missed those whose ancestor in the selector is the
+// element itself. Under jsdom the accessor asks for the elements with the
+// attribute and keeps those that match.
+test('querySelectorAll with a case-flagged attribute selector on an element under jsdom', () => {
+  const doc = page(
+    '<div id="r"><span role="IMG" id="a">a</span><span role="presentation img" id="b">b</span>' +
+      '<i role="imgx" id="c">c</i><p data-x="Foo]bar" title="A B" id="d">d</p>' +
+      '<div role="img" id="e"><b role="img" id="f">f</b><b role="columnheader" id="g">g</b></div></div>' +
+      '<span role="img" id="out">out</span>'
+  );
+  const r = doc.getElementById('r');
+  const asked = [];
+  const proto = doc.defaultView.Element.prototype;
+  const original = proto.querySelectorAll;
+  proto.querySelectorAll = function (selector) {
+    asked.push(selector);
+    return original.call(this, selector);
+  };
+  const ids = (selector) => [...dom.querySelectorAll(r, selector)].map((el) => el.id);
+  // What every element in r that matches the selector gives, in document order.
+  const expected = (selector) =>
+    [...original.call(r, '*')].filter((el) => el.matches(selector)).map((el) => el.id);
+  for (const selector of [
+    '[role~="img" i]',
+    '[role="img" i]',
+    'img, [role~="img" i], [role~="image" i]',
+    '[role~=img i]',
+    '[role~="IMG" s]',
+    '[data-x="foo]bar" i]',
+    '[title="a b" i]',
+    '#r [role="img"i]',
+    'div [role~="img" i]',
+    '[role~="img" i] > [role~="img" i]',
+    '[role~="columnheader" i], [role~="img" i]',
+    '[role~="img" i]:not(b)'
+  ]) {
+    asked.length = 0;
+    assert.deepEqual(ids(selector), expected(selector), selector);
+    assert.ok(
+      asked.length && asked.every((s) => !/\s[iIsS]\]|"[iIsS]\]/.test(s)),
+      `${selector} asked ${asked.join(' | ')}`
+    );
+  }
+  // In document order, where jsdom gave the columnheader first.
+  assert.deepEqual(ids('[role~="columnheader" i], [role~="img" i]'), ['a', 'b', 'e', 'f', 'g']);
+  // Where reducing the attribute selector could miss a match, the query is
+  // jsdom's own: inside :not(), and with :scope.
+  for (const selector of [':not([role~="img" i])', ':scope > [role~="img" i]']) {
+    asked.length = 0;
+    assert.deepEqual(
+      ids(selector),
+      [...original.call(r, selector)].map((el) => el.id)
+    );
+    assert.deepEqual(asked, [selector]);
+  }
+  // A selector that doesn't parse throws, as the query would.
+  assert.throws(() => dom.querySelectorAll(r, '[role~="img" i]:bogus'), /SyntaxError|not a valid/);
+  // A document or a selector without a flag is queried as before.
+  assert.ok(dom.querySelectorAll(doc, '[role~="img" i]') instanceof doc.defaultView.NodeList);
+  assert.ok(dom.querySelectorAll(r, '[role~="img"]') instanceof doc.defaultView.NodeList);
+  proto.querySelectorAll = original;
+});

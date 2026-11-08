@@ -407,6 +407,106 @@ function createSafeDom() {
   // here take at most three, and an argument passed as undefined is the same
   // to them as one left out. tests/core/safe-dom.test.js checks this list
   // against SAFE_DOM_GETTERS and SAFE_DOM_METHODS.
+  // jsdom's selector engine answers an element's querySelectorAll by
+  // walking the whole document when the selector has an attribute selector
+  // with a case flag (`[role~="img" i]`, which the rules use to read roles),
+  // so a rule asking that of every link costs links x elements. Under jsdom,
+  // such a query on an element asks for the elements with that attribute
+  // instead, which can only be more, and keeps those that match the
+  // selector: the same elements, in the same order, as an array.
+  //
+  // flaglessSelector gives the selector with each such attribute selector
+  // reduced to its name ([role]), or null where that wouldn't find every
+  // match: one inside a pseudo-class's parentheses (:not() turns it
+  // around), :scope (which matches() reads against the element itself), or
+  // an attribute selector it can't take apart.
+  const CASE_FLAG_HINT = /[\s"'\w-][iIsS]\s*\]/;
+  const FLAGGED_ATTRIBUTE =
+    /^\s*(-?[_a-zA-Z][\w-]*)\s*[~|^$*]?=\s*("(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\\\]]+)\s*[iIsS]\s*$/;
+  const UNFLAGGED_ATTRIBUTE =
+    /^\s*[^\s~|^$*=\]]+\s*(?:[~|^$*]?=\s*(?:"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[^\s"'\]]+))?\s*$/;
+  const flaglessBySelector = new Map();
+  function flaglessSelector(selector) {
+    if (flaglessBySelector.has(selector)) return flaglessBySelector.get(selector);
+    let out = '';
+    let flagged = false;
+    let depth = 0;
+    let ok = selector.indexOf(':scope') === -1;
+    for (let i = 0; ok && i < selector.length; i++) {
+      const ch = selector[i];
+      if (ch === '\\') {
+        out += selector.slice(i, i + 2);
+        i++;
+      } else if (ch === '"' || ch === "'") {
+        let j = i + 1;
+        while (j < selector.length && selector[j] !== ch) j += selector[j] === '\\' ? 2 : 1;
+        out += selector.slice(i, j + 1);
+        i = j;
+      } else if (ch === '[') {
+        let j = i + 1;
+        while (j < selector.length && selector[j] !== ']') {
+          if (selector[j] === '\\') j += 2;
+          else if (selector[j] === '"' || selector[j] === "'") {
+            const q = selector[j];
+            j++;
+            while (j < selector.length && selector[j] !== q) j += selector[j] === '\\' ? 2 : 1;
+            j++;
+          } else j++;
+        }
+        const inner = selector.slice(i + 1, j);
+        const m = FLAGGED_ATTRIBUTE.exec(inner);
+        if (m && depth === 0) {
+          out += '[' + m[1] + ']';
+          flagged = true;
+        } else if (UNFLAGGED_ATTRIBUTE.test(inner)) {
+          out += selector.slice(i, j + 1);
+        } else {
+          ok = false;
+        }
+        i = j;
+      } else {
+        if (ch === '(') depth++;
+        else if (ch === ')') depth--;
+        out += ch;
+      }
+    }
+    const result = ok && flagged ? out : null;
+    if (flaglessBySelector.size < 500) flaglessBySelector.set(selector, result);
+    return result;
+  }
+  const JSDOM_UA = /\bjsdom\//;
+  const jsdomByDoc = new WeakMap();
+  function elementUnderJsdom(o) {
+    try {
+      if (o === null || typeof o !== 'object') return false;
+      const read = (obj, name) => (guard(obj) ? protectedGet(obj, name) : obj[name]);
+      if (read(o, 'nodeType') !== 1) return false;
+      const doc = read(o, 'ownerDocument');
+      if (!doc) return false;
+      let under = jsdomByDoc.get(doc);
+      if (under === undefined) {
+        const view = read(doc, 'defaultView');
+        const nav = view ? read(view, 'navigator') : null;
+        under = JSDOM_UA.test(String((nav && nav.userAgent) || ''));
+        jsdomByDoc.set(doc, under);
+      }
+      return under;
+    } catch {
+      return false;
+    }
+  }
+  function queryAllFlagless(o, selector, flagless) {
+    const call = (obj, name, arg) =>
+      protect && guard(obj) ? protectedCall(obj, name, arg) : apply(obj[name], obj, [arg]);
+    // A selector the element can't parse throws here, as the query would.
+    call(o, 'matches', selector);
+    const out = [];
+    for (const el of call(o, 'querySelectorAll', flagless)) {
+      if (call(el, 'matches', selector)) out.push(el);
+    }
+    return out;
+  }
+
   const dom = {
     get: (o, name) => (protect && guard(o) ? protectedGet(o, name) : o[name]),
     call: (o, name, ...args) =>
@@ -579,10 +679,15 @@ function createSafeDom() {
       protect && guard(o)
         ? protectedCall(o, 'querySelector', a, b, c, d)
         : o.querySelector(a, b, c, d),
-    querySelectorAll: (o, a, b, c, d) =>
-      protect && guard(o)
+    querySelectorAll: (o, a, b, c, d) => {
+      if (typeof a === 'string' && CASE_FLAG_HINT.test(a) && elementUnderJsdom(o)) {
+        const flagless = flaglessSelector(a);
+        if (flagless) return queryAllFlagless(o, a, flagless);
+      }
+      return protect && guard(o)
         ? protectedCall(o, 'querySelectorAll', a, b, c, d)
-        : o.querySelectorAll(a, b, c, d),
+        : o.querySelectorAll(a, b, c, d);
+    },
     removeAttribute: (o, a, b, c, d) =>
       protect && guard(o)
         ? protectedCall(o, 'removeAttribute', a, b, c, d)
