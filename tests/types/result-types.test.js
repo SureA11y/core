@@ -499,7 +499,7 @@ test(
         'const fresh: number = matchBaseline(result, entries).newCount;',
         "const leanEntries = buildBaselineEntries(result, { leanFail: true }).filter((e) => e.lean === 'fail');",
         'const freshLeans: number | undefined = matchBaseline(result, leanEntries, { leanFail: true }).leanFail?.newCount;',
-        "const leans: Array<'fail' | 'cantTell' | null> = leaningFailures(result, { wcagOnly: true }).map((l) => occurrenceOutcome(result.checksResults[0], l.occurrence));",
+        "const leans: Array<'fail' | 'cantTell' | 'pass' | null> = leaningFailures(result, { wcagOnly: true }).map((l) => occurrenceOutcome(result.checksResults[0], l.occurrence));",
         "const gated: string = renderJunitReport(result, { leanFailAs: 'failure', leanFailWcagOnly: true }) + renderSarifReport(result, { leanFailAs: 'error', leanFailWcagOnly: true });",
         'const migrated: string[] = migrateBaselineEntries({ entries }, result).concat(migrateBaselineEntries(entries)).map((e) => e.reasonCode);',
         "const level: 'A' | 'AA' | 'AAA' | undefined = wcagCriterion('1.4.3', '2.2')?.level;",

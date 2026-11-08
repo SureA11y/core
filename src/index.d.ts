@@ -1034,12 +1034,13 @@ export function flattenCrossFrameResult(
 /**
  * An occurrence's outcome, as the reporters read it: its own tier
  * (`occurrenceOutcome`) when it is 'fail' or 'cantTell', or else its check's
- * outcome when that is; null otherwise.
+ * outcome when that is 'fail', 'cantTell' or 'pass' (the summary occurrence of
+ * a passing check, as a scan of several profiles gives it); null otherwise.
  */
 export function occurrenceOutcome(
   check: Pick<CheckResult, 'outcome'> | null | undefined,
   occurrence: Occurrence | null | undefined
-): 'fail' | 'cantTell' | null;
+): 'fail' | 'cantTell' | 'pass' | null;
 
 /**
  * Where an occurrence goes in a review: 'leanFail' or 'leanPass' for an
