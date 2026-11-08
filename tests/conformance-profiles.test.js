@@ -143,6 +143,30 @@ test('an unknown profile runs the default selection and warns', () => {
   assert.ok(warnings.some((w) => w.includes('"wcag99-aa"') && w.includes('no such profile')));
 });
 
+test('under strictOptions, an unknown profile throws and names the profiles there are', () => {
+  for (const profile of ['wcag21-aa', 'wcag99-aa', ['wcag22-aa', 'wcag20-a']]) {
+    assert.throws(
+      () => scan({ strictOptions: true, profile }),
+      (err) => {
+        assert.equal(err.code, 'INVALID_ENGINE_OPTIONS');
+        assert.match(err.message, /no profile named "wcag(21-aa|99-aa|20-a)"/);
+        for (const known of ['wcag22-a', 'wcag22-aa', 'wcag22-aaa', 'section508'])
+          assert.ok(err.message.includes(known), known);
+        assert.ok(err.knownProfiles.includes('wcag22-aa'));
+        return true;
+      },
+      JSON.stringify(profile)
+    );
+  }
+  // A known one, in any case, still runs.
+  assert.equal(scan({ strictOptions: true, profile: 'WCAG22-AA' }).engine.profile, 'wcag22-aa');
+  // The Node runner too.
+  assert.throws(
+    () => core.runDomRulesInPage(null, null, { strictOptions: true, profile: 'wcag21-aa' }),
+    { code: 'INVALID_ENGINE_OPTIONS' }
+  );
+});
+
 test('an explicit include in engineOptions overrides the profile, with a warning', () => {
   const { value, warnings } = captureWarnings(() =>
     scan({ profile: 'wcag22-aa', tags: { include: 'wcag111' } })

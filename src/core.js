@@ -1250,6 +1250,21 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
 // would be dropped (resolveEffectiveRunOnly).
 const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode'];
 
+// Under strictOptions, a profile the engine doesn't have is an error, as
+// other invalid options are: the scan would otherwise run every rule, which
+// reads as a conformance scan of a target nobody asked for. Without it, the
+// runner says so (runCore) and runs without a profile.
+function enforceKnownProfile(selection, eo) {
+  if (!selection || selection.profileNotApplied !== 'unknown' || !strictOf(eo)) return selection;
+  const err = new Error(
+    'engineOptions.profile: no profile named ' + JSON.stringify(String(eo.profile)) +
+      '; the profiles are ' + Object.keys(CONFORMANCE_PROFILES).sort().join(', ') + '. (strictOptions)'
+  );
+  err.code = 'INVALID_ENGINE_OPTIONS';
+  err.knownProfiles = Object.keys(CONFORMANCE_PROFILES).sort();
+  throw err;
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -1350,7 +1365,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     selection.ownTags = [];
     selection.excludeRollupIds = [];
     selection.standardRuleIds = [];
-    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+    return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
   const mode = normalizeIncludeMode(eo.includeMode);
@@ -1396,7 +1411,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     eo
   );
 
-  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
+  return applyOptInRules(enforceKnownProfile(applyProfile(out, requestedProfile), eo), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
@@ -107684,6 +107699,21 @@ function checkSelectionNames(lists, engineOptions, { otherIncludes = false } = {
 // would be dropped (resolveEffectiveRunOnly).
 const RUN_ONLY_KEYS = ['type', 'values', 'wcag', 'bestPractices', 'tags', 'excludeTags', 'includeRuleIds', 'excludeRuleIds', 'includeTestIds', 'excludeTestIds', 'includeMode'];
 
+// Under strictOptions, a profile the engine doesn't have is an error, as
+// other invalid options are: the scan would otherwise run every rule, which
+// reads as a conformance scan of a target nobody asked for. Without it, the
+// runner says so (runCore) and runs without a profile.
+function enforceKnownProfile(selection, eo) {
+  if (!selection || selection.profileNotApplied !== 'unknown' || !strictOf(eo)) return selection;
+  const err = new Error(
+    'engineOptions.profile: no profile named ' + JSON.stringify(String(eo.profile)) +
+      '; the profiles are ' + Object.keys(CONFORMANCE_PROFILES).sort().join(', ') + '. (strictOptions)'
+  );
+  err.code = 'INVALID_ENGINE_OPTIONS';
+  err.knownProfiles = Object.keys(CONFORMANCE_PROFILES).sort();
+  throw err;
+}
+
 function resolveEffectiveRunOnly(engineOptions, runOnly) {
   const eo = (engineOptions && typeof engineOptions === 'object') ? engineOptions : {};
   // A number or a boolean, and an object none of whose keys the engine
@@ -107784,7 +107814,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     selection.ownTags = [];
     selection.excludeRollupIds = [];
     selection.standardRuleIds = [];
-    return applyOptInRules(applyProfile(selection, requestedProfile), eo.optInRules);
+    return applyOptInRules(enforceKnownProfile(applyProfile(selection, requestedProfile), eo), eo.optInRules);
   }
 
   const mode = normalizeIncludeMode(eo.includeMode);
@@ -107830,7 +107860,7 @@ function resolveEffectiveRunOnly(engineOptions, runOnly) {
     eo
   );
 
-  return applyOptInRules(applyProfile(out, requestedProfile), eo.optInRules);
+  return applyOptInRules(enforceKnownProfile(applyProfile(out, requestedProfile), eo), eo.optInRules);
 }
 
 function ruleIdMatches(candidate, ruleId, engineTag) {
