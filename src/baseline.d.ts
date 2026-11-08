@@ -75,6 +75,8 @@ export function buildBaselineEntries(
  * An entry written under a reason code that a release has since moved its finding to also matches the finding under the new code,
  * with the same rule, markup and frame (docs/BASELINE.md, "Upgrading"). Entries marked lean: 'fail' are compared, in `leanFail`,
  * only with { leanFail: true }.
+ * null or undefined is a baseline with no entries. Anything else that is not a list of entries or a baseline file (a string, {},
+ * [null], an entry without a ruleId, a field of the wrong type) throws a TypeError with code 'INVALID_BASELINE' naming what is wrong.
  */
 export function matchBaseline(
   result: ScanResult | CrossFrameResult | BindingFramesResult,
@@ -90,7 +92,8 @@ export function matchBaseline(
  * one, only an entry whose finding moved to a single code, from a code the
  * rule no longer gives, is rewritten. Every other entry is kept as it is.
  * The entries given are not changed. A result other than a scan result or a
- * cross-frame result throws a TypeError.
+ * cross-frame result throws a TypeError, and so does a malformed baseline, as
+ * in matchBaseline.
  */
 export function migrateBaselineEntries(
   baselineEntries: BaselineEntry[] | BaselineFile | null | undefined,

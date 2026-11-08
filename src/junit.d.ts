@@ -17,7 +17,10 @@ export interface JunitOptions {
   allowProfilesNotRun?: boolean;
   /** Include notApplicable rules as skipped tests. */
   includeNotApplicable?: boolean;
-  /** Failures recorded here are skipped as known, and under leanFailAs so are findings that lean fail recorded here (docs/BASELINE.md). */
+  /**
+   * Failures recorded here are skipped as known, and under leanFailAs so are findings that lean fail recorded here (docs/BASELINE.md).
+   * A value that is not a baseline throws a TypeError with code 'INVALID_BASELINE', as matchBaseline does.
+   */
   baselineEntries?: BaselineEntry[] | BaselineFile;
   /**
    * The packs the scan ran (engineOptions.packs): with leanFailAs: 'failure',
