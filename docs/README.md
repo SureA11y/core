@@ -34,7 +34,7 @@ The reference for `@surea11y/core`, by what you want to do. [surea11y.dev](https
 | Document | What it covers |
 |---|---|
 | [`BUILDING_ON_CORE.md`](./BUILDING_ON_CORE.md) | Start here: what to rely on, running scans, presenting results, comparing runs, extending. |
-| [`API_STABILITY.md`](./API_STABILITY.md) | What semver covers: result fields, entry points, extension points, rule-id deprecation. |
+| [`API_STABILITY.md`](./API_STABILITY.md) | What semver covers: result fields, entry points, extension points, experimental APIs, rule-id deprecation. |
 | [`BINDING_AUTHORS_GUIDE.md`](./BINDING_AUTHORS_GUIDE.md) | Writing an integration for a test framework or browser driver. |
 | [`POLICY.md`](./POLICY.md) | Policy contracts: which outcomes may reach a result. |
 
