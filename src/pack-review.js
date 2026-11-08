@@ -323,6 +323,8 @@ function standardReviewsOf(packs) {
     const st = isObject(pack) && isObject(pack.standard) ? pack.standard : null;
     if (!st || !isObject(st.profiles)) continue;
     if (!isObject(st.review) && !isObject(st.reviewByVersion)) continue;
+    // Shared by its profiles: read once per pack.
+    const texts = idTextsOf(st);
     for (const [profile, p] of Object.entries(st.profiles)) {
       const version = isObject(p) && typeof p.version === 'string' ? p.version : null;
       const review = reviewForVersion(st, version);
@@ -335,7 +337,7 @@ function standardReviewsOf(packs) {
         dictionaries: isObject(pack.dictionaries) ? pack.dictionaries : null,
         version,
         lang: typeof st.lang === 'string' ? st.lang.trim().toLowerCase() : 'en',
-        texts: idTextsOf(st)
+        texts
       });
     }
   }

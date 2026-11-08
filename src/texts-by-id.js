@@ -23,10 +23,23 @@ const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'pr
 // The standard's translations by id, by lower-case locale and version, each
 // list flattened to one key per text ('…steps.0'): { locale: { version: {
 // key: text } } }.
+// Read once for a standard whose texts are frozen, as definePack leaves
+// them: every lookup of a translation reads this. Texts that can still
+// change are read each time.
+const READ = new WeakMap();
+
 function idTextsOf(st) {
+  if (!isObject(st) || !isObject(st.texts)) return {};
+  const frozen = Object.isFrozen(st.texts);
+  if (frozen && READ.has(st.texts)) return READ.get(st.texts);
+  const out = flatten(st.texts);
+  if (frozen) READ.set(st.texts, Object.freeze(out));
+  return out;
+}
+
+function flatten(texts) {
   const out = {};
-  if (!isObject(st) || !isObject(st.texts)) return out;
-  for (const [tag, byVersion] of Object.entries(st.texts)) {
+  for (const [tag, byVersion] of Object.entries(texts)) {
     if (!TAG.test(tag) || !isObject(byVersion)) continue;
     const locale = (out[tag.toLowerCase()] = {});
     for (const [version, dict] of Object.entries(byVersion)) {

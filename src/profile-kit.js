@@ -80,8 +80,11 @@ function basedOnOf(item) {
 }
 
 // Requirement ids in their natural order: '1.2' before '1.10'.
+// One collator for every comparison: localeCompare with options builds one
+// each time, which made sorting the ids the costliest step of composites().
+const ID_ORDER = new Intl.Collator('en', { numeric: true });
 function compareIds(a, b) {
-  return String(a).localeCompare(String(b), 'en', { numeric: true });
+  return ID_ORDER.compare(String(a), String(b));
 }
 
 /**
@@ -423,18 +426,6 @@ function twoLevelStandard({
   const isTest = (version, id) => Object.prototype.hasOwnProperty.call(testsOf(version), id);
   const isReq = (version, id) => Object.prototype.hasOwnProperty.call(reqsOf(version), id);
 
-  // The tests of a requirement, in the standard's order: its own list, else
-  // those that name it.
-  function testsOfRequirement(version, id) {
-    const req = reqsOf(version)[id];
-    if (req && Array.isArray(req.tests)) return req.tests.slice();
-    return Object.keys(testsOf(version))
-      .filter((t) => listOf(testsOf(version)[t].requirements).includes(id))
-      .sort(compareIds);
-  }
-  // What a requirement's rollup groups: the requirement and its tests.
-  const unitsOf = (version, id) => [id, ...testsOfRequirement(version, id)];
-
   const routesOf = (row) => [
     ...Object.values(objectOf(row && row.reasonCodes) || {}),
     ...listOf(row && row.findings)
@@ -560,23 +551,49 @@ function twoLevelStandard({
     return out;
   }
 
+  // The tests of each requirement of a version, read once: its own list, or
+  // else the tests that name it, in number order.
+  function testsIndex(version) {
+    const byReq = new Map();
+    for (const t of Object.keys(testsOf(version)).sort(compareIds)) {
+      for (const r of listOf(testsOf(version)[t].requirements)) {
+        if (!byReq.has(r)) byReq.set(r, []);
+        byReq.get(r).push(t);
+      }
+    }
+    return (id) => {
+      const req = reqsOf(version)[id];
+      return req && Array.isArray(req.tests) ? req.tests : byReq.get(id) || [];
+    };
+  }
+
   function composites() {
     const out = [];
     for (const { version } of versions) {
       const table = ruleMap[version] || {};
+      // Once per version: the rules that count toward or ask about each unit,
+      // so each requirement reads its rules from its units alone.
+      const rulesOfUnit = new Map();
+      for (const ruleId of Object.keys(table)) {
+        for (const u of unitsOfRule(version, ruleId)) {
+          if (!rulesOfUnit.has(u)) rulesOfUnit.set(u, new Set());
+          rulesOfUnit.get(u).add(ruleId);
+        }
+      }
+      const testsOfReq = testsIndex(version);
       for (const id of Object.keys(reqsOf(version)).sort(compareIds)) {
-        const units = unitsOf(version, id);
-        const ruleIds = Object.keys(table)
-          .filter((ruleId) => unitsOfRule(version, ruleId).some((u) => units.includes(u)))
-          .sort();
-        if (!ruleIds.length) continue;
-        const named = [
-          ...new Set(
-            ruleIds
-              .flatMap((ruleId) => unitsOfRule(version, ruleId))
-              .filter((u) => units.includes(u))
-          )
-        ].sort(compareIds);
+        const units = [id, ...testsOfReq(id)];
+        const rules = new Set();
+        const named = [];
+        for (const u of units) {
+          const of = rulesOfUnit.get(u);
+          if (!of) continue;
+          named.push(u);
+          for (const ruleId of of) rules.add(ruleId);
+        }
+        if (!rules.size) continue;
+        const ruleIds = [...rules].sort();
+        named.sort(compareIds);
         const contributions = {};
         for (const ruleId of ruleIds) {
           const c = contributionOf(version, ruleId, units);
