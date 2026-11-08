@@ -40,6 +40,11 @@ const hasOwn = (o, k) => Object.prototype.hasOwnProperty.call(o, k);
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
+// Keys that would reach Object.prototype through an assignment: data can
+// carry them (JSON keeps "__proto__" as a key), so nothing written by key
+// takes them.
+const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
+
 // A language tag, as a locale file is named: 'fr', 'pt-BR', 'zh-Hant'.
 const TAG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{1,8})*$/;
 
@@ -71,9 +76,10 @@ function idTextsOf(st) {
     if (!TAG.test(tag) || !isObject(byVersion)) continue;
     const locale = (out[tag.toLowerCase()] = {});
     for (const [version, dict] of Object.entries(byVersion)) {
-      if (!isObject(dict)) continue;
+      if (!isObject(dict) || isUnsafeKey(version)) continue;
       const flat = (locale[version] = {});
       for (const [key, value] of Object.entries(dict)) {
+        if (isUnsafeKey(key)) continue;
         if (Array.isArray(value)) value.forEach((v, i) => (flat[`${key}.${i}`] = v));
         else flat[key] = value;
       }
@@ -255,6 +261,7 @@ function unitsOf(st) {
     ]) {
       for (const [ruleId, byCode] of Object.entries(isObject(table) ? table : {})) {
         for (const [code, entry] of Object.entries(isObject(byCode) ? byCode : {})) {
+          if (isUnsafeKey(ruleId) || isUnsafeKey(code)) continue;
           if (isObject(entry)) (review[ruleId] = review[ruleId] || {})[code] = entry;
         }
       }
@@ -390,9 +397,10 @@ function idTextProblems(st) {
   const known = {};
   const lists = {};
   for (const u of unitsOf(st)) {
+    if (isUnsafeKey(u.version) || isUnsafeKey(u.key)) continue;
     (known[u.version] = known[u.version] || {})[u.key] = u.text;
     const m = /^(.*)\.(\d+)$/.exec(u.key);
-    if (m) {
+    if (m && !isUnsafeKey(m[1])) {
       const byKey = (lists[u.version] = lists[u.version] || {});
       byKey[m[1]] = Math.max(byKey[m[1]] || 0, Number(m[2]) + 1);
     }
@@ -415,6 +423,10 @@ function idTextProblems(st) {
     }
     for (const [version, dict] of Object.entries(byVersion)) {
       const vAt = `${at}.${version}`;
+      if (isUnsafeKey(version)) {
+        problems.push(`${at}: a key named "${version}" is not allowed`);
+        continue;
+      }
       if (!versions.includes(version)) {
         problems.push(`${vAt}: the standard has no version ${version}`);
         continue;
@@ -427,6 +439,10 @@ function idTextProblems(st) {
       const listed = lists[version] || {};
       for (const [key, value] of Object.entries(dict)) {
         const kAt = `${vAt}: ${key}`;
+        if (isUnsafeKey(key)) {
+          problems.push(`${vAt}: a key named "${key}" is not allowed`);
+          continue;
+        }
         if (Array.isArray(value)) {
           if (!hasOwn(listed, key)) {
             problems.push(`${kAt} is no list of texts of the standard`);
@@ -571,10 +587,13 @@ function withTitleKeys(st, namespace) {
     const key = keyOf(meta);
     // A rollup that names its own titleKey keeps it.
     if (meta.titleKey === undefined) keyed.set(r.id, key);
+    if (isUnsafeKey(source)) continue;
     (dictionaries.en = dictionaries.en || {})[key] = meta.title;
     if (source !== 'en') (dictionaries[source] = dictionaries[source] || {})[key] = meta.title;
-    for (const [locale, text] of found)
+    for (const [locale, text] of found) {
+      if (isUnsafeKey(locale)) continue;
       (dictionaries[locale] = dictionaries[locale] || {})[key] = text;
+    }
   }
   if (!dictionaries.en) return none;
   const composites = () =>

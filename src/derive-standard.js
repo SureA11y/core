@@ -48,10 +48,27 @@ const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
 const listOf = (v) => (Array.isArray(v) ? v : []);
 const copy = (v) => JSON.parse(JSON.stringify(v));
 
+// Keys that would reach Object.prototype through an assignment: data can
+// carry them (JSON keeps "__proto__" as a key), so nothing written by key
+// takes them.
+const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
+
 // The base standard's tables for a version, or null.
 function baseTables(bases, key, version) {
   const base = bases.get(key);
   return base && isObject(base.data) && isObject(base.data[version]) ? base.data[version] : null;
+}
+
+// Where a value holds a key no data may have (isUnsafeKey), as messages.
+function unsafeKeysIn(value, at, out = []) {
+  if (Array.isArray(value)) value.forEach((v, i) => unsafeKeysIn(v, `${at}[${i}]`, out));
+  else if (isObject(value)) {
+    for (const [k, v] of Object.entries(value)) {
+      if (isUnsafeKey(k)) out.push(`${at}: a key named "${k}" is not allowed`);
+      else unsafeKeysIn(v, `${at}.${k}`, out);
+    }
+  }
+  return out;
 }
 
 /**
@@ -72,6 +89,7 @@ function deriveStandard(bases, own) {
     else byKey.set(b.key, b);
   });
   if (!isObject(own)) problems.push('own data must be an object');
+  else problems.push(...unsafeKeysIn(own, 'own'));
   if (problems.length) throw new TypeError(`deriveStandard: ${problems.join('; ')}`);
 
   const out = copy(own);
@@ -285,6 +303,7 @@ function deriveStandard(bases, own) {
       const tables = baseTables(byKey, standard, version);
       for (const [rule, byCode] of Object.entries(isObject(tables.review) ? tables.review : {})) {
         for (const [code, entry] of Object.entries(isObject(byCode) ? byCode : {})) {
+          if (isUnsafeKey(rule) || isUnsafeKey(code)) continue;
           const mineGives =
             isObject(ownReview[rule]) &&
             Object.prototype.hasOwnProperty.call(ownReview[rule], code);
@@ -302,6 +321,7 @@ function deriveStandard(bases, own) {
     }
     for (const [rule, byCode] of Object.entries(ownReview)) {
       for (const [code, entry] of Object.entries(isObject(byCode) ? byCode : {})) {
+        if (isUnsafeKey(rule) || isUnsafeKey(code)) continue;
         if (entry === null) {
           if (review[rule]) delete review[rule][code];
         } else (review[rule] = review[rule] || {})[code] = entry;
@@ -321,6 +341,7 @@ function deriveStandard(bases, own) {
       if (JSON.stringify(baseSource[baseKey]) !== JSON.stringify(mineSource[key])) return;
       for (const [locale, dict] of Object.entries(isObject(baseD.texts) ? baseD.texts : {})) {
         if (!isObject(dict) || !Object.prototype.hasOwnProperty.call(dict, baseKey)) continue;
+        if (isUnsafeKey(locale) || isUnsafeKey(key)) continue;
         const target = (texts[locale] = texts[locale] || {});
         if (!Object.prototype.hasOwnProperty.call(target, key)) target[key] = copy(dict[baseKey]);
       }

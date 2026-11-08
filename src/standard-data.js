@@ -59,6 +59,11 @@ const BASED_ON_KEYS = ['standard', 'version', 'id'];
 const SCOPES = ['page', 'site'];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// Keys that would reach Object.prototype through an assignment: data can
+// carry them (JSON keeps "__proto__" as a key), so nothing written by key
+// takes them.
+const isUnsafeKey = (k) => k === '__proto__' || k === 'constructor' || k === 'prototype';
 const isText = (v) => typeof v === 'string' && v.trim() !== '';
 
 // Where a value holds something JSON can't: a function, a symbol, undefined
@@ -81,7 +86,10 @@ function notJson(value, at, out) {
       out.push(`${at}: must be a plain object`);
       return out;
     }
-    for (const [k, v] of Object.entries(value)) notJson(v, `${at}.${k}`, out);
+    for (const [k, v] of Object.entries(value)) {
+      if (isUnsafeKey(k)) out.push(`${at}: a key named "${k}" is not allowed`);
+      else notJson(v, `${at}.${k}`, out);
+    }
     return out;
   }
   out.push(`${at}: a ${typeof value} is not data`);
@@ -547,8 +555,10 @@ function engineTexts(data) {
         ).includes(t)
       );
     for (const [locale, dict] of Object.entries(d.texts)) {
+      if (isUnsafeKey(locale) || isUnsafeKey(version)) continue;
       const target = ((out[locale] = out[locale] || {})[version] = {});
       for (const [key, value] of Object.entries(dict)) {
+        if (isUnsafeKey(key)) continue;
         let m;
         if ((m = /^requirements\.(.+?)\.procedure\.(steps|passWhen|failWhen)$/.exec(key))) {
           target[`requirements.${m[1]}.facets.${facetIdOf(m[1])}.${m[2]}`] = value;
