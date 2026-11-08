@@ -401,6 +401,7 @@ export interface RuleHelpers {
   paintContainedByContentVisibility: RuleHelper;
   cssRulesOf: RuleHelper;
   cssConditionApplies: RuleHelper;
+  selectorIndex: RuleHelper;
   getStyleSheets: RuleHelper;
   getCustomElementInternals: RuleHelper;
   getInternalsNameInfo: RuleHelper;

@@ -12,6 +12,7 @@ function createContrastHelpers(opts, shared) {
   const computedStyle = shared.computedStyle;
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
+  const selectorIndex = shared.selectorIndex;
 
   const clamp01 = (n) => {
     const x = Number(n);
@@ -2946,6 +2947,27 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  // The parts of a root's rules for prop (__colorRulesOf) that may match el,
+  // in the rules' order (selectorIndex): a page with many color rules costs
+  // elements x the rules that could apply, not elements x rules. Each entry
+  // is { rule, part }; a pseudo-element's part is left out.
+  function __colorPartsFor(found, el) {
+    if (!found.index) {
+      const entries = [];
+      for (const rule of found.rules) {
+        for (const part of rule.parts) {
+          // A pseudo-element paints another box; :visited isn't known here,
+          // and the link is taken as not visited, as jsdom takes it.
+          if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
+          entries.push({ rule, part });
+        }
+      }
+      found.index = { entries, index: selectorIndex(entries.map((e) => e.part)) };
+    }
+    const { entries, index } = found.index;
+    return index.candidates(el).map((i) => entries[i]);
+  }
+
   // The author's declaration of `color` (or of prop) that wins for el in a
   // browser: { value }, null where none applies, or { unknown: true } where
   // it can't be told.
@@ -2957,31 +2979,26 @@ function createContrastHelpers(opts, shared) {
       root = null;
     }
     root = root || dom.ownerDocument(el);
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) return { unknown: true };
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) return { unknown: true };
     let best = null;
     let unknown = false;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        // A pseudo-element paints another box; :visited isn't known here,
-        // and the link is taken as not visited, as jsdom takes it.
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        if (rule.uncertain) {
-          unknown = true;
-          continue;
-        }
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      if (rule.uncertain) {
+        unknown = true;
+        continue;
+      }
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     // The style attribute outranks every rule of its importance.
     try {
@@ -3009,29 +3026,26 @@ function createContrastHelpers(opts, shared) {
     }
     root = root || dom.ownerDocument(el);
     const out = { values: [], winner: null, uncertain: false, unknown: false };
-    const { rules, unreadable } = __colorRulesOf(root, prop);
-    if (unreadable) {
+    const found = __colorRulesOf(root, prop);
+    if (found.unreadable) {
       out.unknown = true;
       return out;
     }
     let best = null;
-    for (const rule of rules) {
-      for (const part of rule.parts) {
-        if (/::|:(before|after|first-line|first-letter)\b|:visited\b/i.test(part)) continue;
-        let matched;
-        try {
-          matched = dom.matches(el, part);
-        } catch {
-          out.unknown = true;
-          continue;
-        }
-        if (!matched) continue;
-        out.values.push(rule.value);
-        if (rule.uncertain) out.uncertain = true;
-        const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
-        if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
-          best = { rank, order: rule.order, value: rule.value };
+    for (const { rule, part } of __colorPartsFor(found, el)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        out.unknown = true;
+        continue;
       }
+      if (!matched) continue;
+      out.values.push(rule.value);
+      if (rule.uncertain) out.uncertain = true;
+      const rank = (rule.important ? 2e12 : 0) + __specificityOf(part);
+      if (!best || rank > best.rank || (rank === best.rank && rule.order > best.order))
+        best = { rank, order: rule.order, value: rule.value };
     }
     try {
       const style = dom.get(el, 'style');
