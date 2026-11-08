@@ -13377,6 +13377,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // matches every dialog in it, so the topmost is found as frame-scan.js finds
   // it: the browser hit-tests nothing inert, and the topmost dialog's backdrop
   // covers the rest, so a point at each dialog's centre lands in the topmost.
+  // A modal dialog inside another is its own layer: when it is the topmost,
+  // the outer one's content around it is inert, so a point that lands in it
+  // is not in the outer one.
   // Where that tells none apart (one dialog, no layout, as in jsdom with
   // assumeModal, or a topmost dialog the pointer passes through) every open
   // one counts. Worked out once per run, with the open dialogs.
@@ -13403,10 +13406,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
               const hit = dom.elementFromPoint(document, x, y);
               if (!hit) return false;
               // A hit in a shadow tree is retargeted to its host.
+              const holds = (m) =>
+                hit === m ||
+                dom.contains(m, hit) ||
+                (!!dom.shadowRoot(hit) && containsModal(hit, m));
+              // A hit in an open modal nested in `d` is in that one, not in
+              // `d`: with the inner one on top, the rest of `d` is inert.
               return (
-                hit === d ||
-                dom.contains(d, hit) ||
-                (!!dom.shadowRoot(hit) && containsModal(hit, d))
+                holds(d) &&
+                !modals.some(
+                  (m) => m !== d && containsModal(d, m) && (hit === m || dom.contains(m, hit))
+                )
               );
             } catch {
               return false;
@@ -120336,6 +120346,9 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // matches every dialog in it, so the topmost is found as frame-scan.js finds
   // it: the browser hit-tests nothing inert, and the topmost dialog's backdrop
   // covers the rest, so a point at each dialog's centre lands in the topmost.
+  // A modal dialog inside another is its own layer: when it is the topmost,
+  // the outer one's content around it is inert, so a point that lands in it
+  // is not in the outer one.
   // Where that tells none apart (one dialog, no layout, as in jsdom with
   // assumeModal, or a topmost dialog the pointer passes through) every open
   // one counts. Worked out once per run, with the open dialogs.
@@ -120362,10 +120375,17 @@ const createDomHelpers = (function createDomHelpers(opts) {
               const hit = dom.elementFromPoint(document, x, y);
               if (!hit) return false;
               // A hit in a shadow tree is retargeted to its host.
+              const holds = (m) =>
+                hit === m ||
+                dom.contains(m, hit) ||
+                (!!dom.shadowRoot(hit) && containsModal(hit, m));
+              // A hit in an open modal nested in `d` is in that one, not in
+              // `d`: with the inner one on top, the rest of `d` is inert.
               return (
-                hit === d ||
-                dom.contains(d, hit) ||
-                (!!dom.shadowRoot(hit) && containsModal(hit, d))
+                holds(d) &&
+                !modals.some(
+                  (m) => m !== d && containsModal(d, m) && (hit === m || dom.contains(m, hit))
+                )
               );
             } catch {
               return false;
@@ -133393,7 +133413,13 @@ function isFrameBehindModal(el) {
       const hit = dom.elementFromPoint(doc, x, y);
       if (!hit) return false;
       const shadow = dom.shadowRoot(hit);
-      return hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d));
+      if (!(hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d))))
+        return false;
+      // A point in an open modal nested in `d` is in that one: with the inner
+      // one on top, the rest of `d` is inert.
+      return !modals.some(
+        (m) => m !== d && frameAncestors(m).indexOf(d) > 0 && (hit === m || dom.contains(m, hit))
+      );
     } catch {
       return false;
     }

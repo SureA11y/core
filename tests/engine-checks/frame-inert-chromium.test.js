@@ -83,5 +83,19 @@ test(
       // The topmost one's frame is scanned, as any.
       assert.ok((await frameOutcomes(page('upper'), open)).length > 0);
     });
+    await t.test('in a modal dialog with another, topmost one inside it', async () => {
+      const frame = `<iframe title="x" srcdoc="${CHILD}"></iframe>`;
+      const page = (frameIn) =>
+        `<dialog id="outer">${frameIn === 'outer' ? frame : '<p>Outer</p>'}` +
+        `<dialog id="inner">${frameIn === 'inner' ? frame : '<p>Inner</p>'}</dialog></dialog>`;
+      const open = () => {
+        document.getElementById('outer').showModal();
+        document.getElementById('inner').showModal();
+      };
+      // The outer dialog's content around the inner one is inert: left out.
+      assert.deepEqual(await frameOutcomes(page('outer'), open), []);
+      // The inner, topmost one's frame is scanned.
+      assert.ok((await frameOutcomes(page('inner'), open)).length > 0);
+    });
   }
 );

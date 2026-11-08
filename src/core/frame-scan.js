@@ -196,7 +196,13 @@ function isFrameBehindModal(el) {
       const hit = dom.elementFromPoint(doc, x, y);
       if (!hit) return false;
       const shadow = dom.shadowRoot(hit);
-      return hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d));
+      if (!(hit === d || dom.contains(d, hit) || (!!shadow && dom.contains(shadow, d))))
+        return false;
+      // A point in an open modal nested in `d` is in that one: with the inner
+      // one on top, the rest of `d` is inert.
+      return !modals.some(
+        (m) => m !== d && frameAncestors(m).indexOf(d) > 0 && (hit === m || dom.contains(m, hit))
+      );
     } catch {
       return false;
     }

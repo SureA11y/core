@@ -364,9 +364,10 @@ Whether `el` is behind an open modal dialog, which the browser makes inert: a di
 root's content inside the dialog, and what the page slots into it, counts as in it) and
 contains none (`<body>` or a wrapper around the dialog is not blocked). With several open,
 only the topmost one, the one opened last, is live: a dialog under it is inert with all it
-holds, as in the browser. No DOM API gives the top layer's order, so the topmost is the one
-the browser hit-tests at each dialog's centre; where that can't tell (no layout), every open
-one counts. `false` for anything
+holds, as in the browser. That holds for a modal dialog inside another too: with the inner one
+on top, the outer one's content around it is inert. No DOM API gives the top layer's order, so
+the topmost is the one the browser hit-tests at each dialog's centre; where that can't tell (no
+layout), every open one counts. `false` for anything
 that isn't an element and while no modal dialog is open. Core's own view of modal blocking:
 `isAccTreeEligible` gives such an element reason `modalInert`, the default hidden-content
 policy leaves it out, and `getFocusableInfo` says it takes no focus (flag `modalInert`). A

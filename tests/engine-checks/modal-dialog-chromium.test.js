@@ -478,3 +478,87 @@ test('two modal dialogs: only the topmost one is judged', { skip }, async (t) =>
     });
   }
 });
+
+// A modal dialog opened with showModal() inside another one: whichever was
+// opened last is the topmost, and HTML makes inert everything that is not in
+// it. With the inner one on top, the outer dialog's own content around it is
+// inert, as the page is; with the outer one on top, the inner dialog is part
+// of it and stays live.
+test('a modal dialog inside another: only the topmost one is live', { skip }, async (t) => {
+  const browser = await chromium.launch({ executablePath });
+  t.after(() => browser.close());
+  const bundle = helpersBundle();
+  const html =
+    '<!doctype html><html lang="en"><head><title>M</title></head><body>' +
+    '<main><img id="bg" src="a.png"></main>' +
+    '<dialog id="outer" aria-label="Outer"><img id="in-outer" src="b.png"><button id="b-outer"></button>' +
+    '<dialog id="inner" aria-label="Inner"><img id="in-inner" src="c.png"><button id="b-inner"></button></dialog>' +
+    '</dialog></body></html>';
+
+  for (const [first, last, live, inert] of [
+    ['outer', 'inner', ['b-inner', 'in-inner'], ['b-outer', 'in-outer', 'bg']],
+    ['inner', 'outer', ['b-inner', 'in-inner', 'b-outer', 'in-outer'], ['bg']]
+  ]) {
+    await t.test(`${first} opened, then ${last}`, async () => {
+      const p = await browser.newPage();
+      await p.setContent(html);
+      await p.evaluate(
+        ([a, b]) => {
+          document.getElementById(a).showModal();
+          document.getElementById(b).showModal();
+        },
+        [first, last]
+      );
+      await p.addScriptTag({ content: bundle });
+      const helpers = await p.evaluate(
+        (ids) => {
+          window.__a11ycoreSharedCache = {};
+          const h = window.__modalTest.createDomHelpers({ window, document, root: document });
+          const out = {};
+          for (const id of ids) {
+            const el = document.getElementById(id);
+            el.focus();
+            out[id] = {
+              browser: id.startsWith('b-') ? document.activeElement === el : null,
+              modalInert: h.isModalInert(el),
+              eligible: h.isAccTreeEligible(el).eligible
+            };
+            el.blur();
+          }
+          return out;
+        },
+        ['b-outer', 'b-inner', 'in-outer', 'in-inner', 'bg']
+      );
+      await addBundle(p);
+      const found = await p.evaluate(() => {
+        const r = window.a11ycore.runa11yCoreInPage(location.href, null, {}, [
+          'img-alt-present',
+          'button-name-present'
+        ]);
+        const out = {};
+        for (const c of r.checksResults)
+          out[c.ruleId] = c.occurrences.map((o) => document.querySelector(o.selector).id).sort();
+        return out;
+      });
+      await p.close();
+
+      assert.deepEqual(found['img-alt-present'], live.filter((id) => id.startsWith('in-')).sort());
+      assert.deepEqual(
+        found['button-name-present'],
+        live.filter((id) => id.startsWith('b-')).sort()
+      );
+      for (const id of live) {
+        if (helpers[id].browser !== null)
+          assert.equal(helpers[id].browser, true, `${id} takes focus`);
+        assert.equal(helpers[id].modalInert, false, id);
+        assert.equal(helpers[id].eligible, true, id);
+      }
+      for (const id of inert) {
+        if (helpers[id].browser !== null)
+          assert.equal(helpers[id].browser, false, `Chromium gives ${id} no focus`);
+        assert.equal(helpers[id].modalInert, true, id);
+        assert.equal(helpers[id].eligible, false, id);
+      }
+    });
+  }
+});
