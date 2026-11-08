@@ -474,6 +474,37 @@ function createDomHelpers(opts) {
 
   // --- eligibility utilities ---
   const isElement = (n) => !!n && dom.nodeType(n) === 1;
+  // el.closest(selector), worked out once per element and selector for the
+  // run: an element's answer is itself, where it matches, else its parent
+  // element's, so asking it of every element of a deep page costs the
+  // elements, not elements x depth. Throws where closest() would (a
+  // selector that doesn't parse).
+  function closestCached(el, selector) {
+    let bySelector;
+    try {
+      const all =
+        __domSharedCache.closestBySelector || (__domSharedCache.closestBySelector = new Map());
+      bySelector = all.get(selector);
+      if (!bySelector) all.set(selector, (bySelector = new WeakMap()));
+    } catch {
+      return dom.call(el, 'closest', selector);
+    }
+    if (bySelector.has(el)) return bySelector.get(el);
+    const path = [];
+    let above = null;
+    for (let cur = el; cur; cur = dom.parentElement(cur)) {
+      if (bySelector.has(cur)) {
+        above = bySelector.get(cur);
+        break;
+      }
+      path.push(cur);
+    }
+    for (let i = path.length - 1; i >= 0; i--) {
+      if (dom.matches(path[i], selector)) above = path[i];
+      bySelector.set(path[i], above);
+    }
+    return bySelector.get(el);
+  }
   // The <math> element el is in, or is, where the page has no layout
   // (jsdom), which can't style a formula; null otherwise. Decided once per
   // document.
@@ -481,7 +512,7 @@ function createDomHelpers(opts) {
   const brokenMathRoot = (el) => {
     let math;
     try {
-      math = el && typeof el === 'object' ? dom.call(el, 'closest', 'math') : null;
+      math = el && typeof el === 'object' ? closestCached(el, 'math') : null;
     } catch {
       return null;
     }
@@ -881,21 +912,34 @@ function createDomHelpers(opts) {
           return cached;
         }
         __perfInc('ancestorsIncludingSelf.miss');
-        const out = [];
-        let cur = n,
-          guard = 0;
-        while (cur && guard++ < 200) {
-          out.push(cur);
-          cur = composedParent(cur);
+        // Built from the parent's chain: the node, then the first 199 of
+        // its parent's, the same nodes a walk of 200 steps meets. So each
+        // node's parent is read once per run, and a deep page costs its
+        // nodes, not nodes x depth. The ancestors on the way up that have
+        // no chain yet get theirs too.
+        const path = [];
+        let base = null;
+        for (let cur = n; cur && path.length < 1e6; cur = composedParent(cur)) {
+          const known = cur === n ? null : __ancestorsIncludingSelfCache.get(cur);
+          if (known) {
+            base = known;
+            break;
+          }
+          path.push(cur);
         }
-        // Still more to walk: callers must not read "no blocking ancestor
-        // found" from a chain that never reached the root.
-        if (cur) {
-          out.truncated = true;
-          __perfInc('ancestorsIncludingSelf.truncated');
+        for (let i = path.length - 1; i >= 0; i--) {
+          const out = [path[i]];
+          if (base) for (let k = 0; k < base.length && k < 199; k++) out.push(base[k]);
+          // Still more to walk: callers must not read "no blocking ancestor
+          // found" from a chain that never reached the root.
+          if (base && base.length >= 200) {
+            out.truncated = true;
+            __perfInc('ancestorsIncludingSelf.truncated');
+          }
+          __ancestorsIncludingSelfCache.set(path[i], out);
+          base = out;
         }
-        __ancestorsIncludingSelfCache.set(n, out);
-        return out;
+        return base;
       }
     } catch {
       /* fall through */
@@ -7905,6 +7949,8 @@ function createDomHelpers(opts) {
     composedParent,
     buildSimpleSelector,
     escapeAttrValue: __escapeAttrValue,
+    ancestorsIncludingSelf,
+    closestCached,
     getLabelControl,
     cssRulesOf,
     selectorIndex,

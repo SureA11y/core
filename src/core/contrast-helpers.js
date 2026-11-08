@@ -13,6 +13,24 @@ function createContrastHelpers(opts, shared) {
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
   const selectorIndex = shared.selectorIndex;
+  // An element and its ancestors in the flat tree, nearest first, as a walk
+  // of 200 composedParent steps meets them, kept per element for the run
+  // (dom-helpers' ancestorsIncludingSelf); walked here where it isn't given.
+  const ancestorsOf =
+    typeof shared.ancestorsIncludingSelf === 'function'
+      ? shared.ancestorsIncludingSelf
+      : (el) => {
+          const out = [];
+          for (let cur = el, guard = 0; cur && guard++ < 200; cur = composedParent(cur))
+            out.push(cur);
+          return out;
+        };
+  // el.closest(selector), kept per element for the run where dom-helpers
+  // gives it (closestCached).
+  const closestOf =
+    typeof shared.closestCached === 'function'
+      ? shared.closestCached
+      : (el, selector) => dom.closest(el, selector);
 
   const clamp01 = (n) => {
     const x = Number(n);
@@ -26,9 +44,27 @@ function createContrastHelpers(opts, shared) {
   // such as the empty string jsdom 26 gives for an opacity no style sets,
   // is the initial value, 1: clamp01 would make it 0, as if the element
   // were invisible.
+  // Kept per style object, which is per element for the run
+  // (__contrastComputedStyle): the walks up an element's ancestors ask it of
+  // each, and under jsdom reading a style's property costs more than the
+  // rest of a step.
+  const __opacityByStyle = new WeakMap();
   const opacityOf = (cs) => {
+    const keep = !!cs && typeof cs === 'object';
+    if (keep && __opacityByStyle.has(cs)) return __opacityByStyle.get(cs);
     const x = Number.parseFloat(cs && cs.opacity != null ? cs.opacity : '1');
-    return Number.isFinite(x) ? clamp01(x) : 1;
+    const out = Number.isFinite(x) ? clamp01(x) : 1;
+    if (keep) __opacityByStyle.set(cs, out);
+    return out;
+  };
+  // A style's background-color as the browser gives it, kept as opacityOf is.
+  const __bgColorByStyle = new WeakMap();
+  const backgroundColorOf = (cs) => {
+    if (!cs || typeof cs !== 'object') return undefined;
+    if (__bgColorByStyle.has(cs)) return __bgColorByStyle.get(cs);
+    const out = cs.backgroundColor;
+    __bgColorByStyle.set(cs, out);
+    return out;
   };
 
   const clamp255 = (n) => {
@@ -461,7 +497,7 @@ function createContrastHelpers(opts, shared) {
     if (__dropDownOptionCache.has(el)) return __dropDownOptionCache.get(el);
     let out = null;
     try {
-      const option = dom.closest(el, 'option');
+      const option = closestOf(el, 'option');
       const select = option ? dom.closest(option, 'select') : null;
       const selectCs = select ? __contrastComputedStyle(select) : null;
       // A customizable select draws its closed control from the page's own
@@ -2648,17 +2684,11 @@ function createContrastHelpers(opts, shared) {
       if (__opacityProductCache.has(el)) return __opacityProductCache.get(el);
 
       let prod = 1;
-      let cur = el;
-      let guard = 0;
-      while (cur && guard++ < 200) {
-        if (dom.nodeType(cur) !== 1) {
-          cur = composedParent(cur);
-          continue;
-        }
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
         const cs = __contrastComputedStyle(cur);
         const o = opacityOf(cs);
         prod *= o;
-        cur = composedParent(cur);
         if (prod <= 0) break;
       }
 
@@ -2755,6 +2785,12 @@ function createContrastHelpers(opts, shared) {
     return out;
   }
 
+  const __isLinkByEl = new WeakMap();
+  function __isLinkKept(el) {
+    if (!el || typeof el !== 'object') return __isLink(el);
+    if (!__isLinkByEl.has(el)) __isLinkByEl.set(el, __isLink(el));
+    return __isLinkByEl.get(el);
+  }
   function __isLink(el) {
     try {
       const name = String(dom.localName(el) || '').toLowerCase();
@@ -3109,15 +3145,9 @@ function createContrastHelpers(opts, shared) {
     if (!__underJsdom(dom.ownerDocument(el))) return undefined;
     // Only text in a link: the browser's sheet sets the color of nothing
     // else that jsdom ranks differently.
-    let inLink = false;
-    for (let cur = el, depth = 0; cur && depth < 200; depth++) {
-      if (__isLink(cur)) {
-        inLink = true;
-        break;
-      }
-      cur = composedParent(cur);
-    }
-    if (!inLink) return undefined;
+    // Each element's answer is kept for the run, as its chain of ancestors
+    // is, so a deep page asks it of each element once.
+    if (!ancestorsOf(el).some(__isLinkKept)) return undefined;
     const parent = composedParent(el);
     const inherited = () => {
       if (!parent || dom.nodeType(parent) !== 1) return null;
@@ -4268,8 +4298,6 @@ function createContrastHelpers(opts, shared) {
         acc = compositeRgba(acc, { r: own.r, g: own.g, b: own.b, a: clamp01(own.a) });
       }
     }
-    let cur = el;
-    let guard = 0;
     // A background color this parser can't read, met while what is in front
     // of it still lets it show through. Skipping it as if transparent would
     // judge the text against whatever lies further out.
@@ -4278,30 +4306,27 @@ function createContrastHelpers(opts, shared) {
     // text): that background is the text's color, not behind it.
     const clipOwner = __clipTextOwner(el);
 
-    while (cur && guard++ < 200) {
-      if (dom.nodeType(cur) !== 1) {
-        cur = composedParent(cur);
-        continue;
-      }
+    for (const cur of ancestorsOf(el)) {
+      if (dom.nodeType(cur) !== 1) continue;
       if (cur === clipOwner) {
         const ocs = __contrastComputedStyle(cur);
         const oop = opacityOf(ocs);
         if (oop < 1) acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * oop) };
-        cur = composedParent(cur);
         continue;
       }
 
       const cs = __contrastComputedStyle(cur);
-      const bg = parseCssColorToRgba(cs && cs.backgroundColor);
+      const bgColor = backgroundColorOf(cs);
+      const bg = parseCssColorToRgba(bgColor);
       const op = opacityOf(cs);
 
-      if (!bg && acc.a < 1 && trim(cs && cs.backgroundColor)) {
+      if (!bg && acc.a < 1 && trim(bgColor)) {
         unparsable = {
           selector: __getSimpleSelectorCached(
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
-          value: truncateCssValue(trim(cs.backgroundColor), 80)
+          value: truncateCssValue(trim(bgColor), 80)
         };
         break;
       }
@@ -4357,8 +4382,6 @@ function createContrastHelpers(opts, shared) {
       if (op < 1) {
         acc = { r: acc.r, g: acc.g, b: acc.b, a: clamp01(acc.a * op) };
       }
-
-      cur = composedParent(cur);
     }
 
     let out;
@@ -5744,8 +5767,6 @@ function createContrastHelpers(opts, shared) {
       return out;
     }
 
-    let cur = el;
-    let guard = 0;
     // Once a closer ancestor's own background-color is confirmed fully
     // opaque (and that ancestor is itself free of blend-mode/filter), it
     // visually PAINTS OVER anything farther out -- a background-image/
@@ -5816,11 +5837,8 @@ function createContrastHelpers(opts, shared) {
       }
     }
 
-    while (cur && guard++ < 200) {
-      if (dom.nodeType(cur) !== 1) {
-        cur = composedParent(cur);
-        continue;
-      }
+    for (const cur of ancestorsOf(el)) {
+      if (dom.nodeType(cur) !== 1) continue;
       const cs = __contrastComputedStyle(cur);
 
       if (__hasBlendModeEl(cur, cs)) {
@@ -6125,7 +6143,7 @@ function createContrastHelpers(opts, shared) {
       // this point (see the paintOccluded comment above the loop).
       if (!paintOccluded) {
         chain.push(cur);
-        const ownBg = parseCssColorToRgba(cs && cs.backgroundColor);
+        const ownBg = parseCssColorToRgba(backgroundColorOf(cs));
         if (
           (ownBg && clamp01(ownBg.a) >= 1) ||
           (layersUnder && layersUnder.colors.some((c) => c.a >= 1))
@@ -6134,8 +6152,6 @@ function createContrastHelpers(opts, shared) {
           occluder = cur;
         }
       }
-
-      cur = composedParent(cur);
     }
 
     const overlap = __findPaintUnderText(el, chain);
@@ -7322,6 +7338,7 @@ function createContrastHelpers(opts, shared) {
   const __rootFactsCache = new WeakMap();
   const __clipsCache = new WeakMap();
   const __sunkCache = new WeakMap();
+  const __sinksCache = new WeakMap();
   const __lname = (node) => String(dom.localName(node) || '').toLowerCase();
 
   function __isStackingContext(node, cs) {
@@ -7668,11 +7685,18 @@ function createContrastHelpers(opts, shared) {
     // Text in a stacking context with a negative z-index can be painted
     // under its own ancestors' backgrounds. Only a negative z-index can
     // give that, so it is read before the paint group is worked out.
+    // Kept per element: a chain the guard cuts short asks it of each of a
+    // thousand ancestors, for every text that deep.
     const sinks = (a) => {
+      if (__sinksCache.has(a)) return __sinksCache.get(a);
       const zcs = __contrastComputedStyle(a);
-      if (!(Number.parseInt(zcs && zcs.zIndex, 10) < 0)) return false;
-      const g = __paintGroup(a);
-      return !!g && g.kind === 'context' && g.z < 0;
+      let v = false;
+      if (Number.parseInt(zcs && zcs.zIndex, 10) < 0) {
+        const g = __paintGroup(a);
+        v = !!g && g.kind === 'context' && g.z < 0;
+      }
+      __sinksCache.set(a, v);
+      return v;
     };
     // The chain's tail is shared with every other text in the same
     // ancestors, so each answer is kept per element, for it and above it.
