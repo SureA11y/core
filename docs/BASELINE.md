@@ -68,7 +68,7 @@ Leans arrive in minor releases, so an upgrade can bring likely failures a baseli
 
 A finding's identity includes its reason code, and a minor release may give a finding a new one: a rule that gave none (`DEFAULT`) now gives one, or one code is split in two by cause ([`API_STABILITY.md`](./API_STABILITY.md#finding-identity)). The finding is the same, and a baseline written before the upgrade still matches it: each move is listed in [`src/baseline-moves.json`](../src/baseline-moves.json) (rule, old code, new codes), and an entry under the old code matches the finding under a new one when the rest of its identity, the rule, the markup and the frame, is the same. `matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, all read it. An entry is looked up under the finding's own code first, so it never goes to a moved finding when another finding has that exact identity.
 
-The table covers one minor release: a move is listed from the release it shipped in until the next minor release, which drops it when its finding identities are frozen (`npm run finding-ids:release`, as the `retired` list of `released-finding-ids.json` is emptied). 1.15 moved no finding, so its table is empty.
+The table covers one minor release: a move is listed from the release it shipped in until the next minor release, which drops it when its finding identities are frozen (`npm run finding-ids:release`, as the `retired` list of `released-finding-ids.json` is emptied). 1.15 and 1.16 moved no finding, so the table is empty.
 
 1.14 moved these, from 1.13, and 1.15 dropped them:
 

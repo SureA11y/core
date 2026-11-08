@@ -617,6 +617,9 @@ bump, the release cadence, and the rule-ID deprecation policy.
 In short: patch and minor releases are always backward-compatible, so a consumer
 pinned to a `^1.y.0` range is never broken by an upgrade within the `1.x` line,
 though rule fixes in those releases can change what a scan finds.
+The exception is an API marked experimental, which may change in a minor
+(never in a patch) and settles within two minors; a pack that uses one
+pins core with a `~` range.
 Correctness fixes ship as patches when ready; feature work is batched into
 periodic minors; breaking changes are reserved for major versions and are rare by
 design.
