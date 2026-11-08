@@ -94303,42 +94303,111 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   function askUnassignedIn(rowCells, inScope, isHeader, isData, scopeOf, named) {
     // A cell with a headers attribute is assigned only to those it names.
     const free = (cell) => !!cell && isData(cell) && !dom.getAttribute(cell, 'headers');
+    // What lies after each cell in its row and below it in its column, read
+    // once per table rather than once per header: how many cells, whether
+    // one is free, and whether all are headers.
+    const kinds = rowCells.map((cells) =>
+      cells.map((cell) => ({ header: isHeader(cell), free: free(cell) }))
+    );
+    const after = kinds.map((cells) => {
+      const out = new Array(cells.length);
+      let count = 0;
+      let anyFree = false;
+      let allHeaders = true;
+      for (let c = cells.length - 1; c >= 0; c--) {
+        out[c] = { count, anyFree, allHeaders };
+        count += 1;
+        anyFree = anyFree || cells[c].free;
+        allHeaders = allHeaders && cells[c].header;
+      }
+      return out;
+    });
+    const below = new Array(rowCells.length);
+    const columns = [];
+    for (let r = rowCells.length - 1; r >= 0; r--) {
+      below[r] = kinds[r].map(
+        (_, c) => columns[c] || { count: 0, anyFree: false, allHeaders: true }
+      );
+      kinds[r].forEach((kind, c) => {
+        const col = columns[c] || { count: 0, anyFree: false, allHeaders: true };
+        columns[c] = {
+          count: col.count + 1,
+          anyFree: col.anyFree || kind.free,
+          allHeaders: col.allHeaders && kind.header
+        };
+      });
+    }
     for (let r = 0; r < rowCells.length; r++) {
       for (let c = 0; c < rowCells[r].length; c++) {
         const th = rowCells[r][c];
-        if (!isHeader(th) || !inScope.has(th)) continue;
+        if (!kinds[r][c].header || !inScope.has(th)) continue;
         const scope = scopeOf(th);
         if (scope === null) continue;
         const headerId = dom.getAttribute(th, 'id');
         if (headerId && named.has(headerId)) continue;
-        const after = rowCells[r].slice(c + 1);
-        const below = rowCells
-          .slice(r + 1)
-          .map((cells) => cells[c])
-          .filter(Boolean);
+        const inRowAfter = after[r][c];
+        const inColumnBelow = below[r][c];
         // The corner where a row of headers meets a column of them labels
         // the headers, as tables often do; it is left out.
-        if (after.length && below.length && after.concat(below).every(isHeader)) continue;
-        const inRow = scope !== 'col' && after.some(free);
-        const inColumn = scope !== 'row' && below.some(free);
+        if (
+          inRowAfter.count &&
+          inColumnBelow.count &&
+          inRowAfter.allHeaders &&
+          inColumnBelow.allHeaders
+        )
+          continue;
+        const inRow = scope !== 'col' && inRowAfter.anyFree;
+        const inColumn = scope !== 'row' && inColumnBelow.anyFree;
         if (!inRow && !inColumn) {
           // No cell at all where the header looks: the row ends, or the
           // rows below are shorter, rather than cells marked up as headers.
           const ragged =
             named.size === 0 &&
             (scope === 'col'
-              ? !below.length
+              ? !inColumnBelow.count
               : scope === 'row'
-                ? !after.length
-                : !after.length && !below.length);
+                ? !inRowAfter.count
+                : !inRowAfter.count && !inColumnBelow.count);
           askUnassigned(th, r, c, ragged);
         }
       }
     }
   }
 
+  // table.rows, by walking the table's children: in its order (the rows of
+  // a thead, then those of the table itself and its tbodys, then those of a
+  // tfoot, each in tree order). jsdom answers each read of table.rows, or of
+  // any element's children, in time that grows with the index, so reading
+  // them cost rows x rows.
+  function rowsOf(table) {
+    const HTML_NS = 'http://www.w3.org/1999/xhtml';
+    const isHtml = (el, name) =>
+      String(dom.localName(el) || '') === name && dom.namespaceURI(el) === HTML_NS;
+    const head = [];
+    const body = [];
+    const foot = [];
+    for (let child = dom.firstElementChild(table); child; child = dom.nextElementSibling(child)) {
+      if (isHtml(child, 'tr')) {
+        body.push(child);
+        continue;
+      }
+      const list = isHtml(child, 'thead')
+        ? head
+        : isHtml(child, 'tbody')
+          ? body
+          : isHtml(child, 'tfoot')
+            ? foot
+            : null;
+      if (!list) continue;
+      for (let row = dom.firstElementChild(child); row; row = dom.nextElementSibling(row)) {
+        if (isHtml(row, 'tr')) list.push(row);
+      }
+    }
+    return head.concat(body, foot);
+  }
+
   function askUnassignedInTable(table, headers) {
-    const rowCells = [...(table.rows || [])].map((row) => [...(row.cells || [])]);
+    const rowCells = rowsOf(table).map((row) => [...(row.cells || [])]);
     // A rowspan of 0 spans too, as in td-has-header.
     const spans = rowCells.some((cells) =>
       cells.some((c) => spanOf(c, 'colspan') > 1 || spanOf(c, 'rowspan') !== 1)
