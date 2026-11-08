@@ -24,6 +24,7 @@
 
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
+const { experimentalUses } = require('./experimental.js');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
 const {
   languageProblems,
@@ -1101,6 +1102,23 @@ function packProblems(pack, withCoreVersion, withReported) {
   } else if (!fits && withCoreVersion) {
     problems.push(`it supports core ${pack.core}, and this is core ${CORE_VERSION}`);
   }
+  // A pack that uses an experimental API (src/experimental.js) can't take
+  // the next minor on trust: that minor may change what it uses. It is
+  // reported, not refused: the pack works with the core it is checked with.
+  if (fits !== null && withReported) {
+    const uses = experimentalUses(pack);
+    const [major, minor] = parseVersion(CORE_VERSION);
+    const next = `${major}.${minor + 1}.0`;
+    if (uses.length && satisfiesRange(next, pack.core)) {
+      problems.push(
+        `core ${pack.core} takes core ${next}, which may change the experimental ${uses
+          .map((u) => u.id)
+          .join(', ')} it uses: declare "~${major}.${minor}.0" until ${
+          uses.length > 1 ? 'they are' : 'it is'
+        } stable (docs/API_STABILITY.md, "Experimental")`
+      );
+    }
+  }
   // Core rules the pack's rules replace, by id (decision: explicit, never
   // inferred from a shared id).
   const overrides = Array.isArray(pack.overrides) ? pack.overrides : [];
@@ -1419,6 +1437,7 @@ function describePacks(packs) {
     const ids = (list) => (list || []).map((r) => r.id);
     const overrides = (pack.overrides || []).slice();
     const standard = standardOf(pack);
+    const experimental = experimentalUses(pack);
     return {
       name: pack.name,
       version: pack.version,
@@ -1450,7 +1469,9 @@ function describePacks(packs) {
         path,
         description: p.description,
         readBy: Array.isArray(p.readBy) ? p.readBy.slice() : []
-      }))
+      })),
+      // The experimental APIs it uses, listed only when it uses one.
+      ...(experimental.length ? { experimental } : {})
     };
   });
 }

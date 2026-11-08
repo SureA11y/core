@@ -100,6 +100,24 @@ Four things are meant to be extended, and all four go through `engineOptions` or
 
 There is deliberately no hook for changing what a built-in rule decides. Overriding one means shipping a `customRules` entry that reuses its id, which the engine allows for a single call, warns about, and reports in `overriddenBuiltinIds` — so a scan that silently disagrees with the catalog is not possible.
 
+## Experimental (may change in a minor)
+
+An API marked **experimental** is supported and documented, but a **minor** release may still change or remove it. It is how a new API reaches the people who will use it before its shape is fixed for a whole major line: a pack's API designed from one standard, say, which the next standard may show needs to change.
+
+- **Never in a patch.** A patch release doesn't change an experimental API, as it doesn't change a stable one.
+- **Every change is announced.** The changelog lists each change to an experimental API under `### Changed (experimental)`, with how to move to the new shape.
+- **It doesn't stay experimental.** Each one becomes stable, or is removed, within two minor releases of the one that brought it (one brought in 1.16.0 is settled by 1.18.0), and at the latest in the next major. `tests/experimental.test.js` fails a release that still has one past its date.
+- **It is marked where you meet it.** The list below names each, with the version that brought it and the version that settles it; its documentation and its declaration in the `.d.ts` files (`@experimental`) say so too.
+- **A pack that uses one declares a narrow range.** The next minor may change what it uses, so its `core` range takes no later minor: `~1.16.0`, not `^1.16.0`. `checkPack` reports a wider range in a pack that uses an experimental API, naming what it uses and the range to declare; the pack still loads. `describePacks` lists the experimental APIs each pack uses (`experimental`). Once they're stable, the pack can widen its range again.
+
+There is no switch to turn them on: they work as any other API does.
+
+| API | What it is | Since | Stable or removed by |
+| --- | ---------- | ----- | -------------------- |
+| _none yet_ | | | |
+
+The list is `src/experimental.js`, which `checkPack` and `describePacks` read.
+
 ## Explicitly unstable (not covered by semver)
 
 - **`src/profile-kit.js`**, the mapping a profile made with `npm run profile:new` uses inside this repository. It is not exported; a pack builds the same with `ruleMappedStandard()` from `@surea11y/core/pack`.
@@ -141,7 +159,7 @@ The conditions a page was rendered under stay out too: `engine.environment`, and
 
 - **Patch**: a correctness fix that changes _which_ outcome a rule produces for the same input, without changing the shape or mechanism. Example: the fragment-scan applicability fix (`engineOptions.fragment`, see `ENGINE_OPTIONS.md`) changed several rules from incorrectly `fail`ing on a scoped subtree to correctly `notApplicable` — that's a patch, not a major bump, because no stable field's _shape_ changed, only a bug got fixed. Don't over-index on "any output change = major" — bug fixes are expected to change output.
   The same goes for a rule whose findings were wrong or duplicated another rule's: it is deprecated and stops reporting at once, keeping its id (see [Rule-ID deprecation policy](#rule-id-deprecation-policy)). So does correcting the WCAG criterion a rule is mapped to, when the mapping contradicts WCAG's own documents: composites change because the rule's evidence was filed under the wrong criterion, not because the rule changed.
-- **Minor**: adding a new stable field, adding a new rule to the catalog, marking an existing rule `deprecated` (see below), splitting a reason code by cause or giving one to a rule that had none ([Finding identity](#finding-identity)), or adding or changing a lean.
+- **Minor**: changing or removing an experimental API (see [Experimental](#experimental-may-change-in-a-minor)), adding a new stable field, adding a new rule to the catalog, marking an existing rule `deprecated` (see below), splitting a reason code by cause or giving one to a rule that had none ([Finding identity](#finding-identity)), or adding or changing a lean.
 - **Major**: removing or renaming a stable field, changing a stable field's type or meaning, or removing a rule ID, which can break a consumer however the rule was deprecated. Paired with an `engine.schemaVersion` bump specifically when the _shape_ changes (as opposed to package-level major bumps for other reasons, e.g. dropping support for an old Node version).
 
 `engine.schemaVersion` has been `"1.0.0"` since the engine's first release and has never needed a bump — nothing has changed a stable field's shape yet. Adding the `deprecated`/`deprecation` meta fields described below is purely additive (new optional fields, ignored safely by anything not looking for them), so it does **not** warrant a schema bump either — this is the policy's first real application. `engine.locale` is the second: a new field next to the existing ones, with no change to any field a consumer already reads. `engine.wcagVersion` and the optional per-result `wcagVersionScope` are the third, on the same reasoning — but note the _outcome_ change that came with them (a rule mapped to the removed SC 4.1.1 now reports `cantTell` instead of `fail` under the default 2.2 target) is an outcome fix of the kind described above, not a shape change. `engine.environment` is another: it reports the conditions a run was rendered under, and changes nothing a consumer already reads.

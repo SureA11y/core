@@ -286,6 +286,12 @@ export interface PackDescription {
   } | null;
   locales: string[];
   probes: { path: string; description: string; readBy: string[] }[];
+  /**
+   * The experimental APIs of core the pack uses (`docs/API_STABILITY.md`,
+   * "Experimental"), each with the version that brought it and the one by
+   * which it is stable or removed. Present only when it uses one.
+   */
+  experimental?: { id: string; since: string; until: string }[];
 }
 
 /** Each pack described, or, for one that is not valid, its name and problems. */
@@ -297,7 +303,8 @@ export function describePacks(
  * What is wrong with a pack's shape; empty when it can be prepared. Also
  * reports a rule's steps (`meta.review`) that a dictionary translates only
  * in part, which `definePack` and a scan accept, reading each missing key in
- * English.
+ * English; and a `core` range wider than `~` in a pack that uses an
+ * experimental API, which the next minor may change.
  */
 export function checkPack(pack: unknown): string[];
 
