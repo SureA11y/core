@@ -360,7 +360,29 @@ export function ruleMappedStandard(options: {
       { title: string; wcagSc?: string[]; partial?: boolean; [field: string]: unknown }
     >
   >;
-  /** Per version, the requirements each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
+  /**
+   * Per version, the tests a standard judges under its requirements:
+   * { '1.0': { '1.1.1': { title, requirements: ['1.1'] } } }. A test belongs
+   * to one requirement or several; its `wcagSc` defaults to its requirement's.
+   * With tests, every version has them, a rule-map row names tests or
+   * requirements, and a result names each test with its `criterion`.
+   * @experimental Until 1.18.0 (docs/API_STABILITY.md).
+   */
+  tests?: Record<
+    string,
+    Record<
+      string,
+      { title: string; requirements: string[]; wcagSc?: string[]; [field: string]: unknown }
+    >
+  >;
+  /**
+   * With tests: link a rule only to tests whose WCAG criteria share one with
+   * the rule's (or give the reason in the row's `outsideCorrespondence`), and
+   * name only the shared criteria in each entry.
+   * @experimental Until 1.18.0.
+   */
+  wcagCorrespondence?: boolean;
+  /** Per version, the requirements (or, with tests, the tests) each rule checks: { '1.0': { 'img-alt-present': { requirements: ['1'] } } }. */
   ruleMap: Record<
     string,
     Record<
@@ -379,6 +401,10 @@ export function ruleMappedStandard(options: {
           requirements?: string[];
           outcome?: 'cantTell' | 'fail';
         }>;
+        /** With tests: where the row's findings are questions. @experimental Until 1.18.0. */
+        asks?: string[];
+        /** With wcagCorrespondence: tests linked outside it, each with the reason. @experimental Until 1.18.0. */
+        outsideCorrespondence?: Record<string, string>;
         [field: string]: unknown;
       }
     >
@@ -412,3 +438,57 @@ export function buildBrowserBundle(options?: { packs?: Pack[] }): string;
 
 /** Internal: the engine a scan with these packs runs on. Not covered by semver. */
 export function preparePacks(packs: unknown[], options?: { strict?: boolean }): unknown;
+
+/**
+ * A standard as data, format "surea11y-standard/1"
+ * (`@surea11y/core/schemas/standard.schema.json`): its versions and, per
+ * version, its groups, requirements, tests and rule map, in JSON.
+ * @experimental Until 1.18.0 (docs/API_STABILITY.md).
+ */
+export interface StandardData {
+  format: 'surea11y-standard/1';
+  key: string;
+  standard: string;
+  lang?: string;
+  versions: Array<{
+    version: string;
+    wcagVersion: '2.0' | '2.1' | '2.2';
+    published?: string;
+    basedOn?: Array<{ standard: string; version?: string; id?: string }>;
+  }>;
+  options?: { applicability?: 'wcag'; wcagCorrespondence?: boolean; ruleMapped?: boolean };
+  data: Record<
+    string,
+    {
+      groups?: Array<Record<string, unknown>>;
+      requirements: Record<string, Record<string, unknown>>;
+      tests?: Record<string, Record<string, unknown>>;
+      ruleMap: Record<string, Record<string, unknown>>;
+    }
+  >;
+  profiles?: Record<string, { version: string; [field: string]: unknown }>;
+}
+
+/**
+ * The problems with a standard's data: its shape and the cross-references a
+ * schema can't check. [] when sound.
+ * @experimental Until 1.18.0.
+ */
+export function checkStandardData(data: unknown): string[];
+
+/**
+ * The registry entry for a standard's data, what a pack's `standard` is.
+ * `extras` adds or replaces fields the data doesn't give (report, review,
+ * translations, notes). Throws a TypeError naming each problem of the data.
+ * @experimental Until 1.18.0.
+ */
+export function standardFromData(
+  data: StandardData,
+  extras?: Record<string, unknown>
+): PackStandard;
+
+/**
+ * The data a pack's standard was built from (frozen), or null.
+ * @experimental Until 1.18.0.
+ */
+export function standardDataOf(standard: unknown): StandardData | null;

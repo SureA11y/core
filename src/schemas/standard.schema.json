@@ -1,0 +1,157 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://a11ycore.dev/schemas/standard.schema.json",
+  "title": "Standard data",
+  "description": "A standard as data, format surea11y-standard/1 (src/standard-data.js, docs/PACKS.md): its versions and, per version, its groups, requirements, tests and rule map. Experimental until 1.18.0. checkStandardData also checks what a schema can't: cross-references between the tables.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["format", "key", "standard", "versions", "data"],
+  "properties": {
+    "format": { "const": "surea11y-standard/1" },
+    "key": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+    "standard": { "$ref": "#/definitions/text" },
+    "lang": { "$ref": "#/definitions/text" },
+    "options": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "applicability": { "const": "wcag" },
+        "wcagCorrespondence": { "type": "boolean" },
+        "ruleMapped": { "type": "boolean" }
+      }
+    },
+    "versions": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "wcagVersion"],
+        "properties": {
+          "version": { "$ref": "#/definitions/text" },
+          "wcagVersion": { "$ref": "#/definitions/text" },
+          "published": { "$ref": "#/definitions/text" },
+          "basedOn": { "$ref": "#/definitions/basedOn" }
+        }
+      }
+    },
+    "data": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/definitions/versionData" }
+    },
+    "profiles": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["version"],
+        "properties": { "version": { "$ref": "#/definitions/text" } }
+      }
+    }
+  },
+  "definitions": {
+    "text": { "type": "string", "pattern": "\\S" },
+    "texts": { "type": "array", "items": { "$ref": "#/definitions/text" }, "uniqueItems": true },
+    "scope": { "enum": ["page", "site"] },
+    "outcome": { "enum": ["cantTell", "fail"] },
+    "basedOn": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["standard"],
+        "properties": {
+          "standard": { "$ref": "#/definitions/text" },
+          "version": { "$ref": "#/definitions/text" },
+          "id": { "$ref": "#/definitions/text" }
+        }
+      }
+    },
+    "group": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "title"],
+      "anyOf": [{ "required": ["requirements"] }, { "required": ["groups"] }],
+      "properties": {
+        "id": { "$ref": "#/definitions/text" },
+        "title": { "$ref": "#/definitions/text" },
+        "requirements": { "$ref": "#/definitions/texts" },
+        "groups": { "type": "array", "items": { "$ref": "#/definitions/group" } }
+      }
+    },
+    "requirement": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title"],
+      "properties": {
+        "title": { "$ref": "#/definitions/text" },
+        "wcagSc": { "$ref": "#/definitions/texts" },
+        "tests": { "$ref": "#/definitions/texts" },
+        "partial": { "type": "boolean" },
+        "scope": { "$ref": "#/definitions/scope" },
+        "basedOn": { "$ref": "#/definitions/basedOn" }
+      }
+    },
+    "test": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "requirements"],
+      "properties": {
+        "title": { "$ref": "#/definitions/text" },
+        "requirements": { "allOf": [{ "$ref": "#/definitions/texts" }, { "minItems": 1 }] },
+        "wcagSc": { "$ref": "#/definitions/texts" },
+        "scope": { "$ref": "#/definitions/scope" },
+        "basedOn": { "$ref": "#/definitions/basedOn" }
+      }
+    },
+    "route": {
+      "type": "object",
+      "properties": {
+        "requirements": { "$ref": "#/definitions/texts" },
+        "outcome": { "$ref": "#/definitions/outcome" }
+      }
+    },
+    "ruleRow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirements"],
+      "properties": {
+        "requirements": { "$ref": "#/definitions/texts" },
+        "asks": { "allOf": [{ "$ref": "#/definitions/texts" }, { "minItems": 1 }] },
+        "reasonCodes": { "type": "object", "additionalProperties": { "$ref": "#/definitions/route" } },
+        "findings": {
+          "type": "array",
+          "items": {
+            "allOf": [
+              { "$ref": "#/definitions/route" },
+              {
+                "type": "object",
+                "required": ["when"],
+                "properties": {
+                  "when": {
+                    "type": "object",
+                    "minProperties": 1,
+                    "additionalProperties": { "type": ["string", "number", "boolean", "null"] }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "note": { "type": "string" },
+        "outsideCorrespondence": { "type": "object", "additionalProperties": { "$ref": "#/definitions/text" } }
+      }
+    },
+    "versionData": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["requirements", "ruleMap"],
+      "properties": {
+        "groups": { "type": "array", "items": { "$ref": "#/definitions/group" } },
+        "requirements": { "type": "object", "additionalProperties": { "$ref": "#/definitions/requirement" } },
+        "tests": { "type": "object", "additionalProperties": { "$ref": "#/definitions/test" } },
+        "ruleMap": { "type": "object", "additionalProperties": { "$ref": "#/definitions/ruleRow" } }
+      }
+    }
+  }
+}

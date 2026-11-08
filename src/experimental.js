@@ -60,6 +60,27 @@ const EXPERIMENTAL = [
       Object.values(pack.dictionaries).some(
         (dict) => isObject(dict) && Object.keys(dict).some((k) => k.includes('_standardReview_'))
       )
+  },
+  {
+    id: 'standard data',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: 'A standard as data (format surea11y-standard/1, src/schemas/standard.schema.json): checkStandardData, standardFromData and standardDataOf.',
+    usedBy: (pack) =>
+      !!(pack && pack.standard && pack.standard[Symbol.for('surea11y.standardData')])
+  },
+  {
+    id: 'ruleMappedStandard tests',
+    since: '1.16.0',
+    until: '1.18.0',
+    what: "ruleMappedStandard's second level: tests under requirements, many to many, rows naming tests, asks, and wcagCorrespondence.",
+    usedBy: (pack) =>
+      !!(
+        pack &&
+        pack.standard &&
+        typeof pack.standard.composites === 'function' &&
+        pack.standard.composites[Symbol.for('surea11y.twoLevelStandard')]
+      )
   }
 ];
 

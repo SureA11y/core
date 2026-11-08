@@ -116,6 +116,8 @@ There is no switch to turn them on: they work as any other API does.
 | --- | ---------- | ----- | -------------------- |
 | `skip-link`'s `data.details.lean` | The direction of a `skip-link` finding's lean (`fail` or `pass`), copied where a standard's mapping (`findings`, `when`) can route by it. Leans may change in a minor ([Stable fields](#stable-fields-covered-by-semver)), so a verdict built on one may too. | 1.16.0 | 1.18.0 |
 | `standard.review` dictionary keys | The keys a pack's dictionaries translate its standard's own steps for core's codes under: `<standard key>_standardReview_<rule id>_<CODE>_step<n>`, `_pass`, `_fail` ([`PACKS.md`](./PACKS.md#6-messages-and-languages)). They name no version of the standard, which one whose steps differ between versions (RGAA 4 and 5) may need. | 1.16.0 | 1.18.0 |
+| `ruleMappedStandard`'s `tests` | A second level: tests under requirements, many to many, rule-map rows naming tests, `asks`, `wcagCorrespondence` and `outsideCorrespondence` ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements)). | 1.16.0 | 1.18.0 |
+| Standard data | The format `surea11y-standard/1` and its schema (`@surea11y/core/schemas/standard.schema.json`), and `checkStandardData`, `standardFromData` and `standardDataOf` from `@surea11y/core/pack`. | 1.16.0 | 1.18.0 |
 
 The list is `src/experimental.js`, which `checkPack` and `describePacks` read.
 

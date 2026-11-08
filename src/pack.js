@@ -25,6 +25,7 @@
 const core = require('./core.js');
 const { version: CORE_VERSION } = require('../package.json');
 const { experimentalUses } = require('./experimental.js');
+const { checkStandardData, standardFromData, standardDataOf } = require('./standard-data.js');
 const { NORMATIVE_STANDARDS, createRegistry } = require('./coverage/standards.js');
 const {
   languageProblems,
@@ -2144,5 +2145,8 @@ module.exports = {
   preparePacks,
   satisfiesRange,
   ruleMappedStandard,
+  checkStandardData,
+  standardFromData,
+  standardDataOf,
   wcagTags
 };
