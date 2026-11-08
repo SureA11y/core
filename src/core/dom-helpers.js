@@ -6267,6 +6267,69 @@ function createDomHelpers(opts) {
     return isEmptyClipPath(style.clipPath != null ? style.clipPath : style['clip-path']);
   }
 
+  // The `clip` declared for an element, where the page has no layout (jsdom)
+  // and its computed clip reads `auto`: jsdom's CSS parser drops a
+  // space-separated rect() (rect(0 0 0 0) computes as auto, and a style
+  // rule keeps only its first edge, rect(0px)), the visually hidden pattern
+  // most sites use. Read as written: the style attribute's declaration, else
+  // the last one in a <style> element of the element's tree whose selector
+  // matches it, in document order, without weighing specificity. null where
+  // a browser computed the value, or nothing declares one.
+  const __declaredClipRulesByRoot = new WeakMap();
+  function declaredClipRules(root) {
+    if (__declaredClipRulesByRoot.has(root)) return __declaredClipRulesByRoot.get(root);
+    const rules = [];
+    let styles = [];
+    try {
+      styles = dom.querySelectorAll(root, 'style');
+    } catch {}
+    for (const style of styles) {
+      const text = String(dom.get(style, 'textContent') || '').replace(/\/\*[\s\S]*?\*\//g, '');
+      if (!/\bclip\s*:/i.test(text)) continue;
+      // The innermost blocks: a style rule's, inside an at-rule or not.
+      for (const m of text.matchAll(/([^{}]*)\{([^{}]*)\}/g)) {
+        const selector = m[1].trim();
+        if (!selector || selector[0] === '@') continue;
+        const decl = [...m[2].matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)].pop();
+        if (decl) rules.push([selector, decl[1].replace(/!\s*important\s*$/i, '').trim()]);
+      }
+    }
+    __declaredClipRulesByRoot.set(root, rules);
+    return rules;
+  }
+  function declaredClipOf(el, cs) {
+    try {
+      const computed = String((cs && cs.clip) || '')
+        .trim()
+        .toLowerCase();
+      if (computed && computed !== 'auto') return null;
+      const doc = dom.ownerDocument(el);
+      if (!doc) return null;
+      if (!__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
+      if (__layoutByDoc.get(doc)) return null;
+      const inline = [
+        ...String(getAttr(el, 'style') || '').matchAll(/(?:^|;)\s*clip\s*:\s*([^;]+)/gi)
+      ].pop();
+      if (inline) return inline[1].replace(/!\s*important\s*$/i, '').trim();
+      const root = dom.getRootNode(el);
+      let found = null;
+      for (const [selector, value] of root ? declaredClipRules(root) : []) {
+        try {
+          if (dom.matches(el, selector)) found = value;
+        } catch {}
+      }
+      return found;
+    } catch {
+      return null;
+    }
+  }
+  // isClipHidden for an element, with its declared clip where jsdom lost it.
+  function isElementClipHidden(el, cs) {
+    if (isClipHidden(cs)) return true;
+    const clip = declaredClipOf(el, cs);
+    return !!clip && isClipHidden({ position: cs && cs.position, clip, clipPath: '' });
+  }
+
   // An element's containing block: the box its position is resolved
   // against, and whose overflow can clip it (CSS Position 3, CSS Overflow 3:
   // a box clips content "whose containing block is the box or a descendant
@@ -6318,7 +6381,8 @@ function createDomHelpers(opts) {
   // transparent, clipped away (clip or clip-path), or at most 1x1 px with its
   // overflow hidden -- the "screen-reader-only" patterns. Applies to the
   // whole subtree. jsdom neither computes clip nor keeps its value intact, so
-  // the declaration in the style attribute is read too. `opts.ignoreOpacity`
+  // there the clip is read as declared (declaredClipOf), and a clip-path in
+  // the style attribute too. `opts.ignoreOpacity`
   // leaves transparency out, for a rule about content a script may fade in.
   function isVisuallyHidden(el, opts) {
     if (!isElement(el)) return false;
@@ -6326,18 +6390,13 @@ function createDomHelpers(opts) {
     const opacity = Number.parseFloat(cs.opacity);
     const ignoreOpacity = !!(opts && opts.ignoreOpacity === true);
     if (!ignoreOpacity && Number.isFinite(opacity) && opacity <= 0.0001) return true;
-    if (isClipHidden(cs)) return true;
+    if (isElementClipHidden(el, cs)) return true;
     const declared = String(getAttr(el, 'style') || '');
     if (declared) {
-      const clip = /(?:^|;)\s*clip\s*:\s*([^;]+)/i.exec(declared);
       const clipPath = /(?:^|;)\s*clip-path\s*:\s*([^;]+)/i.exec(declared);
       if (
-        (clip || clipPath) &&
-        isClipHidden({
-          position: cs.position,
-          clip: clip ? clip[1].trim() : '',
-          clipPath: clipPath ? clipPath[1].trim() : ''
-        })
+        clipPath &&
+        isClipHidden({ position: cs.position, clip: '', clipPath: clipPath[1].trim() })
       )
         return true;
     }
@@ -6398,10 +6457,12 @@ function createDomHelpers(opts) {
 
     // clip / clip-path
     try {
-      const clip = cs.clip != null ? String(cs.clip).trim() : '';
+      const computedClip = cs.clip != null ? String(cs.clip).trim() : '';
+      const declaredClip = declaredClipOf(el, cs);
+      const clip = declaredClip || computedClip;
       const clipPath = cs.clipPath != null ? String(cs.clipPath).trim() : '';
 
-      if (isClipHidden(cs)) hints.push('clipped');
+      if (isElementClipHidden(el, cs)) hints.push('clipped');
 
       if (clip) metrics.clip = clip;
       if (clipPath) metrics.clipPath = clipPath;

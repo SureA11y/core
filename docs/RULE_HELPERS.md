@@ -236,7 +236,10 @@ its result straight through.
 
 Style-only visibility _hints_ for triage/diagnostics (`opacityZero`, `clipped`, etc.) —
 explicitly does **not** decide eligibility; a rule's own logic still owns the outcome.
-`clipped` is `isClipHidden` below.
+`clipped` is `isClipHidden` below. Without a layout (jsdom), whose CSS parser turns a
+space-separated `clip: rect(0 0 0 0)` into `auto`, the clip is read as declared: in the
+`style` attribute, else in the last rule of a `<style>` element of the element's tree that
+matches it (specificity is not weighed), and `metrics.clip` is that value.
 
 ### `computedStyle(el)` → `CSSStyleDeclaration | object`
 
@@ -275,8 +278,8 @@ positioned popup escapes an `overflow: hidden` box that isn't on its chain (#110
 
 Whether an element's box is drawn so that nothing in it can be seen, though it is
 rendered and stays in the accessibility tree: fully transparent, clipped away
-(`isClipHidden`, reading a `clip` in the `style` attribute too, which jsdom doesn't
-compute), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
+(`isClipHidden`, reading the `clip` as declared where jsdom doesn't compute it, as
+`getVisibilityHintsInfo` does), or at most 1×1 px with its overflow hidden. Those are the screen-reader-only
 patterns; the result holds for the whole subtree. For "is this text on screen?", as
 `label-in-name` asks of a control's visible label (#93). `{ ignoreOpacity: true }` leaves
 transparency out, for a rule about content a script may fade in, as `p-as-heading` is.
