@@ -284,6 +284,43 @@ const RULE_REQUIREMENTS = { '1.0': {
 
 `ruleMappedStandard({ standard, tag, versions, requirements, ruleMap })` from `@surea11y/core/pack` turns them into the standard's functions: a rollup per requirement (`<ns>-<version>-<requirement>`), the requirements each rule's result names (in `meta.normativeMappings`, under the standard's profiles or with `engineOptions.mappings: ['<key>']`), and checks of both tables when the pack is prepared. The standard's entry (`standard: { key, standard, versions, profiles, ruleTag, ruleMapped, mappingsFor, composites, validate, report }`) is generated in `index.js`; `report.noteKey` names the message above its results in the HTML report. A standard whose requirements relate to WCAG in a way the two tables can't say writes those functions itself (ENTRY SHAPE in `src/coverage/standards.js`).
 
+**Tests under requirements** (experimental until 1.18.0, [`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)). A standard that judges tests under its requirements, as RGAA judges tests under each criterion and BITV-Test steps under each requirement, gives `ruleMappedStandard` a third table, `tests`, per version: each test's `title` and the `requirements` it belongs to, one or several. A rule-map row then names tests (or requirements), and may say where its findings are only questions, with `asks`:
+
+```js
+const std = ruleMappedStandard({
+  standard: 'City Standard', tag: 'city', versions,
+  requirements: { '1.0': { '4.2': { title: 'Images have a text alternative', wcagSc: ['1.1.1'], tests: ['4.2.1', '4.2.2'] } } },
+  tests: { '1.0': {
+    '4.2.1': { title: 'Each image has an alt attribute', requirements: ['4.2'] },
+    '4.2.2': { title: 'Each alternative describes the image', requirements: ['4.2'] }
+  } },
+  ruleMap: { '1.0': {
+    'img-alt-present': { requirements: ['4.2.1'] },
+    'img-alt-quality': { requirements: [], asks: ['4.2.2'] }
+  } }
+});
+```
+
+There is still one rollup per requirement, grouping the rules of its tests; each finding counts toward the test it fails, and the results name each test with the requirement it belongs to (`criterion: '4.2'`). Every version of such a standard has tests, and a requirement that lists its `tests` lists exactly those that name it. With `wcagCorrespondence: true`, a rule is linked only to tests whose WCAG criteria share one with the rule's, or with the reason in the row's `outsideCorrespondence: { [test]: reason }`, and each entry names only the criteria they share.
+
+**A standard as data** (experimental until 1.18.0). The same tables, with the standard's versions, groups and profiles, can be one JSON object in the format `surea11y-standard/1`, which `@surea11y/core/schemas/standard.schema.json` describes, so any tool can read the standard without running the pack:
+
+```js
+const { standardFromData } = require('@surea11y/core/pack');
+
+const data = require('./standard.json');
+// { format: 'surea11y-standard/1', key: 'city', standard: 'City Standard', lang: 'en',
+//   versions: [{ version: '1.0', wcagVersion: '2.2' }],
+//   options: { applicability: 'wcag' },                 // and wcagCorrespondence, ruleMapped
+//   data: { '1.0': { groups, requirements, tests, ruleMap } },
+//   profiles: { 'city-1.0': { version: '1.0', tags: ['city'], mappedRules: true } } }
+
+module.exports = definePack({ name, version, namespace: 'city', core: '~1.16.0',
+  standard: standardFromData(data, { report: { noteKey: 'city_report_note' } }) });
+```
+
+`standardFromData(data, extras)` returns the `standard` entry: mappings, rollups and checks from `ruleMappedStandard`, the profiles, and, with `applicability: 'wcag'`, procedures and the groups; `extras` adds what the data doesn't give yet (`report`, `review`, `translations`, `notes`, a `mappingsFor` of the pack's own). It throws on data with a problem, naming each: `checkStandardData(data)` lists them, its shape and the cross-references a schema can't check (a group or test naming a requirement the version lacks, a version's tables for a version not listed); what needs the rules is checked when the pack is defined. `standardDataOf(pack.standard)` gives the data back, frozen. A requirement, a test or a version may say what it is based on in another standard, `basedOn: [{ standard, version, id }]`, which a later release reads to build one standard on another.
+
 A row can also send a rule's findings of one reason code elsewhere, with `reasonCodes: { [code]: { requirements, outcome } }`: `requirements` (default: the row's) are the ones those findings count toward, `[]` for none; `outcome: 'cantTell'` makes a failing one a question there, and `outcome: 'fail'` makes a question a failure there. A requirement's rollup then judges the rule by the findings that count toward it, so a standard can ask about one cause where WCAG fails it, be certain of one where WCAG asks, or file two causes under two tests:
 
 ```js

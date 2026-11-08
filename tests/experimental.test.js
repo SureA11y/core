@@ -201,3 +201,35 @@ test('the experimental APIs of 1.16 are settled by 1.18.0', () => {
   assert.deepEqual(listed['skip-link details.lean'], ['1.16.0', '1.18.0']);
   assert.deepEqual(listed['standard.review dictionary keys'], ['1.16.0', '1.18.0']);
 });
+
+test('a pack built from standard data, or on two levels, uses experimental APIs', () => {
+  const { standardFromData } = require('../src/standard-data.js');
+  const data = {
+    format: 'surea11y-standard/1',
+    key: 'datastd',
+    standard: 'Data Standard',
+    versions: [{ version: '1', wcagVersion: '2.2' }],
+    data: {
+      1: {
+        requirements: { A: { title: 'Images', wcagSc: ['1.1.1'] } },
+        ruleMap: { 'img-alt-present': { requirements: ['A'] } }
+      }
+    },
+    profiles: { 'datastd-1': { version: '1', tags: ['datastd'], mappedRules: true } }
+  };
+  const pack = (d) =>
+    definePack({
+      name: 'data-pack',
+      version: '1.0.0',
+      namespace: 'datastd',
+      core: TILDE,
+      standard: standardFromData(d)
+    });
+  assert.deepEqual(ids(pack(data)), ['standard data']);
+  const twoLevel = JSON.parse(JSON.stringify(data));
+  twoLevel.data[1].tests = { 'A.1': { title: 'An <img> has alt', requirements: ['A'] } };
+  twoLevel.data[1].ruleMap['img-alt-present'].requirements = ['A.1'];
+  assert.deepEqual(ids(pack(twoLevel)), ['standard data', 'ruleMappedStandard tests']);
+  // A pack whose standard is written by hand uses neither.
+  assert.deepEqual(ids(skipPack({ requirements: ['S1'] })), []);
+});
