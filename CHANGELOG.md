@@ -4,9 +4,11 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+## [1.16.1] - 2026-11-08
+
 ### Fixed
 
-- A standard written in another language than English, such as one with `lang: 'fr'`, gives its own steps for core's codes (`standard.review`) in that language in a scan in it, where its pack's dictionary or `standard.texts` translates them. 1.16.0 gave them in English there, since it took the steps to be in the standard's language already; they are in English, whatever language the standard is in.
+- A standard written in a language other than English, such as one with `lang: 'fr'`, gives its own steps for core's codes (`standard.review`) in that language in a scan in it, where its pack's dictionary or `standard.texts` translates them. 1.16.0 gave them in English there, since it took the steps to be in the standard's language already; they are in English, whatever language the standard is in.
 
 ## [1.16.0] - 2026-11-08
 
