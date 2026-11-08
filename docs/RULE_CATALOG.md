@@ -2174,6 +2174,7 @@ Checks that when a control has a visible text label, the accessible name contain
 - `visibleLabel`, `accessibleName`: the visible label text and the accessible name, as found.
 - `normalized.visibleLabel`, `normalized.accessibleName`: the same two texts as compared: parenthesised text dropped, case folded, Unicode normalised.
 - `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each text was split into, one word per item. The name must hold the label's words next to each other and in order.
+- Each text is cut at 2,000 characters, with "…" after it, as an occurrence's `html` is, and each word list at its first 200 words.
 - `labelSource`: where the visible label came from: `label` (an associated `<label>`), `self` (the control's own text), `value` (a button-type `<input>`'s value) or `aria-labelledby` (the elements it points at).
 - `nameMechanism`: what gives the accessible name: `aria-label` or `aria-labelledby`.
 

@@ -69,6 +69,8 @@
  *   - `tokenized.visibleLabel`, `tokenized.accessibleName`: the words each
  *     text was split into, one word per item. The name must hold the
  *     label's words next to each other and in order.
+ *   - Each text is cut at 2,000 characters, with "…" after it, as an
+ *     occurrence's `html` is, and each word list at its first 200 words.
  *   - `labelSource`: where the visible label came from: `label` (an
  *     associated `<label>`), `self` (the control's own text), `value` (a
  *     button-type `<input>`'s value) or `aria-labelledby` (the elements it
@@ -306,6 +308,20 @@ function runInPage(ctx) {
     const r = el ? helpers.aria.getExplicitRole(el) : '';
     // eslint-disable-next-line safe-dom/no-raw-role -- descriptor text for messages, not a selector
     return r ? `${tag}[role="${r}"]` : tag;
+  }
+
+  // A text a finding carries, cut as an occurrence's html is: at 2,000
+  // characters, at a code point, with "…" after it. A control's name can be
+  // any length (a 2 MB aria-label), and the finding would carry it whole
+  // several times over. A word list keeps its first 200 words.
+  function capText(s) {
+    const v = s == null ? '' : String(s);
+    if (v.length <= 2000) return v;
+    const code = v.charCodeAt(1999);
+    return v.slice(0, code >= 0xd800 && code <= 0xdbff ? 1999 : 2000) + '…';
+  }
+  function capWords(list) {
+    return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
   }
 
   function clipForSummary(s) {
@@ -999,8 +1015,8 @@ function runInPage(ctx) {
                   needed:
                     'Whether the accessible name and the visible label say the same thing to a user.',
                   evidence: {
-                    visibleLabel,
-                    accessibleName: accName,
+                    visibleLabel: capText(visibleLabel),
+                    accessibleName: capText(accName),
                     difference: uncertainReason
                   }
                 }
@@ -1009,10 +1025,13 @@ function runInPage(ctx) {
           data: {
             details: {
               reasonCode: uncertainReason || 'VISIBLE_LABEL_NOT_IN_ACCESSIBLE_NAME',
-              visibleLabel,
-              accessibleName: accName,
-              normalized: { visibleLabel: visibleNorm, accessibleName: accNorm },
-              tokenized: { visibleLabel: labelTokens, accessibleName: nameTokens },
+              visibleLabel: capText(visibleLabel),
+              accessibleName: capText(accName),
+              normalized: { visibleLabel: capText(visibleNorm), accessibleName: capText(accNorm) },
+              tokenized: {
+                visibleLabel: capWords(labelTokens),
+                accessibleName: capWords(nameTokens)
+              },
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
               nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
             }
