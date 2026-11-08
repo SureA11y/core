@@ -284,8 +284,10 @@ function translatedStandardReview(source, ruleId, code, entry, locales) {
     `${stem}.passWhen`,
     `${stem}.failWhen`
   ];
+  // standard.review is in English whatever language the standard is in
+  // (standard.lang), so a scan in that language reads its translation too.
   for (const locale of locales) {
-    if (locale === 'en' || locale === source.lang) break;
+    if (locale === 'en') break;
     const byVersion = ids && isObject(ids[locale]) ? ids[locale][source.version] : null;
     if (isObject(byVersion) && idKeys.every((k) => hasOwn(byVersion, k) && isText(byVersion[k]))) {
       const texts = idKeys.map((k) => byVersion[k]);
