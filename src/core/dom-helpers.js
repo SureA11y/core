@@ -528,6 +528,65 @@ function createDomHelpers(opts) {
     return __layoutByDoc.get(doc) ? null : math;
   };
 
+  // jsdom resolves an inherited value an element doesn't declare by
+  // recursing into its parent's, and keeps it once resolved: read first on
+  // an element a thousand or so levels deep, it runs out of stack, and
+  // where it does depends on how much stack the caller has used, so the
+  // same page gave a different verdict from one entry point, or one run,
+  // to the next. Each property read on an element deeper than this has
+  // it resolved on the elements above first, from the top down, once per
+  // element and property for the run, so no read recurses far and every
+  // read gives the value it would without the limit.
+  const __WARM_UP_DEPTH = 100;
+  const __warmedByProp = new Map();
+  const __styleKeyIsProperty = new Map();
+  function warmInheritedUp(el, prop) {
+    let warmed = __warmedByProp.get(prop);
+    if (!warmed) __warmedByProp.set(prop, (warmed = new WeakSet()));
+    if (warmed.has(el)) return;
+    const above = [];
+    for (let p = dom.parentElement(el); p && !warmed.has(p); p = dom.parentElement(p))
+      above.push(p);
+    const view = realmWindow || window;
+    for (let i = above.length - 1; i >= 0; i--) {
+      try {
+        view.getComputedStyle(above[i]).getPropertyValue(prop);
+      } catch {}
+      warmed.add(above[i]);
+    }
+    warmed.add(el);
+  }
+  function withInheritedWarmUp(cs, el) {
+    const isProperty = (target, key) => {
+      if (__styleKeyIsProperty.has(key)) return __styleKeyIsProperty.get(key);
+      let desc = null;
+      for (let o = target; o && !desc; o = Object.getPrototypeOf(o))
+        desc = Object.getOwnPropertyDescriptor(o, key);
+      const yes =
+        !!desc &&
+        typeof desc.get === 'function' &&
+        !['length', 'cssText', 'parentRule', 'cssFloat'].includes(key);
+      __styleKeyIsProperty.set(key, yes);
+      return yes;
+    };
+    const kebab = (key) => key.replace(/[A-Z]/g, (m) => '-' + m.toLowerCase());
+    return new Proxy(cs, {
+      get(target, key) {
+        if (key === 'getPropertyValue') {
+          return (name) => {
+            warmInheritedUp(el, String(name).toLowerCase());
+            return target.getPropertyValue(name);
+          };
+        }
+        if (typeof key === 'string' && isProperty(target, key)) {
+          warmInheritedUp(el, key.startsWith('webkit') ? '-' + kebab(key) : kebab(key));
+        }
+        const v = Reflect.get(target, key, target);
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
+  }
+
   const computedStyle = (el) => {
     // Per-run memoization scoped by *helper scope* (root/document), to ensure
     // style caching does not bleed across helper instances with different roots.
@@ -573,13 +632,17 @@ function createDomHelpers(opts) {
       } catch {
         cs = {};
       }
-      // Without a layout (jsdom), with the layered and conditional rules
-      // jsdom leaves out (layeredOverridesOf).
+      // Without a layout (jsdom): an element deep in the page reads its
+      // inherited values with the elements above it resolved first
+      // (withInheritedWarmUp), and the layered and conditional rules jsdom
+      // leaves out apply (layeredOverridesOf).
       try {
         if (cs && isElement(el)) {
           const doc = dom.ownerDocument(el);
           if (doc && !__layoutByDoc.has(doc)) __layoutByDoc.set(doc, hasLayoutOf(el));
           if (doc && !__layoutByDoc.get(doc)) {
+            const chunk = ancestorChunk(el);
+            if (chunk && chunk.depth > __WARM_UP_DEPTH) cs = withInheritedWarmUp(cs, el);
             const overrides = layeredOverridesOf(el);
             if (overrides) cs = withLayeredOverrides(cs, overrides);
           }
