@@ -317,7 +317,54 @@ function standardReviewsOf(packs) {
   return out;
 }
 
+// 'fr-CA' reads fr-ca, then fr; English last.
+function localeChain(locale) {
+  const tag = typeof locale === 'string' ? locale.trim().toLowerCase() : '';
+  if (!tag || tag === 'en' || tag.startsWith('en-')) return [];
+  const base = tag.split('-')[0];
+  return base === tag ? [tag] : [tag, base];
+}
+
+function chainOf(locales) {
+  const chain = [];
+  const add = (l) => {
+    for (const tag of localeChain(l)) if (!chain.includes(tag)) chain.push(tag);
+  };
+  if (Array.isArray(locales)) locales.forEach(add);
+  else add(locales);
+  chain.push('en');
+  return chain;
+}
+
+// A standard's own steps for a finding of a core rule: those of the
+// standard of every profile that asks about it, where each of them gives
+// steps for the rule's code; null where any asking profile has none, such
+// as a WCAG profile, whose question core's steps answer. They are in the
+// first of `locales` the standard's pack translates the whole entry into
+// (standardReviewStem), and in English otherwise.
+function standardSteps(reviews, profiles, ruleIds, code, locales) {
+  if (!reviews.size || !profiles.length || typeof code !== 'string') return null;
+  let found = null;
+  for (const profile of profiles) {
+    const source = reviews.get(profile);
+    let hit = null;
+    for (const id of ruleIds) {
+      const byCode = source && source.review[id];
+      if (byCode && Object.prototype.hasOwnProperty.call(byCode, code)) {
+        hit = { source, ruleId: id, entry: byCode[code] };
+        break;
+      }
+    }
+    if (!hit) return null;
+    if (!found) found = hit;
+  }
+  return found
+    ? translatedStandardReview(found.source, found.ruleId, code, found.entry, chainOf(locales))
+    : null;
+}
+
 module.exports = {
+  chainOf,
   claimsOf,
   codesUnder,
   ownRulesOf,
@@ -327,6 +374,7 @@ module.exports = {
   standardReviewKeys,
   standardReviewStem,
   standardReviewsOf,
+  standardSteps,
   translatedStandardReview,
   withPackReview
 };

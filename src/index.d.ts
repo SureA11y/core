@@ -1130,12 +1130,24 @@ export interface HowToCheckOptions {
    * data.details give them; without them, each placeholder reads as its text.
    */
   values?: Readonly<Record<string, string>> | null;
+  /**
+   * howToCheckFor only, with packs: the profile that asks about the code
+   * ('acme-1.0'), or a list of the profiles that do. Where the standard of
+   * each of them gives its own steps for the rule's code (standard.review),
+   * those are read, as addHowToCheck reads them for a finding only those
+   * profiles ask about, translated where the pack's dictionary for the
+   * locale has the whole entry; core's steps otherwise, as for a WCAG
+   * profile.
+   */
+  profile?: string | readonly string[] | null;
 }
 
 /**
  * A rule's steps for one reason code, in a locale (English when
  * untranslated), or null: core's, a variant's base rule's where it has none
- * of its own, and, with options.packs, a pack rule's own.
+ * of its own, and, with options.packs, a pack rule's own, or, with
+ * options.profile too, the steps a pack's standard gives for a core rule's
+ * code (standard.review).
  */
 export function howToCheckFor(
   ruleId: string,

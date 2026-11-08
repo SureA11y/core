@@ -172,7 +172,7 @@ standard: {
 }
 ```
 
-A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape. The pack's dictionaries translate them, under keys of their own ([§6](#6-messages-and-languages)).
+A finding that only the standard's profiles ask about (its verdict is `cantTell` under them and under no other) reads them in place of core's, which name WCAG; where a WCAG profile asks too, it reads core's. Without a finding, `howToCheckFor(ruleId, code, locale, { packs, profile: 'acme-1.0' })` reads them the same way, translated as below; without `profile` it gives core's. `definePack` refuses a rule that isn't core's (a pack rule writes its own `meta.review`), a code core gives no steps for (`src/procedures`), and steps of the wrong shape. The pack's dictionaries translate them, under keys of their own ([§6](#6-messages-and-languages)).
 
 **Which facet each code tests.** A criterion's procedures ([`PROCEDURES.md`](./PROCEDURES.md#a-packs-rules)) list a rule under the facets it claims in `meta.coverage.facetsBySc`, the test objectives of each criterion in [`src/coverage/wcag-facets.js`](../src/coverage/wcag-facets.js), and its steps as variants under them, as core's are:
 

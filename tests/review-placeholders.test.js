@@ -434,6 +434,53 @@ test("a standard's steps a locale doesn't translate are read in English, as a wh
   });
 });
 
+test("howToCheckFor reads a standard's own steps for a profile that asks, as addHowToCheck does", () => {
+  const pack = definePack(translatedPack(FRENCH));
+  const code = 'ARIA_HASPOPUP_ROLE_MISMATCH';
+  const core = howToCheckFor('aria-valid-attr-value', code, 'en');
+  // Without a profile, or under one whose standard gives none: core's.
+  assert.deepEqual(howToCheckFor('aria-valid-attr-value', code, 'en', { packs: [pack] }), core);
+  assert.deepEqual(
+    howToCheckFor('aria-valid-attr-value', code, 'en', { packs: [pack], profile: 'wcag22-aa' }),
+    core
+  );
+  assert.deepEqual(
+    howToCheckFor('aria-valid-attr-value', code, 'en', {
+      packs: [pack],
+      profile: ['attrs-1.0', 'wcag22-aa']
+    }),
+    core
+  );
+  // Under the standard's profile: its own, in English or translated whole,
+  // with the values given, and the same as a finding's.
+  assert.deepEqual(
+    howToCheckFor('aria-valid-attr-value', code, 'en', { packs: [pack], profile: 'attrs-1.0' }),
+    {
+      steps: ['Open the popup, which aria-haspopup says is a menu.'],
+      passWhen: 'It is a menu.',
+      failWhen: 'It is a dialog, which fails Attr Standard A1.'
+    }
+  );
+  const fr = howToCheckFor('aria-valid-attr-value', code, 'fr-CA', {
+    packs: [pack],
+    profile: ['ATTRS-1.0'],
+    values: { expectedRole: 'listbox' }
+  });
+  assert.equal(fr.passWhen, 'C’est un listbox.');
+  assert.deepEqual(
+    howToCheckFor('aria-valid-attr-value', code, 'fr', { packs: [pack], profile: 'attrs-1.0' }),
+    ownSteps(pack, 'fr')
+  );
+  // A code the standard gives no steps for reads core's.
+  assert.deepEqual(
+    howToCheckFor('aria-valid-attr-value', 'ARIA_ATTR_VALUE_TARGET_ABSENT', 'en', {
+      packs: [pack],
+      profile: 'attrs-1.0'
+    }),
+    howToCheckFor('aria-valid-attr-value', 'ARIA_ATTR_VALUE_TARGET_ABSENT', 'en')
+  );
+});
+
 test("checkPack reports a standard's steps translated in part, or under keys it doesn't have", () => {
   const problems = (fr, en = {}) =>
     checkPack({ ...attrsPack(OWN), dictionaries: { en, fr } }).join('\n');
