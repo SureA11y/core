@@ -2845,6 +2845,23 @@ function createContrastHelpers(opts, shared) {
     return a * 1e6 + b * 1e3 + c;
   }
 
+  // The specificity (__specificityOf) of the most specific selector of a
+  // list that el matches, which is what the cascade weighs for a rule with
+  // that list; -1 where none matches or none can be read.
+  function matchedSpecificity(el, selectorText) {
+    let best = -1;
+    for (const part of __splitTopLevel(String(selectorText || '')).filter(Boolean)) {
+      let matched;
+      try {
+        matched = dom.matches(el, part);
+      } catch {
+        matched = false;
+      }
+      if (matched) best = Math.max(best, __specificityOf(part));
+    }
+    return best;
+  }
+
   // The style rules that set a color property (`color`, or
   // `-webkit-text-fill-color`) in a document's or shadow root's sheets, as
   // jsdom reads them: top-level rules, and those inside an
@@ -7988,7 +8005,8 @@ function createContrastHelpers(opts, shared) {
     colorSchemeMeasurable,
     colorSchemeUnread,
     useNamedCanvas,
-    isPinned: __isPinned
+    isPinned: __isPinned,
+    matchedSpecificity
   };
 }
 
