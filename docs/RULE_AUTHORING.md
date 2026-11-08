@@ -462,7 +462,7 @@ the rule set itself ([`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md#a-check-result-chec
   included), is `cantTell` with no occurrences and the reason in `error`.
 - A returned `type` is ignored: the type is the meta's. One that differs from it is noted.
 - A returned `engineOptions` is replaced by the scan's, and a returned `wcagVersionScope`
-  is dropped: the engine states both.
+  or `ancestorWalkLimit` is dropped: the engine states them.
 - A returned `policyOutcome` or `ruleSeverity` is not taken: the engine sets them, for a
   policy or a profile.
 - Occurrences that are not objects (`null`, a string, a number, an array) are left out.

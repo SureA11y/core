@@ -13,15 +13,15 @@ function createContrastHelpers(opts, shared) {
   const composedParent = shared.composedParent;
   const buildSimpleSelector = shared.buildSimpleSelector;
   const selectorIndex = shared.selectorIndex;
-  // An element and its ancestors in the flat tree, nearest first, as a walk
-  // of 200 composedParent steps meets them, kept per element for the run
-  // (dom-helpers' ancestorsIncludingSelf); walked here where it isn't given.
+  // An element and its ancestors in the flat tree, nearest first, up to
+  // the walk's limit, kept per element for the run (dom-helpers'
+  // ancestorsIncludingSelf); walked here where it isn't given.
   const ancestorsOf =
     typeof shared.ancestorsIncludingSelf === 'function'
       ? shared.ancestorsIncludingSelf
       : (el) => {
           const out = [];
-          for (let cur = el, guard = 0; cur && guard++ < 200; cur = composedParent(cur))
+          for (let cur = el, guard = 0; cur && guard++ < 10000; cur = composedParent(cur))
             out.push(cur);
           return out;
         };

@@ -425,8 +425,10 @@ everywhere without a layout (jsdom). The runner adds it to `helpers` for the sca
 
 ### `hasTruncatedAncestorWalk` (internal)
 
-Backs confidence scoring during result normalization when a 200-step ancestor walk
-didn't reach the root. Not something a rule calls directly.
+Whether the walk up from a node stopped at its limit, 10,000 nodes with the node itself
+(`hasTruncatedAncestorWalk.limit`), short of the root. Result normalization makes a fail on
+such an element a question (`ancestorWalkLimit` in [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md)).
+Not something a rule calls directly.
 
 ---
 

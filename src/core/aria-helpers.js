@@ -147,7 +147,7 @@ function createAriaHelpers(opts, shared) {
     const includeMain = !!(opts && opts.includeMain);
     let cur = dom.parentElement(el);
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       if (isLandmarkScopingAncestorElement(cur, includeMain)) return true;
       // Don't climb past the scanned scope -- a contextSelector-scoped
       // (or fragment) scan should never let ancestry OUTSIDE the
@@ -914,7 +914,7 @@ function createAriaHelpers(opts, shared) {
     const tags = context.tags;
     let cur = el && dom.parentElement(el) ? dom.parentElement(el) : null;
     let guard = 0;
-    while (cur && guard++ < 200) {
+    while (cur && guard++ < 10000) {
       const tag = lower(dom.tagName(cur) || '');
       if (tags.indexOf(tag) !== -1) return true;
       if (context.directParent) return false;
@@ -1456,7 +1456,7 @@ function createAriaHelpers(opts, shared) {
     if (!isElement(el) || lower(dom.tagName(el) || '') !== 'td') return '';
     let table = dom.parentElement(el);
     let guard = 0;
-    while (table && guard++ < 200 && lower(dom.tagName(table) || '') !== 'table') {
+    while (table && guard++ < 10000 && lower(dom.tagName(table) || '') !== 'table') {
       table = dom.parentElement(table);
     }
     if (!table || lower(dom.tagName(table) || '') !== 'table') return '';
