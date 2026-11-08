@@ -315,7 +315,10 @@ function createContrastHelpers(opts, shared) {
             : dom.ownerDocument(labelAncestor);
         const labelId = dom.get(labelAncestor, 'id');
         if (tree && labelId) {
-          const referrers = dom.querySelectorAll(tree, '[aria-labelledby~="' + labelId + '"]');
+          const referrers = dom.querySelectorAll(
+            tree,
+            '[aria-labelledby~="' + shared.escapeAttrValue(labelId) + '"]'
+          );
           for (const ref of referrers) {
             if (isDisabledWidget(ref)) return true;
           }
