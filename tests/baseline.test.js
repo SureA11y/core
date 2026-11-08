@@ -240,17 +240,20 @@ test('matchBaseline: a baseline written in one locale matches a scan in another'
 
 // A broken baseline must report more, never fewer -- silently swallowing
 // violations because a file was malformed is the dangerous direction.
-test('matchBaseline: malformed baseline input degrades to treating everything as new', () => {
+test('matchBaseline: no baseline treats everything as new, and a malformed one throws', () => {
   const page =
     '<!doctype html><html><head><title>t</title></head><body><img src="x.png"></body></html>';
   const result = runa11yCoreOnHtml(page, { engineOptions: {} });
   const expected = buildBaselineEntries(result).length;
 
-  for (const entries of [null, undefined, { a: 1 }, [null], [{}], ['x']]) {
-    assert.equal(
-      matchBaseline(result, entries).newCount,
-      expected,
-      `entries ${JSON.stringify(entries)} should leave every occurrence new`
+  for (const entries of [null, undefined]) {
+    assert.equal(matchBaseline(result, entries).newCount, expected);
+  }
+  for (const entries of [{ a: 1 }, [null], [{}], ['x']]) {
+    assert.throws(
+      () => matchBaseline(result, entries),
+      (err) => err.code === 'INVALID_BASELINE',
+      JSON.stringify(entries)
     );
   }
 });
@@ -449,4 +452,44 @@ test('only a string is a reason code: a number, an object or an empty one reads 
     occurrences: [makeOccurrence({ data: { details: { reasonCode: 'ALT_MISSING' } } })]
   });
   assert.strictEqual(buildBaselineEntries(makeScanResult([named]))[0].reasonCode, 'ALT_MISSING');
+});
+
+// A value that isn't a baseline was read as one with no entries, so every
+// failure read as new and nothing said why.
+test('matchBaseline: a malformed baseline throws, naming what is wrong', () => {
+  const { migrateBaselineEntries } = require('../src/baseline');
+  const { renderSarifReport } = require('../src/sarif');
+  const { renderJunitReport } = require('../src/junit');
+  const result = makeScanResult([makeCheckResult({ occurrences: [makeOccurrence()] })]);
+  for (const [baseline, message] of [
+    ['garbage', /not the string "garbage"/],
+    [{}, /not an object with no entries list/],
+    [{ entries: 'x' }, /not an object whose entries is the string "x"/],
+    [5, /not the number 5/],
+    [[null], /baseline entry 0 is null, not an entry/],
+    [{ entries: [null] }, /baseline entries\[0\] is null, not an entry/],
+    [[{ reasonCode: 'X', html: '' }], /baseline entry 0 has no ruleId/],
+    [[{ ruleId: 'img-alt-present', html: 5 }], /entry 0's html is the number 5, not a string/],
+    [[{ ruleId: 'img-alt-present', frame: '0' }], /entry 0's frame is not a list of strings/]
+  ]) {
+    const thrown = (caller) => (err) =>
+      err instanceof TypeError &&
+      err.code === 'INVALID_BASELINE' &&
+      err.message.startsWith(caller + ': ') &&
+      message.test(err.message);
+    assert.throws(() => matchBaseline(result, baseline), thrown('matchBaseline'));
+    assert.throws(() => migrateBaselineEntries(baseline), thrown('migrateBaselineEntries'));
+    assert.throws(
+      () => renderSarifReport(result, { baselineEntries: baseline }),
+      thrown('renderSarifReport: options.baselineEntries')
+    );
+    assert.throws(
+      () => renderJunitReport(result, { baselineEntries: baseline }),
+      thrown('renderJunitReport: options.baselineEntries')
+    );
+  }
+  // No baseline, or an empty one, knows nothing.
+  for (const baseline of [null, undefined, [], { version: 1, entries: [] }]) {
+    assert.strictEqual(matchBaseline(result, baseline).newCount, 1);
+  }
 });

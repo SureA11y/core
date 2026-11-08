@@ -124,7 +124,7 @@ A single baseline written from every width still gates correctly, since a findin
 }
 ```
 
-`matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list.
+`matchBaseline`, and the `baselineEntries` option of the SARIF and JUnit reporters, take the file as saved (`JSON.parse` of it) or its `entries` list. `null` or no baseline has no entries, so every failure is new. Anything else throws a `TypeError` with `code: 'INVALID_BASELINE'` and a message naming what is wrong: a string or an object with no `entries` list (`matchBaseline: the baseline must be a list of entries or a baseline file ({ entries: [...] }), not the string "…"`), an entry that isn't an object (`baseline entry 0 is null, …`) or has no `ruleId`, or a `reasonCode`, `selector` or `html` that is neither a string nor `null`, or a `frame` that isn't a list of strings. `migrateBaselineEntries` checks it the same way. Before, such a value was read as an empty baseline, which made every failure new without a word.
 
 `--baseline <path>` rejects a file that isn't `{ version: 1, entries: [...] }` with a clear exit-2 error rather than guessing at an older/different format.
 

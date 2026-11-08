@@ -601,18 +601,24 @@ test('renderSarifReport: a baseline entry with no reasonCode or html still filte
   ]);
 
   const sarif = parse(
-    renderSarifReport(result, { baselineEntries: [null, { ruleId: 'img-alt-present' }] })
+    renderSarifReport(result, { baselineEntries: [{ ruleId: 'img-alt-present' }] })
   );
 
   assert.deepStrictEqual(sarif.runs[0].results, []);
 });
 
-test('renderSarifReport: a non-array baselineEntries filters nothing', () => {
+test('renderSarifReport: no baselineEntries filters nothing, and a malformed one throws', () => {
   const result = makeScanResult([makeCheckResult({})]);
 
-  for (const baselineEntries of [null, undefined, 'x', {}]) {
+  for (const baselineEntries of [null, undefined]) {
     const sarif = parse(renderSarifReport(result, { baselineEntries }));
     assert.strictEqual(sarif.runs[0].results.length, 1);
+  }
+  for (const baselineEntries of ['x', {}]) {
+    assert.throws(
+      () => renderSarifReport(result, { baselineEntries }),
+      (err) => err.code === 'INVALID_BASELINE'
+    );
   }
 });
 

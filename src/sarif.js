@@ -352,7 +352,11 @@ function renderSarifReport(result, options = {}) {
     );
   }
   const automation = automationDetails(category);
-  const { known, knownLeaning } = knownOccurrences(frames, baselineEntries);
+  const { known, knownLeaning } = knownOccurrences(
+    frames,
+    baselineEntries,
+    'renderSarifReport: options.baselineEntries'
+  );
 
   const rules = [];
   const seenRuleIds = new Set();

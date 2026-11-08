@@ -514,7 +514,11 @@ function renderJunitReport(result, options = {}) {
       f.result ? { ...f, result: withHowToCheck(f.result, options.packs) } : f
     );
   }
-  const baseline = knownOccurrences(frames, options.baselineEntries);
+  const baseline = knownOccurrences(
+    frames,
+    options.baselineEntries,
+    'renderJunitReport: options.baselineEntries'
+  );
 
   const totals = { tests: 0, failures: 0, errors: 0, skipped: 0 };
   const suiteXml = [];
