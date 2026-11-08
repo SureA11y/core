@@ -35,6 +35,14 @@
     <p lang="en-US_x" id="vl_case_04">Hello</p>
   </div>
 
+  <div class="case" id="case_05">
+    <div class="case-title">05 — FAIL: the only text under the lang is an image map area's alt, in a map set to display:none (the image still draws its areas)</div>
+    <div lang="zz-invalid" id="vl_case_05">
+      <img alt="" usemap="#vl_map" src="x.png">
+      <map name="vl_map" style="display:none"><area href="/x" alt="Altstadt" shape="rect" coords="0,0,10,10"></map>
+    </div>
+  </div>
+
   <p class="note">
     Note: the root &lt;html&gt; element is intentionally excluded from this rule's scope
     (covered separately by html-lang-attr-present for SC 3.1.1), so this fixture

@@ -16697,8 +16697,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // hard block was found anywhere in the chain.
     const __cssInfoByAncestor = new Map();
 
+    // An <area> draws nothing of its own: it is a region of the image that
+    // uses its map, and that image renders it. So its own display, which
+    // HTML's default style sheet sets to none (jsdom follows it; Chromium
+    // computes inline), and its <map>'s don't hide it, as in
+    // isAccTreeEligible: in Chromium and Firefox a used map's region stays
+    // on the page under display:none on the area or the map.
+    const __isAreaNode = String(dom.localName(node) || '').toLowerCase() === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
+
     for (const a of chain) {
       if (!isElement(a)) continue;
+      if (__isAreaNode && (a === node || a === __ownMapEl)) continue;
 
       let cssBlock = null;
       let cssKnown = false;
@@ -99183,18 +99193,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     let found = false;
     let visits = 0;
 
-    function walk(node, isRoot) {
+    // areasOnly: inside a <map> that is not rendered, whose areas still are
+    // (the image using the map draws them, whatever the map's display), so
+    // only an area's alt counts there.
+    function walk(node, isRoot, areasOnly) {
       if (found || visits++ > MAX_VISITS) return;
       if (!node || dom.nodeType(node) !== 1) return;
       if (!isRoot && hasOwnNonEmptyLang(node)) return; // re-scoped to itself
 
       if (isAltBearing(node)) {
+        if (areasOnly && (dom.tagName(node) || '').toLowerCase() !== 'area') return;
         const alt = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'alt') : null;
         if (alt != null && alt.trim() !== '' && isDomVisible(node)) found = true;
         return; // alt-bearing elements have no other text to walk into
       }
 
-      if (!isDomVisible(node)) return;
+      if (!isDomVisible(node)) {
+        if ((dom.tagName(node) || '').toLowerCase() !== 'map') return;
+        areasOnly = true;
+      }
 
       // The flat tree, as the page renders it (helpers.flatChildNodes): a
       // host's shadow content, slotted nodes in place, and no light-DOM
@@ -99207,17 +99224,17 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       for (const kid of kids) {
         if (found) return;
         if (dom.nodeType(kid) === 3) {
-          if (String(dom.nodeValue(kid) || '').trim()) {
+          if (!areasOnly && String(dom.nodeValue(kid) || '').trim()) {
             found = true;
             return;
           }
         } else if (dom.nodeType(kid) === 1) {
-          walk(kid, false);
+          walk(kid, false, areasOnly);
         }
       }
     }
 
-    walk(root, true);
+    walk(root, true, false);
     return found;
   }
 
@@ -123730,8 +123747,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
     // hard block was found anywhere in the chain.
     const __cssInfoByAncestor = new Map();
 
+    // An <area> draws nothing of its own: it is a region of the image that
+    // uses its map, and that image renders it. So its own display, which
+    // HTML's default style sheet sets to none (jsdom follows it; Chromium
+    // computes inline), and its <map>'s don't hide it, as in
+    // isAccTreeEligible: in Chromium and Firefox a used map's region stays
+    // on the page under display:none on the area or the map.
+    const __isAreaNode = String(dom.localName(node) || '').toLowerCase() === 'area';
+    const __ownMapEl = __isAreaNode ? getClosestMap(node) : null;
+
     for (const a of chain) {
       if (!isElement(a)) continue;
+      if (__isAreaNode && (a === node || a === __ownMapEl)) continue;
 
       let cssBlock = null;
       let cssKnown = false;

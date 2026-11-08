@@ -20,7 +20,9 @@
  *   - A non-empty alt attribute on img/area/input[type=image] counts as
  *     governed text, the same as a text node.
  *   - Text (or alt) that CSS keeps out of the render tree (display:none,
- *     the hidden attribute, ...) does not count. aria-hidden and
+ *     the hidden attribute, ...) does not count. An <area> is drawn by the
+ *     image that uses its map, so its own display and its map's don't
+ *     keep its alt out. aria-hidden and
  *     offscreen positioning do NOT exempt text, per ACT's own failed
  *     examples for both, only actual non-rendering does.
  * @expectation
@@ -156,18 +158,25 @@ function runInPage(ctx) {
     let found = false;
     let visits = 0;
 
-    function walk(node, isRoot) {
+    // areasOnly: inside a <map> that is not rendered, whose areas still are
+    // (the image using the map draws them, whatever the map's display), so
+    // only an area's alt counts there.
+    function walk(node, isRoot, areasOnly) {
       if (found || visits++ > MAX_VISITS) return;
       if (!node || dom.nodeType(node) !== 1) return;
       if (!isRoot && hasOwnNonEmptyLang(node)) return; // re-scoped to itself
 
       if (isAltBearing(node)) {
+        if (areasOnly && (dom.tagName(node) || '').toLowerCase() !== 'area') return;
         const alt = dom.get(node, 'getAttribute') ? dom.getAttribute(node, 'alt') : null;
         if (alt != null && alt.trim() !== '' && isDomVisible(node)) found = true;
         return; // alt-bearing elements have no other text to walk into
       }
 
-      if (!isDomVisible(node)) return;
+      if (!isDomVisible(node)) {
+        if ((dom.tagName(node) || '').toLowerCase() !== 'map') return;
+        areasOnly = true;
+      }
 
       // The flat tree, as the page renders it (helpers.flatChildNodes): a
       // host's shadow content, slotted nodes in place, and no light-DOM
@@ -180,17 +189,17 @@ function runInPage(ctx) {
       for (const kid of kids) {
         if (found) return;
         if (dom.nodeType(kid) === 3) {
-          if (String(dom.nodeValue(kid) || '').trim()) {
+          if (!areasOnly && String(dom.nodeValue(kid) || '').trim()) {
             found = true;
             return;
           }
         } else if (dom.nodeType(kid) === 1) {
-          walk(kid, false);
+          walk(kid, false, areasOnly);
         }
       }
     }
 
-    walk(root, true);
+    walk(root, true, false);
     return found;
   }
 

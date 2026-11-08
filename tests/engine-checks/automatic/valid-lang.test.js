@@ -145,6 +145,36 @@ test(`${RULE_ID}: a non-empty alt attribute counts as governed text (ACT de46e4 
   assert.ok(hasOccurrenceForId(rule, 'a'));
 });
 
+test(`${RULE_ID}: an image map area's alt counts as governed text, whatever the area's or its map's own display`, () => {
+  // The image using the map draws its areas: HTML's default style sheet
+  // gives <area> display:none, which jsdom follows and Chromium doesn't, so
+  // that display can't decide it.
+  const page = (lang, css) =>
+    `<!doctype html><html lang="en"><head><style>${css}</style></head><body><div id="d" lang="${lang}">` +
+    '<img alt="" usemap="#m" src="x.png"><map name="m">' +
+    '<area href="/x" alt="Bild von der Altstadt" shape="rect" coords="0,0,10,10"></map></div></body></html>';
+  for (const css of ['', 'area{display:none}', 'map{display:none}']) {
+    assertRule(runa11yCoreOnHtml(page('de', css), { runOnly: [RULE_ID] }), RULE_ID, 'pass', {
+      minOccurrences: 0,
+      maxOccurrences: 0
+    });
+    const rule = assertRule(
+      runa11yCoreOnHtml(page('zz-invalid', css), { runOnly: [RULE_ID] }),
+      RULE_ID,
+      'fail',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    );
+    assert.ok(hasOccurrenceForId(rule, 'd'), css);
+  }
+  // Hidden with the block it is in, it is not on the page.
+  assertRule(
+    runa11yCoreOnHtml(page('zz-invalid', 'div{display:none}'), { runOnly: [RULE_ID] }),
+    RULE_ID,
+    'notApplicable',
+    { minOccurrences: 0, maxOccurrences: 0 }
+  );
+});
+
 test(`${RULE_ID}: an empty alt (decorative image) is not governed text, so no other content leaves the element notApplicable (ACT de46e4 inapplicable example)`, () => {
   const html = `<!doctype html><html><body><div lang="invalid"><img src="x.jpg" alt=""></div></body></html>`;
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
@@ -188,8 +218,9 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/valid-lang-all-scenarios.html
   const fixtureHtml = fs.readFileSync(fixturePath, 'utf8');
   const result = runa11yCoreOnHtml(fixtureHtml, { runOnly: [RULE_ID] });
 
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
   assert.ok(hasOccurrenceForId(rule, 'vl_case_02'));
+  assert.ok(hasOccurrenceForId(rule, 'vl_case_05'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_01'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_03'));
   assert.ok(!hasOccurrenceForId(rule, 'vl_case_04'));

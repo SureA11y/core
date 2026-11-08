@@ -233,7 +233,10 @@ same element under the wrong rule.
 Style/geometry-only visibility (not accessibility-tree membership): `display`,
 `visibility`, size/position, opacity, etc. `opts.visibilityMode` (`'styleOnly'` |
 `'styleAndGeometry'`), `opts.disableGeometry`, `opts.ignoreOpacity` tune what's checked.
-Use when a rule cares about visual rendering specifically, not AT exposure.
+Use when a rule cares about visual rendering specifically, not AT exposure. An `<area>` is
+drawn by the image that uses its map, so neither its own `display` (`none` in HTML's default
+style sheet, which jsdom follows and Chromium doesn't) nor its `<map>`'s hides it, as in
+`isAccTreeEligible`.
 
 ### `getEligibilityInfo(node, ctx, opts)` → `{ eligible, reasons[], targetSet, accEligible }`
 
