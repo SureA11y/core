@@ -549,6 +549,22 @@ window.eval(listenerHookScript({ early: true }));
 
 jsdom's selector engine adds `keydown` and `keyup` listeners to the window the first time a selector runs, for its own `:focus-visible`. Installed before that, the hook records them as the page's, and every element reads as having a key listener above it. Run one selector first, as above. A real browser adds no such listeners.
 
+**Playwright's `setContent()` is no navigation.** It writes the markup into the page's current document, which has already loaded, so an init script doesn't run while that document is loading:
+
+- An init script added to the context (`context.addInitScript`) before the page was opened runs in the page's first, blank document. The hook is there when `setContent()` writes the page, but it is recorded as `'late'`, and `click-handler-keyboard-operable` asks (`CLICK_HANDLER_NO_KEY_HANDLER`) where an early hook would have failed the element (`CLICK_HANDLER_NO_KEY_LISTENER`).
+- An init script added to a page that is already open (`page.addInitScript`) waits for that page's next document, and `setContent()` doesn't make one: the scan runs with no hook (`listenerHook` absent).
+
+For early capture, load the page with a real navigation: `page.goto()` to a server or a `file://` URL, or `page.route()` to answer a URL with the markup, as below. Or, where you know no script of the page has run before the hook (a context init script and markup set with `setContent()`), install it with `listenerHookScript({ early: true })`. The same holds for `internalsHookScript()` and `liveRegionHookScript()`.
+
+```js
+await context.addInitScript({ content: listenerHookScript() });
+const page = await context.newPage();
+await page.route('https://test.local/', (route) =>
+  route.fulfill({ body: html, contentType: 'text/html' })
+);
+await page.goto('https://test.local/'); // listenerHook: 'early'
+```
+
 ### What a page can notice, and the limits
 
 - `addEventListener`, `removeEventListener` and the handler property setters are no longer the browser's own functions: their source isn't `[native code]`. Their names, `length` and property attributes are the same. A stack trace taken inside a call has one more frame.
