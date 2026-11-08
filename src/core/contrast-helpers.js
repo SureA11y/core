@@ -258,8 +258,22 @@ function createContrastHelpers(opts, shared) {
   // (disabled) user interface component has no contrast requirement. Walk the
   // ancestor chain (not just the text's immediate parent) so text nested inside
   // a disabled control, e.g. <button disabled><span>Label</span></button>, is
-  // still recognized as inactive.
+  // still recognized as inactive. Answered once per element per run: every
+  // text element asks it of each of its ancestors, and under jsdom matching
+  // :disabled walks the ancestors again, so a deep page cost elements x
+  // depth x depth.
   function isDisabledWidget(node) {
+    const cache = __getSharedWeakMapCache('__disabledWidgetCache');
+    if (cache && node && typeof node === 'object') {
+      const known = cache.get(node);
+      if (known !== undefined) return known;
+      const out = isDisabledWidgetUncached(node);
+      cache.set(node, out);
+      return out;
+    }
+    return isDisabledWidgetUncached(node);
+  }
+  function isDisabledWidgetUncached(node) {
     try {
       if (typeof dom.get(node, 'matches') === 'function' && dom.matches(node, ':disabled'))
         return true;
