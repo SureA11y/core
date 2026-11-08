@@ -54,6 +54,7 @@ Absolute times depend on the machine, the operating system and the Chromium vers
 - **An index is a ratio to 1.8.0** on the same page; below 1.00 is faster. A difference within the run's spread is noise.
 - **A slower release is not always a regression.** A rule that now checks more of the page costs more, and the [changelog](../CHANGELOG.md) says when one does. The per-rule timings show which rules a change in time comes from, and whether those rules' results changed with it: a rule slower with the same results is a regression; one that is slower and finds more may be paying for what it now finds.
 - **jsdom is not a browser.** Scans under jsdom are dominated by jsdom's own style computation, and skip layout. Full runs check that the Node path still works and hasn't slowed; its times are not comparable with Chromium's.
+- **Deep pages under jsdom cost elements times depth before any rule runs.** The engine reads each element's computed style once per scan, and jsdom keeps it, but jsdom works out an element's style by matching every rule of its default style sheet, many of which (`ul ul`, `:is(dir, menu, ol, ul) ul`) look at every ancestor. On a list nested 500 elements deep the scan's warm-up takes 1.8 s, and on one 1,000 deep 12 s, nearly all inside jsdom; Chromium resolves the same page in linear time. Core can't avoid it without computing styles itself, so scan such pages in a browser.
 - **Only this engine's releases are compared here.**
 
 ## History
