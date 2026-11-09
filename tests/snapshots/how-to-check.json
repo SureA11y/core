@@ -1260,6 +1260,60 @@
       "fr-CA": "4209bf2a5992b97e",
       "pt": "e3cd92d5e8ede628"
     },
+    "page-zones-landmark BANNER_NOT_EXPOSED": {
+      "en": "315fb121217237b3",
+      "de": "03952efa4057a1d7",
+      "es": "cf583f9805e818b5",
+      "fr": "48dc10a789229ebb",
+      "ja": "79eadd23cebe9f62",
+      "fr-CA": "48dc10a789229ebb",
+      "pt": "315fb121217237b3"
+    },
+    "page-zones-landmark CONTENTINFO_NOT_EXPOSED": {
+      "en": "e824323a631a9190",
+      "de": "e7153598a3da0115",
+      "es": "72332348a8b5be39",
+      "fr": "21332d670df32e3e",
+      "ja": "bf14ac9d46c0785c",
+      "fr-CA": "21332d670df32e3e",
+      "pt": "e824323a631a9190"
+    },
+    "page-zones-landmark FOOTER_NESTED": {
+      "en": "df54eb2c11ab3b15",
+      "de": "f11abd3f9d8651e7",
+      "es": "0aa2debdec31b07c",
+      "fr": "d6b9b2304b0b9590",
+      "ja": "1b15169ffcddca99",
+      "fr-CA": "d6b9b2304b0b9590",
+      "pt": "df54eb2c11ab3b15"
+    },
+    "page-zones-landmark HEADER_NESTED": {
+      "en": "96f33ae0762324f2",
+      "de": "6c9fc0b49086d085",
+      "es": "afca8007fbd52f5e",
+      "fr": "2b9e9e404b8461ba",
+      "ja": "76acf58e23850dac",
+      "fr-CA": "2b9e9e404b8461ba",
+      "pt": "96f33ae0762324f2"
+    },
+    "page-zones-landmark NAVIGATION_NOT_EXPOSED": {
+      "en": "21cbf1efd8e6b590",
+      "de": "d4944f4412173e64",
+      "es": "bd44cc721b74ff2a",
+      "fr": "a229b2dde26738a0",
+      "ja": "6d02c3fca67ec629",
+      "fr-CA": "a229b2dde26738a0",
+      "pt": "21cbf1efd8e6b590"
+    },
+    "page-zones-landmark SEARCH_NOT_EXPOSED": {
+      "en": "aea6035d60854465",
+      "de": "b50656f0a8745be4",
+      "es": "b16fad5ffd343210",
+      "fr": "1dad3313f0929164",
+      "ja": "98284379f5fb3b30",
+      "fr-CA": "1dad3313f0929164",
+      "pt": "aea6035d60854465"
+    },
     "progressbar-name-present name_internals": {
       "en": "76d78577cd744b17",
       "de": "def641008049931a",
@@ -2497,6 +2551,7 @@
     "object-text-alternative-present": null,
     "option-name-present": "50681542fa30daa9",
     "page-title-present": null,
+    "page-zones-landmark": "903bfbf62b44c7b4",
     "presentational-children-focusable-absent": null,
     "progressbar-name-present": "6fb808cda52cd74c",
     "role-img-text-alternative-present": "a656f640278b7802",
@@ -2579,10 +2634,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "6d18f57515c375335a2321558db7472fabaec94b745bb7456aea38f93ac54278",
-    "en": "87165c2394102c3b1e6c5297f1d93664f214842a035981929259751417ebb4e6",
-    "es": "6f4f8bb45aa11b65c8b893bb40cab50bde39b9048cae856508e32e98452ca728",
-    "fr": "1b0a4cb2178cc5bd44e91478ac90c2f0f6386bf079df1fbce21006e7e458cc75",
-    "ja": "64f56423c808a5de82a28480d43a7ade90f70d3d455033f322adc02c675f36fa"
+    "de": "d290bf25be45d678a79e6b15eaf7bfbcf20aa30408513cbd01c43892ba86007a",
+    "en": "2c8dd4443344713413fbfcb7a25fee4de0c86b909fc9762e78edb5532c6a5606",
+    "es": "d64387418186c588b7cc2ac4de19a8bbacea730b888225560cccc4e2a421ecb8",
+    "fr": "40c02f8a2c43fc28645885273f245d4fb85307848a1d4e8b6a73fae16a81d85c",
+    "ja": "ede21265522ea16289013112d82ce14af03af858cddb60b2d4e9e842de582a11"
   }
 }
