@@ -119,32 +119,28 @@ export interface PackStandard {
     Record<string, Record<string, { steps: string[]; passWhen: string; failWhen: string }>>
   >;
   /**
-   * The laws the standard is assessed under, by id: facts to show, never
-   * logic (docs/PACKS.md, "The laws a standard is assessed under").
+   * The laws its profiles are used for, by id, identified and not
+   * documented: name, jurisdiction, official texts (docs/PACKS.md, "The
+   * law a profile is used for").
    * @experimental Until 1.18.0.
    */
   laws?: Record<string, PackLaw>;
   /**
-   * The laws' texts in other languages, by locale and id: { en:
-   * { 'laws.<id>.name': '…', 'laws.<id>.exemptions': ['…'] } }.
+   * The laws' names in other languages, by locale and id: { en:
+   * { 'laws.<id>.name': '…' } }.
    * @experimental Until 1.18.0.
    */
-  lawTexts?: Record<string, Record<string, string | string[]>>;
+  lawTexts?: Record<string, Record<string, string>>;
 }
 
 /**
- * A law a standard is assessed under.
+ * A law a profile is used for: identified, not documented.
  * @experimental Until 1.18.0.
  */
 export interface PackLaw {
   name: string;
   /** A country ('FR'), a subdivision ('DE-BY') or a region ('EU'). */
   jurisdiction: string;
-  appliesTo?: string;
-  exemptions?: string[];
-  /** YYYY-MM-DD. */
-  since?: string;
-  enforcement?: string[];
   /** Its official texts, at https addresses. */
   sources?: { title: string; url: string }[];
 }
@@ -155,10 +151,8 @@ export interface PackLaw {
  */
 export interface LawText extends PackLaw {
   id: string;
-  /** The language its texts are in. */
+  /** The language its name is in. */
   lang: string;
-  /** Where they are in more than one: each field's. */
-  langs?: Record<string, string>;
 }
 
 /**

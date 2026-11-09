@@ -93,22 +93,15 @@
       }
     },
     "texts": {
-      "description": "Translations of the laws' texts, by locale: { fr: { 'laws.<id>.name': '\u2026' } }. Experimental.",
+      "description": "Translations of the laws' names, by locale: { fr: { 'laws.<id>.name': '\u2026' } }. Experimental.",
       "type": "object",
       "additionalProperties": {
         "type": "object",
         "propertyNames": {
-          "pattern": "^laws\\."
+          "pattern": "^laws\\..+\\.name$"
         },
         "additionalProperties": {
-          "anyOf": [
-            {
-              "$ref": "#/definitions/text"
-            },
-            {
-              "$ref": "#/definitions/texts"
-            }
-          ]
+          "$ref": "#/definitions/text"
         }
       }
     }
@@ -465,27 +458,6 @@
         "jurisdiction": {
           "type": "string",
           "pattern": "^[A-Z]{2}(-[A-Z0-9]{1,8})?$"
-        },
-        "appliesTo": {
-          "$ref": "#/definitions/text"
-        },
-        "exemptions": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/text"
-          }
-        },
-        "since": {
-          "type": "string",
-          "pattern": "^\\d{4}-\\d{2}-\\d{2}$"
-        },
-        "enforcement": {
-          "type": "array",
-          "minItems": 1,
-          "items": {
-            "$ref": "#/definitions/text"
-          }
         },
         "sources": {
           "type": "array",

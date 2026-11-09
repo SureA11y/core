@@ -3,14 +3,14 @@
 'use strict';
 
 /**
- * The laws a pack's standard is assessed under (standard.laws), and the law
- * each profile serves (profiles[name].law): what each law is, whom it
- * applies to, its exemptions, since when, who enforces it, and its official
- * texts. Facts to show, never logic: core never decides whom a law applies
- * to. A requirement only some laws ask for says which
- * (standard.procedures[version][id].laws). Translated by id in
- * standard.lawTexts: { fr: { 'laws.<id>.name': '…', 'laws.<id>.exemptions':
- * ['…'] } }. Experimental (src/experimental.js).
+ * The law each profile is used for (standard.laws, profiles[name].law),
+ * identified, not documented: its name, where it applies (jurisdiction) and
+ * links to its official text. Core tests accessibility against a standard's
+ * requirements; it says which law a scan was run for and nothing more. A
+ * requirement only some laws ask for says which
+ * (standard.procedures[version][id].laws). A law's name is translated by id
+ * in standard.lawTexts: { fr: { 'laws.<id>.name': '…' } }. Experimental
+ * (src/experimental.js).
  *
  * No file system and no engine, so it runs in a browser bundle too.
  */
@@ -27,23 +27,7 @@ const LAW_ID = /^[a-z0-9]+([.-][a-z0-9]+)*$/;
 // Where a law applies: an ISO 3166 country ('FR'), a subdivision ('DE-BY'),
 // or a region such as 'EU'.
 const JURISDICTION = /^[A-Z]{2}(-[A-Z0-9]{1,8})?$/;
-const LAW_KEYS = [
-  'name',
-  'jurisdiction',
-  'appliesTo',
-  'exemptions',
-  'since',
-  'enforcement',
-  'sources'
-];
-// The fields a translation can give, and whether each is a list.
-const TEXT_FIELDS = { name: false, appliesTo: false, exemptions: true, enforcement: true };
-
-function isDate(v) {
-  if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
-  const d = new Date(`${v}T00:00:00Z`);
-  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === v;
-}
+const LAW_KEYS = ['name', 'jurisdiction', 'sources'];
 
 function isHttpsUrl(v) {
   if (typeof v !== 'string' || !/^https:\/\//i.test(v)) return false;
@@ -57,22 +41,11 @@ function isHttpsUrl(v) {
 /** What is wrong with one law, as messages starting with `at`. */
 function lawProblems(law, at) {
   const out = [];
-  if (!isObject(law)) return [`${at} must be { name, jurisdiction, … }`];
+  if (!isObject(law)) return [`${at} must be { name, jurisdiction, sources }`];
   for (const k of Object.keys(law)) if (!LAW_KEYS.includes(k)) out.push(`${at}: no field "${k}"`);
   if (!isText(law.name)) out.push(`${at}.name must be a non-empty string`);
   if (typeof law.jurisdiction !== 'string' || !JURISDICTION.test(law.jurisdiction)) {
     out.push(`${at}.jurisdiction must be a country or region code, such as 'FR', 'DE-BY' or 'EU'`);
-  }
-  if (law.appliesTo !== undefined && !isText(law.appliesTo)) {
-    out.push(`${at}.appliesTo must be a non-empty string`);
-  }
-  for (const k of ['exemptions', 'enforcement']) {
-    if (law[k] !== undefined && !(Array.isArray(law[k]) && law[k].length && law[k].every(isText))) {
-      out.push(`${at}.${k} must be a non-empty list of texts`);
-    }
-  }
-  if (law.since !== undefined && !isDate(law.since)) {
-    out.push(`${at}.since must be a date, as YYYY-MM-DD`);
   }
   if (law.sources !== undefined) {
     if (!Array.isArray(law.sources) || !law.sources.length) {
@@ -100,7 +73,7 @@ function standardLawProblems(st) {
   if (!isObject(st)) return out;
   const laws = st.laws;
   if (laws !== undefined) {
-    if (!isObject(laws)) out.push('standard.laws must be { id: { name, jurisdiction, … } }');
+    if (!isObject(laws)) out.push('standard.laws must be { id: { name, jurisdiction, sources } }');
     else
       for (const [id, law] of Object.entries(laws)) {
         if (isUnsafeKey(id) || !LAW_ID.test(id)) {
@@ -138,7 +111,7 @@ function standardLawProblems(st) {
 }
 
 // What is wrong with standard.lawTexts: a locale that is no tag or is the
-// standard's own, a key that is no text of a law, a list of another length.
+// standard's own, a key that is not a law's name, an empty name.
 function lawTextsProblems(st) {
   if (st.lawTexts === undefined) return [];
   if (!isObject(st.lawTexts)) return ["standard.lawTexts must be { locale: { key: 'text' } }"];
@@ -160,25 +133,10 @@ function lawTextsProblems(st) {
       continue;
     }
     for (const [key, value] of Object.entries(dict)) {
-      const m = /^laws\.([^.]+(?:\.[^.]+)*?)\.(name|appliesTo|exemptions|enforcement)$/.exec(key);
-      const law =
-        m && isObject(st.laws) && !isUnsafeKey(m[1]) && hasOwn(st.laws, m[1])
-          ? st.laws[m[1]]
-          : null;
-      if (!law || law[m[2]] === undefined) {
-        out.push(`${at}: ${key} is no text of the standard's laws`);
-        continue;
-      }
-      const src = law[m[2]];
-      if (TEXT_FIELDS[m[2]]) {
-        if (!Array.isArray(value) || value.length !== src.length || !value.every(isText)) {
-          out.push(
-            `${at}: ${key} must be a list of ${src.length} ${src.length === 1 ? 'text' : 'texts'}, as the source is`
-          );
-        }
-      } else if (!isText(value)) {
-        out.push(`${at}: ${key} must be a non-empty string`);
-      }
+      const m = /^laws\.(.+)\.name$/.exec(key);
+      const known = m && isObject(st.laws) && !isUnsafeKey(m[1]) && hasOwn(st.laws, m[1]);
+      if (!known) out.push(`${at}: ${key} is not the name of one of the standard's laws`);
+      else if (!isText(value)) out.push(`${at}: ${key} must be a non-empty string`);
     }
   }
   return out;
@@ -193,11 +151,10 @@ function chain(locale) {
 }
 
 /**
- * A law in `locale`: { id, name, jurisdiction, appliesTo, exemptions, since,
- * enforcement, sources, lang }, each text translated where standard.lawTexts
- * gives it for the locale (or its base language), else as written, `lang`
- * the language it is in when all its texts are; `langs` says which field is
- * in which, where they differ. null for a law the standard doesn't have.
+ * A law in `locale`: { id, name, jurisdiction, sources, lang }, its name
+ * translated where standard.lawTexts gives it for the locale (or its base
+ * language), else as written; `lang` the language the name is in. null for
+ * a law the standard doesn't have.
  */
 function lawOf(st, id, locale) {
   if (!isObject(st) || !isObject(st.laws) || isUnsafeKey(id) || !hasOwn(st.laws, id)) return null;
@@ -209,28 +166,18 @@ function lawOf(st, id, locale) {
   const lower = {};
   for (const [tag, d] of Object.entries(dicts))
     if (TAG.test(tag) && isObject(d)) lower[tag.toLowerCase()] = d;
-  const out = { id, ...JSON.parse(JSON.stringify(law)) };
-  const langs = {};
-  for (const [field, list] of Object.entries(TEXT_FIELDS)) {
-    if (law[field] === undefined) continue;
-    langs[field] = source;
-    for (const tag of chain(locale)) {
-      if (tag === source) break;
-      const d = lower[tag];
-      const v = d && hasOwn(d, `laws.${id}.${field}`) ? d[`laws.${id}.${field}`] : undefined;
-      const ok = list
-        ? Array.isArray(v) && v.length === law[field].length && v.every(isText)
-        : isText(v);
-      if (ok) {
-        out[field] = list ? v.slice() : v;
-        langs[field] = tag;
-        break;
-      }
+  const out = { id, ...JSON.parse(JSON.stringify(law)), lang: source };
+  const key = `laws.${id}.name`;
+  for (const tag of chain(locale)) {
+    if (tag === source) break;
+    const d = lower[tag];
+    const v = d && hasOwn(d, key) ? d[key] : undefined;
+    if (isText(v)) {
+      out.name = v;
+      out.lang = tag;
+      break;
     }
   }
-  const used = [...new Set(Object.values(langs))];
-  out.lang = used.length === 1 ? used[0] : source;
-  if (used.length > 1) out.langs = langs;
   return out;
 }
 

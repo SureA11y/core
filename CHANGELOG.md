@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Changed (experimental)
+
+- **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.
+
 ## [1.16.1] - 2026-11-08
 
 ### Fixed
