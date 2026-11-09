@@ -1915,6 +1915,47 @@ The document has a non-empty `<title>`.
 ```
 No `<title>` element anywhere in the document.
 
+## page-zones-landmark
+
+**Passed**
+```html
+<body>
+  <header><a href="/">Site</a></header>
+  <nav class="menu"><a href="/news">News</a> <a href="/contact">Contact</a></nav>
+  <main><p>Content</p></main>
+  <footer>© Site</footer>
+</body>
+```
+The header, the navigation and the footer are landmarks.
+
+**Flagged (cantTell)**
+```html
+<body>
+  <div class="site-header"><a href="/">Site</a></div>
+  <main><p>Content</p></main>
+</body>
+```
+The block named as the page header is not a banner landmark, and the page has none: a person checks whether it is the page header.
+
+**Flagged (cantTell)**
+```html
+<body>
+  <main>
+    <header><a href="/">Site</a></header>
+    <p>Content</p>
+  </main>
+</body>
+```
+The page's `<header>` is inside `<main>`, where it is not a banner landmark, and the page has none.
+
+**Not applicable**
+```html
+<body>
+  <main><p>Content</p></main>
+</body>
+```
+Nothing on the page is named as a zone, and it has no header, footer or search form.
+
 ## password-paste-enabled
 
 *This rule never fails — every case is either raised for review or left alone. An `addEventListener`-attached paste handler leaves no trace in markup, so it can't be demonstrated in a static example; the listener hook (`listenerHookScript()`) records such listeners when the page runs it, and an early hook that saw none takes the caution off a cancel-only handler's lean.*

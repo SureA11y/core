@@ -4,7 +4,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 145,
+    "totalRules": 146,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -6288,6 +6288,31 @@
           ]
         }
       },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/manual/page-zones-landmark-manual.js",
+      "ruleId": "page-zones-landmark",
+      "wcagScNormative": [],
+      "wcagScAll": [],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "The page's header, navigation, search and footer are landmarks",
+      "tags": [
+        "best-practice",
+        "landmarks",
+        "structure",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [],
+        "versions": [],
+        "cumulativeLevelsByVersion": {},
+        "cumulativeLevelsAny": []
+      },
+      "error": null,
+      "coverage": {},
       "deprecated": false
     },
     {
