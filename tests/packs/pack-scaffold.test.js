@@ -48,6 +48,9 @@ function runItsTests(dir) {
   });
 }
 
+// The kinds that bring example rules; a derived pack has none (below).
+const RULE_KINDS = KINDS.filter((k) => k !== 'derived');
+
 const OWN = (ns) => [
   `${ns}-contrast-enhanced`,
   `${ns}-link-text-specific`,
@@ -130,7 +133,7 @@ test('a standard pack: requirements, a rule map, two profiles', () => {
 // profile is judged by.
 const TEST_COUNT = { checklist: 12, standard: 19 };
 
-for (const kind of KINDS) {
+for (const kind of RULE_KINDS) {
   test(`a ${kind} pack's tests pass and its rules pass the lint rules`, async () => {
     const { dir } = newPack({ name: '@acme/a11y-pack', kind });
     assert.match(runItsTests(dir), new RegExp(`# pass ${TEST_COUNT[kind]}\\n# fail 0`));
@@ -167,7 +170,7 @@ test('surea11y-pack new writes into a new folder only, of a known kind', () => {
     );
   fails(['web-pack'], /web-pack is not empty/);
   fails(['other', '--namespace', 'wcag-x'], /namespace "wcag-x"/);
-  fails(['other', '--kind', 'policy'], /kind "policy": one of checklist, standard/);
+  fails(['other', '--kind', 'policy'], /kind "policy": one of checklist, standard, derived/);
   // A namespace that starts core's rule ids, from the name or given.
   fails(
     ['aria-rules'],
@@ -213,7 +216,7 @@ test("a pack whose namespace is a core tag is valid as generated, and leaves cor
   }
 });
 
-for (const kind of KINDS) {
+for (const kind of RULE_KINDS) {
   test(
     `a ${kind} pack's examples give the outcomes their labels say, in Chromium`,
     { skip: chromium ? false : 'playwright not installed' },
@@ -240,7 +243,7 @@ test('a title is written as each file reads it, so any title gives a pack that l
     // Read as the title, not as the template's tokens.
     'Policy __NAMESPACE__ __KEY__ __PACKAGE__ __CORE__ __TITLE__'
   ];
-  for (const kind of KINDS) {
+  for (const kind of RULE_KINDS) {
     for (const title of titles) {
       const { dir } = newPack({ name: 'titled', kind, title });
       const pack = require(path.join(dir, 'index.js'));
@@ -264,7 +267,7 @@ test('a title is written as each file reads it, so any title gives a pack that l
 // generated pack's summary names the link rather than showing "{name}".
 test("a generated pack's messages fill in their placeholders", () => {
   const { runa11yCoreOnHtml } = require('../../src/testing.js');
-  for (const kind of KINDS) {
+  for (const kind of RULE_KINDS) {
     const { dir } = newPack({ name: '@acme/a11y-pack', kind });
     const pack = require(dir);
     const r = runa11yCoreOnHtml(
@@ -275,4 +278,132 @@ test("a generated pack's messages fill in their placeholders", () => {
     assert.equal(c.outcome, 'fail', kind);
     assert.equal(c.occurrences[0].summary, 'The link is named only "click here".', kind);
   }
+});
+
+// A base pack with its standard in core's data format, installed in a folder
+// that a derived pack is generated in: one requirement checked by a core
+// rule and one by the base's own rule.
+function baseWorkspace() {
+  const work = fs.mkdtempSync(path.join(os.tmpdir(), 'pack-derived-'));
+  const modules = path.join(work, 'node_modules');
+  fs.mkdirSync(path.join(modules, '@surea11y'), { recursive: true });
+  fs.symlinkSync(ROOT, path.join(modules, '@surea11y', 'core'), 'dir');
+  const [major, minor] = require('../../package.json').version.split('.');
+  const base = path.join(modules, '@base', 'std-pack');
+  fs.mkdirSync(base, { recursive: true });
+  fs.writeFileSync(
+    path.join(base, 'package.json'),
+    JSON.stringify({ name: '@base/std-pack', version: '2.1.0', main: 'index.js' })
+  );
+  fs.writeFileSync(
+    path.join(base, 'index.js'),
+    `'use strict';
+const { definePack, standardFromData } = require('@surea11y/core/pack');
+const DATA = {
+  format: 'surea11y-standard/1', key: 'base', standard: 'Base Standard', lang: 'en',
+  options: { ruleMapped: true },
+  versions: [{ version: '2.0', wcagVersion: '2.2' }],
+  data: { '2.0': {
+    requirements: {
+      1: { title: 'Pages have a title', wcagSc: ['2.4.2'] },
+      2: { title: 'Pages have a main zone', wcagSc: [] }
+    },
+    ruleMap: {
+      'page-title-present': { requirements: ['1'] },
+      'base-main-present': { requirements: ['2'] }
+    }
+  } },
+  profiles: { 'base-2.0': { version: '2.0', tags: ['base'], mappedRules: true, wcagVersion: '2.2' } }
+};
+module.exports = definePack({
+  name: '@base/std-pack', version: '2.1.0', namespace: 'base', core: '~${major}.${minor}.0',
+  rules: [{
+    id: 'base-main-present',
+    meta: { title: 'The page has a main zone', tags: ['base'], wcagSc: [] },
+    runInPage: (ctx) => ctx.document.querySelector('main')
+      ? { outcome: 'pass', occurrences: [] }
+      : { outcome: 'fail', occurrences: [{ __node: ctx.document.body }] }
+  }],
+  standard: standardFromData(DATA)
+});
+`
+  );
+  return work;
+}
+
+test('a derived pack: the base as it is, its rules used, its own tests passing', async () => {
+  const work = baseWorkspace();
+  const dir = path.join(work, 'city-std');
+  const written = scaffoldPack(dir, {
+    name: '@city/std',
+    kind: 'derived',
+    from: '@base/std-pack',
+    title: 'City Standard',
+    cwd: work
+  });
+  assert.deepEqual(written, [
+    '.gitignore',
+    'README.md',
+    'eslint.config.js',
+    'index.js',
+    'package.json',
+    'standard-data.js',
+    'tests/standard.test.js'
+  ]);
+  for (const file of written) {
+    assert.doesNotMatch(fs.readFileSync(path.join(dir, file), 'utf8'), /__[A-Z]+__/, file);
+  }
+  const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+  const [major, minor] = require('../../package.json').version.split('.');
+  assert.deepEqual(pkg.dependencies, { '@base/std-pack': '~2.1.0' });
+  assert.equal(pkg.peerDependencies['@surea11y/core'], `~${major}.${minor}.0`);
+
+  const base = require(path.join(work, 'node_modules', '@base', 'std-pack'));
+  const pack = require(dir);
+  assert.deepEqual(checkPack(pack), []);
+  const [d] = describePacks([pack]);
+  assert.deepEqual(d.uses, ['@base/std-pack@2.1.0']);
+  assert.equal(pack.standard.standard, 'City Standard');
+
+  // Its profile runs the base pack's rule as the derived map links it.
+  const { runa11yCoreOnHtml } = require('../../src/testing.js');
+  const r = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><p>x</p></body></html>',
+    { engineOptions: { packs: [base, pack], profile: 'city-1.0' } }
+  );
+  assert.equal(r.skippedPacks, undefined);
+  assert.equal(r.rulesResults.find((x) => x.ruleId === 'city-1.0-2').outcome, 'fail');
+
+  assert.match(runItsTests(dir), /# pass 4\n# fail 0/);
+  const lint = await new ESLint({ cwd: dir }).lintFiles(['.']);
+  assert.deepEqual(
+    lint.flatMap((x) => x.messages.map((m) => `${x.filePath}: ${m.ruleId} ${m.message}`)),
+    []
+  );
+});
+
+test('a derived pack needs an installed base whose standard is data, and --from is only for it', () => {
+  const work = baseWorkspace();
+  const at = (name) => path.join(work, name);
+  assert.throws(
+    () => scaffoldPack(at('a'), { kind: 'derived', cwd: work }),
+    /needs the pack it is built on: --from <package name>/
+  );
+  assert.throws(
+    () => scaffoldPack(at('b'), { kind: 'derived', from: '@nowhere/pack', cwd: work }),
+    /--from @nowhere\/pack: not installed here; install it first/
+  );
+  const plain = path.join(work, 'node_modules', 'plain-pack');
+  fs.mkdirSync(plain);
+  fs.writeFileSync(path.join(plain, 'package.json'), '{"name":"plain-pack","version":"1.0.0"}');
+  fs.writeFileSync(path.join(plain, 'index.js'), "module.exports = { name: 'plain-pack' };");
+  assert.throws(
+    () => scaffoldPack(at('c'), { kind: 'derived', from: 'plain-pack', cwd: work }),
+    /--from plain-pack: its standard is not in core's data format/
+  );
+  assert.throws(
+    () => scaffoldPack(at('d'), { kind: 'standard', from: '@base/std-pack', cwd: work }),
+    /--from is for a derived pack/
+  );
+  for (const name of ['a', 'b', 'c', 'd']) assert.ok(!fs.existsSync(at(name)), name);
 });

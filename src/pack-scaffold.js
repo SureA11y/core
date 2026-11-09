@@ -13,11 +13,16 @@
  * - standard: a standard with requirements of its own, like a national one.
  *   A requirements table and the rules that check each requirement
  *   (ruleMappedStandard), a rollup per requirement, profiles.
+ * - derived (experimental, as what it uses is): a standard built on another
+ *   pack's (--from), as RAWeb is on RGAA. Its data is derived from the
+ *   base's (deriveStandard), the base as it is until its author changes it;
+ *   it runs the base pack's rules (uses) and has none of its own.
  *
- * Both bring three example rules (an automatic one, a variant of a core rule
- * and a manual one), their English messages, tests, examples, the safe-dom
- * lint rules and the scripts that test, lint and document the pack. The
- * package is private until its author chooses a licence and publishes it.
+ * The first two bring three example rules (an automatic one, a variant of a
+ * core rule and a manual one), their English messages, tests, examples, the
+ * safe-dom lint rules and the scripts that test, lint and document the pack.
+ * A derived pack brings its standard's tests and the lint rules. The package
+ * is private until its author chooses a licence and publishes it.
  *
  * In the templates, __NAMESPACE__ is the namespace, __KEY__ its camel-case
  * form for message keys, __TITLE__ the pack's title, __PACKAGE__ its package
@@ -31,10 +36,14 @@ const path = require('node:path');
 
 const pkg = require('../package.json');
 const { checkPack, preparePacks } = require('./pack.js');
+const { standardDataOf } = require('./standard-data.js');
 
 const ROOT = path.join(__dirname, '..');
 const TEMPLATES = path.join(ROOT, 'templates', 'pack');
-const KINDS = ['checklist', 'standard'];
+const KINDS = ['checklist', 'standard', 'derived'];
+// What a derived pack takes from common/: it has no rules of its own to
+// show, test or document.
+const COMMON_OF = { derived: ['eslint.config.js', 'gitignore'] };
 const NAMESPACE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 // A namespace from the package name: its scope, or its first word.
@@ -48,9 +57,37 @@ function namespaceOf(name) {
 // acme-web → acmeWeb, for message keys.
 const camel = (s) => s.replace(/-([a-z0-9])/g, (_, c) => c.toUpperCase());
 
-function packageJson({ name, kind }) {
-  const range = `^${pkg.version}`;
+// The core range a kind's pack declares: `~` for one that uses experimental
+// APIs as generated (derived), so it takes no later minor.
+function coreRange(kind) {
+  const [major, minor] = pkg.version.split('.');
+  return kind === 'derived' ? `~${major}.${minor}.0` : `^${pkg.version}`;
+}
+
+function packageJson({ name, kind, base }) {
+  const range = coreRange(kind);
   const dev = pkg.devDependencies;
+  if (kind === 'derived') {
+    return (
+      JSON.stringify(
+        {
+          name,
+          version: '0.1.0',
+          private: true,
+          description: `Accessibility standard for @surea11y/core, built on ${base.name}`,
+          main: 'index.js',
+          files: ['*.js'],
+          scripts: { test: 'node --test', lint: 'eslint .' },
+          // The version it is made with: a scan needs this one in its packs.
+          dependencies: { [base.name]: `~${base.version}` },
+          peerDependencies: { '@surea11y/core': range },
+          devDependencies: { '@surea11y/core': range, eslint: dev.eslint, jsdom: dev.jsdom }
+        },
+        null,
+        2
+      ) + '\n'
+    );
+  }
   return (
     JSON.stringify(
       {
@@ -102,14 +139,15 @@ const jsString = (text) =>
   "'";
 
 // The pack's files: { relative path: text }, the kind's over the common ones.
-function files({ name, namespace, title, kind }) {
+function files({ name, namespace, title, kind, base }) {
   const tokens = {
     __NAMESPACE__: namespace,
     __KEY__: camel(namespace),
     __PACKAGE__: name,
-    __CORE__: `^${pkg.version}`
+    __CORE__: coreRange(kind),
+    __BASE__: base ? base.name : ''
   };
-  const fill = (text) => text.replace(/__(NAMESPACE|KEY|PACKAGE|CORE)__/g, (t) => tokens[t]);
+  const fill = (text) => text.replace(/__(NAMESPACE|KEY|PACKAGE|CORE|BASE)__/g, (t) => tokens[t]);
   // The title is free text, written as each kind of file reads it: a string
   // literal in JavaScript, a comment that it can't end, a JSON string. It goes
   // in after the other tokens, so a title that reads like one is kept as it is.
@@ -127,7 +165,9 @@ function files({ name, namespace, title, kind }) {
   };
   const out = {};
   for (const dir of [path.join(TEMPLATES, 'common'), path.join(TEMPLATES, kind)]) {
+    const common = dir.endsWith(`${path.sep}common`);
     for (const file of listFiles(dir)) {
+      if (common && COMMON_OF[kind] && !COMMON_OF[kind].includes(file)) continue;
       const target = fill(file.split(path.sep).join('/')).replace(
         /(^|\/)gitignore$/,
         '$1.gitignore'
@@ -135,8 +175,53 @@ function files({ name, namespace, title, kind }) {
       out[target] = fillTitle(fill(fs.readFileSync(path.join(dir, file), 'utf8')), file);
     }
   }
-  out['package.json'] = packageJson({ name, kind });
+  out['package.json'] = packageJson({ name, kind, base });
   return out;
+}
+
+// The folder holding a package's package.json, from a file inside it.
+function packageRoot(file, name) {
+  for (let dir = path.dirname(file); ; dir = path.dirname(dir)) {
+    const json = path.join(dir, 'package.json');
+    if (fs.existsSync(json)) {
+      try {
+        if (JSON.parse(fs.readFileSync(json, 'utf8')).name === name) return dir;
+      } catch {}
+    }
+    if (path.dirname(dir) === dir) return null;
+  }
+}
+
+// The base of a derived pack: the pack `from` names, installed where `new`
+// runs, whose standard is in core's data format.
+function baseOf(from, cwd) {
+  if (typeof from !== 'string' || !from.trim()) {
+    throw new Error('a derived pack needs the pack it is built on: --from <package name>');
+  }
+  let file;
+  try {
+    file = require.resolve(from, { paths: [cwd] });
+  } catch (e) {
+    throw new Error(`--from ${from}: not installed here; install it first (npm install ${from})`, {
+      cause: e
+    });
+  }
+  const root = packageRoot(file, from);
+  let pack;
+  try {
+    pack = require(file);
+  } catch (e) {
+    throw new Error(`--from ${from}: it doesn't load: ${e && e.message ? e.message : e}`, {
+      cause: e
+    });
+  }
+  if (!pack || typeof pack !== 'object' || !pack.standard || !standardDataOf(pack.standard)) {
+    throw new Error(
+      `--from ${from}: its standard is not in core's data format (standardFromData), so nothing can be derived from it`
+    );
+  }
+  const version = root ? JSON.parse(fs.readFileSync(path.join(root, 'package.json'))).version : '';
+  return { name: from, version: version || pack.version, root, pack };
 }
 
 // What is wrong with the pack these files make, as a scan would find it:
@@ -144,7 +229,7 @@ function files({ name, namespace, title, kind }) {
 // preparing it with core finds, such as a standard named as one of core's.
 // The files are written to a folder of their own, with core beside them as
 // the pack's own node_modules will have it, and removed after.
-function generatedProblems(out) {
+function generatedProblems(out, base) {
   const staging = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'surea11y-pack-new-')));
   try {
     for (const [file, text] of Object.entries(out)) {
@@ -154,6 +239,11 @@ function generatedProblems(out) {
     }
     fs.mkdirSync(path.join(staging, 'node_modules', '@surea11y'), { recursive: true });
     fs.symlinkSync(ROOT, path.join(staging, 'node_modules', '@surea11y', 'core'), 'junction');
+    if (base && base.root) {
+      const at = path.join(staging, 'node_modules', ...base.name.split('/'));
+      fs.mkdirSync(path.dirname(at), { recursive: true });
+      fs.symlinkSync(base.root, at, 'junction');
+    }
     let pack;
     try {
       pack = require(path.join(staging, 'index.js'));
@@ -163,7 +253,7 @@ function generatedProblems(out) {
     const problems = checkPack(pack);
     if (problems.length) return problems;
     try {
-      preparePacks([pack], { strict: true });
+      preparePacks([...(base ? [base.pack] : []), pack], { strict: true });
     } catch (e) {
       return [String(e && e.message ? e.message : e).replace(/^engineOptions\.packs: [^:]*: /, '')];
     }
@@ -179,7 +269,9 @@ function generatedProblems(out) {
 /**
  * Writes a new pack into folder, which must not exist or be empty. options:
  * name (the package name; the folder's by default), namespace (its scope or
- * first word by default), title, kind ('checklist' or 'standard'). Returns
+ * first word by default), title, kind ('checklist', 'standard' or
+ * 'derived'), and for a derived pack from (the base pack's package name,
+ * installed where cwd, the current folder by default, resolves it). Returns
  * the files written, relative to folder.
  */
 function scaffoldPack(folder, options = {}) {
@@ -189,6 +281,9 @@ function scaffoldPack(folder, options = {}) {
   }
   const kind = options.kind || 'checklist';
   if (!KINDS.includes(kind)) throw new Error(`kind "${kind}": one of ${KINDS.join(', ')}`);
+  if (kind !== 'derived' && options.from !== undefined) {
+    throw new Error('--from is for a derived pack (--kind derived)');
+  }
   const name = options.name || path.basename(path.resolve(folder));
   const namespace = options.namespace || namespaceOf(name);
   if (!NAMESPACE.test(namespace) || /^wcag/.test(namespace)) {
@@ -213,7 +308,7 @@ function scaffoldPack(folder, options = {}) {
   }
   const word = namespace.charAt(0).toUpperCase() + namespace.slice(1);
   const title =
-    options.title || (kind === 'standard' ? `${word} Standard` : `${word} accessibility policy`);
+    options.title || (kind === 'checklist' ? `${word} accessibility policy` : `${word} Standard`);
   // A title is a name on one line.
   const control = (c) => {
     const n = c.codePointAt(0);
@@ -225,9 +320,11 @@ function scaffoldPack(folder, options = {}) {
   if (fs.existsSync(folder) && fs.readdirSync(folder).length) {
     throw new Error(`${folder} is not empty`);
   }
-  const out = files({ name, namespace, title, kind });
+  const base = kind === 'derived' ? baseOf(options.from, options.cwd || process.cwd()) : null;
+  if (base && base.name === name) throw new Error(`name "${name}" is the base's: choose another`);
+  const out = files({ name, namespace, title, kind, base });
   // Nothing is written for a pack that wouldn't load, or that a scan would skip.
-  const problems = generatedProblems(out);
+  const problems = generatedProblems(out, base);
   if (problems.length) {
     throw new Error(`the pack would not be valid: ${problems.join('; ')}`);
   }

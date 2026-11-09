@@ -125,6 +125,8 @@ There is no switch to turn them on: they work as any other API does.
 
 The list is `src/experimental.js`, which `checkPack` and `describePacks` read.
 
+`surea11y-pack new --kind derived` (1.17.0, until 1.19.0) writes a pack that uses standard data, derivation and `uses`: the kind, and what it writes, may change with them.
+
 ## Explicitly unstable (not covered by semver)
 
 - **`src/profile-kit.js`**, the mapping a profile made with `npm run profile:new` uses inside this repository. It is not exported; a pack builds the same with `ruleMappedStandard()` from `@surea11y/core/pack`.

@@ -32,6 +32,8 @@ A pack's rules and profiles can use any of core's rules: a checklist or a standa
 npx -p @surea11y/core surea11y-pack new acme-a11y --name @acme/a11y-pack
 # or, for a standard:
 npx -p @surea11y/core surea11y-pack new city-standard --name @city/a11y-standard --kind standard --title "City Standard"
+# or, for a standard built on another pack's (installed first, here pack-rgaa):
+npx -p @surea11y/core surea11y-pack new city-raweb --name @city/raweb --kind derived --from @surea11y/pack-rgaa
 
 cd acme-a11y
 npm install
@@ -54,6 +56,7 @@ The pack works as generated: its tests pass, its rules lint clean, its examples 
 | `requirements.js`, `rule-map.js` | Standard only: the requirements and the rules that check each. |
 | `procedures.js`, `tests/procedures.test.js` | Standard only: how a person assesses each requirement by hand, and a test that every requirement has a procedure for each of its facets. |
 | `package.json` | `private`, with `@surea11y/core` as a peer dependency at the version that wrote it (`^<version>`, such as `^1.15.0`), and eslint, jsdom and Playwright as development dependencies. |
+| `standard-data.js`, `tests/standard.test.js` | Derived only, and the only files besides `index.js`, `README.md`, `package.json`, `eslint.config.js` and `.gitignore`: the standard derived from the base's data, the base as it is until you change it, and its tests ([A pack built on another pack](#a-pack-built-on-another-pack)). |
 | `README.md`, `.gitignore` | The pack's own guide to these files, and what git leaves out. |
 
 Its README walks through each file. The rest of this guide explains the choices behind them.
@@ -651,6 +654,10 @@ module.exports = definePack({
 - **Without `uses`**, a standard still maps only core's rules and its own: a rule two unrelated standards need belongs in core.
 
 `describePacks` lists what each pack uses (`uses`, as `name@version`).
+
+**Start one** with `surea11y-pack new <folder> --kind derived --from <base>` (experimental, as what it uses is), the base installed where you run it and its standard in the data format. It writes a pack that is the base as it is: `standard-data.js` derives every requirement of the base's latest version, with its tests and rule map, and has an empty table of changes (`OWN_ROWS`) with an example of each kind; `index.js` uses the base; core's range is `~`, and the base is a dependency at the version installed. Its tests check that the data is valid, that every row it doesn't change is the base's, and that the profile runs with the base and is skipped without it.
+
+**Test each difference on a page.** A derived standard changes its base's map where it asks something different: it drops a link, makes a failure a question, sends a reason code or a finding elsewhere. Give each change a page the base's row would get wrong, and the result the derived standard gives. A route by a field of the base pack's findings (`findings`, `when`) needs that page most: the field is the base pack's own, not one core keeps stable, and if it changes, the route matches nothing and the finding goes back to the row, silently. The page test fails instead.
 
 ## 6. Messages and languages
 
