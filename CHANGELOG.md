@@ -4,6 +4,10 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ## [Unreleased]
 
+### Added
+
+- **A pack built on another pack** (experimental until 1.19.0): `uses` names the packs a pack builds on, as the pack objects. Its standard maps their own rules by id, as it maps core's, and its profiles run them, so a standard derived from another (RAWeb from RGAA) uses its base pack's rules instead of copying them. A scan runs the pack only with those packs, at the version it was made with, and otherwise skips it, saying why in `skippedPacks`; `packScript` throws. `checkPack` refuses a circle, two versions of one pack, and an entry that isn't a valid pack, and `describePacks` lists `uses` ([`docs/PACKS.md`](./docs/PACKS.md#a-pack-built-on-another-pack)).
+
 ### Changed (experimental)
 
 - **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.

@@ -75,10 +75,62 @@ const PACK_KEYS = [
   'profiles',
   'rollups',
   'probes',
-  'dictionaries'
+  'dictionaries',
+  'uses'
 ];
 
 const isObject = (v) => !!v && typeof v === 'object' && !Array.isArray(v);
+
+// The packs a pack uses (pack.uses, experimental): those it names, then the
+// ones they use, each once, nearest first. A cycle stops the walk; usesProblems
+// reports it.
+function usedPacks(pack) {
+  const out = [];
+  const seen = new Set([pack]);
+  const walk = (p) => {
+    for (const used of Array.isArray(p.uses) ? p.uses : []) {
+      if (!isObject(used) || seen.has(used)) continue;
+      seen.add(used);
+      out.push(used);
+      walk(used);
+    }
+  };
+  walk(pack);
+  return out;
+}
+
+// What is wrong with pack.uses: not a list of packs, a pack that isn't
+// valid, one that is the pack itself or uses it back (a cycle), or two
+// versions of one pack along the chain.
+function usesProblems(pack) {
+  if (pack.uses === undefined) return [];
+  if (!Array.isArray(pack.uses)) return ['uses must be a list of the packs it builds on'];
+  // A cycle first: checking the packs of one would never end.
+  const chain = usedPacks(pack);
+  if (
+    pack.uses.includes(pack) ||
+    chain.some((p) => p.name === pack.name || usedPacks(p).includes(pack))
+  ) {
+    return ['uses goes round in a circle: a pack it uses uses it back, or is the pack itself'];
+  }
+  const problems = [];
+  pack.uses.forEach((used, i) => {
+    const at = `uses[${i}]`;
+    if (!isObject(used)) return problems.push(`${at} must be a pack, not ${JSON.stringify(used)}`);
+    const own = packProblems(used, false, false);
+    if (own.length)
+      problems.push(`${at} (${used.name || 'a pack'}) is not valid: ${own.join('; ')}`);
+  });
+  const byName = new Map();
+  for (const p of chain) {
+    const other = byName.get(p.name);
+    if (other && other.version !== p.version) {
+      problems.push(`uses reaches two versions of ${p.name}: ${other.version} and ${p.version}`);
+    }
+    byName.set(p.name, p);
+  }
+  return problems;
+}
 
 const ACTS = ['count', 'cantTell', 'fail', 'ignore'];
 
@@ -1122,6 +1174,7 @@ function packProblems(pack, withCoreVersion, withReported) {
       );
     }
   }
+  problems.push(...usesProblems(pack));
   // Core rules the pack's rules replace, by id (decision: explicit, never
   // inferred from a shared id).
   const overrides = Array.isArray(pack.overrides) ? pack.overrides : [];
@@ -1473,6 +1526,10 @@ function describePacks(packs) {
         ids(pack.variants)
       ),
       overrides,
+      // The packs it uses (experimental), as name@version.
+      ...(Array.isArray(pack.uses) && pack.uses.length
+        ? { uses: pack.uses.map(describePack) }
+        : {}),
       standard: standard
         ? {
             key: standard.key,
@@ -1591,9 +1648,13 @@ function standardRules(pack) {
       out.push({ ruleId: e.mod.id, wcagSc: (e.mod.meta && e.mod.meta.wcagSc) || [] });
     }
   }
-  for (const r of Array.isArray(pack.rules) ? pack.rules : []) {
-    if (isObject(r) && typeof r.id === 'string') {
-      out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+  // The pack's own rules, and those of the packs it uses (pack.uses), which
+  // its standard may map as it maps core's.
+  for (const p of [pack, ...usedPacks(pack)]) {
+    for (const r of Array.isArray(p.rules) ? p.rules : []) {
+      if (isObject(r) && typeof r.id === 'string') {
+        out.push({ ruleId: r.id, wcagSc: (isObject(r.meta) && r.meta.wcagSc) || [] });
+      }
     }
   }
   return out;
@@ -1712,10 +1773,22 @@ function prepareCatalog(packs) {
   const titled = new Map(
     packs.map((p) => [p, p.standard ? withTitleKeys(p.standard, p.namespace) : null])
   );
+  // A standard whose pack uses others (pack.uses) may map their rules: by
+  // its key, the rule tags of their standards.
+  const uses = {};
+  for (const p of packs) {
+    const st = standardOf(p);
+    const tags = usedPacks(p)
+      .map((u) => standardOf(u))
+      .filter((u) => u && u.ruleTag)
+      .map((u) => u.ruleTag);
+    if (st && tags.length) uses[st.key] = tags;
+  }
   const registry = createRegistry(
     builtIn.concat(
       packs.map((p) => (titled.get(p) ? titled.get(p).standard : standardOf(p))).filter(Boolean)
-    )
+    ),
+    { uses }
   );
   // A rule a pack lists in `overrides` takes the core rule's place: the meta
   // fields it doesn't give are the core rule's, so it runs where that rule
@@ -1933,7 +2006,8 @@ function preparePacks(list, { strict = false } = {}) {
     let problems = loadProblems(pack);
     if (!problems.length) {
       try {
-        prepareCatalog([pack]);
+        // With the packs it uses, whose rules it may run.
+        prepareCatalog([...usedPacks(pack).reverse(), pack]);
       } catch (e) {
         problems = [e && e.message ? e.message : String(e)];
       }
@@ -1965,6 +2039,22 @@ function preparePacks(list, { strict = false } = {}) {
     if (strict) throw packsError(TypeError, `engineOptions.packs: ${valid[i].name}: ${reason}`);
     skipped.push({ name: valid[i].name, reason });
     valid.splice(i--, 1);
+  }
+  // A pack that uses others runs only with them in the scan, at the version
+  // it was made with; otherwise it is skipped, and so is one that uses it.
+  for (let changed = true; changed;) {
+    changed = false;
+    for (let i = 0; i < valid.length; i++) {
+      const missing = (valid[i].uses || []).find(
+        (u) => !valid.some((p) => p.name === u.name && p.version === u.version)
+      );
+      if (!missing) continue;
+      const reason = `it uses ${describePack(missing)}, which this scan doesn't have: pass it in the same packs`;
+      if (strict) throw packsError(TypeError, `engineOptions.packs: ${valid[i].name}: ${reason}`);
+      skipped.push({ name: valid[i].name, reason });
+      valid.splice(i--, 1);
+      changed = true;
+    }
   }
   let catalog;
   try {

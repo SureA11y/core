@@ -156,7 +156,11 @@ function normalizeExclude(exclude) {
 // The registry's functions over a list of standards in registry order: the
 // built-in list below, or another one (core's standards and those a scan
 // adds). Each function reads only the list it was made with.
-function createRegistry(standards) {
+// `uses`: for a pack's standard that builds on other packs (pack.uses,
+// experimental), by its key, the rule tags of their standards, whose own
+// rules it may map by id.
+function createRegistry(standards, { uses = {} } = {}) {
+  const usedTags = (s) => (Object.prototype.hasOwnProperty.call(uses, s.key) ? uses[s.key] : []);
   // Whether s maps the rule from its own tables, by its id, rather than only
   // through the WCAG criteria the rule gives (as EN 301 549 maps every rule).
   function mapsById(s, id) {
@@ -346,7 +350,8 @@ function createRegistry(standards) {
   // A profile depends on core only, never on another profile: the rules a
   // standard maps, and the bases of its rules' variants, are core's or its own,
   // not another standard's opt-in rules. A rule two standards need belongs in
-  // core. Given every rule ([{ ruleId, wcagSc, tags, core, variantOf }]), the
+  // core, unless one pack builds on the other's (pack.uses): then its standard
+  // may map the rules of the packs it uses. Given every rule ([{ ruleId, wcagSc, tags, core, variantOf }]), the
   // problems. A core rule belongs to no standard, whatever its tags.
   function validateProfileIndependence(rules) {
     const byId = new Map(rules.map((r) => [r.ruleId, r]));
@@ -358,7 +363,7 @@ function createRegistry(standards) {
     for (const s of standards) {
       for (const r of rules) {
         const tag = ownerTag(r);
-        if (!tag || tag === s.ruleTag) continue;
+        if (!tag || tag === s.ruleTag || usedTags(s).includes(tag)) continue;
         // Only a standard naming the rule couples the two; one that maps every
         // rule by its WCAG criteria leaves another standard's rules out.
         if (mapsById(s, r.ruleId)) {
@@ -371,7 +376,7 @@ function createRegistry(standards) {
         if (!s.ruleTag || !r.variantOf || ownerTag(r) !== s.ruleTag) continue;
         const base = byId.get(r.variantOf);
         const tag = base && ownerTag(base);
-        if (tag && tag !== s.ruleTag) {
+        if (tag && tag !== s.ruleTag && !usedTags(s).includes(tag)) {
           problems.push(`${s.key}'s ${r.ruleId} is a variant of ${base.ruleId}, a rule of the standard tagged ${tag}`);
         }
       }

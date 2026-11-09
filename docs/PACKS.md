@@ -631,6 +631,27 @@ Only `name` and `jurisdiction` are required. Where a standard serves several law
 
 What it changes: results name the profile's law (`engine.law: { id, name, jurisdiction, lang }`, and `profiles[name].law` in a scan of several), the HTML report shows it beside the profile, `listProcedures({ profile })` lists only the requirements the profile's law asks for, and its head names the law. `lawOf(standard, id, locale)` from `@surea11y/core/pack` gives a law with its name in a language, and `describePacks` lists each standard's laws with the profiles that use them. In standard data, they are the top-level `laws` and `texts`, a profile's `law` and a requirement's `laws`. A standard derived from another doesn't inherit its laws or its requirements' `laws`: it names its own.
 
+### A pack built on another pack
+
+*Experimental ([`API_STABILITY.md`](./API_STABILITY.md#experimental-may-change-in-a-minor)).* A standard built on another, as RAWeb is on RGAA, takes its base's data with `deriveStandard`. When the base's pack has rules of its own, the new pack uses them too, rather than copying them: it names the packs it builds on in `uses`, and its standard maps their rules by id as it maps core's.
+
+```js
+const rgaa = require('@surea11y/pack-rgaa');
+
+module.exports = definePack({
+  name: '@acme/pack-raweb', version: '1.0.0', namespace: 'raweb', core: '~1.17.0',
+  uses: [rgaa],              // the pack itself, as installed (a dependency in package.json)
+  standard                   // its rule map may name rgaa-… rules, and its profiles run them
+});
+```
+
+- **The rules stay where they are.** A pack uses another's rules as it uses core's: it says which of its requirements each checks, and its profiles run them. It can't change them; where it judges differently, it maps their findings its own way or writes a rule of its own.
+- **A scan runs it only with them.** The packs it uses go in the same scan, `packs: [rgaa, raweb]` (in a page, one `packScript` call), at the version it was made with. Otherwise the scan skips it and says why in `skippedPacks` ("it uses @surea11y/pack-rgaa@1.1.0, which this scan doesn't have"), and skips the packs that use it too; `packScript` throws.
+- **A chain works.** A pack may use one that uses others; `checkPack` refuses a circle, two versions of one pack along the chain, and an entry that isn't a valid pack.
+- **Without `uses`**, a standard still maps only core's rules and its own: a rule two unrelated standards need belongs in core.
+
+`describePacks` lists what each pack uses (`uses`, as `name@version`).
+
 ## 6. Messages and languages
 
 Each text a rule shows has a key: `meta.i18n.titleKey` and `descriptionKey`, and the `summaryKey` and `hintKey` of its occurrences (with `{{name}}` placeholders filled from `params`; a single brace is shown as written). `i18n/<locale>.json` holds them per locale, and `dictionaries` in `index.js` lists the files:

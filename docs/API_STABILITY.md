@@ -121,6 +121,7 @@ There is no switch to turn them on: they work as any other API does.
 | Standard derivation | `deriveStandard` from `@surea11y/core/pack`, and the `basedOn` that results' entries carry from a standard's requirements and tests ([`PACKS.md`](./PACKS.md#5-group-results-checklist-items-or-requirements)). | 1.16.0 | 1.18.0 |
 | Standard texts | A standard's translations by id and version (`standard.texts`), its own review steps per version (`standard.reviewByVersion`), and, in standard data, `procedure`, `note`, `replace`, `notes`, `review` and `texts` ([`PACKS.md`](./PACKS.md#6-messages-and-languages)). | 1.16.0 | 1.18.0 |
 | Standard laws | The law each profile is used for, identified by name, jurisdiction and official texts (`standard.laws`, its name translated in `standard.lawTexts`), each profile's `law`, the `laws` a requirement is asked for under, `lawOf` from `@surea11y/core/pack`, results' `engine.law` and `profiles[name].law`, the report's law chip, `listProcedures`' `profile` option, and in standard data `laws`, top-level `texts`, a profile's `law` and a requirement's `laws` ([`PACKS.md`](./PACKS.md#the-law-a-profile-is-used-for)). | 1.16.0 | 1.18.0 |
+| Pack uses | A pack's `uses`: the packs it builds on, whose own rules its standard maps and its profiles run; a scan runs it only with them, at the version it was made with ([`PACKS.md`](./PACKS.md#a-pack-built-on-another-pack)). | 1.17.0 | 1.19.0 |
 
 The list is `src/experimental.js`, which `checkPack` and `describePacks` read.
 

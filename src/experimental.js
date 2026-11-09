@@ -112,6 +112,13 @@ const EXPERIMENTAL = [
     }
   },
   {
+    id: 'pack uses',
+    since: '1.17.0',
+    until: '1.19.0',
+    what: "A pack's uses: the packs it builds on, whose rules its standard maps and its profiles run; a scan runs it only with them, at the version it was made with.",
+    usedBy: (pack) => Array.isArray(pack && pack.uses) && pack.uses.length > 0
+  },
+  {
     id: 'ruleMappedStandard tests',
     since: '1.16.0',
     until: '1.18.0',
