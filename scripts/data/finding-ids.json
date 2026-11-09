@@ -113,6 +113,7 @@
     "page-has-heading-one",
     "page-title-patterns",
     "page-title-present",
+    "page-zones-landmark",
     "password-paste-enabled",
     "presentation-role-conflict",
     "presentational-children-focusable-absent",
@@ -641,6 +642,12 @@
     "page-title-present": [
       "emptyTitleText",
       "missingTitleElement"
+    ],
+    "page-zones-landmark": [
+      "BANNER_NOT_EXPOSED",
+      "CONTENTINFO_NOT_EXPOSED",
+      "NAVIGATION_NOT_EXPOSED",
+      "SEARCH_NOT_EXPOSED"
     ],
     "password-paste-enabled": [
       "PASTE_CANCELLED",

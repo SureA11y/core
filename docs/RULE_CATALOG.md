@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**145 rules total: 86 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 59 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
+**146 rules total: 86 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -103,7 +103,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (59), never `fail`
+## Manual rules (60), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -154,6 +154,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`p-as-heading`](#p-as-heading) | Text styled to look like a heading should probably be a real heading | 1.3.1 | A | low | minor |
 | [`page-has-heading-one`](#page-has-heading-one) | Page should have a level-one heading | — | — | medium | minor |
 | [`page-title-patterns`](#page-title-patterns) | Page title patterns that may be insufficiently descriptive | 2.4.2 | A | medium | minor |
+| [`page-zones-landmark`](#page-zones-landmark) | The page's header, navigation, search and footer are landmarks | — | — | medium | minor |
 | [`password-paste-enabled`](#password-paste-enabled) | Authentication fields must not block pasting | 3.3.8 | AA | medium | serious |
 | [`presentation-role-conflict`](#presentation-role-conflict) | Presentational role must not conflict with a global ARIA attribute or focusability | — | — | medium | minor |
 | [`region`](#region) | Page content should be inside a landmark region | — | — | medium | minor |
@@ -3041,6 +3042,33 @@ Checks that the page includes a non-empty &lt;title&gt; element.
 |---|---|---|---|
 | `missingTitleElement` | fail | The page has no &lt;title&gt; element. | WCAG 2.4.2; ACT 2779a5; H25 |
 | `emptyTitleText` | fail | The page has a &lt;title&gt; element, but its text is empty or only whitespace. | WCAG 2.4.2; ACT 2779a5; H25 |
+
+### `page-zones-landmark`
+
+**The page's header, navigation, search and footer are landmarks**
+
+manual · no formal WCAG SC mapping · confidence medium · default severity minor
+
+Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.
+
+**Applies to.** Applies to a whole page, not a fragment, a scoped scan or a document in a frame, while no modal dialog is open. It looks at the visible blocks that name themselves a page zone by their id or class (header, masthead, banner, nav, navigation, menu, footer, and their French, German and Spanish names), at search forms (a form with a search field, or one named q, s, search or query), and at the page's first &lt;header&gt; and last &lt;footer&gt;. A page with none of them is notApplicable.
+
+**Expectation.** Each zone is exposed as the landmark of its nature, by its element or a role: the header as banner, a navigation as navigation, the search as search, the footer as contentinfo. A zone inside or around an element with that role is exposed. The page header and footer are asked about only when the page exposes no banner, or no contentinfo, at all. Whether a block is that zone is for a person, so the rule only asks.
+
+**What a finding reports.**
+
+- `zone`: banner, navigation, search or contentinfo, the role the zone would have.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `BANNER_NOT_EXPOSED` | cantTell | The page exposes no banner, and a block named as its header is not a &lt;header&gt; and has no role="banner". | WCAG 1.3.1 (not settled); ARIA11; WAI-ARIA 1.2 banner role (best practice) |
+| `HEADER_NESTED` | cantTell | The page exposes no banner, and its first &lt;header&gt; is inside an &lt;article&gt;, &lt;aside&gt;, &lt;main&gt;, &lt;nav&gt; or &lt;section&gt;, where it is not a banner. | WCAG 1.3.1 (not settled); ARIA11; HTML-AAM header (best practice) |
+| `NAVIGATION_NOT_EXPOSED` | cantTell | A block named as a navigation, with two links or more, is not a &lt;nav&gt; and has no role="navigation". | WCAG 1.3.1 (not settled); ARIA11; WAI-ARIA 1.2 navigation role (best practice) |
+| `SEARCH_NOT_EXPOSED` | cantTell | A search form is not in a &lt;search&gt; and has no role="search". | WCAG 1.3.1 (not settled); ARIA11; WAI-ARIA 1.2 search role (best practice) |
+| `CONTENTINFO_NOT_EXPOSED` | cantTell | The page exposes no contentinfo, and a block named as its footer is not a &lt;footer&gt; and has no role="contentinfo". | WCAG 1.3.1 (not settled); ARIA11; WAI-ARIA 1.2 contentinfo role (best practice) |
+| `FOOTER_NESTED` | cantTell | The page exposes no contentinfo, and its last &lt;footer&gt; is inside an &lt;article&gt;, &lt;aside&gt;, &lt;main&gt;, &lt;nav&gt; or &lt;section&gt;, where it is not a contentinfo. | WCAG 1.3.1 (not settled); ARIA11; HTML-AAM footer (best practice) |
 
 ### `password-paste-enabled`
 

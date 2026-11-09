@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>page-zones-landmark — scenario fixture (CANTTELL case)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; line-height: 1.4; margin: 24px; }
+    h1 { font-size: 20px; margin: 0 0 16px; }
+    .note { font-size: 12px; opacity: 0.85; margin: 8px 0 16px; }
+    .case-title { font-weight: 700; margin: 0 0 8px; }
+  </style>
+</head>
+<body>
+  <div class="case-title">01 — CANTTELL: a page whose header, navigation, search and footer are blocks named as such, none of them a landmark</div>
+  <div id="pzl_case_01a" class="site-header">
+    <a href="/">Example site</a>
+    <ul id="pzl_case_01b" class="menu">
+      <li><a href="/news">News</a></li>
+      <li><a href="/contact">Contact</a></li>
+    </ul>
+    <form id="pzl_case_01c" action="/search"><label>Search <input type="search" name="q"></label></form>
+  </div>
+  <main>
+    <h1>Scenario fixture: <code>page-zones-landmark</code></h1>
+    <p class="note">
+      A whole-document rule: one page, so one outcome. The header, the navigation, the
+      search form and the footer are each asked about (BANNER_NOT_EXPOSED,
+      NAVIGATION_NOT_EXPOSED, SEARCH_NOT_EXPOSED, CONTENTINFO_NOT_EXPOSED). A page whose
+      zones are landmarks (pass), a page with none of them (notApplicable), and a page header
+      or footer nested in a section (HEADER_NESTED, FOOTER_NESTED) are covered by the inline
+      tests in this rule's <code>.test.js</code> file.
+    </p>
+  </main>
+  <div id="pzl_case_01d" class="footer">© Example</div>
+</body>
+</html>

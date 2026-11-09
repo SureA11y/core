@@ -1098,6 +1098,21 @@ const PROCEDURES = {
         'landmark-unique': ['LANDMARK_NOT_UNIQUE']
       }
     },
+    'page-zones-landmarks': {
+      label: "The page's header, navigations, search and footer are landmarks",
+      automation: 'partial',
+      tools: ['screen-reader', 'devtools'],
+      variants: {
+        'page-zones-landmark': [
+          'BANNER_NOT_EXPOSED',
+          'HEADER_NESTED',
+          'NAVIGATION_NOT_EXPOSED',
+          'SEARCH_NOT_EXPOSED',
+          'CONTENTINFO_NOT_EXPOSED',
+          'FOOTER_NESTED'
+        ]
+      }
+    },
     'content-in-landmarks': {
       label: 'All content is inside a landmark',
       automation: 'partial',

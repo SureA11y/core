@@ -1,7 +1,7 @@
 {
   "summary": {
-    "total": 145,
-    "withFixture": 142,
+    "total": 146,
+    "withFixture": 143,
     "withoutFixture": 3
   },
   "rows": [
@@ -2082,6 +2082,23 @@
         "PASS": 0,
         "FAIL": 1,
         "CANTTELL": 0,
+        "OTHER": 0
+      }
+    },
+    {
+      "ruleId": "page-zones-landmark",
+      "title": "The page's header, navigation, search and footer are landmarks",
+      "type": "manual",
+      "wcagSc": [],
+      "ruleFile": "src/checks/manual/page-zones-landmark-manual.js",
+      "testFile": "tests/engine-checks/manual/page-zones-landmark.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/page-zones-landmark-all-scenarios.html",
+      "totalCases": 1,
+      "caseCounts": {
+        "PASS": 0,
+        "FAIL": 0,
+        "CANTTELL": 1,
         "OTHER": 0
       }
     },
