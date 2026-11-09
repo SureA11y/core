@@ -101,7 +101,7 @@ const EXPERIMENTAL = [
     id: 'standard laws',
     since: '1.16.0',
     until: '1.18.0',
-    what: "The laws a standard is assessed under (standard.laws, standard.lawTexts), the law of each profile, the laws a requirement is asked for under, lawOf, results' engine.law and listProcedures' profile option.",
+    what: "The law each profile is used for, identified by name, jurisdiction and official texts (standard.laws, standard.lawTexts), the law of each profile, the laws a requirement is asked for under, lawOf, results' engine.law and listProcedures' profile option.",
     usedBy: (pack) => {
       const st = pack && pack.standard;
       if (!isObject(st)) return false;

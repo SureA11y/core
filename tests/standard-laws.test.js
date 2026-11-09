@@ -35,10 +35,6 @@ const LAWS = {
   'city-public': {
     name: 'City Public Act',
     jurisdiction: 'FR',
-    appliesTo: 'Public bodies',
-    exemptions: ['Archives', 'Third-party content'],
-    since: '2005-02-11',
-    enforcement: ['The regulator'],
     sources: [{ title: 'Official journal', url: 'https://example.org/act' }]
   },
   'city-private': { name: 'City Private Act', jurisdiction: 'EU' }
@@ -107,9 +103,11 @@ test('checkPack reports what is wrong with a law, a reference to one and its tra
     problems({ laws: { ...LAWS, 'city-public': { ...LAWS['city-public'], ...law } } });
   assert.match(bad({ name: '' }).join('\n'), /city-public\.name must be a non-empty string/);
   assert.match(bad({ jurisdiction: 'France' }).join('\n'), /jurisdiction must be a country/);
-  assert.match(bad({ since: '2005-02-30' }).join('\n'), /since must be a date/);
-  assert.match(bad({ exemptions: [] }).join('\n'), /exemptions must be a non-empty list/);
-  assert.match(bad({ extra: 1 }).join('\n'), /no field "extra"/);
+  // A law is identified, not documented: no field beyond name, jurisdiction
+  // and sources.
+  for (const field of ['appliesTo', 'exemptions', 'enforcement', 'since', 'extra']) {
+    assert.match(bad({ [field]: 'x' }).join('\n'), new RegExp(`no field "${field}"`));
+  }
   for (const url of ['http://example.org', 'javascript:alert(1)', 'https//x', 'ftp://x']) {
     assert.match(
       bad({ sources: [{ title: 'T', url }] }).join('\n'),
@@ -133,10 +131,10 @@ test('checkPack reports what is wrong with a law, a reference to one and its tra
   const texts = (dict) => problems({ lawTexts: dict }).join('\n');
   assert.match(
     texts({ fr: { 'laws.city-public.title': 'x' } }),
-    /is no text of the standard's laws/
+    /is not the name of one of the standard's laws/
   );
-  assert.match(texts({ fr: { 'laws.nope.name': 'x' } }), /is no text of the standard's laws/);
-  assert.match(texts({ fr: { 'laws.city-public.exemptions': ['un'] } }), /list of 2 texts/);
+  assert.match(texts({ fr: { 'laws.nope.name': 'x' } }), /is not the name of one/);
+  assert.match(texts({ fr: { 'laws.city-public.name': '' } }), /must be a non-empty string/);
   assert.match(texts({ en: { 'laws.city-public.name': 'x' } }), /needs no translation into it/);
   assert.match(texts({ 'not a tag': {} }), /is not a language tag/);
   assert.equal(texts({ fr: { 'laws.city-public.name': 'Loi publique' } }), '');
@@ -155,8 +153,7 @@ test('lawOf reads a law in a language, its base language, or as written', () => 
   const st = cityPack({
     lawTexts: {
       fr: {
-        'laws.city-public.name': 'Loi publique',
-        'laws.city-public.exemptions': ['Archives', 'Contenus tiers']
+        'laws.city-public.name': 'Loi publique'
       }
     }
   }).standard;
@@ -167,14 +164,11 @@ test('lawOf reads a law in a language, its base language, or as written', () => 
   assert.deepEqual(en.sources, LAWS['city-public'].sources);
   const fr = lawOf(st, 'city-public', 'fr-CA');
   assert.equal(fr.name, 'Loi publique');
-  assert.deepEqual(fr.exemptions, ['Archives', 'Contenus tiers']);
-  // appliesTo and enforcement are untranslated: the law says which is which.
-  assert.equal(fr.appliesTo, 'Public bodies');
-  assert.equal(fr.lang, 'en');
-  assert.deepEqual(fr.langs, { name: 'fr', appliesTo: 'en', exemptions: 'fr', enforcement: 'en' });
+  assert.equal(fr.lang, 'fr');
+  assert.deepEqual(Object.keys(fr).sort(), ['id', 'jurisdiction', 'lang', 'name', 'sources']);
   // Its result is a copy: changing it changes no standard.
-  fr.exemptions.push('x');
-  assert.equal(lawOf(st, 'city-public', 'fr').exemptions.length, 2);
+  fr.sources.push({ title: 'x', url: 'https://x.example' });
+  assert.equal(lawOf(st, 'city-public', 'fr').sources.length, 1);
   assert.equal(lawOf(st, 'nope', 'fr'), null);
   assert.equal(lawOf(null, 'city-public'), null);
 });
@@ -332,7 +326,7 @@ test("checkStandardData and the schema refuse a wrong law, in the data's own ter
   assert.match(out, /^laws\.city-public\.sources\[0\]\.url must be an https/m);
   assert.match(out, /^profiles\.city-1\.law names no law/m);
   assert.match(out, /^data\.1\.requirements\.B\.laws names no law/m);
-  assert.match(out, /^texts\.fr: laws\.city-public\.title is no text/m);
+  assert.match(out, /^texts\.fr: laws\.city-public\.title is not the name of one/m);
   assert.throws(() => standardFromData(bad), /https/);
   assert.equal(validateSchema(bad), false);
   // A profile naming a law in data with no laws at all.
