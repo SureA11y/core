@@ -332,6 +332,12 @@ export interface Pack {
   probes?: Record<string, { description: string; readBy?: string[] }>;
   /** Messages of its own keys, per locale; English is the fallback. */
   dictionaries?: Record<string, Record<string, string>>;
+  /**
+   * The packs it builds on: its standard may map their own rules, and its
+   * profiles run them. A scan runs it only with them, at these versions.
+   * @experimental Until 1.19.0 (docs/API_STABILITY.md).
+   */
+  uses?: Pack[];
 }
 
 /**
@@ -352,6 +358,8 @@ export interface PackDescription {
   rules: string[];
   variants: string[];
   overrides: string[];
+  /** The packs it uses, as name@version. @experimental Until 1.19.0. */
+  uses?: string[];
   standard: {
     key: string;
     standard: string;
