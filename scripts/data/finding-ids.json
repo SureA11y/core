@@ -646,6 +646,8 @@
     "page-zones-landmark": [
       "BANNER_NOT_EXPOSED",
       "CONTENTINFO_NOT_EXPOSED",
+      "FOOTER_NESTED",
+      "HEADER_NESTED",
       "NAVIGATION_NOT_EXPOSED",
       "SEARCH_NOT_EXPOSED"
     ],

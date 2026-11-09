@@ -72,7 +72,17 @@ const meta = {
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: {}
+  coverage: {},
+  // Given through ask(), so read from here: the scenario page shows one
+  // page, which can't reach the nested header and footer.
+  reasonCodes: [
+    'BANNER_NOT_EXPOSED',
+    'HEADER_NESTED',
+    'NAVIGATION_NOT_EXPOSED',
+    'SEARCH_NOT_EXPOSED',
+    'CONTENTINFO_NOT_EXPOSED',
+    'FOOTER_NESTED'
+  ]
 };
 
 // The page's structure: a fragment, a scoped scan, a framed document or a page
