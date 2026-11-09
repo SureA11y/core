@@ -1154,6 +1154,11 @@
       ]
     }
   },
+  "page-zones-landmark": {
+    "prefix": "pageZonesLandmark",
+    "criteria": [],
+    "facets": {}
+  },
   "password-paste-enabled": {
     "prefix": "passwordPasteEnabled",
     "criteria": [

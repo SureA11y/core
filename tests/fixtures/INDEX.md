@@ -4,7 +4,7 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **145**. With fixture: **142**. Without fixture: **3**.
+Total rules: **146**. With fixture: **143**. Without fixture: **3**.
 
 ## Rules WITHOUT a fixture (3)
 
@@ -14,7 +14,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 
-## Rules WITH a fixture (142)
+## Rules WITH a fixture (143)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -127,6 +127,7 @@ Total rules: **145**. With fixture: **142**. Without fixture: **3**.
 | page-has-heading-one | manual | `tests/fixtures/page-has-heading-one-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-patterns | manual | `tests/fixtures/page-title-patterns-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | page-title-present | automatic | `tests/fixtures/page-title-present-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
+| page-zones-landmark | manual | `tests/fixtures/page-zones-landmark-all-scenarios.html` | 1 | 0 | 0 | 1 | 0 |
 | password-paste-enabled | manual | `tests/fixtures/password-paste-enabled-all-scenarios.html` | 14 | 0 | 0 | 8 | 6 |
 | presentation-role-conflict | manual | `tests/fixtures/presentation-role-conflict-all-scenarios.html` | 15 | 5 | 0 | 8 | 2 |
 | presentational-children-focusable-absent | automatic | `tests/fixtures/presentational-children-focusable-absent-all-scenarios.html` | 14 | 6 | 6 | 0 | 2 |

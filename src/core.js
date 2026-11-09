@@ -34501,6 +34501,45 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "page-zones-landmark",
+    "title": "The page's header, navigation, search and footer are landmarks",
+    "description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
+    "i18n": {
+      "titleKey": "pageZonesLandmark_title",
+      "descriptionKey": "pageZonesLandmark_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.16.1/docs/RULE_CATALOG.md#page-zones-landmark",
+    "tags": [
+      "best-practice",
+      "landmarks",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
     "ruleId": "password-paste-enabled",
     "title": "Authentication fields must not block pasting",
     "description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would take away the password manager or clipboard that spares users from remembering or retyping it.",
@@ -38246,6 +38285,7 @@ const RUNTIME_CATALOG = {
   "page-has-heading-one": { run: require("./checks/manual/page-has-heading-one-manual.js").runInPage, applicability: require("./checks/manual/page-has-heading-one-manual.js").applicability || null },
   "page-title-patterns": { run: require("./checks/manual/page-title-patterns-manual.js").runInPage, applicability: require("./checks/manual/page-title-patterns-manual.js").applicability || null },
   "page-title-present": { run: require("./checks/automatic/page-title-present.js").runInPage, applicability: require("./checks/automatic/page-title-present.js").applicability || null },
+  "page-zones-landmark": { run: require("./checks/manual/page-zones-landmark-manual.js").runInPage, applicability: require("./checks/manual/page-zones-landmark-manual.js").applicability || null },
   "password-paste-enabled": { run: require("./checks/manual/password-paste-enabled-manual.js").runInPage, applicability: require("./checks/manual/password-paste-enabled-manual.js").applicability || null },
   "presentation-role-conflict": { run: require("./checks/manual/presentation-role-conflict-manual.js").runInPage, applicability: require("./checks/manual/presentation-role-conflict-manual.js").applicability || null },
   "presentational-children-focusable-absent": { run: require("./checks/automatic/presentational-children-focusable-absent.js").runInPage, applicability: require("./checks/automatic/presentational-children-focusable-absent.js").applicability || null },
@@ -38459,6 +38499,20 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt wie eine Vorlage und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
+      "pageZonesLandmark_title": "Kopfbereich, Navigation, Suche und Fußbereich der Seite sind Landmarken",
+      "pageZonesLandmark_description": "Fragt nach Blöcken, die sich als Kopfbereich der Seite, als Navigation oder als Fußbereich bezeichnen, und nach Suchformularen, die nicht als Landmarke ihrer Art bereitgestellt sind, sowie nach einem Kopf- oder Fußbereich, der so verschachtelt ist, dass er seine Landmarke verliert.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Dieser Block ist als Kopfbereich der Seite bezeichnet, aber die Seite hat keine banner-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "Wenn er der Kopfbereich der Seite ist, verwenden Sie ein <header> außerhalb jedes Abschnitts oder geben Sie ihm role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Dieses <header> liegt in einem Abschnitt und ist daher keine banner-Landmarke, und die Seite hat keine.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "Wenn es der Kopfbereich der Seite ist, nehmen Sie es aus dem Abschnitt heraus oder geben Sie ihm role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Dieser Block ist als Navigation bezeichnet, ist aber keine navigation-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "Wenn er eine Navigation der Seite ist, verwenden Sie ein <nav> oder geben Sie ihm role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Dieses Suchformular ist keine search-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "Wenn es die Website durchsucht, setzen Sie es in ein <search> oder geben Sie ihm role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Dieser Block ist als Fußbereich der Seite bezeichnet, aber die Seite hat keine contentinfo-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "Wenn er der Fußbereich der Seite ist, verwenden Sie ein <footer> außerhalb jedes Abschnitts oder geben Sie ihm role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Dieses <footer> liegt in einem Abschnitt und ist daher keine contentinfo-Landmarke, und die Seite hat keine.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "Wenn es der Fußbereich der Seite ist, nehmen Sie es aus dem Abschnitt heraus oder geben Sie ihm role=\"contentinfo\".",
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
       "contrastComputable_pass_allComputable": "Der Kontrast ist für den gesamten für die Prüfung berücksichtigten Text berechenbar ({{eligibleTextCount}} Textknoten).",
@@ -39816,6 +39870,20 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title looks like a template and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
+      "pageZonesLandmark_title": "The page's header, navigation, search and footer are landmarks",
+      "pageZonesLandmark_description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "This block is named as the page header, but the page has no banner landmark.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "If it is the page header, use a <header> outside any section, or give it role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "This <header> is inside a section, so it is not a banner landmark, and the page has none.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "If it is the page header, move it out of the section, or give it role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "This block is named as a navigation, but it is not a navigation landmark.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "If it is a navigation of the page, use a <nav>, or give it role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "This search form is not a search landmark.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "If it searches the site, put it in a <search>, or give it role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "This block is named as the page footer, but the page has no contentinfo landmark.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "If it is the page footer, use a <footer> outside any section, or give it role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "This <footer> is inside a section, so it is not a contentinfo landmark, and the page has none.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "If it is the page footer, move it out of the section, or give it role=\"contentinfo\".",
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute the color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
       "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
@@ -41173,6 +41241,20 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece una plantilla y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
+      "pageZonesLandmark_title": "La cabecera, la navegación, la búsqueda y el pie de la página son regiones de referencia",
+      "pageZonesLandmark_description": "Pregunta por los bloques que se nombran cabecera de la página, navegación o pie, y por los formularios de búsqueda, que no se exponen como la región de referencia de su naturaleza, y por una cabecera o un pie anidados donde pierden su región de referencia.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Este bloque se nombra como la cabecera de la página, pero la página no tiene región de referencia banner.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "Si es la cabecera de la página, usar un <header> fuera de toda sección, o darle role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Este <header> está dentro de una sección, así que no es una región de referencia banner, y la página no tiene ninguna.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "Si es la cabecera de la página, sacarlo de la sección, o darle role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Este bloque se nombra como una navegación, pero no es una región de referencia navigation.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "Si es una navegación de la página, usar un <nav>, o darle role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Este formulario de búsqueda no es una región de referencia search.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "Si busca en el sitio, ponerlo en un <search>, o darle role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Este bloque se nombra como el pie de la página, pero la página no tiene región de referencia contentinfo.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "Si es el pie de la página, usar un <footer> fuera de toda sección, o darle role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Este <footer> está dentro de una sección, así que no es una región de referencia contentinfo, y la página no tiene ninguna.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "Si es el pie de la página, sacarlo de la sección, o darle role=\"contentinfo\".",
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
       "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
@@ -42530,6 +42612,20 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page ressemble à un modèle et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
+      "pageZonesLandmark_title": "L’en-tête, la navigation, la recherche et le pied de page sont des points de repère",
+      "pageZonesLandmark_description": "Signale les blocs qui se nomment en-tête de la page, navigation ou pied de page, et les formulaires de recherche, qui ne sont pas exposés comme le point de repère de leur nature, ainsi qu’un en-tête ou un pied de page imbriqué là où il perd son point de repère.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Ce bloc est nommé comme l’en-tête de la page, mais la page n’a pas de point de repère banner.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "S’il s’agit de l’en-tête de la page, utilisez un <header> hors de toute section, ou donnez-lui role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Ce <header> est dans une section : il n’est donc pas un point de repère banner, et la page n’en a aucun.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "S’il s’agit de l’en-tête de la page, sortez-le de la section, ou donnez-lui role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Ce bloc est nommé comme une navigation, mais il n’est pas un point de repère navigation.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "S’il s’agit d’une navigation de la page, utilisez un <nav>, ou donnez-lui role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Ce formulaire de recherche n’est pas un point de repère search.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "S’il recherche dans le site, placez-le dans un <search>, ou donnez-lui role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Ce bloc est nommé comme le pied de page, mais la page n’a pas de point de repère contentinfo.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "S’il s’agit du pied de page, utilisez un <footer> hors de toute section, ou donnez-lui role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Ce <footer> est dans une section : il n’est donc pas un point de repère contentinfo, et la page n’en a aucun.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "S’il s’agit du pied de page, sortez-le de la section, ou donnez-lui role=\"contentinfo\".",
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste des couleurs du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
       "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
@@ -43887,6 +43983,20 @@ const RUNTIME_CATALOG = {
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがひな形のように見え、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
+      "pageZonesLandmark_title": "ページのヘッダー、ナビゲーション、検索、フッターがランドマークになっている",
+      "pageZonesLandmark_description": "ページのヘッダー、ナビゲーション、フッターと名付けられたブロックや検索フォームが、その種類のランドマークとして公開されていない場合と、ヘッダーやフッターがランドマークを失う位置に入れ子になっている場合について確認を求めます。",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "このブロックはページのヘッダーと名付けられていますが、ページに banner ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "ページのヘッダーであれば、どのセクションの外にも <header> を使うか、role=\"banner\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_headerNested": "この <header> はセクションの中にあるため banner ランドマークにならず、ページに banner ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_headerNested": "ページのヘッダーであれば、セクションの外に出すか、role=\"banner\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "このブロックはナビゲーションと名付けられていますが、navigation ランドマークではありません。",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "ページのナビゲーションであれば、<nav> を使うか、role=\"navigation\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "この検索フォームは search ランドマークではありません。",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "サイト内を検索するものであれば、<search> の中に置くか、role=\"search\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "このブロックはページのフッターと名付けられていますが、ページに contentinfo ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "ページのフッターであれば、どのセクションの外にも <footer> を使うか、role=\"contentinfo\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_footerNested": "この <footer> はセクションの中にあるため contentinfo ランドマークにならず、ページに contentinfo ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_footerNested": "ページのフッターであれば、セクションの外に出すか、role=\"contentinfo\" を指定してください。",
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
       "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
@@ -45314,6 +45424,7 @@ const RULE_MODULES = [
   "./checks/manual/page-has-heading-one-manual.js",
   "./checks/manual/page-title-patterns-manual.js",
   "./checks/automatic/page-title-present.js",
+  "./checks/manual/page-zones-landmark-manual.js",
   "./checks/manual/password-paste-enabled-manual.js",
   "./checks/manual/presentation-role-conflict-manual.js",
   "./checks/automatic/presentational-children-focusable-absent.js",
@@ -53567,6 +53678,45 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ]
       }
     },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null
+  },
+  {
+    "ruleId": "page-zones-landmark",
+    "title": "The page's header, navigation, search and footer are landmarks",
+    "description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
+    "i18n": {
+      "titleKey": "pageZonesLandmark_title",
+      "descriptionKey": "pageZonesLandmark_description"
+    },
+    "helpUrl": "https://github.com/SureA11y/core/blob/v1.16.1/docs/RULE_CATALOG.md#page-zones-landmark",
+    "tags": [
+      "best-practice",
+      "landmarks",
+      "structure",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [],
+    "normativeMappings": [],
+    "defaultSeverity": "minor",
+    "defaultConfidence": "medium",
+    "type": "manual",
+    "coverage": {},
     "data": null,
     "ruleInterfaceVersion": "1.0.0",
     "ruleVersion": "0.0.0",
@@ -90891,6 +91041,269 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   if (helpers.isTopLevelDocument && !helpers.isTopLevelDocument()) return false;
   return helpers.isWholeDocumentScope ? helpers.isWholeDocumentScope() : true;
 }) },
+    "page-zones-landmark": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { document, helpers, rule } = ctx;
+
+  const norm = (v) =>
+    String(v == null ? '' : v)
+      .replace(/\s+/g, ' ')
+      .trim();
+  const tagOf = (el) => String(dom.localName(el) || '').toLowerCase();
+  const roleOf = (el) => {
+    try {
+      return helpers.getLandmarkRole(el, ctx) || '';
+    } catch {
+      return '';
+    }
+  };
+  const visible = (el) => {
+    try {
+      return !!helpers.isDomVisibleEligible(el, ctx, { targetSet: 'dom' }).eligible;
+    } catch {
+      return true;
+    }
+  };
+  const exposed = (el) => {
+    try {
+      const r = helpers.isAccTreeEligible(el, ctx);
+      return typeof r === 'boolean' ? r : !!(r && r.eligible);
+    } catch {
+      return true;
+    }
+  };
+
+  // The zone a block names itself, from the tokens of its id and class.
+  const NAMES = {
+    banner: [
+      'header',
+      'masthead',
+      'banner',
+      'site-header',
+      'page-header',
+      'en-tete',
+      'entete',
+      'kopf',
+      'kopfzeile',
+      'cabecera'
+    ],
+    navigation: [
+      'nav',
+      'navigation',
+      'navbar',
+      'menu',
+      'main-menu',
+      'primary-menu',
+      'site-nav',
+      'site-navigation',
+      'main-nav',
+      'menu-principal',
+      'hauptmenu',
+      'navegacion'
+    ],
+    contentinfo: [
+      'footer',
+      'site-footer',
+      'page-footer',
+      'pied',
+      'pied-de-page',
+      'piedpage',
+      'fusszeile',
+      'pie',
+      'pie-de-pagina'
+    ]
+  };
+  function zoneNamed(el) {
+    const tokens = norm(
+      `${dom.getAttribute(el, 'id') || ''} ${dom.getAttribute(el, 'class') || ''}`
+    )
+      .toLowerCase()
+      .split(' ')
+      .filter(Boolean);
+    for (const zone of ['banner', 'navigation', 'contentinfo']) {
+      if (tokens.some((t) => NAMES[zone].includes(t))) return zone;
+    }
+    return '';
+  }
+
+  const isSearchField = (input) => {
+    const type = norm(dom.getAttribute(input, 'type')).toLowerCase();
+    const name = norm(dom.getAttribute(input, 'name')).toLowerCase();
+    return type === 'search' || ['q', 's', 'search', 'query'].includes(name);
+  };
+
+  // An element with the role, the block itself, an ancestor or a descendant.
+  function hasRoleAround(el, role) {
+    if (roleOf(el) === role) return true;
+    for (let a = dom.parentElement(el); a; a = dom.parentElement(a)) {
+      if (roleOf(a) === role) return true;
+    }
+    return [...dom.querySelectorAll(el, helpers.landmarkCandidateSelector)].some(
+      (d) => roleOf(d) === role
+    );
+  }
+
+  const all = [...dom.querySelectorAll(document, helpers.landmarkCandidateSelector)];
+  const pageHas = (role) => all.some((el) => roleOf(el) === role && exposed(el));
+
+  const SECTIONING = new Set(['article', 'aside', 'main', 'nav', 'section']);
+  function nested(el) {
+    for (let a = dom.parentElement(el); a; a = dom.parentElement(a)) {
+      if (SECTIONING.has(tagOf(a))) return true;
+    }
+    return false;
+  }
+
+  const MESSAGES = {
+    BANNER_NOT_EXPOSED: [
+      'This block is named as the page header, but the page has no banner landmark.',
+      'If it is the page header, use a <header> outside any section, or give it role="banner".'
+    ],
+    HEADER_NESTED: [
+      'This <header> is inside a section, so it is not a banner landmark, and the page has none.',
+      'If it is the page header, move it out of the section, or give it role="banner".'
+    ],
+    NAVIGATION_NOT_EXPOSED: [
+      'This block is named as a navigation, but it is not a navigation landmark.',
+      'If it is a navigation of the page, use a <nav>, or give it role="navigation".'
+    ],
+    SEARCH_NOT_EXPOSED: [
+      'This search form is not a search landmark.',
+      'If it searches the site, put it in a <search>, or give it role="search".'
+    ],
+    CONTENTINFO_NOT_EXPOSED: [
+      'This block is named as the page footer, but the page has no contentinfo landmark.',
+      'If it is the page footer, use a <footer> outside any section, or give it role="contentinfo".'
+    ],
+    FOOTER_NESTED: [
+      'This <footer> is inside a section, so it is not a contentinfo landmark, and the page has none.',
+      'If it is the page footer, move it out of the section, or give it role="contentinfo".'
+    ]
+  };
+  const ZONE_OF = {
+    BANNER_NOT_EXPOSED: 'banner',
+    HEADER_NESTED: 'banner',
+    NAVIGATION_NOT_EXPOSED: 'navigation',
+    SEARCH_NOT_EXPOSED: 'search',
+    CONTENTINFO_NOT_EXPOSED: 'contentinfo',
+    FOOTER_NESTED: 'contentinfo'
+  };
+
+  const occurrences = [];
+  const reported = new Set();
+  let applicable = 0;
+  function ask(el, code) {
+    if (reported.has(el)) return;
+    reported.add(el);
+    const key = code.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    occurrences.push(
+      helpers.reportOccurrence(el, {
+        summary: MESSAGES[code][0],
+        hint: MESSAGES[code][1],
+        i18n: {
+          summaryKey: `pageZonesLandmark_summary_cantTell_${key}`,
+          hintKey: `pageZonesLandmark_hint_cantTell_${key}`
+        },
+        uncertainty: {
+          code: 'judgement-required',
+          needed: 'Whether the block is that zone of the page.'
+        },
+        data: {
+          details: { reasonCode: code, zone: ZONE_OF[code] },
+          visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
+        }
+      })
+    );
+  }
+
+  const usable = (el) => visible(el) && exposed(el);
+  const noBanner = !pageHas('banner');
+  const noContentinfo = !pageHas('contentinfo');
+
+  // Blocks that name themselves a zone.
+  const named = [...dom.querySelectorAll(document, 'body [id], body [class]')].filter(
+    (el) => !['html', 'body'].includes(tagOf(el)) && zoneNamed(el) && usable(el)
+  );
+  for (const el of named) {
+    const zone = zoneNamed(el);
+    const tag = tagOf(el);
+    if (zone === 'navigation') {
+      if (dom.querySelectorAll(el, 'a[href]').length < 2) continue;
+      applicable += 1;
+      if (!hasRoleAround(el, 'navigation')) ask(el, 'NAVIGATION_NOT_EXPOSED');
+      continue;
+    }
+    // The page header and footer: a <header> or <footer> is judged below.
+    if ((zone === 'banner' && tag === 'header') || (zone === 'contentinfo' && tag === 'footer')) {
+      continue;
+    }
+    // Only the outermost block of a zone: a header's inner wrappers name it too.
+    const outer = (() => {
+      for (let a = dom.parentElement(el); a; a = dom.parentElement(a)) {
+        if (named.includes(a) && zoneNamed(a) === zone) return false;
+      }
+      return true;
+    })();
+    if (!outer) continue;
+    applicable += 1;
+    if (zone === 'banner' && noBanner && !hasRoleAround(el, 'banner')) {
+      ask(el, 'BANNER_NOT_EXPOSED');
+    }
+    if (zone === 'contentinfo' && noContentinfo && !hasRoleAround(el, 'contentinfo')) {
+      ask(el, 'CONTENTINFO_NOT_EXPOSED');
+    }
+  }
+
+  // The page's first <header> and last <footer>, where nesting takes their role.
+  const headers = [...dom.querySelectorAll(document, 'body header')].filter(usable);
+  const footers = [...dom.querySelectorAll(document, 'body footer')].filter(usable);
+  // One with a role of its own is judged by it, not by where it sits.
+  const plain = (el) => {
+    try {
+      return !helpers.aria.getExplicitRole(el);
+    } catch {
+      return true;
+    }
+  };
+  if (headers.length) {
+    applicable += 1;
+    const first = headers[0];
+    if (noBanner && plain(first) && nested(first)) ask(first, 'HEADER_NESTED');
+  }
+  if (footers.length) {
+    applicable += 1;
+    const last = footers[footers.length - 1];
+    if (noContentinfo && plain(last) && nested(last)) ask(last, 'FOOTER_NESTED');
+  }
+
+  // Search forms.
+  for (const form of [...dom.querySelectorAll(document, 'form')]) {
+    if (!usable(form)) continue;
+    if (![...dom.querySelectorAll(form, 'input')].some(isSearchField)) continue;
+    applicable += 1;
+    if (!hasRoleAround(form, 'search')) ask(form, 'SEARCH_NOT_EXPOSED');
+  }
+
+  if (!applicable) {
+    return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+  if (!occurrences.length) {
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  }
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'minor',
+    occurrences
+  };
+}), applicability: (function applicability(ctx) {
+  const h = ctx.helpers;
+  return (
+    h.isWholeDocumentScope() &&
+    h.isTopLevelDocument() &&
+    !(typeof h.isModalDialogOpen === 'function' && h.isModalDialogOpen())
+  );
+}) },
     "password-paste-enabled": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { helpers, rule } = ctx;
@@ -101213,6 +101626,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_templateLike": "Der Seitentitel wirkt wie eine Vorlage und sagt möglicherweise nicht, worum es auf der Seite geht.",
       "pageTitlePatterns_summary_cantTell_review": "Prüfen Sie, ob der Seitentitel „{{titleText}}“ sagt, worum es auf der Seite geht.",
       "pageTitlePatterns_hint_cantTell": "Prüfen Sie, ob der Titel sagt, worum es auf der Seite geht oder wozu sie dient, und sie von den anderen Seiten der Website unterscheidet.",
+      "pageZonesLandmark_title": "Kopfbereich, Navigation, Suche und Fußbereich der Seite sind Landmarken",
+      "pageZonesLandmark_description": "Fragt nach Blöcken, die sich als Kopfbereich der Seite, als Navigation oder als Fußbereich bezeichnen, und nach Suchformularen, die nicht als Landmarke ihrer Art bereitgestellt sind, sowie nach einem Kopf- oder Fußbereich, der so verschachtelt ist, dass er seine Landmarke verliert.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Dieser Block ist als Kopfbereich der Seite bezeichnet, aber die Seite hat keine banner-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "Wenn er der Kopfbereich der Seite ist, verwenden Sie ein <header> außerhalb jedes Abschnitts oder geben Sie ihm role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Dieses <header> liegt in einem Abschnitt und ist daher keine banner-Landmarke, und die Seite hat keine.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "Wenn es der Kopfbereich der Seite ist, nehmen Sie es aus dem Abschnitt heraus oder geben Sie ihm role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Dieser Block ist als Navigation bezeichnet, ist aber keine navigation-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "Wenn er eine Navigation der Seite ist, verwenden Sie ein <nav> oder geben Sie ihm role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Dieses Suchformular ist keine search-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "Wenn es die Website durchsucht, setzen Sie es in ein <search> oder geben Sie ihm role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Dieser Block ist als Fußbereich der Seite bezeichnet, aber die Seite hat keine contentinfo-Landmarke.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "Wenn er der Fußbereich der Seite ist, verwenden Sie ein <footer> außerhalb jedes Abschnitts oder geben Sie ihm role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Dieses <footer> liegt in einem Abschnitt und ist daher keine contentinfo-Landmarke, und die Seite hat keine.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "Wenn es der Fußbereich der Seite ist, nehmen Sie es aus dem Abschnitt heraus oder geben Sie ihm role=\"contentinfo\".",
       "contrastComputable_title": "Der Farbkontrast ist für gerenderten Text berechenbar",
       "contrastComputable_description": "Bestimmt, ob ausreichend Informationen verfügbar sind, um den Farbkontrast für sichtbaren Text zu berechnen (z. B. keine Verläufe/Bilder/Blend-Modi, die den Hintergrund unbestimmbar machen).",
       "contrastComputable_pass_allComputable": "Der Kontrast ist für den gesamten für die Prüfung berücksichtigten Text berechenbar ({{eligibleTextCount}} Textknoten).",
@@ -102570,6 +102997,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_templateLike": "The page title looks like a template and may not say what the page is about.",
       "pageTitlePatterns_summary_cantTell_review": "Check that the page title, “{{titleText}}”, says what the page is about.",
       "pageTitlePatterns_hint_cantTell": "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
+      "pageZonesLandmark_title": "The page's header, navigation, search and footer are landmarks",
+      "pageZonesLandmark_description": "Asks about blocks that name themselves the page's header, a navigation or its footer, and search forms, that are not exposed as the landmark of their nature, and about a page header or footer nested where it loses its landmark.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "This block is named as the page header, but the page has no banner landmark.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "If it is the page header, use a <header> outside any section, or give it role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "This <header> is inside a section, so it is not a banner landmark, and the page has none.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "If it is the page header, move it out of the section, or give it role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "This block is named as a navigation, but it is not a navigation landmark.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "If it is a navigation of the page, use a <nav>, or give it role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "This search form is not a search landmark.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "If it searches the site, put it in a <search>, or give it role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "This block is named as the page footer, but the page has no contentinfo landmark.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "If it is the page footer, use a <footer> outside any section, or give it role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "This <footer> is inside a section, so it is not a contentinfo landmark, and the page has none.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "If it is the page footer, move it out of the section, or give it role=\"contentinfo\".",
       "contrastComputable_title": "Color contrast is computable for rendered text",
       "contrastComputable_description": "Determines whether sufficient information is available to compute the color contrast for visible text (e.g., no gradients/images/blend modes that make background indeterminate).",
       "contrastComputable_pass_allComputable": "Contrast is computable for all eligible text ({{eligibleTextCount}} text node(s)).",
@@ -103927,6 +104368,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_templateLike": "El título de la página parece una plantilla y puede que no diga de qué trata.",
       "pageTitlePatterns_summary_cantTell_review": "Comprobar que el título de la página, «{{titleText}}», dice de qué trata la página.",
       "pageTitlePatterns_hint_cantTell": "Comprobar que el título dice de qué trata la página o para qué sirve, y la distingue de las demás páginas del sitio.",
+      "pageZonesLandmark_title": "La cabecera, la navegación, la búsqueda y el pie de la página son regiones de referencia",
+      "pageZonesLandmark_description": "Pregunta por los bloques que se nombran cabecera de la página, navegación o pie, y por los formularios de búsqueda, que no se exponen como la región de referencia de su naturaleza, y por una cabecera o un pie anidados donde pierden su región de referencia.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Este bloque se nombra como la cabecera de la página, pero la página no tiene región de referencia banner.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "Si es la cabecera de la página, usar un <header> fuera de toda sección, o darle role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Este <header> está dentro de una sección, así que no es una región de referencia banner, y la página no tiene ninguna.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "Si es la cabecera de la página, sacarlo de la sección, o darle role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Este bloque se nombra como una navegación, pero no es una región de referencia navigation.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "Si es una navegación de la página, usar un <nav>, o darle role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Este formulario de búsqueda no es una región de referencia search.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "Si busca en el sitio, ponerlo en un <search>, o darle role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Este bloque se nombra como el pie de la página, pero la página no tiene región de referencia contentinfo.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "Si es el pie de la página, usar un <footer> fuera de toda sección, o darle role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Este <footer> está dentro de una sección, así que no es una región de referencia contentinfo, y la página no tiene ninguna.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "Si es el pie de la página, sacarlo de la sección, o darle role=\"contentinfo\".",
       "contrastComputable_title": "El contraste de color es computable para el texto renderizado",
       "contrastComputable_description": "Determina si hay suficiente información disponible para calcular el contraste de color del texto visible (por ejemplo, sin degradados/imágenes/modos de fusión que hagan indeterminado el fondo).",
       "contrastComputable_pass_allComputable": "El contraste es computable para todo el texto elegible ({{eligibleTextCount}} nodo(s) de texto).",
@@ -105284,6 +105739,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_templateLike": "Le titre de la page ressemble à un modèle et ne dit peut-être pas de quoi elle parle.",
       "pageTitlePatterns_summary_cantTell_review": "Vérifiez que le titre de la page, « {{titleText}} », indique de quoi parle la page.",
       "pageTitlePatterns_hint_cantTell": "Vérifiez que le titre dit de quoi parle la page ou à quoi elle sert, et la distingue des autres pages du site.",
+      "pageZonesLandmark_title": "L’en-tête, la navigation, la recherche et le pied de page sont des points de repère",
+      "pageZonesLandmark_description": "Signale les blocs qui se nomment en-tête de la page, navigation ou pied de page, et les formulaires de recherche, qui ne sont pas exposés comme le point de repère de leur nature, ainsi qu’un en-tête ou un pied de page imbriqué là où il perd son point de repère.",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "Ce bloc est nommé comme l’en-tête de la page, mais la page n’a pas de point de repère banner.",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "S’il s’agit de l’en-tête de la page, utilisez un <header> hors de toute section, ou donnez-lui role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_headerNested": "Ce <header> est dans une section : il n’est donc pas un point de repère banner, et la page n’en a aucun.",
+      "pageZonesLandmark_hint_cantTell_headerNested": "S’il s’agit de l’en-tête de la page, sortez-le de la section, ou donnez-lui role=\"banner\".",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "Ce bloc est nommé comme une navigation, mais il n’est pas un point de repère navigation.",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "S’il s’agit d’une navigation de la page, utilisez un <nav>, ou donnez-lui role=\"navigation\".",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "Ce formulaire de recherche n’est pas un point de repère search.",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "S’il recherche dans le site, placez-le dans un <search>, ou donnez-lui role=\"search\".",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "Ce bloc est nommé comme le pied de page, mais la page n’a pas de point de repère contentinfo.",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "S’il s’agit du pied de page, utilisez un <footer> hors de toute section, ou donnez-lui role=\"contentinfo\".",
+      "pageZonesLandmark_summary_cantTell_footerNested": "Ce <footer> est dans une section : il n’est donc pas un point de repère contentinfo, et la page n’en a aucun.",
+      "pageZonesLandmark_hint_cantTell_footerNested": "S’il s’agit du pied de page, sortez-le de la section, ou donnez-lui role=\"contentinfo\".",
       "contrastComputable_title": "Le contraste des couleurs est calculable pour le texte rendu",
       "contrastComputable_description": "Détermine si suffisamment d’informations sont disponibles pour calculer le contraste des couleurs du texte visible (ex. pas de dégradés/images/modes de fusion rendant l’arrière-plan indéterminé).",
       "contrastComputable_pass_allComputable": "Le contraste est calculable pour tout le texte éligible ({{eligibleTextCount}} nœud(s) de texte).",
@@ -106641,6 +107110,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "pageTitlePatterns_summary_cantTell_templateLike": "ページタイトルがひな形のように見え、ページの内容を伝えていない可能性があります。",
       "pageTitlePatterns_summary_cantTell_review": "ページタイトル「{{titleText}}」が、ページの内容を表しているか確認してください。",
       "pageTitlePatterns_hint_cantTell": "タイトルがページの内容や目的を伝え、サイト内の他のページと区別できるものになっているか確認してください。",
+      "pageZonesLandmark_title": "ページのヘッダー、ナビゲーション、検索、フッターがランドマークになっている",
+      "pageZonesLandmark_description": "ページのヘッダー、ナビゲーション、フッターと名付けられたブロックや検索フォームが、その種類のランドマークとして公開されていない場合と、ヘッダーやフッターがランドマークを失う位置に入れ子になっている場合について確認を求めます。",
+      "pageZonesLandmark_summary_cantTell_bannerNotExposed": "このブロックはページのヘッダーと名付けられていますが、ページに banner ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_bannerNotExposed": "ページのヘッダーであれば、どのセクションの外にも <header> を使うか、role=\"banner\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_headerNested": "この <header> はセクションの中にあるため banner ランドマークにならず、ページに banner ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_headerNested": "ページのヘッダーであれば、セクションの外に出すか、role=\"banner\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_navigationNotExposed": "このブロックはナビゲーションと名付けられていますが、navigation ランドマークではありません。",
+      "pageZonesLandmark_hint_cantTell_navigationNotExposed": "ページのナビゲーションであれば、<nav> を使うか、role=\"navigation\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_searchNotExposed": "この検索フォームは search ランドマークではありません。",
+      "pageZonesLandmark_hint_cantTell_searchNotExposed": "サイト内を検索するものであれば、<search> の中に置くか、role=\"search\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_contentinfoNotExposed": "このブロックはページのフッターと名付けられていますが、ページに contentinfo ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_contentinfoNotExposed": "ページのフッターであれば、どのセクションの外にも <footer> を使うか、role=\"contentinfo\" を指定してください。",
+      "pageZonesLandmark_summary_cantTell_footerNested": "この <footer> はセクションの中にあるため contentinfo ランドマークにならず、ページに contentinfo ランドマークがありません。",
+      "pageZonesLandmark_hint_cantTell_footerNested": "ページのフッターであれば、セクションの外に出すか、role=\"contentinfo\" を指定してください。",
       "contrastComputable_title": "表示されたテキストの色のコントラストを計算できること",
       "contrastComputable_description": "表示されているテキストについて、色のコントラストを計算するのに十分な情報があるかを判定します (背景を特定できなくするグラデーション、画像、ブレンドモードがないかなど)。",
       "contrastComputable_pass_allComputable": "対象となるすべてのテキスト ({{eligibleTextCount}} 個のテキストノード) でコントラストを計算できます。",
