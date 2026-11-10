@@ -727,6 +727,14 @@ const PROCEDURES = {
         }
       }
     },
+    '2.5.5': {
+      'target-size-enhanced': {
+        tools: ['devtools'],
+        variants: {
+          'target-size-enhanced': ['undersized-inline-link-run', 'undersized-plausibly-essential']
+        }
+      }
+    },
     '2.5.8': {
       'target-size-minimum-pointer': {
         tools: ['devtools'],

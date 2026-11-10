@@ -5,20 +5,20 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **146**
+Total rules (loaded without error): **147**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 116 | 30 | 15 |
+| Any WCAG version | 117 | 31 | 16 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 108 | 23 | 14 |
-| WCAG 2.1 | 6 | 5 | 0 |
+| WCAG 2.1 | 7 | 6 | 1 |
 | WCAG 2.2 | 4 | 4 | 2 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -27,6 +27,7 @@ Total rules (loaded without error): **146**
 |---|---:|
 | wcag21a | 1 |
 | wcag21aa | 5 |
+| wcag21aaa | 1 |
 | wcag22aa | 2 |
 | wcag22aaa | 2 |
 | wcag2a | 96 |
@@ -576,6 +577,19 @@ Automation mix: **full 0, partial 1, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | label-in-name | automatic | Label in Name: accessible name contains visible text | src/checks/automatic/label-in-name.js | label-in-name |  |
+
+### 2.5.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| target-size-enhanced | partial | target-size-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | target-size-enhanced |  |
 
 ### 2.5.8
 
@@ -1396,6 +1410,19 @@ Automation mix: **full 0, partial 1, manual 0**.
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | label-in-name | automatic | Label in Name: accessible name contains visible text | src/checks/automatic/label-in-name.js | label-in-name |  |
+
+### 2.5.5
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| target-size-enhanced | partial | target-size-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | target-size-enhanced |  |
 
 ### 2.5.8
 

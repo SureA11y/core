@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**146 rules total: 86 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 116 carry at least one formal WCAG Success Criterion mapping.**
+**147 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 117 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -12,7 +12,7 @@ Under **What a finding reports**, a rule lists the fields its findings carry in 
 
 See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`severity` mean on a scan result, and [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for how these roll up to an SC-level conformance claim. For WCAG-facet-level coverage-gap tracking (which parts of an SC are and aren't automatable yet), see `coverage/coverage-report.md` instead: that one is organized by facet, this one by rule.
 
-## Automatic rules (86), can return `fail`
+## Automatic rules (87), can return `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -94,6 +94,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`tab-name-present`](#tab-name-present) | Tabs have an accessible name | 4.1.2 | A | high | serious |
 | [`table-headers-attr-valid`](#table-headers-attr-valid) | Table cell "headers" attribute must reference valid header cells | 1.3.1 | A | high | serious |
 | [`table-th-has-data-cells`](#table-th-has-data-cells) | &lt;th&gt; elements must describe at least one data cell | 1.3.1 | A | high | moderate |
+| [`target-size-enhanced`](#target-size-enhanced) | Pointer targets must be at least 44x44px large | 2.5.5 | AAA | medium | moderate |
 | [`target-size-minimum`](#target-size-minimum) | Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets | 2.5.8 | AA | medium | serious |
 | [`td-has-header`](#td-has-header) | Data cells in large tables must have an associated header | 1.3.1 | A | high | serious |
 | [`text-spacing-content-loss`](#text-spacing-content-loss) | Text stays readable when the user increases text spacing | 1.4.12 | AA | medium | serious |
@@ -168,7 +169,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide complete captions | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (38)
+## Composite (WCAG-SC rollup) rules (39)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -201,6 +202,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.4.7-focus-visible` | Focus visible | Rollup of checks ensuring keyboard focus is not hidden and remains perceivable. | 2.4.7 | AA | 4 |
 | `wcag-2.4.9-link-purpose-link-only` | Link Purpose (Link Only) | Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA). | 2.4.9 | AAA | 3 |
 | `wcag-2.5.3-label-in-name` | Label in name | Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text. | 2.5.3 | A | 1 |
+| `wcag-2.5.5-target-size-enhanced` | Target Size (Enhanced) | Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA). | 2.5.5 | AAA | 1 |
 | `wcag-2.5.8-target-size-minimum` | Target size: minimum | Rollup of checks ensuring pointer targets meet minimum size requirements. | 2.5.8 | AA | 1 |
 | `wcag-3.1.1-language-of-page` | Language of page | Rollup of checks ensuring the page language is specified. | 3.1.1 | A | 2 |
 | `wcag-3.1.2-language-of-parts` | Language of Parts | Rollup of checks ensuring elements whose language differs from the page default declare it correctly. | 3.1.2 | AA | 1 |
@@ -3594,6 +3596,32 @@ Checks that a table containing &lt;th&gt; elements also contains at least one &l
 | `TABLE_TH_NO_DATA_CELLS` | fail | The table has header cells but no data cell at all, so no header describes anything. | WCAG 1.3.1; H51; ACT d0f69e; HTML table model |
 | `TABLE_TH_NO_ASSIGNED_CELL` | cantTell | No data cell is assigned to the header, so it describes nothing; a person checks whether the table lacks the cells or leaves them out on purpose. A header with scope rowgroup or colgroup is left out, and so is the corner where a row of headers meets a column of them. It leans fail when no cell follows the header at all where its scope looks (short rows) and no cell in the table has a headers attribute; otherwise no lean. | WCAG 1.3.1 (not settled); H51; H43; ACT d0f69e; HTML table model |
 
+### `target-size-enhanced`
+
+**Pointer targets must be at least 44x44px large**
+
+automatic · WCAG 2.5.5 (AAA) · confidence medium · default severity moderate
+
+Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).
+
+**Applies to.** The targets target-size-minimum applies to: &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements whose role resolves to button or link, that a pointer can reach and hit.
+
+**Expectation.** Each target is at least 44 by 44 CSS pixels, measured as target-size-minimum measures 24 (the region a pointer can hit, and the largest square aligned to the page that fits in it), or meets one of the SC 2.5.5 exceptions this rule can establish: the inline exception for a target in a sentence, or user-agent sizing (an unstyled native checkbox or radio). 2.5.5 has no spacing exception, so a target under 44 fails however far it is from others. Where an exception may apply but cannot be confirmed (two inline links side by side between separators alone, as in "Edit | Delete", or a target inside an SVG, canvas or image map that may be essential), the result is cantTell. The equivalent exception (the same function offered by a target that is large enough, elsewhere on the page) is not established: a target it would cover fails. It is target-size-minimum run with `minSizePx: 44` and `spacingException: 'none'` (a variant: docs/RULE_AUTHORING.md, "Rule variants"), so a fix to that rule's measuring reaches this one. Margin (`target-size-px`): of the targets that are at least 44 by 44, the smallest, as the side of the largest square that fits in it against 44. Only a target within 6px of 44 (up to 50) counts as close.
+
+**What a finding reports.**
+
+- As target-size-minimum's, against 44: `metrics.widthPx`, `metrics.heightPx`, `metrics.squarePx` against `metrics.minSizePx` (44), `measured` and `viewport`. No distance to other targets, which decides nothing here, but for an inline link run (`conflictWith`, the link beside it).
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `undersized` | fail | A target smaller than 44 by 44 CSS pixels, with no exception that applies. | WCAG 2.5.5 |
+| `undersized-inline-link-run` | cantTell | An undersized inline link beside another inline link in a run with separators but no words, as in "Edit \| Delete"; whether the inline exception covers it is for a person to judge. | WCAG 2.5.5 (exception: inline) |
+| `undersized-plausibly-essential` | cantTell | An undersized target inside an SVG, a canvas or an image map, where its size may be essential. | WCAG 2.5.5 (exception: essential) |
+
+**Margin.** `target-size-px`, in CSS pixels: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 6 px of the threshold.
+
 ### `target-size-minimum`
 
 **Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets**
@@ -3604,7 +3632,7 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 
 **Applies to.** Applies to &lt;button&gt;, &lt;summary&gt;, &lt;a href&gt;, &lt;area href&gt;, &lt;input&gt;, &lt;select&gt;, &lt;textarea&gt; and elements whose role resolves to button or link (the first real role in the role attribute, in any case) that are pointer-reachable: rendered, not suppressed by pointer-events:none, and with something left for a pointer to hit (a target clipped away is none; one with display: contents is its content). Accessibility-tree exclusion isn't a filter here: an aria-hidden control is still a target a pointer can hit. &lt;area&gt; is matched but never actually evaluated: it has no box of its own to measure. A custom element whose ElementInternals give it the button or link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
-**Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry. A target is the region a pointer can hit: its border box with its rounded corners and 2D transforms, clipped by clip and clip-path: inset() on its containing-block chain and no larger than a box there that clips its overflow, with content sticking out of it. What is painted over a target takes nothing from it, another target included: whether a decorative layer, an overlay or a pinned row covers a target depends on the moment and the scroll position of the scan, so it says nothing about the target's size, and 2.5.8 measures the target itself. Two targets that overlap are within each other's circle, so an undersized one is still too close. A box that clips its overflow (overflow other than visible, or contain: paint), scrolled by the reader or by a script, doesn't cut it where its edge is now: the target is measured whole, as scrolled into it, no larger than the box, and only the boxes and targets inside the box are near a target it keeps out of view. It is large enough when a 24 by 24 square aligned to the page fits in that region, as Understanding 2.5.8 measures it. The exceptions: spacing (a 24px-diameter circle centred on the region's bounding box reaches no unrelated target's region, nor the circle of another undersized one), the inline exception for a target in a sentence, a link or a button written into the text (the stretch of its block container between line breaks holds text outside any target with a letter or a digit in it), or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but cannot be confirmed (two inline links crowding each other between separators alone, as in "Edit | Delete", or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess. Margin (`target-size-px`): of the targets that are at least 24 by 24, the smallest, as the side of the largest square that fits in it against 24 (for a rectangle, the smaller of its width and height); `context.widthPx` and `context.heightPx` give its extent. A target under 24 that passes through the spacing exception is not a candidate. Only a target within 6px of 24 (up to 30) counts as close, so a page whose smallest target is larger gives no margin. `measuredCount` counts every target measured.
+**Expectation.** Each target is at least 24 by 24 CSS pixels, or meets one of the SC 2.5.8 exceptions this rule can establish from geometry. A target is the region a pointer can hit: its border box with its rounded corners and 2D transforms, clipped by clip and clip-path: inset() on its containing-block chain and no larger than a box there that clips its overflow, with content sticking out of it. What is painted over a target takes nothing from it, another target included: whether a decorative layer, an overlay or a pinned row covers a target depends on the moment and the scroll position of the scan, so it says nothing about the target's size, and 2.5.8 measures the target itself. Two targets that overlap are within each other's circle, so an undersized one is still too close. A box that clips its overflow (overflow other than visible, or contain: paint), scrolled by the reader or by a script, doesn't cut it where its edge is now: the target is measured whole, as scrolled into it, no larger than the box, and only the boxes and targets inside the box are near a target it keeps out of view. It is large enough when a 24 by 24 square aligned to the page fits in that region, as Understanding 2.5.8 measures it. The exceptions: spacing (a 24px-diameter circle centred on the region's bounding box reaches no unrelated target's region, nor the circle of another undersized one), the inline exception for a target in a sentence, a link or a button written into the text (the stretch of its block container between line breaks holds text outside any target with a letter or a digit in it), or user-agent sizing (an unstyled native checkbox or radio, detected by appearance not having been reset to none). An undersized target too close to a neighbour fails. Where an exception may apply but cannot be confirmed (two inline links crowding each other between separators alone, as in "Edit | Delete", or a target inside an SVG, canvas or image map that may be essential), the result is cantTell rather than a guess. Settings, for a variant: `minSizePx`, the size needed (24), and `spacingException`, `'none'` to drop the spacing exception, so that every target under the size that no other exception covers fails (`undersized`), however far it is from others. target-size-enhanced is this rule at 2.5.5's 44px with none. Margin (`target-size-px`): of the targets that are at least 24 by 24, the smallest, as the side of the largest square that fits in it against 24 (for a rectangle, the smaller of its width and height); `context.widthPx` and `context.heightPx` give its extent. A target under 24 that passes through the spacing exception is not a candidate. Only a target within 6px of 24 (up to 30) counts as close, so a page whose smallest target is larger gives no margin. `measuredCount` counts every target measured.
 
 **What a finding reports.**
 
@@ -3622,10 +3650,18 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
 | `undersized-and-too-close` | fail | A target smaller than 24 by 24 CSS pixels is too close to another target for the spacing exception, and no other exception applies. | WCAG 2.5.8 |
+| `undersized` | fail | Under `spacingException: 'none'` (a variant's setting, as target-size-enhanced's), a target smaller than the size needed, with no exception that applies; spacing excuses none. | WCAG 2.5.5 |
 | `undersized-inline-link-run` | cantTell | An undersized inline link is too close only to another inline link in a run with separators but no words, as in "Edit \| Delete"; whether the inline exception covers it is for a person to judge. | WCAG 2.5.8 (exception: inline) |
-| `undersized-plausibly-essential` | cantTell | An undersized target too close to another sits inside an SVG, a canvas or an image map, where its size may be essential. | WCAG 2.5.8 (exception: essential) |
+| `undersized-plausibly-essential` | cantTell | An undersized target too close to another (or, under `spacingException: 'none'`, any undersized target) sits inside an SVG, a canvas or an image map, where its size may be essential. | WCAG 2.5.8 (exception: essential) |
 
 **Margin.** `target-size-px`, in CSS pixels: the value must reach the threshold, and the result's `margin` names the element that came closest while meeting it, if it is within 6 px of the threshold.
+
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `minSizePx` | `24` | a number above 0 | The size a target needs, in CSS pixels: a square this size on a side fits in the region a pointer can hit. | WCAG 2.5.8: 24 (2.5.5: 44) |
+| `spacingException` | `"apply"` | `"apply"`, `"none"` | Whether an undersized target passes when a 24px circle centred on it reaches no other target ('apply'), or fails on its size alone, reported as undersized ('none'). | WCAG 2.5.8 exception: Spacing (2.5.5 has none) |
 
 ### `td-has-header`
 

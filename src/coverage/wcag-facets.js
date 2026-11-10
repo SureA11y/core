@@ -1185,7 +1185,7 @@ const FACETS = {
             {
                 "id": "target-size-enhanced",
                 "label": "Pointer targets are at least 44 by 44 CSS pixels",
-                "automation": "manual"
+                "automation": "partial"
             }
         ]
     },

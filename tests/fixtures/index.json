@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 146,
+    "total": 147,
     "withFixture": 143,
-    "withoutFixture": 3
+    "withoutFixture": 4
   },
   "rows": [
     {
@@ -2532,6 +2532,20 @@
         "CANTTELL": 0,
         "OTHER": 1
       }
+    },
+    {
+      "ruleId": "target-size-enhanced",
+      "title": "Pointer targets must be at least 44x44px large",
+      "type": "automatic",
+      "wcagSc": [
+        "2.5.5"
+      ],
+      "ruleFile": "src/checks/automatic/target-size-enhanced.js",
+      "testFile": "tests/engine-checks/automatic/target-size-enhanced.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
     },
     {
       "ruleId": "target-size-minimum",

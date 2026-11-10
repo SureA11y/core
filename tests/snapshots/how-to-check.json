@@ -1422,6 +1422,33 @@
       "fr-CA": "2c712dc9416bae80",
       "pt": "cb5f039a1032cec5"
     },
+    "target-size-enhanced undersized": {
+      "en": "74234e98afe7498f",
+      "de": "74234e98afe7498f",
+      "es": "74234e98afe7498f",
+      "fr": "74234e98afe7498f",
+      "ja": "74234e98afe7498f",
+      "fr-CA": "74234e98afe7498f",
+      "pt": "74234e98afe7498f"
+    },
+    "target-size-enhanced undersized-inline-link-run": {
+      "en": "e91ccba99d46d6b3",
+      "de": "8512a528fe67d9b5",
+      "es": "66e65bee98a19fcb",
+      "fr": "9550a9507ff9ad90",
+      "ja": "b829ac90a135ec00",
+      "fr-CA": "9550a9507ff9ad90",
+      "pt": "e91ccba99d46d6b3"
+    },
+    "target-size-enhanced undersized-plausibly-essential": {
+      "en": "9a4f6bfc1353a24a",
+      "de": "f12de7c57e5447a0",
+      "es": "cd62a9bc731448c5",
+      "fr": "7138e24cbd1875fe",
+      "ja": "7adac439fec6b544",
+      "fr-CA": "7138e24cbd1875fe",
+      "pt": "9a4f6bfc1353a24a"
+    },
     "target-size-minimum undersized-inline-link-run": {
       "en": "7ed6c6f4568ce0a3",
       "de": "646a7a39809df6b2",
@@ -1439,6 +1466,24 @@
       "ja": "7847961a90fdb29c",
       "fr-CA": "7e2d2b0fb9abf205",
       "pt": "9a48146a7628121c"
+    },
+    "target-size-minimum undersized": {
+      "en": "74234e98afe7498f",
+      "de": "74234e98afe7498f",
+      "es": "74234e98afe7498f",
+      "fr": "74234e98afe7498f",
+      "ja": "74234e98afe7498f",
+      "fr-CA": "74234e98afe7498f",
+      "pt": "74234e98afe7498f"
+    },
+    "target-size-minimum undersized-and-too-close": {
+      "en": "74234e98afe7498f",
+      "de": "74234e98afe7498f",
+      "es": "74234e98afe7498f",
+      "fr": "74234e98afe7498f",
+      "ja": "74234e98afe7498f",
+      "fr-CA": "74234e98afe7498f",
+      "pt": "74234e98afe7498f"
     },
     "td-has-header TD_TABLE_NO_HEADERS": {
       "en": "c5c9a9d830cf2fdc",
@@ -2565,6 +2610,7 @@
     "tab-name-present": "b78d06b9a3e9102e",
     "table-headers-attr-valid": null,
     "table-th-has-data-cells": "f9a6090ac2d2994c",
+    "target-size-enhanced": "3c98f4870808c831",
     "target-size-minimum": "2d5bb23f932cec5c",
     "td-has-header": "b8674789d28b9b80",
     "text-spacing-content-loss": "a4366e97a28b8268",
@@ -2634,10 +2680,10 @@
     "widget-keyboard-focusable": "c8cefbbd4fadee80"
   },
   "dictionaries": {
-    "de": "d290bf25be45d678a79e6b15eaf7bfbcf20aa30408513cbd01c43892ba86007a",
-    "en": "2c8dd4443344713413fbfcb7a25fee4de0c86b909fc9762e78edb5532c6a5606",
-    "es": "d64387418186c588b7cc2ac4de19a8bbacea730b888225560cccc4e2a421ecb8",
-    "fr": "40c02f8a2c43fc28645885273f245d4fb85307848a1d4e8b6a73fae16a81d85c",
-    "ja": "ede21265522ea16289013112d82ce14af03af858cddb60b2d4e9e842de582a11"
+    "de": "7f7c54a2b842f3887a197cb7db904fe48e9698167cd03772a4143ae36b51127b",
+    "en": "fffbb09bfdf79ed76ecd283f2eda2cb8ac4042f0b5854e1044604b72a4b10c09",
+    "es": "c6f9e5951dce310ccb4944646bb1520d9bb2c04d3cd55f6244509a7fc62cf663",
+    "fr": "a659a321b6a642dbb96efb47a1a338917481fa039efc8e30acbd59f60c3a2b5d",
+    "ja": "6b88cb0d66a590ff8dbab5dcdc1652b3ea7612a738e6b90860e6abca810d2a7f"
   }
 }
