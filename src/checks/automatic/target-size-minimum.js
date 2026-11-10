@@ -77,6 +77,11 @@
  *     (`regionDistance`): how far the neighbour's region is from the
  *     target's centre, against the circle's 12px radius.
  *   - `conflictWith`: a selector for the neighbour it is too close to.
+ *   - The fail hint (`targetSizeMinimum_hint_fail_centerDistance` or
+ *     `targetSizeMinimum_hint_fail_regionDistance`, by `decidedBy`) states
+ *     the same distance: `i18n.params.distancePx` against
+ *     `i18n.params.minDistancePx`, and `i18n.params.shortfallPx`, how much
+ *     further apart the two need to be, rounded up to a tenth.
  *   - `measured.width`, `measured.height`, `measured.square`: the region's
  *     extent and the largest square, unrounded.
  *   - `viewport.width`, `viewport.height`: the viewport the page was laid
@@ -1726,6 +1731,24 @@ function runInPage(ctx) {
       : `The part of this target a pointer can hit spans ${size.widthPx}×${size.heightPx} CSS px but fits only a ${size.squarePx}×${size.squarePx} square`;
   }
   const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
+  // How far the conflict leaves the target from passing the spacing
+  // exception, for the hint: the distance measured, the distance the test
+  // holds it to, and the gap between them. The distance is rounded as
+  // metrics rounds it, and the gap up, so the two together never fall short
+  // of what is needed.
+  function spacingParams(info) {
+    const limit = info.decidedBy === 'centerDistance' ? MIN : RADIUS;
+    return {
+      distancePx: String(round1(info.distancePx, limit)),
+      minDistancePx: String(limit),
+      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+    };
+  }
+  function spacingHint(decidedBy, s) {
+    return decidedBy === 'centerDistance'
+      ? `Its centre is ${s.distancePx} px from the centre of another target under 24×24, and the two need ${s.minDistancePx} px. Make the target at least 24×24 CSS px, or move the two at least ${s.shortfallPx} px further apart.`
+      : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
+  }
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -1817,15 +1840,16 @@ function runInPage(ctx) {
         continue;
       }
 
+      const spacing = spacingParams(info);
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
           summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
-          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
+          hint: spacingHint(info.decidedBy, spacing),
           i18n: {
             summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
-            hintKey: 'targetSizeMinimum_hint_fail',
-            params: size
+            hintKey: `targetSizeMinimum_hint_fail_${info.decidedBy}`,
+            params: { ...size, ...spacing }
           },
           data: {
             details: {

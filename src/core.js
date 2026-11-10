@@ -38593,7 +38593,8 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
       "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
       "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
-      "targetSizeMinimum_hint_fail": "Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es so weit von anderen Zielen ab, dass ein Kreis von 24 px um seine Mitte keines davon berührt.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, vergrößern Sie das Ziel oder geben Sie ihm mehr Abstand.",
@@ -39964,7 +39965,8 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
       "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
       "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
-      "targetSizeMinimum_hint_fail": "Make the target at least 24×24 CSS px, or move it far enough from other targets that a 24 px circle centred on it touches none of them.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.",
@@ -41335,7 +41337,8 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
       "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
       "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
-      "targetSizeMinimum_hint_fail": "Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo de los demás lo bastante para que un círculo de 24 px centrado en él no toque ninguno.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, agrandar el objetivo o darle más espacio.",
@@ -42706,7 +42709,8 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
       "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
       "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
-      "targetSizeMinimum_hint_fail": "Donnez à la cible au moins 24×24 px CSS, ou éloignez-la assez des autres cibles pour qu’un cercle de 24 px centré sur elle n’en touche aucune.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, agrandissez la cible ou donnez-lui plus d’espace.",
@@ -44077,7 +44081,8 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
       "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
       "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
-      "targetSizeMinimum_hint_fail": "ターゲットを 24×24 CSS px 以上にするか、中心に置いた直径 24 px の円がほかのターゲットに触れないところまで離してください。",
+      "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
+      "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを大きくするか、間隔を広げてください。",
@@ -97844,6 +97849,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       : `The part of this target a pointer can hit spans ${size.widthPx}×${size.heightPx} CSS px but fits only a ${size.squarePx}×${size.squarePx} square`;
   }
   const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
+  // How far the conflict leaves the target from passing the spacing
+  // exception, for the hint: the distance measured, the distance the test
+  // holds it to, and the gap between them. The distance is rounded as
+  // metrics rounds it, and the gap up, so the two together never fall short
+  // of what is needed.
+  function spacingParams(info) {
+    const limit = info.decidedBy === 'centerDistance' ? MIN : RADIUS;
+    return {
+      distancePx: String(round1(info.distancePx, limit)),
+      minDistancePx: String(limit),
+      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+    };
+  }
+  function spacingHint(decidedBy, s) {
+    return decidedBy === 'centerDistance'
+      ? `Its centre is ${s.distancePx} px from the centre of another target under 24×24, and the two need ${s.minDistancePx} px. Make the target at least 24×24 CSS px, or move the two at least ${s.shortfallPx} px further apart.`
+      : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
+  }
 
   for (const it of undersized) {
     // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
@@ -97935,15 +97958,16 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
 
+      const spacing = spacingParams(info);
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
           summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
-          hint: 'Increase target size to at least 24 by 24 CSS pixels, or add sufficient spacing.',
+          hint: spacingHint(info.decidedBy, spacing),
           i18n: {
             summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
-            hintKey: 'targetSizeMinimum_hint_fail',
-            params: size
+            hintKey: `targetSizeMinimum_hint_fail_${info.decidedBy}`,
+            params: { ...size, ...spacing }
           },
           data: {
             details: {
@@ -101720,7 +101744,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
       "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
       "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
-      "targetSizeMinimum_hint_fail": "Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es so weit von anderen Zielen ab, dass ein Kreis von 24 px um seine Mitte keines davon berührt.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, vergrößern Sie das Ziel oder geben Sie ihm mehr Abstand.",
@@ -103091,7 +103116,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
       "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
       "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
-      "targetSizeMinimum_hint_fail": "Make the target at least 24×24 CSS px, or move it far enough from other targets that a 24 px circle centred on it touches none of them.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.",
@@ -104462,7 +104488,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
       "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
       "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
-      "targetSizeMinimum_hint_fail": "Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo de los demás lo bastante para que un círculo de 24 px centrado en él no toque ninguno.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, agrandar el objetivo o darle más espacio.",
@@ -105833,7 +105860,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
       "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
       "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
-      "targetSizeMinimum_hint_fail": "Donnez à la cible au moins 24×24 px CSS, ou éloignez-la assez des autres cibles pour qu’un cercle de 24 px centré sur elle n’en touche aucune.",
+      "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
+      "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, agrandissez la cible ou donnez-lui plus d’espace.",
@@ -107204,7 +107232,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
       "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
       "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
-      "targetSizeMinimum_hint_fail": "ターゲットを 24×24 CSS px 以上にするか、中心に置いた直径 24 px の円がほかのターゲットに触れないところまで離してください。",
+      "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
+      "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを大きくするか、間隔を広げてください。",
