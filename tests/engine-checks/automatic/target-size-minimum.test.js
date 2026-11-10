@@ -82,7 +82,7 @@ test(`${RULE_ID}: two undersized targets too close => fail (2 occurrences)`, () 
   // Deterministic i18n keys
   for (const occ of rule.occurrences) {
     assert.strictEqual(occ.i18n.summaryKey, 'targetSizeMinimum_summary_fail');
-    assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail');
+    assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_centerDistance');
     assert.ok(occ.data && occ.data.details && occ.data.details.measured);
     assert.ok(occ.data.details.measured.width < 24 || occ.data.details.measured.height < 24);
     assert.strictEqual(occ.data.details.reasonCode, 'undersized-and-too-close');
@@ -591,11 +591,19 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
     widthPx: '10',
     heightPx: '10',
     squarePx: '10',
-    viewportWidth: '1000'
+    viewportWidth: '1000',
+    distancePx: '20',
+    minDistancePx: '24',
+    shortfallPx: '4'
   });
   assert.strictEqual(
     occ.summary,
     'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target.'
+  );
+  assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_centerDistance');
+  assert.strictEqual(
+    occ.hint,
+    'Its centre is 20 px from the centre of another target under 24×24, and the two need 24 px. Make the target at least 24×24 CSS px, or move the two at least 4 px further apart.'
   );
 });
 
@@ -617,6 +625,40 @@ test(`${RULE_ID}: a conflict with a neighbour's box reports how far it is from t
     regionDistancePx: 10,
     minDistancePx: 12
   });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_regionDistance');
+  assert.strictEqual(
+    occ.hint,
+    'Another target comes within 10 px of its centre, and a 24 px circle centred on it needs 12 px clear. Make the target at least 24×24 CSS px, or move it at least 2 px further from that target.'
+  );
+});
+
+test(`${RULE_ID}: the hint's shortfall is rounded up, so the distance and the shortfall reach what is needed`, () => {
+  // Centres 20.3px apart: 3.7px short of 24, which floating point puts a
+  // hair under 3.7. The hint still says 3.7, never 3.6 or 3.8.
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="100,100,10,10">A</button>
+    <button id="b" data-rect="120.3,100,10,10">B</button>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const occ = rule.occurrences.find((o) => /#a\b/.test(o.selector));
+  assert.strictEqual(occ.i18n.params.distancePx, '20.3');
+  assert.strictEqual(occ.i18n.params.shortfallPx, '3.7');
+});
+
+test(`${RULE_ID}: the fail hint is translated with its distances`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="small" data-rect="10,10,10,10">Small</button>
+    <button id="big" data-rect="25,10,30,30">Big</button>
+  </body></html>`;
+  const rule = assertRule(run(html, { locale: 'fr' }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(
+    rule.occurrences[0].hint,
+    'Une autre cible arrive à 10 px de son centre, alors qu’un cercle de 24 px centré sur elle demande 12 px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins 2 px de plus de cette cible.'
+  );
 });
 
 test(`${RULE_ID}: a size just under 24 does not read as 24 (#105)`, () => {
