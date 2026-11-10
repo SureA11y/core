@@ -3612,6 +3612,7 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 - `metrics.centerDistancePx`, `metrics.minDistancePx` (`centerDistance`): the distance from the target's centre to its neighbour's, against the 24px it needs.
 - `metrics.regionDistancePx`, `metrics.minDistancePx` (`regionDistance`): how far the neighbour's region is from the target's centre, against the circle's 12px radius.
 - `conflictWith`: a selector for the neighbour it is too close to.
+- The fail hint (`targetSizeMinimum_hint_fail_centerDistance` or `targetSizeMinimum_hint_fail_regionDistance`, by `decidedBy`) states the same distance: `i18n.params.distancePx` against `i18n.params.minDistancePx`, and `i18n.params.shortfallPx`, how much further apart the two need to be, rounded up to a tenth.
 - `measured.width`, `measured.height`, `measured.square`: the region's extent and the largest square, unrounded.
 - `viewport.width`, `viewport.height`: the viewport the page was laid out in, in CSS pixels. A responsive page can size or place a target differently at another width.
 
