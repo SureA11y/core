@@ -7,7 +7,7 @@
  * @atomic true
  * @summary CSS must not remove the focus indicator without drawing a replacement
  * @standard WCAG 2.2
- * @sc 2.4.7
+ * @sc 2.4.7, 2.4.13
  * @applicability
  *   Elements in sequential focus navigation (tabbable and rendered) on a
  *   page whose accessible stylesheets contain at least one rule that
@@ -39,7 +39,7 @@
  *     handler is on it or an ancestor, the removing rule doesn't name
  *     focus-visible, and the listener hook, when it ran, saw no focus
  *     listener for it.
- *     Basis: WCAG 2.4.7 (not settled); F78; ACT oj04fd.
+ *     Basis: WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
  *   only one of the ways a page can indicate focus: ACT oj04fd's own
@@ -90,8 +90,18 @@ const meta = {
     descriptionKey: 'cssFocusIndicatorSuppressed_description'
   },
   helpUrl: null,
-  tags: ['wcag2aa', 'wcag247', 'navigation', 'focus', 'css', 'atomic', 'manual'],
-  wcagSc: ['2.4.7'],
+  tags: [
+    'wcag2aa',
+    'wcag247',
+    'wcag22aaa',
+    'wcag2413',
+    'navigation',
+    'focus',
+    'css',
+    'atomic',
+    'manual'
+  ],
+  wcagSc: ['2.4.7', '2.4.13'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -99,13 +109,25 @@ const meta = {
       requirement: '2.4.7',
       title: 'Focus Visible',
       conformanceLevel: 'AA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.13',
+      title: 'Focus Appearance',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.4.7': ['focus-indicator-not-suppressed'] } }
+  coverage: {
+    facetsBySc: {
+      '2.4.7': ['focus-indicator-not-suppressed'],
+      '2.4.13': ['focus-indicator-not-suppressed']
+    }
+  }
 };
 
 function runInPage(ctx) {

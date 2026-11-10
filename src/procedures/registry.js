@@ -535,6 +535,18 @@ const PROCEDURES = {
       'click-handler-keyboard-operable': {
         coveredBy: 'keyboard-no-exception'
       },
+      'iframe-tabindex-negative-content-not-focusable': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'server-side-image-map-absent': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'widget-keyboard-focusable-evidence': {
+        coveredBy: 'keyboard-no-exception'
+      },
+      'focus-not-removed-by-script-evidence': {
+        coveredBy: 'keyboard-no-exception'
+      },
       'keyboard-no-exception': {
         tools: ['keyboard']
       }
@@ -675,6 +687,17 @@ const PROCEDURES = {
       },
       'focus-indicator-visible': {
         tools: ['keyboard']
+      }
+    },
+    '2.4.13': {
+      'focus-indicator-not-suppressed': {
+        coveredBy: 'focus-appearance'
+      },
+      'focus-not-removed-by-script-evidence': {
+        coveredBy: 'focus-appearance'
+      },
+      'focus-appearance': {
+        tools: ['keyboard', 'devtools']
       }
     },
     '2.4.9': {

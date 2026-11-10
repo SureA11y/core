@@ -7,7 +7,7 @@
  * @atomic true
  * @summary A script must not remove focus from an element as it receives it
  * @standard WCAG 2.2
- * @sc 2.1.1, 2.4.7
+ * @sc 2.1.1, 2.1.3, 2.4.7, 2.4.13
  * @type automatic
  * @applicability
  *   Elements that can take focus, that the page renders, and whose inline
@@ -48,14 +48,14 @@
  *   - `FOCUS_HANDLER_BLURS_SELF` (fail, cantTell): the element's onfocus
  *     handler does nothing but call blur() on it, so focus is removed as it
  *     arrives; it fails in the tab order and is asked about outside it.
- *     Basis: WCAG 2.1.1; WCAG 2.4.7; F55.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; WCAG 2.4.7; WCAG 2.4.13; F55.
  *   - `FOCUS_HANDLER_CALLS_BLUR` (cantTell): the element's onfocus handler
  *     calls blur() among other code or on another element; whether focus is
  *     lost depends on the script.
  *     It leans fail when the element is in the tab order and blur() is
  *     called on it as a statement of its own, outside any condition or
  *     callback, with no return before it.
- *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55.
  *   - `FOCUS_HANDLER_MOVES_FOCUS` (cantTell): the element's onfocus handler
  *     calls focus() on another element, so focus may move away as it arrives.
  *     It leans pass when the element is a focus-trap sentinel (a plain,
@@ -63,7 +63,7 @@
  *     the edge of a container holding focusable content), and fail when it
  *     is a visible control with a name, in the tab order, that calls focus()
  *     as a statement of its own, outside any condition or callback.
- *     Basis: WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55.
  * @implementation-notes
  * - Only inline `onfocus` attributes are read. A focus listener added with
  *   addEventListener, and a blur() delayed by setTimeout, are not seen: the
@@ -87,8 +87,21 @@ const meta = {
     descriptionKey: 'focusNotRemovedByScript_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag2aa', 'wcag211', 'wcag247', 'navigation', 'focus', 'atomic', 'automatic'],
-  wcagSc: ['2.1.1', '2.4.7'],
+  tags: [
+    'wcag2a',
+    'wcag2aa',
+    'wcag2aaa',
+    'wcag22aaa',
+    'wcag211',
+    'wcag213',
+    'wcag247',
+    'wcag2413',
+    'navigation',
+    'focus',
+    'atomic',
+    'automatic'
+  ],
+  wcagSc: ['2.1.1', '2.1.3', '2.4.7', '2.4.13'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -100,9 +113,23 @@ const meta = {
     {
       standard: 'WCAG',
       version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
       requirement: '2.4.7',
       title: 'Focus Visible',
       conformanceLevel: 'AA'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.4.13',
+      title: 'Focus Appearance',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
@@ -112,7 +139,9 @@ const meta = {
   coverage: {
     facetsBySc: {
       '2.1.1': ['focus-not-removed-by-script-evidence'],
-      '2.4.7': ['focus-not-removed-by-script-evidence']
+      '2.1.3': ['focus-not-removed-by-script-evidence'],
+      '2.4.7': ['focus-not-removed-by-script-evidence'],
+      '2.4.13': ['focus-not-removed-by-script-evidence']
     }
   },
   // Picked from a table by the handler's kind, which

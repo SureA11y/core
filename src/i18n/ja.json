@@ -406,6 +406,8 @@
   "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
   "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
   "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+  "catalog.rules.wcag_2413_focus_appearance.title": "フォーカスの外観",
+  "catalog.rules.wcag_2413_focus_appearance.description": "キーボードフォーカスインジケータが十分な大きさで、フォーカスがない状態と十分なコントラストがあるかを確認するチェックの集約です (AAA)。",
   "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
   "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
   "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",

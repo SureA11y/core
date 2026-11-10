@@ -217,6 +217,7 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '2.4.6': 'headings-and-labels',
     '2.4.7': 'focus-visible',
     '2.4.9': 'link-purpose-link-only',
+    '2.4.13': 'focus-appearance',
     '2.5.3': 'label-in-name',
     '2.5.8': 'target-size-minimum',
     '3.1.1': 'language-of-page',

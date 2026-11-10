@@ -406,6 +406,8 @@
   "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
   "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
   "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+  "catalog.rules.wcag_2413_focus_appearance.title": "Fokus-Darstellung",
+  "catalog.rules.wcag_2413_focus_appearance.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokusindikator groß genug ist und sich ausreichend vom nicht fokussierten Zustand abhebt (AAA).",
   "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
   "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
   "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",

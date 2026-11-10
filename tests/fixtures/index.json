@@ -690,7 +690,8 @@
       "title": "Focus indicator must not be removed without a replacement",
       "type": "manual",
       "wcagSc": [
-        "2.4.7"
+        "2.4.7",
+        "2.4.13"
       ],
       "ruleFile": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
       "testFile": "tests/engine-checks/manual/css-focus-indicator-suppressed.test.js",
@@ -934,7 +935,9 @@
       "type": "automatic",
       "wcagSc": [
         "2.1.1",
-        "2.4.7"
+        "2.1.3",
+        "2.4.7",
+        "2.4.13"
       ],
       "ruleFile": "src/checks/automatic/focus-not-removed-by-script.js",
       "testFile": "tests/engine-checks/automatic/focus-not-removed-by-script.test.js",
@@ -1160,7 +1163,8 @@
       "title": "Frames with tabindex=\"-1\" must not contain focusable content",
       "type": "automatic",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/automatic/iframe-focusable-content.js",
       "testFile": "tests/engine-checks/automatic/iframe-focusable-content.test.js",
@@ -2273,7 +2277,8 @@
       "title": "Server-side image maps must have a keyboard-operable alternative",
       "type": "automatic",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/automatic/server-side-image-map-absent.js",
       "testFile": "tests/engine-checks/automatic/server-side-image-map-absent.test.js",
@@ -2704,7 +2709,8 @@
       "title": "Widgets should be reachable with the keyboard",
       "type": "manual",
       "wcagSc": [
-        "2.1.1"
+        "2.1.1",
+        "2.1.3"
       ],
       "ruleFile": "src/checks/manual/widget-keyboard-focusable.js",
       "testFile": "tests/engine-checks/manual/widget-keyboard-focusable.test.js",

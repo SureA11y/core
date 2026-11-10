@@ -392,10 +392,14 @@
   "css-focus-indicator-suppressed": {
     "prefix": "cssFocusIndicatorSuppressed",
     "criteria": [
+      "2.4.13",
       "2.4.7"
     ],
     "facets": {
       "2.4.7": [
+        "focus-indicator-not-suppressed"
+      ],
+      "2.4.13": [
         "focus-indicator-not-suppressed"
       ]
     }
@@ -524,13 +528,21 @@
     "prefix": "focusNotRemovedByScript",
     "criteria": [
       "2.1.1",
+      "2.1.3",
+      "2.4.13",
       "2.4.7"
     ],
     "facets": {
       "2.1.1": [
         "focus-not-removed-by-script-evidence"
       ],
+      "2.1.3": [
+        "focus-not-removed-by-script-evidence"
+      ],
       "2.4.7": [
+        "focus-not-removed-by-script-evidence"
+      ],
+      "2.4.13": [
         "focus-not-removed-by-script-evidence"
       ]
     }
@@ -655,10 +667,14 @@
   "iframe-focusable-content": {
     "prefix": "iframeFocusableContent",
     "criteria": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "facets": {
       "2.1.1": [
+        "iframe-tabindex-negative-content-not-focusable"
+      ],
+      "2.1.3": [
         "iframe-tabindex-negative-content-not-focusable"
       ]
     }
@@ -1247,10 +1263,14 @@
   "server-side-image-map-absent": {
     "prefix": "serverSideImageMapAbsent",
     "criteria": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "facets": {
       "2.1.1": [
+        "server-side-image-map-absent"
+      ],
+      "2.1.3": [
         "server-side-image-map-absent"
       ]
     }
@@ -1482,10 +1502,14 @@
   "widget-keyboard-focusable": {
     "prefix": "widgetKeyboardFocusable",
     "criteria": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "facets": {
       "2.1.1": [
+        "widget-keyboard-focusable-evidence"
+      ],
+      "2.1.3": [
         "widget-keyboard-focusable-evidence"
       ]
     }

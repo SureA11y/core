@@ -7,7 +7,7 @@
  * @atomic true
  * @summary An element with a widget role should be reachable with the keyboard
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Elements the page shows with `aria-activedescendant`, and those whose
  *   role, from the `role` attribute or a custom element's
@@ -67,26 +67,26 @@
  *     it does another way is for a person to check.
  *     It leans fail unless another element in the tab order has the same
  *     role and name.
- *     Basis: WCAG 2.1.1 (not settled); F42.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F42.
  *   - `WIDGET_NOT_IN_TAB_ORDER` (cantTell): a widget that takes focus only
  *     from script (tabindex="-1"), so Tab never reaches it.
  *     It leans pass when another element in the tab order has the same role
  *     and name, and fail when, with a listener hook installed before the
  *     page's scripts, no key listener is on an ancestor, the document or
  *     the window to move focus to it.
- *     Basis: WCAG 2.1.1 (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `COMPOSITE_NO_TAB_STOP` (cantTell): a composite widget that no other
  *     element controls or owns, with no tab stop on it or on any of its
  *     items.
  *     It leans fail unless the element just before it, or before its parent,
  *     says it opens a popup (aria-haspopup, or aria-expanded="true").
- *     Basis: WCAG 2.1.1 (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled).
  *   - `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` (cantTell): an element with
  *     aria-activedescendant that cannot take focus, so its active item is
  *     never announced.
  *     It leans fail: ARIA gives aria-activedescendant effect only on the
  *     element that has focus.
- *     Basis: WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WAI-ARIA 1.2 aria-activedescendant.
  * @implementation-notes
  * - WCAG 2.1.1 asks that all functionality work from a keyboard; F42 fails
  *   a scripted control that can't take focus, F54 a function behind
@@ -117,8 +117,18 @@ const meta = {
     descriptionKey: 'widgetKeyboardFocusable_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'aria', 'keyboard', 'structure', 'atomic', 'manual'],
-  wcagSc: ['2.1.1'],
+  tags: [
+    'wcag2a',
+    'wcag211',
+    'wcag2aaa',
+    'wcag213',
+    'aria',
+    'keyboard',
+    'structure',
+    'atomic',
+    'manual'
+  ],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -126,13 +136,25 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'manual',
   defaultConfidence: 'medium',
-  coverage: { facetsBySc: { '2.1.1': ['widget-keyboard-focusable-evidence'] } }
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['widget-keyboard-focusable-evidence'],
+      '2.1.3': ['widget-keyboard-focusable-evidence']
+    }
+  }
 };
 
 function runInPage(ctx) {

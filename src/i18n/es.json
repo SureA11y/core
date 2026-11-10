@@ -406,6 +406,8 @@
   "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un texto provisional en lugar de una descripción del contenido que sigue.",
   "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
   "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+  "catalog.rules.wcag_2413_focus_appearance.title": "Apariencia del foco",
+  "catalog.rules.wcag_2413_focus_appearance.description": "Agrupación de comprobaciones que garantizan que el indicador de foco del teclado sea lo bastante grande y contraste lo suficiente con el estado sin foco (AAA).",
   "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
   "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
   "catalog.rules.wcag_253_label_in_name.title": "Inclusión de la etiqueta en el nombre",

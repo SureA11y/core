@@ -15,7 +15,10 @@ function levelTagsFor(prefix) {
 }
 
 // Static consistency: every rule's meta.tags must carry the version-correct wcag2/wcag21/wcag22
-// level tag for its wcagSc, and must not also carry a level tag from a different version prefix.
+// level tag for its wcagSc, and must not also carry a level tag from a version none of its SCs
+// comes from. A rule whose SCs come from different versions, such as 2.4.7 (2.0) with 2.4.13
+// (2.2), may carry a level tag for each SC's own version: the profiles select by these tags, so
+// with only wcag22aaa it would not run in a WCAG 2.0 or AA scan, where its 2.4.7 applies.
 // Rules with no wcagSc (best-practice/advisory, no formal SC) are exempt -- there's no SC to
 // derive a version from. This is the guard rail so a future rule authored for a WCAG 2.1/2.2 SC
 // doesn't silently ship with the wrong (or a stale bare wcag2*) tag.
@@ -29,7 +32,9 @@ test('every rule with a wcagSc carries the version-correct wcag2*/wcag21*/wcag22
         const tags = Array.isArray(def.tags) ? def.tags.map(String) : [];
         const expectedPrefix = versionTagPrefixForScs(wcagSc);
         const expectedLevelTags = levelTagsFor(expectedPrefix);
-        const wrongLevelTags = ALL_LEVEL_TAGS.filter((t) => !expectedLevelTags.includes(t));
+        const scPrefixes = new Set(wcagSc.map((sc) => versionTagPrefixForScs([sc])));
+        const allowedLevelTags = [...scPrefixes].flatMap(levelTagsFor);
+        const wrongLevelTags = ALL_LEVEL_TAGS.filter((t) => !allowedLevelTags.includes(t));
 
         const hasExpected = expectedLevelTags.some((t) => tags.includes(t));
         assert.ok(

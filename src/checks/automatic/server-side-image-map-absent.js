@@ -7,7 +7,7 @@
  * @atomic true
  * @summary A server-side image map (ismap) needs a keyboard-operable alternative
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Applies to any scan scope. An <img ismap> inside an <a href> is a
  *   server-side image map: the browser sends the click coordinates to the
@@ -26,7 +26,7 @@
  *   - `SERVER_SIDE_IMAGE_MAP` (cantTell): an <img ismap> in a link is a
  *     server-side image map, which a keyboard cannot operate; a person
  *     checks that the same destinations are offered as ordinary links.
- *     Basis: WCAG 2.1.1 (not settled); HTML img ismap.
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); HTML img ismap.
  * @implementation-notes
  * - There is no automatable way to verify that a usable alternative exists
  *   elsewhere on the page, so the rule never fails.
@@ -43,8 +43,17 @@ const meta = {
     descriptionKey: 'serverSideImageMapAbsent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard'],
-  wcagSc: ['2.1.1'],
+  tags: [
+    'wcag2a',
+    'wcag211',
+    'wcag2aaa',
+    'wcag213',
+    'structure',
+    'atomic',
+    'automatic',
+    'keyboard'
+  ],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -52,13 +61,25 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'serious',
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['server-side-image-map-absent'] } }
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['server-side-image-map-absent'],
+      '2.1.3': ['server-side-image-map-absent']
+    }
+  }
 };
 
 function runInPage(ctx) {

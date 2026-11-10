@@ -53,13 +53,13 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`duplicate-id-aria`](#duplicate-id-aria) | IDs referenced by ARIA must be unique | 4.1.2 | A | high | serious |
 | [`embed-text-alternative-present`](#embed-text-alternative-present) | &lt;embed&gt; must provide a text alternative | 1.1.1 | A | high | serious |
 | [`empty-heading`](#empty-heading) | Headings must not be empty | — | — | high | minor |
-| [`focus-not-removed-by-script`](#focus-not-removed-by-script) | A script must not remove focus from an element as it receives it | 2.1.1, 2.4.7 | A, AA | medium | serious |
+| [`focus-not-removed-by-script`](#focus-not-removed-by-script) | A script must not remove focus from an element as it receives it | 2.1.1, 2.1.3, 2.4.13, 2.4.7 | A, AAA, AAA, AA | medium | serious |
 | [`form-control-programmatic-label-present`](#form-control-programmatic-label-present) | Form controls must have a programmatic label | 1.3.1, 3.3.2, 4.1.2 | A | medium | serious |
 | [`form-control-single-label`](#form-control-single-label) | Form controls should not have multiple labels | 3.3.2 | A | high | moderate |
 | [`html-lang-attr-present`](#html-lang-attr-present) | Page language is declared | 3.1.1 | A | high | serious |
 | [`html-xml-lang-mismatch`](#html-xml-lang-mismatch) | lang and xml:lang must not disagree | 3.1.1 | A | high | serious |
 | [`identical-iframes-same-purpose`](#identical-iframes-same-purpose) | Frames with the same name embed the same resource | 4.1.2 | A | medium | moderate |
-| [`iframe-focusable-content`](#iframe-focusable-content) | Frames with tabindex="-1" must not contain focusable content | 2.1.1 | A | high | moderate |
+| [`iframe-focusable-content`](#iframe-focusable-content) | Frames with tabindex="-1" must not contain focusable content | 2.1.1, 2.1.3 | A, AAA | high | moderate |
 | [`iframe-name-present`](#iframe-name-present) | Frames have an accessible name | 4.1.2 | A | high | serious |
 | [`iframe-title-unique`](#iframe-title-unique) | Frame title uniqueness (deprecated) | 4.1.2 | A | high | moderate |
 | [`img-alt-present`](#img-alt-present) | &lt;img&gt; must have an alt attribute | 1.1.1 | A | high | serious |
@@ -85,7 +85,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`progressbar-name-present`](#progressbar-name-present) | Progress bars have an accessible name | 1.1.1 | A | high | serious |
 | [`role-img-text-alternative-present`](#role-img-text-alternative-present) | [role="img"/"graphics-symbol"/"graphics-document"] must have an accessible text alternative | 1.1.1 | A | high | serious |
 | [`searchbox-name-present`](#searchbox-name-present) | Searchboxes have an accessible name | 4.1.2 | A | high | serious |
-| [`server-side-image-map-absent`](#server-side-image-map-absent) | Server-side image maps must have a keyboard-operable alternative | 2.1.1 | A | high | serious |
+| [`server-side-image-map-absent`](#server-side-image-map-absent) | Server-side image maps must have a keyboard-operable alternative | 2.1.1, 2.1.3 | A, AAA | high | serious |
 | [`slider-name-present`](#slider-name-present) | Sliders have an accessible name | 4.1.2 | A | high | serious |
 | [`spinbutton-name-present`](#spinbutton-name-present) | Spinbuttons have an accessible name | 4.1.2 | A | high | serious |
 | [`summary-name-present`](#summary-name-present) | Summary elements have an accessible name | 4.1.2 | A | high | serious |
@@ -115,7 +115,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`bypass-blocks-present`](#bypass-blocks-present) | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | [`canvas-text-alternative-quality`](#canvas-text-alternative-quality) | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`control-name-title-only`](#control-name-title-only) | A button or link should not take its name only from its title | — | — | medium | minor |
-| [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.7 | AA | medium | serious |
+| [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.13, 2.4.7 | AAA, AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
@@ -166,9 +166,9 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`table-duplicate-name`](#table-duplicate-name) | Table caption must not duplicate its summary attribute | — | — | medium | minor |
 | [`table-fake-caption`](#table-fake-caption) | A table's first row should not stand in for a real &lt;caption&gt; | 1.3.1 | A | low | minor |
 | [`video-caption`](#video-caption) | Prerecorded video should provide complete captions | 1.2.2 | A | low | moderate |
-| [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1 | A | medium | serious |
+| [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (37)
+## Composite (WCAG-SC rollup) rules (38)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -188,11 +188,12 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.4.5-images-of-text` | Images of Text | Rollup of checks asking whether images that markup shows likely to hold text could use real text instead. | 1.4.5 | AA | 1 |
 | `wcag-1.4.6-contrast-enhanced` | Contrast: enhanced | Rollup of checks for enhanced text contrast. | 1.4.6 | AAA | 2 |
 | `wcag-2.1.1-keyboard` | Keyboard | Rollup of checks ensuring functionality is operable through a keyboard interface. | 2.1.1 | A | 8 |
-| `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 3 |
+| `wcag-2.1.3-keyboard-no-exception` | Keyboard (No Exception) | Rollup of checks ensuring functionality is operable through a keyboard interface with no exceptions (AAA). | 2.1.3 | AAA | 7 |
 | `wcag-2.2.1-timing-adjustable` | Timing Adjustable | Rollup of checks ensuring the page does not impose a timed refresh the user cannot control. | 2.2.1 | A | 1 |
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
 | `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
+| `wcag-2.4.13-focus-appearance` | Focus Appearance | Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA). | 2.4.13 | AAA | 2 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |
 | `wcag-2.4.4-link-purpose-in-context` | Link Purpose (In Context) | Rollup of checks flagging links with no accessible name, or whose text alone is a known non-descriptive/generic phrase. | 2.4.4 | A | 2 |
@@ -1235,7 +1236,7 @@ The name is valid, so 4.1.2 is met, but a title is shown only on mouse hover: no
 
 **Focus indicator must not be removed without a replacement**
 
-manual · WCAG 2.4.7 (AA) · confidence medium · default severity serious
+manual · WCAG 2.4.13, 2.4.7 (AAA, AA) · confidence medium · default severity serious
 
 Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.
 
@@ -1251,7 +1252,7 @@ Flags elements in the tab order whose focus outline is removed, by a :focus/:foc
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. It leans fail when every style sheet could be read, no :focus-within rule around the element draws a change, no inline focus or blur handler is on it or an ancestor, the removing rule doesn't name focus-visible, and the listener hook, when it ran, saw no focus listener for it. | WCAG 2.4.7 (not settled); F78; ACT oj04fd |
+| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. It leans fail when every style sheet could be read, no :focus-within rule around the element draws a change, no inline focus or blur handler is on it or an ancestor, the removing rule doesn't name focus-visible, and the listener hook, when it ran, saw no focus listener for it. | WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd |
 
 ### `css-hidden-focus`
 
@@ -1533,7 +1534,7 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 
 **A script must not remove focus from an element as it receives it**
 
-automatic · WCAG 2.1.1, 2.4.7 (A, AA) · confidence medium · default severity serious
+automatic · WCAG 2.1.1, 2.1.3, 2.4.13, 2.4.7 (A, AAA, AAA, AA) · confidence medium · default severity serious
 
 Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it.
 
@@ -1562,9 +1563,9 @@ A handler that sends focus somewhere (a focus-trap sentinel, a redirect) is the 
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_HANDLER_BLURS_SELF` | fail, cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives; it fails in the tab order and is asked about outside it. | WCAG 2.1.1; WCAG 2.4.7; F55 |
-| `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. It leans fail when the element is in the tab order and blur() is called on it as a statement of its own, outside any condition or callback, with no return before it. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
-| `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. It leans pass when the element is a focus-trap sentinel (a plain, empty, unnamed element in the tab order, in or beside a dialog, or at the edge of a container holding focusable content), and fail when it is a visible control with a name, in the tab order, that calls focus() as a statement of its own, outside any condition or callback. | WCAG 2.1.1 (not settled); WCAG 2.4.7 (not settled); F55 |
+| `FOCUS_HANDLER_BLURS_SELF` | fail, cantTell | The element's onfocus handler does nothing but call blur() on it, so focus is removed as it arrives; it fails in the tab order and is asked about outside it. | WCAG 2.1.1; WCAG 2.1.3; WCAG 2.4.7; WCAG 2.4.13; F55 |
+| `FOCUS_HANDLER_CALLS_BLUR` | cantTell | The element's onfocus handler calls blur() among other code or on another element; whether focus is lost depends on the script. It leans fail when the element is in the tab order and blur() is called on it as a statement of its own, outside any condition or callback, with no return before it. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55 |
+| `FOCUS_HANDLER_MOVES_FOCUS` | cantTell | The element's onfocus handler calls focus() on another element, so focus may move away as it arrives. It leans pass when the element is a focus-trap sentinel (a plain, empty, unnamed element in the tab order, in or beside a dialog, or at the edge of a container holding focusable content), and fail when it is a visible control with a name, in the tab order, that calls focus() as a statement of its own, outside any condition or callback. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F55 |
 
 ### `focus-order-semantics`
 
@@ -1857,7 +1858,7 @@ Flags groups of links that share the same accessible name but resolve to more th
 
 **Frames with tabindex="-1" must not contain focusable content**
 
-automatic · WCAG 2.1.1 (A) · confidence high · default severity moderate
+automatic · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence high · default severity moderate
 
 Checks that same-origin &lt;iframe&gt;/&lt;frame&gt; elements with tabindex="-1" do not contain focusable content, which keyboard users cannot reach: the negative tabindex takes the frame’s whole content out of the tab order.
 
@@ -1869,8 +1870,8 @@ Checks that same-origin &lt;iframe&gt;/&lt;frame&gt; elements with tabindex="-1"
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` | fail | A frame with a negative tabindex holds content in the tab order, which Tab skips, so a keyboard user cannot reach it. | WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation |
-| `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | cantTell | A frame with a negative tabindex holds one focusable element, but focus moved straight on from it, so keyboard access is checked in a real browser. It leans pass when that element is an empty focus guard (a plain element made focusable by tabindex alone, with no text, content, name or role) and focus left the frame. | WCAG 2.1.1 (not settled); ACT akn7bn (not settled) |
+| `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` | fail | A frame with a negative tabindex holds content in the tab order, which Tab skips, so a keyboard user cannot reach it. | WCAG 2.1.1; WCAG 2.1.3; ACT akn7bn; HTML sequential focus navigation |
+| `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` | cantTell | A frame with a negative tabindex holds one focusable element, but focus moved straight on from it, so keyboard access is checked in a real browser. It leans pass when that element is an empty focus guard (a plain element made focusable by tabindex alone, with no text, content, name or role) and focus left the frame. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); ACT akn7bn (not settled) |
 
 ### `iframe-name-present`
 
@@ -3275,7 +3276,7 @@ Checks that elements with role="searchbox" expose a non-empty accessible name.
 
 **Server-side image maps must have a keyboard-operable alternative**
 
-automatic · WCAG 2.1.1 (A) · confidence high · default severity serious
+automatic · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence high · default severity serious
 
 Asks, for each &lt;img ismap&gt; inside a link, whether the page offers the same destinations as links a keyboard can reach, since a server-side image map has no keyboard-operable regions of its own.
 
@@ -3287,7 +3288,7 @@ Asks, for each &lt;img ismap&gt; inside a link, whether the page offers the same
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `SERVER_SIDE_IMAGE_MAP` | cantTell | An &lt;img ismap&gt; in a link is a server-side image map, which a keyboard cannot operate; a person checks that the same destinations are offered as ordinary links. | WCAG 2.1.1 (not settled); HTML img ismap |
+| `SERVER_SIDE_IMAGE_MAP` | cantTell | An &lt;img ismap&gt; in a link is a server-side image map, which a keyboard cannot operate; a person checks that the same destinations are offered as ordinary links. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); HTML img ismap |
 
 ### `skip-link`
 
@@ -3860,7 +3861,7 @@ Between-tag fallback content inside &lt;video&gt; is NOT accepted: it is only re
 
 **Widgets should be reachable with the keyboard**
 
-manual · WCAG 2.1.1 (A) · confidence medium · default severity serious
+manual · WCAG 2.1.1, 2.1.3 (A, AAA) · confidence medium · default severity serious
 
 Flags an element with a widget role that cannot take focus or is out of the tab order, and a composite widget with no tab stop, for manual review.
 
@@ -3897,7 +3898,7 @@ A keyboard user can reach the widget with Tab (WCAG 2.1.1). Only the markup's fo
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `WIDGET_NOT_FOCUSABLE` | cantTell | A widget that cannot take focus and holds nothing that can; whether a keyboard user can reach it or what it does another way is for a person to check. It leans fail unless another element in the tab order has the same role and name. | WCAG 2.1.1 (not settled); F42 |
-| `WIDGET_NOT_IN_TAB_ORDER` | cantTell | A widget that takes focus only from script (tabindex="-1"), so Tab never reaches it. It leans pass when another element in the tab order has the same role and name, and fail when, with a listener hook installed before the page's scripts, no key listener is on an ancestor, the document or the window to move focus to it. | WCAG 2.1.1 (not settled) |
-| `COMPOSITE_NO_TAB_STOP` | cantTell | A composite widget that no other element controls or owns, with no tab stop on it or on any of its items. It leans fail unless the element just before it, or before its parent, says it opens a popup (aria-haspopup, or aria-expanded="true"). | WCAG 2.1.1 (not settled) |
-| `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | cantTell | An element with aria-activedescendant that cannot take focus, so its active item is never announced. It leans fail: ARIA gives aria-activedescendant effect only on the element that has focus. | WCAG 2.1.1 (not settled); WAI-ARIA 1.2 aria-activedescendant |
+| `WIDGET_NOT_FOCUSABLE` | cantTell | A widget that cannot take focus and holds nothing that can; whether a keyboard user can reach it or what it does another way is for a person to check. It leans fail unless another element in the tab order has the same role and name. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); F42 |
+| `WIDGET_NOT_IN_TAB_ORDER` | cantTell | A widget that takes focus only from script (tabindex="-1"), so Tab never reaches it. It leans pass when another element in the tab order has the same role and name, and fail when, with a listener hook installed before the page's scripts, no key listener is on an ancestor, the document or the window to move focus to it. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `COMPOSITE_NO_TAB_STOP` | cantTell | A composite widget that no other element controls or owns, with no tab stop on it or on any of its items. It leans fail unless the element just before it, or before its parent, says it opens a popup (aria-haspopup, or aria-expanded="true"). | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled) |
+| `ACTIVEDESCENDANT_HOST_NOT_FOCUSABLE` | cantTell | An element with aria-activedescendant that cannot take focus, so its active item is never announced. It leans fail: ARIA gives aria-activedescendant effect only on the element that has focus. | WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); WAI-ARIA 1.2 aria-activedescendant |
