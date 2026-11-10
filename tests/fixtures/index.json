@@ -690,6 +690,7 @@
       "title": "Focus indicator must not be removed without a replacement",
       "type": "manual",
       "wcagSc": [
+        "1.4.11",
         "2.4.7",
         "2.4.13"
       ],

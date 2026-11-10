@@ -427,6 +427,20 @@ module.exports = [
   },
 
   {
+    id: 'wcag-1.4.11-non-text-contrast',
+    checksIds: ['css-focus-indicator-suppressed'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_1411_non_text_contrast.title',
+      descriptionKey: 'catalog.rules.wcag_1411_non_text_contrast.description',
+      title: 'Non-text Contrast',
+      description:
+        'Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.',
+      wcagSc: ['1.4.11'],
+      level: 'AA'
+    }
+  },
+
+  {
     id: 'wcag-1.4.12-text-spacing',
     checksIds: ['avoid-inline-spacing', 'text-spacing-content-loss'],
     meta: {

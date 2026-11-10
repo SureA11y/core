@@ -618,6 +618,11 @@ const FACETS = {
         "level": "AA",
         "facets": [
             {
+                "id": "focus-indicator-not-suppressed",
+                "label": "CSS does not remove the focus indicator without drawing a replacement",
+                "automation": "manual"
+            },
+            {
                 "id": "ui-component-contrast",
                 "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
                 "automation": "manual"

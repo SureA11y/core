@@ -438,6 +438,8 @@
   "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
   "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
   "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+  "catalog.rules.wcag_1411_non_text_contrast.title": "非テキストのコントラスト",
+  "catalog.rules.wcag_1411_non_text_contrast.description": "ユーザインタフェースコンポーネントとその状態を識別するのに必要な視覚的情報と、グラフィックの理解に必要な部分のコントラスト比が 3:1 以上であるかを確認するチェックの集約です。",
   "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
   "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
   "catalog.rules.wcag_224_interruptions.title": "割込み",
