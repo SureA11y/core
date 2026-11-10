@@ -438,6 +438,8 @@
   "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
   "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
   "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+  "catalog.rules.wcag_1411_non_text_contrast.title": "Non-text Contrast",
+  "catalog.rules.wcag_1411_non_text_contrast.description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
   "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
   "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
   "catalog.rules.wcag_224_interruptions.title": "Interruptions",

@@ -424,6 +424,17 @@ const PROCEDURES = {
         }
       }
     },
+    '1.4.11': {
+      'focus-indicator-not-suppressed': {
+        coveredBy: 'ui-component-contrast'
+      },
+      'ui-component-contrast': {
+        tools: ['devtools']
+      },
+      'graphics-contrast': {
+        tools: ['devtools']
+      }
+    },
     '1.4.12': {
       'avoid-inline-spacing': {
         tools: ['devtools'],

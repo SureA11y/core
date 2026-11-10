@@ -438,6 +438,8 @@
   "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
   "catalog.rules.wcag_135_identify_input_purpose.title": "Identificación del propósito de la entrada",
   "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+  "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste no textual",
+  "catalog.rules.wcag_1411_non_text_contrast.description": "Agrupación de comprobaciones que garantizan que la información visual necesaria para identificar los componentes de la interfaz y sus estados, y las partes de los gráficos necesarias para entenderlos, tengan un contraste de al menos 3:1.",
   "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
   "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
   "catalog.rules.wcag_224_interruptions.title": "Interrupciones",

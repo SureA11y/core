@@ -392,10 +392,14 @@
   "css-focus-indicator-suppressed": {
     "prefix": "cssFocusIndicatorSuppressed",
     "criteria": [
+      "1.4.11",
       "2.4.13",
       "2.4.7"
     ],
     "facets": {
+      "1.4.11": [
+        "focus-indicator-not-suppressed"
+      ],
       "2.4.7": [
         "focus-indicator-not-suppressed"
       ],

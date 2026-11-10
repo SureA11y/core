@@ -29139,6 +29139,8 @@ const RUNTIME_CATALOG = {
     "helpUrl": "",
     "tags": [
       "wcag2aa",
+      "wcag21aa",
+      "wcag1411",
       "wcag247",
       "wcag22aaa",
       "wcag2413",
@@ -29150,10 +29152,20 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
+      "1.4.11",
       "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.11",
+        "title": "Non-text Contrast",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"
+      },
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -29171,6 +29183,24 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -29196,6 +29226,9 @@ const RUNTIME_CATALOG = {
     "type": "manual",
     "coverage": {
       "facetsBySc": {
+        "1.4.11": [
+          "focus-indicator-not-suppressed"
+        ],
         "2.4.7": [
           "focus-indicator-not-suppressed"
         ],
@@ -37954,6 +37987,42 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-1.4.11-non-text-contrast",
+    "checksIds": [
+      "css-focus-indicator-suppressed"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_1411_non_text_contrast.title",
+      "descriptionKey": "catalog.rules.wcag_1411_non_text_contrast.description",
+      "title": "Non-text Contrast",
+      "description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
+      "wcagSc": [
+        "1.4.11"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.11",
+          "title": "Non-text contrast",
+          "wcagSc": [
+            "1.4.11"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.11",
+          "title": "Non-text contrast",
+          "wcagSc": [
+            "1.4.11"
+          ]
+        }
+      ]
+    }
+  },
+  {
     "id": "wcag-1.4.12-text-spacing",
     "checksIds": [
       "avoid-inline-spacing",
@@ -38998,6 +39067,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Nicht-Text-Kontrast",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die visuellen Informationen, die zum Erkennen von Bedienelementen und ihren Zuständen nötig sind, und die Teile von Grafiken, die zu ihrem Verständnis nötig sind, einen Kontrast von mindestens 3:1 haben.",
       "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
       "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
       "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
@@ -40390,6 +40461,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Non-text Contrast",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
       "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "catalog.rules.wcag_224_interruptions.title": "Interruptions",
@@ -41782,6 +41855,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identificación del propósito de la entrada",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste no textual",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Agrupación de comprobaciones que garantizan que la información visual necesaria para identificar los componentes de la interfaz y sus estados, y las partes de los gráficos necesarias para entenderlos, tengan un contraste de al menos 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
       "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
       "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
@@ -43174,6 +43249,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité de la saisie",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste du contenu non textuel",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Regroupe les contrôles garantissant que l’information visuelle nécessaire pour identifier les composants d’interface et leurs états, et les parties des graphiques nécessaires pour les comprendre, ont un contraste d’au moins 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
       "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
       "catalog.rules.wcag_224_interruptions.title": "Interruptions",
@@ -44566,6 +44643,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
       "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "非テキストのコントラスト",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "ユーザインタフェースコンポーネントとその状態を識別するのに必要な視覚的情報と、グラフィックの理解に必要な部分のコントラスト比が 3:1 以上であるかを確認するチェックの集約です。",
       "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
       "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
       "catalog.rules.wcag_224_interruptions.title": "割込み",
@@ -48675,6 +48754,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "helpUrl": "",
     "tags": [
       "wcag2aa",
+      "wcag21aa",
+      "wcag1411",
       "wcag247",
       "wcag22aaa",
       "wcag2413",
@@ -48686,10 +48767,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
+      "1.4.11",
       "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "1.4.11",
+        "title": "Non-text Contrast",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#non-text-contrast",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/non-text-contrast.html"
+      },
       {
         "standard": "WCAG",
         "version": "2.2",
@@ -48707,6 +48798,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AAA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V3.2.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.1.4.11",
+        "title": "Non-text contrast",
+        "wcagSc": [
+          "1.4.11"
+        ]
       },
       {
         "standard": "EN 301 549",
@@ -48732,6 +48841,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "type": "manual",
     "coverage": {
       "facetsBySc": {
+        "1.4.11": [
+          "focus-indicator-not-suppressed"
+        ],
         "2.4.7": [
           "focus-indicator-not-suppressed"
         ],
@@ -57484,6 +57596,42 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           "title": "Identify input purpose",
           "wcagSc": [
             "1.3.5"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-1.4.11-non-text-contrast",
+    "checksIds": [
+      "css-focus-indicator-suppressed"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_1411_non_text_contrast.title",
+      "descriptionKey": "catalog.rules.wcag_1411_non_text_contrast.description",
+      "title": "Non-text Contrast",
+      "description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
+      "wcagSc": [
+        "1.4.11"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V3.2.1",
+          "requirement": "9.1.4.11",
+          "title": "Non-text contrast",
+          "wcagSc": [
+            "1.4.11"
+          ]
+        },
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.1.4.11",
+          "title": "Non-text contrast",
+          "wcagSc": [
+            "1.4.11"
           ]
         }
       ]
@@ -104250,6 +104398,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Nicht-Text-Kontrast",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die visuellen Informationen, die zum Erkennen von Bedienelementen und ihren Zuständen nötig sind, und die Teile von Grafiken, die zu ihrem Verständnis nötig sind, einen Kontrast von mindestens 3:1 haben.",
       "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
       "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
       "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",
@@ -105642,6 +105792,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Rollup of checks ensuring content does not restrict its view to a single display orientation.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identify Input Purpose",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Non-text Contrast",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Text Spacing",
       "catalog.rules.wcag_1412_text_spacing.description": "Rollup of checks ensuring text spacing can be increased without losing content.",
       "catalog.rules.wcag_224_interruptions.title": "Interruptions",
@@ -107034,6 +107186,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Agrupación de comprobaciones que garantizan que el contenido no restrinja su visualización a una sola orientación de pantalla.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identificación del propósito de la entrada",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Agrupación de comprobaciones que garantizan que el atributo autocomplete identifique correctamente el propósito de la entrada.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste no textual",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Agrupación de comprobaciones que garantizan que la información visual necesaria para identificar los componentes de la interfaz y sus estados, y las partes de los gráficos necesarias para entenderlos, tengan un contraste de al menos 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espaciado del texto",
       "catalog.rules.wcag_1412_text_spacing.description": "Agrupación de comprobaciones que garantizan que el espaciado del texto se puede aumentar sin pérdida de contenido.",
       "catalog.rules.wcag_224_interruptions.title": "Interrupciones",
@@ -108426,6 +108580,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
       "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité de la saisie",
       "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste du contenu non textuel",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "Regroupe les contrôles garantissant que l’information visuelle nécessaire pour identifier les composants d’interface et leurs états, et les parties des graphiques nécessaires pour les comprendre, ont un contraste d’au moins 3:1.",
       "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
       "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
       "catalog.rules.wcag_224_interruptions.title": "Interruptions",
@@ -109818,6 +109974,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_134_orientation.description": "コンテンツの表示が、1 つの表示の向きに制限されていないかを確認するチェックの集約です。",
       "catalog.rules.wcag_135_identify_input_purpose.title": "入力目的の特定",
       "catalog.rules.wcag_135_identify_input_purpose.description": "autocomplete 属性が入力の目的を正しく特定しているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_1411_non_text_contrast.title": "非テキストのコントラスト",
+      "catalog.rules.wcag_1411_non_text_contrast.description": "ユーザインタフェースコンポーネントとその状態を識別するのに必要な視覚的情報と、グラフィックの理解に必要な部分のコントラスト比が 3:1 以上であるかを確認するチェックの集約です。",
       "catalog.rules.wcag_1412_text_spacing.title": "テキストの間隔",
       "catalog.rules.wcag_1412_text_spacing.description": "内容を失わずにテキストの間隔を広げられることを確認するチェックの集約です。",
       "catalog.rules.wcag_224_interruptions.title": "割込み",

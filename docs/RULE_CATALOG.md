@@ -116,7 +116,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`bypass-blocks-present`](#bypass-blocks-present) | Page must provide a way to bypass repeated blocks | 2.4.1 | A | medium | moderate |
 | [`canvas-text-alternative-quality`](#canvas-text-alternative-quality) | &lt;canvas&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`control-name-title-only`](#control-name-title-only) | A button or link should not take its name only from its title | — | — | medium | minor |
-| [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 2.4.13, 2.4.7 | AAA, AA | medium | serious |
+| [`css-focus-indicator-suppressed`](#css-focus-indicator-suppressed) | Focus indicator must not be removed without a replacement | 1.4.11, 2.4.13, 2.4.7 | AA, AAA, AA | medium | serious |
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
@@ -169,7 +169,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide complete captions | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (39)
+## Composite (WCAG-SC rollup) rules (40)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -182,6 +182,7 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-1.3.4-orientation` | Orientation | Rollup of checks ensuring content does not restrict its view to a single display orientation. | 1.3.4 | AA | 1 |
 | `wcag-1.3.5-identify-input-purpose` | Identify Input Purpose | Rollup of checks ensuring the autocomplete attribute correctly identifies input purpose. | 1.3.5 | AA | 1 |
 | `wcag-1.4.1-use-of-color` | Use of Color | Rollup of checks ensuring color is not used as the only visual means of conveying information. | 1.4.1 | A | 1 |
+| `wcag-1.4.11-non-text-contrast` | Non-text Contrast | Rollup of checks ensuring the visual information needed to identify user interface components and their states, and the parts of graphics needed to understand them, has a contrast of at least 3:1. | 1.4.11 | AA | 1 |
 | `wcag-1.4.12-text-spacing` | Text Spacing | Rollup of checks ensuring text spacing can be increased without losing content. | 1.4.12 | AA | 2 |
 | `wcag-1.4.2-audio-control` | Audio Control | Rollup of checks for a pause/stop or volume-control mechanism on autoplaying audio. | 1.4.2 | A | 1 |
 | `wcag-1.4.3-contrast-minimum` | Contrast: minimum | Rollup of checks for minimum text contrast. | 1.4.3 | AA | 2 |
@@ -1238,7 +1239,7 @@ The name is valid, so 4.1.2 is met, but a title is shown only on mouse hover: no
 
 **Focus indicator must not be removed without a replacement**
 
-manual · WCAG 2.4.13, 2.4.7 (AAA, AA) · confidence medium · default severity serious
+manual · WCAG 1.4.11, 2.4.13, 2.4.7 (AA, AAA, AA) · confidence medium · default severity serious
 
 Flags elements in the tab order whose focus outline is removed, by a :focus/:focus-visible rule or by a rule with no state such as a { outline: none }, with no replacement indicator (border, box-shadow, background, ...) in any focus rule matching them.
 
@@ -1254,7 +1255,7 @@ Flags elements in the tab order whose focus outline is removed, by a :focus/:foc
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. It leans fail when every style sheet could be read, no :focus-within rule around the element draws a change, no inline focus or blur handler is on it or an ancestor, the removing rule doesn't name focus-visible, and the listener hook, when it ran, saw no focus listener for it. | WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd |
+| `FOCUS_INDICATOR_SUPPRESSED` | cantTell | A style sheet rule removes the element's focus outline and no focus rule draws a replacement; whether the page shows focus another way is for a person to check. It leans fail when every style sheet could be read, no :focus-within rule around the element draws a change, no inline focus or blur handler is on it or an ancestor, the removing rule doesn't name focus-visible, and the listener hook, when it ran, saw no focus listener for it. | WCAG 1.4.11 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd |
 
 ### `css-hidden-focus`
 

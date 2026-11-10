@@ -7,7 +7,7 @@
  * @atomic true
  * @summary CSS must not remove the focus indicator without drawing a replacement
  * @standard WCAG 2.2
- * @sc 2.4.7, 2.4.13
+ * @sc 1.4.11, 2.4.7, 2.4.13
  * @applicability
  *   Elements in sequential focus navigation (tabbable and rendered) on a
  *   page whose accessible stylesheets contain at least one rule that
@@ -39,7 +39,7 @@
  *     handler is on it or an ancestor, the removing rule doesn't name
  *     focus-visible, and the listener hook, when it ran, saw no focus
  *     listener for it.
- *     Basis: WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd.
+ *     Basis: WCAG 1.4.11 (not settled); WCAG 2.4.7 (not settled); WCAG 2.4.13 (not settled); F78; ACT oj04fd.
  * @implementation-notes
  * - Authored as `type: 'manual'` (cantTell-capped, never fail). CSS is
  *   only one of the ways a page can indicate focus: ACT oj04fd's own
@@ -92,6 +92,8 @@ const meta = {
   helpUrl: null,
   tags: [
     'wcag2aa',
+    'wcag21aa',
+    'wcag1411',
     'wcag247',
     'wcag22aaa',
     'wcag2413',
@@ -101,8 +103,15 @@ const meta = {
     'atomic',
     'manual'
   ],
-  wcagSc: ['2.4.7', '2.4.13'],
+  wcagSc: ['1.4.11', '2.4.7', '2.4.13'],
   normativeMappings: [
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '1.4.11',
+      title: 'Non-text Contrast',
+      conformanceLevel: 'AA'
+    },
     {
       standard: 'WCAG',
       version: '2.2',
@@ -124,6 +133,7 @@ const meta = {
   defaultConfidence: 'medium',
   coverage: {
     facetsBySc: {
+      '1.4.11': ['focus-indicator-not-suppressed'],
       '2.4.7': ['focus-indicator-not-suppressed'],
       '2.4.13': ['focus-indicator-not-suppressed']
     }
