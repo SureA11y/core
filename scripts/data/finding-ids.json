@@ -740,7 +740,6 @@
     ],
     "target-size-enhanced": [
       "undersized",
-      "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"
     ],
