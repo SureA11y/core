@@ -12,6 +12,12 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - **`page-zones-landmark`** (manual, best practice): asks about a page's header, navigation, search and footer that are not exposed as the landmark of their nature (`BANNER_NOT_EXPOSED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`), found from the names their blocks give themselves and from search forms, and about a page header or footer nested in a section, where it is no landmark, on a page that has none at the top (`HEADER_NESTED`, `FOOTER_NESTED`). It only asks: which block is a zone of the page is for a person. A standard that requires those landmarks, such as RAWeb 9.2, links its codes to its own tests.
 
+### Changed
+
+- **`target-size-minimum` says how far a target is from passing the spacing exception.** A fail's hint gives the distance measured, the distance needed and how much further apart the two need to be: between two undersized targets' centres, against 24px (`targetSizeMinimum_hint_fail_centerDistance`), or from the target's centre to another target, against 12px (`targetSizeMinimum_hint_fail_regionDistance`). They replace `targetSizeMinimum_hint_fail`; `i18n.params` adds `distancePx`, `minDistancePx` and `shortfallPx`.
+
+- **`link-in-text-block` states the contrast in a fail.** A link set apart from its text by color alone gives its ratio against that text, below 3:1 (`linkInTextBlock_summary_fail_ratio`), or the ratio before an ancestor's opacity fades both, lower as drawn (`linkInTextBlock_summary_fail_ratioBeforeOpacity`). A ratio under 3:1 never reads as 3.00:1.
+
 ### Changed (experimental)
 
 - **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.
