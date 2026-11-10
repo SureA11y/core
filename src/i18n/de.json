@@ -438,6 +438,8 @@
   "catalog.rules.wcag_134_orientation.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Inhalte ihre Darstellung nicht auf eine einzige Bildschirmausrichtung beschränken.",
   "catalog.rules.wcag_135_identify_input_purpose.title": "Bestimmung des Eingabezwecks",
   "catalog.rules.wcag_135_identify_input_purpose.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass das autocomplete-Attribut den Eingabezweck korrekt angibt.",
+  "catalog.rules.wcag_1411_non_text_contrast.title": "Nicht-Text-Kontrast",
+  "catalog.rules.wcag_1411_non_text_contrast.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass die visuellen Informationen, die zum Erkennen von Bedienelementen und ihren Zuständen nötig sind, und die Teile von Grafiken, die zu ihrem Verständnis nötig sind, einen Kontrast von mindestens 3:1 haben.",
   "catalog.rules.wcag_1412_text_spacing.title": "Textabstand",
   "catalog.rules.wcag_1412_text_spacing.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Textabstände ohne Inhaltsverlust vergrößert werden können.",
   "catalog.rules.wcag_224_interruptions.title": "Unterbrechungen",

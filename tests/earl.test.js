@@ -199,6 +199,7 @@ test('every criterion the catalog maps to slugifies to its published id', () => 
     '1.3.4': 'orientation',
     '1.3.5': 'identify-input-purpose',
     '1.4.1': 'use-of-color',
+    '1.4.11': 'non-text-contrast',
     '1.4.12': 'text-spacing',
     '1.4.2': 'audio-control',
     '1.4.3': 'contrast-minimum',

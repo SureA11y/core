@@ -438,6 +438,8 @@
   "catalog.rules.wcag_134_orientation.description": "Regroupe les contrôles garantissant que le contenu ne limite pas son affichage à une seule orientation d’écran.",
   "catalog.rules.wcag_135_identify_input_purpose.title": "Identifier la finalité de la saisie",
   "catalog.rules.wcag_135_identify_input_purpose.description": "Regroupe les contrôles garantissant que l’attribut autocomplete identifie correctement la finalité du champ.",
+  "catalog.rules.wcag_1411_non_text_contrast.title": "Contraste du contenu non textuel",
+  "catalog.rules.wcag_1411_non_text_contrast.description": "Regroupe les contrôles garantissant que l’information visuelle nécessaire pour identifier les composants d’interface et leurs états, et les parties des graphiques nécessaires pour les comprendre, ont un contraste d’au moins 3:1.",
   "catalog.rules.wcag_1412_text_spacing.title": "Espacement du texte",
   "catalog.rules.wcag_1412_text_spacing.description": "Regroupe les contrôles garantissant que l’espacement du texte peut être augmenté sans perte de contenu.",
   "catalog.rules.wcag_224_interruptions.title": "Interruptions",

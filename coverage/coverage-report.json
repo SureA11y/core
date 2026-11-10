@@ -13,8 +13,8 @@
           "AAA": 14
         },
         "2.1": {
-          "A": 7,
-          "AA": 6,
+          "A": 8,
+          "AA": 7,
           "AAA": 1
         },
         "2.2": {
@@ -30,7 +30,7 @@
       },
       "rawTagCounts": {
         "wcag2a": 96,
-        "wcag21aa": 5,
+        "wcag21aa": 6,
         "wcag2aaa": 14,
         "wcag2aa": 11,
         "wcag22aaa": 2,
@@ -4895,10 +4895,12 @@
       "file": "src/checks/manual/css-focus-indicator-suppressed-manual.js",
       "ruleId": "css-focus-indicator-suppressed",
       "wcagScNormative": [
+        "1.4.11",
         "2.4.7",
         "2.4.13"
       ],
       "wcagScAll": [
+        "1.4.11",
         "2.4.7",
         "2.4.13"
       ],
@@ -4907,6 +4909,8 @@
       "title": "Focus indicator must not be removed without a replacement",
       "tags": [
         "wcag2aa",
+        "wcag21aa",
+        "wcag1411",
         "wcag247",
         "wcag22aaa",
         "wcag2413",
@@ -4924,6 +4928,11 @@
             "level": "AA"
           },
           {
+            "tag": "wcag21aa",
+            "version": "2.1",
+            "level": "AA"
+          },
+          {
             "tag": "wcag22aaa",
             "version": "2.2",
             "level": "AAA"
@@ -4931,10 +4940,15 @@
         ],
         "versions": [
           "2.0",
+          "2.1",
           "2.2"
         ],
         "cumulativeLevelsByVersion": {
           "2.0": [
+            "A",
+            "AA"
+          ],
+          "2.1": [
             "A",
             "AA"
           ],
@@ -4953,6 +4967,9 @@
       "error": null,
       "coverage": {
         "facetsBySc": {
+          "1.4.11": [
+            "focus-indicator-not-suppressed"
+          ],
           "2.4.7": [
             "focus-indicator-not-suppressed"
           ],
@@ -7661,6 +7678,43 @@
         ]
       },
       {
+        "sc": "1.4.11",
+        "title": "Non-text Contrast",
+        "totalFacets": 3,
+        "coveredFacets": 1,
+        "uncoveredFacets": [
+          "ui-component-contrast",
+          "graphics-contrast"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-indicator-not-suppressed",
+            "label": "CSS does not remove the focus indicator without drawing a replacement",
+            "automation": "manual",
+            "coveredBy": [
+              "css-focus-indicator-suppressed"
+            ]
+          },
+          {
+            "id": "ui-component-contrast",
+            "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "graphics-contrast",
+            "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+            "automation": "manual",
+            "coveredBy": []
+          }
+        ]
+      },
+      {
         "sc": "1.4.12",
         "title": "Text Spacing",
         "totalFacets": 4,
@@ -9634,6 +9688,43 @@
             "coveredBy": [
               "contrast-enhanced"
             ]
+          }
+        ]
+      },
+      {
+        "sc": "1.4.11",
+        "title": "Non-text Contrast",
+        "totalFacets": 3,
+        "coveredFacets": 1,
+        "uncoveredFacets": [
+          "ui-component-contrast",
+          "graphics-contrast"
+        ],
+        "automationCounts": {
+          "manual": 3
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-indicator-not-suppressed",
+            "label": "CSS does not remove the focus indicator without drawing a replacement",
+            "automation": "manual",
+            "coveredBy": [
+              "css-focus-indicator-suppressed"
+            ]
+          },
+          {
+            "id": "ui-component-contrast",
+            "label": "The parts of a control that show it is there and its state have a contrast of at least 3:1",
+            "automation": "manual",
+            "coveredBy": []
+          },
+          {
+            "id": "graphics-contrast",
+            "label": "The parts of a graphic needed to understand it have a contrast of at least 3:1",
+            "automation": "manual",
+            "coveredBy": []
           }
         ]
       },

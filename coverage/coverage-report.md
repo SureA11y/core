@@ -18,7 +18,7 @@ Total rules (loaded without error): **147**
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
 | WCAG 2.0 | 108 | 23 | 14 |
-| WCAG 2.1 | 7 | 6 | 1 |
+| WCAG 2.1 | 8 | 7 | 1 |
 | WCAG 2.2 | 4 | 4 | 2 |
 
 ### Raw WCAG tag counts (non-cumulative)
@@ -26,7 +26,7 @@ Total rules (loaded without error): **147**
 | Tag | Rules |
 |---|---:|
 | wcag21a | 1 |
-| wcag21aa | 5 |
+| wcag21aa | 6 |
 | wcag21aaa | 1 |
 | wcag22aa | 2 |
 | wcag22aaa | 2 |
@@ -293,6 +293,23 @@ Automation mix: **full 0, partial 2, manual 0**.
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
 | contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 1.4.11
+
+Facet coverage: **1/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| ui-component-contrast | manual | — |
+| graphics-contrast | manual | — |
+
+Uncovered facets: ui-component-contrast, graphics-contrast
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 
 ### 1.4.12
 
@@ -1126,6 +1143,23 @@ Automation mix: **full 0, partial 2, manual 0**.
 |---|---|---|---|---|---|
 | contrast-computable | automatic | Color contrast is computable for rendered text | src/checks/automatic/contrast-computable.js | contrast-computability-146 |  |
 | contrast-enhanced | automatic | Text meets enhanced color contrast (AAA) | src/checks/automatic/contrast-enhanced.js | contrast-enhanced-text |  |
+
+### 1.4.11
+
+Facet coverage: **1/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| ui-component-contrast | manual | — |
+| graphics-contrast | manual | — |
+
+Uncovered facets: ui-component-contrast, graphics-contrast
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 
 ### 1.4.12
 
