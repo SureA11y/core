@@ -1400,6 +1400,17 @@
       ]
     }
   },
+  "target-size-enhanced": {
+    "prefix": "targetSizeEnhanced",
+    "criteria": [
+      "2.5.5"
+    ],
+    "facets": {
+      "2.5.5": [
+        "target-size-enhanced"
+      ]
+    }
+  },
   "target-size-minimum": {
     "prefix": "targetSizeMinimum",
     "criteria": [

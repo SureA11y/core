@@ -53,6 +53,11 @@
  *   each other between separators alone, as in "Edit | Delete", or a target
  *   inside an SVG, canvas or image map that may be essential), the result is
  *   cantTell rather than a guess.
+ *   Settings, for a variant: `minSizePx`, the size needed (24), and
+ *   `spacingException`, `'none'` to drop the spacing exception, so that
+ *   every target under the size that no other exception covers fails
+ *   (`undersized`), however far it is from others. target-size-enhanced is
+ *   this rule at 2.5.5's 44px with none.
  *   Margin (`target-size-px`): of the targets that are at least 24 by 24,
  *   the smallest, as the side of the largest square that fits in it against
  *   24 (for a rectangle, the smaller of its width and height);
@@ -92,14 +97,19 @@
  *     pixels is too close to another target for the spacing exception, and
  *     no other exception applies.
  *     Basis: WCAG 2.5.8.
+ *   - `undersized` (fail): under `spacingException: 'none'` (a variant's
+ *     setting, as target-size-enhanced's), a target smaller than the size
+ *     needed, with no exception that applies; spacing excuses none.
+ *     Basis: WCAG 2.5.5.
  *   - `undersized-inline-link-run` (cantTell): an undersized inline link is
  *     too close only to another inline link in a run with separators but no
  *     words, as in "Edit | Delete"; whether the inline exception covers it
  *     is for a person to judge.
  *     Basis: WCAG 2.5.8 (exception: inline).
  *   - `undersized-plausibly-essential` (cantTell): an undersized target too
- *     close to another sits inside an SVG, a canvas or an image map, where
- *     its size may be essential.
+ *     close to another (or, under `spacingException: 'none'`, any
+ *     undersized target) sits inside an SVG, a canvas or an image map,
+ *     where its size may be essential.
  *     Basis: WCAG 2.5.8 (exception: essential).
  * @implementation-notes
  * - Under a scoped scan (contextSelector), only targets in scope are
@@ -216,7 +226,15 @@ const meta = {
       '2.5.8': ['target-size-minimum-pointer']
     }
   },
-  margin: { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } }
+  margin: { measure: 'target-size-px', unit: 'px', limit: 'min', band: { absolute: 6 } },
+  // undersized is given only under a variant's setting (spacingException:
+  // 'none'), which the fixture never runs.
+  reasonCodes: [
+    'undersized-and-too-close',
+    'undersized',
+    'undersized-inline-link-run',
+    'undersized-plausibly-essential'
+  ]
 };
 
 function runInPage(ctx) {
@@ -226,8 +244,22 @@ function runInPage(ctx) {
   const { document, helpers, rule } = ctx;
 
   const RULE_ID = (rule && rule.ruleId) || 'target-size-minimum';
-  const MIN = 24;
-  const RADIUS = MIN / 2;
+  // Settings (see `settings` below): WCAG 2.5.8's by default. A variant,
+  // such as target-size-enhanced for 2.5.5, passes its own in ctx.config
+  // (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  // The size a target needs: a square this many CSS px on a side fits in it.
+  const MIN =
+    typeof cfg.minSizePx === 'number' && Number.isFinite(cfg.minSizePx) && cfg.minSizePx > 0
+      ? cfg.minSizePx
+      : 24;
+  // Whether an undersized target passes when it is far enough from others
+  // (2.5.8's spacing exception, 'apply'), or fails on its size alone ('none',
+  // as 2.5.5 has no such exception).
+  const SPACING_APPLIES = cfg.spacingException !== 'none';
+  // The spacing exception's circle is 24px across, whatever size is needed.
+  const SPACING = 24;
+  const RADIUS = SPACING / 2;
 
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
@@ -1501,8 +1533,13 @@ function runInPage(ctx) {
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
   for (const e of spaced) {
-    for (const f of around(extentCells, e.extent, MIN)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= MIN) continue;
+    // With no spacing exception, every target's size decides it.
+    if (!SPACING_APPLIES) {
+      e.near = true;
+      continue;
+    }
+    for (const f of around(extentCells, e.extent, SPACING)) {
+      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
@@ -1534,7 +1571,7 @@ function runInPage(ctx) {
     b: it.rect.bottom
   }));
   function nearbyItems(center) {
-    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, MIN);
+    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, SPACING);
   }
 
   // Whether the browser reports something else on top of `other` everywhere
@@ -1547,10 +1584,10 @@ function runInPage(ctx) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
     const r = other.rect;
-    const x0 = Math.max(r.left, target.center.cx - MIN);
-    const x1 = Math.min(r.right, target.center.cx + MIN);
-    const y0 = Math.max(r.top, target.center.cy - MIN);
-    const y1 = Math.min(r.bottom, target.center.cy + MIN);
+    const x0 = Math.max(r.left, target.center.cx - SPACING);
+    const x1 = Math.min(r.right, target.center.cx + SPACING);
+    const y0 = Math.max(r.top, target.center.cy - SPACING);
+    const y1 = Math.min(r.bottom, target.center.cy + SPACING);
     if (x1 <= x0 || y1 <= y0) return false;
     let answered = false;
     for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
@@ -1584,7 +1621,7 @@ function runInPage(ctx) {
       if (isInlineTextExceptionTarget(other.el)) continue;
 
       const d = dist(target.center, other.center);
-      if (isUndersized(other) && d < MIN - EPS) {
+      if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
         return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
       }
@@ -1704,8 +1741,8 @@ function runInPage(ctx) {
       decidedBy: info.decidedBy || null
     };
     if (info.decidedBy === 'centerDistance') {
-      metrics.centerDistancePx = round1(info.distancePx);
-      metrics.minDistancePx = MIN;
+      metrics.centerDistancePx = round1(info.distancePx, SPACING);
+      metrics.minDistancePx = SPACING;
     } else if (info.decidedBy === 'regionDistance') {
       metrics.regionDistancePx = round1(info.distancePx, RADIUS);
       metrics.minDistancePx = RADIUS;
@@ -1737,7 +1774,7 @@ function runInPage(ctx) {
   // metrics rounds it, and the gap up, so the two together never fall short
   // of what is needed.
   function spacingParams(info) {
-    const limit = info.decidedBy === 'centerDistance' ? MIN : RADIUS;
+    const limit = info.decidedBy === 'centerDistance' ? SPACING : RADIUS;
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
@@ -1767,8 +1804,13 @@ function runInPage(ctx) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+    // Without the spacing exception the size alone decides, and the distance
+    // to a neighbour is reported only where it is why the target is asked
+    // about (the inline link run below).
+    const shown = SPACING_APPLIES ? info : { conflict: false, conflictEl: null };
+    const tooClose = SPACING_APPLIES ? ', and too close to another target' : '';
 
-    if (info.conflict) {
+    if (info.conflict || !SPACING_APPLIES) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region, so report it as
@@ -1776,7 +1818,7 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.`,
             hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
@@ -1794,8 +1836,8 @@ function runInPage(ctx) {
               details: {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-plausibly-essential',
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-                ...measurements(it, info)
+                conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+                ...measurements(it, shown)
               }
             }
           })
@@ -1813,8 +1855,8 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
-            hint: 'Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link in the same run of text, where the inline exception may apply.`,
+            hint: `Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least ${MIN}×${MIN} CSS px or give it more space.`,
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
@@ -1840,23 +1882,30 @@ function runInPage(ctx) {
         continue;
       }
 
-      const spacing = spacingParams(info);
+      // Too small with nothing to except it: with the spacing exception, the
+      // hint says how far the target is from passing it; without one, how
+      // large it needs to be.
+      const spacing = SPACING_APPLIES ? spacingParams(info) : { minSizePx: String(MIN) };
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
-          hint: spacingHint(info.decidedBy, spacing),
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          hint: SPACING_APPLIES
+            ? spacingHint(info.decidedBy, spacing)
+            : `Make the target at least ${MIN}×${MIN} CSS px.`,
           i18n: {
             summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
-            hintKey: `targetSizeMinimum_hint_fail_${info.decidedBy}`,
+            hintKey: SPACING_APPLIES
+              ? `targetSizeMinimum_hint_fail_${info.decidedBy}`
+              : 'targetSizeMinimum_hint_fail_size',
             params: { ...size, ...spacing }
           },
           data: {
             details: {
               measured: measuredOf(it),
-              reasonCode: 'undersized-and-too-close',
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-              ...measurements(it, info)
+              reasonCode: SPACING_APPLIES ? 'undersized-and-too-close' : 'undersized',
+              conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+              ...measurements(it, shown)
             }
           }
         })
@@ -1906,4 +1955,27 @@ function runInPage(ctx) {
   return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
 }
 
-module.exports = { id, meta, runInPage };
+// Settings a variant can change (docs/RULE_AUTHORING.md, "Rule variants"),
+// with WCAG 2.5.8's as defaults. target-size-enhanced (2.5.5) is this rule at
+// 44px with no spacing exception.
+const settings = {
+  minSizePx: 24,
+  spacingException: 'apply'
+};
+
+// What each setting changes, for the catalog and docs/RULE_SETTINGS.md.
+const settingsInfo = {
+  minSizePx: {
+    description:
+      'The size a target needs, in CSS pixels: a square this size on a side fits in the region a pointer can hit.',
+    basis: 'WCAG 2.5.8: 24 (2.5.5: 44)'
+  },
+  spacingException: {
+    values: ['apply', 'none'],
+    description:
+      "Whether an undersized target passes when a 24px circle centred on it reaches no other target ('apply'), or fails on its size alone, reported as undersized ('none').",
+    basis: 'WCAG 2.5.8 exception: Spacing (2.5.5 has none)'
+  }
+};
+
+module.exports = { id, meta, runInPage, settings, settingsInfo };

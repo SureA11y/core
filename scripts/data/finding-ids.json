@@ -137,6 +137,7 @@
     "table-fake-caption",
     "table-headers-attr-valid",
     "table-th-has-data-cells",
+    "target-size-enhanced",
     "target-size-minimum",
     "td-has-header",
     "text-spacing-content-loss",
@@ -737,7 +738,14 @@
       "TABLE_TH_NO_ASSIGNED_CELL",
       "TABLE_TH_NO_DATA_CELLS"
     ],
+    "target-size-enhanced": [
+      "undersized",
+      "undersized-and-too-close",
+      "undersized-inline-link-run",
+      "undersized-plausibly-essential"
+    ],
     "target-size-minimum": [
+      "undersized",
       "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"

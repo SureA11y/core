@@ -2342,6 +2342,20 @@ The table has at least one `<td>` for the `<th>` to head.
 ```
 The table has a `<th>` but zero `<td>` anywhere.
 
+## target-size-enhanced
+
+**Passed**
+```html
+<button style="width:44px; height:44px; padding:0;">+</button>
+```
+Meets the 44×44 CSS pixel size of WCAG 2.5.5 on its own.
+
+**Failed**
+```html
+<button style="width:30px; height:30px; padding:0;">+</button>
+```
+30×30 meets 2.5.8's 24×24 but not 2.5.5's 44×44, and 2.5.5 has no spacing exception: the button fails however far it is from other targets.
+
 ## target-size-minimum
 
 **Passed**

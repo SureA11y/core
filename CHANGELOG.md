@@ -12,7 +12,13 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - **`page-zones-landmark`** (manual, best practice): asks about a page's header, navigation, search and footer that are not exposed as the landmark of their nature (`BANNER_NOT_EXPOSED`, `NAVIGATION_NOT_EXPOSED`, `SEARCH_NOT_EXPOSED`, `CONTENTINFO_NOT_EXPOSED`), found from the names their blocks give themselves and from search forms, and about a page header or footer nested in a section, where it is no landmark, on a page that has none at the top (`HEADER_NESTED`, `FOOTER_NESTED`). It only asks: which block is a zone of the page is for a person. A standard that requires those landmarks, such as RAWeb 9.2, links its codes to its own tests.
 
+- **`target-size-enhanced`** (automatic, WCAG 2.5.5, AAA): a target smaller than 44 by 44 CSS pixels fails (`undersized`), however far it is from others, as 2.5.5 has no spacing exception. It measures as `target-size-minimum` does, whose variant it is (`minSizePx: 44`, `spacingException: 'none'`), with the same inline and user-agent exceptions, and asks about inline link runs and targets in an SVG, a canvas or an image map. The equivalent exception is not established. 2.5.5 was a manual criterion.
+
 ### Changed
+
+- **`target-size-minimum` has settings for a variant**: `minSizePx` (24) and `spacingException` (`'apply'`, or `'none'` to fail every undersized target on its size alone, as `undersized`). Its results at the defaults are unchanged.
+
+- **More rules map to WCAG 2.1.3 and 2.4.13.** `server-side-image-map-absent`, `iframe-focusable-content`, `widget-keyboard-focusable` and `focus-not-removed-by-script` map to 2.1.3 Keyboard (No Exception), as they do to 2.1.1. `css-focus-indicator-suppressed` and `focus-not-removed-by-script` map to 2.4.13 Focus Appearance, which W3C's F78 and F55 name beside 2.4.7; 2.4.13 has a rollup of its own. A rule whose criteria come from different WCAG versions carries the level tag of each (`wcag2aa` and `wcag22aaa`), so it still runs in an AA scan.
 
 - **`target-size-minimum` says how far a target is from passing the spacing exception.** A fail's hint gives the distance measured, the distance needed and how much further apart the two need to be: between two undersized targets' centres, against 24px (`targetSizeMinimum_hint_fail_centerDistance`), or from the target's centre to another target, against 12px (`targetSizeMinimum_hint_fail_regionDistance`). They replace `targetSizeMinimum_hint_fail`; `i18n.params` adds `distancePx`, `minDistancePx` and `shortfallPx`.
 

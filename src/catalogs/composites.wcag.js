@@ -345,6 +345,20 @@ module.exports = [
     }
   },
   {
+    id: 'wcag-2.5.5-target-size-enhanced',
+    checksIds: ['target-size-enhanced'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_255_target_size_enhanced.title',
+      descriptionKey: 'catalog.rules.wcag_255_target_size_enhanced.description',
+      title: 'Target Size (Enhanced)',
+      description:
+        'Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).',
+      wcagSc: ['2.5.5'],
+      level: 'AAA'
+    }
+  },
+
+  {
     id: 'wcag-2.5.8-target-size-minimum',
     checksIds: ['target-size-minimum'],
     meta: {

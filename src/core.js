@@ -36154,6 +36154,89 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "target-size-enhanced",
+    "title": "Pointer targets must be at least 44x44px large",
+    "description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
+    "i18n": {
+      "titleKey": "targetSizeEnhanced_title",
+      "descriptionKey": "targetSizeEnhanced_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aaa",
+      "wcag255",
+      "navigation",
+      "operable",
+      "pointer",
+      "target-size",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.5"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.5",
+        "title": "Target Size (Enhanced)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#target-size-enhanced",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.5": [
+          "target-size-enhanced"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": {
+      "measure": "target-size-px",
+      "unit": "px",
+      "limit": "min",
+      "band": {
+        "absolute": 6
+      }
+    },
+    "variant": {
+      "of": "target-size-minimum",
+      "config": {
+        "minSizePx": 44,
+        "spacingException": "none"
+      },
+      "messages": {
+        "from": "targetSizeMinimum",
+        "to": "targetSizeEnhanced"
+      }
+    },
+    "settings": [
+      "minSizePx",
+      "spacingException"
+    ]
+  },
+  {
     "ruleId": "target-size-minimum",
     "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
@@ -36228,7 +36311,30 @@ const RUNTIME_CATALOG = {
       "band": {
         "absolute": 6
       }
-    }
+    },
+    "settings": [
+      "minSizePx",
+      "spacingException"
+    ],
+    "variantSettings": [
+      {
+        "name": "minSizePx",
+        "default": 24,
+        "values": null,
+        "description": "The size a target needs, in CSS pixels: a square this size on a side fits in the region a pointer can hit.",
+        "basis": "WCAG 2.5.8: 24 (2.5.5: 44)"
+      },
+      {
+        "name": "spacingException",
+        "default": "apply",
+        "values": [
+          "apply",
+          "none"
+        ],
+        "description": "Whether an undersized target passes when a 24px circle centred on it reaches no other target ('apply'), or fails on its size alone, reported as undersized ('none').",
+        "basis": "WCAG 2.5.8 exception: Spacing (2.5.5 has none)"
+      }
+    ]
   },
   {
     "ruleId": "td-has-header",
@@ -37659,6 +37765,23 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-2.5.5-target-size-enhanced",
+    "checksIds": [
+      "target-size-enhanced"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_255_target_size_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_255_target_size_enhanced.description",
+      "title": "Target Size (Enhanced)",
+      "description": "Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).",
+      "wcagSc": [
+        "2.5.5"
+      ],
+      "level": "AAA",
+      "standardMappings": []
+    }
+  },
+  {
     "id": "wcag-2.5.8-target-size-minimum",
     "checksIds": [
       "target-size-minimum"
@@ -38421,6 +38544,7 @@ const RUNTIME_CATALOG = {
   "table-fake-caption": { run: require("./checks/manual/table-fake-caption-manual.js").runInPage, applicability: require("./checks/manual/table-fake-caption-manual.js").applicability || null },
   "table-headers-attr-valid": { run: require("./checks/automatic/table-headers-attr-valid.js").runInPage, applicability: require("./checks/automatic/table-headers-attr-valid.js").applicability || null },
   "table-th-has-data-cells": { run: require("./checks/automatic/table-th-has-data-cells.js").runInPage, applicability: require("./checks/automatic/table-th-has-data-cells.js").applicability || null },
+  "target-size-enhanced": { run: require("./checks/automatic/target-size-minimum.js").runInPage, applicability: require("./checks/automatic/target-size-minimum.js").applicability || null },
   "target-size-minimum": { run: require("./checks/automatic/target-size-minimum.js").runInPage, applicability: require("./checks/automatic/target-size-minimum.js").applicability || null },
   "td-has-header": { run: require("./checks/automatic/td-has-header.js").runInPage, applicability: require("./checks/automatic/td-has-header.js").applicability || null },
   "text-spacing-content-loss": { run: require("./checks/automatic/text-spacing-content-loss.js").runInPage, applicability: require("./checks/automatic/text-spacing-content-loss.js").applicability || null },
@@ -38707,12 +38831,26 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
       "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
       "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
+      "targetSizeMinimum_hint_fail_size": "Machen Sie das Ziel mindestens {{minSizePx}}×{{minSizePx}} CSS-Pixel groß.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, vergrößern Sie das Ziel oder geben Sie ihm mehr Abstand.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder geben Sie ihm mehr Abstand.",
+      "targetSizeEnhanced_title": "Zeigerziele müssen mindestens 44x44px groß sein",
+      "targetSizeEnhanced_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 44 mal 44 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (Inline, vom Browser bestimmte Größe, wesentlich).",
+      "targetSizeEnhanced_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_hint_fail_size": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, und steht neben einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, und steht neben einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
       "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
       "ariaHidden_focus_description": "Prüft, ob Elemente mit aria-hidden=\"true\" nicht fokussierbar sind und keine fokussierbaren Nachfahren enthalten.",
       "ariaHidden_focus_summary_fail_desc": "Dieses <{{element}}> mit aria-hidden enthält {{focusableCount}} fokussierbare(s) Element(e): Tastaturnutzende erreichen sie, aber Screenreader geben sie nicht aus.",
@@ -38848,6 +38986,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Zielgröße (erweitert)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele mindestens 44 mal 44 CSS-Pixel groß sind oder unter eine Ausnahme fallen (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße (Minimum)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele die Mindestgrößenanforderungen erfüllen.",
       "catalog.rules.wcag_311_language_of_page.title": "Sprache der Seite",
@@ -40083,12 +40223,26 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
       "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
       "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
+      "targetSizeMinimum_hint_fail_size": "Make the target at least {{minSizePx}}×{{minSizePx}} CSS px.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.",
+      "targetSizeEnhanced_title": "Pointer targets must be at least 44x44px large",
+      "targetSizeEnhanced_description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
+      "targetSizeEnhanced_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_hint_fail_size": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44, but may be exempt as part of an essential graphic or image-map region.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 44×44, but may be exempt as part of an essential graphic or image-map region.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link in the same run of text, where the inline exception may apply.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link in the same run of text, where the inline exception may apply.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 44×44 CSS px.",
       "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
       "ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
       "ariaHidden_focus_summary_fail_desc": "This aria-hidden <{{element}}> contains {{focusableCount}} focusable element(s): keyboard users can reach them, but screen readers don't announce them.",
@@ -40224,6 +40378,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Target Size (Enhanced)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
       "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
       "catalog.rules.wcag_311_language_of_page.title": "Language of page",
@@ -41459,12 +41615,26 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
       "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
       "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
+      "targetSizeMinimum_hint_fail_size": "Hacer que el objetivo mida al menos {{minSizePx}}×{{minSizePx}} px CSS.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, agrandar el objetivo o darle más espacio.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 24×24 px CSS o darle más espacio.",
+      "targetSizeEnhanced_title": "Los objetivos de puntero deben tener al menos 44x44px de tamaño",
+      "targetSizeEnhanced_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 44 por 44 píxeles CSS, o cumplan una excepción permitida (en línea, tamaño fijado por el navegador, esencial).",
+      "targetSizeEnhanced_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_size": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, y está junto a otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y está junto a otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
       "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
       "ariaHidden_focus_description": "Comprueba que los elementos con aria-hidden=\"true\" no sean enfocables ni contengan descendientes enfocables.",
       "ariaHidden_focus_summary_fail_desc": "Este <{{element}}> con aria-hidden contiene {{focusableCount}} elemento(s) enfocable(s): se llega a ellos con el teclado, pero los lectores de pantalla no los anuncian.",
@@ -41600,6 +41770,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Inclusión de la etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Tamaño del objetivo (mejorado)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero midan al menos 44 por 44 píxeles CSS, o cumplan una excepción (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero cumplan los requisitos de tamaño mínimo.",
       "catalog.rules.wcag_311_language_of_page.title": "Idioma de la página",
@@ -42835,12 +43007,26 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
       "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
       "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
+      "targetSizeMinimum_hint_fail_size": "Donnez à la cible au moins {{minSizePx}}×{{minSizePx}} px CSS.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, agrandissez la cible ou donnez-lui plus d’espace.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 24×24 px CSS ou plus d’espace.",
+      "targetSizeEnhanced_title": "Les cibles activables au pointeur doivent mesurer au moins 44×44px",
+      "targetSizeEnhanced_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 44×44 pixels CSS, ou respectent une exception autorisée (contenu en ligne, taille fixée par le navigateur, essentielle).",
+      "targetSizeEnhanced_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_size": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, et est à côté d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et est à côté d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 44×44 px CSS.",
       "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
       "ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
       "ariaHidden_focus_summary_fail_desc": "Cet élément <{{element}}> avec aria-hidden contient {{focusableCount}} élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.",
@@ -42976,6 +43162,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Taille de la cible (amélioré)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Regroupe les contrôles garantissant que les cibles activables au pointeur font au moins 44×44 pixels CSS, ou relèvent d’une exception (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
       "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
@@ -44211,12 +44399,26 @@ const RUNTIME_CATALOG = {
       "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
       "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
+      "targetSizeMinimum_hint_fail_size": "ターゲットを {{minSizePx}}×{{minSizePx}} CSS px 以上にしてください。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを大きくするか、間隔を広げてください。",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 24×24 CSS px 以上にするか、間隔を広げてください。",
+      "targetSizeEnhanced_title": "ポインターのターゲットは 44×44px 以上の大きさが必要",
+      "targetSizeEnhanced_description": "ポインターで操作できるターゲットの実効的なヒット領域が 44×44 CSS ピクセル以上であるか、または認められている例外 (インライン、ユーザエージェントによる大きさ、必要不可欠) に該当するかを確認します。",
+      "targetSizeEnhanced_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満です。",
+      "targetSizeEnhanced_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満です。",
+      "targetSizeEnhanced_hint_fail_centerDistance": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_hint_fail_regionDistance": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_hint_fail_size": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満ですが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満です。必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、同じ文中の別のインラインリンクの隣にあります。インラインの例外が適用される可能性があります。",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、同じ文中の別のインラインリンクの隣にあります。インラインの例外が適用される可能性があります。",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
       "ariaHidden_focus_title": "aria-hidden が指定された要素はフォーカス可能であってはならない",
       "ariaHidden_focus_description": "aria-hidden=\"true\" の要素がフォーカス可能でなく、フォーカス可能な子孫要素も含んでいないかを確認します。",
       "ariaHidden_focus_summary_fail_desc": "aria-hidden が指定されたこの <{{element}}> には、フォーカス可能な要素が {{focusableCount}} 個含まれています。キーボードでは到達できますが、スクリーンリーダーは読み上げません。",
@@ -44352,6 +44554,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "ターゲットのサイズ (高度)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "ポインターのターゲットが 44×44 CSS ピクセル以上であるか、例外に該当するかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
       "catalog.rules.wcag_258_target_size_minimum.description": "ポインターのターゲットが最小サイズの要件を満たしているかを確認するチェックの集約です。",
       "catalog.rules.wcag_311_language_of_page.title": "ページの言語",
@@ -45585,6 +45789,7 @@ const RULE_MODULES = [
   "./checks/manual/table-fake-caption-manual.js",
   "./checks/automatic/table-headers-attr-valid.js",
   "./checks/automatic/table-th-has-data-cells.js",
+  "./checks/automatic/target-size-enhanced.js",
   "./checks/automatic/target-size-minimum.js",
   "./checks/automatic/td-has-header.js",
   "./checks/automatic/text-spacing-content-loss.js",
@@ -55485,6 +55690,89 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "margin": null
   },
   {
+    "ruleId": "target-size-enhanced",
+    "title": "Pointer targets must be at least 44x44px large",
+    "description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
+    "i18n": {
+      "titleKey": "targetSizeEnhanced_title",
+      "descriptionKey": "targetSizeEnhanced_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag21aaa",
+      "wcag255",
+      "navigation",
+      "operable",
+      "pointer",
+      "target-size",
+      "atomic",
+      "automatic",
+      "dom",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.5.5"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.5.5",
+        "title": "Target Size (Enhanced)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#target-size-enhanced",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/target-size-enhanced.html"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "medium",
+    "type": "automatic",
+    "coverage": {
+      "facetsBySc": {
+        "2.5.5": [
+          "target-size-enhanced"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": {
+      "measure": "target-size-px",
+      "unit": "px",
+      "limit": "min",
+      "band": {
+        "absolute": 6
+      }
+    },
+    "variant": {
+      "of": "target-size-minimum",
+      "config": {
+        "minSizePx": 44,
+        "spacingException": "none"
+      },
+      "messages": {
+        "from": "targetSizeMinimum",
+        "to": "targetSizeEnhanced"
+      }
+    },
+    "settings": [
+      "minSizePx",
+      "spacingException"
+    ]
+  },
+  {
     "ruleId": "target-size-minimum",
     "title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
     "description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
@@ -55559,7 +55847,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "band": {
         "absolute": 6
       }
-    }
+    },
+    "settings": [
+      "minSizePx",
+      "spacingException"
+    ],
+    "variantSettings": [
+      {
+        "name": "minSizePx",
+        "default": 24,
+        "values": null,
+        "description": "The size a target needs, in CSS pixels: a square this size on a side fits in the region a pointer can hit.",
+        "basis": "WCAG 2.5.8: 24 (2.5.5: 44)"
+      },
+      {
+        "name": "spacingException",
+        "default": "apply",
+        "values": [
+          "apply",
+          "none"
+        ],
+        "description": "Whether an undersized target passes when a 24px circle centred on it reaches no other target ('apply'), or fails on its size alone, reported as undersized ('none').",
+        "basis": "WCAG 2.5.8 exception: Spacing (2.5.5 has none)"
+      }
+    ]
   },
   {
     "ruleId": "td-has-header",
@@ -56987,6 +57298,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ]
         }
       ]
+    }
+  },
+  {
+    "id": "wcag-2.5.5-target-size-enhanced",
+    "checksIds": [
+      "target-size-enhanced"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_255_target_size_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_255_target_size_enhanced.description",
+      "title": "Target Size (Enhanced)",
+      "description": "Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).",
+      "wcagSc": [
+        "2.5.5"
+      ],
+      "level": "AAA",
+      "standardMappings": []
     }
   },
   {
@@ -96598,15 +96926,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   );
   return { ruleId: rule.ruleId, ...resolved };
 }), applicability: null },
-    "target-size-minimum": { run: (function runInPage(ctx) {
+    "target-size-enhanced": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   ('use strict');
 
   const { document, helpers, rule } = ctx;
 
   const RULE_ID = (rule && rule.ruleId) || 'target-size-minimum';
-  const MIN = 24;
-  const RADIUS = MIN / 2;
+  // Settings (see `settings` below): WCAG 2.5.8's by default. A variant,
+  // such as target-size-enhanced for 2.5.5, passes its own in ctx.config
+  // (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  // The size a target needs: a square this many CSS px on a side fits in it.
+  const MIN =
+    typeof cfg.minSizePx === 'number' && Number.isFinite(cfg.minSizePx) && cfg.minSizePx > 0
+      ? cfg.minSizePx
+      : 24;
+  // Whether an undersized target passes when it is far enough from others
+  // (2.5.8's spacing exception, 'apply'), or fails on its size alone ('none',
+  // as 2.5.5 has no such exception).
+  const SPACING_APPLIES = cfg.spacingException !== 'none';
+  // The spacing exception's circle is 24px across, whatever size is needed.
+  const SPACING = 24;
+  const RADIUS = SPACING / 2;
 
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
@@ -97880,8 +98222,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const spaced = entries.filter((e) => !e.exempt);
   const extentCells = gridOf(spaced, (e) => e.extent);
   for (const e of spaced) {
-    for (const f of around(extentCells, e.extent, MIN)) {
-      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= MIN) continue;
+    // With no spacing exception, every target's size decides it.
+    if (!SPACING_APPLIES) {
+      e.near = true;
+      continue;
+    }
+    for (const f of around(extentCells, e.extent, SPACING)) {
+      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
       e.near = true;
       break;
     }
@@ -97913,7 +98260,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     b: it.rect.bottom
   }));
   function nearbyItems(center) {
-    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, MIN);
+    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, SPACING);
   }
 
   // Whether the browser reports something else on top of `other` everywhere
@@ -97926,10 +98273,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Out of view, neither is where a pointer would find it.
     if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
     const r = other.rect;
-    const x0 = Math.max(r.left, target.center.cx - MIN);
-    const x1 = Math.min(r.right, target.center.cx + MIN);
-    const y0 = Math.max(r.top, target.center.cy - MIN);
-    const y1 = Math.min(r.bottom, target.center.cy + MIN);
+    const x0 = Math.max(r.left, target.center.cx - SPACING);
+    const x1 = Math.min(r.right, target.center.cx + SPACING);
+    const y0 = Math.max(r.top, target.center.cy - SPACING);
+    const y1 = Math.min(r.bottom, target.center.cy + SPACING);
     if (x1 <= x0 || y1 <= y0) return false;
     let answered = false;
     for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
@@ -97963,7 +98310,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       if (isInlineTextExceptionTarget(other.el)) continue;
 
       const d = dist(target.center, other.center);
-      if (isUndersized(other) && d < MIN - EPS) {
+      if (isUndersized(other) && d < SPACING - EPS) {
         if (isCoveredNear(other, target)) continue;
         return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
       }
@@ -98083,8 +98430,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       decidedBy: info.decidedBy || null
     };
     if (info.decidedBy === 'centerDistance') {
-      metrics.centerDistancePx = round1(info.distancePx);
-      metrics.minDistancePx = MIN;
+      metrics.centerDistancePx = round1(info.distancePx, SPACING);
+      metrics.minDistancePx = SPACING;
     } else if (info.decidedBy === 'regionDistance') {
       metrics.regionDistancePx = round1(info.distancePx, RADIUS);
       metrics.minDistancePx = RADIUS;
@@ -98116,7 +98463,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // metrics rounds it, and the gap up, so the two together never fall short
   // of what is needed.
   function spacingParams(info) {
-    const limit = info.decidedBy === 'centerDistance' ? MIN : RADIUS;
+    const limit = info.decidedBy === 'centerDistance' ? SPACING : RADIUS;
     return {
       distancePx: String(round1(info.distancePx, limit)),
       minDistancePx: String(limit),
@@ -98146,8 +98493,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const info = hasSpacingConflict(it);
     const size = sizeParams(it);
     const sized = sizeText(it, size);
+    // Without the spacing exception the size alone decides, and the distance
+    // to a neighbour is reported only where it is why the target is asked
+    // about (the inline link run below).
+    const shown = SPACING_APPLIES ? info : { conflict: false, conflictEl: null };
+    const tooClose = SPACING_APPLIES ? ', and too close to another target' : '';
 
-    if (info.conflict) {
+    if (info.conflict || !SPACING_APPLIES) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
         // Confident spacing conflict, but the target may be exempt as part
         // of an essential graphic/image-map region, so report it as
@@ -98155,7 +98507,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.`,
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.`,
             hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
@@ -98173,8 +98525,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
               details: {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-plausibly-essential',
-                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-                ...measurements(it, info)
+                conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+                ...measurements(it, shown)
               }
             }
           })
@@ -98192,8 +98544,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.`,
-            hint: 'Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link in the same run of text, where the inline exception may apply.`,
+            hint: `Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least ${MIN}×${MIN} CSS px or give it more space.`,
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
@@ -98219,23 +98571,1747 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         continue;
       }
 
-      const spacing = spacingParams(info);
+      // Too small with nothing to except it: with the spacing exception, the
+      // hint says how far the target is from passing it; without one, how
+      // large it needs to be.
+      const spacing = SPACING_APPLIES ? spacingParams(info) : { minSizePx: String(MIN) };
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under 24×24, and too close to another target.`,
-          hint: spacingHint(info.decidedBy, spacing),
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          hint: SPACING_APPLIES
+            ? spacingHint(info.decidedBy, spacing)
+            : `Make the target at least ${MIN}×${MIN} CSS px.`,
           i18n: {
             summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
-            hintKey: `targetSizeMinimum_hint_fail_${info.decidedBy}`,
+            hintKey: SPACING_APPLIES
+              ? `targetSizeMinimum_hint_fail_${info.decidedBy}`
+              : 'targetSizeMinimum_hint_fail_size',
             params: { ...size, ...spacing }
           },
           data: {
             details: {
               measured: measuredOf(it),
-              reasonCode: 'undersized-and-too-close',
-              conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
-              ...measurements(it, info)
+              reasonCode: SPACING_APPLIES ? 'undersized-and-too-close' : 'undersized',
+              conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+              ...measurements(it, shown)
+            }
+          }
+        })
+      );
+    }
+  }
+
+  // See helpers.resolveTieredOutcome's own header comment (src/core/dom-helpers.js):
+  // a fail-tier finding never silently discards cantTell-tier findings from
+  // the same run. Both are returned together when the outcome is 'fail'.
+  const resolved = helpers.resolveTieredOutcome(
+    failOccurrences,
+    cantTellOccurrences,
+    (rule && rule.defaultSeverity) || 'minor'
+  );
+  // The smallest target that is at least 24 by 24 on its own, reported as
+  // the result's margin whatever the outcome. A target under 24 that passes
+  // through the spacing exception is not a size candidate.
+  // Only the smallest can be the margin, so targets are taken from the
+  // smallest bound up (a target not measured yet is bounded by its extent,
+  // and measured now), and the search stops at one whose bound exceeds the
+  // smallest square found (a bound equal to it may tie, and is kept).
+  const marginCandidates = [];
+  const sized = items
+    .map((e) => ({
+      e,
+      bound: e.item
+        ? squareBound(e.item.region)
+        : Math.min(e.extent.r - e.extent.l, e.extent.b - e.extent.t)
+    }))
+    .filter(({ bound }) => bound >= MIN - 1e-3)
+    .sort((a, b) => a.bound - b.bound);
+  let smallest = Infinity;
+  for (const { e, bound } of sized) {
+    if (bound > smallest) break;
+    if (!e.near && e.item === undefined) e.item = measure(e.el);
+    const it = e.item;
+    if (!it || isUndersized(it)) continue;
+    smallest = Math.min(smallest, it.square);
+    marginCandidates.push({
+      el: it.el,
+      value: it.square,
+      threshold: MIN,
+      context: { widthPx: round1(it.rect.width), heightPx: round1(it.rect.height) }
+    });
+  }
+  return { ruleId: RULE_ID, ...resolved, marginCandidates, measuredCount: items.length };
+}), applicability: null },
+    "target-size-minimum": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  ('use strict');
+
+  const { document, helpers, rule } = ctx;
+
+  const RULE_ID = (rule && rule.ruleId) || 'target-size-minimum';
+  // Settings (see `settings` below): WCAG 2.5.8's by default. A variant,
+  // such as target-size-enhanced for 2.5.5, passes its own in ctx.config
+  // (docs/RULE_AUTHORING.md, "Rule variants").
+  const cfg = ctx.config && typeof ctx.config === 'object' ? ctx.config : {};
+  // The size a target needs: a square this many CSS px on a side fits in it.
+  const MIN =
+    typeof cfg.minSizePx === 'number' && Number.isFinite(cfg.minSizePx) && cfg.minSizePx > 0
+      ? cfg.minSizePx
+      : 24;
+  // Whether an undersized target passes when it is far enough from others
+  // (2.5.8's spacing exception, 'apply'), or fails on its size alone ('none',
+  // as 2.5.5 has no such exception).
+  const SPACING_APPLIES = cfg.spacingException !== 'none';
+  // The spacing exception's circle is 24px across, whatever size is needed.
+  const SPACING = 24;
+  const RADIUS = SPACING / 2;
+
+  // --- tiny safe helpers (never throw) ---
+  // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
+  // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
+  // an array (multi-region contextSelector support), not a single element
+  // with its own .querySelectorAll to call directly.
+  function qsa(sel, opts) {
+    try {
+      if (helpers && typeof helpers.queryAllSmart === 'function')
+        return [...(helpers.queryAllSmart(sel, opts) || [])];
+      if (helpers && typeof helpers.queryAll === 'function')
+        return [...(helpers.queryAll(sel) || [])];
+      return [];
+    } catch {
+      return [];
+    }
+  }
+
+  function buildSelector(el) {
+    try {
+      if (helpers && typeof helpers.buildSelector === 'function') return helpers.buildSelector(el);
+    } catch {}
+    // Without the engine's builder, the id, escaped as CSS reads it, where
+    // the selector so made names the element.
+    try {
+      const elId = el ? dom.getAttribute(el, 'id') : '';
+      const view = dom.defaultView(dom.ownerDocument(el));
+      const esc =
+        helpers && typeof helpers.cssEscape === 'function'
+          ? helpers.cssEscape
+          : view && view.CSS && typeof view.CSS.escape === 'function'
+            ? (s) => view.CSS.escape(s)
+            : null;
+      const sel = elId && esc ? '#' + esc(elId) : '';
+      if (sel && dom.matches(el, sel)) return sel;
+    } catch {}
+    return 'html';
+  }
+
+  // The element's role: the first token of its role attribute that names a
+  // real role, in any case (role="foo link" and role="LINK" are both links),
+  // else the role a custom element's internals give it, or '' for neither.
+  function getExplicitRole(el) {
+    try {
+      return helpers && helpers.aria ? helpers.aria.getAuthorRole(el) : '';
+    } catch {
+      return '';
+    }
+  }
+
+  // A link: a[href] or role="link".
+  function isLinkLike(el) {
+    try {
+      const tag = (dom.tagName(el) || '').toLowerCase();
+      return (
+        !!(tag === 'a' && dom.get(el, 'getAttribute') && dom.getAttribute(el, 'href')) ||
+        getExplicitRole(el) === 'link'
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  // A target rendered inline/inline-* and carrying visible text: a link, or
+  // a button or other control written into the text. This is the shape the
+  // SC 2.5.8 inline exception is about ("The target is in a sentence"),
+  // without the surrounding-container requirement. Called for the rule's
+  // targets only.
+  function isInlineTextTarget(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return false;
+
+      const cs = getStyle(el);
+      const display = cs && cs.display ? String(cs.display) : '';
+      // Many design systems use inline-block for links, so treat the
+      // inline-block variants as inline here too.
+      const isInline =
+        display === 'inline' ||
+        display === 'inline-block' ||
+        display === 'inline-flex' ||
+        display === 'inline-grid' ||
+        display === 'inline-table';
+      if (!isInline) return false;
+
+      return (dom.textContent(el) || '').trim().length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  // SC 2.5.8's inline exception: an inline target "in a sentence" (#106). It
+  // is in one when the stretch of its block container between line breaks
+  // (a <br>, an <hr>, or a box that isn't inline) holds text outside any
+  // target with a letter or a digit in it. Separators alone (|, ›, ·) make
+  // no sentence: links between them are judged, and where they crowd only
+  // each other the inline-link-run cantTell below applies.
+  function isInlineTextExceptionTarget(el) {
+    const around = textAround(el);
+    return !!around && around.words;
+  }
+  // The stretch of text an inline target is in, as { words, symbols }: text
+  // with a letter or digit in it, and other text that isn't white space.
+  // null for a target that isn't inline.
+  function textAround(el) {
+    try {
+      if (!isInlineTextTarget(el)) return null;
+      if (!__textAround.has(el)) {
+        stretchesOf(blockContainerOf(el));
+        if (!__textAround.has(el)) __textAround.set(el, null);
+      }
+      return __textAround.get(el);
+    } catch {
+      return null;
+    }
+  }
+  // Inline boxes and boxes with display: contents lay their content out
+  // in their parent's lines; an inline-block lays out lines of its own.
+  const isInlineBox = (cs) => !!cs && /^inline/.test(String(cs.display || ''));
+  function blockContainerOf(el) {
+    let cur = helpers.composedParent(el);
+    for (let i = 0; cur && dom.nodeType(cur) === 1 && i < 100000; i++) {
+      const cs = getStyle(cur);
+      if (!cs || (cs.display !== 'contents' && !isInlineFlow(cs))) return cur;
+      cur = helpers.composedParent(cur);
+    }
+    return cur;
+  }
+  // The nodes a box lays out: its shadow root's in place of its own, and
+  // a slot's assigned nodes in place of its fallback.
+  function renderedChildren(node) {
+    try {
+      if (dom.nodeType(node) === 1) {
+        const sr = dom.shadowRoot(node);
+        if (sr) return [...dom.childNodes(sr)];
+        if (String(dom.localName(node) || '').toLowerCase() === 'slot') {
+          const assigned = dom.assignedNodes(node, { flatten: true });
+          if (assigned && assigned.length) return [...assigned];
+        }
+      }
+      return [...dom.childNodes(node)];
+    } catch {
+      return [];
+    }
+  }
+  // Walks a block container once and settles, for every inline target in it,
+  // the text of its stretch.
+  const __textAround = new WeakMap();
+  const HAS_WORD = /[\p{L}\p{N}]/u;
+  function stretchesOf(container) {
+    if (!container) return;
+    let stretch = { words: false, symbols: false };
+    let links = [];
+    const close = () => {
+      for (const l of links) __textAround.set(l, stretch);
+      stretch = { words: false, symbols: false };
+      links = [];
+    };
+    const walk = (node) => {
+      for (const child of renderedChildren(node)) {
+        const type = dom.nodeType(child);
+        if (type === 3) {
+          const text = String(dom.nodeValue(child) || '');
+          if (HAS_WORD.test(text)) stretch.words = true;
+          else if (text.trim()) stretch.symbols = true;
+          continue;
+        }
+        if (type !== 1) continue;
+        const tag = String(dom.localName(child) || '').toLowerCase();
+        if (tag === 'br' || tag === 'hr') {
+          close();
+          continue;
+        }
+        const cs = getStyle(child);
+        if (!cs || cs.display === 'none') continue;
+        if (cs.display !== 'contents' && !isInlineBox(cs)) {
+          close();
+          continue;
+        }
+        if (isCandidate(child)) {
+          // A target's own text is no sentence around it.
+          if (isInlineTextTarget(child)) links.push(child);
+          continue;
+        }
+        walk(child);
+      }
+    };
+    walk(container);
+    close();
+  }
+
+  function getRects(el) {
+    try {
+      if (!el || typeof dom.get(el, 'getClientRects') !== 'function') return [];
+      const r = dom.getClientRects(el);
+      return r ? [...r] : [];
+    } catch {
+      return [];
+    }
+  }
+
+  function getBcr(el) {
+    try {
+      if (!el || typeof dom.get(el, 'getBoundingClientRect') !== 'function') return null;
+      return dom.getBoundingClientRect(el);
+    } catch {
+      return null;
+    }
+  }
+
+  function hasHiddenAttr(el) {
+    try {
+      return !!(el && dom.get(el, 'hasAttribute') && dom.hasAttribute(el, 'hidden'));
+    } catch {
+      return false;
+    }
+  }
+
+  function closest(el, sel) {
+    try {
+      return el && typeof dom.get(el, 'closest') === 'function' ? dom.closest(el, sel) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  // A closed <details> shows only its first <summary> child, which stays
+  // operable as the toggle, with whatever is inside it. Everything else in
+  // it is suppressed, an open <details> nested in it included. The walk
+  // crosses shadow boundaries and slots.
+  function inClosedDetails(el) {
+    try {
+      let child = el;
+      let cur = helpers.composedParent(el);
+      for (let guard = 0; cur && guard < 1000; guard++) {
+        if (
+          dom.nodeType(cur) === 1 &&
+          String(dom.localName(cur) || '').toLowerCase() === 'details' &&
+          !dom.hasAttribute(cur, 'open')
+        ) {
+          let first = dom.firstElementChild(cur);
+          while (first && String(dom.localName(first) || '').toLowerCase() !== 'summary') {
+            first = dom.nextElementSibling(first);
+          }
+          if (child !== first) return true;
+        }
+        child = cur;
+        cur = helpers.composedParent(cur);
+      }
+    } catch {}
+    return false;
+  }
+
+  function inInertSubtree(el) {
+    // Any ancestor with [inert] suppresses, including self.
+    try {
+      return !!closest(el, '[inert]');
+    } catch {
+      return false;
+    }
+  }
+
+  // Per-run memoization: getComputedStyle is a real, non-trivial cost in an
+  // actual browser (unlike jsdom, which no-ops it), and hasSpacingConflict
+  // below calls getStyle on the SAME candidate element repeatedly -- once
+  // per undersized target it's compared against, via
+  // isInlineTextExceptionTarget/isInlineTextTarget -- so with U undersized
+  // targets and N total candidates this was an uncached O(U * N)
+  // getComputedStyle call count. The DOM is read-only for the rest of this
+  // rule's run (no writes between reads), so caching per element here is
+  // safe -- style cannot change mid-run.
+  const __styleCache = new WeakMap();
+  function getStyle(el) {
+    if (__styleCache.has(el)) return __styleCache.get(el);
+    let cs;
+    try {
+      // The scan's shared reading (helpers.computedStyle): it stands in for
+      // a style jsdom can't compute (an element of a formula), and is an
+      // empty object where there is none, which is null here.
+      if (typeof helpers.computedStyle === 'function') {
+        cs = helpers.computedStyle(el);
+        if (cs && Object.getPrototypeOf(cs) === Object.prototype && Object.keys(cs).length === 0) {
+          cs = null;
+        }
+      } else {
+        cs =
+          document && dom.defaultView(document) && dom.defaultView(document).getComputedStyle
+            ? dom.defaultView(document).getComputedStyle(el)
+            : null;
+      }
+    } catch {
+      cs = null;
+    }
+    __styleCache.set(el, cs);
+    return cs;
+  }
+
+  // Visually hidden: the element, or an ancestor, is clipped to nothing, as
+  // the usual screen-reader-only pattern does. A pointer cannot hit any of
+  // it, so it is not a target, however small its box (helpers.isClipHidden).
+  function isClippedAway(el) {
+    // Bounded as a safety net only: a walk up a real tree always ends.
+    for (
+      let a = el, i = 0;
+      a && dom.nodeType(a) === 1 && i < 100000;
+      a = dom.parentElement(a), i++
+    ) {
+      const cs = getStyle(a);
+      if (cs && helpers.isClipHidden(cs)) return true;
+    }
+    return false;
+  }
+
+  // --- The region a pointer can hit (#105) ---
+  // A target is the "region of the display that will accept a pointer
+  // action" (WCAG 2.2, target), and it is large enough when a 24 by 24
+  // square aligned to the page fits inside it (Understanding 2.5.8), so
+  // rounded corners and a rotation count. The region is worked out from the
+  // layout: the border box with its rounded corners and 2D transforms,
+  // clipped by overflow, clip and clip-path: inset() on its containing-block
+  // chain, plus descendants that stick out of it. Nothing painted over it
+  // is taken away: what covers a target at the moment of a scan (an overlay,
+  // a pinned row, another target the scroll position brings over it) is no
+  // measure of the target. It is a list of convex polygons (`pieces`), in
+  // viewport coordinates. Left as their bounding box: 3D transforms, other clip-path
+  // shapes, and rounded clipping by an ancestor.
+  const EPS = 1e-7;
+  const HTML_NS = 'http://www.w3.org/1999/xhtml';
+  const px = (v) => {
+    const n = Number.parseFloat(v);
+    return Number.isFinite(n) ? n : 0;
+  };
+  const NO_CLIP = { l: -Infinity, t: -Infinity, r: Infinity, b: Infinity };
+  // sw and sh: the smallest box a reader scrolls the region through, on
+  // each axis (see overflowClip).
+  const meet = (a, b) => ({
+    l: Math.max(a.l, b.l),
+    t: Math.max(a.t, b.t),
+    r: Math.min(a.r, b.r),
+    b: Math.min(a.b, b.b),
+    sw: Math.min(a.sw === undefined ? Infinity : a.sw, b.sw === undefined ? Infinity : b.sw),
+    sh: Math.min(a.sh === undefined ? Infinity : a.sh, b.sh === undefined ? Infinity : b.sh)
+  });
+  const rectPoly = (l, t, r, b) => [
+    { x: l, y: t },
+    { x: r, y: t },
+    { x: r, y: b },
+    { x: l, y: b }
+  ];
+  const cross = (o, a, b) => (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+  function area(poly) {
+    let s = 0;
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i];
+      const b = poly[(i + 1) % poly.length];
+      s += a.x * b.y - b.x * a.y;
+    }
+    return s / 2;
+  }
+  // Polygons are kept with a positive signed area, so a point is inside
+  // when it is on the left of every edge.
+  const oriented = (poly) => (area(poly) < 0 ? poly.slice().reverse() : poly);
+  // Polygons are never changed once made, so their bounds are kept.
+  const __boundsCache = new WeakMap();
+  function boundsOf(poly) {
+    let bb = __boundsCache.get(poly);
+    if (!bb) {
+      bb = measureBounds(poly);
+      __boundsCache.set(poly, bb);
+    }
+    return bb;
+  }
+  function measureBounds(poly) {
+    let l = Infinity;
+    let t = Infinity;
+    let r = -Infinity;
+    let b = -Infinity;
+    for (const p of poly) {
+      if (p.x < l) l = p.x;
+      if (p.x > r) r = p.x;
+      if (p.y < t) t = p.y;
+      if (p.y > b) b = p.y;
+    }
+    return { l, t, r, b };
+  }
+  // Sutherland-Hodgman: the part of a convex polygon where keep(p) >= 0,
+  // for keep linear along each edge.
+  function clipBy(poly, keep) {
+    const out = [];
+    for (let i = 0; i < poly.length; i++) {
+      const a = poly[i];
+      const b = poly[(i + 1) % poly.length];
+      const ka = keep(a);
+      const kb = keep(b);
+      if (ka >= -EPS) out.push(a);
+      if (ka >= -EPS !== kb >= -EPS) {
+        const t = ka / (ka - kb);
+        out.push({ x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t });
+      }
+    }
+    return out;
+  }
+  function clipToRect(poly, c) {
+    let p = poly;
+    if (c.l > -Infinity) p = clipBy(p, (q) => q.x - c.l);
+    if (p.length && c.r < Infinity) p = clipBy(p, (q) => c.r - q.x);
+    if (p.length && c.t > -Infinity) p = clipBy(p, (q) => q.y - c.t);
+    if (p.length && c.b < Infinity) p = clipBy(p, (q) => c.b - q.y);
+    return p;
+  }
+  function clipToPoly(poly, clip) {
+    let p = poly;
+    for (let i = 0; i < clip.length && p.length; i++) {
+      const a = clip[i];
+      const b = clip[(i + 1) % clip.length];
+      p = clipBy(p, (q) => cross(a, b, q));
+    }
+    return p;
+  }
+  // Bounds first: a polygon squeezed to a segment or a point (a square that
+  // just fits) has every point of its line on the left of its edges.
+  function inPoly(poly, p) {
+    const bb = boundsOf(poly);
+    if (p.x < bb.l - 1e-6 || p.x > bb.r + 1e-6 || p.y < bb.t - 1e-6 || p.y > bb.b + 1e-6)
+      return false;
+    for (let i = 0; i < poly.length; i++) {
+      if (cross(poly[i], poly[(i + 1) % poly.length], p) < -1e-6) return false;
+    }
+    return true;
+  }
+  const edgesOf = (poly) => poly.map((a, i) => [a, poly[(i + 1) % poly.length]]);
+  function pieceBounds(piece) {
+    return boundsOf(piece.poly);
+  }
+  // Whether a square of side s fits in the piece: some top-left corner p
+  // has all four corners of the square in the polygon (which, being convex,
+  // then holds the square).
+  function squareFits(piece, s) {
+    let f = piece.poly;
+    for (const [dx, dy] of [
+      [s, 0],
+      [0, s],
+      [s, s]
+    ]) {
+      if (!f.length) return false;
+      f = clipToPoly(
+        f,
+        piece.poly.map((q) => ({ x: q.x - dx, y: q.y - dy }))
+      );
+    }
+    return f.length > 0;
+  }
+  // The largest square in a piece where it needs no search, else null: a
+  // rectangle's smaller side, or for a whole box, rounded or turned, which
+  // is symmetric about its centre as the largest square in it is, the side
+  // whose corners, centred there, stay inside every edge (the centre's
+  // distance from an edge over the edge's |dx| + |dy| bounds the half-side).
+  function plainSquare(piece) {
+    const bb = boundsOf(piece.poly);
+    const hi = Math.min(bb.r - bb.l, bb.b - bb.t);
+    if (piece.rect) return hi;
+    if (!piece.symmetric) return null;
+    const c = { x: (bb.l + bb.r) / 2, y: (bb.t + bb.b) / 2 };
+    let h = Infinity;
+    for (const [a, b] of edgesOf(piece.poly)) {
+      const run = Math.abs(b.x - a.x) + Math.abs(b.y - a.y);
+      if (run > EPS) h = Math.min(h, cross(a, b, c) / run);
+    }
+    return Math.max(0, Math.min(hi, 2 * h));
+  }
+  function largestSquare(piece) {
+    const plain = plainSquare(piece);
+    if (plain !== null) return plain;
+    const bb = boundsOf(piece.poly);
+    const hi = Math.min(bb.r - bb.l, bb.b - bb.t);
+    if (!(hi > 0)) return 0;
+    if (squareFits(piece, hi)) return hi;
+    let lo = 0;
+    let top = hi;
+    while (top - lo > 1e-5) {
+      const mid = (lo + top) / 2;
+      if (squareFits(piece, mid)) lo = mid;
+      else top = mid;
+    }
+    return lo;
+  }
+  function segmentDistance(c, a, b) {
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const len = dx * dx + dy * dy;
+    let t = len > 0 ? ((c.x - a.x) * dx + (c.y - a.y) * dy) / len : 0;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(c.x - (a.x + dx * t), c.y - (a.y + dy * t));
+  }
+  // How far point c is from the piece: 0 inside it, else the distance to
+  // the nearest point of its outline.
+  function pieceDistance(piece, c) {
+    if (inPoly(piece.poly, c)) return 0;
+    let near = Infinity;
+    for (const [a, b] of edgesOf(piece.poly)) near = Math.min(near, segmentDistance(c, a, b));
+    return near;
+  }
+
+  // The 2D linear part of the transforms on el and its ancestors, as
+  // { a, b, c, d } (x' = a x + c y, y' = b x + d y), or null for a 3D one.
+  // The individual translate, rotate and scale properties apply before
+  // transform; translations move a box without changing its shape.
+  const __linearCache = new WeakMap();
+  const IDENTITY = { a: 1, b: 0, c: 0, d: 1 };
+  const mul = (m, n) =>
+    m &&
+    n && {
+      a: m.a * n.a + m.c * n.b,
+      b: m.b * n.a + m.d * n.b,
+      c: m.a * n.c + m.c * n.d,
+      d: m.b * n.c + m.d * n.d
+    };
+  function angleOf(token) {
+    const m = /^(-?[\d.]+(?:e-?\d+)?)(deg|rad|grad|turn)$/.exec(String(token || ''));
+    if (!m) return null;
+    const v = Number(m[1]);
+    if (m[2] === 'rad') return v;
+    if (m[2] === 'grad') return (v * Math.PI) / 200;
+    if (m[2] === 'turn') return v * 2 * Math.PI;
+    return (v * Math.PI) / 180;
+  }
+  function ownLinear(cs) {
+    let m = IDENTITY;
+    const rotate = String((cs && cs.rotate) || 'none').trim();
+    if (rotate && rotate !== 'none') {
+      const parts = rotate.split(/\s+/);
+      const angle = angleOf(parts[parts.length - 1]);
+      const axis = parts.slice(0, -1);
+      const aboutZ =
+        !axis.length ||
+        (axis.length === 1 && axis[0] === 'z') ||
+        (axis.length === 3 && px(axis[0]) === 0 && px(axis[1]) === 0 && px(axis[2]) > 0);
+      if (angle === null || !aboutZ) return null;
+      const cos = Math.cos(angle);
+      const sin = Math.sin(angle);
+      m = mul(m, { a: cos, b: sin, c: -sin, d: cos });
+    }
+    const scale = String((cs && cs.scale) || 'none').trim();
+    if (scale && scale !== 'none') {
+      const f = scale.split(/\s+/).map((v) => (/%$/.test(v) ? px(v) / 100 : px(v)));
+      m = mul(m, { a: f[0], b: 0, c: 0, d: f.length > 1 ? f[1] : f[0] });
+    }
+    const t = String((cs && cs.transform) || 'none').trim();
+    if (t && t !== 'none') {
+      const v = (/^matrix(3d)?\(([^)]*)\)$/.exec(t) || [])[2];
+      if (!v) return null;
+      const n = v.split(',').map(Number);
+      if (n.length === 6) m = mul(m, { a: n[0], b: n[1], c: n[2], d: n[3] });
+      else if (n.length === 16) {
+        const flat = [2, 3, 6, 7, 8, 9, 11, 14].every((i) => Math.abs(n[i]) < 1e-9);
+        if (!flat || Math.abs(n[10] - 1) > 1e-9 || Math.abs(n[15] - 1) > 1e-9) return null;
+        m = mul(m, { a: n[0], b: n[1], c: n[4], d: n[5] });
+      } else return null;
+    }
+    return m;
+  }
+  // Transforms apply to boxes, not to the fragments of an inline box.
+  const isInlineFlow = (cs) => !!cs && /^inline$|^ruby/.test(String(cs.display || ''));
+  function linearOf(el) {
+    if (!el || dom.nodeType(el) !== 1) return IDENTITY;
+    if (__linearCache.has(el)) return __linearCache.get(el);
+    const cs = getStyle(el);
+    const own = isInlineFlow(cs) ? IDENTITY : ownLinear(cs);
+    const m = mul(linearOf(helpers.composedParent(el)), own);
+    __linearCache.set(el, m || null);
+    return m || null;
+  }
+  const isAxisAligned = (m) => !!m && Math.abs(m.b) < 1e-9 && Math.abs(m.c) < 1e-9;
+
+  // The containing block a box is clipped through (helpers.containingBlockOf):
+  // its parent box in flow, the nearest positioned ancestor when absolutely
+  // positioned, and null for the viewport.
+  const containingBlockOf = (el) => helpers.containingBlockOf(el);
+  const __boxCache = new WeakMap();
+  function boxOf(el) {
+    if (__boxCache.has(el)) return __boxCache.get(el);
+    const r = getBcr(el);
+    __boxCache.set(el, r);
+    return r;
+  }
+  // Whether a's overflow clips on an axis: any overflow but visible, or
+  // contain: paint.
+  const clipsOn = (cs, axis) =>
+    !!cs &&
+    ((!!cs[axis] && cs[axis] !== 'visible') ||
+      /\b(paint|strict|content)\b/.test(String(cs.contain || '')));
+  // What a's overflow (or contain: paint) does to the boxes inside it: the
+  // root's and the body's belong to the viewport. A box that clips its
+  // overflow doesn't cut a target where its edge is at the scan's scroll
+  // position: whether it scrolls with auto or scroll, or with hidden and a
+  // script (a custom scrollbar, a virtual list), a reader sees the target
+  // whole once it is scrolled in, as the page's own scrolling shows what
+  // lies below the fold. It only bounds the target's size by its padding
+  // box's (sw, sh), which regionOf applies at the target, so a 40px button
+  // in a 10px box is still measured as 10px.
+  function overflowClip(a, cs) {
+    const tag = String(dom.localName(a) || '').toLowerCase();
+    if (!cs || tag === 'html' || tag === 'body') return null;
+    const paint = /\b(paint|strict|content)\b/.test(String(cs.contain || ''));
+    const clipX = paint || (!!cs.overflowX && cs.overflowX !== 'visible');
+    const clipY = paint || (!!cs.overflowY && cs.overflowY !== 'visible');
+    if (!clipX && !clipY) return null;
+    const r = boxOf(a);
+    if (!r) return null;
+    const m = linearOf(a);
+    const sx = isAxisAligned(m) ? Math.abs(m.a) : 0;
+    const sy = isAxisAligned(m) ? Math.abs(m.d) : 0;
+    const w = r.width - (px(cs.borderLeftWidth) + px(cs.borderRightWidth)) * sx;
+    const h = r.height - (px(cs.borderTopWidth) + px(cs.borderBottomWidth)) * sy;
+    const c = { ...NO_CLIP, sw: Infinity, sh: Infinity };
+    if (clipX) c.sw = Math.max(0, w);
+    if (clipY) c.sh = Math.max(0, h);
+    return c;
+  }
+  // The innermost box on el's containing-block chain that clips its overflow
+  // and keeps el's box partly or wholly out of view, or null; a target larger
+  // than the box never fits in it, and isn't out of view but cut to it. Such a
+  // target is seen scrolled into it, where what lies outside it now, the
+  // boxes over it and the targets near it, is not.
+  const __scrolledOutCache = new WeakMap();
+  function scrolledOutOf(el) {
+    if (__scrolledOutCache.has(el)) return __scrolledOutCache.get(el);
+    let found = null;
+    const r = boxOf(el);
+    for (let a = r ? containingBlockOf(el) : null, i = 0; a && i < 100000; i++) {
+      const tag = String(dom.localName(a) || '').toLowerCase();
+      if (tag === 'html' || tag === 'body') break;
+      const cs = getStyle(a);
+      const sx = clipsOn(cs, 'overflowX');
+      const sy = clipsOn(cs, 'overflowY');
+      const ar = sx || sy ? boxOf(a) : null;
+      if (
+        ar &&
+        ((sx &&
+          r.width <= ar.width + EPS &&
+          (r.left < ar.left - EPS || r.left + r.width > ar.left + ar.width + EPS)) ||
+          (sy &&
+            r.height <= ar.height + EPS &&
+            (r.top < ar.top - EPS || r.top + r.height > ar.top + ar.height + EPS)))
+      ) {
+        found = a;
+        break;
+      }
+      a = containingBlockOf(a);
+    }
+    __scrolledOutCache.set(el, found);
+    return found;
+  }
+  // Whether a and b can be seen side by side: neither is scrolled out of a
+  // box the other isn't in.
+  function seenTogether(a, b) {
+    const sa = scrolledOutOf(a);
+    const sb = scrolledOutOf(b);
+    return (!sa || isComposedInside(b, sa)) && (!sb || isComposedInside(a, sb));
+  }
+  // What clip-path: inset() and clip: rect() clip a and everything inside
+  // it to. Other shapes are left out.
+  function lengthIn(v, ref) {
+    const s = String(v || '').trim();
+    return /%$/.test(s) ? (px(s) / 100) * ref : px(s);
+  }
+  function subtreeClipOf(a, cs) {
+    if (!cs) return null;
+    const cp = String(cs.clipPath || 'none').trim();
+    const clip = String(cs.clip || 'auto').trim();
+    if (cp === 'none' && clip === 'auto') return null;
+    const r = boxOf(a);
+    if (!r || !isAxisAligned(linearOf(a))) return null;
+    let c = null;
+    const inset = /^inset\(([^)]*)\)(?:\s+border-box)?$/.exec(cp);
+    if (inset) {
+      const v = inset[1]
+        .split(/\s+round\s+/)[0]
+        .trim()
+        .split(/\s+/);
+      const [t, rt, b, l] = [v[0], v[1] || v[0], v[2] || v[0], v[3] || v[1] || v[0]];
+      c = {
+        l: r.left + lengthIn(l, r.width),
+        t: r.top + lengthIn(t, r.height),
+        r: r.left + r.width - lengthIn(rt, r.width),
+        b: r.top + r.height - lengthIn(b, r.height)
+      };
+    }
+    const pos = String(cs.position || '');
+    const rect = /^rect\(([^)]*)\)$/.exec(clip);
+    if (rect && (pos === 'absolute' || pos === 'fixed')) {
+      const v = rect[1].split(/\s*,\s*|\s+/);
+      const side = (s, auto) => (s === 'auto' ? auto : px(s));
+      const k = {
+        l: r.left + side(v[3], 0),
+        t: r.top + side(v[0], 0),
+        r: r.left + side(v[1], r.width),
+        b: r.top + side(v[2], r.height)
+      };
+      c = c ? meet(c, k) : k;
+    }
+    return c;
+  }
+  // Past the last containing block: the page, which scrolls to anything
+  // after its start but to nothing before it (as with a skip link at
+  // left: -9999px), or, for a fixed box, the viewport. A right-to-left page
+  // scrolls left of its start, so only its top bounds it here.
+  function outerClip(cs) {
+    const view = dom.defaultView(document);
+    if (!view) return NO_CLIP;
+    if (cs && cs.position === 'fixed')
+      return { l: 0, t: 0, r: view.innerWidth, b: view.innerHeight };
+    const rootCs = getStyle(dom.documentElement(document));
+    const rtl = !!rootCs && rootCs.direction === 'rtl';
+    return {
+      l: rtl ? -Infinity : -(Number(view.scrollX) || 0),
+      t: -(Number(view.scrollY) || 0),
+      r: Infinity,
+      b: Infinity
+    };
+  }
+  const __cbClipCache = new WeakMap();
+  // The clip of everything whose containing block chain runs through a.
+  function chainClip(a) {
+    if (__cbClipCache.has(a)) return __cbClipCache.get(a);
+    __cbClipCache.set(a, NO_CLIP);
+    const cs = getStyle(a);
+    const own = overflowClip(a, cs);
+    const cb = containingBlockOf(a);
+    let up = cb ? chainClip(cb) : outerClip(cs);
+    // What is outside a (the page's start, an outer box's edge) cuts a, not
+    // what a scrolls: content a box scrolls past the top of the page comes
+    // back when it is scrolled.
+    if (own && own.sw < Infinity) up = { ...up, l: -Infinity, r: Infinity };
+    if (own && own.sh < Infinity) up = { ...up, t: -Infinity, b: Infinity };
+    const c = own ? meet(own, up) : up;
+    __cbClipCache.set(a, c);
+    return c;
+  }
+  const __subtreeClipCache = new WeakMap();
+  function inheritedClip(a) {
+    if (!a || dom.nodeType(a) !== 1) return NO_CLIP;
+    if (__subtreeClipCache.has(a)) return __subtreeClipCache.get(a);
+    const own = subtreeClipOf(a, getStyle(a));
+    const up = inheritedClip(helpers.composedParent(a));
+    const c = own ? meet(own, up) : up;
+    __subtreeClipCache.set(a, c);
+    return c;
+  }
+  function clipOf(el) {
+    const cs = getStyle(el);
+    const cb = containingBlockOf(el);
+    return meet(inheritedClip(el), cb ? chainClip(cb) : outerClip(cs));
+  }
+
+  // The border box as a polygon: its rounded corners (see roundedRect)
+  // under its transforms. null where the box is better left as its bounding box.
+  function radiiOf(cs, w, h) {
+    const corner = (v) => {
+      const parts = String(v || '0')
+        .trim()
+        .split(/\s+/);
+      return [lengthIn(parts[0], w), lengthIn(parts[1] || parts[0], h)];
+    };
+    const r = [
+      corner(cs.borderTopLeftRadius),
+      corner(cs.borderTopRightRadius),
+      corner(cs.borderBottomRightRadius),
+      corner(cs.borderBottomLeftRadius)
+    ];
+    // Radii that overlap are scaled down together (CSS Backgrounds 3).
+    const f = Math.min(
+      1,
+      w / (r[0][0] + r[1][0] || Infinity),
+      w / (r[3][0] + r[2][0] || Infinity),
+      h / (r[0][1] + r[3][1] || Infinity),
+      h / (r[1][1] + r[2][1] || Infinity)
+    );
+    return r.map(([x, y]) => [Math.max(0, x * f), Math.max(0, y * f)]);
+  }
+  // Each corner's arc as 8 chords, inside it by at most 0.5% of the radius.
+  // A square in a round shape touches it at 45 degrees, where a chord ends
+  // on the arc, so the square is exact.
+  const ARC_STEPS = 8;
+  function roundedRect(w, h, radii) {
+    const pts = [];
+    const corners = [
+      [radii[0], radii[0][0], radii[0][1], Math.PI],
+      [radii[1], w - radii[1][0], radii[1][1], 1.5 * Math.PI],
+      [radii[2], w - radii[2][0], h - radii[2][1], 0],
+      [radii[3], radii[3][0], h - radii[3][1], 0.5 * Math.PI]
+    ];
+    for (const [[rx, ry], cx, cy, start] of corners) {
+      if (!(rx > 0 && ry > 0)) {
+        pts.push({ x: cx, y: cy });
+        continue;
+      }
+      for (let i = 0; i <= ARC_STEPS; i++) {
+        const t = start + (i / ARC_STEPS) * (Math.PI / 2);
+        pts.push({ x: cx + rx * Math.cos(t), y: cy + ry * Math.sin(t) });
+      }
+    }
+    return pts;
+  }
+  function boxPolygon(el, cs, r) {
+    const m = linearOf(el);
+    if (!m) return null;
+    if (isAxisAligned(m)) {
+      const sx = Math.abs(m.a);
+      const sy = Math.abs(m.d);
+      if (!(sx > 0 && sy > 0)) return null;
+      const radii = radiiOf(cs, r.width / sx, r.height / sy).map(([x, y]) => [x * sx, y * sy]);
+      if (radii.every(([x, y]) => !(x > 0 && y > 0))) return null;
+      return roundedRect(r.width, r.height, radii).map((p) => ({
+        x: r.left + p.x,
+        y: r.top + p.y
+      }));
+    }
+    // Rotated or skewed: the untransformed border box, from the used size,
+    // must agree with the bounding box the browser reports.
+    const border = cs.boxSizing === 'border-box';
+    const w =
+      px(cs.width) +
+      (border
+        ? 0
+        : px(cs.paddingLeft) +
+          px(cs.paddingRight) +
+          px(cs.borderLeftWidth) +
+          px(cs.borderRightWidth));
+    const h =
+      px(cs.height) +
+      (border
+        ? 0
+        : px(cs.paddingTop) +
+          px(cs.paddingBottom) +
+          px(cs.borderTopWidth) +
+          px(cs.borderBottomWidth));
+    if (!(w > 0 && h > 0)) return null;
+    const local = roundedRect(w, h, radiiOf(cs, w, h));
+    const poly = local.map((p) => ({ x: m.a * p.x + m.c * p.y, y: m.b * p.x + m.d * p.y }));
+    const bb = boundsOf(
+      rectPoly(0, 0, w, h).map((p) => ({ x: m.a * p.x + m.c * p.y, y: m.b * p.x + m.d * p.y }))
+    );
+    if (Math.abs(bb.r - bb.l - r.width) > 0.5 || Math.abs(bb.b - bb.t - r.height) > 0.5)
+      return null;
+    return poly.map((p) => ({ x: p.x - bb.l + r.left, y: p.y - bb.t + r.top }));
+  }
+
+  function isComposedInside(node, container) {
+    for (let cur = node, i = 0; cur && i < 100000; cur = helpers.composedParent(cur), i++) {
+      if (cur === container) return true;
+    }
+    return false;
+  }
+  // The rectangles of a box with display: contents: what its content
+  // lays out.
+  function contentsRects(el) {
+    try {
+      const range = dom.createRange(document);
+      range.selectNodeContents(el);
+      return [...dom.getClientRects(range)];
+    } catch {
+      return [];
+    }
+  }
+
+  // The elements inside el that are not targets themselves, up to 500.
+  const __contentCache = new WeakMap();
+  function contentOf(el) {
+    let list = __contentCache.get(el);
+    if (!list) {
+      try {
+        list = [...dom.querySelectorAll(el, '*')].slice(0, 500).filter((d) => !isCandidate(d));
+      } catch {
+        list = [];
+      }
+      __contentCache.set(el, list);
+    }
+    return list;
+  }
+
+  // The region of el a pointer can hit, as { pieces, bounds, square,
+  // rectangle }, or null when nothing of it is left.
+  function regionOf(el) {
+    const cs = getStyle(el);
+    let clip = clipOf(el);
+    // Scrolled into view, a target larger than the box it scrolls in shows
+    // that box's size of it at most, from its start.
+    if (clip.sw < Infinity || clip.sh < Infinity) {
+      const r = boxOf(el);
+      if (r) {
+        const l = Math.max(r.left, clip.l);
+        const t = Math.max(r.top, clip.t);
+        clip = meet(clip, { l, t, r: l + clip.sw, b: t + clip.sh });
+      }
+    }
+    const polys = [];
+    const asRect = (q) => {
+      const p = clipToRect(rectPoly(q.left, q.top, q.left + q.width, q.top + q.height), clip);
+      if (p.length >= 3 && Math.abs(area(p)) > EPS) polys.push({ poly: oriented(p), rect: true });
+    };
+    if (cs && cs.display === 'contents') {
+      for (const q of contentsRects(el)) asRect(q);
+    } else {
+      if (isInlineFlow(cs)) {
+        for (const q of getRects(el)) asRect(q);
+      } else {
+        const r = boxOf(el);
+        if (!r) return null;
+        const shaped = dom.namespaceURI(el) === HTML_NS && cs ? boxPolygon(el, cs, r) : null;
+        if (shaped) {
+          const bb = boundsOf(shaped);
+          const whole = bb.l >= clip.l && bb.t >= clip.t && bb.r <= clip.r && bb.b <= clip.b;
+          const p = whole ? shaped : clipToRect(oriented(shaped), clip);
+          if (p.length >= 3 && Math.abs(area(p)) > EPS)
+            polys.push({ poly: oriented(p), rect: false, symmetric: whole });
+        } else asRect(r);
+      }
+      // Content sticking out of the box takes the pointer for el too, as an
+      // image does out of the line of the link around it.
+      const own = polys.slice();
+      for (const d of contentOf(el)) {
+        const dr = boxOf(d);
+        if (!dr || !(dr.width > 0) || !(dr.height > 0)) continue;
+        const corners = rectPoly(dr.left, dr.top, dr.left + dr.width, dr.top + dr.height);
+        if (own.some((o) => corners.every((p) => inPoly(o.poly, p)))) continue;
+        const dcs = getStyle(d);
+        if (!dcs || dcs.pointerEvents === 'none' || dcs.visibility !== 'visible') continue;
+        const dclip = clipOf(d);
+        for (const q of isInlineFlow(dcs) ? getRects(d) : [dr]) {
+          const p = clipToRect(rectPoly(q.left, q.top, q.left + q.width, q.top + q.height), dclip);
+          if (p.length >= 3 && Math.abs(area(p)) > EPS)
+            polys.push({ poly: oriented(p), rect: true });
+        }
+      }
+    }
+    const pieces = polys;
+    if (!pieces.length) return null;
+    let bounds = null;
+    for (const piece of pieces) {
+      const b = pieceBounds(piece);
+      bounds = bounds
+        ? {
+            l: Math.min(bounds.l, b.l),
+            t: Math.min(bounds.t, b.t),
+            r: Math.max(bounds.r, b.r),
+            b: Math.max(bounds.b, b.b)
+          }
+        : b;
+    }
+    if (!(bounds.r - bounds.l > 0) || !(bounds.b - bounds.t > 0)) return null;
+    return {
+      pieces,
+      bounds,
+      rectangle: pieces.length === 1 && pieces[0].rect
+    };
+  }
+  // The side of the largest square in the region, searched for only when
+  // asked: deciding whether 24 fits takes one test.
+  // Pieces are searched from the largest bound down, and the search stops
+  // at a piece whose bound can't beat the square found: a link's own box
+  // usually settles it before the boxes of its content are searched.
+  function squareOf(region) {
+    if (region.square === undefined) {
+      const ranked = region.pieces
+        .map((piece) => ({ piece, bound: pieceSquareBound(piece) }))
+        .sort((a, b) => b.bound - a.bound);
+      let s = 0;
+      for (const { piece, bound } of ranked) {
+        if (bound <= s) break;
+        s = Math.max(s, largestSquare(piece));
+      }
+      region.square = s;
+    }
+    return region.square;
+  }
+  // At least the largest square in a piece, without a search: exact where
+  // no search is needed, else its bounding box's smaller side.
+  function pieceSquareBound(piece) {
+    const plain = plainSquare(piece);
+    if (plain !== null) return plain;
+    const bb = boundsOf(piece.poly);
+    return Math.min(bb.r - bb.l, bb.b - bb.t);
+  }
+  // At least the largest square, without a search.
+  function squareBound(region) {
+    let s = 0;
+    for (const piece of region.pieces) s = Math.max(s, pieceSquareBound(piece));
+    return s;
+  }
+  // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
+  // and within a thousandth of a pixel where the region is worked out by
+  // search rather than read off a box.
+  function fitsMin(region) {
+    if (region.fits === undefined) {
+      region.fits = region.pieces.some((piece) => {
+        const plain = plainSquare(piece);
+        if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
+        return squareFits(piece, MIN - 1e-3);
+      });
+    }
+    return region.fits;
+  }
+  function regionDistance(region, c) {
+    let best = Infinity;
+    for (const piece of region.pieces) best = Math.min(best, pieceDistance(piece, c));
+    return best;
+  }
+
+  function isPointerReachable(el) {
+    // Match test expectations:
+    // - exclude display:none
+    // - exclude [hidden]
+    // - exclude content-visibility:hidden
+    // - exclude visibility hidden/collapse
+    // - exclude pointer-events:none
+    // - exclude inert subtree
+    // - exclude elements inside closed details (except summary)
+    // - exclude elements with no client rects
+    // - DO NOT exclude aria-hidden or opacity:0
+    if (!el || dom.nodeType(el) !== 1) return false;
+
+    if (hasHiddenAttr(el)) return false;
+    if (inInertSubtree(el)) return false;
+    if (inClosedDetails(el)) return false;
+    const cs = getStyle(el);
+    // With display: contents, el has no box of its own, and its content is
+    // what a pointer hits (#105).
+    const contents = !!cs && cs.display === 'contents';
+    // Under a hidden ancestor (display:none, hidden="until-found",
+    // content-visibility:hidden): the element keeps a box in Chromium, but
+    // nothing of it is drawn for a pointer to hit.
+    try {
+      if (
+        !contents &&
+        typeof dom.get(el, 'checkVisibility') === 'function' &&
+        !dom.checkVisibility(el)
+      )
+        return false;
+    } catch {}
+    if (helpers.isHiddenContent && helpers.isHiddenContent(el)) return false;
+
+    // Not operable => exclude
+    try {
+      if (typeof dom.get(el, 'matches') === 'function' && dom.matches(el, ':disabled'))
+        return false;
+    } catch {}
+
+    // aria-disabled elements are typically treated as not operable
+    try {
+      const ad =
+        dom.get(el, 'getAttribute') &&
+        String(dom.getAttribute(el, 'aria-disabled') || '')
+          .trim()
+          .toLowerCase();
+      if (ad === 'true') return false;
+    } catch {}
+
+    const rects = contents ? contentsRects(el) : getRects(el);
+    if (!rects || rects.length === 0) return false;
+
+    const display = cs && cs.display ? String(cs.display) : 'block';
+    const visibility = cs && cs.visibility ? String(cs.visibility) : 'visible';
+    const contentVisibility = cs && cs.contentVisibility ? String(cs.contentVisibility) : 'visible';
+    const pointerEvents = cs && cs.pointerEvents ? String(cs.pointerEvents) : 'auto';
+
+    if (display === 'none') return false;
+    if (visibility === 'hidden' || visibility === 'collapse') return false;
+    if (contentVisibility === 'hidden') return false;
+    if (pointerEvents === 'none') return false;
+    if (isClippedAway(el)) return false;
+
+    return true;
+  }
+
+  function centerOfRect(r) {
+    return { cx: r.left + r.width / 2, cy: r.top + r.height / 2 };
+  }
+
+  function dist(a, b) {
+    const dx = a.cx - b.cx;
+    const dy = a.cy - b.cy;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  function elementFromPoint(x, y) {
+    try {
+      if (document && typeof dom.get(document, 'elementFromPoint') === 'function')
+        return dom.elementFromPoint(document, x, y);
+    } catch {}
+    return null;
+  }
+
+  // Bidirectional containment check: true when `a` and `b` are the same
+  // element, or either one is an ancestor of the other. A nested-interactive
+  // pattern (e.g. a small <button> inside a wrapping <a href>, or vice
+  // versa) is a single visual/interactive region, not two independently
+  // placed targets. The spacing exception's "does the circle intersect
+  // ANOTHER target" language is about separate targets, not an element and
+  // its own container. (Nested interactive controls are their own,
+  // separately-flagged anti-pattern, nested-interactive-controls-absent,
+  // not a target-size spacing concern.)
+  function isRelated(a, b) {
+    try {
+      if (!a || !b) return false;
+      if (a === b) return true;
+      if (typeof dom.get(a, 'contains') === 'function' && dom.contains(a, b)) return true;
+      if (typeof dom.get(b, 'contains') === 'function' && dom.contains(b, a)) return true;
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
+  const NATIVE_CANDIDATE_SELECTOR = 'button, summary, a[href], area[href], input, select, textarea';
+  // role~= matches the token anywhere in the fallback list, so the resolved
+  // role is checked below (role="tab button" is a tab, not a target here).
+  const CANDIDATE_SELECTOR = `${NATIVE_CANDIDATE_SELECTOR}, [role~="button" i], [role~="link" i]`;
+
+  function isCandidate(el) {
+    try {
+      if (
+        typeof dom.get(el, 'matches') === 'function' &&
+        dom.matches(el, NATIVE_CANDIDATE_SELECTOR)
+      )
+        return true;
+    } catch {}
+    const role = getExplicitRole(el);
+    return role === 'button' || role === 'link';
+  }
+
+  // --- candidate collection ---
+  const candidates = qsa(CANDIDATE_SELECTOR, { internalsRoles: true }).filter(isCandidate);
+
+  const applicable = [];
+  for (const el of candidates) {
+    if (isPointerReachable(el)) applicable.push(el);
+  }
+
+  if (applicable.length === 0) {
+    return { ruleId: RULE_ID, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // A target's region, its bounding box (`rect`), on whose centre the
+  // spacing circle sits, and the largest square that fits in it (`square`),
+  // or null for a target with nothing left to hit, clipped away.
+  function measure(el) {
+    let region;
+    try {
+      region = regionOf(el);
+    } catch {
+      region = null;
+    }
+    if (!region) return null;
+    const { l, t, r, b } = region.bounds;
+    const w = r - l;
+    const h = b - t;
+    if (!Number.isFinite(w) || !Number.isFinite(h)) return null;
+    if (w <= 0 || h <= 0) return null;
+    return {
+      el,
+      region,
+      get square() {
+        return squareOf(region);
+      },
+      rect: { left: l, top: t, width: w, height: h, right: r, bottom: b },
+      center: centerOfRect({ left: l, top: t, width: w, height: h })
+    };
+  }
+
+  // Where a target can be hit at most: its own boxes (with display:
+  // contents, its content's) and those of the content inside it. Its region
+  // lies within, since clips and the boxes over it only take away. Cheap
+  // next to the region, it tells which targets need one.
+  function extentOf(el) {
+    const cs = getStyle(el);
+    const rects =
+      cs && cs.display === 'contents'
+        ? contentsRects(el)
+        : isInlineFlow(cs)
+          ? getRects(el)
+          : [boxOf(el)];
+    for (const d of contentOf(el)) rects.push(boxOf(d));
+    let e = null;
+    for (const q of rects) {
+      if (!q || !(q.width > 0) || !(q.height > 0)) continue;
+      const k = { l: q.left, t: q.top, r: q.left + q.width, b: q.top + q.height };
+      e = e
+        ? {
+            l: Math.min(e.l, k.l),
+            t: Math.min(e.t, k.t),
+            r: Math.max(e.r, k.r),
+            b: Math.max(e.b, k.b)
+          }
+        : k;
+    }
+    return e;
+  }
+
+  // Each target in scope, with its extent. Under a scoped scan the targets
+  // judged are the ones in scope, but their neighbours are whatever the page
+  // puts next to them: a target crowded by a button just outside the scope
+  // fails the spacing exception all the same. So the neighbours come from
+  // the whole document (light DOM; a neighbour in a shadow root outside the
+  // scope is not found).
+  const entry = (el, inScope) => {
+    const extent = extentOf(el);
+    return extent && { el, extent, inScope, exempt: isInlineTextExceptionTarget(el) };
+  };
+  const entries = [];
+  for (const el of applicable) {
+    const e = entry(el, true);
+    if (e) entries.push(e);
+  }
+  if (
+    helpers &&
+    typeof helpers.isWholeDocumentScope === 'function' &&
+    !helpers.isWholeDocumentScope()
+  ) {
+    const inScope = new Set(applicable);
+    let all;
+    try {
+      all = [...dom.querySelectorAll(document, CANDIDATE_SELECTOR)];
+    } catch {
+      all = [];
+    }
+    for (const el of all) {
+      if (inScope.has(el) || !isCandidate(el) || !isPointerReachable(el)) continue;
+      const e = entry(el, false);
+      if (e) entries.push(e);
+    }
+  }
+
+  // Only a target with another one within 24px of it, extent to extent, can
+  // fail, or be what another one fails against: the spacing circle reaches
+  // 12px from a centre inside the extent, and two undersized targets'
+  // circles meet only with their centres under 24px apart. Those targets'
+  // regions are worked out; any other passes whatever its size, and is
+  // measured only if the margin asks. Inline links in text are left out of
+  // both sides, as the spacing check leaves them.
+  const GRID = 64;
+  function gridOf(list, boxOfEntry) {
+    const cells = new Map(); // "cx,cy" -> entry[]
+    for (const it of list) {
+      const q = boxOfEntry(it);
+      const x1 = Math.floor(q.r / GRID);
+      const y1 = Math.floor(q.b / GRID);
+      for (let cx = Math.floor(q.l / GRID); cx <= x1; cx++) {
+        for (let cy = Math.floor(q.t / GRID); cy <= y1; cy++) {
+          const key = cx + ',' + cy;
+          const bucket = cells.get(key);
+          if (bucket) bucket.push(it);
+          else cells.set(key, [it]);
+        }
+      }
+    }
+    return cells;
+  }
+  function around(cells, q, reach) {
+    const out = new Set();
+    const x1 = Math.floor((q.r + reach) / GRID);
+    const y1 = Math.floor((q.b + reach) / GRID);
+    for (let cx = Math.floor((q.l - reach) / GRID); cx <= x1; cx++) {
+      for (let cy = Math.floor((q.t - reach) / GRID); cy <= y1; cy++) {
+        for (const it of cells.get(cx + ',' + cy) || []) out.add(it);
+      }
+    }
+    return out;
+  }
+  const gap = (p, q) =>
+    Math.hypot(Math.max(0, p.l - q.r, q.l - p.r), Math.max(0, p.t - q.b, q.t - p.b));
+  const spaced = entries.filter((e) => !e.exempt);
+  const extentCells = gridOf(spaced, (e) => e.extent);
+  for (const e of spaced) {
+    // With no spacing exception, every target's size decides it.
+    if (!SPACING_APPLIES) {
+      e.near = true;
+      continue;
+    }
+    for (const f of around(extentCells, e.extent, SPACING)) {
+      if (f === e || isRelated(e.el, f.el) || gap(e.extent, f.extent) >= SPACING) continue;
+      e.near = true;
+      break;
+    }
+  }
+  for (const e of entries) if (e.near) e.item = measure(e.el);
+
+  const items = entries.filter((e) => e.inScope && (!e.near || e.item));
+  if (items.length === 0) {
+    // had “applicable” but no measurable geometry
+    return { ruleId: RULE_ID, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // No 24 by 24 square fits in the target.
+  const isUndersized = (it) => !fitsMin(it.region);
+  const undersized = items.filter((e) => e.item && isUndersized(e.item)).map((e) => e.item);
+
+  // Spatial grid over the measured neighbours' bounding boxes, so
+  // hasSpacingConflict looks only at the neighbours near a target. A
+  // neighbour can conflict only if its region comes within 12px of the
+  // target's centre, or, undersized, its centre within 24px; both lie in its
+  // bounding box, so the cells within 24px of the centre hold every
+  // neighbour that can. This changes performance only, never which targets
+  // conflict.
+  const neighbours = entries.filter((e) => e.item).map((e) => e.item);
+  const regionCells = gridOf(neighbours, (it) => ({
+    l: it.rect.left,
+    t: it.rect.top,
+    r: it.rect.right,
+    b: it.rect.bottom
+  }));
+  function nearbyItems(center) {
+    return around(regionCells, { l: center.cx, t: center.cy, r: center.cx, b: center.cy }, SPACING);
+  }
+
+  // Whether the browser reports something else on top of `other` everywhere
+  // near `target`: a link under a fixed cookie banner, say, which a pointer
+  // near the banner's own button cannot reach. Points in `other`'s box within
+  // 24px of the target's centre are hit-tested. A point outside the viewport
+  // hits nothing, which proves nothing, so `other` counts as covered only when
+  // a point did hit something and no point hit `other`.
+  function isCoveredNear(other, target) {
+    // Out of view, neither is where a pointer would find it.
+    if (scrolledOutOf(other.el) || scrolledOutOf(target.el)) return false;
+    const r = other.rect;
+    const x0 = Math.max(r.left, target.center.cx - SPACING);
+    const x1 = Math.min(r.right, target.center.cx + SPACING);
+    const y0 = Math.max(r.top, target.center.cy - SPACING);
+    const y1 = Math.min(r.bottom, target.center.cy + SPACING);
+    if (x1 <= x0 || y1 <= y0) return false;
+    let answered = false;
+    for (const fx of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+      for (const fy of [0.1, 0.3, 0.5, 0.7, 0.9]) {
+        const hit = elementFromPoint(x0 + (x1 - x0) * fx, y0 + (y1 - y0) * fy);
+        if (!hit) continue;
+        answered = true;
+        try {
+          if (hit === other.el || dom.contains(other.el, hit)) return false;
+        } catch {
+          return false;
+        }
+      }
+    }
+    return answered;
+  }
+
+  // --- spacing evaluation ---
+  // WCAG 2.5.8's spacing exception, exactly: the 24px circle centred on the
+  // target's region must not intersect another target's region, nor the
+  // circle of another undersized target (their centres 24px apart or more).
+  // A circle that only touches passes.
+  function hasSpacingConflict(target) {
+    const c = { x: target.center.cx, y: target.center.cy };
+    for (const other of nearbyItems(target.center)) {
+      if (!other || !other.el || isRelated(target.el, other.el)) continue;
+      if (!seenTogether(target.el, other.el)) continue;
+
+      // Ignore inline-text exception targets when evaluating spacing conflicts.
+      // (Inline links in text are exempt and should not invalidate spacing.)
+      if (isInlineTextExceptionTarget(other.el)) continue;
+
+      const d = dist(target.center, other.center);
+      if (isUndersized(other) && d < SPACING - EPS) {
+        if (isCoveredNear(other, target)) continue;
+        return { conflict: true, conflictEl: other.el, decidedBy: 'centerDistance', distancePx: d };
+      }
+      const reach = regionDistance(other.region, c);
+      if (reach < RADIUS - EPS) {
+        if (isCoveredNear(other, target)) continue;
+        return {
+          conflict: true,
+          conflictEl: other.el,
+          decidedBy: 'regionDistance',
+          distancePx: reach
+        };
+      }
+    }
+    return { conflict: false, conflictEl: null };
+  }
+
+  // WCAG 2.5.8 "User Agent Control" exception: the target's size requirement
+  // does not apply at all when its size is determined by the user agent and
+  // not modified by the author. The canonical example is an unstyled native
+  // checkbox/radio (browsers render these well under 24px by default, and
+  // that's not the author's choice). Scoped narrowly to
+  // input[type=checkbox]/[type=radio] specifically, the only form-control
+  // types with a universally-recognized, unambiguous native rendering, and
+  // not extended to select/range/color/file, whose "default" sizing varies
+  // enough across browsers/OSes that a wrong exemption there risks masking a
+  // real author-introduced undersized target.
+  //
+  // Detection signal: `appearance` (or the legacy `-webkit-appearance`)
+  // computed as `none` is the near-universal first step of custom
+  // checkbox/radio styling across every CSS framework/design system. If the
+  // author hasn't reset it, the browser is still rendering its own default
+  // control chrome, so the size is UA-determined rather than authored.
+  function isUserAgentSizedControl(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return false;
+      const tag = (dom.tagName(el) || '').toLowerCase();
+      if (tag !== 'input') return false;
+
+      const type =
+        (dom.get(el, 'getAttribute') &&
+          String(dom.getAttribute(el, 'type') || '')
+            .trim()
+            .toLowerCase()) ||
+        '';
+      if (type !== 'checkbox' && type !== 'radio') return false;
+
+      const cs = getStyle(el);
+      let appearance = '';
+      try {
+        if (cs && typeof cs.getPropertyValue === 'function') {
+          appearance =
+            cs.getPropertyValue('appearance') || cs.getPropertyValue('-webkit-appearance') || '';
+        } else if (cs) {
+          appearance = cs.appearance || cs.webkitAppearance || '';
+        }
+      } catch {}
+      appearance = String(appearance).trim().toLowerCase();
+
+      // Author has reset the native chrome => size is now author-controlled;
+      // the exception no longer applies, evaluate normally.
+      if (appearance === 'none') return false;
+
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  function isPlausiblyEssentialOrEquivalent(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return false;
+
+      const tag = (dom.tagName(el) || '').toLowerCase();
+
+      // Image map targets are often constrained by the underlying image.
+      // Currently unreachable in practice: <area> never becomes a
+      // measurable candidate at all (see the file header's "Known,
+      // unimplemented gap" note). Kept for forward compatibility if that
+      // gap is closed later.
+      if (tag === 'area') return true;
+
+      // Graphics / spatial interaction regions are commonly essential by design.
+      if (closest(el, 'svg, canvas, map')) return true;
+
+      // Otherwise: do NOT guess "essential/equivalent" from layout containers.
+      return false;
+    } catch {
+      return false; // conservative: don't mask failures as cantTell
+    }
+  }
+
+  const failOccurrences = [];
+  const cantTellOccurrences = [];
+
+  // What decided a finding, measured against what it was held to, and the
+  // viewport it was measured at: a responsive page can size or place a
+  // target differently at another width. A conflict between two undersized
+  // targets reports the distance between their centres against the 24px
+  // their circles need; one with another target's region reports how far
+  // that region comes from the target's centre, against the circle's 12px
+  // radius. Values are rounded to a tenth of a pixel, but down where
+  // rounding would reach what they are held to, so a target under 24 never
+  // reads as 24 (#105).
+  const round1 = (n, limit = MIN) => {
+    const r = Math.round(n * 10) / 10;
+    return n < limit && r >= limit ? Math.floor(n * 10) / 10 : r;
+  };
+  const view = dom.defaultView(document) || null;
+  const viewport = view ? { width: view.innerWidth, height: view.innerHeight } : null;
+  function measurements(it, info) {
+    const metrics = {
+      widthPx: round1(it.rect.width),
+      heightPx: round1(it.rect.height),
+      squarePx: round1(it.square),
+      minSizePx: MIN,
+      decidedBy: info.decidedBy || null
+    };
+    if (info.decidedBy === 'centerDistance') {
+      metrics.centerDistancePx = round1(info.distancePx, SPACING);
+      metrics.minDistancePx = SPACING;
+    } else if (info.decidedBy === 'regionDistance') {
+      metrics.regionDistancePx = round1(info.distancePx, RADIUS);
+      metrics.minDistancePx = RADIUS;
+    }
+    return { metrics, viewport };
+  }
+  function measuredOf(it) {
+    return { width: it.rect.width, height: it.rect.height, square: it.square };
+  }
+  // A target whose region isn't a plain rectangle (rounded, rotated, partly
+  // covered) is described by its extent and the square that fits in it.
+  function sizeParams(it) {
+    return {
+      widthPx: String(round1(it.rect.width)),
+      heightPx: String(round1(it.rect.height)),
+      squarePx: String(round1(it.square)),
+      viewportWidth: String(viewport && viewport.width)
+    };
+  }
+  function sizeText(it, size) {
+    return it.region.rectangle
+      ? `Target is ${size.widthPx}×${size.heightPx} CSS px`
+      : `The part of this target a pointer can hit spans ${size.widthPx}×${size.heightPx} CSS px but fits only a ${size.squarePx}×${size.squarePx} square`;
+  }
+  const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
+  // How far the conflict leaves the target from passing the spacing
+  // exception, for the hint: the distance measured, the distance the test
+  // holds it to, and the gap between them. The distance is rounded as
+  // metrics rounds it, and the gap up, so the two together never fall short
+  // of what is needed.
+  function spacingParams(info) {
+    const limit = info.decidedBy === 'centerDistance' ? SPACING : RADIUS;
+    return {
+      distancePx: String(round1(info.distancePx, limit)),
+      minDistancePx: String(limit),
+      shortfallPx: String(Math.ceil((limit - info.distancePx) * 10 - 1e-6) / 10)
+    };
+  }
+  function spacingHint(decidedBy, s) {
+    return decidedBy === 'centerDistance'
+      ? `Its centre is ${s.distancePx} px from the centre of another target under 24×24, and the two need ${s.minDistancePx} px. Make the target at least 24×24 CSS px, or move the two at least ${s.shortfallPx} px further apart.`
+      : `Another target comes within ${s.distancePx} px of its centre, and a 24 px circle centred on it needs ${s.minDistancePx} px clear. Make the target at least 24×24 CSS px, or move it at least ${s.shortfallPx} px further from that target.`;
+  }
+
+  for (const it of undersized) {
+    // Inline-text exception: do not fail purely on size/spacing for inline targets in text.
+    if (isInlineTextExceptionTarget(it.el)) {
+      continue; // pass by exception (no occurrence)
+    }
+
+    // User Agent Control exception: size isn't the author's choice, so the
+    // size requirement (and therefore any spacing conflict stemming from
+    // it) doesn't apply at all. Skip straight to pass, no need to even
+    // evaluate spacing.
+    if (isUserAgentSizedControl(it.el)) {
+      continue;
+    }
+
+    const info = hasSpacingConflict(it);
+    const size = sizeParams(it);
+    const sized = sizeText(it, size);
+    // Without the spacing exception the size alone decides, and the distance
+    // to a neighbour is reported only where it is why the target is asked
+    // about (the inline link run below).
+    const shown = SPACING_APPLIES ? info : { conflict: false, conflictEl: null };
+    const tooClose = SPACING_APPLIES ? ', and too close to another target' : '';
+
+    if (info.conflict || !SPACING_APPLIES) {
+      if (isPlausiblyEssentialOrEquivalent(it.el)) {
+        // Confident spacing conflict, but the target may be exempt as part
+        // of an essential graphic/image-map region, so report it as
+        // cantTell rather than dropping it.
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.`,
+            hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
+            i18n: {
+              summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
+              hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
+              params: size
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target’s size is essential, which WCAG exempts.',
+              evidence: {
+                measured: measuredOf(it)
+              }
+            },
+            data: {
+              details: {
+                measured: measuredOf(it),
+                reasonCode: 'undersized-plausibly-essential',
+                conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+                ...measurements(it, shown)
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      // This target and its conflicting neighbor are both inline links in
+      // one stretch of text that has separators but no words ("Edit |
+      // Delete"), where the SC 2.5.8 inline exception may apply. That can't
+      // be decided from the page, so defer to manual review. Links with no
+      // text around them at all are in no text to be exempt in.
+      const around = isLinkLike(it.el) ? textAround(it.el) : null;
+      if (around && around.symbols && info.conflictEl && textAround(info.conflictEl) === around) {
+        cantTellOccurrences.push(
+          helpers.reportOccurrence(it.el, {
+            occurrenceOutcome: 'cantTell',
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link in the same run of text, where the inline exception may apply.`,
+            hint: `Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least ${MIN}×${MIN} CSS px or give it more space.`,
+            i18n: {
+              summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
+              hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
+              params: size
+            },
+            uncertainty: {
+              code: 'judgement-required',
+              needed: 'Whether this target is a link in a sentence, which WCAG exempts.',
+              evidence: {
+                measured: measuredOf(it)
+              }
+            },
+            data: {
+              details: {
+                measured: measuredOf(it),
+                reasonCode: 'undersized-inline-link-run',
+                conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...measurements(it, info)
+              }
+            }
+          })
+        );
+        continue;
+      }
+
+      // Too small with nothing to except it: with the spacing exception, the
+      // hint says how far the target is from passing it; without one, how
+      // large it needs to be.
+      const spacing = SPACING_APPLIES ? spacingParams(info) : { minSizePx: String(MIN) };
+      failOccurrences.push(
+        helpers.reportOccurrence(it.el, {
+          occurrenceOutcome: 'fail',
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          hint: SPACING_APPLIES
+            ? spacingHint(info.decidedBy, spacing)
+            : `Make the target at least ${MIN}×${MIN} CSS px.`,
+          i18n: {
+            summaryKey: keyFor(it, 'targetSizeMinimum_summary_fail'),
+            hintKey: SPACING_APPLIES
+              ? `targetSizeMinimum_hint_fail_${info.decidedBy}`
+              : 'targetSizeMinimum_hint_fail_size',
+            params: { ...size, ...spacing }
+          },
+          data: {
+            details: {
+              measured: measuredOf(it),
+              reasonCode: SPACING_APPLIES ? 'undersized-and-too-close' : 'undersized',
+              conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+              ...measurements(it, shown)
             }
           }
         })
@@ -102007,12 +104083,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
       "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
       "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
+      "targetSizeMinimum_hint_fail_size": "Machen Sie das Ziel mindestens {{minSizePx}}×{{minSizePx}} CSS-Pixel groß.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, vergrößern Sie das Ziel oder geben Sie ihm mehr Abstand.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt nah an einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 24×24 CSS-Pixel groß oder geben Sie ihm mehr Abstand.",
+      "targetSizeEnhanced_title": "Zeigerziele müssen mindestens 44x44px groß sein",
+      "targetSizeEnhanced_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 44 mal 44 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (Inline, vom Browser bestimmte Größe, wesentlich).",
+      "targetSizeEnhanced_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_hint_fail_size": "Machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, könnte aber als Teil einer essenziellen Grafik oder eines Image-Map-Bereichs ausgenommen sein.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Prüfen Sie, ob diese Größe wesentlich ist, wie bei einem Bereich einer Karte oder eines Diagramms. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 44×44, und steht neben einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 44×44, und steht neben einem anderen Inline-Link im selben Textfluss, wo die Inline-Ausnahme gelten kann.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Prüfen Sie, ob diese Links in einem Satz oder Absatz stehen, was ausgenommen ist. Wenn nicht, machen Sie das Ziel mindestens 44×44 CSS-Pixel groß.",
       "ariaHidden_focus_title": "ARIA-hidden-Elemente dürfen nicht fokussierbar sein",
       "ariaHidden_focus_description": "Prüft, ob Elemente mit aria-hidden=\"true\" nicht fokussierbar sind und keine fokussierbaren Nachfahren enthalten.",
       "ariaHidden_focus_summary_fail_desc": "Dieses <{{element}}> mit aria-hidden enthält {{focusableCount}} fokussierbare(s) Element(e): Tastaturnutzende erreichen sie, aber Screenreader geben sie nicht aus.",
@@ -102148,6 +104238,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
       "catalog.rules.wcag_253_label_in_name.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der zugängliche Name eines Bedienelements mit sichtbarer Textbeschriftung diesen sichtbaren Text enthält.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Zielgröße (erweitert)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele mindestens 44 mal 44 CSS-Pixel groß sind oder unter eine Ausnahme fallen (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Zielgröße (Minimum)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass Zeigerziele die Mindestgrößenanforderungen erfüllen.",
       "catalog.rules.wcag_311_language_of_page.title": "Sprache der Seite",
@@ -103383,12 +105475,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
       "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
       "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
+      "targetSizeMinimum_hint_fail_size": "Make the target at least {{minSizePx}}×{{minSizePx}} CSS px.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target, but may be exempt as part of an essential graphic or image-map region.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 24×24, and close to another inline link in the same run of text, where the inline exception may apply.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 24×24 CSS px or give it more space.",
+      "targetSizeEnhanced_title": "Pointer targets must be at least 44x44px large",
+      "targetSizeEnhanced_description": "Checks that pointer-operable targets have an effective hit region of at least 44 by 44 CSS pixels, or meet an allowed exception (inline, user-agent sizing, essential).",
+      "targetSizeEnhanced_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_hint_fail_size": "Make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 44×44, but may be exempt as part of an essential graphic or image-map region.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 44×44, but may be exempt as part of an essential graphic or image-map region.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target at least 44×44 CSS px.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link in the same run of text, where the inline exception may apply.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, smaller than 44×44, and beside another inline link in the same run of text, where the inline exception may apply.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least 44×44 CSS px.",
       "ariaHidden_focus_title": "ARIA hidden elements must not be focusable",
       "ariaHidden_focus_description": "Checks that aria-hidden=\"true\" elements are not focusable and do not contain focusable descendants.",
       "ariaHidden_focus_summary_fail_desc": "This aria-hidden <{{element}}> contains {{focusableCount}} focusable element(s): keyboard users can reach them, but screen readers don't announce them.",
@@ -103524,6 +105630,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
       "catalog.rules.wcag_253_label_in_name.description": "Rollup of checks ensuring that when a control has a visible text label, the accessible name contains that visible label text.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Target Size (Enhanced)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Rollup of checks ensuring pointer targets are at least 44 by 44 CSS pixels, or meet an exception (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Target size: minimum",
       "catalog.rules.wcag_258_target_size_minimum.description": "Rollup of checks ensuring pointer targets meet minimum size requirements.",
       "catalog.rules.wcag_311_language_of_page.title": "Language of page",
@@ -104759,12 +106867,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
       "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
       "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
+      "targetSizeMinimum_hint_fail_size": "Hacer que el objetivo mida al menos {{minSizePx}}×{{minSizePx}} px CSS.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, agrandar el objetivo o darle más espacio.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está cerca de otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 24×24 px CSS o darle más espacio.",
+      "targetSizeEnhanced_title": "Los objetivos de puntero deben tener al menos 44x44px de tamaño",
+      "targetSizeEnhanced_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 44 por 44 píxeles CSS, o cumplan una excepción permitida (en línea, tamaño fijado por el navegador, esencial).",
+      "targetSizeEnhanced_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_size": "Hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, pero puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y puede estar exento por formar parte de un gráfico esencial o una región de mapa de imagen.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Comprobar si este tamaño es esencial, como puede serlo en una zona de un mapa o de un diagrama. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 44×44, y está junto a otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 44×44, y está junto a otro enlace en línea dentro del mismo texto, donde puede aplicarse la excepción de contenido en línea.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Comprobar si estos enlaces están dentro de una frase o un párrafo, que está exento. Si no, hacer que el objetivo mida al menos 44×44 px CSS.",
       "ariaHidden_focus_title": "Los elementos ocultos con ARIA no deben ser enfocables",
       "ariaHidden_focus_description": "Comprueba que los elementos con aria-hidden=\"true\" no sean enfocables ni contengan descendientes enfocables.",
       "ariaHidden_focus_summary_fail_desc": "Este <{{element}}> con aria-hidden contiene {{focusableCount}} elemento(s) enfocable(s): se llega a ellos con el teclado, pero los lectores de pantalla no los anuncian.",
@@ -104900,6 +107022,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Inclusión de la etiqueta en el nombre",
       "catalog.rules.wcag_253_label_in_name.description": "Agrupación de comprobaciones que garantizan que, cuando un control tiene una etiqueta de texto visible, su nombre accesible contenga ese texto.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Tamaño del objetivo (mejorado)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero midan al menos 44 por 44 píxeles CSS, o cumplan una excepción (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Tamaño del objetivo (mínimo)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Agrupación de comprobaciones que garantizan que los objetivos de puntero cumplan los requisitos de tamaño mínimo.",
       "catalog.rules.wcag_311_language_of_page.title": "Idioma de la página",
@@ -106135,12 +108259,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
       "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
       "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
+      "targetSizeMinimum_hint_fail_size": "Donnez à la cible au moins {{minSizePx}}×{{minSizePx}} px CSS.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, agrandissez la cible ou donnez-lui plus d’espace.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est proche d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 24×24 px CSS ou plus d’espace.",
+      "targetSizeEnhanced_title": "Les cibles activables au pointeur doivent mesurer au moins 44×44px",
+      "targetSizeEnhanced_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 44×44 pixels CSS, ou respectent une exception autorisée (contenu en ligne, taille fixée par le navigateur, essentielle).",
+      "targetSizeEnhanced_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44.",
+      "targetSizeEnhanced_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44.",
+      "targetSizeEnhanced_hint_fail_centerDistance": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_regionDistance": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_hint_fail_size": "Donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, mais pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et pourrait être exemptée parce qu’elle fait partie d’un graphique essentiel ou d’une région d’image cliquable.",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "Vérifiez si cette taille est essentielle, comme elle peut l’être pour une zone de carte ou de schéma. Sinon, donnez à la cible au moins 44×44 px CSS.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 44×44, et est à côté d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 44×44, et est à côté d’un autre lien en ligne dans le même texte, où l’exception de contenu en ligne peut s’appliquer.",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "Vérifiez si ces liens sont dans une phrase ou un paragraphe, ce qui est exempté. Sinon, donnez à la cible au moins 44×44 px CSS.",
       "ariaHidden_focus_title": "Les éléments aria-hidden ne doivent pas être focalisables",
       "ariaHidden_focus_description": "Vérifie que les éléments avec aria-hidden=\"true\" ne sont pas focalisables et ne contiennent pas d’éléments focalisables.",
       "ariaHidden_focus_summary_fail_desc": "Cet élément <{{element}}> avec aria-hidden contient {{focusableCount}} élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.",
@@ -106276,6 +108414,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
       "catalog.rules.wcag_253_label_in_name.description": "Regroupe les contrôles garantissant que, lorsqu’un composant a une étiquette textuelle visible, son nom accessible contient ce texte.",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "Taille de la cible (amélioré)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "Regroupe les contrôles garantissant que les cibles activables au pointeur font au moins 44×44 pixels CSS, ou relèvent d’une exception (AAA).",
       "catalog.rules.wcag_258_target_size_minimum.title": "Taille de la cible (minimum)",
       "catalog.rules.wcag_258_target_size_minimum.description": "Regroupe les contrôles garantissant que les cibles de pointage respectent les dimensions minimales requises.",
       "catalog.rules.wcag_311_language_of_page.title": "Langue de la page",
@@ -107511,12 +109651,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
       "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
+      "targetSizeMinimum_hint_fail_size": "ターゲットを {{minSizePx}}×{{minSizePx}} CSS px 以上にしてください。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎますが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
       "targetSizeMinimum_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを大きくするか、間隔を広げてください。",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
       "targetSizeMinimum_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、同じ文中の別のインラインリンクに近接しています。インラインの例外が適用される可能性があります。",
       "targetSizeMinimum_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 24×24 CSS px 以上にするか、間隔を広げてください。",
+      "targetSizeEnhanced_title": "ポインターのターゲットは 44×44px 以上の大きさが必要",
+      "targetSizeEnhanced_description": "ポインターで操作できるターゲットの実効的なヒット領域が 44×44 CSS ピクセル以上であるか、または認められている例外 (インライン、ユーザエージェントによる大きさ、必要不可欠) に該当するかを確認します。",
+      "targetSizeEnhanced_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満です。",
+      "targetSizeEnhanced_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満です。",
+      "targetSizeEnhanced_hint_fail_centerDistance": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_hint_fail_regionDistance": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_hint_fail_size": "ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満ですが、必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+      "targetSizeEnhanced_summary_cantTell_plausiblyEssential_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満です。必要不可欠なグラフィックやイメージマップの領域の一部として例外に該当する可能性があります。",
+      "targetSizeEnhanced_hint_cantTell_plausiblyEssential": "地図や図の一部のように、このサイズが不可欠かどうか確認してください。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 44×44 未満で、同じ文中の別のインラインリンクの隣にあります。インラインの例外が適用される可能性があります。",
+      "targetSizeEnhanced_summary_cantTell_inlineLinkRun_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 44×44 未満で、同じ文中の別のインラインリンクの隣にあります。インラインの例外が適用される可能性があります。",
+      "targetSizeEnhanced_hint_cantTell_inlineLinkRun": "これらのリンクが文や段落の中にあるか確認してください。その場合は対象外です。そうでなければ、ターゲットを 44×44 CSS px 以上にしてください。",
       "ariaHidden_focus_title": "aria-hidden が指定された要素はフォーカス可能であってはならない",
       "ariaHidden_focus_description": "aria-hidden=\"true\" の要素がフォーカス可能でなく、フォーカス可能な子孫要素も含んでいないかを確認します。",
       "ariaHidden_focus_summary_fail_desc": "aria-hidden が指定されたこの <{{element}}> には、フォーカス可能な要素が {{focusableCount}} 個含まれています。キーボードでは到達できますが、スクリーンリーダーは読み上げません。",
@@ -107652,6 +109806,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
       "catalog.rules.wcag_253_label_in_name.description": "コントロールに表示テキストのラベルがある場合に、アクセシブルな名前にそのラベルのテキストが含まれているかを確認するチェックの集約です。",
+      "catalog.rules.wcag_255_target_size_enhanced.title": "ターゲットのサイズ (高度)",
+      "catalog.rules.wcag_255_target_size_enhanced.description": "ポインターのターゲットが 44×44 CSS ピクセル以上であるか、例外に該当するかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_258_target_size_minimum.title": "ターゲットのサイズ (最低限)",
       "catalog.rules.wcag_258_target_size_minimum.description": "ポインターのターゲットが最小サイズの要件を満たしているかを確認するチェックの集約です。",
       "catalog.rules.wcag_311_language_of_page.title": "ページの言語",
