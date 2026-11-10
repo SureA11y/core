@@ -2159,15 +2159,32 @@ function runInPage(ctx) {
 
     const eligInfo = eligibilityInfoOf(el);
     const tag = (dom.tagName(el) || '').toLowerCase();
-    const ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
+    // The ratio the summary states, to two decimals, rounded down where
+    // rounding would reach 3: a link under 3:1 never reads as 3.00:1.
+    const hasRatio = Number.isFinite(ratio);
+    let ratioStr = c.round2 ? c.round2(ratio) : String(ratio);
+    if (hasRatio && Number(ratioStr) >= 3) ratioStr = (Math.floor(ratio * 100) / 100).toFixed(2);
+    // The ratio is stated with the summary. Under an ancestor's opacity it
+    // is the one before the fading, which only brings the colors closer.
+    const summaryKey = !hasRatio
+      ? 'linkInTextBlock_summary_fail'
+      : beforeOpacity
+        ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
+        : 'linkInTextBlock_summary_fail_ratio';
+    const colorOnly =
+      'This link in a block of text relies on color alone to be distinguished from the surrounding text';
+    const summary = !hasRatio
+      ? `${colorOnly}.`
+      : beforeOpacity
+        ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
+        : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This link in a block of text relies on color alone to be distinguished from the surrounding text.',
+        summary,
         hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
-          summaryKey: 'linkInTextBlock_summary_fail',
+          summaryKey,
           hintKey: 'linkInTextBlock_hint_fail',
           params: { element: tag, ratio: String(ratioStr), threshold: '3' }
         },

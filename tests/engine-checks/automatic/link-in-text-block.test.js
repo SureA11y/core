@@ -197,6 +197,19 @@ test(`${RULE_ID}: two opaque text colors decide a link whose background can't be
     assert.ok(Math.abs(occFor(rule, id).data.details.metrics.ratio - 1.66) < 0.01, id);
     assert.strictEqual(occFor(rule, id).data.details.metrics.ratioBeforeOpacity, undefined, id);
   }
+  // The summary states the ratio, and says the fading lowers it as drawn.
+  const rootClose = occFor(rule, 'root-close');
+  assert.strictEqual(rootClose.i18n.summaryKey, 'linkInTextBlock_summary_fail_ratio');
+  assert.strictEqual(
+    rootClose.summary,
+    'This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of 1.66:1 against that text, below 3:1.'
+  );
+  const opClose = occFor(rule, 'op-close');
+  assert.strictEqual(opClose.i18n.summaryKey, 'linkInTextBlock_summary_fail_ratioBeforeOpacity');
+  assert.strictEqual(
+    opClose.summary,
+    "This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of 1.66:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both."
+  );
   // 3.57:1: told apart by color alone, as on any page.
   for (const id of ['img-far', 'root-far']) {
     assert.strictEqual(occFor(rule, id).data.details.reasonCode, 'LINK_COLOR_CONTRAST_ONLY', id);
@@ -858,4 +871,21 @@ test(`${RULE_ID}: a link faded with its text by an ancestor leans pass on no hov
   const bare = scan('');
   assert.strictEqual(occFor(bare, 'faded').lean.toward, 'fail');
   assert.strictEqual(occFor(bare, 'plain').lean.toward, 'fail');
+});
+
+test(`${RULE_ID}: a ratio just under 3:1 never reads as 3.00:1`, () => {
+  // #595959 against #000 is 2.998:1, which rounds to 3.00.
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p { color: #000000; }
+    a { text-decoration: none; color: #595959; }
+  </style></head><body><p>Read <a id="edge" href="#">this guide</a> before you start.</p></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.ok(occ.data.details.metrics.ratio < 3);
+  assert.strictEqual(occ.i18n.params.ratio, '2.99');
+  assert.ok(occ.summary.includes('2.99:1'), occ.summary);
 });
