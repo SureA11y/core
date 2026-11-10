@@ -38896,8 +38896,8 @@ const RUNTIME_CATALOG = {
       "roleImg_textAlternativePresent_hint_fail": "Benennen Sie es mit aria-label oder mit aria-labelledby, das auf nicht leeren Text verweist.",
       "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
       "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
-      "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
-      "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
+      "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel: {{distancePx}} px, wo {{minDistancePx}} px nötig sind.",
+      "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel: {{distancePx}} px, wo {{minDistancePx}} px nötig sind.",
       "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
       "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
       "targetSizeMinimum_hint_fail_size": "Machen Sie das Ziel mindestens {{minSizePx}}×{{minSizePx}} CSS-Pixel groß.",
@@ -40290,8 +40290,8 @@ const RUNTIME_CATALOG = {
       "roleImg_textAlternativePresent_hint_fail": "Name it with aria-label, or with aria-labelledby pointing at text that is not empty.",
       "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
       "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
-      "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
-      "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
+      "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target: {{distancePx}} px where {{minDistancePx}} px is needed.",
+      "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target: {{distancePx}} px where {{minDistancePx}} px is needed.",
       "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
       "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
       "targetSizeMinimum_hint_fail_size": "Make the target at least {{minSizePx}}×{{minSizePx}} CSS px.",
@@ -41684,8 +41684,8 @@ const RUNTIME_CATALOG = {
       "roleImg_textAlternativePresent_hint_fail": "Darle nombre con aria-label, o con aria-labelledby apuntando a un texto que no esté vacío.",
       "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
       "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
-      "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
-      "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
+      "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo: {{distancePx}} px cuando se necesitan {{minDistancePx}}.",
+      "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo: {{distancePx}} px cuando se necesitan {{minDistancePx}}.",
       "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
       "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
       "targetSizeMinimum_hint_fail_size": "Hacer que el objetivo mida al menos {{minSizePx}}×{{minSizePx}} px CSS.",
@@ -43078,8 +43078,8 @@ const RUNTIME_CATALOG = {
       "roleImg_textAlternativePresent_hint_fail": "Nommez-le avec aria-label, ou avec aria-labelledby pointant vers un texte non vide.",
       "targetSizeMinimum_title": "Les cibles activables au pointeur doivent mesurer au moins 24×24px ou être suffisamment espacées des autres cibles",
       "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
-      "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
-      "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
+      "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible : {{distancePx}} px là où il en faut {{minDistancePx}}.",
+      "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible : {{distancePx}} px là où il en faut {{minDistancePx}}.",
       "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
       "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
       "targetSizeMinimum_hint_fail_size": "Donnez à la cible au moins {{minSizePx}}×{{minSizePx}} px CSS.",
@@ -44472,8 +44472,8 @@ const RUNTIME_CATALOG = {
       "roleImg_textAlternativePresent_hint_fail": "aria-label で名前を付けるか、aria-labelledby で空でないテキストを参照してください。",
       "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
       "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
-      "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
-      "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
+      "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます ({{distancePx}} px、必要なのは {{minDistancePx}} px)。",
+      "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます ({{distancePx}} px、必要なのは {{minDistancePx}} px)。",
       "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_size": "ターゲットを {{minSizePx}}×{{minSizePx}} CSS px 以上にしてください。",
@@ -98726,7 +98726,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${
+            SPACING_APPLIES
+              ? `${tooClose}: ${spacing.distancePx} px where ${spacing.minDistancePx} px is needed`
+              : ''
+          }.`,
           hint: SPACING_APPLIES
             ? spacingHint(info.decidedBy, spacing)
             : `Make the target at least ${MIN}×${MIN} CSS px.`,
@@ -100443,7 +100447,11 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${
+            SPACING_APPLIES
+              ? `${tooClose}: ${spacing.distancePx} px where ${spacing.minDistancePx} px is needed`
+              : ''
+          }.`,
           hint: SPACING_APPLIES
             ? spacingHint(info.decidedBy, spacing)
             : `Make the target at least ${MIN}×${MIN} CSS px.`,
@@ -104227,8 +104235,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "roleImg_textAlternativePresent_hint_fail": "Benennen Sie es mit aria-label oder mit aria-labelledby, das auf nicht leeren Text verweist.",
       "targetSizeMinimum_title": "Zeigerziele müssen mindestens 24x24px groß sein oder ausreichend Abstand zu anderen Zielen einhalten",
       "targetSizeMinimum_description": "Prüft, ob per Zeiger bedienbare Ziele eine effektive Zielgröße von mindestens 24 mal 24 CSS-Pixel haben oder eine zulässige Ausnahme erfüllen (z. B. ausreichender Abstand).",
-      "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
-      "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel.",
+      "targetSizeMinimum_summary_fail": "Das Ziel ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, kleiner als 24×24, und liegt zu nah an einem anderen Ziel: {{distancePx}} px, wo {{minDistancePx}} px nötig sind.",
+      "targetSizeMinimum_summary_fail_shape": "Der Bereich dieses Ziels, den ein Zeiger treffen kann, ist bei einem {{viewportWidth}} px breiten Viewport {{widthPx}}×{{heightPx}} CSS-Pixel groß, fasst aber nur ein Quadrat von {{squarePx}}×{{squarePx}}, kleiner als 24×24, und liegt zu nah an einem anderen Ziel: {{distancePx}} px, wo {{minDistancePx}} px nötig sind.",
       "targetSizeMinimum_hint_fail_centerDistance": "Seine Mitte liegt {{distancePx}} px von der Mitte eines anderen Ziels unter 24×24 entfernt, nötig sind {{minDistancePx}} px. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie die beiden um mindestens {{shortfallPx}} px weiter auseinander.",
       "targetSizeMinimum_hint_fail_regionDistance": "Ein anderes Ziel reicht bis auf {{distancePx}} px an seine Mitte heran, ein Kreis von 24 px um seine Mitte braucht aber {{minDistancePx}} px Abstand. Machen Sie das Ziel mindestens 24×24 CSS-Pixel groß, oder rücken Sie es um mindestens {{shortfallPx}} px weiter von diesem Ziel ab.",
       "targetSizeMinimum_hint_fail_size": "Machen Sie das Ziel mindestens {{minSizePx}}×{{minSizePx}} CSS-Pixel groß.",
@@ -105621,8 +105629,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "roleImg_textAlternativePresent_hint_fail": "Name it with aria-label, or with aria-labelledby pointing at text that is not empty.",
       "targetSizeMinimum_title": "Pointer targets must be at least 24x24px large, or leave sufficient distance to other targets",
       "targetSizeMinimum_description": "Checks that pointer-operable targets have an effective hit region of at least 24 by 24 CSS pixels, or meet an allowed exception (e.g. sufficient spacing).",
-      "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
-      "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target.",
+      "targetSizeMinimum_summary_fail": "Target is {{widthPx}}×{{heightPx}} CSS px at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target: {{distancePx}} px where {{minDistancePx}} px is needed.",
+      "targetSizeMinimum_summary_fail_shape": "The part of this target a pointer can hit spans {{widthPx}}×{{heightPx}} CSS px but fits only a {{squarePx}}×{{squarePx}} square at a {{viewportWidth}}px-wide viewport, under 24×24, and too close to another target: {{distancePx}} px where {{minDistancePx}} px is needed.",
       "targetSizeMinimum_hint_fail_centerDistance": "Its centre is {{distancePx}} px from the centre of another target under 24×24, and the two need {{minDistancePx}} px. Make the target at least 24×24 CSS px, or move the two at least {{shortfallPx}} px further apart.",
       "targetSizeMinimum_hint_fail_regionDistance": "Another target comes within {{distancePx}} px of its centre, and a 24 px circle centred on it needs {{minDistancePx}} px clear. Make the target at least 24×24 CSS px, or move it at least {{shortfallPx}} px further from that target.",
       "targetSizeMinimum_hint_fail_size": "Make the target at least {{minSizePx}}×{{minSizePx}} CSS px.",
@@ -107015,8 +107023,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "roleImg_textAlternativePresent_hint_fail": "Darle nombre con aria-label, o con aria-labelledby apuntando a un texto que no esté vacío.",
       "targetSizeMinimum_title": "Los objetivos de puntero deben tener al menos 24x24px de tamaño, o dejar suficiente distancia respecto a otros objetivos",
       "targetSizeMinimum_description": "Comprueba que los objetivos operables por puntero tengan una zona de contacto efectiva de al menos 24 por 24 píxeles CSS, o cumplan una excepción permitida (por ejemplo, espaciado suficiente).",
-      "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo.",
-      "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo.",
+      "targetSizeMinimum_summary_fail": "El objetivo mide {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, menos de 24×24, y está demasiado cerca de otro objetivo: {{distancePx}} px cuando se necesitan {{minDistancePx}}.",
+      "targetSizeMinimum_summary_fail_shape": "La parte de este objetivo que un puntero puede alcanzar abarca {{widthPx}}×{{heightPx}} px CSS en una ventana de {{viewportWidth}} px de ancho, pero solo cabe en ella un cuadrado de {{squarePx}}×{{squarePx}}, menos de 24×24, y está demasiado cerca de otro objetivo: {{distancePx}} px cuando se necesitan {{minDistancePx}}.",
       "targetSizeMinimum_hint_fail_centerDistance": "Su centro está a {{distancePx}} px del centro de otro objetivo de menos de 24×24, y los dos necesitan {{minDistancePx}} px. Hacer que el objetivo mida al menos 24×24 px CSS, o separar los dos al menos {{shortfallPx}} px más.",
       "targetSizeMinimum_hint_fail_regionDistance": "Otro objetivo llega a {{distancePx}} px de su centro, y un círculo de 24 px centrado en él necesita {{minDistancePx}} px libres. Hacer que el objetivo mida al menos 24×24 px CSS, o alejarlo al menos {{shortfallPx}} px más de ese objetivo.",
       "targetSizeMinimum_hint_fail_size": "Hacer que el objetivo mida al menos {{minSizePx}}×{{minSizePx}} px CSS.",
@@ -108409,8 +108417,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "roleImg_textAlternativePresent_hint_fail": "Nommez-le avec aria-label, ou avec aria-labelledby pointant vers un texte non vide.",
       "targetSizeMinimum_title": "Les cibles activables au pointeur doivent mesurer au moins 24×24px ou être suffisamment espacées des autres cibles",
       "targetSizeMinimum_description": "Vérifie que les cibles activables au pointeur ont une zone cliquable effective d’au moins 24×24 pixels CSS, ou respectent une exception autorisée (par ex. un espacement suffisant).",
-      "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible.",
-      "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible.",
+      "targetSizeMinimum_summary_fail": "La cible mesure {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, moins de 24×24, et est trop proche d’une autre cible : {{distancePx}} px là où il en faut {{minDistancePx}}.",
+      "targetSizeMinimum_summary_fail_shape": "La partie de cette cible qu’un pointeur peut atteindre s’étend sur {{widthPx}}×{{heightPx}} px CSS dans une zone d’affichage de {{viewportWidth}} px de large, mais ne contient qu’un carré de {{squarePx}}×{{squarePx}}, moins de 24×24, et est trop proche d’une autre cible : {{distancePx}} px là où il en faut {{minDistancePx}}.",
       "targetSizeMinimum_hint_fail_centerDistance": "Son centre est à {{distancePx}} px du centre d’une autre cible de moins de 24×24, alors qu’il en faut {{minDistancePx}}. Donnez à la cible au moins 24×24 px CSS, ou écartez les deux d’au moins {{shortfallPx}} px de plus.",
       "targetSizeMinimum_hint_fail_regionDistance": "Une autre cible arrive à {{distancePx}} px de son centre, alors qu’un cercle de 24 px centré sur elle demande {{minDistancePx}} px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins {{shortfallPx}} px de plus de cette cible.",
       "targetSizeMinimum_hint_fail_size": "Donnez à la cible au moins {{minSizePx}}×{{minSizePx}} px CSS.",
@@ -109803,8 +109811,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "roleImg_textAlternativePresent_hint_fail": "aria-label で名前を付けるか、aria-labelledby で空でないテキストを参照してください。",
       "targetSizeMinimum_title": "ポインターのターゲットは 24×24px 以上の大きさか、ほかのターゲットとの間に十分な間隔が必要",
       "targetSizeMinimum_description": "ポインターで操作できるターゲットの実効的なヒット領域が 24×24 CSS ピクセル以上であるか、または認められている例外 (十分な間隔など) に該当するかを確認します。",
-      "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます。",
-      "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます。",
+      "targetSizeMinimum_summary_fail": "幅 {{viewportWidth}}px のビューポートで、このターゲットは {{widthPx}}×{{heightPx}} CSS px と 24×24 未満で、ほかのターゲットに近すぎます ({{distancePx}} px、必要なのは {{minDistancePx}} px)。",
+      "targetSizeMinimum_summary_fail_shape": "幅 {{viewportWidth}}px のビューポートで、このターゲットのポインターが当たる部分は {{widthPx}}×{{heightPx}} CSS px の範囲ですが、収まる正方形は {{squarePx}}×{{squarePx}} と 24×24 未満で、ほかのターゲットに近すぎます ({{distancePx}} px、必要なのは {{minDistancePx}} px)。",
       "targetSizeMinimum_hint_fail_centerDistance": "このターゲットの中心は、24×24 未満の別のターゲットの中心から {{distancePx}} px の位置にあり、{{minDistancePx}} px 必要です。ターゲットを 24×24 CSS px 以上にするか、2 つをさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_regionDistance": "別のターゲットがこのターゲットの中心から {{distancePx}} px の位置まで来ています。中心に置いた直径 24 px の円には {{minDistancePx}} px の間隔が必要です。ターゲットを 24×24 CSS px 以上にするか、そのターゲットからさらに {{shortfallPx}} px 以上離してください。",
       "targetSizeMinimum_hint_fail_size": "ターゲットを {{minSizePx}}×{{minSizePx}} CSS px 以上にしてください。",

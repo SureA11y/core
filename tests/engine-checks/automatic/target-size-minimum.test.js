@@ -598,7 +598,7 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
   });
   assert.strictEqual(
     occ.summary,
-    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target.'
+    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target: 20 px where 24 px is needed.'
   );
   assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_centerDistance');
   assert.strictEqual(
@@ -626,6 +626,10 @@ test(`${RULE_ID}: a conflict with a neighbour's box reports how far it is from t
     minDistancePx: 12
   });
   const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target: 10 px where 12 px is needed.'
+  );
   assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_regionDistance');
   assert.strictEqual(
     occ.hint,
@@ -646,7 +650,7 @@ test(`${RULE_ID}: the hint's shortfall is rounded up, so the distance and the sh
   assert.strictEqual(occ.i18n.params.shortfallPx, '3.7');
 });
 
-test(`${RULE_ID}: the fail hint is translated with its distances`, () => {
+test(`${RULE_ID}: the fail summary and hint are translated with their distances`, () => {
   const html = `<!doctype html><html><body>
     <button id="small" data-rect="10,10,10,10">Small</button>
     <button id="big" data-rect="25,10,30,30">Big</button>
@@ -658,6 +662,10 @@ test(`${RULE_ID}: the fail hint is translated with its distances`, () => {
   assert.strictEqual(
     rule.occurrences[0].hint,
     'Une autre cible arrive à 10 px de son centre, alors qu’un cercle de 24 px centré sur elle demande 12 px de dégagement. Donnez à la cible au moins 24×24 px CSS, ou éloignez-la d’au moins 2 px de plus de cette cible.'
+  );
+  assert.strictEqual(
+    rule.occurrences[0].summary,
+    'La cible mesure 10×10 px CSS dans une zone d’affichage de 1000 px de large, moins de 24×24, et est trop proche d’une autre cible : 10 px là où il en faut 12.'
   );
 });
 
