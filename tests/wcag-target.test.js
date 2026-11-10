@@ -253,10 +253,10 @@ test('a WCAG tag no rule carries, beside others, is noted, not warned about', ()
   assert.ok(info.length > 0);
   for (const line of info) assert.equal(line, NOTE_22A);
 
-  const two = quietly(() => ids({ tags: ['wcag2a', 'wcag22a', 'wcag22aaa'] }));
+  const two = quietly(() => ids({ tags: ['wcag2a', 'wcag21aaa', 'wcag22a'] }));
   assert.equal(
     two.info[0],
-    '[surea11y] runOnly.tags: no rules for WCAG 2.2 Level A ("wcag22a") or WCAG 2.2 Level AAA ("wcag22aaa"); their criteria need manual review.'
+    '[surea11y] runOnly.tags: no rules for WCAG 2.1 Level AAA ("wcag21aaa") or WCAG 2.2 Level A ("wcag22a"); their criteria need manual review.'
   );
 
   const shorthand = quietly(() => ids(['wcag2a', 'wcag22a']));

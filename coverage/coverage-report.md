@@ -11,15 +11,15 @@ Total rules (loaded without error): **146**
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 116 | 27 | 10 |
+| Any WCAG version | 116 | 30 | 15 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| WCAG 2.0 | 108 | 20 | 10 |
+| WCAG 2.0 | 108 | 23 | 14 |
 | WCAG 2.1 | 6 | 5 | 0 |
-| WCAG 2.2 | 2 | 2 | 0 |
+| WCAG 2.2 | 4 | 4 | 2 |
 
 ### Raw WCAG tag counts (non-cumulative)
 
@@ -28,9 +28,10 @@ Total rules (loaded without error): **146**
 | wcag21a | 1 |
 | wcag21aa | 5 |
 | wcag22aa | 2 |
+| wcag22aaa | 2 |
 | wcag2a | 96 |
 | wcag2aa | 11 |
-| wcag2aaa | 10 |
+| wcag2aaa | 14 |
 
 ## SC Coverage (A): Enforced requirements only (normativeMappings)
 
@@ -343,14 +344,18 @@ Uncovered facets: keyboard-operable-all-functionality
 
 ### 2.1.3
 
-Facet coverage: **3/4** facets covered.
-Automation mix: **full 0, partial 1, manual 3**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| iframe-tabindex-negative-content-not-focusable | partial | iframe-focusable-content |
+| server-side-image-map-absent | full | server-side-image-map-absent |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 | keyboard-no-exception | manual | — |
 
 Uncovered facets: keyboard-no-exception
@@ -358,8 +363,12 @@ Uncovered facets: keyboard-no-exception
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
+| iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 
 ### 2.2.1
 
@@ -536,6 +545,24 @@ Uncovered facets: link-text-alone-clear
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.13
+
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| focus-appearance | manual | — |
+
+Uncovered facets: focus-appearance
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
+| css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 
 ### 2.5.3
 
@@ -1137,14 +1164,18 @@ Uncovered facets: keyboard-operable-all-functionality
 
 ### 2.1.3
 
-Facet coverage: **3/4** facets covered.
-Automation mix: **full 0, partial 1, manual 3**.
+Facet coverage: **7/8** facets covered.
+Automation mix: **full 1, partial 2, manual 5**.
 
 | Facet | Automation | Covered by |
 |---|---|---|
 | scrollable-region-focusable-evidence | manual | scrollable-region-focusable |
 | mouse-only-event-handlers-evidence | manual | mouse-only-event-handlers |
 | click-handler-keyboard-operable | partial | click-handler-keyboard-operable |
+| iframe-tabindex-negative-content-not-focusable | partial | iframe-focusable-content |
+| server-side-image-map-absent | full | server-side-image-map-absent |
+| widget-keyboard-focusable-evidence | manual | widget-keyboard-focusable |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
 | keyboard-no-exception | manual | — |
 
 Uncovered facets: keyboard-no-exception
@@ -1152,8 +1183,12 @@ Uncovered facets: keyboard-no-exception
 | Rule ID | Type | Title | File | Facet | Notes |
 |---|---|---|---|---|---|
 | click-handler-keyboard-operable | automatic | Click handlers on elements that are not native controls must work by keyboard | src/checks/automatic/click-handler-keyboard-operable.js | click-handler-keyboard-operable |  |
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
+| iframe-focusable-content | automatic | Frames with tabindex="-1" must not contain focusable content | src/checks/automatic/iframe-focusable-content.js | iframe-tabindex-negative-content-not-focusable |  |
+| server-side-image-map-absent | automatic | Server-side image maps must have a keyboard-operable alternative | src/checks/automatic/server-side-image-map-absent.js | server-side-image-map-absent |  |
 | mouse-only-event-handlers | manual | Pointer-only event handlers should have a keyboard-reachable equivalent | src/checks/manual/mouse-only-event-handlers-manual.js | mouse-only-event-handlers-evidence |  |
 | scrollable-region-focusable | manual | Scrollable regions with no focusable content should be keyboard-focusable | src/checks/manual/scrollable-region-focusable-manual.js | scrollable-region-focusable-evidence |  |
+| widget-keyboard-focusable | manual | Widgets should be reachable with the keyboard | src/checks/manual/widget-keyboard-focusable.js | widget-keyboard-focusable-evidence |  |
 
 ### 2.2.1
 
@@ -1330,6 +1365,24 @@ Uncovered facets: link-text-alone-clear
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.13
+
+Facet coverage: **2/3** facets covered.
+Automation mix: **full 0, partial 0, manual 3**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-indicator-not-suppressed | manual | css-focus-indicator-suppressed |
+| focus-not-removed-by-script-evidence | manual | focus-not-removed-by-script |
+| focus-appearance | manual | — |
+
+Uncovered facets: focus-appearance
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-removed-by-script | automatic | A script must not remove focus from an element as it receives it | src/checks/automatic/focus-not-removed-by-script.js | focus-not-removed-by-script-evidence |  |
+| css-focus-indicator-suppressed | manual | Focus indicator must not be removed without a replacement | src/checks/manual/css-focus-indicator-suppressed-manual.js | focus-indicator-not-suppressed |  |
 
 ### 2.5.3
 

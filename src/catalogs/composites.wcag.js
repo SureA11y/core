@@ -184,9 +184,13 @@ module.exports = [
   {
     id: 'wcag-2.1.3-keyboard-no-exception',
     checksIds: [
+      'iframe-focusable-content',
+      'server-side-image-map-absent',
       'scrollable-region-focusable',
       'mouse-only-event-handlers',
-      'click-handler-keyboard-operable'
+      'click-handler-keyboard-operable',
+      'focus-not-removed-by-script',
+      'widget-keyboard-focusable'
     ],
     meta: {
       titleKey: 'catalog.rules.wcag_213_keyboard_no_exception.title',
@@ -297,6 +301,20 @@ module.exports = [
         'Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.',
       wcagSc: ['2.4.7'],
       level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-2.4.13-focus-appearance',
+    checksIds: ['css-focus-indicator-suppressed', 'focus-not-removed-by-script'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2413_focus_appearance.title',
+      descriptionKey: 'catalog.rules.wcag_2413_focus_appearance.description',
+      title: 'Focus Appearance',
+      description:
+        'Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).',
+      wcagSc: ['2.4.13'],
+      level: 'AAA'
     }
   },
 

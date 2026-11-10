@@ -29140,6 +29140,8 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2aa",
       "wcag247",
+      "wcag22aaa",
+      "wcag2413",
       "navigation",
       "focus",
       "css",
@@ -29148,6 +29150,7 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
@@ -29159,6 +29162,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.13",
+        "title": "Focus Appearance",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
       },
       {
         "standard": "EN 301 549",
@@ -29185,6 +29197,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.4.7": [
+          "focus-indicator-not-suppressed"
+        ],
+        "2.4.13": [
           "focus-indicator-not-suppressed"
         ]
       }
@@ -30046,8 +30061,12 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag2aa",
+      "wcag2aaa",
+      "wcag22aaa",
       "wcag211",
+      "wcag213",
       "wcag247",
+      "wcag2413",
       "navigation",
       "focus",
       "atomic",
@@ -30056,6 +30075,8 @@ const RUNTIME_CATALOG = {
     ],
     "wcagSc": [
       "2.1.1",
+      "2.1.3",
+      "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
@@ -30071,11 +30092,29 @@ const RUNTIME_CATALOG = {
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.13",
+        "title": "Focus Appearance",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
       },
       {
         "standard": "EN 301 549",
@@ -30122,7 +30161,13 @@ const RUNTIME_CATALOG = {
         "2.1.1": [
           "focus-not-removed-by-script-evidence"
         ],
+        "2.1.3": [
+          "focus-not-removed-by-script-evidence"
+        ],
         "2.4.7": [
+          "focus-not-removed-by-script-evidence"
+        ],
+        "2.4.13": [
           "focus-not-removed-by-script-evidence"
         ]
       }
@@ -30965,6 +31010,8 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "structure",
       "atomic",
       "automatic",
@@ -30973,7 +31020,8 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -30984,6 +31032,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -31010,6 +31067,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "iframe-tabindex-negative-content-not-focusable"
+        ],
+        "2.1.3": [
           "iframe-tabindex-negative-content-not-focusable"
         ]
       }
@@ -35133,6 +35193,8 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "structure",
       "atomic",
       "automatic",
@@ -35140,7 +35202,8 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -35151,6 +35214,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -35177,6 +35249,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "server-side-image-map-absent"
+        ],
+        "2.1.3": [
           "server-side-image-map-absent"
         ]
       }
@@ -36797,6 +36872,8 @@ const RUNTIME_CATALOG = {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "aria",
       "keyboard",
       "structure",
@@ -36805,7 +36882,8 @@ const RUNTIME_CATALOG = {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -36816,6 +36894,15 @@ const RUNTIME_CATALOG = {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -36842,6 +36929,9 @@ const RUNTIME_CATALOG = {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "widget-keyboard-focusable-evidence"
+        ],
+        "2.1.3": [
           "widget-keyboard-focusable-evidence"
         ]
       }
@@ -37216,9 +37306,13 @@ const RUNTIME_CATALOG = {
   {
     "id": "wcag-2.1.3-keyboard-no-exception",
     "checksIds": [
+      "iframe-focusable-content",
+      "server-side-image-map-absent",
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
-      "click-handler-keyboard-operable"
+      "click-handler-keyboard-operable",
+      "focus-not-removed-by-script",
+      "widget-keyboard-focusable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
@@ -37489,6 +37583,24 @@ const RUNTIME_CATALOG = {
           ]
         }
       ]
+    }
+  },
+  {
+    "id": "wcag-2.4.13-focus-appearance",
+    "checksIds": [
+      "css-focus-indicator-suppressed",
+      "focus-not-removed-by-script"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2413_focus_appearance.title",
+      "descriptionKey": "catalog.rules.wcag_2413_focus_appearance.description",
+      "title": "Focus Appearance",
+      "description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
+      "wcagSc": [
+        "2.4.13"
+      ],
+      "level": "AAA",
+      "standardMappings": []
     }
   },
   {
@@ -38730,6 +38842,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Fokus-Darstellung",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokusindikator groß genug ist und sich ausreichend vom nicht fokussierten Zustand abhebt (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
@@ -40104,6 +40218,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Focus Appearance",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
@@ -41478,6 +41594,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un texto provisional en lugar de una descripción del contenido que sigue.",
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Apariencia del foco",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Agrupación de comprobaciones que garantizan que el indicador de foco del teclado sea lo bastante grande y contraste lo suficiente con el estado sin foco (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Inclusión de la etiqueta en el nombre",
@@ -42852,6 +42970,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Apparence du focus",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Regroupe les contrôles garantissant que l’indicateur de focus clavier est assez grand et contraste assez avec l’état sans focus (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
@@ -44226,6 +44346,8 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+      "catalog.rules.wcag_2413_focus_appearance.title": "フォーカスの外観",
+      "catalog.rules.wcag_2413_focus_appearance.description": "キーボードフォーカスインジケータが十分な大きさで、フォーカスがない状態と十分なコントラストがあるかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",
@@ -48349,6 +48471,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2aa",
       "wcag247",
+      "wcag22aaa",
+      "wcag2413",
       "navigation",
       "focus",
       "css",
@@ -48357,6 +48481,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
+      "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
@@ -48368,6 +48493,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.13",
+        "title": "Focus Appearance",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
       },
       {
         "standard": "EN 301 549",
@@ -48394,6 +48528,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.4.7": [
+          "focus-indicator-not-suppressed"
+        ],
+        "2.4.13": [
           "focus-indicator-not-suppressed"
         ]
       }
@@ -49255,8 +49392,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag2aa",
+      "wcag2aaa",
+      "wcag22aaa",
       "wcag211",
+      "wcag213",
       "wcag247",
+      "wcag2413",
       "navigation",
       "focus",
       "atomic",
@@ -49265,6 +49406,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     ],
     "wcagSc": [
       "2.1.1",
+      "2.1.3",
+      "2.4.13",
       "2.4.7"
     ],
     "normativeMappings": [
@@ -49280,11 +49423,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       {
         "standard": "WCAG",
         "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
         "requirement": "2.4.7",
         "title": "Focus Visible",
         "conformanceLevel": "AA",
         "url": "https://www.w3.org/TR/WCAG22/#focus-visible",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-visible.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.13",
+        "title": "Focus Appearance",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-appearance",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-appearance.html"
       },
       {
         "standard": "EN 301 549",
@@ -49331,7 +49492,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "2.1.1": [
           "focus-not-removed-by-script-evidence"
         ],
+        "2.1.3": [
+          "focus-not-removed-by-script-evidence"
+        ],
         "2.4.7": [
+          "focus-not-removed-by-script-evidence"
+        ],
+        "2.4.13": [
           "focus-not-removed-by-script-evidence"
         ]
       }
@@ -50174,6 +50341,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "structure",
       "atomic",
       "automatic",
@@ -50182,7 +50351,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -50193,6 +50363,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -50219,6 +50398,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "iframe-tabindex-negative-content-not-focusable"
+        ],
+        "2.1.3": [
           "iframe-tabindex-negative-content-not-focusable"
         ]
       }
@@ -54342,6 +54524,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "structure",
       "atomic",
       "automatic",
@@ -54349,7 +54533,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -54360,6 +54545,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -54386,6 +54580,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "server-side-image-map-absent"
+        ],
+        "2.1.3": [
           "server-side-image-map-absent"
         ]
       }
@@ -56006,6 +56203,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "tags": [
       "wcag2a",
       "wcag211",
+      "wcag2aaa",
+      "wcag213",
       "aria",
       "keyboard",
       "structure",
@@ -56014,7 +56213,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "a11ycore"
     ],
     "wcagSc": [
-      "2.1.1"
+      "2.1.1",
+      "2.1.3"
     ],
     "normativeMappings": [
       {
@@ -56025,6 +56225,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         "conformanceLevel": "A",
         "url": "https://www.w3.org/TR/WCAG22/#keyboard",
         "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard.html"
+      },
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.1.3",
+        "title": "Keyboard (No Exception)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#keyboard-no-exception",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/keyboard-no-exception.html"
       },
       {
         "standard": "EN 301 549",
@@ -56051,6 +56260,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "coverage": {
       "facetsBySc": {
         "2.1.1": [
+          "widget-keyboard-focusable-evidence"
+        ],
+        "2.1.3": [
           "widget-keyboard-focusable-evidence"
         ]
       }
@@ -56425,9 +56637,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   {
     "id": "wcag-2.1.3-keyboard-no-exception",
     "checksIds": [
+      "iframe-focusable-content",
+      "server-side-image-map-absent",
       "scrollable-region-focusable",
       "mouse-only-event-handlers",
-      "click-handler-keyboard-operable"
+      "click-handler-keyboard-operable",
+      "focus-not-removed-by-script",
+      "widget-keyboard-focusable"
     ],
     "meta": {
       "titleKey": "catalog.rules.wcag_213_keyboard_no_exception.title",
@@ -56698,6 +56914,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ]
         }
       ]
+    }
+  },
+  {
+    "id": "wcag-2.4.13-focus-appearance",
+    "checksIds": [
+      "css-focus-indicator-suppressed",
+      "focus-not-removed-by-script"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2413_focus_appearance.title",
+      "descriptionKey": "catalog.rules.wcag_2413_focus_appearance.description",
+      "title": "Focus Appearance",
+      "description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
+      "wcagSc": [
+        "2.4.13"
+      ],
+      "level": "AAA",
+      "standardMappings": []
     }
   },
   {
@@ -101908,6 +102142,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Fokus-Darstellung",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokusindikator groß genug ist und sich ausreichend vom nicht fokussierten Zustand abhebt (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass sich der Zweck eines Links allein aus dem Link erschließt: Er hat einen zugänglichen Namen, der keine allgemeine Floskel ist, und Links mit demselben zugänglichen Namen erfüllen denselben Zweck (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Beschriftung (Label) im Namen",
@@ -103282,6 +103518,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Focus Appearance",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Rollup of checks ensuring a link's purpose can be identified from the link alone: it has an accessible name that is not a generic phrase, and links with the same accessible name serve the same purpose (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Label in name",
@@ -104656,6 +104894,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un texto provisional en lugar de una descripción del contenido que sigue.",
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Apariencia del foco",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Agrupación de comprobaciones que garantizan que el indicador de foco del teclado sea lo bastante grande y contraste lo suficiente con el estado sin foco (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Agrupación de comprobaciones que garantizan que el propósito de un enlace se pueda identificar a partir del propio enlace: tiene un nombre accesible que no es una frase genérica, y los enlaces con el mismo nombre accesible tienen el mismo propósito (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Inclusión de la etiqueta en el nombre",
@@ -106030,6 +106270,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+      "catalog.rules.wcag_2413_focus_appearance.title": "Apparence du focus",
+      "catalog.rules.wcag_2413_focus_appearance.description": "Regroupe les contrôles garantissant que l’indicateur de focus clavier est assez grand et contraste assez avec l’état sans focus (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
       "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",
@@ -107404,6 +107646,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+      "catalog.rules.wcag_2413_focus_appearance.title": "フォーカスの外観",
+      "catalog.rules.wcag_2413_focus_appearance.description": "キーボードフォーカスインジケータが十分な大きさで、フォーカスがない状態と十分なコントラストがあるかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
       "catalog.rules.wcag_249_link_purpose_link_only.description": "リンクの目的がリンクだけから特定できるか、つまりリンクに汎用的な語句ではないアクセシブルな名前があり、同じアクセシブルな名前を持つリンクが同じ目的を果たしているかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_253_label_in_name.title": "ラベルを含む名前 (name)",

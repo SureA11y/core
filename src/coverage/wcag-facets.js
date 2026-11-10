@@ -753,6 +753,26 @@ const FACETS = {
                 "automation": "partial"
             },
             {
+                "id": "iframe-tabindex-negative-content-not-focusable",
+                "label": "Same-origin frames with tabindex=\"-1\" contain no focusable content",
+                "automation": "partial"
+            },
+            {
+                "id": "server-side-image-map-absent",
+                "label": "<img> does not use a server-side image map (ismap)",
+                "automation": "full"
+            },
+            {
+                "id": "widget-keyboard-focusable-evidence",
+                "label": "An element with a widget role, or one item of a composite widget, is in the tab order (evidence only: a script may move focus in ways the markup doesn't show)",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+                "automation": "manual"
+            },
+            {
                 "id": "keyboard-no-exception",
                 "label": "Everything can be done with the keyboard, with no exception for path-dependent input",
                 "automation": "manual",
@@ -1097,6 +1117,16 @@ const FACETS = {
         "title": "Focus Appearance",
         "level": "AAA",
         "facets": [
+            {
+                "id": "focus-indicator-not-suppressed",
+                "label": "CSS does not remove the focus indicator without drawing a replacement",
+                "automation": "manual"
+            },
+            {
+                "id": "focus-not-removed-by-script-evidence",
+                "label": "An inline focus handler does not remove focus from the element that receives it (evidence only: listeners added from script are not statically visible)",
+                "automation": "manual"
+            },
             {
                 "id": "focus-appearance",
                 "label": "The focus indicator is at least as large as a 2 CSS pixel outline around the element and changes contrast by at least 3:1",

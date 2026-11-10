@@ -406,6 +406,8 @@
   "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
   "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
   "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+  "catalog.rules.wcag_2413_focus_appearance.title": "Apparence du focus",
+  "catalog.rules.wcag_2413_focus_appearance.description": "Regroupe les contrôles garantissant que l’indicateur de focus clavier est assez grand et contraste assez avec l’état sans focus (AAA).",
   "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
   "catalog.rules.wcag_249_link_purpose_link_only.description": "Regroupe les contrôles garantissant que la fonction d’un lien peut être identifiée à partir du lien seul : il a un nom accessible qui n’est pas une formule générique, et les liens portant le même nom accessible ont la même fonction (AAA).",
   "catalog.rules.wcag_253_label_in_name.title": "Étiquette dans le nom",

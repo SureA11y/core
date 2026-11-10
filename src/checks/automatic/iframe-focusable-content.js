@@ -7,7 +7,7 @@
  * @atomic true
  * @summary <iframe>/<frame> elements with tabindex="-1" must not contain focusable content
  * @standard WCAG 2.2
- * @sc 2.1.1
+ * @sc 2.1.1, 2.1.3
  * @applicability
  *   Applies to <iframe>/<frame> elements with an explicit negative
  *   tabindex, whose embedded document is same-origin and reachable via
@@ -36,14 +36,14 @@
  *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE` (fail): a frame with a
  *     negative tabindex holds content in the tab order, which Tab skips, so
  *     a keyboard user cannot reach it.
- *     Basis: WCAG 2.1.1; ACT akn7bn; HTML sequential focus navigation.
+ *     Basis: WCAG 2.1.1; WCAG 2.1.3; ACT akn7bn; HTML sequential focus navigation.
  *   - `IFRAME_TABINDEX_NEGATIVE_CONTENT_RUNTIME_REDIRECT` (cantTell): a frame
  *     with a negative tabindex holds one focusable element, but focus moved
  *     straight on from it, so keyboard access is checked in a real browser.
  *     It leans pass when that element is an empty focus guard (a plain
  *     element made focusable by tabindex alone, with no text, content, name
  *     or role) and focus left the frame.
- *     Basis: WCAG 2.1.1 (not settled); ACT akn7bn (not settled).
+ *     Basis: WCAG 2.1.1 (not settled); WCAG 2.1.3 (not settled); ACT akn7bn (not settled).
  * @implementation-notes
  * - Scoped to same-origin, currently-accessible content only
  *   (contentDocument access is wrapped in try/catch and treated as "no
@@ -76,8 +76,18 @@ const meta = {
     descriptionKey: 'iframeFocusableContent_description'
   },
   helpUrl: null,
-  tags: ['wcag2a', 'wcag211', 'structure', 'atomic', 'automatic', 'keyboard', 'iframe'],
-  wcagSc: ['2.1.1'],
+  tags: [
+    'wcag2a',
+    'wcag211',
+    'wcag2aaa',
+    'wcag213',
+    'structure',
+    'atomic',
+    'automatic',
+    'keyboard',
+    'iframe'
+  ],
+  wcagSc: ['2.1.1', '2.1.3'],
   normativeMappings: [
     {
       standard: 'WCAG',
@@ -85,13 +95,25 @@ const meta = {
       requirement: '2.1.1',
       title: 'Keyboard',
       conformanceLevel: 'A'
+    },
+    {
+      standard: 'WCAG',
+      version: '2.2',
+      requirement: '2.1.3',
+      title: 'Keyboard (No Exception)',
+      conformanceLevel: 'AAA'
     }
   ],
   defaultSeverity: 'moderate',
   category: 'operable',
   type: 'automatic',
   defaultConfidence: 'high',
-  coverage: { facetsBySc: { '2.1.1': ['iframe-tabindex-negative-content-not-focusable'] } }
+  coverage: {
+    facetsBySc: {
+      '2.1.1': ['iframe-tabindex-negative-content-not-focusable'],
+      '2.1.3': ['iframe-tabindex-negative-content-not-focusable']
+    }
+  }
 };
 
 function runInPage(ctx) {
