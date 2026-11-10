@@ -1889,7 +1889,11 @@ function runInPage(ctx) {
       failOccurrences.push(
         helpers.reportOccurrence(it.el, {
           occurrenceOutcome: 'fail',
-          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}.`,
+          summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${
+            SPACING_APPLIES
+              ? `${tooClose}: ${spacing.distancePx} px where ${spacing.minDistancePx} px is needed`
+              : ''
+          }.`,
           hint: SPACING_APPLIES
             ? spacingHint(info.decidedBy, spacing)
             : `Make the target at least ${MIN}×${MIN} CSS px.`,
