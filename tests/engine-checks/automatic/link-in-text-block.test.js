@@ -338,6 +338,43 @@ test(`${RULE_ID}: inline style outranks a stylesheet declaration`, () => {
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+test(`${RULE_ID}: only text on the link's own line puts it in a block of text`, () => {
+  // A contact block: each phone number has its label beside it, the e-mail
+  // address is alone on its line after a <br>, the text of the lines above
+  // is not around it.
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p, a { color: #222222; text-decoration: none; }
+  </style></head><body>
+    <p><a href="tel:1" id="fon">+41 44 445 30 55</a> (Fon)<br>
+    <a href="tel:2" id="fax">+41 44 445 30 56</a> (Fax)<br>
+    <a href="mailto:x@example.com" id="mail">x@example.com</a></p>
+    <div>Opening hours<div>Mon to Fri</div><a href="#" id="block">Contact</a></div>
+    <p>Wrapped over two lines, <a href="#" id="wrapped">this link</a> is in the sentence.</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  for (const id of ['fon', 'fax', 'wrapped']) assert.ok(hasOccurrenceForId(rule, id), id);
+  assert.ok(!hasOccurrenceForId(rule, 'mail'), 'a link alone on its line after a <br>');
+  // The text before the <div> is on a line of its own, not the link's.
+  assert.ok(!hasOccurrenceForId(rule, 'block'), 'a link after a block-level child');
+});
+
+test(`${RULE_ID}: a link drawn in the text's own color is told apart by nothing, the summary says`, () => {
+  const html = `<!doctype html><html><head><style>
+    body { background: #ffffff; }
+    p, a { color: #222222; text-decoration: none; }
+  </style></head><body><p>Call <a href="tel:1">+41 44 445 30 56</a> (Fax).</p></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'COLOR_ONLY_DIFFERENTIATION');
+  assert.strictEqual(occ.i18n.summaryKey, 'linkInTextBlock_summary_fail_sameColor');
+  assert.strictEqual(occ.i18n.hintKey, 'linkInTextBlock_hint_fail_sameColor');
+  assert.match(occ.summary, /^Nothing sets this link/);
+  assert.ok(!/relies on color/.test(occ.summary), occ.summary);
+});
+
 test(`${RULE_ID}: i18n default is English`, () => {
   const html = `<!doctype html><html><head><style>
     body { background: #ffffff; }
@@ -365,7 +402,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
 
   // Cases 04, 07b and 11 are cantTell-tier occurrences reported alongside
   // the confident fails rather than discarded by them.
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 11, maxOccurrences: 11 });
 
   // Asked about, each leaning: 04 has no hover cue in the style sheet, 07b
   // is drawn in the text's own translucent color under the same image, 11
@@ -388,7 +425,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_05d',
     'litb_case_05e',
     'litb_case_07',
-    'litb_case_09'
+    'litb_case_09',
+    'litb_case_12'
   ];
   const expectedNoOccIds = [
     'litb_case_01',
@@ -397,7 +435,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/link-in-text-block-all-scenar
     'litb_case_03b',
     'litb_case_06',
     'litb_case_08',
-    'litb_case_10'
+    'litb_case_10',
+    'litb_case_13'
   ];
 
   for (const id of expectedFailIds) {

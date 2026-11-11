@@ -26,11 +26,19 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - **`link-in-text-block` states the contrast in a fail.** A link set apart from its text by color alone gives its ratio against that text, below 3:1 (`linkInTextBlock_summary_fail_ratio`), or the ratio before an ancestor's opacity fades both, lower as drawn (`linkInTextBlock_summary_fail_ratioBeforeOpacity`). A ratio under 3:1 never reads as 3.00:1.
 
-- **A name rule's fail says when the element's text is hidden.** Where a button, link, tab, menu item, option, summary, tooltip, tree item or check box has text in its content that is hidden from assistive technology, the hint names that text and what hides it (`display: none`, `visibility: hidden`, `aria-hidden="true"` or the `hidden` attribute), instead of asking for visible text that is there to see: `nameHiddenText_hint_displayNone`, `_visibilityHidden`, `_ariaHidden`, `_hiddenAttribute`, with `i18n.params` `text` and `hiddenElement`. `data.details.hiddenText` gives `{ text, reason, element }`. The outcome and reason code are unchanged.
+- **A name rule's fail says why the element has no name**, where the page shows a cause the element alone does not. The hint names it: text in its content hidden from assistive technology, with the text and what hides it (`display: none`, `visibility: hidden`, `aria-hidden="true"` or the `hidden` attribute; `nameHiddenText_hint_*`, `i18n.params` `text` and `hiddenElement`); an `aria-labelledby` whose ids no element has (`nameCause_hint_labelledbyMissing`); content that is only an image with `alt=""` or no alt, or an `<svg>` with no name (`nameCause_hint_imageEmptyAlt`, `_imageNoAlt`, `_svgNoName`); and, for a form field, a `<label>` hidden from assistive technology (`nameCause_hint_labelHidden`) or a `<label for>` beside it pointing at an id no element has, with the field's own id (`nameCause_hint_labelForMissing`, `_labelForMissingNoId`). It applies to the button, link, tab, menu item, option, summary, tooltip, tree item and check box name rules, `empty-heading` and `form-control-programmatic-label-present`. `data.details.nameCause` gives the cause. Outcomes, summaries and reason codes are unchanged.
+
+- **`autocomplete-valid` names what is wrong with the value**: a token that is no autofill token, with the field name it is likely a typo of (`"emial" … Did you mean "email"?`), a contact modality before a field that is no contact field (`"work" can come only before a contact field…`), or known tokens in an order autofill doesn't take (`autocompleteValid_hint_fail_unknownToken_suggestion`, `_unknownToken`, `_modality`, `_order`; `i18n.params` `token`, `suggestion`, `field`; `data.details.problem`).
 
 ### Changed (experimental)
 
 - **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.
+
+### Fixed
+
+- **`link-in-text-block` counts only text on the link's own line.** A link alone on its line, after a `<br>` or a child laid out as a block, is in no block of text, whatever the lines around it hold: an e-mail address under two phone numbers and their labels was failed as a link set apart by color alone.
+
+- **`link-in-text-block` says nothing sets a link apart when it is drawn in the text's own color.** At 1.00:1, with no underline or other mark, the summary no longer says the link relies on color (`linkInTextBlock_summary_fail_sameColor`, `linkInTextBlock_hint_fail_sameColor`). It still fails, with the same reason code.
 
 ## [1.16.1] - 2026-11-08
 

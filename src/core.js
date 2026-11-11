@@ -39896,6 +39896,8 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
       "linkInTextBlock_summary_fail_ratio": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe, mit einem Kontrast von {{ratio}}:1 zu diesem Text, unter {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe, mit einem Kontrast von {{ratio}}:1 zu diesem Text, unter {{threshold}}:1, und wie gezeichnet noch weniger, da die Deckkraft eines Vorfahren beide verblassen lässt.",
+      "linkInTextBlock_summary_fail_sameColor": "Nichts unterscheidet diesen Link in einem Textblock vom umgebenden Text: Er hat dieselbe Farbe, ohne Unterstreichung oder anderes Merkmal.",
+      "linkInTextBlock_hint_fail_sameColor": "Fügen Sie eine Unterstreichung oder ein anderes sichtbares Merkmal hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol), damit sich der Link vom Text um ihn herum unterscheiden lässt.",
       "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol). Ein Farbkontrast von 3:1 zum umgebenden Text genügt nur, wenn Hover und Fokus auf dem Link ebenfalls ein Merkmal außer der Farbe hinzufügen.",
       "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
       "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied bei font-weight oder font-style oder ein anderes Merkmal außer der Farbe aufweist. Alternativ braucht er mindestens 3:1 Kontrast zum umgebenden Text sowie ein Merkmal außer der Farbe bei Hover und Fokus. Wenn Sie die Engine in einem echten Browser statt in einem DOM-Emulator ausführen, lassen sich die meisten Fälle automatisch klären.",
@@ -41305,6 +41307,8 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
       "linkInTextBlock_summary_fail_ratio": "This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of {{ratio}}:1 against that text, below {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of {{ratio}}:1 against that text, below {{threshold}}:1, and less as drawn, since an ancestor's opacity fades both.",
+      "linkInTextBlock_summary_fail_sameColor": "Nothing sets this link in a block of text apart from the surrounding text: it is drawn in the same color, with no underline or other mark.",
+      "linkInTextBlock_hint_fail_sameColor": "Add an underline or another visible cue (a font-weight or style difference, a border, an icon), so the link can be told apart from the text around it.",
       "linkInTextBlock_hint_fail": "Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.",
       "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
       "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
@@ -42714,6 +42718,8 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
       "linkInTextBlock_summary_fail_ratio": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante, con un contraste de {{ratio}}:1 respecto a ese texto, por debajo de {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante, con un contraste de {{ratio}}:1 respecto a ese texto, por debajo de {{threshold}}:1, y menor tal como se dibuja, porque la opacidad de un ancestro atenúa ambos.",
+      "linkInTextBlock_summary_fail_sameColor": "Nada distingue este enlace dentro de un bloque de texto del texto circundante: se muestra en el mismo color, sin subrayado ni otra marca.",
+      "linkInTextBlock_hint_fail_sameColor": "Agregar un subrayado u otra señal visible (una diferencia de grosor o estilo de fuente, un borde, un icono), para que el enlace se distinga del texto que lo rodea.",
       "linkInTextBlock_hint_fail": "Agregar un subrayado u otra señal distinta del color (una diferencia de grosor o estilo de fuente, un borde, un icono). Aumentar el contraste de color con el texto circundante a 3:1 solo basta si al pasar el cursor y al recibir el foco el enlace también añade una señal distinta del color.",
       "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
       "linkInTextBlock_hint_cantTell": "Comprobar visualmente que el enlace tiene un subrayado, una diferencia de font-weight o font-style u otra señal distinta del color. Si no la tiene, debe tener un contraste de al menos 3:1 respecto al texto que lo rodea y una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de un emulador del DOM, permite resolver la mayoría de los casos automáticamente.",
@@ -44123,6 +44129,8 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
       "linkInTextBlock_summary_fail_ratio": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur, avec un contraste de {{ratio}}:1 par rapport à ce texte, sous {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur, avec un contraste de {{ratio}}:1 par rapport à ce texte, sous {{threshold}}:1, et moindre tel qu’il est affiché, car l’opacité d’un ancêtre estompe les deux.",
+      "linkInTextBlock_summary_fail_sameColor": "Rien ne distingue ce lien dans un bloc de texte du texte environnant : il est affiché dans la même couleur, sans soulignement ni autre marque.",
+      "linkInTextBlock_hint_fail_sameColor": "Ajoutez un soulignement ou un autre indice visible (une différence de graisse ou de style de police, une bordure, une icône), pour que le lien se distingue du texte qui l'entoure.",
       "linkInTextBlock_hint_fail": "Ajoutez un soulignement ou un autre indice que la couleur (une différence de graisse ou de style de police, une bordure, une icône). Porter le contraste de couleur avec le texte environnant à 3:1 ne suffit que si le survol et le focus du lien ajoutent aussi un indice autre que la couleur.",
       "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
       "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien présente un soulignement, une différence de font-weight ou de font-style, ou un autre indice que la couleur. À défaut, il doit présenter un contraste d’au moins 3:1 avec le texte environnant, ainsi qu’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur du DOM permet de résoudre automatiquement la plupart des cas.",
@@ -45532,6 +45540,8 @@ const RUNTIME_CATALOG = {
       "linkInTextBlock_summary_fail": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っています。",
       "linkInTextBlock_summary_fail_ratio": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っており、そのテキストとのコントラストは {{ratio}}:1 と {{threshold}}:1 未満です。",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っており、そのテキストとのコントラストは {{ratio}}:1 と {{threshold}}:1 未満です。祖先要素の不透明度で両方が薄められるため、描画された状態ではさらに低くなります。",
+      "linkInTextBlock_summary_fail_sameColor": "文中のこのリンクは、周囲のテキストと区別するものが何もありません。同じ色で表示され、下線やその他の印もありません。",
+      "linkInTextBlock_hint_fail_sameColor": "下線、または目に見える別の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けて、リンクを周囲のテキストと見分けられるようにしてください。",
       "linkInTextBlock_hint_fail": "下線、または色以外の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けてください。周囲のテキストとの色のコントラストを 3:1 にするだけで十分なのは、リンクのホバー時とフォーカス時にも色以外の手がかりが加わる場合に限られます。",
       "linkInTextBlock_summary_cantTell": "このリンクが色以外の手段で周囲のテキストと区別できるかは判定できませんでした。",
       "linkInTextBlock_hint_cantTell": "リンクに下線、font-weight や font-style の違い、または色以外の手がかりがあるかを目視で確認してください。それらがない場合は、周囲のテキストとのコントラストが 3:1 以上で、ホバー時とフォーカス時に色以外の手がかりがあることを確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどのケースを自動的に解決できます。",
@@ -84893,30 +84903,54 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return null;
   }
-  // The element whose style is the surrounding text's, for the parent: the
-  // parent itself when text sits in it directly, else the inline element
-  // beside the link that holds it, else null (no text around the link).
+  // The element whose style is the surrounding text's, for the link (or the
+  // inline wrapper holding it, `child`) in parent: the parent itself when
+  // text sits in it directly, else the inline element beside the link that
+  // holds it, else null (no text around the link). Only text on the link's
+  // own line counts: a <br>, or a child laid out as a block, starts another
+  // line, so a link alone on its line ("Phone 555 (Fax)<br><a>mail</a>") is
+  // in no block of text, whatever the lines around it hold. The parent's
+  // children are read once, a line at a time, for all its links.
   const surroundingTextElement = new Map();
-  function textElementOf(parent) {
-    if (!parent) return null;
+  const INLINE_LEVEL = /^(inline|contents|none|ruby)|^$/;
+  function breaksLine(n) {
+    if ((dom.tagName(n) || '').toLowerCase() === 'br') return true;
+    const display = String((safeComputedStyle(n) || {}).display || '');
+    return !INLINE_LEVEL.test(display.split(/\s+/)[0]);
+  }
+  function linesOf(parent) {
     if (surroundingTextElement.has(parent)) return surroundingTextElement.get(parent);
-    let found = null;
+    // A flex or grid parent lays its children out as items, not lines of
+    // text: its own text still counts, its elements' does not.
+    const itemized = /flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''));
+    const lineOf = new Map();
+    let line = { text: null, inline: null };
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && TEXT.test(dom.nodeValue(n) || '')) {
-        found = parent;
-        break;
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (!line.text && TEXT.test(dom.nodeValue(n) || '')) line.text = parent;
+        continue;
       }
-    }
-    if (!found && !/flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''))) {
-      for (let n = dom.firstElementChild(parent); n && !found; n = dom.nextElementSibling(n)) {
-        found = inlineTextElement(n);
+      if (type !== 1) continue;
+      if (!itemized && breaksLine(n)) {
+        // The element is a line of its own, and the text after it another.
+        lineOf.set(n, { text: null, inline: null });
+        line = { text: null, inline: null };
+        continue;
       }
+      lineOf.set(n, line);
+      if (!itemized && !line.inline) line.inline = inlineTextElement(n);
     }
-    surroundingTextElement.set(parent, found);
-    return found;
+    surroundingTextElement.set(parent, lineOf);
+    return lineOf;
+  }
+  function textElementOf(parent, child) {
+    if (!parent || !child) return null;
+    const line = linesOf(parent).get(child);
+    return line ? line.text || line.inline : null;
   }
   function hasSurroundingText(el, parent) {
-    return !!textElementOf(parent);
+    return !!textElementOf(parent, el);
   }
 
   const contrastOpts =
@@ -85850,14 +85884,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (!drawsText(el)) return;
 
     const parent = textParentOf(el);
-    if (!hasSurroundingText(el, parent)) return;
+    // The link, or the inline wrapper holding it, as a child of parent.
+    let lineChild = el;
+    while (lineChild && dom.parentElement(lineChild) !== parent) {
+      lineChild = dom.parentElement(lineChild);
+    }
+    if (!hasSurroundingText(lineChild, parent)) return;
 
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
     // The surrounding text's style: the parent's, or the inline element's
     // beside the link that holds the text.
-    const textEl = textElementOf(parent);
+    const textEl = textElementOf(parent, lineChild);
     const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
@@ -86172,26 +86211,36 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (hasRatio && Number(ratioStr) >= 3) ratioStr = (Math.floor(ratio * 100) / 100).toFixed(2);
     // The ratio is stated with the summary. Under an ancestor's opacity it
     // is the one before the fading, which only brings the colors closer.
-    const summaryKey = !hasRatio
-      ? 'linkInTextBlock_summary_fail'
-      : beforeOpacity
-        ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
-        : 'linkInTextBlock_summary_fail_ratio';
+    // At 1.00:1 the link is drawn in the surrounding text's color: color
+    // sets it apart no more than anything else does, and the summary says
+    // nothing does. The outcome and its reason code are the same (F73).
+    const sameColor = hasRatio && Number(ratioStr) === 1;
+    const summaryKey = sameColor
+      ? 'linkInTextBlock_summary_fail_sameColor'
+      : !hasRatio
+        ? 'linkInTextBlock_summary_fail'
+        : beforeOpacity
+          ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
+          : 'linkInTextBlock_summary_fail_ratio';
     const colorOnly =
       'This link in a block of text relies on color alone to be distinguished from the surrounding text';
-    const summary = !hasRatio
-      ? `${colorOnly}.`
-      : beforeOpacity
-        ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
-        : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
+    const summary = sameColor
+      ? 'Nothing sets this link in a block of text apart from the surrounding text: it is drawn in the same color, with no underline or other mark.'
+      : !hasRatio
+        ? `${colorOnly}.`
+        : beforeOpacity
+          ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
+          : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary,
-        hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
+        hint: sameColor
+          ? 'Add an underline or another visible cue (a font-weight or style difference, a border, an icon), so the link can be told apart from the text around it.'
+          : 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
           summaryKey,
-          hintKey: 'linkInTextBlock_hint_fail',
+          hintKey: sameColor ? 'linkInTextBlock_hint_fail_sameColor' : 'linkInTextBlock_hint_fail',
           params: { element: tag, ratio: String(ratioStr), threshold: '3' }
         },
         data: {
@@ -105479,6 +105528,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_fail": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe.",
       "linkInTextBlock_summary_fail_ratio": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe, mit einem Kontrast von {{ratio}}:1 zu diesem Text, unter {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Dieser Link in einem Textblock unterscheidet sich vom umgebenden Text ausschließlich durch Farbe, mit einem Kontrast von {{ratio}}:1 zu diesem Text, unter {{threshold}}:1, und wie gezeichnet noch weniger, da die Deckkraft eines Vorfahren beide verblassen lässt.",
+      "linkInTextBlock_summary_fail_sameColor": "Nichts unterscheidet diesen Link in einem Textblock vom umgebenden Text: Er hat dieselbe Farbe, ohne Unterstreichung oder anderes Merkmal.",
+      "linkInTextBlock_hint_fail_sameColor": "Fügen Sie eine Unterstreichung oder ein anderes sichtbares Merkmal hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol), damit sich der Link vom Text um ihn herum unterscheiden lässt.",
       "linkInTextBlock_hint_fail": "Fügen Sie eine Unterstreichung oder ein anderes Merkmal außer der Farbe hinzu (einen Unterschied in Schriftgewicht oder -stil, einen Rahmen, ein Symbol). Ein Farbkontrast von 3:1 zum umgebenden Text genügt nur, wenn Hover und Fokus auf dem Link ebenfalls ein Merkmal außer der Farbe hinzufügen.",
       "linkInTextBlock_summary_cantTell": "Es konnte nicht ermittelt werden, ob sich dieser Link durch andere Mittel als Farbe vom umgebenden Text abhebt.",
       "linkInTextBlock_hint_cantTell": "Prüfen Sie visuell, ob der Link eine Unterstreichung, einen Unterschied bei font-weight oder font-style oder ein anderes Merkmal außer der Farbe aufweist. Alternativ braucht er mindestens 3:1 Kontrast zum umgebenden Text sowie ein Merkmal außer der Farbe bei Hover und Fokus. Wenn Sie die Engine in einem echten Browser statt in einem DOM-Emulator ausführen, lassen sich die meisten Fälle automatisch klären.",
@@ -106888,6 +106939,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_fail": "This link in a block of text relies on color alone to be distinguished from the surrounding text.",
       "linkInTextBlock_summary_fail_ratio": "This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of {{ratio}}:1 against that text, below {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "This link in a block of text relies on color alone to be distinguished from the surrounding text, with a contrast of {{ratio}}:1 against that text, below {{threshold}}:1, and less as drawn, since an ancestor's opacity fades both.",
+      "linkInTextBlock_summary_fail_sameColor": "Nothing sets this link in a block of text apart from the surrounding text: it is drawn in the same color, with no underline or other mark.",
+      "linkInTextBlock_hint_fail_sameColor": "Add an underline or another visible cue (a font-weight or style difference, a border, an icon), so the link can be told apart from the text around it.",
       "linkInTextBlock_hint_fail": "Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.",
       "linkInTextBlock_summary_cantTell": "Whether this link is distinguishable from the surrounding text by non-color means could not be determined.",
       "linkInTextBlock_hint_cantTell": "Confirm by eye that the link carries an underline, a font-weight or font-style difference or another non-color mark, or at least 3:1 contrast against the surrounding text together with a non-color cue on hover and focus. Running the engine in a real browser rather than a DOM emulator resolves most cases automatically.",
@@ -108297,6 +108350,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_fail": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante.",
       "linkInTextBlock_summary_fail_ratio": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante, con un contraste de {{ratio}}:1 respecto a ese texto, por debajo de {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Este enlace dentro de un bloque de texto depende únicamente del color para distinguirse del texto circundante, con un contraste de {{ratio}}:1 respecto a ese texto, por debajo de {{threshold}}:1, y menor tal como se dibuja, porque la opacidad de un ancestro atenúa ambos.",
+      "linkInTextBlock_summary_fail_sameColor": "Nada distingue este enlace dentro de un bloque de texto del texto circundante: se muestra en el mismo color, sin subrayado ni otra marca.",
+      "linkInTextBlock_hint_fail_sameColor": "Agregar un subrayado u otra señal visible (una diferencia de grosor o estilo de fuente, un borde, un icono), para que el enlace se distinga del texto que lo rodea.",
       "linkInTextBlock_hint_fail": "Agregar un subrayado u otra señal distinta del color (una diferencia de grosor o estilo de fuente, un borde, un icono). Aumentar el contraste de color con el texto circundante a 3:1 solo basta si al pasar el cursor y al recibir el foco el enlace también añade una señal distinta del color.",
       "linkInTextBlock_summary_cantTell": "No se ha podido determinar si este enlace se distingue del texto circundante por medios que no sean el color.",
       "linkInTextBlock_hint_cantTell": "Comprobar visualmente que el enlace tiene un subrayado, una diferencia de font-weight o font-style u otra señal distinta del color. Si no la tiene, debe tener un contraste de al menos 3:1 respecto al texto que lo rodea y una señal distinta del color al pasar el cursor y al recibir el foco. Ejecutar el motor en un navegador real, en lugar de un emulador del DOM, permite resolver la mayoría de los casos automáticamente.",
@@ -109706,6 +109761,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_fail": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur.",
       "linkInTextBlock_summary_fail_ratio": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur, avec un contraste de {{ratio}}:1 par rapport à ce texte, sous {{threshold}}:1.",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "Ce lien dans un bloc de texte se distingue du texte environnant uniquement par la couleur, avec un contraste de {{ratio}}:1 par rapport à ce texte, sous {{threshold}}:1, et moindre tel qu’il est affiché, car l’opacité d’un ancêtre estompe les deux.",
+      "linkInTextBlock_summary_fail_sameColor": "Rien ne distingue ce lien dans un bloc de texte du texte environnant : il est affiché dans la même couleur, sans soulignement ni autre marque.",
+      "linkInTextBlock_hint_fail_sameColor": "Ajoutez un soulignement ou un autre indice visible (une différence de graisse ou de style de police, une bordure, une icône), pour que le lien se distingue du texte qui l'entoure.",
       "linkInTextBlock_hint_fail": "Ajoutez un soulignement ou un autre indice que la couleur (une différence de graisse ou de style de police, une bordure, une icône). Porter le contraste de couleur avec le texte environnant à 3:1 ne suffit que si le survol et le focus du lien ajoutent aussi un indice autre que la couleur.",
       "linkInTextBlock_summary_cantTell": "Impossible de déterminer si ce lien se distingue du texte environnant par un moyen autre que la couleur.",
       "linkInTextBlock_hint_cantTell": "Vérifiez visuellement que le lien présente un soulignement, une différence de font-weight ou de font-style, ou un autre indice que la couleur. À défaut, il doit présenter un contraste d’au moins 3:1 avec le texte environnant, ainsi qu’un indice autre que la couleur au survol et au focus. Exécuter le moteur dans un navigateur réel plutôt que dans un émulateur du DOM permet de résoudre automatiquement la plupart des cas.",
@@ -111115,6 +111172,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "linkInTextBlock_summary_fail": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っています。",
       "linkInTextBlock_summary_fail_ratio": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っており、そのテキストとのコントラストは {{ratio}}:1 と {{threshold}}:1 未満です。",
       "linkInTextBlock_summary_fail_ratioBeforeOpacity": "文中のこのリンクは、周囲のテキストとの区別を色だけに頼っており、そのテキストとのコントラストは {{ratio}}:1 と {{threshold}}:1 未満です。祖先要素の不透明度で両方が薄められるため、描画された状態ではさらに低くなります。",
+      "linkInTextBlock_summary_fail_sameColor": "文中のこのリンクは、周囲のテキストと区別するものが何もありません。同じ色で表示され、下線やその他の印もありません。",
+      "linkInTextBlock_hint_fail_sameColor": "下線、または目に見える別の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けて、リンクを周囲のテキストと見分けられるようにしてください。",
       "linkInTextBlock_hint_fail": "下線、または色以外の手がかり (フォントの太さやスタイルの違い、枠線、アイコン) を付けてください。周囲のテキストとの色のコントラストを 3:1 にするだけで十分なのは、リンクのホバー時とフォーカス時にも色以外の手がかりが加わる場合に限られます。",
       "linkInTextBlock_summary_cantTell": "このリンクが色以外の手段で周囲のテキストと区別できるかは判定できませんでした。",
       "linkInTextBlock_hint_cantTell": "リンクに下線、font-weight や font-style の違い、または色以外の手がかりがあるかを目視で確認してください。それらがない場合は、周囲のテキストとのコントラストが 3:1 以上で、ホバー時とフォーカス時に色以外の手がかりがあることを確認してください。DOM エミュレーターではなく実際のブラウザーでエンジンを実行すると、ほとんどのケースを自動的に解決できます。",
