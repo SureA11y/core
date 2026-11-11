@@ -382,19 +382,26 @@ function runInPage(ctx) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
+      // Text in its content hidden from assistive technology: the hint
+      // says so, as the text is there to see (helpers.hiddenNameText).
+      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This button has no accessible name.',
-          hint: 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
+          hint: hiddenHint
+            ? hiddenHint.hint
+            : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
             summaryKey: 'buttonNamePresent_summary_fail',
-            hintKey: 'buttonNamePresent_hint_fail',
-            params: { element: tag }
+            hintKey: hiddenHint ? hiddenHint.hintKey : 'buttonNamePresent_hint_fail',
+            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
+              ...(hiddenText ? { hiddenText } : {}),
               metrics: {
                 trustedProgrammaticNameLength: trustedProgrammaticName.length,
                 inputValueNameLength: inputValueName.length,

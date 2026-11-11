@@ -1971,6 +1971,90 @@ function createDomHelpers(opts) {
     return { status: 'unset', value: null };
   }
 
+  // Why a control that takes its name from its content has none, where its
+  // content has text: the first text with a letter or a digit inside el that
+  // is hidden from assistive technology, and what hides it. A name rule's
+  // fail says so, since "give the button visible text" reads as wrong to
+  // someone who sees the text on screen, or finds it in the markup.
+  // { text, reason, element }: text trimmed to 40 characters; reason one of
+  // 'displayNone', 'visibilityHidden', 'ariaHidden', 'hiddenAttribute'; element
+  // the tag of the element that hides it. null when no such text is found
+  // (the control has no text at all, or it is in a shadow root).
+  const HIDDEN_TEXT_NODES = 500;
+  const HIDDEN_TEXT_RE = /[\p{L}\p{N}]/u;
+  function hiddenNameText(el) {
+    try {
+      if (!isElement(el)) return null;
+      // What hides n from assistive technology, for an element inside el.
+      const hides = (n) => {
+        if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') return 'ariaHidden';
+        const cs = computedStyle(n) || {};
+        if (String(cs.display || '') !== 'none') return null;
+        // The hidden attribute hides only while author CSS leaves it so.
+        return dom.hasAttribute(n, 'hidden') ? 'hiddenAttribute' : 'displayNone';
+      };
+      const stack = [];
+      for (let c = dom.lastChild(el); c; c = dom.previousSibling(c)) stack.push([c, null]);
+      let seen = 0;
+      while (stack.length && seen < HIDDEN_TEXT_NODES) {
+        const [n, hidden] = stack.pop();
+        seen += 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const text = String(dom.nodeValue(n) || '');
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          let found = hidden;
+          if (!found) {
+            // Visibility is inherited, and a child can set it back: it is
+            // read on the element the text is in.
+            const holder = dom.parentElement(n);
+            const v = String((computedStyle(holder) || {}).visibility || '');
+            if (holder && holder !== el && (v === 'hidden' || v === 'collapse')) {
+              found = { reason: 'visibilityHidden', element: holder };
+            }
+          }
+          if (!found) continue;
+          const all = trim(String(dom.textContent(found.element) || '').replace(/\s+/g, ' '));
+          return {
+            text: all.length > 40 ? `${all.slice(0, 39)}…` : all,
+            reason: found.reason,
+            element: lower(dom.tagName(found.element) || '')
+          };
+        }
+        if (type !== 1) continue;
+        const why = hidden ? null : hides(n);
+        const under = hidden || (why ? { reason: why, element: n } : null);
+        for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push([c, under]);
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  // The hint of a name rule's fail when hiddenNameText found the content's
+  // text hidden: the fields for helpers.reportOccurrence's hint and i18n.
+  function hiddenNameTextHint(found) {
+    const { text, reason, element } = found;
+    const how = {
+      displayNone: 'with display: none, which hides it from screen readers as well as from view',
+      visibilityHidden:
+        'with visibility: hidden, which hides it from screen readers as well as from view',
+      ariaHidden: 'with aria-hidden="true", which hides it from screen readers',
+      hiddenAttribute:
+        'with the hidden attribute, which hides it from screen readers as well as from view'
+    }[reason];
+    const fix =
+      reason === 'ariaHidden'
+        ? 'Remove aria-hidden from it, or name the element with aria-label.'
+        : 'Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.';
+    return {
+      hint: `Its text "${text}" is in a <${element}> ${how}, so it gives no name. ${fix}`,
+      hintKey: `nameHiddenText_hint_${reason}`,
+      params: { text, element }
+    };
+  }
+
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
   // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
@@ -8749,6 +8833,8 @@ function createDomHelpers(opts) {
     getInternalsNameInfo,
     getInternalsStateInfo,
     internalsQuestion,
+    hiddenNameText,
+    hiddenNameTextHint,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

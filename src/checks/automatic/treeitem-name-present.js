@@ -265,17 +265,28 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'treeitemNamePresent_summary_fail',
-          hintKey: 'treeitemNamePresent_hint_fail',
-          params: { controlType: 'treeitem' }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem', ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'treeitem',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

@@ -26,6 +26,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - **`link-in-text-block` states the contrast in a fail.** A link set apart from its text by color alone gives its ratio against that text, below 3:1 (`linkInTextBlock_summary_fail_ratio`), or the ratio before an ancestor's opacity fades both, lower as drawn (`linkInTextBlock_summary_fail_ratioBeforeOpacity`). A ratio under 3:1 never reads as 3.00:1.
 
+- **A name rule's fail says when the element's text is hidden.** Where a button, link, tab, menu item, option, summary, tooltip, tree item or check box has text in its content that is hidden from assistive technology, the hint names that text and what hides it (`display: none`, `visibility: hidden`, `aria-hidden="true"` or the `hidden` attribute), instead of asking for visible text that is there to see: `nameHiddenText_hint_displayNone`, `_visibilityHidden`, `_ariaHidden`, `_hiddenAttribute`, with `i18n.params` `text` and `element`. `data.details.hiddenText` gives `{ text, reason, element }`. The outcome and reason code are unchanged.
+
 ### Changed (experimental)
 
 - **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.

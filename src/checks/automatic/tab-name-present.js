@@ -262,17 +262,28 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tab has no accessible name.',
-        hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tabNamePresent_summary_fail',
-          hintKey: 'tabNamePresent_hint_fail',
-          params: {}
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'tabNamePresent_hint_fail',
+          params: { ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'tab',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

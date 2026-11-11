@@ -460,3 +460,21 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'button'));
 });
+
+test('link-name-present: a fail whose content text is hidden says what hides it', () => {
+  const html = `<!doctype html><html><body>
+  <a href="/cart" id="cart"><span style="display: none">Cart</span></a>
+</body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: ['link-name-present'] });
+  const rule = assertRule(result, 'link-name-present', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.deepEqual(occ.data.details.hiddenText, {
+    text: 'Cart',
+    reason: 'displayNone',
+    element: 'span'
+  });
+  assert.equal(occ.i18n.hintKey, 'nameHiddenText_hint_displayNone');
+});

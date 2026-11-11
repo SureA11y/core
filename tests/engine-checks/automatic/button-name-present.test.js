@@ -501,3 +501,39 @@ test('button-name-present: content with a hidden attribute that author CSS displ
   assert.ok(hasOccurrenceForId(rule, 'still-hidden'));
   assert.ok(!hasOccurrenceForId(rule, 'shown'));
 });
+
+test('button-name-present: a fail whose content text is hidden says what hides it', () => {
+  const html = `
+<!doctype html><html><head><style>
+  .nav-text { display: none; }
+  .nav-bars::after { content: ""; display: block; width: 20px; height: 2px; background: #fff; }
+</style></head><body>
+  <button id="display-none" class="main-nav-toggle"> <span class="nav-text">Menü</span> <span class="nav-bars"></span> </button>
+  <button id="aria-hidden"><span aria-hidden="true">Close</span></button>
+  <button id="hidden-attr"><span hidden>Open</span></button>
+  <button id="visibility"><span style="visibility: hidden">Save</span></button>
+  <button id="empty"></button>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 5,
+    maxOccurrences: 5
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  for (const [id, reason, text] of [
+    ['display-none', 'displayNone', 'Menü'],
+    ['aria-hidden', 'ariaHidden', 'Close'],
+    ['hidden-attr', 'hiddenAttribute', 'Open'],
+    ['visibility', 'visibilityHidden', 'Save']
+  ]) {
+    const o = occ(id);
+    assert.equal(o.data.details.reasonCode, 'name_missing', id);
+    assert.deepEqual(o.data.details.hiddenText, { text, reason, element: 'span' }, id);
+    assert.equal(o.i18n.hintKey, `nameHiddenText_hint_${reason}`, id);
+    assert.equal(o.i18n.params.text, text, id);
+    assert.ok(o.hint.startsWith(`Its text "${text}" is in a <span> with `), o.hint);
+  }
+  assert.match(occ('display-none').hint, /display: none, which hides it from screen readers/);
+  // No text at all: the hint stays as it was.
+  assert.equal(occ('empty').i18n.hintKey, 'buttonNamePresent_hint_fail');
+  assert.equal(occ('empty').data.details.hiddenText, undefined);
+});

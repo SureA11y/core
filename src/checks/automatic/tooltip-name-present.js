@@ -267,14 +267,20 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tooltip has no accessible name.',
-        hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tooltipNamePresent_summary_fail',
-          hintKey: 'tooltipNamePresent_hint_fail',
-          params: {}
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'tooltipNamePresent_hint_fail',
+          params: { ...(hiddenHint ? hiddenHint.params : {}) }
         },
         uncertainty: {
           code: 'spec-only',
@@ -283,7 +289,12 @@ function runInPage(ctx) {
           evidence: { role: 'tooltip', source: 'WAI-ARIA 1.2, tooltip role' }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'tooltip',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

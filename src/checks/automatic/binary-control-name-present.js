@@ -265,18 +265,25 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
-          hintKey: 'binaryControlNamePresent_hint_fail',
-          params: { controlType }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'binaryControlNamePresent_hint_fail',
+          params: { controlType, ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
             controlType,
             methodTried: res.method
           },

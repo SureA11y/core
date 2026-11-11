@@ -1389,6 +1389,10 @@
   "engine_review_ancestorWalkLimit_fail": "The element is exposed: the finding stands as the rule reported it.",
   "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
   "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+  "nameHiddenText_hint_displayNone": "Its text \"{{text}}\" is in a <{{element}}> with display: none, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+  "nameHiddenText_hint_visibilityHidden": "Its text \"{{text}}\" is in a <{{element}}> with visibility: hidden, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+  "nameHiddenText_hint_ariaHidden": "Its text \"{{text}}\" is in a <{{element}}> with aria-hidden=\"true\", which hides it from screen readers, so it gives no name. Remove aria-hidden from it, or name the element with aria-label.",
+  "nameHiddenText_hint_hiddenAttribute": "Its text \"{{text}}\" is in a <{{element}}> with the hidden attribute, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
   "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
   "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
 }

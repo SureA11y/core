@@ -14723,6 +14723,90 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { status: 'unset', value: null };
   }
 
+  // Why a control that takes its name from its content has none, where its
+  // content has text: the first text with a letter or a digit inside el that
+  // is hidden from assistive technology, and what hides it. A name rule's
+  // fail says so, since "give the button visible text" reads as wrong to
+  // someone who sees the text on screen, or finds it in the markup.
+  // { text, reason, element }: text trimmed to 40 characters; reason one of
+  // 'displayNone', 'visibilityHidden', 'ariaHidden', 'hiddenAttribute'; element
+  // the tag of the element that hides it. null when no such text is found
+  // (the control has no text at all, or it is in a shadow root).
+  const HIDDEN_TEXT_NODES = 500;
+  const HIDDEN_TEXT_RE = /[\p{L}\p{N}]/u;
+  function hiddenNameText(el) {
+    try {
+      if (!isElement(el)) return null;
+      // What hides n from assistive technology, for an element inside el.
+      const hides = (n) => {
+        if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') return 'ariaHidden';
+        const cs = computedStyle(n) || {};
+        if (String(cs.display || '') !== 'none') return null;
+        // The hidden attribute hides only while author CSS leaves it so.
+        return dom.hasAttribute(n, 'hidden') ? 'hiddenAttribute' : 'displayNone';
+      };
+      const stack = [];
+      for (let c = dom.lastChild(el); c; c = dom.previousSibling(c)) stack.push([c, null]);
+      let seen = 0;
+      while (stack.length && seen < HIDDEN_TEXT_NODES) {
+        const [n, hidden] = stack.pop();
+        seen += 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const text = String(dom.nodeValue(n) || '');
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          let found = hidden;
+          if (!found) {
+            // Visibility is inherited, and a child can set it back: it is
+            // read on the element the text is in.
+            const holder = dom.parentElement(n);
+            const v = String((computedStyle(holder) || {}).visibility || '');
+            if (holder && holder !== el && (v === 'hidden' || v === 'collapse')) {
+              found = { reason: 'visibilityHidden', element: holder };
+            }
+          }
+          if (!found) continue;
+          const all = trim(String(dom.textContent(found.element) || '').replace(/\s+/g, ' '));
+          return {
+            text: all.length > 40 ? `${all.slice(0, 39)}…` : all,
+            reason: found.reason,
+            element: lower(dom.tagName(found.element) || '')
+          };
+        }
+        if (type !== 1) continue;
+        const why = hidden ? null : hides(n);
+        const under = hidden || (why ? { reason: why, element: n } : null);
+        for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push([c, under]);
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  // The hint of a name rule's fail when hiddenNameText found the content's
+  // text hidden: the fields for helpers.reportOccurrence's hint and i18n.
+  function hiddenNameTextHint(found) {
+    const { text, reason, element } = found;
+    const how = {
+      displayNone: 'with display: none, which hides it from screen readers as well as from view',
+      visibilityHidden:
+        'with visibility: hidden, which hides it from screen readers as well as from view',
+      ariaHidden: 'with aria-hidden="true", which hides it from screen readers',
+      hiddenAttribute:
+        'with the hidden attribute, which hides it from screen readers as well as from view'
+    }[reason];
+    const fix =
+      reason === 'ariaHidden'
+        ? 'Remove aria-hidden from it, or name the element with aria-label.'
+        : 'Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.';
+    return {
+      hint: `Its text "${text}" is in a <${element}> ${how}, so it gives no name. ${fix}`,
+      hintKey: `nameHiddenText_hint_${reason}`,
+      params: { text, element }
+    };
+  }
+
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
   // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
@@ -21501,6 +21585,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsNameInfo,
     getInternalsStateInfo,
     internalsQuestion,
+    hiddenNameText,
+    hiddenNameTextHint,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -40018,6 +40104,10 @@ const RUNTIME_CATALOG = {
       "engine_review_ancestorWalkLimit_fail": "Das Element wird bereitgestellt: Der Befund gilt so, wie die Regel ihn gemeldet hat.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "nameHiddenText_hint_displayNone": "Sein Text „{{text}}“ steht in einem <{{element}}> mit display: none, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Sein Text „{{text}}“ steht in einem <{{element}}> mit visibility: hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Sein Text „{{text}}“ steht in einem <{{element}}> mit aria-hidden=\"true\", das ihn vor Screenreadern verbirgt, sodass er keinen Namen liefert. Entfernen Sie aria-hidden davon, oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Sein Text „{{text}}“ steht in einem <{{element}}> mit dem Attribut hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
     },
@@ -41412,6 +41502,10 @@ const RUNTIME_CATALOG = {
       "engine_review_ancestorWalkLimit_fail": "The element is exposed: the finding stands as the rule reported it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "nameHiddenText_hint_displayNone": "Its text \"{{text}}\" is in a <{{element}}> with display: none, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Its text \"{{text}}\" is in a <{{element}}> with visibility: hidden, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Its text \"{{text}}\" is in a <{{element}}> with aria-hidden=\"true\", which hides it from screen readers, so it gives no name. Remove aria-hidden from it, or name the element with aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Its text \"{{text}}\" is in a <{{element}}> with the hidden attribute, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
       "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
     },
@@ -42806,6 +42900,10 @@ const RUNTIME_CATALOG = {
       "engine_review_ancestorWalkLimit_fail": "El elemento está expuesto: el hallazgo se mantiene tal como lo informó la regla.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
+      "nameHiddenText_hint_displayNone": "Su texto «{{text}}» está en un <{{element}}> con display: none, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Su texto «{{text}}» está en un <{{element}}> con visibility: hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Su texto «{{text}}» está en un <{{element}}> con aria-hidden=\"true\", que lo oculta a los lectores de pantalla, así que no da nombre. Quitar aria-hidden de él, o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Su texto «{{text}}» está en un <{{element}}> con el atributo hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
       "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
     },
@@ -44200,6 +44298,10 @@ const RUNTIME_CATALOG = {
       "engine_review_ancestorWalkLimit_fail": "L'élément est exposé : le constat vaut tel que la règle l'a rapporté.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "nameHiddenText_hint_displayNone": "Son texte « {{text}} » est dans un <{{element}}> avec display: none, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Son texte « {{text}} » est dans un <{{element}}> avec visibility: hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Son texte « {{text}} » est dans un <{{element}}> avec aria-hidden=\"true\", qui le masque aux lecteurs d’écran, il ne donne donc aucun nom. Retirez-en aria-hidden, ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Son texte « {{text}} » est dans un <{{element}}> avec l’attribut hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
       "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
     },
@@ -45594,6 +45696,10 @@ const RUNTIME_CATALOG = {
       "engine_review_ancestorWalkLimit_fail": "この要素は公開されています：この指摘はルールが報告したとおりに有効です。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{element}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
       "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
     }
@@ -65872,18 +65978,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
-          hintKey: 'binaryControlNamePresent_hint_fail',
-          params: { controlType }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'binaryControlNamePresent_hint_fail',
+          params: { controlType, ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
             controlType,
             methodTried: res.method
           },
@@ -66212,19 +66325,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
+      // Text in its content hidden from assistive technology: the hint
+      // says so, as the text is there to see (helpers.hiddenNameText).
+      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This button has no accessible name.',
-          hint: 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
+          hint: hiddenHint
+            ? hiddenHint.hint
+            : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
             summaryKey: 'buttonNamePresent_summary_fail',
-            hintKey: 'buttonNamePresent_hint_fail',
-            params: { element: tag }
+            hintKey: hiddenHint ? hiddenHint.hintKey : 'buttonNamePresent_hint_fail',
+            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
+              ...(hiddenText ? { hiddenText } : {}),
               metrics: {
                 trustedProgrammaticNameLength: trustedProgrammaticName.length,
                 inputValueNameLength: inputValueName.length,
@@ -86089,23 +86209,30 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const tag = (dom.tagName(el) || '').toLowerCase();
 
+      // Text in its content hidden from assistive technology: the hint
+      // says so, as the text is there to see (helpers.hiddenNameText).
+      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           // Human fallbacks (allowed)
           summary: 'This link has no accessible name.',
-          hint: 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
+          hint: hiddenHint
+            ? hiddenHint.hint
+            : 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
 
           // Validator requires these keys to exist in the English dictionary
           i18n: {
             summaryKey: 'linkNamePresent_summary_fail',
-            hintKey: 'linkNamePresent_hint_fail',
-            params: { element: tag }
+            hintKey: hiddenHint ? hiddenHint.hintKey : 'linkNamePresent_hint_fail',
+            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
           },
 
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
+              ...(hiddenText ? { hiddenText } : {}),
               metrics: {
                 programmaticNameLength: programmaticName.trim().length,
                 contentNameLength: contentName.trim().length
@@ -88404,17 +88531,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This menu item has no accessible name.',
-        hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'menuitemNamePresent_summary_fail',
-          hintKey: 'menuitemNamePresent_hint_fail',
-          params: { role }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'menuitemNamePresent_hint_fail',
+          params: { role, ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: role,
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -90652,17 +90790,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'optionNamePresent_summary_fail',
-          hintKey: 'optionNamePresent_hint_fail',
-          params: { controlType: 'option' }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'optionNamePresent_hint_fail',
+          params: { controlType: 'option', ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'option',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -95088,17 +95237,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This summary has no accessible name.',
-        hint: 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'summaryNamePresent_summary_fail',
-          hintKey: 'summaryNamePresent_hint_fail',
-          params: {}
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'summaryNamePresent_hint_fail',
+          params: { ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'summary', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'summary',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -96117,17 +96277,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tab has no accessible name.',
-        hint: 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tabNamePresent_summary_fail',
-          hintKey: 'tabNamePresent_hint_fail',
-          params: {}
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'tabNamePresent_hint_fail',
+          params: { ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'tab', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'tab',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -102730,14 +102901,20 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tooltip has no accessible name.',
-        hint: 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tooltipNamePresent_summary_fail',
-          hintKey: 'tooltipNamePresent_hint_fail',
-          params: {}
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'tooltipNamePresent_hint_fail',
+          params: { ...(hiddenHint ? hiddenHint.params : {}) }
         },
         uncertainty: {
           code: 'spec-only',
@@ -102746,7 +102923,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           evidence: { role: 'tooltip', source: 'WAI-ARIA 1.2, tooltip role' }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'tooltip', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'tooltip',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -102962,17 +103144,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Text in its content hidden from assistive technology: the hint
+    // says so, as the text is there to see (helpers.hiddenNameText).
+    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
+    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        hint: hiddenHint
+          ? hiddenHint.hint
+          : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'treeitemNamePresent_summary_fail',
-          hintKey: 'treeitemNamePresent_hint_fail',
-          params: { controlType: 'treeitem' }
+          hintKey: hiddenHint ? hiddenHint.hintKey : 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem', ...(hiddenHint ? hiddenHint.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'treeitem', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(hiddenText ? { hiddenText } : {}),
+            controlType: 'treeitem',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -105357,6 +105550,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_review_ancestorWalkLimit_fail": "Das Element wird bereitgestellt: Der Befund gilt so, wie die Regel ihn gemeldet hat.",
       "internals_summary_cantTell_name": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das sich vielleicht über ElementInternals einen Namen gibt, den kein Skript lesen kann; ob es einen hat, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_name": "Prüfen Sie seinen Namen im Barrierefreiheitsbaum des Browsers oder mit einem Screenreader; hat es keinen, geben Sie ihm ein aria-label oder sichtbaren Text.",
+      "nameHiddenText_hint_displayNone": "Sein Text „{{text}}“ steht in einem <{{element}}> mit display: none, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Sein Text „{{text}}“ steht in einem <{{element}}> mit visibility: hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Sein Text „{{text}}“ steht in einem <{{element}}> mit aria-hidden=\"true\", das ihn vor Screenreadern verbirgt, sodass er keinen Namen liefert. Entfernen Sie aria-hidden davon, oder benennen Sie das Element mit aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Sein Text „{{text}}“ steht in einem <{{element}}> mit dem Attribut hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
     },
@@ -106751,6 +106948,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_review_ancestorWalkLimit_fail": "The element is exposed: the finding stands as the rule reported it.",
       "internals_summary_cantTell_name": "This <{{element}}> is a custom element that may give itself a name through ElementInternals, which no script can read, so whether it has one could not be told.",
       "internals_hint_cantTell_name": "Check its name in the browser's accessibility tree or with a screen reader; if it has none, give it an aria-label or visible text.",
+      "nameHiddenText_hint_displayNone": "Its text \"{{text}}\" is in a <{{element}}> with display: none, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Its text \"{{text}}\" is in a <{{element}}> with visibility: hidden, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Its text \"{{text}}\" is in a <{{element}}> with aria-hidden=\"true\", which hides it from screen readers, so it gives no name. Remove aria-hidden from it, or name the element with aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Its text \"{{text}}\" is in a <{{element}}> with the hidden attribute, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
       "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
     },
@@ -108145,6 +108346,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_review_ancestorWalkLimit_fail": "El elemento está expuesto: el hallazgo se mantiene tal como lo informó la regla.",
       "internals_summary_cantTell_name": "Este <{{element}}> es un elemento personalizado que puede darse un nombre mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si tiene uno.",
       "internals_hint_cantTell_name": "Comprobar su nombre en el árbol de accesibilidad del navegador o con un lector de pantalla; si no tiene, darle un aria-label o un texto visible.",
+      "nameHiddenText_hint_displayNone": "Su texto «{{text}}» está en un <{{element}}> con display: none, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Su texto «{{text}}» está en un <{{element}}> con visibility: hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Su texto «{{text}}» está en un <{{element}}> con aria-hidden=\"true\", que lo oculta a los lectores de pantalla, así que no da nombre. Quitar aria-hidden de él, o nombrar el elemento con aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Su texto «{{text}}» está en un <{{element}}> con el atributo hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
       "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
     },
@@ -109539,6 +109744,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_review_ancestorWalkLimit_fail": "L'élément est exposé : le constat vaut tel que la règle l'a rapporté.",
       "internals_summary_cantTell_name": "Ce <{{element}}> est un élément personnalisé qui se donne peut-être un nom par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il en a un.",
       "internals_hint_cantTell_name": "Vérifiez son nom dans l’arbre d’accessibilité du navigateur ou avec un lecteur d’écran ; s’il n’en a pas, donnez-lui un aria-label ou un texte visible.",
+      "nameHiddenText_hint_displayNone": "Son texte « {{text}} » est dans un <{{element}}> avec display: none, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_visibilityHidden": "Son texte « {{text}} » est dans un <{{element}}> avec visibility: hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_ariaHidden": "Son texte « {{text}} » est dans un <{{element}}> avec aria-hidden=\"true\", qui le masque aux lecteurs d’écran, il ne donne donc aucun nom. Retirez-en aria-hidden, ou nommez l’élément avec aria-label.",
+      "nameHiddenText_hint_hiddenAttribute": "Son texte « {{text}} » est dans un <{{element}}> avec l’attribut hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
       "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
     },
@@ -110933,6 +111142,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "engine_review_ancestorWalkLimit_fail": "この要素は公開されています：この指摘はルールが報告したとおりに有効です。",
       "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
       "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
+      "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{element}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
+      "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
       "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
     }
@@ -125875,6 +126088,90 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return { status: 'unset', value: null };
   }
 
+  // Why a control that takes its name from its content has none, where its
+  // content has text: the first text with a letter or a digit inside el that
+  // is hidden from assistive technology, and what hides it. A name rule's
+  // fail says so, since "give the button visible text" reads as wrong to
+  // someone who sees the text on screen, or finds it in the markup.
+  // { text, reason, element }: text trimmed to 40 characters; reason one of
+  // 'displayNone', 'visibilityHidden', 'ariaHidden', 'hiddenAttribute'; element
+  // the tag of the element that hides it. null when no such text is found
+  // (the control has no text at all, or it is in a shadow root).
+  const HIDDEN_TEXT_NODES = 500;
+  const HIDDEN_TEXT_RE = /[\p{L}\p{N}]/u;
+  function hiddenNameText(el) {
+    try {
+      if (!isElement(el)) return null;
+      // What hides n from assistive technology, for an element inside el.
+      const hides = (n) => {
+        if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') return 'ariaHidden';
+        const cs = computedStyle(n) || {};
+        if (String(cs.display || '') !== 'none') return null;
+        // The hidden attribute hides only while author CSS leaves it so.
+        return dom.hasAttribute(n, 'hidden') ? 'hiddenAttribute' : 'displayNone';
+      };
+      const stack = [];
+      for (let c = dom.lastChild(el); c; c = dom.previousSibling(c)) stack.push([c, null]);
+      let seen = 0;
+      while (stack.length && seen < HIDDEN_TEXT_NODES) {
+        const [n, hidden] = stack.pop();
+        seen += 1;
+        const type = dom.nodeType(n);
+        if (type === 3) {
+          const text = String(dom.nodeValue(n) || '');
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          let found = hidden;
+          if (!found) {
+            // Visibility is inherited, and a child can set it back: it is
+            // read on the element the text is in.
+            const holder = dom.parentElement(n);
+            const v = String((computedStyle(holder) || {}).visibility || '');
+            if (holder && holder !== el && (v === 'hidden' || v === 'collapse')) {
+              found = { reason: 'visibilityHidden', element: holder };
+            }
+          }
+          if (!found) continue;
+          const all = trim(String(dom.textContent(found.element) || '').replace(/\s+/g, ' '));
+          return {
+            text: all.length > 40 ? `${all.slice(0, 39)}…` : all,
+            reason: found.reason,
+            element: lower(dom.tagName(found.element) || '')
+          };
+        }
+        if (type !== 1) continue;
+        const why = hidden ? null : hides(n);
+        const under = hidden || (why ? { reason: why, element: n } : null);
+        for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push([c, under]);
+      }
+    } catch {
+      return null;
+    }
+    return null;
+  }
+
+  // The hint of a name rule's fail when hiddenNameText found the content's
+  // text hidden: the fields for helpers.reportOccurrence's hint and i18n.
+  function hiddenNameTextHint(found) {
+    const { text, reason, element } = found;
+    const how = {
+      displayNone: 'with display: none, which hides it from screen readers as well as from view',
+      visibilityHidden:
+        'with visibility: hidden, which hides it from screen readers as well as from view',
+      ariaHidden: 'with aria-hidden="true", which hides it from screen readers',
+      hiddenAttribute:
+        'with the hidden attribute, which hides it from screen readers as well as from view'
+    }[reason];
+    const fix =
+      reason === 'ariaHidden'
+        ? 'Remove aria-hidden from it, or name the element with aria-label.'
+        : 'Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.';
+    return {
+      hint: `Its text "${text}" is in a <${element}> ${how}, so it gives no name. ${fix}`,
+      hintKey: `nameHiddenText_hint_${reason}`,
+      params: { text, element }
+    };
+  }
+
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
   // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
@@ -132653,6 +132950,8 @@ const createDomHelpers = (function createDomHelpers(opts) {
     getInternalsNameInfo,
     getInternalsStateInfo,
     internalsQuestion,
+    hiddenNameText,
+    hiddenNameTextHint,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
