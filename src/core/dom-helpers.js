@@ -2051,7 +2051,8 @@ function createDomHelpers(opts) {
     return {
       hint: `Its text "${text}" is in a <${element}> ${how}, so it gives no name. ${fix}`,
       hintKey: `nameHiddenText_hint_${reason}`,
-      params: { text, element }
+      // Not `element`, which a rule's own params give as the control's tag.
+      params: { text, hiddenElement: element }
     };
   }
 

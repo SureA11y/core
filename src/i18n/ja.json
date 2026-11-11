@@ -1389,10 +1389,10 @@
   "engine_review_ancestorWalkLimit_fail": "この要素は公開されています：この指摘はルールが報告したとおりに有効です。",
   "internals_summary_cantTell_name": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で名前を設定している可能性があるため、名前があるかどうかを判断できませんでした。",
   "internals_hint_cantTell_name": "ブラウザーのアクセシビリティツリーやスクリーンリーダーで名前を確認してください。名前がなければ、aria-label か表示テキストを付けてください。",
-  "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
-  "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
-  "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{element}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
-  "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{element}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+  "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+  "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
+  "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{hiddenElement}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
+  "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
   "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
   "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
 }

@@ -530,6 +530,9 @@ test('button-name-present: a fail whose content text is hidden says what hides i
     assert.deepEqual(o.data.details.hiddenText, { text, reason, element: 'span' }, id);
     assert.equal(o.i18n.hintKey, `nameHiddenText_hint_${reason}`, id);
     assert.equal(o.i18n.params.text, text, id);
+    assert.equal(o.i18n.params.hiddenElement, 'span', id);
+    // The rule's own params keep the control's tag.
+    assert.equal(o.i18n.params.element, 'button', id);
     assert.ok(o.hint.startsWith(`Its text "${text}" is in a <span> with `), o.hint);
   }
   assert.match(occ('display-none').hint, /display: none, which hides it from screen readers/);
