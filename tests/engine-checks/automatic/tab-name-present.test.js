@@ -162,3 +162,18 @@ test(`${RULE_ID}: an upper-case role resolves too: role="TAB" is a tab (#91)`, (
   );
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: a fail names an aria-labelledby target whose text is hidden`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><span id="t"><b style="display:none">Home</b></span><div role="tablist"><div role="tab" aria-labelledby="t"></div></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.equal(occ.i18n.hintKey, 'nameCause_hint_labelledbyHiddenText');
+  assert.equal(occ.i18n.params.hiddenBy, 'display: none');
+  assert.match(
+    occ.hint,
+    /^Its aria-labelledby points to <span id="t">, whose text "Home" is in a <b> hidden from screen readers by display: none/
+  );
+});

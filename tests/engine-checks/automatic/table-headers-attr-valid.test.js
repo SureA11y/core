@@ -194,3 +194,18 @@ test(`${RULE_ID}: with one bad id, the hint says what is wrong with it`, () => {
     '"pp" is on a <p>, not on a table cell. Point the headers attribute at a <th>\'s id.'
   );
 });
+
+test(`${RULE_ID}: with several bad ids, the hint lists what each one reaches`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table><tr><th><span id="h1">Name</span></th></tr><tr><td headers="h1 h2 x">a</td></tr></table><table><tr><th id="x">N</th></tr></table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'tableHeadersAttrValid_hint_fail_several');
+  assert.strictEqual(occ.i18n.params.reached, '"h1" (<th> › <span>), "h2" (—), "x" (<th>)');
+  assert.strictEqual(
+    occ.hint,
+    'None of these ids reaches a header cell for it: "h1" (<th> › <span>), "h2" (—), "x" (<th>), where — marks an id no element has. Each id must be on another <th> or <td> of this same table: not on an element inside a cell, and not in another table.'
+  );
+});

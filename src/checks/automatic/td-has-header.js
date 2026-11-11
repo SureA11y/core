@@ -344,15 +344,58 @@ function runInPage(ctx) {
       const hasData = rowCells.some((cells) => cells.some((c) => isEligible(c) && !isEmptyCell(c)));
       if (hasData) {
         const kind = tableKind(table, rowCells);
+        // A cell that looks like a header but is not counted as one
+        // (notHeader): the message names it.
+        let looks = null;
+        for (const cells of rowCells) {
+          for (const c of cells) {
+            looks = looks || notHeader(c);
+          }
+        }
+        const lk = looks ? looks.kind : '';
         questions.push(
           helpers.reportOccurrence(table, {
-            summary: 'This table has no header cells. If it holds data, its cells have no headers.',
-            hint: 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
+            summary:
+              lk === 'role'
+                ? `This table has no header cells that count: its <th> ("${looks.text}") has role="${looks.role}", which makes it an ordinary cell. If it holds data, its cells have no headers.`
+                : lk === 'hidden'
+                  ? `This table has no header cells that count: its <th> ("${looks.text}") is hidden from screen readers by ${looks.hiddenBy}. If it holds data, its cells have no headers.`
+                  : lk === 'theadTd'
+                    ? `This table has no header cells: its <thead> holds <td> cells ("${looks.text}"), not <th>. If it holds data, its cells have no headers.`
+                    : 'This table has no header cells. If it holds data, its cells have no headers.',
+            hint:
+              lk === 'role'
+                ? `If the table holds data, remove role="${looks.role}" from its <th> cells (or give them role="columnheader" or role="rowheader"). If it only lays out content, give the table role="presentation".`
+                : lk === 'hidden'
+                  ? 'If the table holds data, let screen readers read its header cells. If it only lays out content, give the table role="presentation".'
+                  : lk === 'theadTd'
+                    ? 'If the table holds data, make the cells of its header row <th>. If it only lays out content, give the table role="presentation".'
+                    : 'If the table holds data, mark its header cells with <th>, or give its cells a headers attribute. If it only lays out content, give it role="presentation".',
             occurrenceOutcome: 'cantTell',
             i18n: {
-              summaryKey: 'tdHasHeader_summary_cantTell_noHeaders',
-              hintKey: 'tdHasHeader_hint_cantTell_noHeaders',
-              params: {}
+              summaryKey:
+                lk === 'role'
+                  ? 'tdHasHeader_summary_cantTell_noHeadersRole'
+                  : lk === 'hidden'
+                    ? 'tdHasHeader_summary_cantTell_noHeadersHidden'
+                    : lk === 'theadTd'
+                      ? 'tdHasHeader_summary_cantTell_noHeadersTheadTd'
+                      : 'tdHasHeader_summary_cantTell_noHeaders',
+              hintKey:
+                lk === 'role'
+                  ? 'tdHasHeader_hint_cantTell_noHeadersRole'
+                  : lk === 'hidden'
+                    ? 'tdHasHeader_hint_cantTell_noHeadersHidden'
+                    : lk === 'theadTd'
+                      ? 'tdHasHeader_hint_cantTell_noHeadersTheadTd'
+                      : 'tdHasHeader_hint_cantTell_noHeaders',
+              params: looks
+                ? {
+                    text: looks.text,
+                    ...(looks.role ? { role: looks.role } : {}),
+                    ...(looks.hiddenBy ? { hiddenBy: looks.hiddenBy } : {})
+                  }
+                : {}
             },
             uncertainty: {
               code: 'judgement-required',
@@ -378,7 +421,9 @@ function runInPage(ctx) {
                   }
                 }
               : {}),
-            data: { details: { reasonCode: 'TD_TABLE_NO_HEADERS' } }
+            data: {
+              details: { reasonCode: 'TD_TABLE_NO_HEADERS', ...(looks ? { notHeader: looks } : {}) }
+            }
           })
         );
       }

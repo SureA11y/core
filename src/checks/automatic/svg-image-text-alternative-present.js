@@ -259,16 +259,44 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause), or a <title> beside
+    // it, which names the <svg> or <g> they sit in, not the <image>.
+    const imageCause = (() => {
+      const parent = dom.parentElement(el);
+      if (!parent) return null;
+      for (let c = dom.firstElementChild(parent); c; c = dom.nextElementSibling(c)) {
+        if (String(dom.localName(c) || '').toLowerCase() !== 'title') continue;
+        const all = trim(String(dom.textContent(c) || '').replace(/\s+/g, ' '));
+        if (!all) return null;
+        const text = all.length > 40 ? `${all.slice(0, 39)}…` : all;
+        const parentTag = String(dom.localName(parent) || '').toLowerCase();
+        return {
+          hint: `The <title> "${text}" beside it is a child of the <${parentTag}>, so it names the <${parentTag}>, not this <image>. Put a <title> inside the <image>, or name it with aria-label.`,
+          hintKey: 'svgImage_textAltPresent_hint_fail_parentTitle',
+          params: { text, parentTag },
+          detail: { cause: 'parentTitle', text, parent: parentTag }
+        };
+      }
+      return null;
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || imageCause;
     const baseOccurrence = {
       summary: 'This SVG <image> has no text alternative.',
-      hint: 'Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.',
+      hint: cause
+        ? cause.hint
+        : 'Add a <title> inside the <image>, or name it with aria-label or aria-labelledby.',
       i18n: {
         summaryKey: 'svgImage_textAltPresent_summary_fail',
-        hintKey: 'svgImage_textAltPresent_hint_fail',
-        params: { element: 'image' }
+        hintKey: cause ? cause.hintKey : 'svgImage_textAltPresent_hint_fail',
+        params: { element: 'image', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

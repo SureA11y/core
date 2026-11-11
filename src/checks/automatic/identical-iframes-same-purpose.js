@@ -183,6 +183,13 @@ function runInPage(ctx) {
     'player.twitch.tv'
   ];
 
+  // Titles a video service's embed code gives every frame, lowercased:
+  // the service's name.
+  const EMBED_DEFAULT_TITLES = {
+    'youtube video player': 'YouTube',
+    'dailymotion video player': 'Dailymotion'
+  };
+
   // What a frame embeds, read from its src, else a lazy-load attribute
   // (data-src, data-lazy-src), else its srcdoc. `from` says which.
   function embedOf(el) {
@@ -329,19 +336,40 @@ function runInPage(ctx) {
     if (allSame) continue;
 
     const leans = setLeans(name, els, keys);
+    // A name a video service's embed code puts on every frame, which the
+    // author never chose.
+    const service = EMBED_DEFAULT_TITLES[name.toLowerCase()] || '';
     for (let i = 0; i < els.length; i++) {
       const el = els[i];
       const tag = dom.tagName(el).toLowerCase();
+      // The addresses the other frames of the set embed, for the summary.
+      const others = [...new Set(resolved.filter((k) => k !== keys[i]))];
+      const cut = (u) => (u.length > 80 ? `${u.slice(0, 79)}…` : u);
+      const other = others.length
+        ? others.slice(0, 2).map(cut).join(', ') + (others.length > 2 ? ', …' : '')
+        : '';
       occurrences.push(
         helpers.reportOccurrence(el, {
           ...(leans[i] ? { lean: leans[i] } : {}),
-          summary:
-            'This frame shares its accessible name with another frame that embeds a different resource.',
-          hint: 'If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.',
+          summary: other
+            ? `This frame shares its accessible name with another frame that embeds a different resource (${other}).`
+            : 'This frame shares its accessible name with another frame that embeds a different resource.',
+          hint: service
+            ? `“${name}” is the title ${service}'s embed code gives every frame, not one that says what this frame shows. Give each frame a name of its own, such as the title of the video it plays.`
+            : 'If these frames embed equivalent content, such as two copies of one page or two adverts that do the same job, nothing needs to change. Otherwise give each frame a name that describes what it embeds.',
           i18n: {
-            summaryKey: 'identicalIframesSamePurpose_summary_cantTell',
-            hintKey: 'identicalIframesSamePurpose_hint_cantTell',
-            params: { element: tag, name }
+            summaryKey: other
+              ? 'identicalIframesSamePurpose_summary_cantTell_other'
+              : 'identicalIframesSamePurpose_summary_cantTell',
+            hintKey: service
+              ? 'identicalIframesSamePurpose_hint_cantTell_embedDefault'
+              : 'identicalIframesSamePurpose_hint_cantTell',
+            params: {
+              element: tag,
+              name,
+              ...(other ? { other } : {}),
+              ...(service ? { service } : {})
+            }
           },
           uncertainty:
             keys[i] == null
@@ -368,6 +396,8 @@ function runInPage(ctx) {
               element: tag,
               name,
               resource: keys[i],
+              ...(others.length ? { otherResources: others } : {}),
+              ...(service ? { embedDefaultTitle: service } : {}),
               setSize: els.length
             }
           }

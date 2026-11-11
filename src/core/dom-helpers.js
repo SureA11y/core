@@ -2083,14 +2083,18 @@ function createDomHelpers(opts) {
   // Why an element that should have a name has none, where the page shows a
   // cause a reader would not see from the element alone: the hint and its
   // i18n fields for a name rule's fail, with details.nameCause, or null.
-  // Tried in turn: an aria-labelledby whose ids are all missing, or whose
-  // elements all have no text; a <label> on an element it can't label (a
+  // Tried in turn: an aria-labelledby whose ids are all missing, whose
+  // elements all have no text, whose elements' text is hidden from assistive
+  // technology, or that mixes missing ids with such elements; a <label> on an element it can't label (a
   // custom widget); for a form field, a <label> hidden from assistive
   // technology, and a nearby <label> that misses the field (a for typo, a
   // duplicate id, a for at a non-field, a label around an earlier field, a
   // label beside it with no for); then, for an element named from its
   // content (opts.content), text in it that is hidden, and content that is
-  // only images or icons that give no name; last, an aria-label with no text.
+  // only images or icons that give no name; then an aria-label with no
+  // text; last, an attribute that reads like a name but gives none
+  // (aria-placeholder, aria-describedby, an aria-label on the generic
+  // parent). opts.skip lists causes a rule words itself.
   const LEVENSHTEIN_MAX = 2;
   function closeIds(a, b) {
     a = lower(a);
@@ -2159,6 +2163,8 @@ function createDomHelpers(opts) {
   const LABELABLE = /^(input|select|textarea|meter|output|progress|button)$/;
   function nameCause(el, opts) {
     const o = opts || {};
+    // Causes a rule words itself (opts.skip: cause names) are left to it.
+    const skip = (cause) => Array.isArray(o.skip) && o.skip.includes(cause);
     try {
       if (!isElement(el)) return null;
       const doc = dom.ownerDocument(el);
@@ -2223,14 +2229,51 @@ function createDomHelpers(opts) {
           attr(t, 'title') ||
           attr(t, 'value') ||
           dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
+        const tagWithId = (t) => `<${tagOf(t)} id="${attr(t, 'id')}">`;
         if (targets.every((t) => t && t !== el && !gives(t))) {
-          const list = targets.map((t) => `<${tagOf(t)} id="${attr(t, 'id')}">`).join(', ');
+          const list = targets.map(tagWithId).join(', ');
           return {
             hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
             hintKey: 'nameCause_hint_labelledbyEmpty',
             params: { targets: list },
             detail: { cause: 'labelledbyEmpty', ids }
           };
+        }
+        // The element names nothing, so a target with text has it hidden
+        // from assistive technology inside it (the target itself may be
+        // hidden: its text still counts).
+        const hiddenIn = targets.map((t) => (t && t !== el && gives(t) ? hiddenNameText(t) : null));
+        const silent = targets.every((t, i) => !t || t === el || !gives(t) || hiddenIn[i]);
+        if (silent) {
+          const missing = ids.filter((_, i) => !targets[i]);
+          const found = targets.filter((t) => t && t !== el);
+          const k = hiddenIn.findIndex(Boolean);
+          if (!missing.length && k >= 0 && !skip('labelledbyHiddenText')) {
+            const { text, reason, element: hiddenElement } = hiddenIn[k];
+            const hiddenBy = {
+              displayNone: 'display: none',
+              visibilityHidden: 'visibility: hidden',
+              ariaHidden: 'aria-hidden="true"',
+              hiddenAttribute: 'the hidden attribute'
+            }[reason];
+            const target = tagWithId(targets[k]);
+            return {
+              hint: `Its aria-labelledby points to ${target}, whose text "${text}" is in a <${hiddenElement}> hidden from screen readers by ${hiddenBy}, so it gives no name. Let screen readers read that text, or name it with aria-label.`,
+              hintKey: 'nameCause_hint_labelledbyHiddenText',
+              params: { target, text, hiddenElement, hiddenBy },
+              detail: { cause: 'labelledbyHiddenText', ids, text, hiddenBy: reason }
+            };
+          }
+          if (missing.length && found.length) {
+            const missingIds = missing.map((id) => `"${id}"`).join(', ');
+            const list = found.map(tagWithId).join(', ');
+            return {
+              hint: `Its aria-labelledby gives no name: no element on the page has ${missingIds}, and what it does point to (${list}) has no text screen readers read. Point it at elements with text, or name it with aria-label.`,
+              hintKey: 'nameCause_hint_labelledbyMixed',
+              params: { ids: missingIds, targets: list },
+              detail: { cause: 'labelledbyMixed', ids, missing }
+            };
+          }
         }
       }
       const tag = tagOf(el);
@@ -2426,8 +2469,54 @@ function createDomHelpers(opts) {
               detail: { cause: 'ariaLabelEmpty' }
             };
       };
-      if (!o.content) return blankLabel();
-      return contentNameCause(el) || blankLabel();
+      // An attribute that reads like a name but gives none: aria-placeholder,
+      // aria-describedby, or an aria-label on the generic parent.
+      const notAName = () => {
+        const placeholder = attr(el, 'aria-placeholder');
+        if (placeholder && !skip('ariaPlaceholder')) {
+          const text = placeholder.length > 40 ? `${placeholder.slice(0, 39)}…` : placeholder;
+          return {
+            hint: `Its aria-placeholder "${text}" is a hint shown while it is empty, not a name. Name it with aria-label or aria-labelledby.`,
+            hintKey: 'nameCause_hint_ariaPlaceholder',
+            params: { text },
+            detail: { cause: 'ariaPlaceholder', text }
+          };
+        }
+        const described = attr(el, 'aria-describedby')
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(byId)
+          .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
+        if (described.length) {
+          const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
+          return {
+            hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_describedbyNotName',
+            params: { targets },
+            detail: { cause: 'describedbyNotName' }
+          };
+        }
+        const parent = dom.parentElement(el);
+        const parentLabel = parent ? attr(parent, 'aria-label') : '';
+        if (
+          parentLabel &&
+          dom.childElementCount(parent) === 1 &&
+          !attr(parent, 'role') &&
+          /^(div|span|p)$/.test(tagOf(parent))
+        ) {
+          const text = parentLabel.length > 40 ? `${parentLabel.slice(0, 39)}…` : parentLabel;
+          const parentTag = describeElement(parent);
+          return {
+            hint: `The aria-label "${text}" is on its parent ${parentTag}, where it names nothing. Move it to this element.`,
+            hintKey: 'nameCause_hint_parentAriaLabel',
+            params: { text, parentTag },
+            detail: { cause: 'parentAriaLabel', text }
+          };
+        }
+        return null;
+      };
+      if (!o.content) return blankLabel() || notAName();
+      return contentNameCause(el) || blankLabel() || notAName();
     } catch {
       return null;
     }
@@ -2477,6 +2566,30 @@ function createDomHelpers(opts) {
           !dom.querySelector(n, '*') &&
           !trim(dom.textContent(n) || '')
       );
+      if (!icons.length) {
+        // An icon-font character a ::before or ::after draws, on el or on
+        // an empty element in it, with no class to name it by: only a
+        // document with a layout computes it.
+        const empty = [el].concat(
+          [...dom.querySelectorAll(el, '*')].filter(
+            (n) => !dom.querySelector(n, '*') && !trim(dom.textContent(n) || '')
+          )
+        );
+        for (const n of empty.slice(0, 50)) {
+          for (const pseudo of ['::before', '::after']) {
+            const gen = contrast.getGeneratedNameText(n, pseudo);
+            if (!gen || !gen.glyphs || trim(gen.text)) continue;
+            const host = describeElement(n);
+            return {
+              hint: `Its only content is an icon-font character drawn by CSS (${pseudo} on ${host}), which screen readers can't read as a name. Add visually-hidden text, or name the element with aria-label.`,
+              hintKey: 'nameCause_hint_iconGenerated',
+              params: { pseudo, host },
+              detail: { cause: 'iconGenerated', pseudo, element: tagOf(n) }
+            };
+          }
+        }
+        return null;
+      }
       if (icons.length !== 1 || named(icons[0])) return null;
       const iconTag = tagOf(icons[0]);
       const cls = trim(dom.getAttribute(icons[0], 'class')).replace(/\s+/g, ' ');

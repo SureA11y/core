@@ -395,3 +395,34 @@ test(`${RULE_ID}: a fail says a header row of <td>s in <thead> heads nothing`, (
   );
   assert.equal(below.i18n.hintKey, 'tdHasHeader_hint_fail_theadTd');
 });
+
+test(`${RULE_ID}: a table with no header cells names the <th> that does not count`, () => {
+  const body = '<tr><td>1</td><td>2</td><td>3</td><td>4</td></tr>'.repeat(4);
+  const run = (head) =>
+    assertRule(
+      runa11yCoreOnHtml(
+        `<!doctype html><html lang="en"><head><title>t</title></head><body><table>${head}${body}</table></body></html>`,
+        { runOnly: [RULE_ID] }
+      ),
+      RULE_ID,
+      'cantTell',
+      { minOccurrences: 1, maxOccurrences: 1 }
+    ).occurrences[0];
+  const role = run('<tr>' + '<th role="presentation">Year</th>'.repeat(4) + '</tr>');
+  assert.strictEqual(role.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersRole');
+  assert.strictEqual(role.i18n.hintKey, 'tdHasHeader_hint_cantTell_noHeadersRole');
+  assert.strictEqual(
+    role.summary,
+    'This table has no header cells that count: its <th> ("Year") has role="presentation", which makes it an ordinary cell. If it holds data, its cells have no headers.'
+  );
+  assert.strictEqual(role.data.details.reasonCode, 'TD_TABLE_NO_HEADERS');
+  const hidden = run('<tr>' + '<th aria-hidden="true">Year</th>'.repeat(4) + '</tr>');
+  assert.strictEqual(hidden.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersHidden');
+  assert.strictEqual(hidden.i18n.params.hiddenBy, 'aria-hidden="true"');
+  const thead = run('<thead><tr>' + '<td>Year</td>'.repeat(4) + '</tr></thead>');
+  assert.strictEqual(thead.i18n.summaryKey, 'tdHasHeader_summary_cantTell_noHeadersTheadTd');
+  assert.strictEqual(
+    thead.hint,
+    'If the table holds data, make the cells of its header row <th>. If it only lays out content, give the table role="presentation".'
+  );
+});

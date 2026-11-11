@@ -318,7 +318,9 @@ function runInPage(ctx) {
     // Why it has none, where the page shows a cause the reader would not
     // see from the field alone (helpers.nameCause): a hidden <label>, or a
     // <label for> beside it pointing at an id no element has.
-    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: false, skip: ['ariaPlaceholder'] })
+      : null;
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
       hint: cause

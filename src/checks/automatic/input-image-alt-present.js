@@ -215,31 +215,53 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // A value attribute, which names a submit button but not an image
+    // button: the hint says so, and so does an aria-labelledby that names
+    // nothing or a blank aria-label (helpers.nameCause).
+    const valueCause = (() => {
+      const raw = String(dom.getAttribute(el, 'value') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(raw)) return null;
+      const value = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its value="${value}" is not used as an image button's name. Put the text in alt: alt="${value}".`,
+        hintKey: 'inputImage_altPresent_hint_fail_value',
+        params: { value },
+        detail: { cause: 'valueNotName', value }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || valueCause;
     const baseOccurrence = emptyAlt
       ? {
           summary: 'This <input type="image"> has an empty alt="", so the button has no name.',
-          hint: 'Say what the button does in alt, or name it with aria-label or aria-labelledby. A button is never decorative.',
+          hint: cause
+            ? cause.hint
+            : 'Say what the button does in alt, or name it with aria-label or aria-labelledby. A button is never decorative.',
           i18n: {
             summaryKey: 'inputImage_altPresent_summary_emptyAlt',
-            hintKey: 'inputImage_altPresent_hint_emptyAlt',
-            params: { element: 'input[type=image]' }
+            hintKey: cause ? cause.hintKey : 'inputImage_altPresent_hint_emptyAlt',
+            params: { element: 'input[type=image]', ...(cause ? cause.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-            details: { reasonCode: 'empty_alt' }
+            details: { reasonCode: 'empty_alt', ...(cause ? { nameCause: cause.detail } : {}) }
           }
         }
       : {
           summary: 'This <input type="image"> has no alt attribute, so the button has no name.',
-          hint: 'Add an alt attribute that says what the button does, for example alt="Search".',
+          hint: cause
+            ? cause.hint
+            : 'Add an alt attribute that says what the button does, for example alt="Search".',
           i18n: {
             summaryKey: 'inputImage_altPresent_summary_fail',
-            hintKey: 'inputImage_altPresent_hint_fail',
-            params: { element: 'input[type=image]' }
+            hintKey: cause ? cause.hintKey : 'inputImage_altPresent_hint_fail',
+            params: { element: 'input[type=image]', ...(cause ? cause.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-            details: { reasonCode: 'missing_alt' }
+            details: { reasonCode: 'missing_alt', ...(cause ? { nameCause: cause.detail } : {}) }
           }
         };
 
