@@ -959,6 +959,27 @@ function runInPage(ctx) {
           : `This aria-hidden <${tagName}> contains a focusable element, ${firstInside.description}: keyboard users can reach it, but screen readers don't announce it.`;
     }
 
+    // A focusable aria-hidden element itself, named as the reader finds it
+    // in the markup.
+    const rootOffender = entry.offenders.find((o) => o.description && o.isRoot);
+    const selfNamed = selfFocusable && !!rootOffender;
+    if (selfNamed) {
+      namedSummaryKey =
+        descendantFocusable > 0
+          ? 'ariaHidden_focus_summary_fail_self_and_desc_named'
+          : 'ariaHidden_focus_summary_fail_self_named';
+      namedSummary =
+        descendantFocusable > 0
+          ? `This aria-hidden ${rootOffender.description} can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
+          : `This aria-hidden ${rootOffender.description} can take keyboard focus, but screen readers don't announce it.`;
+    }
+
+    // A focusable element made invisible with opacity: 0 still takes focus:
+    // the hint says so, as the reader may not find it on screen.
+    const invisible = entry.offenders.find(
+      (o) => o.description && (o.visibilityHints || []).indexOf('opacityZero') !== -1
+    );
+
     const summaryText = selfFocusable
       ? descendantFocusable > 0
         ? `This aria-hidden <${tagName}> can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
@@ -986,10 +1007,18 @@ function runInPage(ctx) {
     let occReasonCode;
 
     if (downgradedByModal) {
-      occSummary = cantTellModalSummary;
+      occSummary = firstInside
+        ? moreCount > 0
+          ? `This aria-hidden <${tagName}> contains ${firstInside.description} and ${moreCount} more focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them.`
+          : `This aria-hidden <${tagName}> contains a focusable element, ${firstInside.description}, while a modal dialog is open. It is fine if the dialog keeps focus inside it; check that focus can't reach it.`
+        : cantTellModalSummary;
       occHint =
         'Making the background inert, or opening a native <dialog> with showModal(), takes it out of the tab order. Then check that keyboard focus stays inside the dialog.';
-      occSummaryKey = 'ariaHidden_focus_summary_cantTell_modal';
+      occSummaryKey = firstInside
+        ? moreCount > 0
+          ? 'ariaHidden_focus_summary_cantTell_modal_named'
+          : 'ariaHidden_focus_summary_cantTell_modal_one'
+        : 'ariaHidden_focus_summary_cantTell_modal';
       occHintKey = 'ariaHidden_focus_hint_cantTell_modal';
       occReasonCode = 'ariaHiddenFocusable_modalOpen_needsReview';
     } else if (downgradedByRedirect) {
@@ -1000,11 +1029,12 @@ function runInPage(ctx) {
       occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
       occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
     } else {
-      occSummary = named ? namedSummary : summaryText;
-      occHint =
-        'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
-      occSummaryKey = named ? namedSummaryKey : summaryKey;
-      occHintKey = 'ariaHidden_focus_hint_fail';
+      occSummary = named || selfNamed ? namedSummary : summaryText;
+      occHint = invisible
+        ? `${invisible.description} is invisible (opacity: 0) but still takes focus, so keyboard focus lands on something no one can see. Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section).`
+        : 'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
+      occSummaryKey = named || selfNamed ? namedSummaryKey : summaryKey;
+      occHintKey = invisible ? 'ariaHidden_focus_hint_fail_opacity' : 'ariaHidden_focus_hint_fail';
       occReasonCode = reasonCode;
     }
 
@@ -1019,7 +1049,9 @@ function runInPage(ctx) {
           element: tagName,
           focusableCount: String(totalFocusable),
           descendantFocusableCount: String(descendantFocusable),
-          ...(named ? { first: firstInside.description, moreCount: String(moreCount) } : {}),
+          ...(firstInside ? { first: firstInside.description, moreCount: String(moreCount) } : {}),
+          ...(selfNamed ? { self: rootOffender.description } : {}),
+          ...(invisible && !downgradedToCantTell ? { invisible: invisible.description } : {}),
           redirectedToTag:
             runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
           redirectedToId:
