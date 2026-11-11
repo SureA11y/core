@@ -2055,6 +2055,21 @@ function createDomHelpers(opts) {
       params: { text, hiddenElement: element }
     };
   }
+  // A short tag for an element in a message: <div id="app">, else
+  // <div class="drawer"> with its first class, else <div>
+  // (helpers.describeElement).
+  function describeElement(el) {
+    try {
+      if (!isElement(el)) return '';
+      const tag = lower(dom.tagName(el) || '');
+      const id = trim(dom.getAttribute(el, 'id') || '');
+      if (id) return `<${tag} id="${id}">`;
+      const cls = trim(dom.getAttribute(el, 'class') || '').split(/\s+/)[0];
+      return cls ? `<${tag} class="${cls}">` : `<${tag}>`;
+    } catch {
+      return '';
+    }
+  }
   // Why an element that should have a name has none, where the page shows a
   // cause a reader would not see from the element alone: the hint and its
   // i18n fields for a name rule's fail, with details.nameCause, or null.
@@ -9039,6 +9054,7 @@ function createDomHelpers(opts) {
     hiddenNameTextHint,
     nameCause,
     hiddenCause: hiddenBy,
+    describeElement,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

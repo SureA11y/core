@@ -124,27 +124,82 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
+  // A main landmark in the markup that is hidden (an app root left
+  // aria-hidden after a dialog closed): adding a second one would not help.
+  function hiddenMain() {
+    let all;
+    try {
+      all =
+        typeof helpers.queryAllDeep === 'function'
+          ? helpers.queryAllDeep('main, [role]')
+          : dom.querySelectorAll(document, 'main, [role]');
+    } catch {
+      all = [];
+    }
+    for (const el of all) {
+      if (!el || helpers.getLandmarkRole(el, ctx) !== 'main') continue;
+      const tag = dom.tagName(el).toLowerCase();
+      const described = helpers.describeElement(el);
+      const main = tag === 'main' || described !== `<${tag}>` ? described : `<${tag} role="main">`;
+      const cause = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(el) : null;
+      if (!cause) {
+        return {
+          summary: `This page's main landmark ${main} is hidden from screen readers, so the page has no main landmark they can reach.`,
+          summaryKey: 'landmarkOneMain_summary_cantTell_hidden',
+          params: { main },
+          detail: { main }
+        };
+      }
+      if (cause.element === el) {
+        return {
+          summary: `This page's main landmark ${main} is hidden from screen readers by ${cause.hiddenBy}, so the page has no main landmark they can reach.`,
+          summaryKey: 'landmarkOneMain_summary_cantTell_hiddenOwn',
+          params: { main, hiddenBy: cause.hiddenBy },
+          detail: { main, hiddenBy: cause.hiddenBy }
+        };
+      }
+      const ancestor = helpers.describeElement(cause.element);
+      return {
+        summary: `This page's main landmark ${main} is hidden from screen readers by ${cause.hiddenBy} on its ancestor ${ancestor}, so the page has no main landmark they can reach.`,
+        summaryKey: 'landmarkOneMain_summary_cantTell_hiddenAncestor',
+        params: { main, hiddenBy: cause.hiddenBy, ancestor },
+        detail: { main, hiddenBy: cause.hiddenBy, hiddenByElement: ancestor }
+      };
+    }
+    return null;
+  }
+  const hidden = hiddenMain();
+
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
       helpers.reportOccurrence(body, {
-        summary: 'This page has no main landmark.',
-        hint: 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
+        summary: hidden ? hidden.summary : 'This page has no main landmark.',
+        hint: hidden
+          ? 'Let screen readers reach the main landmark: remove what hides it (aria-hidden, inert or display: none on it or a container), unless a dialog is open. Adding a second main landmark would not help.'
+          : 'Add a main landmark (<main> or role="main") around the page\'s primary content.',
         i18n: {
-          summaryKey: 'landmarkOneMain_summary_cantTell_missing',
-          hintKey: 'landmarkOneMain_hint_cantTell_missing',
-          params: {}
+          summaryKey: hidden ? hidden.summaryKey : 'landmarkOneMain_summary_cantTell_missing',
+          hintKey: hidden
+            ? 'landmarkOneMain_hint_cantTell_hidden'
+            : 'landmarkOneMain_hint_cantTell_missing',
+          params: hidden ? hidden.params : {}
         },
         lean: {
           toward: 'fail',
-          why: 'The page has no main landmark.',
+          why: hidden
+            ? "The page's main landmark is hidden from screen readers."
+            : 'The page has no main landmark.',
           signals: [{ signal: 'main-landmark-absent', value: true }],
-          i18n: { whyKey: 'landmarkOneMain_lean_why' }
+          i18n: { whyKey: hidden ? 'landmarkOneMain_lean_why_hidden' : 'landmarkOneMain_lean_why' }
         },
         data: {
-          details: { reasonCode: 'LANDMARK_MAIN_MISSING' }
+          details: {
+            reasonCode: 'LANDMARK_MAIN_MISSING',
+            ...(hidden ? { hiddenMain: hidden.detail } : {})
+          }
         }
       })
     ]
