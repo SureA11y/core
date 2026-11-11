@@ -49,6 +49,8 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 ### Fixed
 
+- **`aria-conditional-attr` passes an `aria-invalid` value outside its tokens.** WAI-ARIA 1.2 has any value but `false` or empty read as `true`, so `aria-invalid="yes"` with `aria-errormessage` exposes the error message, and the rule no longer asks about it. The wrong value is still `aria-valid-attr-value`'s finding. The keys `ariaConditionalAttr_summary_fail_invalidValue` and `ariaConditionalAttr_hint_fail_invalidValue` are removed.
+
 - **`link-in-text-block` counts only text on the link's own line.** A link alone on its line, after a `<br>` or a child laid out as a block, is in no block of text, whatever the lines around it hold: an e-mail address under two phone numbers and their labels was failed as a link set apart by color alone.
 
 - **`link-in-text-block` says nothing sets a link apart when it is drawn in the text's own color.** At 1.00:1, with no underline or other mark, the summary no longer says the link relies on color (`linkInTextBlock_summary_fail_sameColor`, `linkInTextBlock_hint_fail_sameColor`). It still fails, with the same reason code.

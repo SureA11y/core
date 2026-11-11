@@ -40945,8 +40945,6 @@ const RUNTIME_CATALOG = {
       "ariaConditionalAttr_hint_fail": "Setzen Sie aria-invalid auf „true“ (oder „grammar“/„spelling“), wann immer aria-errormessage assistiven Technologien zur Verfügung gestellt werden soll.",
       "ariaConditionalAttr_summary_fail_missing": "Dieses Element hat aria-errormessage, aber kein aria-invalid, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
       "ariaConditionalAttr_summary_fail_false": "Dieses Element hat aria-errormessage, aber aria-invalid=\"false\", sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Dieses Element hat aria-errormessage, aber sein aria-invalid=\"{{ariaInvalid}}\" ist kein gültiger Wert (true, false, grammar oder spelling). Browser lesen ihn als \"true\", andere Werkzeuge aber vielleicht nicht, sodass die Fehlermeldung möglicherweise nicht zur Verfügung gestellt wird.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Verwenden Sie aria-invalid=\"true\" (oder \"grammar\" oder \"spelling\"), damit jedes Werkzeug die Fehlermeldung zur Verfügung stellt.",
       "ariaConditionalAttr_lean_why_described": "Die Fehlermeldung wird auch von aria-describedby benannt und erreicht assistive Technologien so als Beschreibung des Feldes.",
       "ariaConditionalAttr_lean_why_shown": "Die Fehlermeldung wird mit Text angezeigt, aber aria-invalid ist nicht gesetzt, sodass assistive Technologien sie nicht erhalten.",
       "ariaConditionalAttr_lean_caution_shown": "Der angezeigte Text kann ein ständiger Hinweis statt eines Fehlers sein.",
@@ -42654,8 +42652,6 @@ const RUNTIME_CATALOG = {
       "ariaConditionalAttr_hint_fail": "Set aria-invalid to \"true\" (or \"grammar\"/\"spelling\") whenever aria-errormessage should be exposed to assistive technology.",
       "ariaConditionalAttr_summary_fail_missing": "This element has aria-errormessage but no aria-invalid, so the error message is not exposed.",
       "ariaConditionalAttr_summary_fail_false": "This element has aria-errormessage but aria-invalid=\"false\", so the error message is not exposed.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "This element has aria-errormessage, but its aria-invalid=\"{{ariaInvalid}}\" is not a valid value (true, false, grammar or spelling). Browsers read it as \"true\", but other tools may not, so the error message may not be exposed.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Use aria-invalid=\"true\" (or \"grammar\" or \"spelling\"), so every tool exposes the error message.",
       "ariaConditionalAttr_lean_why_described": "The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.",
       "ariaConditionalAttr_lean_why_shown": "The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.",
       "ariaConditionalAttr_lean_caution_shown": "The text shown may be a standing hint rather than an error.",
@@ -44363,8 +44359,6 @@ const RUNTIME_CATALOG = {
       "ariaConditionalAttr_hint_fail": "Establecer aria-invalid en \"true\" (o \"grammar\"/\"spelling\") siempre que aria-errormessage deba exponerse a las tecnologías de apoyo.",
       "ariaConditionalAttr_summary_fail_missing": "Este elemento tiene aria-errormessage pero no aria-invalid, así que el mensaje de error no se expone.",
       "ariaConditionalAttr_summary_fail_false": "Este elemento tiene aria-errormessage pero aria-invalid=\"false\", así que el mensaje de error no se expone.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Este elemento tiene aria-errormessage, pero su aria-invalid=\"{{ariaInvalid}}\" no es un valor válido (true, false, grammar o spelling). Los navegadores lo leen como \"true\", pero otras herramientas puede que no, así que el mensaje de error puede no exponerse.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Usar aria-invalid=\"true\" (o \"grammar\" o \"spelling\"), para que todas las herramientas expongan el mensaje de error.",
       "ariaConditionalAttr_lean_why_described": "El mensaje de error también lo nombra aria-describedby, así que llega a las tecnologías de apoyo como descripción del campo.",
       "ariaConditionalAttr_lean_why_shown": "El mensaje de error se muestra con texto, pero aria-invalid no está establecido, así que las tecnologías de apoyo no lo reciben.",
       "ariaConditionalAttr_lean_caution_shown": "El texto mostrado puede ser una indicación permanente y no un error.",
@@ -46072,8 +46066,6 @@ const RUNTIME_CATALOG = {
       "ariaConditionalAttr_hint_fail": "Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.",
       "ariaConditionalAttr_summary_fail_missing": "Cet élément a aria-errormessage mais pas d’aria-invalid, le message d’erreur n’est donc pas exposé.",
       "ariaConditionalAttr_summary_fail_false": "Cet élément a aria-errormessage mais aria-invalid=\"false\", le message d’erreur n’est donc pas exposé.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Cet élément a aria-errormessage, mais son aria-invalid=\"{{ariaInvalid}}\" n’est pas une valeur valide (true, false, grammar ou spelling). Les navigateurs le lisent comme \"true\", mais d’autres outils peut-être pas, le message d’erreur risque donc de ne pas être exposé.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Utilisez aria-invalid=\"true\" (ou \"grammar\" ou \"spelling\"), pour que chaque outil expose le message d’erreur.",
       "ariaConditionalAttr_lean_why_described": "Le message d’erreur est aussi désigné par aria-describedby : il parvient aux technologies d’assistance comme description du champ.",
       "ariaConditionalAttr_lean_why_shown": "Le message d’erreur est affiché avec du texte, mais aria-invalid n’est pas défini : les technologies d’assistance ne le reçoivent pas.",
       "ariaConditionalAttr_lean_caution_shown": "Le texte affiché peut être une indication permanente plutôt qu’une erreur.",
@@ -47781,8 +47773,6 @@ const RUNTIME_CATALOG = {
       "ariaConditionalAttr_hint_fail": "aria-errormessage を支援技術に公開する必要があるときは、aria-invalid を \"true\" (または \"grammar\"/\"spelling\") に設定してください。",
       "ariaConditionalAttr_summary_fail_missing": "この要素には aria-errormessage がありますが aria-invalid がないため、エラーメッセージは公開されません。",
       "ariaConditionalAttr_summary_fail_false": "この要素には aria-errormessage がありますが aria-invalid=\"false\" のため、エラーメッセージは公開されません。",
-      "ariaConditionalAttr_summary_fail_invalidValue": "この要素には aria-errormessage がありますが、aria-invalid=\"{{ariaInvalid}}\" は有効な値 (true、false、grammar、spelling) ではありません。ブラウザーは \"true\" として扱いますが、他のツールはそうしない場合があり、エラーメッセージが公開されないおそれがあります。",
-      "ariaConditionalAttr_hint_fail_invalidValue": "どのツールでもエラーメッセージが公開されるよう、aria-invalid=\"true\" (または \"grammar\" か \"spelling\") を使ってください。",
       "ariaConditionalAttr_lean_why_described": "エラーメッセージは aria-describedby でも参照されているため、フィールドの説明として支援技術に届きます。",
       "ariaConditionalAttr_lean_why_shown": "エラーメッセージはテキスト付きで表示されていますが、aria-invalid が設定されていないため、支援技術には伝わりません。",
       "ariaConditionalAttr_lean_caution_shown": "表示されているテキストは、エラーではなく常設のヒントである可能性があります。",
@@ -63155,28 +63145,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const invalidValue = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
+    // Any other value but "false" is read as "true" (WAI-ARIA 1.2,
+    // aria-invalid: "Any value not recognized in the list of allowed values
+    // MUST be treated as if the value true had been provided"), so the error
+    // message is exposed. That the value is not one of aria-invalid's tokens
+    // (aria-invalid="yes") is aria-valid-attr-value's finding, not this one's.
+    const absentAttr = dom.getAttribute(el, 'aria-invalid') == null;
+    if (!absentAttr && invalidValue !== '' && invalidValue !== 'false') continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const lean = leanFor(el, errorMessageRef);
 
-    // Which case it is: no aria-invalid, aria-invalid="false", or a value
-    // that is none of aria-invalid's tokens (aria-invalid="yes"), which
-    // browsers read as "true" though the value is not valid.
+    // Which case it is: no aria-invalid, or aria-invalid="false" (an empty
+    // value counts as false).
     const absent = dom.getAttribute(el, 'aria-invalid') == null;
-    const otherValue = !absent && invalidValue !== '' && invalidValue !== 'false';
-    const variant = absent
-      ? 'missing'
-      : invalidValue === 'false'
-        ? 'false'
-        : otherValue
-          ? 'invalidValue'
-          : '';
+    const variant = absent ? 'missing' : invalidValue === 'false' ? 'false' : '';
     const SUMMARIES = {
       missing:
         'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.',
       false:
-        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.',
-      invalidValue: `This element has aria-errormessage, but its aria-invalid="${invalidValue}" is not a valid value (true, false, grammar or spelling). Browsers read it as "true", but other tools may not, so the error message may not be exposed.`
+        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.'
     };
 
     occurrences.push(
@@ -63184,18 +63172,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         summary: variant
           ? SUMMARIES[variant]
           : 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-        hint:
-          variant === 'invalidValue'
-            ? 'Use aria-invalid="true" (or "grammar" or "spelling"), so every tool exposes the error message.'
-            : 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
         i18n: {
           summaryKey: variant
             ? `ariaConditionalAttr_summary_fail_${variant}`
             : 'ariaConditionalAttr_summary_fail',
-          hintKey:
-            variant === 'invalidValue'
-              ? 'ariaConditionalAttr_hint_fail_invalidValue'
-              : 'ariaConditionalAttr_hint_fail',
+          hintKey: 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },
         uncertainty: {
@@ -112157,8 +112139,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaConditionalAttr_hint_fail": "Setzen Sie aria-invalid auf „true“ (oder „grammar“/„spelling“), wann immer aria-errormessage assistiven Technologien zur Verfügung gestellt werden soll.",
       "ariaConditionalAttr_summary_fail_missing": "Dieses Element hat aria-errormessage, aber kein aria-invalid, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
       "ariaConditionalAttr_summary_fail_false": "Dieses Element hat aria-errormessage, aber aria-invalid=\"false\", sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Dieses Element hat aria-errormessage, aber sein aria-invalid=\"{{ariaInvalid}}\" ist kein gültiger Wert (true, false, grammar oder spelling). Browser lesen ihn als \"true\", andere Werkzeuge aber vielleicht nicht, sodass die Fehlermeldung möglicherweise nicht zur Verfügung gestellt wird.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Verwenden Sie aria-invalid=\"true\" (oder \"grammar\" oder \"spelling\"), damit jedes Werkzeug die Fehlermeldung zur Verfügung stellt.",
       "ariaConditionalAttr_lean_why_described": "Die Fehlermeldung wird auch von aria-describedby benannt und erreicht assistive Technologien so als Beschreibung des Feldes.",
       "ariaConditionalAttr_lean_why_shown": "Die Fehlermeldung wird mit Text angezeigt, aber aria-invalid ist nicht gesetzt, sodass assistive Technologien sie nicht erhalten.",
       "ariaConditionalAttr_lean_caution_shown": "Der angezeigte Text kann ein ständiger Hinweis statt eines Fehlers sein.",
@@ -113866,8 +113846,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaConditionalAttr_hint_fail": "Set aria-invalid to \"true\" (or \"grammar\"/\"spelling\") whenever aria-errormessage should be exposed to assistive technology.",
       "ariaConditionalAttr_summary_fail_missing": "This element has aria-errormessage but no aria-invalid, so the error message is not exposed.",
       "ariaConditionalAttr_summary_fail_false": "This element has aria-errormessage but aria-invalid=\"false\", so the error message is not exposed.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "This element has aria-errormessage, but its aria-invalid=\"{{ariaInvalid}}\" is not a valid value (true, false, grammar or spelling). Browsers read it as \"true\", but other tools may not, so the error message may not be exposed.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Use aria-invalid=\"true\" (or \"grammar\" or \"spelling\"), so every tool exposes the error message.",
       "ariaConditionalAttr_lean_why_described": "The error message is also named by aria-describedby, so it reaches assistive technology as the field’s description.",
       "ariaConditionalAttr_lean_why_shown": "The error message is shown with text, but aria-invalid is not set, so assistive technology is not given it.",
       "ariaConditionalAttr_lean_caution_shown": "The text shown may be a standing hint rather than an error.",
@@ -115575,8 +115553,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaConditionalAttr_hint_fail": "Establecer aria-invalid en \"true\" (o \"grammar\"/\"spelling\") siempre que aria-errormessage deba exponerse a las tecnologías de apoyo.",
       "ariaConditionalAttr_summary_fail_missing": "Este elemento tiene aria-errormessage pero no aria-invalid, así que el mensaje de error no se expone.",
       "ariaConditionalAttr_summary_fail_false": "Este elemento tiene aria-errormessage pero aria-invalid=\"false\", así que el mensaje de error no se expone.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Este elemento tiene aria-errormessage, pero su aria-invalid=\"{{ariaInvalid}}\" no es un valor válido (true, false, grammar o spelling). Los navegadores lo leen como \"true\", pero otras herramientas puede que no, así que el mensaje de error puede no exponerse.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Usar aria-invalid=\"true\" (o \"grammar\" o \"spelling\"), para que todas las herramientas expongan el mensaje de error.",
       "ariaConditionalAttr_lean_why_described": "El mensaje de error también lo nombra aria-describedby, así que llega a las tecnologías de apoyo como descripción del campo.",
       "ariaConditionalAttr_lean_why_shown": "El mensaje de error se muestra con texto, pero aria-invalid no está establecido, así que las tecnologías de apoyo no lo reciben.",
       "ariaConditionalAttr_lean_caution_shown": "El texto mostrado puede ser una indicación permanente y no un error.",
@@ -117284,8 +117260,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaConditionalAttr_hint_fail": "Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.",
       "ariaConditionalAttr_summary_fail_missing": "Cet élément a aria-errormessage mais pas d’aria-invalid, le message d’erreur n’est donc pas exposé.",
       "ariaConditionalAttr_summary_fail_false": "Cet élément a aria-errormessage mais aria-invalid=\"false\", le message d’erreur n’est donc pas exposé.",
-      "ariaConditionalAttr_summary_fail_invalidValue": "Cet élément a aria-errormessage, mais son aria-invalid=\"{{ariaInvalid}}\" n’est pas une valeur valide (true, false, grammar ou spelling). Les navigateurs le lisent comme \"true\", mais d’autres outils peut-être pas, le message d’erreur risque donc de ne pas être exposé.",
-      "ariaConditionalAttr_hint_fail_invalidValue": "Utilisez aria-invalid=\"true\" (ou \"grammar\" ou \"spelling\"), pour que chaque outil expose le message d’erreur.",
       "ariaConditionalAttr_lean_why_described": "Le message d’erreur est aussi désigné par aria-describedby : il parvient aux technologies d’assistance comme description du champ.",
       "ariaConditionalAttr_lean_why_shown": "Le message d’erreur est affiché avec du texte, mais aria-invalid n’est pas défini : les technologies d’assistance ne le reçoivent pas.",
       "ariaConditionalAttr_lean_caution_shown": "Le texte affiché peut être une indication permanente plutôt qu’une erreur.",
@@ -118993,8 +118967,6 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "ariaConditionalAttr_hint_fail": "aria-errormessage を支援技術に公開する必要があるときは、aria-invalid を \"true\" (または \"grammar\"/\"spelling\") に設定してください。",
       "ariaConditionalAttr_summary_fail_missing": "この要素には aria-errormessage がありますが aria-invalid がないため、エラーメッセージは公開されません。",
       "ariaConditionalAttr_summary_fail_false": "この要素には aria-errormessage がありますが aria-invalid=\"false\" のため、エラーメッセージは公開されません。",
-      "ariaConditionalAttr_summary_fail_invalidValue": "この要素には aria-errormessage がありますが、aria-invalid=\"{{ariaInvalid}}\" は有効な値 (true、false、grammar、spelling) ではありません。ブラウザーは \"true\" として扱いますが、他のツールはそうしない場合があり、エラーメッセージが公開されないおそれがあります。",
-      "ariaConditionalAttr_hint_fail_invalidValue": "どのツールでもエラーメッセージが公開されるよう、aria-invalid=\"true\" (または \"grammar\" か \"spelling\") を使ってください。",
       "ariaConditionalAttr_lean_why_described": "エラーメッセージは aria-describedby でも参照されているため、フィールドの説明として支援技術に届きます。",
       "ariaConditionalAttr_lean_why_shown": "エラーメッセージはテキスト付きで表示されていますが、aria-invalid が設定されていないため、支援技術には伝わりません。",
       "ariaConditionalAttr_lean_caution_shown": "表示されているテキストは、エラーではなく常設のヒントである可能性があります。",

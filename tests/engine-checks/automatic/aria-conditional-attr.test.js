@@ -67,7 +67,13 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-conditional-attr-all-sce
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
 
   const expectedFailIds = ['aca_case_04', 'aca_case_05'];
-  const expectedNoOccIds = ['aca_case_01', 'aca_case_02', 'aca_case_03', 'aca_case_06'];
+  const expectedNoOccIds = [
+    'aca_case_01',
+    'aca_case_02',
+    'aca_case_03',
+    'aca_case_03b',
+    'aca_case_06'
+  ];
 
   for (const id of expectedFailIds) {
     assert.ok(hasOccurrenceForId(rule, id), `Expected occurrence for id="${id}"`);
@@ -130,21 +136,24 @@ function messageOccurrence(html, match) {
   return occ;
 }
 
-test(`${RULE_ID}: an aria-invalid value outside its tokens is called invalid, not missing`, () => {
-  const occ = messageOccurrence(
-    '<input aria-errormessage="e1" aria-invalid="yes"><span id="e1">Bad</span>',
-    'yes'
-  );
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_invalidValue');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail_invalidValue');
-  assert.strictEqual(
-    occ.summary,
-    'This element has aria-errormessage, but its aria-invalid="yes" is not a valid value (true, false, grammar or spelling). Browsers read it as "true", but other tools may not, so the error message may not be exposed.'
-  );
-  assert.strictEqual(
-    occ.hint,
-    'Use aria-invalid="true" (or "grammar" or "spelling"), so every tool exposes the error message.'
-  );
+test(`${RULE_ID}: an aria-invalid value outside its tokens is read as true, so it passes`, () => {
+  // WAI-ARIA 1.2: a value not in aria-invalid's list is treated as "true",
+  // so the error message is exposed. The value is aria-valid-attr-value's.
+  for (const value of ['yes', 'invalid', '1']) {
+    const result = runa11yCoreOnHtml(
+      `<!doctype html><html lang="en"><head><title>t</title></head><body><input aria-label="Email" aria-errormessage="e1" aria-invalid="${value}"><span id="e1">Bad</span></body></html>`,
+      { runOnly: [RULE_ID, 'aria-valid-attr-value'] }
+    );
+    const own = result.checksResults.find((r) => r.ruleId === RULE_ID);
+    assert.strictEqual(own.outcome, 'pass', value);
+    const valueRule = result.checksResults.find((r) => r.ruleId === 'aria-valid-attr-value');
+    assert.ok(
+      (valueRule.occurrences || []).some((o) =>
+        String(o.summary).includes(`aria-invalid="${value}"`)
+      ),
+      `aria-valid-attr-value reports aria-invalid="${value}"`
+    );
+  }
 });
 
 test(`${RULE_ID}: a missing aria-invalid is called missing`, () => {

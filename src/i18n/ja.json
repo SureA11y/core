@@ -1301,8 +1301,6 @@
   "ariaConditionalAttr_hint_fail": "aria-errormessage を支援技術に公開する必要があるときは、aria-invalid を \"true\" (または \"grammar\"/\"spelling\") に設定してください。",
   "ariaConditionalAttr_summary_fail_missing": "この要素には aria-errormessage がありますが aria-invalid がないため、エラーメッセージは公開されません。",
   "ariaConditionalAttr_summary_fail_false": "この要素には aria-errormessage がありますが aria-invalid=\"false\" のため、エラーメッセージは公開されません。",
-  "ariaConditionalAttr_summary_fail_invalidValue": "この要素には aria-errormessage がありますが、aria-invalid=\"{{ariaInvalid}}\" は有効な値 (true、false、grammar、spelling) ではありません。ブラウザーは \"true\" として扱いますが、他のツールはそうしない場合があり、エラーメッセージが公開されないおそれがあります。",
-  "ariaConditionalAttr_hint_fail_invalidValue": "どのツールでもエラーメッセージが公開されるよう、aria-invalid=\"true\" (または \"grammar\" か \"spelling\") を使ってください。",
   "ariaConditionalAttr_lean_why_described": "エラーメッセージは aria-describedby でも参照されているため、フィールドの説明として支援技術に届きます。",
   "ariaConditionalAttr_lean_why_shown": "エラーメッセージはテキスト付きで表示されていますが、aria-invalid が設定されていないため、支援技術には伝わりません。",
   "ariaConditionalAttr_lean_caution_shown": "表示されているテキストは、エラーではなく常設のヒントである可能性があります。",

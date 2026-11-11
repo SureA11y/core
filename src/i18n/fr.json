@@ -1301,8 +1301,6 @@
   "ariaConditionalAttr_hint_fail": "Définissez aria-invalid à « true » (ou « grammar »/« spelling ») chaque fois que aria-errormessage doit être exposé aux technologies d’assistance.",
   "ariaConditionalAttr_summary_fail_missing": "Cet élément a aria-errormessage mais pas d’aria-invalid, le message d’erreur n’est donc pas exposé.",
   "ariaConditionalAttr_summary_fail_false": "Cet élément a aria-errormessage mais aria-invalid=\"false\", le message d’erreur n’est donc pas exposé.",
-  "ariaConditionalAttr_summary_fail_invalidValue": "Cet élément a aria-errormessage, mais son aria-invalid=\"{{ariaInvalid}}\" n’est pas une valeur valide (true, false, grammar ou spelling). Les navigateurs le lisent comme \"true\", mais d’autres outils peut-être pas, le message d’erreur risque donc de ne pas être exposé.",
-  "ariaConditionalAttr_hint_fail_invalidValue": "Utilisez aria-invalid=\"true\" (ou \"grammar\" ou \"spelling\"), pour que chaque outil expose le message d’erreur.",
   "ariaConditionalAttr_lean_why_described": "Le message d’erreur est aussi désigné par aria-describedby : il parvient aux technologies d’assistance comme description du champ.",
   "ariaConditionalAttr_lean_why_shown": "Le message d’erreur est affiché avec du texte, mais aria-invalid n’est pas défini : les technologies d’assistance ne le reçoivent pas.",
   "ariaConditionalAttr_lean_caution_shown": "Le texte affiché peut être une indication permanente plutôt qu’une erreur.",
