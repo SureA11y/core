@@ -536,3 +536,29 @@ test(`${RULE_ID}: role="foo button" / role="COMBOBOX" are owned elsewhere, role=
   );
   assertRule(unknown, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: a fail says when its label is hidden, or a label beside it points at a missing id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label for="hidden-label" style="display:none">Name</label><input id="hidden-label">
+  <label for="emial">Email</label><input id="email">
+  <div><label for="phone">Phone</label><input></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.data.details.nameCause && o.html.includes(id));
+  assert.deepEqual(occ('id="hidden-label"').data.details.nameCause, {
+    cause: 'labelHidden',
+    text: 'Name',
+    hiddenBy: 'display: none',
+    element: 'label'
+  });
+  assert.equal(
+    occ('id="email"').hint,
+    'The <label for="emial"> "Email" points to an id no element has, so it labels nothing; this field\'s id is "email". Make the two match.'
+  );
+  const noId = rule.occurrences.find((o) => !/id=/.test(o.html));
+  assert.equal(noId.i18n.hintKey, 'nameCause_hint_labelForMissingNoId');
+  assert.equal(noId.i18n.params.forId, 'phone');
+});

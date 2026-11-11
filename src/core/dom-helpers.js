@@ -2055,6 +2055,203 @@ function createDomHelpers(opts) {
       params: { text, hiddenElement: element }
     };
   }
+  // Why an element that should have a name has none, where the page shows a
+  // cause a reader would not see from the element alone: the hint and its
+  // i18n fields for a name rule's fail, with details.nameCause, or null.
+  // Tried in turn: an aria-labelledby whose ids are all missing; a <label>
+  // of the field hidden from assistive technology; a <label for> beside the
+  // field whose id no element has (a typo); then, for an element named from
+  // its content (opts.content), text in it that is hidden, and content that
+  // is only an unnamed image.
+  const LEVENSHTEIN_MAX = 2;
+  function closeIds(a, b) {
+    a = lower(a);
+    b = lower(b);
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return false;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= LEVENSHTEIN_MAX;
+  }
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // What hides el (or an ancestor) from assistive technology, or null.
+  function hiddenBy(el) {
+    for (let n = el, i = 0; n && isElement(n) && i < 200; n = dom.parentElement(n), i++) {
+      if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') {
+        return { hiddenBy: 'aria-hidden="true"', element: n };
+      }
+      const cs = computedStyle(n) || {};
+      if (String(cs.display || '') === 'none') {
+        return { hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden' : 'display: none', element: n };
+      }
+      if (n === el && /^(hidden|collapse)$/.test(String(cs.visibility || ''))) {
+        return { hiddenBy: `visibility: ${cs.visibility}`, element: n };
+      }
+    }
+    return null;
+  }
+  function labelsOf(el) {
+    const out = [];
+    try {
+      const doc = dom.ownerDocument(el);
+      const id = dom.getAttribute(el, 'id');
+      if (id && doc) {
+        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+          if (dom.getAttribute(l, 'for') === id) out.push(l);
+        }
+      }
+      const wrap = dom.closest(el, 'label');
+      if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
+    } catch {
+      /* none */
+    }
+    return out;
+  }
+  const LABELABLE = /^(input|select|textarea|meter|output|progress|button)$/;
+  function nameCause(el, opts) {
+    const o = opts || {};
+    try {
+      if (!isElement(el)) return null;
+      const doc = dom.ownerDocument(el);
+      const root = dom.getRootNode(el) || doc;
+      const byId = (id) => {
+        try {
+          return (
+            (root && dom.get(root, 'getElementById') && dom.getElementById(root, id)) ||
+            (doc && dom.getElementById(doc, id)) ||
+            null
+          );
+        } catch {
+          return null;
+        }
+      };
+      const labelledby = trim(dom.getAttribute(el, 'aria-labelledby') || '');
+      if (labelledby) {
+        const ids = labelledby.split(/\s+/);
+        if (ids.every((id) => !byId(id))) {
+          const list = ids.map((id) => `"${id}"`).join(', ');
+          return {
+            hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyMissing',
+            params: { ids: list },
+            detail: { cause: 'labelledbyMissing', ids }
+          };
+        }
+      }
+      const tag = lower(dom.tagName(el) || '');
+      if (LABELABLE.test(tag)) {
+        for (const label of labelsOf(el)) {
+          const text = shortText(label);
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          const hid = hiddenBy(label);
+          if (!hid) continue;
+          const hiddenElement = lower(dom.tagName(hid.element) || '');
+          return {
+            hint: `Its label "${text}" is hidden from screen readers by ${hid.hiddenBy} on a <${hiddenElement}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.`,
+            hintKey: 'nameCause_hint_labelHidden',
+            params: { text, hiddenBy: hid.hiddenBy, hiddenElement },
+            detail: { cause: 'labelHidden', text, hiddenBy: hid.hiddenBy, element: hiddenElement }
+          };
+        }
+        if (!labelsOf(el).length && doc) {
+          const id = trim(dom.getAttribute(el, 'id') || '');
+          // A <label for> that labels nothing, beside the field or with an
+          // id one or two letters from the field's.
+          const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
+          const parent = dom.parentElement(el);
+          if (parent) near.add(dom.previousElementSibling(parent));
+          for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+            const forId = trim(dom.getAttribute(l, 'for') || '');
+            if (!forId || byId(forId)) continue;
+            const inParent = parent && dom.parentElement(l) === parent;
+            if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
+                  hintKey: 'nameCause_hint_labelForMissing',
+                  params: { forId, text, id },
+                  detail: { cause: 'labelForMissing', for: forId, text, id }
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id "${forId}".`,
+                  hintKey: 'nameCause_hint_labelForMissingNoId',
+                  params: { forId, text },
+                  detail: { cause: 'labelForMissing', for: forId, text, id: null }
+                };
+          }
+        }
+      }
+      if (!o.content) return null;
+      const hidden = hiddenNameText(el);
+      if (hidden) {
+        const h = hiddenNameTextHint(hidden);
+        return { ...h, detail: { cause: 'hiddenText', ...hidden } };
+      }
+      // Content that is only an image with no name: no text of its own.
+      if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
+      const imgs = [...dom.querySelectorAll(el, 'img, svg')];
+      if (imgs.length !== 1) return null;
+      const img = imgs[0];
+      if (hiddenBy(img)) return null;
+      if (lower(dom.tagName(img)) === 'img') {
+        if (
+          trim(dom.getAttribute(img, 'aria-label') || '') ||
+          dom.getAttribute(img, 'aria-labelledby')
+        ) {
+          return null;
+        }
+        const alt = dom.getAttribute(img, 'alt');
+        if (alt === null) {
+          return {
+            hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageNoAlt',
+            params: {},
+            detail: { cause: 'imageNoAlt' }
+          };
+        }
+        if (!trim(alt)) {
+          return {
+            hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageEmptyAlt',
+            params: {},
+            detail: { cause: 'imageEmptyAlt' }
+          };
+        }
+        return null;
+      }
+      const svgNamed =
+        trim(dom.getAttribute(img, 'aria-label') || '') ||
+        dom.getAttribute(img, 'aria-labelledby') ||
+        [...dom.querySelectorAll(img, 'title')].some((t) =>
+          HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
+        );
+      if (svgNamed) return null;
+      return {
+        hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+        hintKey: 'nameCause_hint_svgNoName',
+        params: {},
+        detail: { cause: 'svgNoName' }
+      };
+    } catch {
+      return null;
+    }
+  }
 
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
@@ -8836,6 +9033,7 @@ function createDomHelpers(opts) {
     internalsQuestion,
     hiddenNameText,
     hiddenNameTextHint,
+    nameCause,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

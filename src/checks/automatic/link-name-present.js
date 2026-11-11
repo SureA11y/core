@@ -332,30 +332,29 @@ function runInPage(ctx) {
 
       const tag = (dom.tagName(el) || '').toLowerCase();
 
-      // Text in its content hidden from assistive technology: the hint
-      // says so, as the text is there to see (helpers.hiddenNameText).
-      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+      // Why it has none, where the page shows a cause the reader would not
+      // see from the element alone (helpers.nameCause): the hint says so.
+      const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           // Human fallbacks (allowed)
           summary: 'This link has no accessible name.',
-          hint: hiddenHint
-            ? hiddenHint.hint
+          hint: cause
+            ? cause.hint
             : 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
 
           // Validator requires these keys to exist in the English dictionary
           i18n: {
             summaryKey: 'linkNamePresent_summary_fail',
-            hintKey: hiddenHint ? hiddenHint.hintKey : 'linkNamePresent_hint_fail',
-            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
+            hintKey: cause ? cause.hintKey : 'linkNamePresent_hint_fail',
+            params: { element: tag, ...(cause ? cause.params : {}) }
           },
 
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
-              ...(hiddenText ? { hiddenText } : {}),
+              ...(cause ? { nameCause: cause.detail } : {}),
               metrics: {
                 programmaticNameLength: programmaticName.trim().length,
                 contentNameLength: contentName.trim().length

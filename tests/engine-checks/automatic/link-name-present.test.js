@@ -471,7 +471,8 @@ test('link-name-present: a fail whose content text is hidden says what hides it'
     maxOccurrences: 1
   });
   const occ = rule.occurrences[0];
-  assert.deepEqual(occ.data.details.hiddenText, {
+  assert.deepEqual(occ.data.details.nameCause, {
+    cause: 'hiddenText',
     text: 'Cart',
     reason: 'displayNone',
     element: 'span'

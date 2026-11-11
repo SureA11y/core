@@ -257,17 +257,22 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This heading has no accessible name.',
-        hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+        hint: cause
+          ? cause.hint
+          : "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
           summaryKey: 'emptyHeading_summary_fail',
-          hintKey: 'emptyHeading_hint_fail',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'emptyHeading_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'HEADING_EMPTY' },
+          details: { reasonCode: 'HEADING_EMPTY', ...(cause ? { nameCause: cause.detail } : {}) },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

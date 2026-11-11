@@ -14807,6 +14807,203 @@ const createDomHelpers = (function createDomHelpers(opts) {
       params: { text, hiddenElement: element }
     };
   }
+  // Why an element that should have a name has none, where the page shows a
+  // cause a reader would not see from the element alone: the hint and its
+  // i18n fields for a name rule's fail, with details.nameCause, or null.
+  // Tried in turn: an aria-labelledby whose ids are all missing; a <label>
+  // of the field hidden from assistive technology; a <label for> beside the
+  // field whose id no element has (a typo); then, for an element named from
+  // its content (opts.content), text in it that is hidden, and content that
+  // is only an unnamed image.
+  const LEVENSHTEIN_MAX = 2;
+  function closeIds(a, b) {
+    a = lower(a);
+    b = lower(b);
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return false;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= LEVENSHTEIN_MAX;
+  }
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // What hides el (or an ancestor) from assistive technology, or null.
+  function hiddenBy(el) {
+    for (let n = el, i = 0; n && isElement(n) && i < 200; n = dom.parentElement(n), i++) {
+      if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') {
+        return { hiddenBy: 'aria-hidden="true"', element: n };
+      }
+      const cs = computedStyle(n) || {};
+      if (String(cs.display || '') === 'none') {
+        return { hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden' : 'display: none', element: n };
+      }
+      if (n === el && /^(hidden|collapse)$/.test(String(cs.visibility || ''))) {
+        return { hiddenBy: `visibility: ${cs.visibility}`, element: n };
+      }
+    }
+    return null;
+  }
+  function labelsOf(el) {
+    const out = [];
+    try {
+      const doc = dom.ownerDocument(el);
+      const id = dom.getAttribute(el, 'id');
+      if (id && doc) {
+        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+          if (dom.getAttribute(l, 'for') === id) out.push(l);
+        }
+      }
+      const wrap = dom.closest(el, 'label');
+      if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
+    } catch {
+      /* none */
+    }
+    return out;
+  }
+  const LABELABLE = /^(input|select|textarea|meter|output|progress|button)$/;
+  function nameCause(el, opts) {
+    const o = opts || {};
+    try {
+      if (!isElement(el)) return null;
+      const doc = dom.ownerDocument(el);
+      const root = dom.getRootNode(el) || doc;
+      const byId = (id) => {
+        try {
+          return (
+            (root && dom.get(root, 'getElementById') && dom.getElementById(root, id)) ||
+            (doc && dom.getElementById(doc, id)) ||
+            null
+          );
+        } catch {
+          return null;
+        }
+      };
+      const labelledby = trim(dom.getAttribute(el, 'aria-labelledby') || '');
+      if (labelledby) {
+        const ids = labelledby.split(/\s+/);
+        if (ids.every((id) => !byId(id))) {
+          const list = ids.map((id) => `"${id}"`).join(', ');
+          return {
+            hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyMissing',
+            params: { ids: list },
+            detail: { cause: 'labelledbyMissing', ids }
+          };
+        }
+      }
+      const tag = lower(dom.tagName(el) || '');
+      if (LABELABLE.test(tag)) {
+        for (const label of labelsOf(el)) {
+          const text = shortText(label);
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          const hid = hiddenBy(label);
+          if (!hid) continue;
+          const hiddenElement = lower(dom.tagName(hid.element) || '');
+          return {
+            hint: `Its label "${text}" is hidden from screen readers by ${hid.hiddenBy} on a <${hiddenElement}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.`,
+            hintKey: 'nameCause_hint_labelHidden',
+            params: { text, hiddenBy: hid.hiddenBy, hiddenElement },
+            detail: { cause: 'labelHidden', text, hiddenBy: hid.hiddenBy, element: hiddenElement }
+          };
+        }
+        if (!labelsOf(el).length && doc) {
+          const id = trim(dom.getAttribute(el, 'id') || '');
+          // A <label for> that labels nothing, beside the field or with an
+          // id one or two letters from the field's.
+          const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
+          const parent = dom.parentElement(el);
+          if (parent) near.add(dom.previousElementSibling(parent));
+          for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+            const forId = trim(dom.getAttribute(l, 'for') || '');
+            if (!forId || byId(forId)) continue;
+            const inParent = parent && dom.parentElement(l) === parent;
+            if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
+                  hintKey: 'nameCause_hint_labelForMissing',
+                  params: { forId, text, id },
+                  detail: { cause: 'labelForMissing', for: forId, text, id }
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id "${forId}".`,
+                  hintKey: 'nameCause_hint_labelForMissingNoId',
+                  params: { forId, text },
+                  detail: { cause: 'labelForMissing', for: forId, text, id: null }
+                };
+          }
+        }
+      }
+      if (!o.content) return null;
+      const hidden = hiddenNameText(el);
+      if (hidden) {
+        const h = hiddenNameTextHint(hidden);
+        return { ...h, detail: { cause: 'hiddenText', ...hidden } };
+      }
+      // Content that is only an image with no name: no text of its own.
+      if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
+      const imgs = [...dom.querySelectorAll(el, 'img, svg')];
+      if (imgs.length !== 1) return null;
+      const img = imgs[0];
+      if (hiddenBy(img)) return null;
+      if (lower(dom.tagName(img)) === 'img') {
+        if (
+          trim(dom.getAttribute(img, 'aria-label') || '') ||
+          dom.getAttribute(img, 'aria-labelledby')
+        ) {
+          return null;
+        }
+        const alt = dom.getAttribute(img, 'alt');
+        if (alt === null) {
+          return {
+            hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageNoAlt',
+            params: {},
+            detail: { cause: 'imageNoAlt' }
+          };
+        }
+        if (!trim(alt)) {
+          return {
+            hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageEmptyAlt',
+            params: {},
+            detail: { cause: 'imageEmptyAlt' }
+          };
+        }
+        return null;
+      }
+      const svgNamed =
+        trim(dom.getAttribute(img, 'aria-label') || '') ||
+        dom.getAttribute(img, 'aria-labelledby') ||
+        [...dom.querySelectorAll(img, 'title')].some((t) =>
+          HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
+        );
+      if (svgNamed) return null;
+      return {
+        hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+        hintKey: 'nameCause_hint_svgNoName',
+        params: {},
+        detail: { cause: 'svgNoName' }
+      };
+    } catch {
+      return null;
+    }
+  }
 
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
@@ -21588,6 +21785,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     internalsQuestion,
     hiddenNameText,
     hiddenNameTextHint,
+    nameCause,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
@@ -39618,6 +39816,10 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
       "autocompleteValid_summary_fail": "Dieser autocomplete-Wert wird von Browsern nicht für das automatische Ausfüllen erkannt.",
       "autocompleteValid_hint_fail": "Verwenden Sie \"on\", \"off\" oder gültige Autofill-Token, etwa \"shipping postal-code\" oder \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "„{{token}}“ ist kein Autofill-Token. Meinten Sie „{{suggestion}}“?",
+      "autocompleteValid_hint_fail_unknownToken": "„{{token}}“ ist kein Autofill-Token. Verwenden Sie einen Feldnamen wie „email“, „tel“ oder „postal-code“, wo zutreffend nach „shipping“ oder „billing“.",
+      "autocompleteValid_hint_fail_modality": "„{{token}}“ darf nur vor einem Kontaktfeld (email, tel, impp) stehen, nicht vor „{{field}}“.",
+      "autocompleteValid_hint_fail_order": "Seine Tokens sind Autofill-Tokens, aber nicht in einer Reihenfolge oder Anzahl, die Autofill akzeptiert: optional section-*, dann shipping oder billing, dann home, work, mobile, fax oder pager vor einem Kontaktfeld, dann ein Feldname, dann webauthn.",
       "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
       "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und Nutzenden damit den Passwortmanager oder die Zwischenablage nimmt, die ihnen das Merken oder erneute Eintippen ersparen.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -40108,6 +40310,13 @@ const RUNTIME_CATALOG = {
       "nameHiddenText_hint_displayNone": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit display: none, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit visibility: hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_ariaHidden": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit aria-hidden=\"true\", das ihn vor Screenreadern verbirgt, sodass er keinen Namen liefert. Entfernen Sie aria-hidden davon, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_labelledbyMissing": "Sein aria-labelledby verweist auf {{ids}}, die kein Element der Seite hat, sodass es keinen Namen liefert. Verweisen Sie auf die id des Elements, dessen Text es benennt, oder benennen Sie es mit aria-label.",
+      "nameCause_hint_labelHidden": "Seine Beschriftung „{{text}}“ ist durch {{hiddenBy}} an einem <{{hiddenElement}}> vor Screenreadern verborgen, sodass sie keinen Namen liefert. Machen Sie sie für Screenreader lesbar (eine visually-hidden-Klasse hält sie vom Bildschirm fern, aber lesbar), oder benennen Sie das Feld mit aria-label.",
+      "nameCause_hint_labelForMissing": "Das <label for=\"{{forId}}\"> „{{text}}“ verweist auf eine id, die kein Element hat, und beschriftet daher nichts; die id dieses Feldes ist „{{id}}“. Gleichen Sie beide an.",
+      "nameCause_hint_labelForMissingNoId": "Das <label for=\"{{forId}}\"> „{{text}}“ verweist auf eine id, die kein Element hat, und beschriftet daher nichts, und dieses Feld hat keine id. Geben Sie dem Feld die id „{{forId}}“.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit dem Attribut hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
@@ -41016,6 +41225,10 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
       "autocompleteValid_summary_fail": "This autocomplete value is not one that browsers recognize for autofill.",
       "autocompleteValid_hint_fail": "Use \"on\", \"off\", or valid autofill tokens, such as \"shipping postal-code\" or \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "\"{{token}}\" is not an autofill token. Did you mean \"{{suggestion}}\"?",
+      "autocompleteValid_hint_fail_unknownToken": "\"{{token}}\" is not an autofill token. Use a field name such as \"email\", \"tel\" or \"postal-code\", after \"shipping\" or \"billing\" where it applies.",
+      "autocompleteValid_hint_fail_modality": "\"{{token}}\" can come only before a contact field (email, tel, impp), not \"{{field}}\".",
+      "autocompleteValid_hint_fail_order": "Its tokens are autofill tokens, but not in an order or number autofill accepts: an optional section-*, then shipping or billing, then home, work, mobile, fax or pager before a contact field, then one field name, then webauthn.",
       "passwordPasteEnabled_title": "Authentication fields must not block pasting",
       "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would take away the password manager or clipboard that spares users from remembering or retyping it.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -41506,6 +41719,13 @@ const RUNTIME_CATALOG = {
       "nameHiddenText_hint_displayNone": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with display: none, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with visibility: hidden, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "nameHiddenText_hint_ariaHidden": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with aria-hidden=\"true\", which hides it from screen readers, so it gives no name. Remove aria-hidden from it, or name the element with aria-label.",
+      "nameCause_hint_labelledbyMissing": "Its aria-labelledby points to {{ids}}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.",
+      "nameCause_hint_labelHidden": "Its label \"{{text}}\" is hidden from screen readers by {{hiddenBy}} on a <{{hiddenElement}}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.",
+      "nameCause_hint_labelForMissing": "The <label for=\"{{forId}}\"> \"{{text}}\" points to an id no element has, so it labels nothing; this field's id is \"{{id}}\". Make the two match.",
+      "nameCause_hint_labelForMissingNoId": "The <label for=\"{{forId}}\"> \"{{text}}\" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id \"{{forId}}\".",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with the hidden attribute, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
       "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
@@ -42414,6 +42634,10 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
       "autocompleteValid_summary_fail": "Este valor de autocomplete no es uno que los navegadores reconozcan para el autorrelleno.",
       "autocompleteValid_hint_fail": "Usar \"on\", \"off\" o tokens de autorrelleno válidos, como \"shipping postal-code\" o \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "«{{token}}» no es un token de autocompletado. ¿Quería decir «{{suggestion}}»?",
+      "autocompleteValid_hint_fail_unknownToken": "«{{token}}» no es un token de autocompletado. Usar un nombre de campo como «email», «tel» o «postal-code», tras «shipping» o «billing» cuando corresponda.",
+      "autocompleteValid_hint_fail_modality": "«{{token}}» solo puede ir antes de un campo de contacto (email, tel, impp), no de «{{field}}».",
+      "autocompleteValid_hint_fail_order": "Sus tokens son de autocompletado, pero no en un orden o número que el autocompletado acepte: un section-* opcional, luego shipping o billing, luego home, work, mobile, fax o pager antes de un campo de contacto, luego un nombre de campo, luego webauthn.",
       "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
       "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que quitaría al usuario el gestor de contraseñas o el portapapeles que le evitan recordarlo o volver a escribirlo.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -42904,6 +43128,13 @@ const RUNTIME_CATALOG = {
       "nameHiddenText_hint_displayNone": "Su texto «{{text}}» está en un <{{hiddenElement}}> con display: none, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Su texto «{{text}}» está en un <{{hiddenElement}}> con visibility: hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_ariaHidden": "Su texto «{{text}}» está en un <{{hiddenElement}}> con aria-hidden=\"true\", que lo oculta a los lectores de pantalla, así que no da nombre. Quitar aria-hidden de él, o nombrar el elemento con aria-label.",
+      "nameCause_hint_labelledbyMissing": "Su aria-labelledby apunta a {{ids}}, que ningún elemento de la página tiene, así que no da nombre. Apuntarlo al id del elemento cuyo texto lo nombra, o nombrarlo con aria-label.",
+      "nameCause_hint_labelHidden": "Su etiqueta «{{text}}» está oculta a los lectores de pantalla por {{hiddenBy}} en un <{{hiddenElement}}>, así que no da nombre. Permitir que los lectores de pantalla la lean (una clase visually-hidden la mantiene fuera de la pantalla pero legible), o nombrar el campo con aria-label.",
+      "nameCause_hint_labelForMissing": "El <label for=\"{{forId}}\"> «{{text}}» apunta a un id que ningún elemento tiene, así que no etiqueta nada; el id de este campo es «{{id}}». Hacer que coincidan.",
+      "nameCause_hint_labelForMissingNoId": "El <label for=\"{{forId}}\"> «{{text}}» apunta a un id que ningún elemento tiene, así que no etiqueta nada, y este campo no tiene id. Dar al campo el id «{{forId}}».",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Su texto «{{text}}» está en un <{{hiddenElement}}> con el atributo hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
       "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
@@ -43812,6 +44043,10 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
       "autocompleteValid_summary_fail": "Cette valeur d’autocomplete n’est pas reconnue par les navigateurs pour le remplissage automatique.",
       "autocompleteValid_hint_fail": "Utilisez \"on\", \"off\" ou des jetons de remplissage automatique valides, comme \"shipping postal-code\" ou \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "« {{token}} » n’est pas un jeton de saisie automatique. Vouliez-vous dire « {{suggestion}} » ?",
+      "autocompleteValid_hint_fail_unknownToken": "« {{token}} » n’est pas un jeton de saisie automatique. Utilisez un nom de champ comme « email », « tel » ou « postal-code », après « shipping » ou « billing » le cas échéant.",
+      "autocompleteValid_hint_fail_modality": "« {{token}} » ne peut précéder qu’un champ de contact (email, tel, impp), pas « {{field}} ».",
+      "autocompleteValid_hint_fail_order": "Ses jetons sont des jetons de saisie automatique, mais pas dans un ordre ou un nombre qu’elle accepte : un section-* facultatif, puis shipping ou billing, puis home, work, mobile, fax ou pager avant un champ de contact, puis un nom de champ, puis webauthn.",
       "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
       "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui priverait l'utilisateur du gestionnaire de mots de passe ou du presse-papiers qui lui évitent de le mémoriser ou de le retaper.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -44302,6 +44537,13 @@ const RUNTIME_CATALOG = {
       "nameHiddenText_hint_displayNone": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec display: none, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec visibility: hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_ariaHidden": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec aria-hidden=\"true\", qui le masque aux lecteurs d’écran, il ne donne donc aucun nom. Retirez-en aria-hidden, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_labelledbyMissing": "Son aria-labelledby pointe vers {{ids}}, qu’aucun élément de la page ne porte, il ne donne donc aucun nom. Faites-le pointer vers l’id de l’élément dont le texte le nomme, ou nommez-le avec aria-label.",
+      "nameCause_hint_labelHidden": "Son étiquette « {{text}} » est masquée aux lecteurs d’écran par {{hiddenBy}} sur un <{{hiddenElement}}>, elle ne donne donc aucun nom. Laissez les lecteurs d’écran la lire (une classe visually-hidden la garde hors de l’écran mais lisible), ou nommez le champ avec aria-label.",
+      "nameCause_hint_labelForMissing": "Le <label for=\"{{forId}}\"> « {{text}} » pointe vers un id qu’aucun élément ne porte, il n’étiquette donc rien ; l’id de ce champ est « {{id}} ». Faites-les correspondre.",
+      "nameCause_hint_labelForMissingNoId": "Le <label for=\"{{forId}}\"> « {{text}} » pointe vers un id qu’aucun élément ne porte, il n’étiquette donc rien, et ce champ n’a pas d’id. Donnez au champ l’id « {{forId}} ».",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec l’attribut hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
       "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
@@ -45210,6 +45452,10 @@ const RUNTIME_CATALOG = {
       "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
       "autocompleteValid_summary_fail": "この autocomplete の値は、ブラウザーが自動入力に使える値ではありません。",
       "autocompleteValid_hint_fail": "\"on\"、\"off\"、または \"shipping postal-code\" や \"cc-number\" のような有効な自動入力トークンを使ってください。",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "「{{token}}」は自動入力のトークンではありません。「{{suggestion}}」のことですか?",
+      "autocompleteValid_hint_fail_unknownToken": "「{{token}}」は自動入力のトークンではありません。「email」「tel」「postal-code」などのフィールド名を使い、必要に応じて「shipping」または「billing」の後に置いてください。",
+      "autocompleteValid_hint_fail_modality": "「{{token}}」は連絡先フィールド (email、tel、impp) の前にしか置けません。「{{field}}」の前には置けません。",
+      "autocompleteValid_hint_fail_order": "トークンはどれも自動入力のトークンですが、受け付けられる順序または個数ではありません。省略可能な section-*、次に shipping または billing、次に連絡先フィールドの前の home、work、mobile、fax、pager、次にフィールド名 1 つ、最後に webauthn の順です。",
       "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
       "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、記憶や再入力をしなくて済むようにするパスワードマネージャーやクリップボードが使えなくなります。",
       "passwordPasteEnabled_summary_cantTell_cancelled": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
@@ -45700,6 +45946,13 @@ const RUNTIME_CATALOG = {
       "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{hiddenElement}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_labelledbyMissing": "aria-labelledby が参照する {{ids}} を持つ要素がページにないため、名前になりません。名前となるテキストを持つ要素の id を参照するか、aria-label で名前を付けてください。",
+      "nameCause_hint_labelHidden": "ラベル「{{text}}」は <{{hiddenElement}}> の {{hiddenBy}} によってスクリーンリーダーから隠されているため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label でフィールドに名前を付けてください。",
+      "nameCause_hint_labelForMissing": "<label for=\"{{forId}}\">「{{text}}」が参照する id を持つ要素がないため、何もラベル付けしていません。このフィールドの id は「{{id}}」です。両者を一致させてください。",
+      "nameCause_hint_labelForMissingNoId": "<label for=\"{{forId}}\">「{{text}}」が参照する id を持つ要素がないため、何もラベル付けしていません。また、このフィールドには id がありません。フィールドに id「{{forId}}」を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
       "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
@@ -65177,6 +65430,63 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return FIELD_NAMES.has(remaining[0]);
   }
 
+  // What is wrong with an invalid value, so the hint can name it: a token
+  // that is no autofill token (with the field name one or two letters from
+  // it, as a typo), a contact modality before a field that is no contact
+  // field, or known tokens in an order or number autofill doesn't take.
+  function editDistance(a, b) {
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length];
+  }
+  function diagnose(raw) {
+    const tokens = tokensOf(raw);
+    const known = (t) =>
+      FIELD_NAMES.has(t) ||
+      t.startsWith('section-') ||
+      t === 'shipping' ||
+      t === 'billing' ||
+      t === 'webauthn' ||
+      CONTACT_MODALITY.has(t);
+    const unknown = tokens.find((t) => !known(t));
+    if (unknown) {
+      let suggestion = '';
+      let best = 3;
+      for (const name of FIELD_NAMES) {
+        if (Math.abs(name.length - unknown.length) >= best) continue;
+        const d = editDistance(unknown, name);
+        if (d < best) {
+          best = d;
+          suggestion = name;
+        }
+      }
+      return {
+        kind: suggestion ? 'unknownToken_suggestion' : 'unknownToken',
+        token: unknown,
+        suggestion
+      };
+    }
+    const at = tokens.findIndex((t) => CONTACT_MODALITY.has(t));
+    if (at >= 0) {
+      const next = tokens[at + 1] || '';
+      const isContactField =
+        next === 'email' || next === 'impp' || next === 'tel' || next.startsWith('tel-');
+      if (!isContactField) return { kind: 'modality', token: tokens[at], field: next };
+    }
+    return { kind: 'order' };
+  }
+
   const nodes = helpers.queryAllSmart
     ? helpers.queryAllSmart('input, select, textarea')
     : helpers.queryAll('input, select, textarea');
@@ -65231,17 +65541,37 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    const why = diagnose(raw);
+    const hint = {
+      unknownToken_suggestion: `"${why.token}" is not an autofill token. Did you mean "${why.suggestion}"?`,
+      unknownToken: `"${why.token}" is not an autofill token. Use a field name such as "email", "tel" or "postal-code", after "shipping" or "billing" where it applies.`,
+      modality: `"${why.token}" can come only before a contact field (email, tel, impp), not "${why.field}".`,
+      order:
+        'Its tokens are autofill tokens, but not in an order or number autofill accepts: an optional section-*, then shipping or billing, then home, work, mobile, fax or pager before a contact field, then one field name, then webauthn.'
+    }[why.kind];
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This autocomplete value is not one that browsers recognize for autofill.',
-        hint: 'Use "on", "off", or valid autofill tokens, such as "shipping postal-code" or "cc-number".',
+        hint,
         i18n: {
           summaryKey: 'autocompleteValid_summary_fail',
-          hintKey: 'autocompleteValid_hint_fail',
-          params: { element: tag, value }
+          hintKey: `autocompleteValid_hint_fail_${why.kind}`,
+          params: {
+            element: tag,
+            value,
+            token: why.token || '',
+            suggestion: why.suggestion || '',
+            field: why.field || ''
+          }
         },
         data: {
-          details: { reasonCode: 'AUTOCOMPLETE_VALUE_INVALID', element: tag, value }
+          details: {
+            reasonCode: 'AUTOCOMPLETE_VALUE_INVALID',
+            element: tag,
+            value,
+            problem: why
+          }
         }
       })
     );
@@ -65979,25 +66309,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'binaryControlNamePresent_hint_fail',
-          params: { controlType, ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'binaryControlNamePresent_hint_fail',
+          params: { controlType, ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType,
             methodTried: res.method
           },
@@ -66326,26 +66655,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
-      // Text in its content hidden from assistive technology: the hint
-      // says so, as the text is there to see (helpers.hiddenNameText).
-      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+      // Why it has none, where the page shows a cause the reader would not
+      // see from the element alone (helpers.nameCause): the hint says so.
+      const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This button has no accessible name.',
-          hint: hiddenHint
-            ? hiddenHint.hint
+          hint: cause
+            ? cause.hint
             : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
             summaryKey: 'buttonNamePresent_summary_fail',
-            hintKey: hiddenHint ? hiddenHint.hintKey : 'buttonNamePresent_hint_fail',
-            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
+            hintKey: cause ? cause.hintKey : 'buttonNamePresent_hint_fail',
+            params: { element: tag, ...(cause ? cause.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
-              ...(hiddenText ? { hiddenText } : {}),
+              ...(cause ? { nameCause: cause.detail } : {}),
               metrics: {
                 trustedProgrammaticNameLength: trustedProgrammaticName.length,
                 inputValueNameLength: inputValueName.length,
@@ -75191,17 +75519,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This heading has no accessible name.',
-        hint: "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
+        hint: cause
+          ? cause.hint
+          : "Give the heading text, or name it with aria-label or aria-labelledby; remove it if it isn't needed.",
         i18n: {
           summaryKey: 'emptyHeading_summary_fail',
-          hintKey: 'emptyHeading_hint_fail',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'emptyHeading_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'HEADING_EMPTY' },
+          details: { reasonCode: 'HEADING_EMPTY', ...(cause ? { nameCause: cause.detail } : {}) },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })
@@ -77207,17 +77540,25 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       ariaPlaceholder = String(dom.getAttribute(el, 'aria-placeholder') || '').trim();
     } catch {}
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the field alone (helpers.nameCause): a hidden <label>, or a
+    // <label for> beside it pointing at an id no element has.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
-      hint: ariaPlaceholder
-        ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
-        : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
+      hint: cause
+        ? cause.hint
+        : ariaPlaceholder
+          ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
+          : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
-        hintKey: ariaPlaceholder
-          ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
-          : 'formControl_programmaticLabelPresent_hint_fail',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        hintKey: cause
+          ? cause.hintKey
+          : ariaPlaceholder
+            ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
+            : 'formControl_programmaticLabelPresent_hint_fail',
+        params: { element: (dom.tagName(el) || '').toLowerCase(), ...(cause ? cause.params : {}) }
       },
       data: {
         visibilityFilter: vf
@@ -77227,7 +77568,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           reasonCode: 'missing_programmatic_label',
           labelMethod: 'none',
           labelStrength: 'none',
-          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {})
+          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {}),
+          ...(cause ? { nameCause: cause.detail } : {})
         }
       }
     };
@@ -86210,30 +86552,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
 
       const tag = (dom.tagName(el) || '').toLowerCase();
 
-      // Text in its content hidden from assistive technology: the hint
-      // says so, as the text is there to see (helpers.hiddenNameText).
-      const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-      const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+      // Why it has none, where the page shows a cause the reader would not
+      // see from the element alone (helpers.nameCause): the hint says so.
+      const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           // Human fallbacks (allowed)
           summary: 'This link has no accessible name.',
-          hint: hiddenHint
-            ? hiddenHint.hint
+          hint: cause
+            ? cause.hint
             : 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
 
           // Validator requires these keys to exist in the English dictionary
           i18n: {
             summaryKey: 'linkNamePresent_summary_fail',
-            hintKey: hiddenHint ? hiddenHint.hintKey : 'linkNamePresent_hint_fail',
-            params: { element: tag, ...(hiddenHint ? hiddenHint.params : {}) }
+            hintKey: cause ? cause.hintKey : 'linkNamePresent_hint_fail',
+            params: { element: tag, ...(cause ? cause.params : {}) }
           },
 
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
-              ...(hiddenText ? { hiddenText } : {}),
+              ...(cause ? { nameCause: cause.detail } : {}),
               metrics: {
                 programmaticNameLength: programmaticName.trim().length,
                 contentNameLength: contentName.trim().length
@@ -88532,25 +88873,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This menu item has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'menuitemNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'menuitemNamePresent_hint_fail',
-          params: { role, ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'menuitemNamePresent_hint_fail',
+          params: { role, ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: role,
             methodTried: res.method
           },
@@ -90791,25 +91131,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'optionNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'optionNamePresent_hint_fail',
-          params: { controlType: 'option', ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'optionNamePresent_hint_fail',
+          params: { controlType: 'option', ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'option',
             methodTried: res.method
           },
@@ -95238,25 +95577,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This summary has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide summary text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'summaryNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'summaryNamePresent_hint_fail',
-          params: { ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'summaryNamePresent_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'summary',
             methodTried: res.method
           },
@@ -96278,25 +96616,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tab has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide tab text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tabNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'tabNamePresent_hint_fail',
-          params: { ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'tabNamePresent_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'tab',
             methodTried: res.method
           },
@@ -102902,20 +103239,19 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This tooltip has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide tooltip text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'tooltipNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'tooltipNamePresent_hint_fail',
-          params: { ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'tooltipNamePresent_hint_fail',
+          params: { ...(cause ? cause.params : {}) }
         },
         uncertainty: {
           code: 'spec-only',
@@ -102926,7 +103262,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'tooltip',
             methodTried: res.method
           },
@@ -103145,25 +103481,24 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         })()
       : null;
 
-    // Text in its content hidden from assistive technology: the hint
-    // says so, as the text is there to see (helpers.hiddenNameText).
-    const hiddenText = helpers.hiddenNameText ? helpers.hiddenNameText(el) : null;
-    const hiddenHint = hiddenText ? helpers.hiddenNameTextHint(hiddenText) : null;
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: hiddenHint
-          ? hiddenHint.hint
+        hint: cause
+          ? cause.hint
           : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'treeitemNamePresent_summary_fail',
-          hintKey: hiddenHint ? hiddenHint.hintKey : 'treeitemNamePresent_hint_fail',
-          params: { controlType: 'treeitem', ...(hiddenHint ? hiddenHint.params : {}) }
+          hintKey: cause ? cause.hintKey : 'treeitemNamePresent_hint_fail',
+          params: { controlType: 'treeitem', ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
-            ...(hiddenText ? { hiddenText } : {}),
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'treeitem',
             methodTried: res.method
           },
@@ -105064,6 +105399,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_description": "Prüft, ob ein nicht leeres autocomplete-Attribut „on“/„off“ oder eine wohlgeformte Liste von Autofill-Detail-Tokens ist.",
       "autocompleteValid_summary_fail": "Dieser autocomplete-Wert wird von Browsern nicht für das automatische Ausfüllen erkannt.",
       "autocompleteValid_hint_fail": "Verwenden Sie \"on\", \"off\" oder gültige Autofill-Token, etwa \"shipping postal-code\" oder \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "„{{token}}“ ist kein Autofill-Token. Meinten Sie „{{suggestion}}“?",
+      "autocompleteValid_hint_fail_unknownToken": "„{{token}}“ ist kein Autofill-Token. Verwenden Sie einen Feldnamen wie „email“, „tel“ oder „postal-code“, wo zutreffend nach „shipping“ oder „billing“.",
+      "autocompleteValid_hint_fail_modality": "„{{token}}“ darf nur vor einem Kontaktfeld (email, tel, impp) stehen, nicht vor „{{field}}“.",
+      "autocompleteValid_hint_fail_order": "Seine Tokens sind Autofill-Tokens, aber nicht in einer Reihenfolge oder Anzahl, die Autofill akzeptiert: optional section-*, dann shipping oder billing, dann home, work, mobile, fax oder pager vor einem Kontaktfeld, dann ein Feldname, dann webauthn.",
       "passwordPasteEnabled_title": "Authentifizierungsfelder dürfen das Einfügen nicht blockieren",
       "passwordPasteEnabled_description": "Prüft, dass ein Passwort- oder Einmalcode-Feld keinen Inline-Einfügehandler trägt, der den Vorgang abbricht und Nutzenden damit den Passwortmanager oder die Zwischenablage nimmt, die ihnen das Merken oder erneute Eintippen ersparen.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Dieses Authentifizierungsfeld hat einen Einfügehandler, dessen einzige Wirkung das Abbrechen des Vorgangs ist.",
@@ -105554,6 +105893,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameHiddenText_hint_displayNone": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit display: none, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit visibility: hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_ariaHidden": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit aria-hidden=\"true\", das ihn vor Screenreadern verbirgt, sodass er keinen Namen liefert. Entfernen Sie aria-hidden davon, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_labelledbyMissing": "Sein aria-labelledby verweist auf {{ids}}, die kein Element der Seite hat, sodass es keinen Namen liefert. Verweisen Sie auf die id des Elements, dessen Text es benennt, oder benennen Sie es mit aria-label.",
+      "nameCause_hint_labelHidden": "Seine Beschriftung „{{text}}“ ist durch {{hiddenBy}} an einem <{{hiddenElement}}> vor Screenreadern verborgen, sodass sie keinen Namen liefert. Machen Sie sie für Screenreader lesbar (eine visually-hidden-Klasse hält sie vom Bildschirm fern, aber lesbar), oder benennen Sie das Feld mit aria-label.",
+      "nameCause_hint_labelForMissing": "Das <label for=\"{{forId}}\"> „{{text}}“ verweist auf eine id, die kein Element hat, und beschriftet daher nichts; die id dieses Feldes ist „{{id}}“. Gleichen Sie beide an.",
+      "nameCause_hint_labelForMissingNoId": "Das <label for=\"{{forId}}\"> „{{text}}“ verweist auf eine id, die kein Element hat, und beschriftet daher nichts, und dieses Feld hat keine id. Geben Sie dem Feld die id „{{forId}}“.",
+      "nameCause_hint_imageNoAlt": "Sein einziger Inhalt ist ein Bild ohne alt-Attribut, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Sein einziger Inhalt ist ein Bild mit alt=\"\", das es als dekorativ kennzeichnet, sodass es keinen Namen liefert. Geben Sie dem Bild einen alt-Text, der sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
+      "nameCause_hint_svgNoName": "Sein einziger Inhalt ist ein <svg> ohne Namen (kein <title> und kein aria-label), sodass es keinen Namen liefert. Geben Sie dem svg einen <title> oder ein aria-label, das sagt, was es tut oder wohin es führt, oder benennen Sie das Element mit aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Sein Text „{{text}}“ steht in einem <{{hiddenElement}}> mit dem Attribut hidden, das ihn vor Screenreadern ebenso wie vor der Anzeige verbirgt, sodass er keinen Namen liefert. Machen Sie ihn für Screenreader lesbar (eine visually-hidden-Klasse hält ihn vom Bildschirm fern, aber lesbar), oder benennen Sie das Element mit aria-label.",
       "internals_summary_cantTell_state": "Dieses <{{element}}> ist ein benutzerdefiniertes Element, das {{attr}} vielleicht über ElementInternals setzt, was kein Skript lesen kann; ob es gesetzt ist, ließ sich daher nicht feststellen.",
       "internals_hint_cantTell_state": "Prüfen Sie den Zustand im Barrierefreiheitsbaum des Browsers; fehlt er dort, setzen Sie {{attr}} am Element."
@@ -106462,6 +106808,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_description": "Checks that a non-empty autocomplete attribute is \"on\"/\"off\" or a well-formed autofill detail token list.",
       "autocompleteValid_summary_fail": "This autocomplete value is not one that browsers recognize for autofill.",
       "autocompleteValid_hint_fail": "Use \"on\", \"off\", or valid autofill tokens, such as \"shipping postal-code\" or \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "\"{{token}}\" is not an autofill token. Did you mean \"{{suggestion}}\"?",
+      "autocompleteValid_hint_fail_unknownToken": "\"{{token}}\" is not an autofill token. Use a field name such as \"email\", \"tel\" or \"postal-code\", after \"shipping\" or \"billing\" where it applies.",
+      "autocompleteValid_hint_fail_modality": "\"{{token}}\" can come only before a contact field (email, tel, impp), not \"{{field}}\".",
+      "autocompleteValid_hint_fail_order": "Its tokens are autofill tokens, but not in an order or number autofill accepts: an optional section-*, then shipping or billing, then home, work, mobile, fax or pager before a contact field, then one field name, then webauthn.",
       "passwordPasteEnabled_title": "Authentication fields must not block pasting",
       "passwordPasteEnabled_description": "Checks that a password or one-time-code field carries no inline paste handler that cancels the paste, which would take away the password manager or clipboard that spares users from remembering or retyping it.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "This authentication field has a paste handler whose only effect is to cancel the paste.",
@@ -106952,6 +107302,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameHiddenText_hint_displayNone": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with display: none, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with visibility: hidden, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "nameHiddenText_hint_ariaHidden": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with aria-hidden=\"true\", which hides it from screen readers, so it gives no name. Remove aria-hidden from it, or name the element with aria-label.",
+      "nameCause_hint_labelledbyMissing": "Its aria-labelledby points to {{ids}}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.",
+      "nameCause_hint_labelHidden": "Its label \"{{text}}\" is hidden from screen readers by {{hiddenBy}} on a <{{hiddenElement}}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.",
+      "nameCause_hint_labelForMissing": "The <label for=\"{{forId}}\"> \"{{text}}\" points to an id no element has, so it labels nothing; this field's id is \"{{id}}\". Make the two match.",
+      "nameCause_hint_labelForMissingNoId": "The <label for=\"{{forId}}\"> \"{{text}}\" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id \"{{forId}}\".",
+      "nameCause_hint_imageNoAlt": "Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Its only content is an image with alt=\"\", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.",
+      "nameCause_hint_svgNoName": "Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Its text \"{{text}}\" is in a <{{hiddenElement}}> with the hidden attribute, which hides it from screen readers as well as from view, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the element with aria-label.",
       "internals_summary_cantTell_state": "This <{{element}}> is a custom element that may set {{attr}} through ElementInternals, which no script can read, so whether it is set could not be told.",
       "internals_hint_cantTell_state": "Check the state in the browser's accessibility tree; if it isn't there, set {{attr}} on the element."
@@ -107860,6 +108217,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_description": "Comprueba que un atributo autocomplete no vacío sea \"on\"/\"off\" o una lista de tokens de detalle de autocompletado bien formada.",
       "autocompleteValid_summary_fail": "Este valor de autocomplete no es uno que los navegadores reconozcan para el autorrelleno.",
       "autocompleteValid_hint_fail": "Usar \"on\", \"off\" o tokens de autorrelleno válidos, como \"shipping postal-code\" o \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "«{{token}}» no es un token de autocompletado. ¿Quería decir «{{suggestion}}»?",
+      "autocompleteValid_hint_fail_unknownToken": "«{{token}}» no es un token de autocompletado. Usar un nombre de campo como «email», «tel» o «postal-code», tras «shipping» o «billing» cuando corresponda.",
+      "autocompleteValid_hint_fail_modality": "«{{token}}» solo puede ir antes de un campo de contacto (email, tel, impp), no de «{{field}}».",
+      "autocompleteValid_hint_fail_order": "Sus tokens son de autocompletado, pero no en un orden o número que el autocompletado acepte: un section-* opcional, luego shipping o billing, luego home, work, mobile, fax o pager antes de un campo de contacto, luego un nombre de campo, luego webauthn.",
       "passwordPasteEnabled_title": "Los campos de autenticación no deben impedir pegar",
       "passwordPasteEnabled_description": "Comprueba que un campo de contraseña o de código de un solo uso no lleve un controlador de pegado en línea que cancele la acción, lo que quitaría al usuario el gestor de contraseñas o el portapapeles que le evitan recordarlo o volver a escribirlo.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Este campo de autenticación tiene un controlador de pegado cuyo único efecto es cancelar la acción.",
@@ -108350,6 +108711,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameHiddenText_hint_displayNone": "Su texto «{{text}}» está en un <{{hiddenElement}}> con display: none, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Su texto «{{text}}» está en un <{{hiddenElement}}> con visibility: hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_ariaHidden": "Su texto «{{text}}» está en un <{{hiddenElement}}> con aria-hidden=\"true\", que lo oculta a los lectores de pantalla, así que no da nombre. Quitar aria-hidden de él, o nombrar el elemento con aria-label.",
+      "nameCause_hint_labelledbyMissing": "Su aria-labelledby apunta a {{ids}}, que ningún elemento de la página tiene, así que no da nombre. Apuntarlo al id del elemento cuyo texto lo nombra, o nombrarlo con aria-label.",
+      "nameCause_hint_labelHidden": "Su etiqueta «{{text}}» está oculta a los lectores de pantalla por {{hiddenBy}} en un <{{hiddenElement}}>, así que no da nombre. Permitir que los lectores de pantalla la lean (una clase visually-hidden la mantiene fuera de la pantalla pero legible), o nombrar el campo con aria-label.",
+      "nameCause_hint_labelForMissing": "El <label for=\"{{forId}}\"> «{{text}}» apunta a un id que ningún elemento tiene, así que no etiqueta nada; el id de este campo es «{{id}}». Hacer que coincidan.",
+      "nameCause_hint_labelForMissingNoId": "El <label for=\"{{forId}}\"> «{{text}}» apunta a un id que ningún elemento tiene, así que no etiqueta nada, y este campo no tiene id. Dar al campo el id «{{forId}}».",
+      "nameCause_hint_imageNoAlt": "Su único contenido es una imagen sin atributo alt, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Su único contenido es una imagen con alt=\"\", que la marca como decorativa, así que no da nombre. Dar a la imagen un texto alt que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
+      "nameCause_hint_svgNoName": "Su único contenido es un <svg> sin nombre (sin <title> ni aria-label), así que no da nombre. Dar al svg un <title> o aria-label que diga qué hace o adónde lleva, o nombrar el elemento con aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Su texto «{{text}}» está en un <{{hiddenElement}}> con el atributo hidden, que lo oculta a los lectores de pantalla además de a la vista, así que no da nombre. Permitir que los lectores de pantalla lo lean (una clase visually-hidden lo mantiene fuera de la pantalla pero legible), o nombrar el elemento con aria-label.",
       "internals_summary_cantTell_state": "Este <{{element}}> es un elemento personalizado que puede establecer {{attr}} mediante ElementInternals, que ningún script puede leer, así que no se pudo saber si está establecido.",
       "internals_hint_cantTell_state": "Comprobar el estado en el árbol de accesibilidad del navegador; si no aparece, establecer {{attr}} en el elemento."
@@ -109258,6 +109626,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_description": "Vérifie qu’un attribut autocomplete non vide vaut « on »/« off » ou une liste de jetons d’auto-remplissage bien formée.",
       "autocompleteValid_summary_fail": "Cette valeur d’autocomplete n’est pas reconnue par les navigateurs pour le remplissage automatique.",
       "autocompleteValid_hint_fail": "Utilisez \"on\", \"off\" ou des jetons de remplissage automatique valides, comme \"shipping postal-code\" ou \"cc-number\".",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "« {{token}} » n’est pas un jeton de saisie automatique. Vouliez-vous dire « {{suggestion}} » ?",
+      "autocompleteValid_hint_fail_unknownToken": "« {{token}} » n’est pas un jeton de saisie automatique. Utilisez un nom de champ comme « email », « tel » ou « postal-code », après « shipping » ou « billing » le cas échéant.",
+      "autocompleteValid_hint_fail_modality": "« {{token}} » ne peut précéder qu’un champ de contact (email, tel, impp), pas « {{field}} ».",
+      "autocompleteValid_hint_fail_order": "Ses jetons sont des jetons de saisie automatique, mais pas dans un ordre ou un nombre qu’elle accepte : un section-* facultatif, puis shipping ou billing, puis home, work, mobile, fax ou pager avant un champ de contact, puis un nom de champ, puis webauthn.",
       "passwordPasteEnabled_title": "Les champs d'authentification ne doivent pas empêcher le collage",
       "passwordPasteEnabled_description": "Vérifie qu'un champ de mot de passe ou de code à usage unique ne porte pas de gestionnaire de collage en ligne qui annule l'action, ce qui priverait l'utilisateur du gestionnaire de mots de passe ou du presse-papiers qui lui évitent de le mémoriser ou de le retaper.",
       "passwordPasteEnabled_summary_cantTell_cancelled": "Ce champ d'authentification comporte un gestionnaire de collage dont le seul effet est d'annuler l'action.",
@@ -109748,6 +110120,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameHiddenText_hint_displayNone": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec display: none, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_visibilityHidden": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec visibility: hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_ariaHidden": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec aria-hidden=\"true\", qui le masque aux lecteurs d’écran, il ne donne donc aucun nom. Retirez-en aria-hidden, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_labelledbyMissing": "Son aria-labelledby pointe vers {{ids}}, qu’aucun élément de la page ne porte, il ne donne donc aucun nom. Faites-le pointer vers l’id de l’élément dont le texte le nomme, ou nommez-le avec aria-label.",
+      "nameCause_hint_labelHidden": "Son étiquette « {{text}} » est masquée aux lecteurs d’écran par {{hiddenBy}} sur un <{{hiddenElement}}>, elle ne donne donc aucun nom. Laissez les lecteurs d’écran la lire (une classe visually-hidden la garde hors de l’écran mais lisible), ou nommez le champ avec aria-label.",
+      "nameCause_hint_labelForMissing": "Le <label for=\"{{forId}}\"> « {{text}} » pointe vers un id qu’aucun élément ne porte, il n’étiquette donc rien ; l’id de ce champ est « {{id}} ». Faites-les correspondre.",
+      "nameCause_hint_labelForMissingNoId": "Le <label for=\"{{forId}}\"> « {{text}} » pointe vers un id qu’aucun élément ne porte, il n’étiquette donc rien, et ce champ n’a pas d’id. Donnez au champ l’id « {{forId}} ».",
+      "nameCause_hint_imageNoAlt": "Son seul contenu est une image sans attribut alt, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_imageEmptyAlt": "Son seul contenu est une image avec alt=\"\", qui la marque comme décorative, il ne donne donc aucun nom. Donnez à l’image un texte alt qui dit ce qu’elle fait ou où elle mène, ou nommez l’élément avec aria-label.",
+      "nameCause_hint_svgNoName": "Son seul contenu est un <svg> sans nom (ni <title> ni aria-label), il ne donne donc aucun nom. Donnez au svg un <title> ou un aria-label qui dit ce qu’il fait ou où il mène, ou nommez l’élément avec aria-label.",
       "nameHiddenText_hint_hiddenAttribute": "Son texte « {{text}} » est dans un <{{hiddenElement}}> avec l’attribut hidden, qui le masque aux lecteurs d’écran comme à la vue, il ne donne donc aucun nom. Laissez les lecteurs d’écran le lire (une classe visually-hidden le garde hors de l’écran mais lisible), ou nommez l’élément avec aria-label.",
       "internals_summary_cantTell_state": "Ce <{{element}}> est un élément personnalisé qui définit peut-être {{attr}} par ElementInternals, qu’aucun script ne peut lire : on n’a pas pu savoir s’il est défini.",
       "internals_hint_cantTell_state": "Vérifiez l’état dans l’arbre d’accessibilité du navigateur ; s’il n’y est pas, définissez {{attr}} sur l’élément."
@@ -110656,6 +111035,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "autocompleteValid_description": "空でない autocomplete 属性の値が \"on\"/\"off\"、または正しい形式の自動入力の詳細トークンのリストであるかを確認します。",
       "autocompleteValid_summary_fail": "この autocomplete の値は、ブラウザーが自動入力に使える値ではありません。",
       "autocompleteValid_hint_fail": "\"on\"、\"off\"、または \"shipping postal-code\" や \"cc-number\" のような有効な自動入力トークンを使ってください。",
+      "autocompleteValid_hint_fail_unknownToken_suggestion": "「{{token}}」は自動入力のトークンではありません。「{{suggestion}}」のことですか?",
+      "autocompleteValid_hint_fail_unknownToken": "「{{token}}」は自動入力のトークンではありません。「email」「tel」「postal-code」などのフィールド名を使い、必要に応じて「shipping」または「billing」の後に置いてください。",
+      "autocompleteValid_hint_fail_modality": "「{{token}}」は連絡先フィールド (email、tel、impp) の前にしか置けません。「{{field}}」の前には置けません。",
+      "autocompleteValid_hint_fail_order": "トークンはどれも自動入力のトークンですが、受け付けられる順序または個数ではありません。省略可能な section-*、次に shipping または billing、次に連絡先フィールドの前の home、work、mobile、fax、pager、次にフィールド名 1 つ、最後に webauthn の順です。",
       "passwordPasteEnabled_title": "認証用のフィールドで貼り付けを禁止してはならない",
       "passwordPasteEnabled_description": "パスワードやワンタイムコードのフィールドに、貼り付けを取り消すインラインの paste ハンドラーがないかを確認します。貼り付けが禁止されると、記憶や再入力をしなくて済むようにするパスワードマネージャーやクリップボードが使えなくなります。",
       "passwordPasteEnabled_summary_cantTell_cancelled": "この認証用フィールドには、貼り付けを取り消すことだけを行う paste ハンドラーがあります。",
@@ -111146,6 +111529,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "nameHiddenText_hint_displayNone": "テキスト「{{text}}」は display: none の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_visibilityHidden": "テキスト「{{text}}」は visibility: hidden の <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_ariaHidden": "テキスト「{{text}}」は aria-hidden=\"true\" の <{{hiddenElement}}> の中にあり、スクリーンリーダーから隠されるため、名前になりません。そこから aria-hidden を外すか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_labelledbyMissing": "aria-labelledby が参照する {{ids}} を持つ要素がページにないため、名前になりません。名前となるテキストを持つ要素の id を参照するか、aria-label で名前を付けてください。",
+      "nameCause_hint_labelHidden": "ラベル「{{text}}」は <{{hiddenElement}}> の {{hiddenBy}} によってスクリーンリーダーから隠されているため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label でフィールドに名前を付けてください。",
+      "nameCause_hint_labelForMissing": "<label for=\"{{forId}}\">「{{text}}」が参照する id を持つ要素がないため、何もラベル付けしていません。このフィールドの id は「{{id}}」です。両者を一致させてください。",
+      "nameCause_hint_labelForMissingNoId": "<label for=\"{{forId}}\">「{{text}}」が参照する id を持つ要素がないため、何もラベル付けしていません。また、このフィールドには id がありません。フィールドに id「{{forId}}」を付けてください。",
+      "nameCause_hint_imageNoAlt": "唯一の内容が alt 属性のない画像のため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_imageEmptyAlt": "唯一の内容が alt=\"\" の画像で、装飾として扱われるため、名前になりません。何をするか、どこへ移動するかを示す alt テキストを画像に付けるか、aria-label で要素に名前を付けてください。",
+      "nameCause_hint_svgNoName": "唯一の内容が名前のない <svg> (<title> も aria-label もない) のため、名前になりません。何をするか、どこへ移動するかを示す <title> または aria-label を svg に付けるか、aria-label で要素に名前を付けてください。",
       "nameHiddenText_hint_hiddenAttribute": "テキスト「{{text}}」は hidden 属性の付いた <{{hiddenElement}}> の中にあり、表示だけでなくスクリーンリーダーからも隠されるため、名前になりません。スクリーンリーダーが読めるようにする (visually-hidden クラスなら画面外に置いたまま読ませられます) か、aria-label で要素に名前を付けてください。",
       "internals_summary_cantTell_state": "この <{{element}}> はカスタム要素で、スクリプトから読めない ElementInternals で {{attr}} を設定している可能性があるため、設定されているかどうかを判断できませんでした。",
       "internals_hint_cantTell_state": "ブラウザーのアクセシビリティツリーで状態を確認してください。なければ、要素に {{attr}} を設定してください。"
@@ -126173,6 +126563,203 @@ const createDomHelpers = (function createDomHelpers(opts) {
       params: { text, hiddenElement: element }
     };
   }
+  // Why an element that should have a name has none, where the page shows a
+  // cause a reader would not see from the element alone: the hint and its
+  // i18n fields for a name rule's fail, with details.nameCause, or null.
+  // Tried in turn: an aria-labelledby whose ids are all missing; a <label>
+  // of the field hidden from assistive technology; a <label for> beside the
+  // field whose id no element has (a typo); then, for an element named from
+  // its content (opts.content), text in it that is hidden, and content that
+  // is only an unnamed image.
+  const LEVENSHTEIN_MAX = 2;
+  function closeIds(a, b) {
+    a = lower(a);
+    b = lower(b);
+    if (a === b) return true;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return false;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= LEVENSHTEIN_MAX;
+  }
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // What hides el (or an ancestor) from assistive technology, or null.
+  function hiddenBy(el) {
+    for (let n = el, i = 0; n && isElement(n) && i < 200; n = dom.parentElement(n), i++) {
+      if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') {
+        return { hiddenBy: 'aria-hidden="true"', element: n };
+      }
+      const cs = computedStyle(n) || {};
+      if (String(cs.display || '') === 'none') {
+        return { hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden' : 'display: none', element: n };
+      }
+      if (n === el && /^(hidden|collapse)$/.test(String(cs.visibility || ''))) {
+        return { hiddenBy: `visibility: ${cs.visibility}`, element: n };
+      }
+    }
+    return null;
+  }
+  function labelsOf(el) {
+    const out = [];
+    try {
+      const doc = dom.ownerDocument(el);
+      const id = dom.getAttribute(el, 'id');
+      if (id && doc) {
+        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+          if (dom.getAttribute(l, 'for') === id) out.push(l);
+        }
+      }
+      const wrap = dom.closest(el, 'label');
+      if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
+    } catch {
+      /* none */
+    }
+    return out;
+  }
+  const LABELABLE = /^(input|select|textarea|meter|output|progress|button)$/;
+  function nameCause(el, opts) {
+    const o = opts || {};
+    try {
+      if (!isElement(el)) return null;
+      const doc = dom.ownerDocument(el);
+      const root = dom.getRootNode(el) || doc;
+      const byId = (id) => {
+        try {
+          return (
+            (root && dom.get(root, 'getElementById') && dom.getElementById(root, id)) ||
+            (doc && dom.getElementById(doc, id)) ||
+            null
+          );
+        } catch {
+          return null;
+        }
+      };
+      const labelledby = trim(dom.getAttribute(el, 'aria-labelledby') || '');
+      if (labelledby) {
+        const ids = labelledby.split(/\s+/);
+        if (ids.every((id) => !byId(id))) {
+          const list = ids.map((id) => `"${id}"`).join(', ');
+          return {
+            hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyMissing',
+            params: { ids: list },
+            detail: { cause: 'labelledbyMissing', ids }
+          };
+        }
+      }
+      const tag = lower(dom.tagName(el) || '');
+      if (LABELABLE.test(tag)) {
+        for (const label of labelsOf(el)) {
+          const text = shortText(label);
+          if (!HIDDEN_TEXT_RE.test(text)) continue;
+          const hid = hiddenBy(label);
+          if (!hid) continue;
+          const hiddenElement = lower(dom.tagName(hid.element) || '');
+          return {
+            hint: `Its label "${text}" is hidden from screen readers by ${hid.hiddenBy} on a <${hiddenElement}>, so it gives no name. Let screen readers read it (a visually-hidden class keeps it off screen but read), or name the field with aria-label.`,
+            hintKey: 'nameCause_hint_labelHidden',
+            params: { text, hiddenBy: hid.hiddenBy, hiddenElement },
+            detail: { cause: 'labelHidden', text, hiddenBy: hid.hiddenBy, element: hiddenElement }
+          };
+        }
+        if (!labelsOf(el).length && doc) {
+          const id = trim(dom.getAttribute(el, 'id') || '');
+          // A <label for> that labels nothing, beside the field or with an
+          // id one or two letters from the field's.
+          const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
+          const parent = dom.parentElement(el);
+          if (parent) near.add(dom.previousElementSibling(parent));
+          for (const l of dom.querySelectorAll(doc, 'label[for]')) {
+            const forId = trim(dom.getAttribute(l, 'for') || '');
+            if (!forId || byId(forId)) continue;
+            const inParent = parent && dom.parentElement(l) === parent;
+            if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
+                  hintKey: 'nameCause_hint_labelForMissing',
+                  params: { forId, text, id },
+                  detail: { cause: 'labelForMissing', for: forId, text, id }
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing, and this field has no id. Give the field the id "${forId}".`,
+                  hintKey: 'nameCause_hint_labelForMissingNoId',
+                  params: { forId, text },
+                  detail: { cause: 'labelForMissing', for: forId, text, id: null }
+                };
+          }
+        }
+      }
+      if (!o.content) return null;
+      const hidden = hiddenNameText(el);
+      if (hidden) {
+        const h = hiddenNameTextHint(hidden);
+        return { ...h, detail: { cause: 'hiddenText', ...hidden } };
+      }
+      // Content that is only an image with no name: no text of its own.
+      if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
+      const imgs = [...dom.querySelectorAll(el, 'img, svg')];
+      if (imgs.length !== 1) return null;
+      const img = imgs[0];
+      if (hiddenBy(img)) return null;
+      if (lower(dom.tagName(img)) === 'img') {
+        if (
+          trim(dom.getAttribute(img, 'aria-label') || '') ||
+          dom.getAttribute(img, 'aria-labelledby')
+        ) {
+          return null;
+        }
+        const alt = dom.getAttribute(img, 'alt');
+        if (alt === null) {
+          return {
+            hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageNoAlt',
+            params: {},
+            detail: { cause: 'imageNoAlt' }
+          };
+        }
+        if (!trim(alt)) {
+          return {
+            hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+            hintKey: 'nameCause_hint_imageEmptyAlt',
+            params: {},
+            detail: { cause: 'imageEmptyAlt' }
+          };
+        }
+        return null;
+      }
+      const svgNamed =
+        trim(dom.getAttribute(img, 'aria-label') || '') ||
+        dom.getAttribute(img, 'aria-labelledby') ||
+        [...dom.querySelectorAll(img, 'title')].some((t) =>
+          HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
+        );
+      if (svgNamed) return null;
+      return {
+        hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+        hintKey: 'nameCause_hint_svgNoName',
+        params: {},
+        detail: { cause: 'svgNoName' }
+      };
+    } catch {
+      return null;
+    }
+  }
 
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
@@ -132954,6 +133541,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     internalsQuestion,
     hiddenNameText,
     hiddenNameTextHint,
+    nameCause,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
