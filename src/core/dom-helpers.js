@@ -2667,10 +2667,29 @@ function createDomHelpers(opts) {
     return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
   }
 
+  // Words authors write as a role that ARIA calls by another name, each
+  // with the role it means; only words with one clear meaning.
+  const ROLE_WORDS = {
+    icon: 'img',
+    image: 'img',
+    picture: 'img',
+    photo: 'img',
+    svg: 'img',
+    nav: 'navigation',
+    btn: 'button',
+    input: 'textbox',
+    textfield: 'textbox',
+    modal: 'dialog',
+    hyperlink: 'link',
+    anchor: 'link'
+  };
+
   // A role attribute that gives an element no role because none of its
   // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
   // as written, and the role its first near token misspells ('' when none
-  // is near). null when the element has no role attribute, an empty one,
+  // is near; then word and meant, when a token is a word for a role,
+  // ROLE_WORDS).
+  // null when the element has no role attribute, an empty one,
   // or one naming a role (an abstract one too, which aria-roles-valid
   // reports apart). The rules that fall back to the element's native role
   // say so, as the reader sees a role attribute in the markup.
@@ -2688,6 +2707,13 @@ function createDomHelpers(opts) {
     for (const t of tokens) {
       suggestion = nearestRole(t);
       if (suggestion) break;
+    }
+    if (suggestion) return { written: raw, suggestion };
+    // No near misspelling: a word authors often write for a role ARIA
+    // names otherwise (role="icon" for img) gives that role as meant.
+    for (const t of tokens) {
+      if (Object.prototype.hasOwnProperty.call(ROLE_WORDS, t))
+        return { written: raw, suggestion, word: t, meant: ROLE_WORDS[t] };
     }
     return { written: raw, suggestion };
   }

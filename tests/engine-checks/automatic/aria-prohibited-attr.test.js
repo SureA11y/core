@@ -385,3 +385,24 @@ test(`${RULE_ID}: a misspelled role is named as why the element has none`, () =>
   );
   assert.strictEqual(occ.hint, 'Did you mean role="button"? Fix the role, or remove aria-label.');
 });
+
+test(`${RULE_ID}: a word written for a role is answered with the ARIA role for it`, () => {
+  const html = `<!doctype html><html lang="en"><body><span id="star" role="icon" aria-label="Star"></span></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ARIA_ATTR_PROHIBITED_ROLELESS');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedAttr_hint_typoMeant');
+  assert.deepStrictEqual(occ.data.details.roleTypo, {
+    written: 'icon',
+    suggestion: '',
+    word: 'icon',
+    meant: 'img'
+  });
+  assert.strictEqual(
+    occ.hint,
+    'ARIA has no role "icon"; use role="img", the ARIA role for it, or remove aria-label.'
+  );
+});

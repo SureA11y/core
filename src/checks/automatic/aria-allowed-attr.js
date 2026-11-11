@@ -884,6 +884,20 @@ function runInPage(ctx) {
   // applicable count.
   function rolelessOccurrences(el, tag, allowed) {
     let seen = 0;
+    // Why the element has no role, where its markup alone doesn't show it:
+    // a <td> in a <table> whose role takes the cells' away, an <img> with
+    // alt="" (only such an img reaches here).
+    let tableRole = '';
+    if (tag === 'td') {
+      let table;
+      try {
+        table = dom.closest(el, 'table');
+      } catch {
+        table = null;
+      }
+      tableRole = table ? ariaHelpers.getExplicitRole(table) || '' : '';
+    }
+    const decorativeImg = tag === 'img';
     const attrs = dom.attributes(el);
     for (let i = 0; i < attrs.length; i++) {
       const name = String(attrs[i].name || '').toLowerCase();
@@ -923,13 +937,21 @@ function runInPage(ctx) {
 
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
+          summary: tableRole
+            ? `This <td> has no role because its <table> has role="${tableRole}", so nothing supports the ${name} attribute on it.`
+            : decorativeImg
+              ? `This <img> has alt="", which marks it as decorative, with no role, so nothing supports the ${name} attribute on it.`
+              : `<${tag}> has no ARIA role, so nothing supports the ${name} attribute on it.`,
           hint: `Remove ${name}, or move it to an element whose role supports it. A role-specific ARIA attribute on an element with no role is ignored by assistive technology.`,
           occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_fail_roleless',
+            summaryKey: tableRole
+              ? 'ariaAllowedAttr_summary_cantTell_rolelessCell'
+              : decorativeImg
+                ? 'ariaAllowedAttr_summary_cantTell_rolelessImg'
+                : 'ariaAllowedAttr_summary_fail_roleless',
             hintKey: 'ariaAllowedAttr_hint_fail_roleless',
-            params: { attr: name, element: tag }
+            params: { attr: name, element: tag, ...(tableRole ? { tableRole } : {}) }
           },
           uncertainty: {
             code: 'spec-only',
@@ -938,7 +960,13 @@ function runInPage(ctx) {
             evidence: { attribute: name, element: tag, status: 'not-supported-roleless' }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS', attr: name, element: tag }
+            details: {
+              reasonCode: 'ARIA_ATTR_NOT_ALLOWED_ROLELESS',
+              attr: name,
+              element: tag,
+              ...(tableRole ? { tableRole } : {}),
+              ...(decorativeImg ? { emptyAlt: true } : {})
+            }
           }
         })
       );
@@ -1039,6 +1067,23 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The attribute a role takes for the state an unsupported one was
+  // likely meant to give (aria-checked on a button means aria-pressed).
+  const STATE_ATTRS = {
+    button: { 'aria-checked': 'aria-pressed', 'aria-selected': 'aria-pressed' },
+    checkbox: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    radio: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    switch: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    menuitemcheckbox: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    menuitemradio: { 'aria-pressed': 'aria-checked', 'aria-selected': 'aria-checked' },
+    tab: { 'aria-pressed': 'aria-selected', 'aria-checked': 'aria-selected' },
+    option: { 'aria-pressed': 'aria-selected' }
+  };
+  function stateAttrFor(role, name) {
+    const map = Object.prototype.hasOwnProperty.call(STATE_ATTRS, role) ? STATE_ATTRS[role] : null;
+    return map && Object.prototype.hasOwnProperty.call(map, name) ? map[name] : '';
+  }
+
   for (const el of nodes) {
     if (!el || !dom.attributes(el)) continue;
 
@@ -1132,17 +1177,32 @@ function runInPage(ctx) {
       if (deprecated) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
-            summary: implicit
-              ? `${name} is deprecated on this <${element}>, whose implicit role is ${role} (still allowed, but discouraged).`
-              : 'This ARIA attribute is deprecated for this element’s role.',
-            hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
+            summary: typo
+              ? `This <${element}>’s role "${typo.written}" is not an ARIA role, so it is read as ${role}, on which ${name} is deprecated (still allowed, but discouraged).`
+              : implicit
+                ? `${name} is deprecated on this <${element}>, whose implicit role is ${role} (still allowed, but discouraged).`
+                : 'This ARIA attribute is deprecated for this element’s role.',
+            hint:
+              typo && typo.suggestion
+                ? `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${name}.`
+                : 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
             occurrenceOutcome: 'cantTell',
             i18n: {
-              summaryKey: implicit
-                ? 'ariaAllowedAttr_summary_cantTell_implicit'
-                : 'ariaAllowedAttr_summary_cantTell',
-              hintKey: 'ariaAllowedAttr_hint_cantTell',
-              params: { attr: name, role, element }
+              summaryKey: typo
+                ? 'ariaAllowedAttr_summary_cantTell_typo'
+                : implicit
+                  ? 'ariaAllowedAttr_summary_cantTell_implicit'
+                  : 'ariaAllowedAttr_summary_cantTell',
+              hintKey:
+                typo && typo.suggestion
+                  ? 'ariaAllowedAttr_hint_fail_typoNear'
+                  : 'ariaAllowedAttr_hint_cantTell',
+              params: {
+                attr: name,
+                role,
+                element,
+                ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {})
+              }
             },
             uncertainty: {
               code: 'spec-only',
@@ -1151,12 +1211,31 @@ function runInPage(ctx) {
               evidence: { attribute: name, role, status: 'deprecated-for-role' }
             },
             data: {
-              details: { reasonCode: 'ARIA_ATTR_DEPRECATED', attr: name, role }
+              details: {
+                reasonCode: 'ARIA_ATTR_DEPRECATED',
+                attr: name,
+                role,
+                ...(typo ? { roleTypo: typo } : {})
+              }
             }
           })
         );
         continue;
       }
+      // A role a word was written for (role="icon" for img) is offered only
+      // where it supports the attribute; the attribute the role takes for
+      // the state meant; or, on a cell, the grid whose cells can be selected.
+      const meant =
+        typo &&
+        !typo.suggestion &&
+        typo.meant &&
+        Object.prototype.hasOwnProperty.call(SUPPORTED_ATTRS_BY_ROLE, typo.meant) &&
+        SUPPORTED_ATTRS_BY_ROLE[typo.meant].indexOf(name) !== -1
+          ? typo.meant
+          : '';
+      const meantUnsupported = typo && !typo.suggestion && typo.meant && !meant ? typo.meant : '';
+      const substitute = typo ? '' : stateAttrFor(role, name);
+      const cellSelected = !typo && role === 'cell' && name === 'aria-selected';
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary: typo
@@ -1167,9 +1246,17 @@ function runInPage(ctx) {
           hint:
             typo && typo.suggestion
               ? `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${name}.`
-              : implicit
-                ? `Remove ${name}, or give the element a role that supports it.`
-                : 'Remove this attribute, or use a role that supports it.',
+              : meant
+                ? `ARIA has no role "${typo.word}"; use role="${meant}", the ARIA role for it, or remove ${name}.`
+                : meantUnsupported
+                  ? `ARIA has no role "${typo.word}"; the ARIA role for it, role="${meantUnsupported}", does not support ${name} either. Remove ${name}, or give the element a role that supports it.`
+                  : substitute
+                    ? `Did you mean ${substitute}? Role ${role} gives this state with ${substitute}, and ignores ${name}.`
+                    : cellSelected
+                      ? 'A cell can’t be selected: aria-selected is supported on a gridcell. If its cells can be selected, give the table role="grid"; otherwise remove aria-selected.'
+                      : implicit
+                        ? `Remove ${name}, or give the element a role that supports it.`
+                        : 'Remove this attribute, or use a role that supports it.',
           occurrenceOutcome: 'cantTell',
           i18n: {
             summaryKey: typo
@@ -1180,14 +1267,25 @@ function runInPage(ctx) {
             hintKey:
               typo && typo.suggestion
                 ? 'ariaAllowedAttr_hint_fail_typoNear'
-                : implicit
-                  ? 'ariaAllowedAttr_hint_fail_implicit'
-                  : 'ariaAllowedAttr_hint_fail',
+                : meant
+                  ? 'ariaAllowedAttr_hint_cantTell_typoMeant'
+                  : meantUnsupported
+                    ? 'ariaAllowedAttr_hint_cantTell_typoMeantUnsupported'
+                    : substitute
+                      ? 'ariaAllowedAttr_hint_cantTell_substitute'
+                      : cellSelected
+                        ? 'ariaAllowedAttr_hint_cantTell_cellSelected'
+                        : implicit
+                          ? 'ariaAllowedAttr_hint_fail_implicit'
+                          : 'ariaAllowedAttr_hint_fail',
             params: {
               attr: name,
               role,
               element,
-              ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {})
+              ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {}),
+              ...(meant ? { word: typo.word, meant } : {}),
+              ...(meantUnsupported ? { word: typo.word, meant: meantUnsupported } : {}),
+              ...(substitute ? { substitute } : {})
             }
           },
           uncertainty: {
@@ -1202,7 +1300,8 @@ function runInPage(ctx) {
               attr: name,
               role,
               ...(implicit ? { implicitRole: true } : {}),
-              ...(typo ? { roleTypo: typo } : {})
+              ...(typo ? { roleTypo: typo } : {}),
+              ...(substitute ? { substitute } : {})
             }
           }
         })

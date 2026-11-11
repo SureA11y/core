@@ -510,11 +510,22 @@ function runInPage(ctx) {
     // the element has none: the reader sees a role in the markup, so the
     // message says so, and the role it likely misspells.
     const typo = typeof helpers.roleTypo === 'function' ? helpers.roleTypo(el) : null;
-    const typoParams = typo ? { written: typo.written, suggestion: typo.suggestion } : {};
+    // With no near role, a word authors write for a role ARIA names
+    // otherwise (role="icon" for img) gives the role meant.
+    const typoParams = typo
+      ? {
+          written: typo.written,
+          suggestion: typo.suggestion,
+          ...(typo.meant ? { word: typo.word, meant: typo.meant } : {})
+        }
+      : {};
     const typoHint =
       typo && typo.suggestion
         ? (attr) => `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${attr}.`
-        : null;
+        : typo && typo.meant
+          ? (attr) =>
+              `ARIA has no role "${typo.word}"; use role="${typo.meant}", the ARIA role for it, or remove ${attr}.`
+          : null;
     const typoDetails = typo ? { roleTypo: typo } : {};
 
     for (const attr of present) {
@@ -537,7 +548,9 @@ function runInPage(ctx) {
                 ? 'ariaProhibitedAttr_summary_fail_roleDescription_typo'
                 : 'ariaProhibitedAttr_summary_fail_roleDescription',
               hintKey: typoHint
-                ? 'ariaProhibitedAttr_hint_typoNear'
+                ? typo.suggestion
+                  ? 'ariaProhibitedAttr_hint_typoNear'
+                  : 'ariaProhibitedAttr_hint_typoMeant'
                 : 'ariaProhibitedAttr_hint_fail_roleDescription',
               params: { attr, element: tag, ...typoParams }
             },
@@ -574,7 +587,9 @@ function runInPage(ctx) {
                 ? 'ariaProhibitedAttr_summary_cantTell_roleless_typo'
                 : 'ariaProhibitedAttr_summary_cantTell_roleless',
               hintKey: typoHint
-                ? 'ariaProhibitedAttr_hint_typoNear'
+                ? typo.suggestion
+                  ? 'ariaProhibitedAttr_hint_typoNear'
+                  : 'ariaProhibitedAttr_hint_typoMeant'
                 : 'ariaProhibitedAttr_hint_cantTell_roleless',
               params: { attr, element: tag, ...typoParams }
             },
@@ -610,7 +625,9 @@ function runInPage(ctx) {
                 ? 'ariaProhibitedAttr_summary_fail_roleless_typo'
                 : 'ariaProhibitedAttr_summary_fail_roleless',
               hintKey: typoHint
-                ? 'ariaProhibitedAttr_hint_typoNear'
+                ? typo.suggestion
+                  ? 'ariaProhibitedAttr_hint_typoNear'
+                  : 'ariaProhibitedAttr_hint_typoMeant'
                 : 'ariaProhibitedAttr_hint_fail_roleless',
               params: { attr, element: tag, ...typoParams }
             },

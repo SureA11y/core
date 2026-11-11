@@ -666,12 +666,75 @@ test(`${RULE_ID}: a misspelled role is named, with the role it likely meant`, ()
 });
 
 test(`${RULE_ID}: an implicit role is named as the element’s, not as a role attribute`, () => {
-  const occ = messageOccurrence('<button aria-checked="true">B</button>', 'aria-checked');
+  const occ = messageOccurrence('<button aria-valuenow="3">B</button>', 'aria-valuenow');
   assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedAttr_summary_fail_implicit');
   assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedAttr_hint_fail_implicit');
   assert.strictEqual(
     occ.summary,
-    'aria-checked is not permitted on this <button>, whose implicit role button does not support it.'
+    'aria-valuenow is not permitted on this <button>, whose implicit role button does not support it.'
   );
-  assert.strictEqual(occ.hint, 'Remove aria-checked, or give the element a role that supports it.');
+  assert.strictEqual(
+    occ.hint,
+    'Remove aria-valuenow, or give the element a role that supports it.'
+  );
+});
+
+test(`${RULE_ID}: the hint gives the attribute a role takes for the state meant`, () => {
+  const button = messageOccurrence('<button aria-checked="true">B</button>', 'aria-checked');
+  assert.strictEqual(button.i18n.hintKey, 'ariaAllowedAttr_hint_cantTell_substitute');
+  assert.strictEqual(button.data.details.substitute, 'aria-pressed');
+  assert.strictEqual(
+    button.hint,
+    'Did you mean aria-pressed? Role button gives this state with aria-pressed, and ignores aria-checked.'
+  );
+  const checkbox = messageOccurrence(
+    '<div role="checkbox" tabindex="0" aria-checked="true" aria-pressed="true">C</div>',
+    'aria-pressed'
+  );
+  assert.strictEqual(checkbox.i18n.params.substitute, 'aria-checked');
+  const cell = messageOccurrence(
+    '<table><tr><td aria-selected="true">y</td></tr></table>',
+    'aria-selected'
+  );
+  assert.strictEqual(cell.i18n.hintKey, 'ariaAllowedAttr_hint_cantTell_cellSelected');
+});
+
+test(`${RULE_ID}: an element with no role says why it has none`, () => {
+  const td = messageOccurrence(
+    '<table role="presentation"><tr><td aria-selected="true">x</td></tr></table>',
+    'aria-selected'
+  );
+  assert.strictEqual(td.data.details.reasonCode, 'ARIA_ATTR_NOT_ALLOWED_ROLELESS');
+  assert.strictEqual(td.i18n.summaryKey, 'ariaAllowedAttr_summary_cantTell_rolelessCell');
+  assert.strictEqual(
+    td.summary,
+    'This <td> has no role because its <table> has role="presentation", so nothing supports the aria-selected attribute on it.'
+  );
+  const img = messageOccurrence('<img src="x.png" alt="" aria-expanded="true">', 'aria-expanded');
+  assert.strictEqual(img.i18n.summaryKey, 'ariaAllowedAttr_summary_cantTell_rolelessImg');
+  assert.strictEqual(img.data.details.emptyAlt, true);
+});
+
+test(`${RULE_ID}: a deprecated attribute names a misspelled role, and a word for a role is answered`, () => {
+  const dep = messageOccurrence('<div role="buton" aria-haspopup="true">z</div>', 'aria-haspopup');
+  assert.strictEqual(dep.data.details.reasonCode, 'ARIA_ATTR_DEPRECATED');
+  assert.strictEqual(dep.i18n.summaryKey, 'ariaAllowedAttr_summary_cantTell_typo');
+  assert.strictEqual(
+    dep.summary,
+    'This <div>’s role "buton" is not an ARIA role, so it is read as generic, on which aria-haspopup is deprecated (still allowed, but discouraged).'
+  );
+  assert.strictEqual(
+    dep.hint,
+    'Did you mean role="button"? Fix the role, or remove aria-haspopup.'
+  );
+
+  const btn = messageOccurrence('<div role="btn" aria-pressed="true">z</div>', 'aria-pressed');
+  assert.strictEqual(btn.i18n.hintKey, 'ariaAllowedAttr_hint_cantTell_typoMeant');
+  assert.strictEqual(
+    btn.hint,
+    'ARIA has no role "btn"; use role="button", the ARIA role for it, or remove aria-pressed.'
+  );
+  const icon = messageOccurrence('<div role="icon" aria-pressed="true">z</div>', 'aria-pressed');
+  assert.strictEqual(icon.i18n.hintKey, 'ariaAllowedAttr_hint_cantTell_typoMeantUnsupported');
+  assert.strictEqual(icon.i18n.params.meant, 'img');
 });
