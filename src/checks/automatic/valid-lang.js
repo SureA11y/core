@@ -251,22 +251,36 @@ function runInPage(ctx) {
     const wellFormed = /^[a-zA-Z]{2,8}$/.test(subtag);
     const setsDefault = setsDefaultLanguage(el);
 
+    // An almost-right value (en_US, jp, eng): the hint gives the tag it was
+    // meant to be (helpers.langTagFix).
+    const fix = typeof helpers.langTagFix === 'function' ? helpers.langTagFix(raw) : null;
+    const fixHints = {
+      underscore: `Language tags use a hyphen, not an underscore: lang="${fix && fix.suggestion}".`,
+      country: `"${subtag}" is a country code, not a language code: for the language, use lang="${fix && fix.suggestion}".`,
+      alpha3: `"${subtag}" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="${fix && fix.suggestion}".`
+    };
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: wellFormed
           ? `This lang attribute value ("${raw}") is well formed, but "${subtag}" names no known language (it is not in the IANA Language Subtag Registry).`
           : `This lang value ("${raw}") is not a valid language tag.`,
-        hint: 'Use a valid language tag, such as "fr" or "es-MX".',
+        hint: fix ? fixHints[fix.kind] : 'Use a valid language tag, such as "fr" or "es-MX".',
         i18n: {
           summaryKey: wellFormed ? 'validLang_summary_unknown' : 'validLang_summary_fail',
-          hintKey: 'validLang_hint_fail',
-          params: { element: tag, value: raw, subtag }
+          hintKey: fix ? `validLang_hint_fail_${fix.kind}` : 'validLang_hint_fail',
+          params: {
+            element: tag,
+            value: raw,
+            subtag,
+            ...(fix ? { suggestion: fix.suggestion } : {})
+          }
         },
         data: {
           details: {
             reasonCode: setsDefault ? 'DEFAULT_LANG_INVALID' : 'ELEMENT_LANG_INVALID',
             element: tag,
-            value: raw
+            value: raw,
+            ...(fix ? { suggestion: fix.suggestion, fixKind: fix.kind } : {})
           }
         }
       })

@@ -2514,6 +2514,70 @@ function createDomHelpers(opts) {
     };
   }
 
+  // The language tag an almost-right lang value was meant to be, for a
+  // message: { kind, suggestion }, kind 'underscore' (en_US, a POSIX locale),
+  // 'country' (jp, a country code used as a language code) or 'alpha3' (eng,
+  // the ISO 639-2 code of a language with a two-letter one); null when no
+  // such fix gives a valid tag.
+  const LANG_FROM_COUNTRY = {
+    jp: 'ja',
+    cz: 'cs',
+    dk: 'da',
+    gr: 'el',
+    cn: 'zh',
+    ua: 'uk',
+    kr: 'ko',
+    il: 'he',
+    vn: 'vi'
+  };
+  const LANG_FROM_ALPHA3 = {
+    ara: 'ar',
+    ces: 'cs',
+    chi: 'zh',
+    cze: 'cs',
+    dan: 'da',
+    deu: 'de',
+    dut: 'nl',
+    ell: 'el',
+    eng: 'en',
+    fin: 'fi',
+    fra: 'fr',
+    fre: 'fr',
+    ger: 'de',
+    gre: 'el',
+    heb: 'he',
+    hin: 'hi',
+    ita: 'it',
+    jpn: 'ja',
+    kor: 'ko',
+    nld: 'nl',
+    nor: 'no',
+    pol: 'pl',
+    por: 'pt',
+    rus: 'ru',
+    spa: 'es',
+    swe: 'sv',
+    tur: 'tr',
+    ukr: 'uk',
+    zho: 'zh'
+  };
+  function langTagFix(value) {
+    const raw = trim(value);
+    if (!raw) return null;
+    if (raw.includes('_')) {
+      const fixed = raw.replace(/_/g, '-');
+      return isValidLanguageTag(fixed) ? { kind: 'underscore', suggestion: fixed } : null;
+    }
+    const parts = raw.split('-');
+    const primary = lower(parts[0]);
+    const own = (map) => Object.prototype.hasOwnProperty.call(map, primary);
+    const kind = own(LANG_FROM_COUNTRY) ? 'country' : own(LANG_FROM_ALPHA3) ? 'alpha3' : '';
+    if (!kind) return null;
+    const code = kind === 'country' ? LANG_FROM_COUNTRY[primary] : LANG_FROM_ALPHA3[primary];
+    const suggestion = [code].concat(parts.slice(1)).join('-');
+    return isValidLanguageTag(suggestion) ? { kind, suggestion } : null;
+  }
+
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
   // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
@@ -9295,6 +9359,7 @@ function createDomHelpers(opts) {
     hiddenNameText,
     hiddenNameTextHint,
     nameCause,
+    langTagFix,
     hiddenCause: hiddenBy,
     getTextFromIdRefsIdrefEligible,
 
