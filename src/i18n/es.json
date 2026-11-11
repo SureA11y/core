@@ -27,6 +27,8 @@
   "canvas_textAltPresent_hint_fail": "Agregar texto alternativo dentro del <canvas>, o darle nombre con aria-label o aria-labelledby.",
   "canvas_textAltPresent_summary_fail_roleImg": "Este <canvas role=\"img\"> no tiene nombre accesible; con role=\"img\" su contenido alternativo no cuenta.",
   "canvas_textAltPresent_hint_fail_roleImg": "Nombrarlo con aria-label o aria-labelledby, o quitar role=\"img\" para que su contenido alternativo sirva de alternativa textual.",
+  "canvas_textAltPresent_hint_fail_describedby": "Su aria-describedby añade una descripción, no un nombre. Darle nombre con aria-labelledby=\"{{ids}}\" en su lugar, o agregar texto alternativo dentro del <canvas>.",
+  "canvas_textAltPresent_hint_fail_roleImgDescribedby": "Su aria-describedby añade una descripción, no un nombre. Nombrarlo con aria-labelledby=\"{{ids}}\" en su lugar, o con aria-label.",
   "svg_textAltPresent_title": "<svg> debe proporcionar una alternativa textual",
   "svg_textAltPresent_description": "Comprueba que los elementos <svg> en línea proporcionen una alternativa textual mediante un elemento <title> o un nombre ARIA (un elemento <desc> por sí solo no cuenta).",
   "svg_textAltPresent_summary_fail": "Este <svg> no tiene alternativa textual.",

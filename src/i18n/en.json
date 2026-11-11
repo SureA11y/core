@@ -27,6 +27,8 @@
   "canvas_textAltPresent_hint_fail": "Add fallback text inside the <canvas>, or name it with aria-label or aria-labelledby.",
   "canvas_textAltPresent_summary_fail_roleImg": "This <canvas role=\"img\"> has no accessible name; with role=\"img\" its fallback content does not count.",
   "canvas_textAltPresent_hint_fail_roleImg": "Name it with aria-label or aria-labelledby, or remove role=\"img\" so that its fallback content can serve as the text alternative.",
+  "canvas_textAltPresent_hint_fail_describedby": "Its aria-describedby adds a description, not a name. Name it with aria-labelledby=\"{{ids}}\" instead, or add fallback text inside the <canvas>.",
+  "canvas_textAltPresent_hint_fail_roleImgDescribedby": "Its aria-describedby adds a description, not a name. Name it with aria-labelledby=\"{{ids}}\" instead, or with aria-label.",
   "svg_textAltPresent_title": "<svg> must provide a text alternative",
   "svg_textAltPresent_description": "Checks that inline <svg> elements provide a text alternative via a <title> element or an ARIA name (a <desc> element alone does not count).",
   "svg_textAltPresent_summary_fail": "This <svg> has no text alternative.",

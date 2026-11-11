@@ -27,6 +27,8 @@
   "canvas_textAltPresent_hint_fail": "<canvas> の中に代替テキストを入れるか、aria-label または aria-labelledby で名前を付けてください。",
   "canvas_textAltPresent_summary_fail_roleImg": "この <canvas role=\"img\"> にはアクセシブルな名前がありません。role=\"img\" があると、フォールバックコンテンツは名前になりません。",
   "canvas_textAltPresent_hint_fail_roleImg": "aria-label か aria-labelledby で名前を付けるか、role=\"img\" を削除してフォールバックコンテンツがテキストによる代替として機能するようにしてください。",
+  "canvas_textAltPresent_hint_fail_describedby": "aria-describedby が付けるのは説明で、名前ではありません。代わりに aria-labelledby=\"{{ids}}\" で名前を付けるか、<canvas> の中に代替テキストを入れてください。",
+  "canvas_textAltPresent_hint_fail_roleImgDescribedby": "aria-describedby が付けるのは説明で、名前ではありません。代わりに aria-labelledby=\"{{ids}}\" か aria-label で名前を付けてください。",
   "svg_textAltPresent_title": "<svg> にはテキストによる代替が必要",
   "svg_textAltPresent_description": "インライン <svg> 要素に、<title> 要素または ARIA による名前でテキストによる代替があるかを確認します (このチェックでは <desc> 要素だけでは不十分です)。",
   "svg_textAltPresent_summary_fail": "この <svg> にはテキストによる代替がありません。",
