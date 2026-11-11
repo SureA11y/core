@@ -445,6 +445,48 @@ function runInPage(ctx) {
     };
   }
 
+  // Text drawn in a color other than the one its CSS gives, faded by the
+  // opacity of itself or an ancestor, or by its color's own alpha: the
+  // summary names the color the CSS gives and what fades it
+  // (helpers.contrast.describeFade). { params, detail }, or null where the
+  // drawn color is the CSS one.
+  function fadeNote(el, fgHex) {
+    const C = helpers.contrast;
+    const f = C && typeof C.describeFade === 'function' ? C.describeFade(el) : null;
+    if (!f || !f.declaredColor || f.declaredColor === fgHex) return null;
+    const round = (n) => String(Math.round(n * 100) / 100);
+    const faders = f.faders || [];
+    const detail = {
+      declaredColor: f.declaredColor,
+      colorAlpha: f.colorAlpha,
+      fadedBy: faders.map((x) => ({ element: x.description, opacity: x.opacity }))
+    };
+    if (faders.length === 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedBy: faders[0].description,
+          fadedOpacity: round(faders[0].opacity)
+        },
+        detail
+      };
+    }
+    if (faders.length > 1) {
+      return {
+        params: {
+          declaredColor: f.declaredColor,
+          fadedByMany: faders.map((x) => `${x.description} (${round(x.opacity)})`).join(', '),
+          fadedOpacity: round(faders.reduce((p, x) => p * x.opacity, 1))
+        },
+        detail
+      };
+    }
+    if (f.colorAlpha < 1) {
+      return { params: { declaredColor: f.declaredColor, alphaColor: true }, detail };
+    }
+    return null;
+  }
+
   function pushFailOccurrence(el, params, details, placeholder, pseudo, symbol, special) {
     try {
       if (pseudo && !seenGenerated.has(pseudo)) seenGenerated.set(pseudo, new Set());
@@ -1201,6 +1243,17 @@ function runInPage(ctx) {
               ? analysis.bgAssumedRootCanvasColor
               : null;
 
+          // The color the CSS gives, where opacity or its alpha fades it.
+          const fade =
+            pseudo ||
+            placeholderMode ||
+            analysis.colorScheme ||
+            analysis.drawnBy ||
+            analysis.pseudoElementColor
+              ? null
+              : fadeNote(el, fgHex);
+          if (fade) Object.assign(params, fade.params);
+
           const details = {
             reasonCode: 'BELOW_THRESHOLD',
             metrics: { ratio, threshold },
@@ -1228,6 +1281,7 @@ function runInPage(ctx) {
               ? { pseudoElementColor: analysis.pseudoElementColor }
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
+            ...(fade ? { fade: fade.detail } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {}),
             // On the canvas of a page with two color schemes: the one it
             // fails in, where it passes in the other, and those measured,
