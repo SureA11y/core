@@ -61,8 +61,11 @@ test(`${RULE_ID}: ask, leaning fail, when aria-errormessage names a hidden messa
   assert.deepEqual(rule.occurrences[0].data.details, {
     reasonCode: 'ERROR_MESSAGE_HIDDEN',
     ariaInvalid: 'true',
-    errorMessageIds: ['e']
+    errorMessageIds: ['e'],
+    // What hides it, named in the summary.
+    hiddenCause: { hiddenBy: 'hidden', element: '<p id="e">', onAncestor: false }
   });
+  assert.match(rule.occurrences[0].summary, /is hidden by hidden on <p id="e">\.$/);
   assert.equal(rule.occurrences[0].uncertainty.code, 'judgement-required');
   // As for an empty message, the error may be told elsewhere; but the one
   // tied to the field can't be seen, so it leans fail.
@@ -360,4 +363,70 @@ test(`${RULE_ID}: never fails; every finding it can't pass is asked about`, () =
     assert.equal(o.occurrenceOutcome, 'cantTell', o.data.details.reasonCode);
     assert.ok(o.uncertainty && o.uncertainty.code, o.data.details.reasonCode);
   }
+});
+
+// The summary says what hides the message, or which id is missing, and the
+// hint offers an id close to the missing one.
+test(`${RULE_ID}: names what hides the message and the id no element has`, () => {
+  const rule = assertRule(
+    run(`
+      <style>.errors{display:none}</style>
+      <label>A <input id="a" aria-invalid="true" aria-errormessage="a-err"></label>
+      <div class="errors"><span id="a-err">Enter a valid email</span></div>
+      <label>B <input id="b" aria-invalid="true" aria-errormessage="email-err"></label>
+      <span id="email-error">Enter a valid email</span>
+      <label>C <input id="c" aria-invalid="true" aria-errormessage="nothing-near"></label>`),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 3, maxOccurrences: 3 }
+  );
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const hidden = byId('a');
+  assert.strictEqual(hidden.data.details.reasonCode, 'ERROR_MESSAGE_HIDDEN');
+  assert.strictEqual(hidden.i18n.summaryKey, 'invalidFieldErrorMessage_summary_cantTell_hidden');
+  assert.strictEqual(
+    hidden.summary,
+    'This field is marked invalid, but the error message aria-errormessage names ("Enter a valid email") is hidden by display: none on <div class="errors">, which contains it.'
+  );
+  assert.deepStrictEqual(hidden.data.details.hiddenCause, {
+    hiddenBy: 'display: none',
+    element: '<div class="errors">',
+    onAncestor: true
+  });
+
+  const near = byId('b');
+  assert.strictEqual(near.data.details.reasonCode, 'ERROR_MESSAGE_TARGET_MISSING');
+  assert.strictEqual(
+    near.summary,
+    'This field is marked invalid, but no element has the id aria-errormessage names ("email-err").'
+  );
+  assert.strictEqual(near.i18n.params.nearId, 'email-error');
+  assert.strictEqual(near.data.details.nearId, 'email-error');
+  assert.match(
+    near.hint,
+    /An element has the id "email-error", with the text "Enter a valid email"; did you mean that one\?$/
+  );
+
+  const far = byId('c');
+  assert.deepStrictEqual(far.data.details.missingIds, ['nothing-near']);
+  assert.strictEqual(far.data.details.nearId, undefined);
+  assert.doesNotMatch(far.hint, /did you mean/);
+});
+
+test(`${RULE_ID}: names the aria-hidden ancestor that hides the message`, () => {
+  const rule = assertRule(
+    run(`
+      <label>A <input id="a" aria-invalid="true" aria-errormessage="a-err"></label>
+      <div class="msgs" aria-hidden="true"><span id="a-err">Too short</span></div>`),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'invalidFieldErrorMessage_summary_cantTell_hiddenAria');
+  assert.strictEqual(
+    occ.summary,
+    'This field is marked invalid, but the error message aria-errormessage names ("Too short") is hidden from assistive technology by aria-hidden="true" on <div class="msgs">, which contains it.'
+  );
 });

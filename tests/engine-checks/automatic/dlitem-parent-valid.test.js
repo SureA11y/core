@@ -78,3 +78,28 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/dlitem-parent-valid-all-scena
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: an item a <dl> holds through two wrappers says so`, () => {
+  const html = `<!doctype html><html><body>
+    <dl><div class="group"><div><dt id="t">Term</dt><dd id="d">Definition</dd></div></div></dl>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const dt = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(dt.data.details.reasonCode, 'DLITEM_INVALID_PARENT');
+  assert.strictEqual(dt.i18n.summaryKey, 'dlitemParentValid_summary_fail_wrapped');
+  assert.strictEqual(
+    dt.summary,
+    'This <dt> is inside a <dl>, but through <div>, <div class="group">; only a single <div> may sit between a <dl> and its <dt>/<dd>.'
+  );
+  assert.deepStrictEqual(dt.data.details.wrappedBy, ['<div>', '<div class="group">']);
+  assert.match(dt.hint, /^Remove the extra wrapper, so the <dt> sits directly in the <dl>/);
+});
+
+test(`${RULE_ID}: an item in no <dl> keeps the general message`, () => {
+  const html = `<!doctype html><html><body><section><dt>Term</dt></section></body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'dlitemParentValid_summary_fail');
+  assert.strictEqual(rule.occurrences[0].data.details.wrappedBy, undefined);
+});

@@ -79,6 +79,18 @@ function runInPage(ctx) {
   const occurrences = [];
   let applicableCount = 0;
 
+  // An element as a message names it: <div class="row">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(n, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(n, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+
   // The element a <dt>/<dd> renders in: its parent in the flat tree,
   // through an assigned slot and past any <slot> or shadow root on the way
   // (helpers.flatParentElement). undefined for a child of a shadow host that
@@ -104,10 +116,29 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    // A <dl> a level or two further up: the item is in one, through more
+    // wrappers than the one <div> a group may have. The elements between
+    // are named, as <div class="row">.
+    const between = [];
+    let wrappedIn = null;
+    for (let cur = parent, i = 0; cur && i < 3; cur = helpers.flatParentElement(cur), i++) {
+      const curTag = dom.tagName(cur) ? dom.tagName(cur).toLowerCase() : '';
+      if (curTag === 'dl') {
+        wrappedIn = cur;
+        break;
+      }
+      between.push(describeEl(cur));
+    }
+    const betweenList = wrappedIn ? between.join(', ') : '';
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This description-list item is not contained by a <dl>.',
-        hint: 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
+        summary: wrappedIn
+          ? `This <${tag}> is inside a <dl>, but through ${betweenList}; only a single <div> may sit between a <dl> and its <dt>/<dd>.`
+          : 'This description-list item is not contained by a <dl>.',
+        hint: wrappedIn
+          ? `Remove the extra wrapper, so the <${tag}> sits directly in the <dl> or in one <div> directly inside it.`
+          : 'Place this <dt>/<dd> inside a <dl>, directly or wrapped in a single <div>.',
         uncertainty: {
           code: 'spec-only',
           needed:
@@ -115,12 +146,21 @@ function runInPage(ctx) {
           evidence: { element: tag, parentElement: parentTag }
         },
         i18n: {
-          summaryKey: 'dlitemParentValid_summary_fail',
-          hintKey: 'dlitemParentValid_hint_fail',
-          params: { element: tag, parentElement: parentTag }
+          summaryKey: wrappedIn
+            ? 'dlitemParentValid_summary_fail_wrapped'
+            : 'dlitemParentValid_summary_fail',
+          hintKey: wrappedIn
+            ? 'dlitemParentValid_hint_fail_wrapped'
+            : 'dlitemParentValid_hint_fail',
+          params: { element: tag, parentElement: parentTag, between: betweenList }
         },
         data: {
-          details: { reasonCode: 'DLITEM_INVALID_PARENT', element: tag, parentElement: parentTag }
+          details: {
+            reasonCode: 'DLITEM_INVALID_PARENT',
+            element: tag,
+            parentElement: parentTag,
+            ...(wrappedIn ? { wrappedBy: between } : {})
+          }
         }
       })
     );

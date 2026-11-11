@@ -432,6 +432,18 @@ function runInPage(ctx) {
         summaryKey = 'contrastComputable_cantTell_selectOption';
       else if (rc === 'COLOR_SCHEME_NOT_RENDERED')
         summaryKey = 'contrastComputable_cantTell_colorScheme';
+      // What stopped the measurement, named with the element that carries it.
+      else if (rc === 'ANCESTOR_OPACITY')
+        summaryKey = 'contrastComputable_cantTell_ancestorOpacity';
+      else if (rc === 'ELEMENT_OPACITY') summaryKey = 'contrastComputable_cantTell_elementOpacity';
+      else if (rc === 'BACKGROUND_OVERLAP')
+        summaryKey = 'contrastComputable_cantTell_backgroundOverlap';
+      else if (rc === 'BACKGROUND_UNPARSABLE')
+        summaryKey = 'contrastComputable_cantTell_backgroundUnparsable';
+      else if (rc === 'FOREGROUND_UNPARSABLE')
+        summaryKey = 'contrastComputable_cantTell_foregroundUnparsable';
+      else if (rc === 'BACKGROUND_NOT_COMPUTABLE')
+        summaryKey = 'contrastComputable_cantTell_backgroundNotComputable';
       if (pseudo) summaryKey = 'contrastComputable_cantTell_generatedText';
 
       // Every cantTell leaves a person to measure the contrast, so each one
@@ -449,7 +461,9 @@ function runInPage(ctx) {
         rc === 'BACKGROUND_FILTER_OR_BACKDROP_FILTER' ||
         rc === 'TEXT_SHADOW' ||
         rc === 'TEXT_STROKE' ||
-        rc === 'PSEUDO_ELEMENT_COLOR'
+        rc === 'PSEUDO_ELEMENT_COLOR' ||
+        rc === 'ELEMENT_OPACITY' ||
+        rc === 'ANCESTOR_OPACITY'
       )
         hintKind = 'effect';
       else if (rc === 'BACKGROUND_NOT_OPAQUE_AT_ROOT') hintKind = 'rootNotOpaque';
@@ -477,6 +491,13 @@ function runInPage(ctx) {
               ? {
                   blockerProperty: details.blockerProperty ? String(details.blockerProperty) : '',
                   blockerValue: details.blockerValue ? String(details.blockerValue) : '',
+                  // The element that carries it, as <div class="hero">, and
+                  // the same where it is an ancestor of the text.
+                  blockerElement: details.blockerElement ? String(details.blockerElement) : '',
+                  blockerAncestor:
+                    details.blockerElement && details.blockerIsAncestor
+                      ? String(details.blockerElement)
+                      : '',
                   backgroundAlpha:
                     details.backgroundAlpha !== undefined && details.backgroundAlpha !== null
                       ? String(details.backgroundAlpha)
@@ -826,6 +847,12 @@ function runInPage(ctx) {
               blockerProperty: blocker.blockerProperty,
               blockerValue: blocker.blockerValue,
               blockerSelector: blocker.blockerSelector,
+              ...(blocker.blockerElement
+                ? {
+                    blockerElement: blocker.blockerElement,
+                    blockerIsAncestor: !!blocker.blockerIsAncestor
+                  }
+                : {}),
               backgroundFillType: blocker.backgroundFillType
             },
             leanFor(el, blocker.reasonCode)
@@ -901,6 +928,12 @@ function runInPage(ctx) {
               ...(bg && bg.blockerProperty
                 ? {
                     blockerSelector: bg.blockerSelector || '',
+                    ...(bg.blockerElement
+                      ? {
+                          blockerElement: bg.blockerElement,
+                          blockerIsAncestor: !!bg.blockerIsAncestor
+                        }
+                      : {}),
                     blockerProperty: bg.blockerProperty,
                     blockerValue: bg.blockerValue || ''
                   }
@@ -930,7 +963,13 @@ function runInPage(ctx) {
         }
         if (!fg || !fg.rgba) {
           cantTellCount += textCount;
+          // The color value the scan could not read, for the summary.
+          const fillValue =
+            typeof helpers.contrast.textFillColor === 'function'
+              ? String(helpers.contrast.textFillColor(el) || '').slice(0, 80)
+              : '';
           pushCantTellOccurrence(el, 'FOREGROUND_UNPARSABLE', {
+            ...(fillValue ? { blockerProperty: 'color', blockerValue: fillValue } : {}),
             background: bg && bg.rgba ? helpers.contrast.rgbaToString(bg.rgba) : '',
             backgroundAlpha:
               bg && typeof bg.alpha === 'number' ? helpers.contrast.round2(bg.alpha) : ''

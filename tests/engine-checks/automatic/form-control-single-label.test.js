@@ -205,3 +205,42 @@ test(`${RULE_ID}: an extra empty label leans pass`, () => {
     ['FORM_FIELD_EXTRA_EMPTY_LABEL', 'pass', 'formControlSingleLabel_lean_why']
   ]);
 });
+
+// The summary quotes each label and the name they make together; a second
+// label that looks like a validation message gets its own hint.
+test(`${RULE_ID}: competing labels are quoted with the name they make`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="e">Email</label><input id="e">
+    <label for="e" class="error">Please enter a valid email</label>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'formControlSingleLabel_summary_cantTell_competing');
+  assert.strictEqual(
+    occ.summary,
+    'This <input> has 2 <label> elements, "Email", "Please enter a valid email", which browsers join into the name "Email Please enter a valid email"; check that it makes sense.'
+  );
+  assert.strictEqual(occ.i18n.params.joinedName, 'Email Please enter a valid email');
+  assert.deepStrictEqual(occ.data.details.labelTexts, ['Email', 'Please enter a valid email']);
+  assert.strictEqual(occ.i18n.params.errorLabel, '<label class="error">');
+  assert.match(
+    occ.hint,
+    /If <label class="error"> is an error message, tie it to the field with aria-describedby or aria-errormessage instead of <label for>\.$/
+  );
+});
+
+test(`${RULE_ID}: labels that are no error message get no error hint`, () => {
+  const html = `<!doctype html><html><body>
+    <label for="p">Phone</label><input id="p"><label for="p">(mobile)</label><label for="p">Work</label>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.params.errorLabel, '');
+  assert.match(
+    occ.summary,
+    /has 3 <label> elements, "Phone", "\(mobile\)", "Work", which browsers join into the name "Phone \(mobile\) Work"/
+  );
+  assert.doesNotMatch(occ.hint, /error message/);
+});

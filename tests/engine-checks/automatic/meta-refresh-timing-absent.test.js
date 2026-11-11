@@ -148,3 +148,38 @@ test(`${RULE_ID}: the refresh time is read as HTML reads it`, () => {
   assert.strictEqual(outcome(doc(' 5; url=/a')), 'fail');
   assert.strictEqual(outcome(doc('5x; url=/a')), 'notApplicable');
 });
+
+// A URL after the delay makes it a delayed redirect: the summary says where
+// it goes, and the hint is to redirect at once, not to pause or extend it.
+test(`${RULE_ID}: a delayed redirect is called a redirect, with its target`, () => {
+  const html =
+    '<!doctype html><html><head><meta http-equiv="refresh" content="5; url=https://example.com/new"><title>t</title></head><body></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'metaRefreshTimingAbsent_summary_fail_redirect');
+  assert.strictEqual(
+    occ.summary,
+    'This page redirects to https://example.com/new after 5 seconds.'
+  );
+  assert.match(occ.hint, /^Redirect at once \(a delay of 0, or a redirect from the server\)/);
+  assert.doesNotMatch(occ.hint, /pause|extend/);
+  assert.strictEqual(occ.data.details.target, 'https://example.com/new');
+});
+
+test(`${RULE_ID}: a refresh with no URL keeps the refresh wording`, () => {
+  const html =
+    '<!doctype html><html><head><meta http-equiv="refresh" content="30;"><title>t</title></head><body></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.strictEqual(rule.occurrences[0].i18n.summaryKey, 'metaRefreshTimingAbsent_summary_fail');
+  assert.strictEqual(
+    rule.occurrences[0].summary,
+    'This page refreshes itself automatically after 30 seconds.'
+  );
+  assert.strictEqual(rule.occurrences[0].data.details.target, undefined);
+});

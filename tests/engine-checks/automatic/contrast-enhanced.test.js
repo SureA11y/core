@@ -748,3 +748,20 @@ test(`${RULE_ID}: text on the canvas of a page with two color schemes is measure
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the color the CSS gives`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div id="card" style="opacity: 0.4"><p id="faded" style="color: #333">Faded text</p></div>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastEnhanced_fail_belowThreshold');
+  assert.strictEqual(occ.i18n.params.fadedBy, '<div id="card">');
+  assert.match(
+    occ.summary,
+    /Its color #333333 is drawn as #adadad because <div id="card"> has opacity: 0\.4\.$/
+  );
+});

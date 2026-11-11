@@ -106,6 +106,12 @@ function runInPage(ctx) {
   const SPACING_PROPS = ['line-height', 'letter-spacing', 'word-spacing'];
   // WCAG 1.4.12's own metrics, as multiples of the font size.
   const MIN_RATIO = { 'line-height': 1.5, 'letter-spacing': 0.12, 'word-spacing': 0.16 };
+  // Each metric as a message quotes it.
+  const LIMIT_TEXT = {
+    'line-height': 'line-height 1.5',
+    'letter-spacing': 'letter-spacing 0.12em',
+    'word-spacing': 'word-spacing 0.16em'
+  };
   // Only these two take the value from the parent, leaving this declaration
   // specifying no spacing of its own. `initial` and `revert` resolve to a
   // concrete value (`normal` for all three properties), so they stay in scope.
@@ -402,6 +408,9 @@ function runInPage(ctx) {
 
     const flagged = [];
     const unresolved = [];
+    // The forced declarations, as the summary quotes them: the value, and
+    // for one not already relative to the font size, the ratio it comes to.
+    const forced = {};
     let inScope = false;
     for (const prop of SPACING_PROPS) {
       const decl = effectiveDeclaration(raw, prop);
@@ -411,16 +420,30 @@ function runInPage(ctx) {
       const ratio = spacingRatio(el, prop, decl.value);
       // Not flagged, since `fail` needs a measured value -- but recorded, so
       // the element does not fall through to `pass` unmeasured.
+      const value = decl.value.trim();
       if (ratio === null) {
         unresolved.push(prop);
+        forced[prop] = `${prop}: ${value}`;
         continue;
       }
-      if (!meetsMinimum(prop, ratio)) flagged.push(prop);
+      if (!meetsMinimum(prop, ratio)) {
+        flagged.push(prop);
+        const shown = Math.round(ratio * 100) / 100;
+        const relative = /^(\d*\.?\d+)(em)?$/i.test(value);
+        forced[prop] = relative
+          ? `${prop}: ${value}`
+          : `${prop}: ${value} (${shown}${prop === 'line-height' ? '' : 'em'})`;
+      }
     }
 
     if (inScope) applicableCount += 1;
     if (!flagged.length) {
-      if (unresolved.length) undecided.push({ el, props: unresolved.slice() });
+      if (unresolved.length)
+        undecided.push({
+          el,
+          props: unresolved.slice(),
+          declarations: unresolved.map((prop) => forced[prop]).join(', ')
+        });
       continue;
     }
 
@@ -440,18 +463,41 @@ function runInPage(ctx) {
     }
 
     const tag = dom.tagName(el).toLowerCase();
+    // The values forced, the font size they are measured against, and only
+    // the limits they fall short of.
+    const declarations = flagged.map((prop) => forced[prop]).join(', ');
+    const limits = flagged.map((prop) => LIMIT_TEXT[prop]).join(', ');
+    let fontSize;
+    try {
+      fontSize = fontSizeOf(computedStyleOf(el));
+    } catch {
+      fontSize = null;
+    }
+    const fontSizePx = fontSize ? String(Math.round(fontSize * 100) / 100) : '';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This element's inline style forces ${flagged.join(', ')} with !important below the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em), so they can't increase it.`,
-        hint: 'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em.',
+        summary: `This element's inline style forces ${declarations} with !important${fontSizePx ? ` at its ${fontSizePx}px font size` : ''}, below the spacing users must be able to apply (${limits}), so they can't increase it.`,
+        hint: `Remove !important from the spacing in the inline style, or set a value that already meets the metric: ${limits}.`,
         i18n: {
           summaryKey: 'avoidInlineSpacing_summary_fail',
           hintKey: 'avoidInlineSpacing_hint_fail',
-          params: { element: tag, properties: flagged.join(', ') }
+          params: {
+            element: tag,
+            properties: flagged.join(', '),
+            declarations,
+            limits,
+            fontSizePx
+          }
         },
         data: {
-          details: { reasonCode: 'INLINE_SPACING_IMPORTANT', element: tag, properties: flagged }
+          details: {
+            reasonCode: 'INLINE_SPACING_IMPORTANT',
+            element: tag,
+            properties: flagged,
+            declarations: flagged.map((prop) => forced[prop]),
+            ...(fontSize ? { fontSizePx: fontSize } : {})
+          }
         }
       })
     );
@@ -583,17 +629,18 @@ function runInPage(ctx) {
       )
     )
     .concat(
-      undecided.map(({ el, props }) =>
+      undecided.map(({ el, props, declarations }) =>
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `This element's inline style sets ${props.join(', ')} with !important, but the value could not be worked out, so whether it allows the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
+          summary: `This element's inline style sets ${declarations} with !important, but the value could not be worked out, so whether it allows the spacing users must be able to apply (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em) is unknown.`,
           hint: "Check the value by hand against line-height 1.5, letter-spacing 0.12em and word-spacing 0.16em, or use a unit the engine can work out from the element's font size.",
           i18n: {
             summaryKey: 'avoidInlineSpacing_summary_cantTell',
             hintKey: 'avoidInlineSpacing_hint_cantTell',
             params: {
               element: (dom.tagName(el) || '').toLowerCase(),
-              properties: props.join(', ')
+              properties: props.join(', '),
+              declarations
             }
           },
           uncertainty: {

@@ -2672,6 +2672,50 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // An element as a message names it: its tag with its id, or else with its
+  // class, as in <div class="card is-disabled">.
+  function describeElement(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return '';
+      const tag = String(dom.localName(el) || dom.tagName(el) || '').toLowerCase();
+      const cut = (s) => (s.length > 60 ? s.slice(0, 57) + '...' : s);
+      const id = trim(String(dom.getAttribute(el, 'id') || ''));
+      if (id) return `<${tag} id="${cut(id)}">`;
+      const cls = trim(String(dom.getAttribute(el, 'class') || '').replace(/\s+/g, ' '));
+      if (cls) return `<${tag} class="${cut(cls)}">`;
+      return `<${tag}>`;
+    } catch {
+      return '';
+    }
+  }
+
+  // Why text is drawn in a color other than the one its CSS gives: the
+  // elements, itself or its ancestors, whose opacity below 1 fades it
+  // (nearest first), and the alpha of its own color. declaredColor is that
+  // color as CSS gives it: a hex, or rgba() where it is semi-transparent.
+  // null where it can't be read.
+  function describeFade(el) {
+    try {
+      if (!el || dom.nodeType(el) !== 1) return null;
+      const declared = parseCssColorToRgba(textFillColor(el));
+      if (!declared) return null;
+      const faders = [];
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const o = opacityOf(__contrastComputedStyle(cur));
+        if (o < 1) faders.push({ element: cur, description: describeElement(cur), opacity: o });
+      }
+      const alpha = declared.a == null ? 1 : clamp01(declared.a);
+      const declaredColor =
+        alpha < 1
+          ? `rgba(${Math.round(declared.r)}, ${Math.round(declared.g)}, ${Math.round(declared.b)}, ${Math.round(alpha * 100) / 100})`
+          : rgbToHex(declared);
+      return { declaredColor, colorAlpha: alpha, faders };
+    } catch {
+      return null;
+    }
+  }
+
   // -------- Opacity product memoization --------
 
   const __localOpacityProductCache = new WeakMap();
@@ -4326,6 +4370,8 @@ function createContrastHelpers(opts, shared) {
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
+          element: describeElement(cur),
+          isAncestor: cur !== el,
           value: truncateCssValue(trim(bgColor), 80)
         };
         break;
@@ -4396,6 +4442,8 @@ function createContrastHelpers(opts, shared) {
         stack: stack || [],
         reasonCode: 'BACKGROUND_UNPARSABLE',
         blockerSelector: unparsable.selector,
+        blockerElement: unparsable.element,
+        blockerIsAncestor: unparsable.isAncestor,
         blockerProperty: 'background-color',
         blockerValue: unparsable.value
       };
@@ -5849,6 +5897,8 @@ function createContrastHelpers(opts, shared) {
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
           blockerProperty: 'mix-blend-mode',
           blockerValue: truncateCssValue(cs && cs.mixBlendMode, 80)
         };
@@ -5885,6 +5935,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: filterBlocks ? 'filter' : 'backdrop-filter',
             blockerValue: truncateCssValue((filterBlocks ? cs.filter : cs.backdropFilter) || '', 80)
           };
@@ -6019,6 +6071,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: '-webkit-text-stroke',
             blockerValue: truncateCssValue(strokeWidth + ' ' + strokeColor, 80)
           };
@@ -6044,6 +6098,8 @@ function createContrastHelpers(opts, shared) {
             cur,
             (dom.tagName(cur) || '').toLowerCase() || 'html'
           ),
+          blockerElement: describeElement(cur),
+          blockerIsAncestor: cur !== el,
           blockerProperty: 'background-image',
           blockerValue: truncateCssValue(bgImg, 80),
           backgroundFillType: classifyBackgroundImageValue(bgImg)
@@ -6080,6 +6136,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
           };
@@ -6125,6 +6183,8 @@ function createContrastHelpers(opts, shared) {
               cur,
               (dom.tagName(cur) || '').toLowerCase() || 'html'
             ),
+            blockerElement: describeElement(cur),
+            blockerIsAncestor: cur !== el,
             blockerProperty: 'opacity',
             blockerValue: truncateCssValue(String(cs && cs.opacity != null ? cs.opacity : '1'), 80)
           };
@@ -6160,6 +6220,7 @@ function createContrastHelpers(opts, shared) {
           ok: false,
           reasonCode: 'BACKGROUND_OVERLAP',
           blockerSelector: overlap.selector,
+          blockerElement: overlap.element || '',
           blockerProperty: overlap.property,
           blockerValue: overlap.value
         }
@@ -7141,6 +7202,7 @@ function createContrastHelpers(opts, shared) {
                 continue;
               return {
                 selector: __getSimpleSelectorCached(p.el, String(dom.localName(p.el) || '')),
+                element: describeElement(p.el),
                 property: p.paint.property,
                 value: p.paint.value
               };
@@ -7168,6 +7230,7 @@ function createContrastHelpers(opts, shared) {
         return {
           selector:
             __getSimpleSelectorCached(host, String(dom.localName(host) || '')) + pseudo.name,
+          element: describeElement(host) + pseudo.name,
           property: pseudo.property,
           value: pseudo.value
         };
@@ -7529,6 +7592,7 @@ function createContrastHelpers(opts, shared) {
     const blocked = (p) => ({
       blocked: {
         selector: __getSimpleSelectorCached(p.el, __lname(p.el)) + (p.pseudo || ''),
+        element: describeElement(p.el) + (p.pseudo || ''),
         property: p.paint.property,
         value: p.paint.value
       }
@@ -8004,6 +8068,8 @@ function createContrastHelpers(opts, shared) {
     hasBlendMode,
     hasFilter,
     computeOpacityProduct,
+    describeElement,
+    describeFade,
     computeEffectiveForeground,
     textFillColor,
     computeEffectiveBackground,
