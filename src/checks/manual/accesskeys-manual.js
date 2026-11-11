@@ -19,6 +19,8 @@
  *   - `accesskey`: the shared key, in lower case.
  *   - `duplicateCount`: how many elements on the page share it, this one
  *     included.
+ *   - `others`: the other elements with this key, as the message names
+ *     them (`<button> "Save"`).
  * @reason-codes
  *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
  *     also used by another element on the page, so the shortcut may not
@@ -76,14 +78,19 @@ function runInPage(ctx) {
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
+      // The other elements with this key, at most three, for the message.
+      const otherEls = els.filter((o) => o !== el);
+      const named = otherEls.slice(0, 3).map((o) => helpers.describeElement(o, { text: true }));
+      const others = otherEls.length > 3 ? `${named.join(', ')}, …` : named.join(', ');
+      const value = String(dom.getAttribute(el, 'accesskey') || '').trim();
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: "This element's accesskey is shared with another element on the page.",
+          summary: `This element's accesskey="${value}" is also used by ${others}, so the shortcut may reach only one of them.`,
           hint: 'Give each accesskey its own value.',
           i18n: {
-            summaryKey: 'accesskeys_summary_cantTell',
+            summaryKey: 'accesskeys_summary_cantTell_others',
             hintKey: 'accesskeys_hint_cantTell',
-            params: { accesskey: key, duplicateCount: String(els.length) }
+            params: { accesskey: key, duplicateCount: String(els.length), value, others }
           },
           lean: {
             toward: 'fail',
@@ -95,7 +102,8 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'ACCESSKEY_DUPLICATE',
               accesskey: key,
-              duplicateCount: els.length
+              duplicateCount: els.length,
+              others: otherEls.map((o) => helpers.describeElement(o, { text: true }))
             }
           }
         })

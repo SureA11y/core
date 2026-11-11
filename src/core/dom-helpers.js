@@ -2056,16 +2056,26 @@ function createDomHelpers(opts) {
     };
   }
   // A short tag for an element in a message: <div id="app">, else
-  // <div class="drawer"> with its first class, else <div>
+  // <div class="drawer"> with its first class, else <div>; with
+  // { role: true }, its role attribute first: <div role="banner" id="ad">;
+  // with { text: true }, followed by its text, shortened: <button> "Save"
   // (helpers.describeElement).
-  function describeElement(el) {
+  function describeElement(el, opts) {
     try {
       if (!isElement(el)) return '';
       const tag = lower(dom.tagName(el) || '');
       const id = trim(dom.getAttribute(el, 'id') || '');
-      if (id) return `<${tag} id="${id}">`;
       const cls = trim(dom.getAttribute(el, 'class') || '').split(/\s+/)[0];
-      return cls ? `<${tag} class="${cls}">` : `<${tag}>`;
+      const role = opts && opts.role ? trim(dom.getAttribute(el, 'role') || '') : '';
+      const head = role ? `${tag} role="${role}"` : tag;
+      let out = `<${head}>`;
+      if (id) out = `<${head} id="${id}">`;
+      else if (cls) out = `<${head} class="${cls}">`;
+      if (opts && opts.text) {
+        const text = shortText(el);
+        if (text) out += ` "${text}"`;
+      }
+      return out;
     } catch {
       return '';
     }

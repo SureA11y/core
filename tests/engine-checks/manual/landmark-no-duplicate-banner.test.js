@@ -160,3 +160,23 @@ test(`${RULE_ID} (node runtime): a display:none duplicate header is excluded (no
   assert.strictEqual(rule.outcome, 'pass');
   assert.strictEqual(rule.occurrences.length, 0);
 });
+
+test(`${RULE_ID}: names the other banner landmark`, () => {
+  const html = `<!doctype html><html><body>
+    <header id="site">Site A</header><main>x</main>
+    <div role="banner" class="cookie">Cookies</div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const site = rule.occurrences.find((o) => o.html.includes('id="site"'));
+  assert.strictEqual(
+    site.summary,
+    'This page has 2 banner landmarks: this one and <div role="banner" class="cookie"> "Cookies".'
+  );
+  assert.strictEqual(site.i18n.summaryKey, 'landmarkNoDuplicateBanner_summary_cantTell_others');
+  assert.deepStrictEqual(site.data.details.others, [
+    '<div role="banner" class="cookie"> "Cookies"'
+  ]);
+  assert.strictEqual(site.data.details.reasonCode, 'LANDMARK_DUPLICATE_BANNER');
+  const cookie = rule.occurrences.find((o) => o.html.includes('cookie'));
+  assert.match(cookie.summary, /this one and <header id="site"> "Site A"\.$/);
+});

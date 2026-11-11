@@ -128,3 +128,16 @@ test(`${RULE_ID}: an explicit role="contentinfo" is still flagged wherever it is
   const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
   assert.ok(hasOccurrenceForId(rule, 'c'));
 });
+
+test(`${RULE_ID}: names the landmark it is nested in`, () => {
+  const html = `<!doctype html><html><body><section class="page" aria-label="Page"><div class="col"><div role="contentinfo" id="t">Legal</div></div></section></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(
+    occ.summary,
+    'This contentinfo landmark is nested inside the region landmark <section class="page">.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'landmarkContentinfoIsTopLevel_summary_cantTell_inside');
+  assert.strictEqual(occ.data.details.ancestorRole, 'region');
+  assert.strictEqual(occ.data.details.ancestorElement, '<section class="page">');
+});

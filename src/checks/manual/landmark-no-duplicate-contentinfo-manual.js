@@ -19,6 +19,8 @@
  * @reports
  *   - `count`: how many contentinfo landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ *   - `others`: the other landmarks of this role, as the message names
+ *     them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_CONTENTINFO` (cantTell): the page exposes more than
  *     one contentinfo landmark; each one is reported.
@@ -103,14 +105,19 @@ function runInPage(ctx) {
     };
   }
 
+  // The others, named, so a reviewer finds the one they did not expect.
+  const described = (el) => helpers.describeElement(el, { role: true, text: true });
   const occurrences = contentinfos.map((el) => {
+    const otherEls = contentinfos.filter((o) => o !== el);
+    const named = otherEls.slice(0, 3).map(described);
+    const others = otherEls.length > 3 ? `${named.join(', ')}, …` : named.join(', ');
     return helpers.reportOccurrence(el, {
-      summary: 'This page has more than one contentinfo landmark.',
+      summary: `This page has ${contentinfos.length} contentinfo landmarks: this one and ${others}.`,
       hint: 'Keep only one contentinfo landmark (<footer> or role="contentinfo") on the page.',
       i18n: {
-        summaryKey: 'landmarkNoDuplicateContentinfo_summary_cantTell',
+        summaryKey: 'landmarkNoDuplicateContentinfo_summary_cantTell_others',
         hintKey: 'landmarkNoDuplicateContentinfo_hint_cantTell',
-        params: { count: String(contentinfos.length) }
+        params: { count: String(contentinfos.length), others }
       },
       lean: {
         toward: 'fail',
@@ -119,7 +126,11 @@ function runInPage(ctx) {
         i18n: { whyKey: 'landmarkNoDuplicateContentinfo_lean_why' }
       },
       data: {
-        details: { reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO', count: contentinfos.length }
+        details: {
+          reasonCode: 'LANDMARK_DUPLICATE_CONTENTINFO',
+          count: contentinfos.length,
+          others: otherEls.map(described)
+        }
       }
     });
   });

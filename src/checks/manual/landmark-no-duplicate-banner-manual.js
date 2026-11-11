@@ -22,6 +22,8 @@
  * @reports
  *   - `count`: how many banner landmarks the page exposes to assistive
  *     technology, against a limit of 1.
+ *   - `others`: the other landmarks of this role, as the message names
+ *     them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
  * @reason-codes
  *   - `LANDMARK_DUPLICATE_BANNER` (cantTell): the page exposes more than one
  *     banner landmark; each one is reported.
@@ -110,14 +112,19 @@ function runInPage(ctx) {
     };
   }
 
+  // The others, named, so a reviewer finds the one they did not expect.
+  const described = (el) => helpers.describeElement(el, { role: true, text: true });
   const occurrences = banners.map((el) => {
+    const otherEls = banners.filter((o) => o !== el);
+    const named = otherEls.slice(0, 3).map(described);
+    const others = otherEls.length > 3 ? `${named.join(', ')}, …` : named.join(', ');
     return helpers.reportOccurrence(el, {
-      summary: 'This page has more than one banner landmark.',
+      summary: `This page has ${banners.length} banner landmarks: this one and ${others}.`,
       hint: 'Keep only one banner landmark (<header> or role="banner") on the page.',
       i18n: {
-        summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell',
+        summaryKey: 'landmarkNoDuplicateBanner_summary_cantTell_others',
         hintKey: 'landmarkNoDuplicateBanner_hint_cantTell',
-        params: { count: String(banners.length) }
+        params: { count: String(banners.length), others }
       },
       lean: {
         toward: 'fail',
@@ -126,7 +133,11 @@ function runInPage(ctx) {
         i18n: { whyKey: 'landmarkNoDuplicateBanner_lean_why' }
       },
       data: {
-        details: { reasonCode: 'LANDMARK_DUPLICATE_BANNER', count: banners.length }
+        details: {
+          reasonCode: 'LANDMARK_DUPLICATE_BANNER',
+          count: banners.length,
+          others: otherEls.map(described)
+        }
       }
     });
   });
