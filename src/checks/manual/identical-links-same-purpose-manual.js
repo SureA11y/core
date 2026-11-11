@@ -33,7 +33,8 @@
  *   - `distinctDestinationCount`: how many different URLs the links with
  *     this name lead to, a count of 2 or more.
  *   - `otherDestinations`: the other addresses the links with this name
- *     lead to, as the message shows them (a path on the page's own site).
+ *     lead to, the first ten, as the message shows them (a path on the
+ *     page's own site).
  *   - `linkKind`: what this link is made of (`helpers.getLinkKind`): `svg`
  *     for an `<a>` in SVG; `image` for an `<area>`, or a link whose content
  *     is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`,
@@ -320,12 +321,20 @@ function runInPage(ctx) {
     if (distinctHrefs.size <= 1) continue;
     const lean = groupLean(name, entries);
 
+    // Each address shown once; a link lists the first ten others in
+    // details and three in the message, so many alike links stay cheap.
+    const shownOf = new Map([...distinctHrefs].map((h) => [h, shownHref(h)]));
     for (const { el, href, shownName } of entries) {
-      const others = [...distinctHrefs].filter((h) => h !== href).map(shownHref);
-      const shown = shownHref(href);
-      const otherList =
-        others.length > 3 ? `${others.slice(0, 3).join(', ')}, …` : others.join(', ');
-      const one = others.length === 1;
+      const others = [];
+      for (const h of distinctHrefs) {
+        if (h === href) continue;
+        if (others.length === 10) break;
+        others.push(shownOf.get(h));
+      }
+      const otherCount = distinctHrefs.size - 1;
+      const shown = shownOf.get(href);
+      const otherList = others.slice(0, 3).join(', ') + (otherCount > 3 ? ', …' : '');
+      const one = otherCount === 1;
       const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
       const html = helpers.getOuterHtmlSnippet
         ? helpers.getOuterHtmlSnippet(el)
@@ -337,7 +346,7 @@ function runInPage(ctx) {
         html,
         summary: one
           ? `This link, "${shownName}", goes to ${shown}, and a link with the same name elsewhere on the page goes to ${otherList}.`
-          : `This link, "${shownName}", goes to ${shown}; links with the same name elsewhere on the page go to ${others.length} other addresses: ${otherList}.`,
+          : `This link, "${shownName}", goes to ${shown}; links with the same name elsewhere on the page go to ${otherCount} other addresses: ${otherList}.`,
         hint: 'Links with the same text may lead to different addresses when they serve the same purpose, such as one page with different tracking parameters. Otherwise make each link’s text describe its own destination.',
         i18n: {
           summaryKey: one
@@ -349,7 +358,7 @@ function runInPage(ctx) {
             destinationCount: String(distinctHrefs.size),
             shownName,
             href: shown,
-            otherCount: String(others.length),
+            otherCount: String(otherCount),
             others: otherList
           }
         },

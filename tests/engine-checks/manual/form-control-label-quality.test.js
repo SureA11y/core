@@ -547,3 +547,20 @@ test(`${RULE_ID}: the work grows linearly with fields sharing a label, with the 
     assert.deepEqual(toward, new Set([name === 'checkboxes' ? null : 'fail']), name);
   }
 });
+
+test(`${RULE_ID}: a shared label names the other field and its name attribute`, () => {
+  const html = `<!doctype html><html><body><form>
+    <label for="a">Name</label><input id="a" name="first">
+    <label for="b">Name</label><input id="b" name="last">
+  </form></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const a = rule.occurrences.find((o) => o.html.includes('id="a"'));
+  assert.strictEqual(
+    a.summary,
+    'This field\'s visible label ("Name") is also the label of #b (name="last"), with no visible heading, legend or row text telling them apart.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'formControlLabelQuality_summary_cantTell_duplicateOthers');
+  assert.deepStrictEqual(a.data.details.sharedWithFields, ['#b (name="last")']);
+  assert.strictEqual(a.data.details.sharedWith, 1);
+  assert.strictEqual(a.data.details.reasonCode, 'DUPLICATE_LABEL_TEXT');
+});

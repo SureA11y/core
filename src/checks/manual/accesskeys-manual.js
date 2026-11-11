@@ -19,8 +19,8 @@
  *   - `accesskey`: the shared key, in lower case.
  *   - `duplicateCount`: how many elements on the page share it, this one
  *     included.
- *   - `others`: the other elements with this key, as the message names
- *     them (`<button> "Save"`).
+ *   - `others`: the other elements with this key, the first three, as the
+ *     message names them (`<button> "Save"`).
  * @reason-codes
  *   - `ACCESSKEY_DUPLICATE` (cantTell): this element's accesskey value is
  *     also used by another element on the page, so the shortcut may not
@@ -75,13 +75,22 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const described = new Map();
+  const describe = (o) => {
+    if (!described.has(o)) described.set(o, helpers.describeElement(o, { text: true }));
+    return described.get(o);
+  };
   for (const [key, els] of groups) {
     if (els.length <= 1) continue;
     for (const el of els) {
       // The other elements with this key, at most three, for the message.
-      const otherEls = els.filter((o) => o !== el);
-      const named = otherEls.slice(0, 3).map((o) => helpers.describeElement(o, { text: true }));
-      const others = otherEls.length > 3 ? `${named.join(', ')}, …` : named.join(', ');
+      const named = [];
+      for (const o of els) {
+        if (o === el) continue;
+        if (named.length === 3) break;
+        named.push(describe(o));
+      }
+      const others = named.join(', ') + (els.length - 1 > 3 ? ', …' : '');
       const value = String(dom.getAttribute(el, 'accesskey') || '').trim();
       occurrences.push(
         helpers.reportOccurrence(el, {
@@ -103,7 +112,7 @@ function runInPage(ctx) {
               reasonCode: 'ACCESSKEY_DUPLICATE',
               accesskey: key,
               duplicateCount: els.length,
-              others: otherEls.map((o) => helpers.describeElement(o, { text: true }))
+              others: named
             }
           }
         })
