@@ -136,6 +136,26 @@ function runInPage(ctx) {
     return null;
   }
 
+  // The URL a refresh directive goes to, '' when it reloads the page itself:
+  // after the time and its separator, an optional "url=" and an optional
+  // quote, as HTML's declarative refresh steps read it. Cut at 100
+  // characters for a message.
+  function parseRefreshTarget(input) {
+    const s = String(input == null ? '' : input);
+    const m =
+      /^[\t\n\f\r ]*[0-9.]*[\t\n\f\r ]*[;,]?[\t\n\f\r ]*(?:url[\t\n\f\r ]*=[\t\n\f\r ]*)?(.*)$/is.exec(
+        s
+      );
+    let url = m ? m[1].trim() : '';
+    const q = url[0];
+    if (q === '"' || q === "'") {
+      const end = url.indexOf(q, 1);
+      url = end === -1 ? url.slice(1) : url.slice(1, end);
+    }
+    url = url.trim();
+    return url.length > 100 ? url.slice(0, 97) + '...' : url;
+  }
+
   for (const el of nodes) {
     if (!el || !dom.get(el, 'getAttribute')) continue;
     if (dom.get(el, 'closest') && dom.closest(el, 'noscript')) continue; // never applies with scripting enabled, see meta-refresh-no-exceptions.js's header comment
@@ -153,17 +173,29 @@ function runInPage(ctx) {
     if (!(delay > 0)) break;
     if (delay > EXEMPT_DELAY_SECONDS) break; // WCAG 2.2.1 Exception 3 (>20 hours)
 
+    // A URL after the delay makes it a delayed redirect, not a refresh:
+    // pausing or extending it is not the fix, redirecting at once is.
+    const target = parseRefreshTarget(raw);
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This page refreshes itself automatically after a delay.',
-        hint: 'Remove the timed refresh, or let users turn it off, pause it or extend it before it happens.',
+        summary: target
+          ? `This page redirects to ${target} after ${delay} seconds.`
+          : `This page refreshes itself automatically after ${delay} seconds.`,
+        hint: target
+          ? 'Redirect at once (a delay of 0, or a redirect from the server), or give users a link to follow instead of a timer.'
+          : 'Remove the timed refresh, or let users turn it off, pause it or extend it before it happens.',
         i18n: {
-          summaryKey: 'metaRefreshTimingAbsent_summary_fail',
-          hintKey: 'metaRefreshTimingAbsent_hint_fail',
-          params: { delay: String(delay) }
+          summaryKey: target
+            ? 'metaRefreshTimingAbsent_summary_fail_redirect'
+            : 'metaRefreshTimingAbsent_summary_fail',
+          hintKey: target
+            ? 'metaRefreshTimingAbsent_hint_fail_redirect'
+            : 'metaRefreshTimingAbsent_hint_fail',
+          params: { delay: String(delay), target }
         },
         data: {
-          details: { reasonCode: 'META_REFRESH_DELAYED', delay }
+          details: { reasonCode: 'META_REFRESH_DELAYED', delay, ...(target ? { target } : {}) }
         }
       })
     );
