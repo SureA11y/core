@@ -2088,7 +2088,11 @@ function createDomHelpers(opts) {
     const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
     return all.length > 40 ? `${all.slice(0, 39)}…` : all;
   }
-  // What hides el (or an ancestor) from assistive technology, or null.
+  // What hides el (or an ancestor) from assistive technology, or null:
+  // { hiddenBy, element }, hiddenBy one of 'aria-hidden="true"', 'hidden',
+  // 'display: none', 'visibility: hidden' or 'visibility: collapse' (the last
+  // two read on el itself, as a child can set visibility back), element the
+  // one that carries it. Rules name it in a message (helpers.hiddenCause).
   function hiddenBy(el) {
     for (let n = el, i = 0; n && isElement(n) && i < 200; n = dom.parentElement(n), i++) {
       if (lower(dom.getAttribute(n, 'aria-hidden')) === 'true') {
@@ -9034,6 +9038,7 @@ function createDomHelpers(opts) {
     hiddenNameText,
     hiddenNameTextHint,
     nameCause,
+    hiddenCause: hiddenBy,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)
