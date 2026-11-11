@@ -57,6 +57,8 @@
  *     the dialog is `modal` whatever else hides it (inert or aria-hidden on
  *     it or above it, with or without includeHiddenElements): while the
  *     dialog is open, it is the cause in effect.
+ *   - `hiddenByElement`: for `aria-hidden` or `inert` on an ancestor, that
+ *     ancestor (`<div id="app">`).
  *   - `text`: for the hook's two findings, the text the region was given
  *     (up to 300 characters).
  *   - `removed`: for the hook's two findings, true when the region was no
@@ -203,11 +205,16 @@ function runInPage(ctx) {
   // What keeps a drawn region from assistive technology: 'aria-hidden',
   // 'inert', or ''.
   function hiddenBy(el) {
+    const c = hiddenCarrier(el);
+    return c ? c.by : '';
+  }
+  // The same, with the element that carries it: { by, element } or null.
+  function hiddenCarrier(el) {
     for (let n = el; n && dom.nodeType(n) === 1; n = helpers.composedParent(n)) {
-      if (attr(n, 'aria-hidden') === 'true') return 'aria-hidden';
-      if (dom.hasAttribute(n, 'inert')) return 'inert';
+      if (attr(n, 'aria-hidden') === 'true') return { by: 'aria-hidden', element: n };
+      if (dom.hasAttribute(n, 'inert')) return { by: 'inert', element: n };
     }
-    return '';
+    return null;
   }
   function eligibility(el) {
     try {
@@ -388,15 +395,32 @@ function runInPage(ctx) {
     const by = dialogOpen && behindModal(el) ? 'modal' : hiddenBy(el);
     if (by) {
       const lean = by === 'modal' ? modalLean(el) : hiddenLean();
+      // aria-hidden or inert on an ancestor: name it, as the region's own
+      // markup does not show it.
+      const carrier = by === 'modal' ? null : hiddenCarrier(el);
+      const ancestor =
+        carrier && carrier.element !== el ? helpers.describeElement(carrier.element) : '';
+      const summary = ancestor
+        ? by === 'aria-hidden'
+          ? [
+              `This live region is inside ${ancestor}, which has aria-hidden="true", so nothing it is given can be announced.`,
+              'liveRegionAnnouncements_summary_cantTell_ariaHiddenAncestor'
+            ]
+          : [
+              `This live region is inside ${ancestor}, which is inert, so nothing it is given can be announced.`,
+              'liveRegionAnnouncements_summary_cantTell_inertAncestor'
+            ]
+        : SUMMARY[by];
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: SUMMARY[by][0],
+          summary: summary[0],
           hint:
             by === 'modal'
               ? 'Check whether the page writes status messages to it while the dialog is open; if so, put them in a live region inside the dialog.'
               : 'Check whether the page uses it for status messages; if so, keep it out of aria-hidden and inert content.',
           i18n: {
-            summaryKey: SUMMARY[by][1],
+            summaryKey: summary[1],
+            ...(ancestor ? { params: { ancestor } } : {}),
             hintKey:
               by === 'modal'
                 ? 'liveRegionAnnouncements_hint_cantTell_modal'
@@ -408,7 +432,8 @@ function runInPage(ctx) {
               reasonCode: 'LIVE_REGION_HIDDEN',
               politeness: level,
               messageKind: messageKind(el),
-              hiddenBy: by
+              hiddenBy: by,
+              ...(ancestor ? { hiddenByElement: ancestor } : {})
             },
             visibilityFilter: eligibility(el)
           }
