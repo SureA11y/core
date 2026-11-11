@@ -237,7 +237,7 @@ function runInPage(ctx) {
           'A <div> inside the wrapping <div> holds items of this description list; only one level of <div> may sit between <dl> and its <dt>/<dd>.',
         hint: 'Remove the inner <div>, so each group is wrapped in at most one <div> directly inside the <dl>.',
         key: 'invalidChild_nestedDiv',
-        hintKey: 'invalidChild_nestedDiv'
+        hintSuffix: 'invalidChild_nestedDiv'
       },
       noDd: {
         summary: `This description list has terms (<dt>, ${dtCount}) but no definition (<dd>).`,
@@ -289,7 +289,7 @@ function runInPage(ctx) {
         },
         i18n: {
           summaryKey: `definitionListChildrenValid_summary_fail_${VARIANT ? VARIANT.key : TEXT.key}`,
-          hintKey: `definitionListChildrenValid_hint_fail_${VARIANT && VARIANT.hintKey ? VARIANT.hintKey : TEXT.key}`,
+          hintKey: `definitionListChildrenValid_hint_fail_${VARIANT && VARIANT.hintSuffix ? VARIANT.hintSuffix : TEXT.key}`,
           params: {
             invalidChildren: dedupedInvalidTags.join(', '),
             dtCount: String(dtCount),
