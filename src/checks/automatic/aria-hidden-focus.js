@@ -845,11 +845,11 @@ function runInPage(ctx) {
       for (const h of hints) entry.hints.add(h);
 
       // The element as the reader finds it in the markup, for the message
-      // (helpers.describeElement): <a href="/promo"> "Read more".
+      // (helpers.describeMarkup): <a href="/promo"> "Read more".
       let description;
       try {
         description =
-          typeof helpers.describeElement === 'function' ? helpers.describeElement(el) : '';
+          typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(el) : '';
       } catch {
         description = '';
       }

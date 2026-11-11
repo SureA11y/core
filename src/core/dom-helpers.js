@@ -2055,6 +2055,31 @@ function createDomHelpers(opts) {
       params: { text, hiddenElement: element }
     };
   }
+  // A short tag for an element in a message: <div id="app">, else
+  // <div class="drawer"> with its first class, else <div>; with
+  // { role: true }, its role attribute first: <div role="banner" id="ad">;
+  // with { text: true }, followed by its text, shortened: <button> "Save"
+  // (helpers.describeElement).
+  function describeElement(el, opts) {
+    try {
+      if (!isElement(el)) return '';
+      const tag = lower(dom.tagName(el) || '');
+      const id = trim(dom.getAttribute(el, 'id') || '');
+      const cls = trim(dom.getAttribute(el, 'class') || '').split(/\s+/)[0];
+      const role = opts && opts.role ? trim(dom.getAttribute(el, 'role') || '') : '';
+      const head = role ? `${tag} role="${role}"` : tag;
+      let out = `<${head}>`;
+      if (id) out = `<${head} id="${id}">`;
+      else if (cls) out = `<${head} class="${cls}">`;
+      if (opts && opts.text) {
+        const text = shortText(el);
+        if (text) out += ` "${text}"`;
+      }
+      return out;
+    } catch {
+      return '';
+    }
+  }
   // Why an element that should have a name has none, where the page shows a
   // cause a reader would not see from the element alone: the hint and its
   // i18n fields for a name rule's fail, with details.nameCause, or null.
@@ -2103,7 +2128,10 @@ function createDomHelpers(opts) {
       }
       const cs = computedStyle(n) || {};
       if (String(cs.display || '') === 'none') {
-        return { hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden' : 'display: none', element: n };
+        return {
+          hiddenBy: dom.hasAttribute(n, 'hidden') ? 'hidden=""' : 'display: none',
+          element: n
+        };
       }
       if (n === el && /^(hidden|collapse)$/.test(String(cs.visibility || ''))) {
         return { hiddenBy: `visibility: ${cs.visibility}`, element: n };
@@ -2668,8 +2696,8 @@ function createDomHelpers(opts) {
   // at: its start tag with the attributes that give it a role or focus
   // (role, tabindex, href, type, contenteditable), then its text or
   // aria-label, each cut to 40 characters: <span role="button"
-  // tabindex="0"> "Fav".
-  function describeElement(el) {
+  // tabindex="0"> "Fav" (helpers.describeMarkup).
+  function describeMarkup(el) {
     const cut = (v) => (v.length > 40 ? v.slice(0, 39) + '…' : v);
     let out = '<' + lower(dom.tagName(el) || '');
     for (const a of ['role', 'tabindex', 'href', 'type', 'contenteditable']) {
@@ -9475,6 +9503,7 @@ function createDomHelpers(opts) {
     nearestAriaAttr,
     roleTypo,
     describeElement,
+    describeMarkup,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

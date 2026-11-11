@@ -53,6 +53,10 @@
  *     `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it,
  *     or for an empty target the content it marks, has no area or is cut
  *     to nothing.
+ *   - `unusableCause` (a target that is not usable, when known): what hides
+ *     it, `hiddenBy` (`aria-hidden="true"`, `hidden`, `display: none`,
+ *     `visibility: hidden`, `inert`) with `hiddenByElement` when an
+ *     ancestor carries it, or `geometry` (`notRendered`, `noSize`).
  *   - `targetSelector` (a target that is not usable): a selector for the
  *     target.
  *   - `geometryCheckEnabled` (a target that is not usable): whether the
@@ -379,6 +383,57 @@ function runInPage(ctx) {
     };
   }
 
+  // Why the target can't be reached, for the summary: what hides it and
+  // the element that carries it, inert, or no box or no size.
+  function unusableCause(target, href, byAcc, reasons, geometryCode) {
+    if (byAcc) {
+      const cause = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(target) : null;
+      let hiddenBy = cause ? cause.hiddenBy : null;
+      let carrier = cause ? cause.element : null;
+      if (!cause && reasons.indexOf('inert') !== -1) {
+        hiddenBy = 'inert';
+        try {
+          carrier = dom.closest(target, '[inert]');
+        } catch {
+          carrier = null;
+        }
+      }
+      if (!hiddenBy) return null;
+      if (!carrier || carrier === target) {
+        return {
+          summary: `This skip link's target ${href} can't be reached: it has ${hiddenBy}.`,
+          summaryKey: 'skipLink_summary_unusableTarget_hiddenOwn',
+          params: { hiddenBy },
+          detail: { hiddenBy }
+        };
+      }
+      const ancestor = helpers.describeElement(carrier);
+      return {
+        summary: `This skip link's target ${href} can't be reached: its ancestor ${ancestor} has ${hiddenBy}.`,
+        summaryKey: 'skipLink_summary_unusableTarget_hiddenAncestor',
+        params: { hiddenBy, ancestor },
+        detail: { hiddenBy, hiddenByElement: ancestor }
+      };
+    }
+    if (geometryCode === 'NO_CLIENT_RECTS') {
+      return {
+        summary: `This skip link's target ${href} is not rendered, so the page can't scroll to it.`,
+        summaryKey: 'skipLink_summary_unusableTarget_notRendered',
+        params: {},
+        detail: { geometry: 'notRendered' }
+      };
+    }
+    if (geometryCode === 'ZERO_AREA_TARGET') {
+      return {
+        summary: `This skip link's target ${href} has no size or is clipped to nothing, so it lands on nothing visible.`,
+        summaryKey: 'skipLink_summary_unusableTarget_noSize',
+        params: {},
+        detail: { geometry: 'noSize' }
+      };
+    }
+    return null;
+  }
+
   // The lean's direction, in details too (`lean`), so a standard's mapping
   // can route a finding by it: the routes read data.details.
   const leanDetail = (lean) => (lean && lean.toward ? { lean: lean.toward } : {});
@@ -459,17 +514,25 @@ function runInPage(ctx) {
       const unusableByGeometry = !!geometryReasonCode;
       if (!unusableByAcc && !unusableByGeometry) continue;
       const unusableLean = unusableByAcc ? unusableTargetLean(accEligibility.reasons) : null;
+      const why = unusableCause(
+        target,
+        href,
+        unusableByAcc,
+        accEligibility.reasons,
+        geometryReasonCode
+      );
 
       occurrences.push(
         helpers.reportOccurrence(el, {
           ...(unusableLean ? { lean: unusableLean } : {}),
-          summary:
-            "This skip link points to an element that exists but can't be reached right now.",
+          summary: why
+            ? why.summary
+            : "This skip link points to an element that exists but can't be reached right now.",
           hint: 'Point it at an element that is visible and not hidden from assistive technology.',
           i18n: {
-            summaryKey: 'skipLink_summary_unusableTarget_cantTell',
+            summaryKey: why ? why.summaryKey : 'skipLink_summary_unusableTarget_cantTell',
             hintKey: 'skipLink_hint_unusableTarget_cantTell',
-            params: { href }
+            params: { href, ...(why ? why.params : {}) }
           },
           data: {
             details: {
@@ -477,6 +540,7 @@ function runInPage(ctx) {
               href,
               ...leanDetail(unusableLean),
               unusableReasonCode: unusableByAcc ? 'ACC_TREE_INELIGIBLE' : geometryReasonCode,
+              ...(why ? { unusableCause: why.detail } : {}),
               targetSelector: helpers.buildSelector ? helpers.buildSelector(target) : null,
               geometryCheckEnabled: geometrySupported,
               // A target hidden at one breakpoint may be shown at another.

@@ -210,3 +210,44 @@ test(`${RULE_ID}: an <h1> whose role="none" is ignored is still the page's h1`, 
     });
   }
 });
+
+test(`${RULE_ID}: names the <h1> that is in the markup and why it does not count`, () => {
+  const run = (body) => {
+    const html = `<!doctype html><html><head><style>.mob{display:none}</style></head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+    return rule.occurrences[0];
+  };
+
+  const hidden = run('<header class="mob"><h1>Acme Shoes</h1></header><main><h2>Sale</h2></main>');
+  assert.strictEqual(
+    hidden.summary,
+    'This page has no level-one heading that screen readers can reach. Its <h1> "Acme Shoes" is hidden: an ancestor <header class="mob"> has display: none.'
+  );
+  assert.strictEqual(hidden.i18n.summaryKey, 'pageHasHeadingOne_summary_h1HiddenAncestor');
+  assert.strictEqual(hidden.i18n.hintKey, 'pageHasHeadingOne_hint_h1Hidden');
+  assert.strictEqual(hidden.data.details.reasonCode, 'HEADING_ONE_MISSING');
+  assert.deepStrictEqual(hidden.data.details.skippedH1, {
+    cause: 'hidden',
+    text: 'Acme Shoes',
+    hiddenBy: 'display: none',
+    hiddenByElement: '<header class="mob">'
+  });
+
+  const app = run('<div id="app" aria-hidden="true"><h1>Acme</h1></div>');
+  assert.match(app.summary, /an ancestor <div id="app"> has aria-hidden="true"\.$/);
+
+  const relevelled = run('<h1 aria-level="2">Acme</h1>');
+  assert.strictEqual(
+    relevelled.summary,
+    'This page has no level-one heading. Its <h1> "Acme" is exposed as level 2 by aria-level="2".'
+  );
+  assert.strictEqual(relevelled.i18n.summaryKey, 'pageHasHeadingOne_summary_h1Relevelled');
+
+  const role = run('<h1 role="banner">Acme</h1>');
+  assert.strictEqual(role.i18n.summaryKey, 'pageHasHeadingOne_summary_h1Role');
+  assert.strictEqual(role.i18n.params.role, 'banner');
+
+  const none = run('<h2>Sale</h2>');
+  assert.strictEqual(none.summary, 'This page has no level-one heading.');
+  assert.strictEqual(none.data.details.skippedH1, undefined);
+});

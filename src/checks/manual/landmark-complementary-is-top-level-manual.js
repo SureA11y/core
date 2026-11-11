@@ -19,6 +19,9 @@
  *   region. Complementary content supports the main content of the page and
  *   sits beside it; nested inside another landmark it is a section of that
  *   landmark instead, which is not what landmark navigation announces.
+ * @reports
+ *   - `ancestorRole`, `ancestorElement`: the landmark it is nested in, its
+ *     role and the element, as the message names it.
  * @reason-codes
  *   - `LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL` (cantTell): a complementary
  *     landmark sits inside another landmark instead of at the top level of
@@ -73,18 +76,19 @@ function runInPage(ctx) {
     return helpers.getLandmarkRole(el, ctx) === 'complementary';
   }
 
-  function hasLandmarkAncestor(el) {
+  // The nearest ancestor landmark, or null.
+  function landmarkAncestorOf(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = dom.parentElement(el);
     // Bounded as a safety net only: a walk up a real tree always ends.
     for (let steps = 0; p && steps < 100000; steps++) {
-      if (helpers.getLandmarkRole(p, ctx)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return p;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
       p = dom.parentElement(p);
     }
-    return false;
+    return null;
   }
 
   // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
@@ -129,19 +133,26 @@ function runInPage(ctx) {
 
   const occurrences = [];
   for (const el of complementaries) {
-    if (!hasLandmarkAncestor(el)) continue;
+    const ancestorEl = landmarkAncestorOf(el);
+    if (!ancestorEl) continue;
+    const ancestorRole = helpers.getLandmarkRole(ancestorEl, ctx);
+    const ancestor = helpers.describeElement(ancestorEl, { role: true });
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This complementary landmark is nested inside another landmark region.',
+        summary: `This complementary landmark is nested inside the ${ancestorRole} landmark ${ancestor}.`,
         hint: 'Move the complementary landmark (<aside> or role="complementary") out of the other landmark; complementary content sits beside the main content, not inside another region.',
         i18n: {
-          summaryKey: 'landmarkComplementaryIsTopLevel_summary_cantTell',
+          summaryKey: 'landmarkComplementaryIsTopLevel_summary_cantTell_inside',
           hintKey: 'landmarkComplementaryIsTopLevel_hint_cantTell',
-          params: {}
+          params: { ancestorRole, ancestor }
         },
         data: {
-          details: { reasonCode: 'LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL' }
+          details: {
+            reasonCode: 'LANDMARK_COMPLEMENTARY_NOT_TOP_LEVEL',
+            ancestorRole,
+            ancestorElement: ancestor
+          }
         }
       })
     );

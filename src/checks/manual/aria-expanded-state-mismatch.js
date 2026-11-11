@@ -40,6 +40,10 @@
  *   - `ariaExpanded`: `true` or `false`, as the attribute says.
  *   - `controlledCount`: how many elements `aria-controls` names that were
  *     compared.
+ *   - `controlled`: each of them, `{ element }` (`#menu`), and for hidden
+ *     content what hides it, `hiddenBy` (`display: none`, `hidden`,
+ *     `aria-hidden="true"`...) with `hiddenByElement` when an ancestor
+ *     carries it.
  * @reason-codes
  *   - `EXPANDED_FALSE_CONTROLLED_SHOWN` (cantTell): an element says
  *     aria-expanded="false" while every element its aria-controls names is
@@ -267,26 +271,53 @@ function runInPage(ctx) {
 
     const collapsed = expanded === 'false';
     const lean = leanFor(el, collapsed, refs);
+    // The controlled elements, named, and for hidden ones what hides them.
+    const refName = (r) => {
+      const rid = trim(dom.getAttribute(r, 'id'));
+      return rid ? `#${rid}` : helpers.describeElement(r);
+    };
+    const controlledInfo = refs.map((r) => {
+      const cause =
+        collapsed || typeof helpers.hiddenCause !== 'function' ? null : helpers.hiddenCause(r);
+      return {
+        element: refName(r),
+        ...(cause ? { hiddenBy: cause.hiddenBy } : {}),
+        ...(cause && cause.element !== r
+          ? { hiddenByElement: helpers.describeElement(cause.element) }
+          : {})
+      };
+    });
+    const listed = controlledInfo.slice(0, 3);
+    const more = controlledInfo.length > 3 ? ', …' : '';
+    const controlled = listed.map((c) => c.element).join(', ') + more;
+    const causes =
+      listed.map((c) => (c.hiddenBy ? `${c.element} (${c.hiddenBy})` : c.element)).join(', ') +
+      more;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: collapsed
-          ? 'aria-expanded="false" says the controlled content is collapsed, but it is shown.'
-          : 'aria-expanded="true" says the controlled content is expanded, but it is hidden.',
+          ? `aria-expanded="false" says the content it controls (${controlled}) is collapsed, but it is shown.`
+          : `aria-expanded="true" says the content it controls is expanded, but it is hidden: ${causes}.`,
         hint: collapsed
           ? 'Check whether the content is open; if it is, set aria-expanded="true", or hide the content while collapsed.'
           : 'Check whether the content is open; if it is not, set aria-expanded="false", or show the content while expanded.',
         i18n: {
           summaryKey: collapsed
-            ? 'ariaExpandedStateMismatch_summary_cantTell_collapsedShown'
-            : 'ariaExpandedStateMismatch_summary_cantTell_expandedHidden',
+            ? 'ariaExpandedStateMismatch_summary_cantTell_collapsedShownNamed'
+            : 'ariaExpandedStateMismatch_summary_cantTell_expandedHiddenNamed',
           hintKey: collapsed
             ? 'ariaExpandedStateMismatch_hint_cantTell_collapsedShown'
             : 'ariaExpandedStateMismatch_hint_cantTell_expandedHidden',
-          params: {}
+          params: { controlled, causes }
         },
         ...(lean ? { lean } : {}),
         data: {
-          details: { reasonCode, ariaExpanded: expanded, controlledCount: refs.length },
+          details: {
+            reasonCode,
+            ariaExpanded: expanded,
+            controlledCount: refs.length,
+            controlled: controlledInfo
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

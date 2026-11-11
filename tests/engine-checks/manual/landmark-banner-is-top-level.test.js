@@ -146,3 +146,16 @@ test(`${RULE_ID}: an explicit role="banner" inside an unnamed role="region" is n
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: names the landmark it is nested in`, () => {
+  const html = `<!doctype html><html><body><section class="page" aria-label="Page"><div class="col"><div role="banner" id="t">Top</div></div></section></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(
+    occ.summary,
+    'This banner landmark is nested inside the region landmark <section class="page">.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'landmarkBannerIsTopLevel_summary_cantTell_inside');
+  assert.strictEqual(occ.data.details.ancestorRole, 'region');
+  assert.strictEqual(occ.data.details.ancestorElement, '<section class="page">');
+});

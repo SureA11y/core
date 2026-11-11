@@ -79,7 +79,7 @@ test(`${RULE_ID}: i18n default is English`, () => {
   assert.strictEqual(rule.title, 'Complementary landmark must be top-level');
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'This complementary landmark is nested inside another landmark region.'
+    'This complementary landmark is nested inside the navigation landmark <nav>.'
   );
 });
 
@@ -107,4 +107,20 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/landmark-complementary-is-top
   ]) {
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
+});
+
+test(`${RULE_ID}: names the landmark it is nested in`, () => {
+  const html = `<!doctype html><html><body><section class="page" aria-label="Page"><div class="col"><aside id="t" aria-label="Related">x</aside></div></section></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="t"'));
+  assert.strictEqual(
+    occ.summary,
+    'This complementary landmark is nested inside the region landmark <section class="page">.'
+  );
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'landmarkComplementaryIsTopLevel_summary_cantTell_inside'
+  );
+  assert.strictEqual(occ.data.details.ancestorRole, 'region');
+  assert.strictEqual(occ.data.details.ancestorElement, '<section class="page">');
 });

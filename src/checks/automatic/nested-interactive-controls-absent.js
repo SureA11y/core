@@ -405,11 +405,11 @@ function runInPage(ctx) {
     const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
 
     // Each nested control as the reader finds it in the markup, with what
-    // makes it focusable (helpers.describeElement): <span role="button"
+    // makes it focusable (helpers.describeMarkup): <span role="button"
     // tabindex="0"> "Fav". The first three, and how many more.
     const describe = (n) => {
       try {
-        return typeof helpers.describeElement === 'function' ? helpers.describeElement(n) : '';
+        return typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(n) : '';
       } catch {
         return '';
       }

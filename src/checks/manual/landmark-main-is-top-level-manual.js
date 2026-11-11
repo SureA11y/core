@@ -18,6 +18,9 @@
  *   A main region nested inside another landmark is not a top-level,
  *   whole-page main content area and confuses landmark-based navigation
  *   for assistive technology users.
+ * @reports
+ *   - `ancestorRole`, `ancestorElement`: the landmark it is nested in, its
+ *     role and the element, as the message names it.
  * @reason-codes
  *   - `LANDMARK_MAIN_NOT_TOP_LEVEL` (cantTell): a main landmark sits inside
  *     another landmark instead of at the top level of the page.
@@ -62,18 +65,19 @@ function runInPage(ctx) {
   const dom = ctx.helpers.dom;
   const { root, helpers, rule } = ctx;
 
-  function hasLandmarkAncestor(el) {
+  // The nearest ancestor landmark, or null.
+  function landmarkAncestorOf(el) {
     const scopeRoots = Array.isArray(root) ? root : root ? [root] : [];
     let p = dom.parentElement(el);
     // Bounded as a safety net only: a walk up a real tree always ends.
     for (let steps = 0; p && steps < 100000; steps++) {
-      if (helpers.getLandmarkRole(p, ctx)) return true;
+      if (helpers.getLandmarkRole(p, ctx)) return p;
       // Don't climb past the scanned scope -- see aria-helpers.js's
       // hasLandmarkScopingAncestor for the same fix and rationale.
       if (scopeRoots.includes(p)) break;
       p = dom.parentElement(p);
     }
-    return false;
+    return null;
   }
 
   // queryAllSmart is shadow-DOM-aware, so a landmark a third-party widget
@@ -120,16 +124,19 @@ function runInPage(ctx) {
 
   const occurrences = [];
   for (const el of mains) {
-    if (!hasLandmarkAncestor(el)) continue;
+    const ancestorEl = landmarkAncestorOf(el);
+    if (!ancestorEl) continue;
+    const ancestorRole = helpers.getLandmarkRole(ancestorEl, ctx);
+    const ancestor = helpers.describeElement(ancestorEl, { role: true });
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This main landmark is nested inside another landmark region.',
+        summary: `This main landmark is nested inside the ${ancestorRole} landmark ${ancestor}.`,
         hint: 'Move the main landmark (<main> or role="main") out of the other landmark; main belongs at the top level of the page.',
         i18n: {
-          summaryKey: 'landmarkMainIsTopLevel_summary_cantTell',
+          summaryKey: 'landmarkMainIsTopLevel_summary_cantTell_inside',
           hintKey: 'landmarkMainIsTopLevel_hint_cantTell',
-          params: {}
+          params: { ancestorRole, ancestor }
         },
         lean: {
           toward: 'fail',
@@ -138,7 +145,11 @@ function runInPage(ctx) {
           i18n: { whyKey: 'landmarkMainIsTopLevel_lean_why' }
         },
         data: {
-          details: { reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL' }
+          details: {
+            reasonCode: 'LANDMARK_MAIN_NOT_TOP_LEVEL',
+            ancestorRole,
+            ancestorElement: ancestor
+          }
         }
       })
     );

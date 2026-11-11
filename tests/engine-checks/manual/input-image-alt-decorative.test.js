@@ -85,7 +85,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'Cet \u00e9l\u00e9ment <input type="image"> a alt="" et tire son nom d\u2019une autre source.'
+    'Cet \u00e9l\u00e9ment <input type="image"> a alt="" et tire son nom, \u00ab Search \u00bb, d\u2019aria-label.'
   );
   assert.strictEqual(
     occ.hint,
@@ -157,4 +157,39 @@ test(`${RULE_ID}: leans fail when the name from elsewhere is a file name or a pl
     assert.strictEqual(o.lean.i18n.whyKey, 'inputImage_altDecorative_lean_why', attrs);
   }
   assert.strictEqual(run('aria-label="Search"').lean, undefined);
+});
+
+test(`${RULE_ID}: says what the name is and where it comes from`, () => {
+  const html = `<!doctype html><html><body>
+    <span id="q" hidden>icon</span>
+    <input id="a" type="image" src="s.png" alt="" aria-labelledby="q">
+    <input id="b" type="image" src="s.png" alt="" title="Search the site">
+    <input id="c" type="image" src="s.png" alt="" aria-label="Go">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'This <input type="image"> has alt="" and takes its name, "icon", from aria-labelledby (#q).'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'inputImage_altDecorative_summary_fromLabelledby');
+  assert.deepStrictEqual(a.data.details, {
+    reasonCode: 'NAME_FROM_ELSEWHERE_REVIEW',
+    name: 'icon',
+    nameSource: 'aria-labelledby',
+    labelledbyIds: '#q'
+  });
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'This <input type="image"> has alt="" and takes its name, "Search the site", from its title attribute.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'inputImage_altDecorative_summary_fromTitle');
+
+  const c = byId('c');
+  assert.strictEqual(c.i18n.summaryKey, 'inputImage_altDecorative_summary_fromAriaLabel');
+  assert.strictEqual(c.data.details.nameSource, 'aria-label');
 });

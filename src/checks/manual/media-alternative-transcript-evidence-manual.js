@@ -25,6 +25,9 @@
  *     `href`.
  *   - `evidence.transcriptNodeSelector` (a weak signal): a selector for the
  *     transcript link.
+ *   - `evidence.transcriptLinkText`, `evidence.transcriptLinkSelector` (a
+ *     weak signal): the transcript link's name, shortened, and a selector
+ *     that finds that link.
  *   - `evidence.notes`: short English notes on what was found. Empty when
  *     nothing was.
  * @reason-codes
@@ -270,6 +273,13 @@ function runInPage(ctx) {
         const href = dom.getAttribute(a, 'href') || '';
         evidence.transcriptLinkHref = href;
         evidence.transcriptNodeSelector = nodeRef(a);
+        // The link as the reader finds it: its text and a selector for it.
+        const shownName = String(linkName || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        evidence.transcriptLinkText =
+          shownName.length > 80 ? `${shownName.slice(0, 79)}…` : shownName;
+        evidence.transcriptLinkSelector = helpers.buildSelector ? helpers.buildSelector(a) : null;
 
         // 3a) Same-document anchor: resolve and verify target content has transcript heading + substance.
         if (href.startsWith('#')) {
@@ -418,14 +428,19 @@ function runInPage(ctx) {
     }
 
     if (evidence.strength === 'weak') {
+      const linkText = evidence.transcriptLinkText || '';
+      const linkHref = evidence.transcriptLinkHref || '';
       const baseOccurrence = {
-        summary:
-          "This media may have a transcript or other text alternative, but the page doesn't make clear which one.",
+        summary: linkText
+          ? `A link that may lead to this <${mediaTag}>'s transcript, "${linkText}" (${linkHref}), was found, but the page doesn't show that it is one. Open it and check.`
+          : "This media may have a transcript or other text alternative, but the page doesn't make clear which one.",
         hint: 'Ensure a clearly identified transcript or other text alternative is available and visibly or programmatically associated with the media on the page. No transcript is needed when the media is itself an alternative for text on the page and is clearly labelled as one.',
         i18n: {
-          summaryKey: 'mediaTranscriptPresent_summary_cantTell_unverified',
+          summaryKey: linkText
+            ? 'mediaTranscriptPresent_summary_cantTell_unverifiedLink'
+            : 'mediaTranscriptPresent_summary_cantTell_unverified',
           hintKey: 'mediaTranscriptPresent_hint_cantTell_unverified',
-          params: { element: mediaTag }
+          params: { element: mediaTag, linkText, href: linkHref }
         },
         data: {
           details: {

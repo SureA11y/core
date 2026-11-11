@@ -57,6 +57,10 @@
  *     the control then has no name from it, whether or not it decorates,
  *     with `controlContent` naming the control's role (`link` or
  *     `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
+ *   - `excludedBy`: what hides it: `hidden-ancestor` (an ancestor's
+ *     aria-hidden, with `hiddenBy` and `hiddenByElement`), `hidden` (its
+ *     own), `role` (role none/presentation), `empty-alt`, `unnamed-svg` or
+ *     `unnamed-canvas`; `alt` quotes a non-empty alt that is never read.
  * @reason-codes
  *   - `EXCLUDED_ELEMENT_REVIEW` (cantTell): a visible image, <svg> or
  *     <canvas> is hidden from assistive technology, and a person checks
@@ -591,15 +595,91 @@ function runInPage(ctx) {
     if (!isDomVisible(el)) continue;
     if (isOffscreen(el)) continue;
 
-    let excluded = isGenerallyExcluded(el);
-    if (!excluded) excluded = isPresentationallyExcluded(el, tag);
-    if (!excluded && tag === 'svg') excluded = isIgnoredSvg(el);
-    if (!excluded && tag === 'canvas') excluded = isIgnoredCanvas(el);
+    // Which of the four ways hides it, for the message.
+    let excludedBy = isGenerallyExcluded(el) ? 'hidden' : null;
+    if (!excludedBy && isPresentationallyExcluded(el, tag)) {
+      const role = getExplicitRole(el);
+      excludedBy = role === 'presentation' || role === 'none' ? 'role' : 'empty-alt';
+    }
+    if (!excludedBy && tag === 'svg' && isIgnoredSvg(el)) excludedBy = 'unnamed-svg';
+    if (!excludedBy && tag === 'canvas' && isIgnoredCanvas(el)) excludedBy = 'unnamed-canvas';
 
-    if (!excluded) continue;
+    if (!excludedBy) continue;
     if (hasAncestorNamingIt(el)) continue;
 
-    reported.push({ el, tag, key: sameImageKey(el, tag), controlContent: onlyContentOf(el) });
+    reported.push({
+      el,
+      tag,
+      excludedBy,
+      key: sameImageKey(el, tag),
+      controlContent: onlyContentOf(el)
+    });
+  }
+
+  // What the summary and hint say: the cause the rule found, the element
+  // that carries an aria-hidden, and the alt text that is never read.
+  function messageFor(el, tag, excludedBy) {
+    const rawAlt = tag === 'img' ? dom.getAttribute(el, 'alt') : null;
+    const altText = rawAlt == null ? '' : String(rawAlt).replace(/\s+/g, ' ').trim();
+    const alt = altText.length > 80 ? `${altText.slice(0, 79)}…` : altText;
+    if (excludedBy === 'hidden') {
+      const cause =
+        helpers && typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(el) : null;
+      if (!cause) return null;
+      const hiddenBy = cause.hiddenBy;
+      if (cause.element !== el) {
+        const ancestor = helpers.describeElement(cause.element);
+        const detail = { excludedBy: 'hidden-ancestor', hiddenBy, hiddenByElement: ancestor };
+        if (alt) {
+          return {
+            summary: `This <${tag}> is hidden from screen readers by ${hiddenBy} on its ancestor ${ancestor}, so its alt text "${alt}" is never read. Check whether it is purely decorative.`,
+            hint: `If it only decorates, nothing needs to change. If it carries information, take it out of ${ancestor} or remove ${hiddenBy} there, so its alt text is read.`,
+            summaryKey: 'img_altDecorative_summary_ancestorHiddenAlt',
+            hintKey: 'img_altDecorative_hint_ancestorHidden',
+            params: { hiddenBy, ancestor, alt },
+            detail: { ...detail, alt }
+          };
+        }
+        return {
+          summary: `This <${tag}> is hidden from screen readers by ${hiddenBy} on its ancestor ${ancestor}. Check whether it is purely decorative.`,
+          hint: `If it only decorates, nothing needs to change. If it carries information, take it out of ${ancestor} or remove ${hiddenBy} there, and give it a text alternative that says so.`,
+          summaryKey: 'img_altDecorative_summary_ancestorHidden',
+          hintKey: 'img_altDecorative_hint_ancestorHiddenNoAlt',
+          params: { hiddenBy, ancestor },
+          detail
+        };
+      }
+      if (!alt) return { detail: { excludedBy: 'hidden', hiddenBy } };
+      return {
+        summary: `${hiddenBy} hides this <${tag}> from screen readers, so its alt text "${alt}" is never read. Check whether it is purely decorative.`,
+        hint: `If it only decorates, nothing needs to change. If it carries information, remove ${hiddenBy} so its alt text is read.`,
+        summaryKey: 'img_altDecorative_summary_ownHiddenAlt',
+        hintKey: 'img_altDecorative_hint_ownHiddenAlt',
+        params: { hiddenBy, alt },
+        detail: { excludedBy: 'hidden', hiddenBy, alt }
+      };
+    }
+    if (excludedBy === 'role') {
+      const role = `role="${getExplicitRole(el)}"`;
+      if (!alt) return { detail: { excludedBy } };
+      return {
+        summary: `${role} hides this <${tag}> from screen readers, so its alt text "${alt}" is never read. Check whether it is purely decorative.`,
+        hint: `If it only decorates, nothing needs to change. If it carries information, remove ${role} so its alt text is read.`,
+        summaryKey: 'img_altDecorative_summary_ownHiddenAlt',
+        hintKey: 'img_altDecorative_hint_ownHiddenAlt',
+        params: { hiddenBy: role, alt },
+        detail: { excludedBy, hiddenBy: role, alt }
+      };
+    }
+    if (excludedBy === 'unnamed-svg' || excludedBy === 'unnamed-canvas') {
+      return {
+        summary: `This <${tag}> has no name and no role, so screen readers skip it. Check whether it is purely decorative.`,
+        summaryKey: 'img_altDecorative_summary_unnamed',
+        params: {},
+        detail: { excludedBy }
+      };
+    }
+    return { detail: { excludedBy } };
   }
 
   const applicableCount = reported.length;
@@ -608,25 +688,29 @@ function runInPage(ctx) {
 
   const occurrences = [];
   const seenKeys = new Set();
-  for (const { el, tag, key, controlContent } of reported) {
+  for (const { el, tag, excludedBy, key, controlContent } of reported) {
+    const msg = messageFor(el, tag, excludedBy) || { detail: { excludedBy } };
     const details = {
       reasonCode: controlContent ? 'IMAGE_ONLY_CONTROL_CONTENT' : 'EXCLUDED_ELEMENT_REVIEW',
       element: tag,
       sameImageCount: key ? countByKey.get(key) : 1,
       sameImageFirst: !key || !seenKeys.has(key),
-      ...(controlContent ? { controlContent } : {})
+      ...(controlContent ? { controlContent } : {}),
+      ...msg.detail
     };
     if (key) seenKeys.add(key);
 
     const lean = leanFor(el, tag, controlContent);
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: `Check whether this <${tag}> is purely decorative.`,
-      hint: 'If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.',
+      summary: msg.summary || `Check whether this <${tag}> is purely decorative.`,
+      hint:
+        msg.hint ||
+        'If it only decorates, nothing needs to change. If it carries information or does something, give it a text alternative that says so.',
       i18n: {
-        summaryKey: 'img_altDecorative_summary_cantTell',
-        hintKey: 'img_altDecorative_hint_cantTell',
-        params: { element: tag }
+        summaryKey: msg.summaryKey || 'img_altDecorative_summary_cantTell',
+        hintKey: msg.hintKey || 'img_altDecorative_hint_cantTell',
+        params: { element: tag, ...(msg.params || {}) }
       },
       data: {
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] },

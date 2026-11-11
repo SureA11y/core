@@ -301,13 +301,13 @@ function runInPage(ctx) {
       : null;
 
     // Each tab stop as the reader finds it in the markup, with what makes it
-    // focusable (helpers.describeElement): <span tabindex="0"> "3". The
+    // focusable (helpers.describeMarkup): <span tabindex="0"> "3". The
     // first three, and how many more.
     const described = tabStops
       .slice(0, 3)
       .map((n) => {
         try {
-          return typeof helpers.describeElement === 'function' ? helpers.describeElement(n) : '';
+          return typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(n) : '';
         } catch {
           return '';
         }
