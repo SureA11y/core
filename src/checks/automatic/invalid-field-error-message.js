@@ -235,6 +235,78 @@ function runInPage(ctx) {
     });
   }
 
+  // Up to 40 characters of an element's text, for a message.
+  function shortText(n) {
+    const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+  // An element as a message names it: <div class="errors">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = trim(dom.getAttribute(n, 'id'));
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = trim(String(dom.getAttribute(n, 'class') || '').replace(/\s+/g, ' '));
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+  // Whether two ids are at most two edits apart (a typo, or "-err" for
+  // "-error"), ignoring case.
+  function closeIds(a, b) {
+    a = a.toLowerCase();
+    b = b.toLowerCase();
+    if (a === b || Math.abs(a.length - b.length) > 2) return a === b;
+    let prev = [];
+    for (let j = 0; j <= b.length; j++) prev.push(j);
+    for (let i = 1; i <= a.length; i++) {
+      const cur = [i];
+      for (let j = 1; j <= b.length; j++) {
+        cur[j] = Math.min(
+          prev[j] + 1,
+          cur[j - 1] + 1,
+          prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)
+        );
+      }
+      prev = cur;
+    }
+    return prev[b.length] <= 2;
+  }
+  // The element whose id is closest to one aria-errormessage names that no
+  // element has: { id, text }, or null.
+  let idElements = null;
+  function nearIdOf(missingIds) {
+    try {
+      if (!idElements) idElements = [...dom.querySelectorAll(ctx.document, '[id]')].slice(0, 5000);
+      for (const want of missingIds) {
+        for (const cand of idElements) {
+          const candId = String(dom.getAttribute(cand, 'id') || '');
+          if (candId && candId !== want && closeIds(want, candId)) {
+            return { id: candId, text: shortText(cand) };
+          }
+        }
+      }
+    } catch {}
+    return null;
+  }
+  // What hides the first hidden message, as helpers.hiddenCause finds it:
+  // { hiddenBy, element, onAncestor }, or null.
+  function hideCauseOf(refs) {
+    try {
+      if (typeof helpers.hiddenCause !== 'function') return null;
+      for (const ref of refs) {
+        const cause = helpers.hiddenCause(ref);
+        if (cause && cause.element) {
+          return {
+            hiddenBy: cause.hiddenBy,
+            element: describeEl(cause.element),
+            onAncestor: cause.element !== ref,
+            messageText: shortText(ref)
+          };
+        }
+      }
+    } catch {}
+    return null;
+  }
+
   const questions = [];
   let applicableCount = 0;
 
@@ -288,6 +360,14 @@ function runInPage(ctx) {
       eligInfo = helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' });
     } catch {}
 
+    // The cause the message names: what hides the message, or the ids no
+    // element has and an id close to one of them.
+    const hideCause = reasonCode === 'ERROR_MESSAGE_HIDDEN' ? hideCauseOf(refs) : null;
+    const missingIds =
+      reasonCode === 'ERROR_MESSAGE_TARGET_MISSING' ? errorMessageIds.slice(0) : [];
+    const nearId = missingIds.length ? nearIdOf(missingIds) : null;
+    const missingList = missingIds.map((v) => `"${v}"`).join(', ');
+
     // Only these two codes are reached without asking for a description.
     const hasDescription =
       reasonCode === 'ERROR_MESSAGE_ARIA_HIDDEN' || reasonCode === 'ERROR_MESSAGE_TARGET_MISSING'
@@ -297,8 +377,9 @@ function runInPage(ctx) {
     const messages = {
       ERROR_MESSAGE_HIDDEN: {
         key: 'cantTell_hidden',
-        summary:
-          'This field is marked invalid, but the error message aria-errormessage names is hidden.',
+        summary: hideCause
+          ? `This field is marked invalid, but the error message aria-errormessage names${hideCause.messageText ? ` ("${hideCause.messageText}")` : ''} is hidden by ${hideCause.hiddenBy} on ${hideCause.element}${hideCause.onAncestor ? ', which contains it' : ''}.`
+          : 'This field is marked invalid, but the error message aria-errormessage names is hidden.',
         hint: 'Show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
@@ -310,8 +391,9 @@ function runInPage(ctx) {
       },
       ERROR_MESSAGE_HIDDEN_ARIA: {
         key: 'cantTell_hiddenAria',
-        summary:
-          'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
+        summary: hideCause
+          ? `This field is marked invalid, but the error message aria-errormessage names${hideCause.messageText ? ` ("${hideCause.messageText}")` : ''} is hidden from assistive technology by ${hideCause.hiddenBy} on ${hideCause.element}${hideCause.onAncestor ? ', which contains it' : ''}.`
+          : 'This field is marked invalid, but the error message aria-errormessage names is hidden from assistive technology with aria-hidden.',
         hint: 'Remove aria-hidden from the error message, and from what contains it, while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether screen reader users are told about the error some other way.',
@@ -384,8 +466,12 @@ function runInPage(ctx) {
       },
       ERROR_MESSAGE_TARGET_MISSING: {
         key: 'cantTell_targetMissing',
-        summary: 'This field is marked invalid, but no element has the id aria-errormessage names.',
-        hint: 'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.',
+        summary: `This field is marked invalid, but no element has the id aria-errormessage names${missingList ? ` (${missingList})` : ''}.`,
+        hint:
+          'Check that the error message is in the page while the field is invalid, with the id aria-errormessage names.' +
+          (nearId
+            ? ` An element has the id "${nearId.id}"${nearId.text ? `, with the text "${nearId.text}"` : ''}; did you mean that one?`
+            : ''),
         uncertainty: 'runtime-dependent',
         needed: 'Whether a script adds the error message the field names.',
         // aria-invalid says the field is in error now, so its message
@@ -420,10 +506,37 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: `invalidFieldErrorMessage_summary_${m.key}`,
         hintKey: `invalidFieldErrorMessage_hint_${m.key}`,
-        params: {}
+        params: {
+          ...(hideCause
+            ? {
+                hiddenBy: hideCause.hiddenBy,
+                hiddenElement: hideCause.element,
+                onAncestor: hideCause.onAncestor,
+                messageText: hideCause.messageText
+              }
+            : {}),
+          ...(missingIds.length ? { missingIds: missingList } : {}),
+          ...(nearId ? { nearId: nearId.id, nearText: nearId.text } : {})
+        }
       },
       data: {
-        details: { reasonCode, ariaInvalid, errorMessageIds, ...(hiddenBy ? { hiddenBy } : {}) },
+        details: {
+          reasonCode,
+          ariaInvalid,
+          errorMessageIds,
+          ...(hiddenBy ? { hiddenBy } : {}),
+          ...(hideCause
+            ? {
+                hiddenCause: {
+                  hiddenBy: hideCause.hiddenBy,
+                  element: hideCause.element,
+                  onAncestor: hideCause.onAncestor
+                }
+              }
+            : {}),
+          ...(missingIds.length ? { missingIds } : {}),
+          ...(nearId ? { nearId: nearId.id } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
