@@ -299,6 +299,14 @@ function runInPage(ctx) {
         if (suggestion) break;
       }
     }
+    // No near misspelling: a word authors write for a role ARIA names
+    // otherwise (role="icon" for img), from helpers.roleTypo.
+    const typo =
+      !isKnown && !suggestion && typeof helpers.roleTypo === 'function'
+        ? helpers.roleTypo(el)
+        : null;
+    const meant = typo && typo.meant ? typo.meant : '';
+    const word = meant ? typo.word : '';
     const element = String(dom.tagName(el) || '').toLowerCase();
 
     if (nativeRole) {
@@ -311,15 +319,25 @@ function runInPage(ctx) {
             : `The role attribute has no usable value, so this element keeps its native role, "${nativeRole}".`,
           hint: suggestion
             ? `Did you mean role="${suggestion}"? Fix the role, or remove it if the native role, ${nativeRole}, is what you want.`
-            : 'Fix or remove the role attribute; until then, assistive technology treats the element by its native role.',
+            : meant
+              ? `ARIA has no role "${word}"; use role="${meant}", the ARIA role for it, or remove the role if the native role, ${nativeRole}, is what you want.`
+              : 'Fix or remove the role attribute; until then, assistive technology treats the element by its native role.',
           i18n: {
             summaryKey: !isKnown
               ? 'ariaRolesValid_summary_cantTell_invalid'
               : 'ariaRolesValid_summary_cantTell',
             hintKey: suggestion
               ? 'ariaRolesValid_hint_cantTell_near'
-              : 'ariaRolesValid_hint_cantTell',
-            params: { role, nativeRole, element, ...(suggestion ? { suggestion } : {}) }
+              : meant
+                ? 'ariaRolesValid_hint_cantTell_meant'
+                : 'ariaRolesValid_hint_cantTell',
+            params: {
+              role,
+              nativeRole,
+              element,
+              ...(suggestion ? { suggestion } : {}),
+              ...(meant ? { word, meant } : {})
+            }
           },
           uncertainty: {
             code: 'spec-only',
@@ -328,7 +346,13 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode, role, nativeRole, ...(suggestion ? { suggestion } : {}) }
+            details: {
+              reasonCode,
+              role,
+              nativeRole,
+              ...(suggestion ? { suggestion } : {}),
+              ...(meant ? { meant } : {})
+            }
           }
         })
       );
@@ -368,22 +392,31 @@ function runInPage(ctx) {
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
         hint: suggestion
           ? `Did you mean role="${suggestion}"? As written, the role is ignored and the element has none.`
-          : !isKnown
-            ? 'Use a valid ARIA role, or remove the role attribute if none fits.'
-            : 'Replace it with a concrete role that matches what the element is, such as "button" or "region".',
+          : meant
+            ? `ARIA has no role "${word}"; use role="${meant}", the ARIA role for it. As written, the role is ignored and the element has none.`
+            : !isKnown
+              ? 'Use a valid ARIA role, or remove the role attribute if none fits.'
+              : 'Replace it with a concrete role that matches what the element is, such as "button" or "region".',
         i18n: {
           summaryKey: !isKnown
             ? 'ariaRolesValid_summary_invalid'
             : 'ariaRolesValid_summary_abstract',
           hintKey: suggestion
             ? 'ariaRolesValid_hint_invalid_near'
-            : !isKnown
-              ? 'ariaRolesValid_hint_invalid'
-              : 'ariaRolesValid_hint_abstract',
-          params: { role, ...(suggestion ? { suggestion } : {}) }
+            : meant
+              ? 'ariaRolesValid_hint_invalid_meant'
+              : !isKnown
+                ? 'ariaRolesValid_hint_invalid'
+                : 'ariaRolesValid_hint_abstract',
+          params: { role, ...(suggestion ? { suggestion } : {}), ...(meant ? { word, meant } : {}) }
         },
         data: {
-          details: { reasonCode, role, ...(suggestion ? { suggestion } : {}) }
+          details: {
+            reasonCode,
+            role,
+            ...(suggestion ? { suggestion } : {}),
+            ...(meant ? { meant } : {})
+          }
         }
       })
     );

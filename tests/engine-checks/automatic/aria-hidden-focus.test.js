@@ -55,7 +55,7 @@ test(`${RULE_ID}: fail when aria-hidden element itself is focusable (tabindex=0)
   assert.ok(hasOccurrenceForId(rule, 'ah_focus'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> can take keyboard focus, but screen readers don't announce it."
+    `This aria-hidden <div tabindex="0"> "Focusable hidden" can take keyboard focus, but screen readers don't announce it.`
   );
 });
 
@@ -280,7 +280,7 @@ test(`${RULE_ID}: cantTell when a custom aria-modal="true" dialog is open behind
   assert.strictEqual(occ.data.details.metrics.modalOpen, true);
   assert.strictEqual(
     occ.summary,
-    "This aria-hidden <div> contains 2 focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them."
+    `This aria-hidden <div> contains <a href="#x"> "Background link" and 1 more focusable element(s) while a modal dialog is open. They are fine if the dialog keeps focus inside it; check that focus can't reach them.`
   );
 });
 
@@ -385,7 +385,7 @@ test(`${RULE_ID}: fail when aria-hidden native control itself is focusable (butt
   assert.ok(hasOccurrenceForId(rule, 'ah_btn'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <button> can take keyboard focus, but screen readers don't announce it."
+    `This aria-hidden <button> "Hidden button" can take keyboard focus, but screen readers don't announce it.`
   );
 });
 
@@ -461,7 +461,7 @@ test(`${RULE_ID}: fail when aria-hidden element is focusable AND contains focusa
   assert.ok(hasOccurrenceForId(rule, 'ah_root_mix'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'This aria-hidden <div> can take keyboard focus and contains 1 more focusable element(s), none of which screen readers announce.'
+    'This aria-hidden <div tabindex="0"> "Focusable link" can take keyboard focus and contains 1 more focusable element(s), none of which screen readers announce.'
   );
 });
 
@@ -995,5 +995,44 @@ test(`${RULE_ID}: several focusable elements: the summary names one and counts t
   assert.strictEqual(
     occ.hint,
     'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.'
+  );
+});
+
+test(`${RULE_ID}: the hint says when a focusable element is invisible with opacity: 0`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_op" aria-hidden="true"><div tabindex="0" style="opacity:0">Ghost</div></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'ariaHidden_focus_hint_fail_opacity');
+  assert.strictEqual(occ.i18n.params.invisible, '<div tabindex="0"> "Ghost"');
+  assert.match(
+    occ.hint,
+    /^<div tabindex="0"> "Ghost" is invisible \(opacity: 0\) but still takes focus/
+  );
+});
+
+test(`${RULE_ID}: a self-focusable aria-hidden element and a modal-open background are named`, () => {
+  const self = runa11yCoreOnHtml(
+    `<!doctype html><html><body><a id="s" aria-hidden="true" href="/x">Promo</a></body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const selfOcc = assertRule(self, RULE_ID, 'fail', { minOccurrences: 1 }).occurrences[0];
+  assert.strictEqual(selfOcc.i18n.summaryKey, 'ariaHidden_focus_summary_fail_self_named');
+  assert.strictEqual(selfOcc.i18n.params.self, '<a href="/x"> "Promo"');
+
+  const modal = runa11yCoreOnHtml(
+    `<!doctype html><html><body>
+      <div role="dialog" aria-modal="true" aria-label="D"><button>Close</button></div>
+      <div aria-hidden="true"><a href="/a">Back</a></div>
+    </body></html>`,
+    { runOnly: [RULE_ID] }
+  );
+  const modalOcc = assertRule(modal, RULE_ID, 'cantTell', { minOccurrences: 1 }).occurrences[0];
+  assert.strictEqual(modalOcc.i18n.summaryKey, 'ariaHidden_focus_summary_cantTell_modal_one');
+  assert.strictEqual(
+    modalOcc.summary,
+    'This aria-hidden <div> contains a focusable element, <a href="/a"> "Back", while a modal dialog is open. It is fine if the dialog keeps focus inside it; check that focus can\'t reach it.'
   );
 });

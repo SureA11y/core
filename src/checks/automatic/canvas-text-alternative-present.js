@@ -254,20 +254,41 @@ function runInPage(ctx) {
     // see from the element alone (helpers.nameCause): the hint says so.
     // Its fallback content counts only without role="img".
     const cause = helpers.nameCause ? helpers.nameCause(el, { content: !isRoleImg }) : null;
+    // An aria-describedby that reaches an element is likely meant as the
+    // text alternative: it gives a description, never a name.
+    let describedBy = '';
+    if (!cause) {
+      const value = String(dom.getAttribute(el, 'aria-describedby') || '').trim();
+      if (value && helpers.resolveIdRefs(value, ctx, {}, el).refs.length) describedBy = value;
+    }
+    const describedByHint = isRoleImg
+      ? `Its aria-describedby adds a description, not a name. Name it with aria-labelledby="${describedBy}" instead, or with aria-label.`
+      : `Its aria-describedby adds a description, not a name. Name it with aria-labelledby="${describedBy}" instead, or add fallback text inside the <canvas>.`;
     const baseOccurrence = {
       selector: '',
       html: '',
       summary: messages.summary,
-      hint: cause ? cause.hint : messages.hint,
+      hint: cause ? cause.hint : describedBy ? describedByHint : messages.hint,
       i18n: {
         summaryKey: messages.summaryKey,
-        hintKey: cause ? cause.hintKey : messages.hintKey,
-        params: { element: 'canvas', ...(cause ? cause.params : {}) }
+        hintKey: cause
+          ? cause.hintKey
+          : describedBy
+            ? isRoleImg
+              ? 'canvas_textAltPresent_hint_fail_roleImgDescribedby'
+              : 'canvas_textAltPresent_hint_fail_describedby'
+            : messages.hintKey,
+        params: {
+          element: 'canvas',
+          ...(cause ? cause.params : {}),
+          ...(describedBy ? { ids: describedBy } : {})
+        }
       },
       data: {
         details: {
           reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING',
-          ...(cause ? { nameCause: cause.detail } : {})
+          ...(cause ? { nameCause: cause.detail } : {}),
+          ...(describedBy ? { describedByOnly: describedBy } : {})
         },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

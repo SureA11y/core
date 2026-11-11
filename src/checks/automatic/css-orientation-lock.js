@@ -642,6 +642,15 @@ function runInPage(ctx) {
       return '';
     }
   }
+  // The address of a sheet, as the page links it ('' for one with none).
+  function sheetUrl(sheet) {
+    try {
+      const href = sheet && sheet.href;
+      return href ? new URL(href, dom.baseURI(document)).href : '';
+    } catch {
+      return '';
+    }
+  }
   function unreadableSheetsLean() {
     if (!unreadableSheetHosts.length) return null;
     if (!unreadableSheetHosts.every((h) => WEB_FONT_CSS_HOSTS.indexOf(h) !== -1)) return null;
@@ -666,6 +675,7 @@ function runInPage(ctx) {
   let sheetCount = 0;
   let unreadableSheetCount = 0;
   const unreadableSheetHosts = [];
+  const unreadableSheetUrls = [];
 
   try {
     // The document's sheets, adopted ones too, and each open shadow root's,
@@ -693,6 +703,8 @@ function runInPage(ctx) {
         if (!readable) {
           unreadableSheetCount += 1;
           unreadableSheetHosts.push(sheetHost(sheet));
+          const url = sheetUrl(sheet);
+          if (url) unreadableSheetUrls.push(url);
         }
         continue;
       }
@@ -766,14 +778,23 @@ function runInPage(ctx) {
   );
 
   function unreadableSheetsOccurrence(count) {
+    // The sheets to look in, by address: the first three.
+    const urls = unreadableSheetUrls.slice(0, 3);
+    const urlsText = urls.length
+      ? urls.join(', ') + (unreadableSheetUrls.length > 3 ? ', …' : '')
+      : '';
     return helpers.reportOccurrence(scanTarget, {
       ...withLean(unreadableSheetsLean()),
-      summary: `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
+      summary: urlsText
+        ? `${count} stylesheet(s) could not be read (${urlsText}), so whether this page locks its orientation could not be determined.`
+        : `${count} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.`,
       hint: "Stylesheets from another origin can't be read from the page. Check any third-party CSS for an orientation media query with a rotate() transform, or scan again with those stylesheets served from the same origin.",
       i18n: {
-        summaryKey: 'cssOrientationLock_summary_cantTell_unreadableSheets',
+        summaryKey: urlsText
+          ? 'cssOrientationLock_summary_cantTell_unreadableSheetsNamed'
+          : 'cssOrientationLock_summary_cantTell_unreadableSheets',
         hintKey: 'cssOrientationLock_hint_cantTell_unreadableSheets',
-        params: { count: String(count) }
+        params: { count: String(count), urls: urlsText }
       },
       uncertainty: {
         code: 'not-computable',
@@ -783,7 +804,10 @@ function runInPage(ctx) {
       data: {
         details: {
           reasonCode: 'STYLESHEETS_NOT_READABLE',
-          unreadableSheetCount: count
+          unreadableSheetCount: count,
+          ...(unreadableSheetUrls.length
+            ? { unreadableSheetUrls: unreadableSheetUrls.slice(0) }
+            : {})
         }
       }
     });

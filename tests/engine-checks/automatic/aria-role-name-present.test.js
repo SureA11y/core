@@ -663,3 +663,17 @@ test(`${RULE_ID}: a fail names an aria-labelledby with no text, or a blank aria-
     'Its aria-label is only white space, so it gives no name. Put the name in it.'
   );
 });
+
+test(`${RULE_ID}: the summary names the role that needs a name`, () => {
+  const html = `<!doctype html><html lang="en"><body>
+      <div id="rg" role="radiogroup" aria-labelledby="e"><span id="e"></span>
+        <div role="radio" aria-checked="false" tabindex="0">a</div></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const occ = rule.occurrences.find((o) => o.html.includes('id="rg"'));
+  assert.ok(occ);
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRoleNamePresent_summary_cantTell_role');
+  assert.strictEqual(occ.summary, 'This radiogroup element has no accessible name.');
+  assert.strictEqual(occ.i18n.hintKey, 'nameCause_hint_labelledbyEmpty');
+});
