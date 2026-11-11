@@ -794,18 +794,31 @@ function runInPage(ctx) {
     );
     const managedFromAbove = keyAbove || hookKeyAbove || focusKeeper;
 
+    // An <a> or <area> without href is no link and takes no focus, which a
+    // reader expecting a link to be focusable would not guess (WCAG F42).
+    const noHref = (tag === 'a' || tag === 'area') && !dom.hasAttribute(el, 'href');
+
     if (FAIL_ROLES.has(role) && !managedFromAbove) {
       fails.push(
         helpers.reportOccurrence(el, {
           summary: `This element has role="${role}" and a click handler, but neither it nor anything in it can take keyboard focus, so a keyboard user cannot reach it.`,
-          hint: `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
+          hint: noHref
+            ? `An <${tag}> without href is not a link and can't take keyboard focus. Give it a real href if it leads somewhere, or use a <button> for an action; or add tabindex="0" and make the keys a ${role} answers to do what a click does.`
+            : `Use the native element (<button>, <a href> or <input type="checkbox">), or add tabindex="0" and make the keys a ${role} answers to do what a click does.`,
           i18n: {
             summaryKey: 'clickHandlerKeyboardOperable_summary_fail_notFocusable',
-            hintKey: 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
-            params: { role }
+            hintKey: noHref
+              ? 'clickHandlerKeyboardOperable_hint_fail_notFocusableNoHref'
+              : 'clickHandlerKeyboardOperable_hint_fail_notFocusable',
+            params: { role, element: tag }
           },
           data: {
-            details: { reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE', role, focusable: false }
+            details: {
+              reasonCode: 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE',
+              role,
+              focusable: false,
+              ...(noHref ? { noHref: true } : {})
+            }
           }
         })
       );
@@ -851,10 +864,14 @@ function runInPage(ctx) {
       helpers.reportOccurrence(el, {
         ...(notFocusableLean ? { lean: notFocusableLean } : {}),
         summary: `This <${tag}> runs a click handler, but neither it nor anything in it can take keyboard focus.`,
-        hint: 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
+        hint: noHref
+          ? `An <${tag}> without href is not a link and can't take keyboard focus. Check that a keyboard user can do the same thing with another control of the page; if not, give it a real href if it leads somewhere, or use a <button> for an action.`
+          : 'Check that a keyboard user can do the same thing, here or with another control of the page. If not, use a native <button> or <a href>, or add tabindex="0" and handle Enter and Space.',
         i18n: {
           summaryKey: 'clickHandlerKeyboardOperable_summary_cantTell_notFocusable',
-          hintKey: 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
+          hintKey: noHref
+            ? 'clickHandlerKeyboardOperable_hint_cantTell_notFocusableNoHref'
+            : 'clickHandlerKeyboardOperable_hint_cantTell_notFocusable',
           params: { element: tag }
         },
         uncertainty: {
@@ -864,7 +881,12 @@ function runInPage(ctx) {
           evidence: { role, focusable: false, managedFromAbove }
         },
         data: {
-          details: { reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE', role, focusable: false }
+          details: {
+            reasonCode: 'CLICK_HANDLER_NOT_FOCUSABLE',
+            role,
+            focusable: false,
+            ...(noHref ? { noHref: true } : {})
+          }
         }
       })
     );

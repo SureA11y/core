@@ -597,3 +597,33 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/click-handler-keyboard-operab
     assert.ok(!hasOccurrenceForId(rule, `chko_case_${n}`), `case ${n} not reported`);
   }
 });
+
+test(`${RULE_ID}: an <a> without href is named as why it can't take focus`, () => {
+  const failRule = assertRule(
+    run('<a id="nh" role="button" onclick="go()">Btn</a>'),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  const failOcc = failRule.occurrences[0];
+  assert.strictEqual(failOcc.data.details.reasonCode, 'CLICK_HANDLER_CONTROL_NOT_FOCUSABLE');
+  assert.strictEqual(failOcc.data.details.noHref, true);
+  assert.strictEqual(
+    failOcc.i18n.hintKey,
+    'clickHandlerKeyboardOperable_hint_fail_notFocusableNoHref'
+  );
+  assert.match(failOcc.hint, /^An <a> without href is not a link and can't take keyboard focus\./);
+
+  const askRule = assertRule(
+    run('<a name="top" onclick="go()" style="cursor:pointer">Top</a>'),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  const askOcc = askRule.occurrences[0];
+  assert.strictEqual(askOcc.data.details.reasonCode, 'CLICK_HANDLER_NOT_FOCUSABLE');
+  assert.strictEqual(
+    askOcc.i18n.hintKey,
+    'clickHandlerKeyboardOperable_hint_cantTell_notFocusableNoHref'
+  );
+});
