@@ -710,3 +710,48 @@ test(`${RULE_ID}: a symbols-only label the name doesn't hold is asked about, lea
   const held = `<!doctype html><html lang="en"><body><main><button aria-label="+ add">+</button></main></body></html>`;
   assertRule(runa11yCoreOnHtml(held, { runOnly: [RULE_ID] }), RULE_ID, 'pass');
 });
+
+// The fail states the accessible name, and the hint which visible words it
+// lacks (and where they are shown), or that it has them all but apart.
+test('label-in-name: the fail names the accessible name and the words it lacks', () => {
+  const html = `
+<!doctype html><html><body>
+  <a id="ref" href="/x" aria-labelledby="h l">Read more</a><h3 id="h">Shirts</h3><span id="l">Details</span>
+  <button id="badge" aria-label="Search">Search <span class="badge">3</span></button>
+  <button id="apart" aria-label="Buy the shirt now">Buy now</button>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html), 'label-in-name', 'fail', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const ref = byId('ref');
+  assert.strictEqual(
+    ref.summary,
+    'a: visible label "Read more" (from self) is not included in the accessible name "Shirts Details" (from aria-labelledby).'
+  );
+  assert.strictEqual(ref.i18n.params.accessibleName, 'Shirts Details');
+  assert.strictEqual(ref.i18n.hintKey, 'labelInName_hint_fail_missingWords');
+  assert.deepStrictEqual(ref.data.details.missingWords, ['read', 'more']);
+
+  const badge = byId('badge');
+  assert.strictEqual(badge.i18n.hintKey, 'labelInName_hint_fail_missingWords');
+  assert.strictEqual(badge.i18n.params.missingWords, '"3"');
+  assert.strictEqual(badge.i18n.params.missingIn, '<span class="badge">');
+  assert.strictEqual(badge.data.details.missingWordsShownIn, '<span class="badge">');
+  assert.match(badge.summary, /in the accessible name "Search" \(from aria-label\)/);
+  assert.strictEqual(
+    badge.hint,
+    'The accessible name lacks "3" from the visible label, shown in <span class="badge"> inside the control. Add "3" to the name, or move that text out of the control, so people using speech input can activate it by saying what they see.'
+  );
+
+  const apart = byId('apart');
+  assert.strictEqual(apart.i18n.hintKey, 'labelInName_hint_fail_wordOrder');
+  assert.deepStrictEqual(apart.data.details.missingWords, []);
+  assert.match(
+    apart.hint,
+    /has every word of the visible label, but not together and in that order/
+  );
+  assert.match(apart.hint, /contain "Buy now" as one phrase/);
+});
