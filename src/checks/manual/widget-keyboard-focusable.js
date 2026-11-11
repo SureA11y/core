@@ -318,9 +318,10 @@ function runInPage(ctx) {
       return '';
     }
   }
-  function hasTabbableTwin(el, role) {
+  // The first other tab stop with el's role and name, or null.
+  function tabbableTwin(el, role) {
     const name = nameOf(el);
-    if (!name) return false;
+    if (!name) return null;
     if (!tabStopsByRoleName) {
       tabStopsByRoleName = new Map();
       for (const d of helpers.queryAllDeep(FOCUS_SELECTOR + ', [role]')) {
@@ -329,7 +330,7 @@ function runInPage(ctx) {
         tabStopsByRoleName.set(key, (tabStopsByRoleName.get(key) || []).concat(d));
       }
     }
-    return (tabStopsByRoleName.get(role + '|' + name) || []).some((d) => d !== el);
+    return (tabStopsByRoleName.get(role + '|' + name) || []).find((d) => d !== el) || null;
   }
   // A key listener the listener hook saw on an ancestor, the document or the
   // window; null without an early hook, which alone shows there is none.
@@ -456,7 +457,7 @@ function runInPage(ctx) {
 
     let lean;
     if (reasonCode === 'WIDGET_NOT_FOCUSABLE') {
-      if (!hasTabbableTwin(el, role))
+      if (!tabbableTwin(el, role))
         lean = {
           toward: 'fail',
           why: 'The element says it is a widget, but neither it nor anything in it can take focus, and no control in the tab order has its role and name.',
@@ -473,15 +474,24 @@ function runInPage(ctx) {
           }
         };
     } else if (reasonCode === 'WIDGET_NOT_IN_TAB_ORDER') {
-      if (hasTabbableTwin(el, role)) {
+      const twin = tabbableTwin(el, role);
+      if (twin) {
+        // The other control, as in the markup, for the reviewer to compare.
+        const other =
+          typeof helpers.describeMarkup === 'function' ? helpers.describeMarkup(twin) : '';
         lean = {
           toward: 'pass',
-          why: 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
+          why: other
+            ? `Another control in the tab order, ${other}, has the same role and name, so this one is a duplicate taken out of the tab order.`
+            : 'Another control in the tab order has the same role and name, so this one is a duplicate taken out of the tab order.',
           signals: [{ signal: 'same-name-tabbable-duplicate', value: true }],
           caution: 'Check that the two really do the same thing.',
           i18n: {
-            whyKey: 'widgetKeyboardFocusable_lean_why_duplicate',
-            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate'
+            whyKey: other
+              ? 'widgetKeyboardFocusable_lean_why_duplicateNamed'
+              : 'widgetKeyboardFocusable_lean_why_duplicate',
+            cautionKey: 'widgetKeyboardFocusable_lean_caution_duplicate',
+            ...(other ? { params: { other } } : {})
           }
         };
       } else if (keyListenerAbove(el) === false) {

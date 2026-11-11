@@ -228,3 +228,35 @@ test(`${RULE_ID}: names the controlled elements and what hides each`, () => {
     'aria-expanded="false" says the content it controls (#p) is collapsed, but it is shown.'
   );
 });
+
+test(`${RULE_ID}: names the ancestor that hides the one panel it controls`, () => {
+  const rule = assertRule(
+    run(
+      '<button aria-expanded="true" aria-controls="m1">Menu</button>' +
+        '<div class="drawer" style="display:none"><ul id="m1"><li>a</li></ul></div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'aria-expanded="true" says the content it controls (#m1) is expanded, but its ancestor <div class="drawer"> hides it with display: none.'
+  );
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'ariaExpandedStateMismatch_summary_cantTell_expandedHiddenByAncestor'
+  );
+  assert.strictEqual(occ.i18n.params.ancestor, '<div class="drawer">');
+  assert.strictEqual(occ.i18n.params.hiddenBy, 'display: none');
+
+  const fr = run(
+    '<button aria-expanded="true" aria-controls="m1">Menu</button>' +
+      '<div class="drawer" hidden><ul id="m1"><li>a</li></ul></div>',
+    { engineOptions: { locale: 'fr' } }
+  );
+  assert.strictEqual(
+    assertRule(fr, RULE_ID, 'cantTell').occurrences[0].summary,
+    'aria-expanded="true" indique que le contenu contrôlé (#m1) est déplié, mais son ancêtre <div class="drawer"> le masque avec hidden="".'
+  );
+});

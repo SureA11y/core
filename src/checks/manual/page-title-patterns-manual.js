@@ -406,19 +406,50 @@ function runInPage(ctx) {
             ? 'pageTitlePatterns_summary_cantTell_templateLike'
             : 'pageTitlePatterns_summary_cantTell_review';
     const review = reasonCode === 'titleReview';
+    const shownTitle = titleText.length > 80 ? `${titleText.slice(0, 79)}…` : titleText;
+    // The generic word of a templated title, as written: "Home" in "Acme | Home".
+    const templateWord = (() => {
+      if (reasonCode !== 'templateLikeTitle') return '';
+      let m = /\b(home|homepage|welcome)\b\s*(?:\||-|—|:)\s*./i.exec(titleText);
+      if (m) return m[1];
+      m = /.(?:\||-|—|:) ?\b(home|homepage|welcome)\b/i.exec(titleText);
+      if (m) return m[1];
+      const tokens = Object.prototype.hasOwnProperty.call(TEMPLATE_TOKENS, pageLang)
+        ? TEMPLATE_TOKENS[pageLang]
+        : [];
+      const parts = titleText.split(/\s*(?:\||-|—|:)\s*/).filter(Boolean);
+      const normPart = (x) =>
+        x
+          .toLowerCase()
+          .normalize('NFKC')
+          .replace(/[\u2018\u2019]/g, "'");
+      if (parts.length < 2) return '';
+      if (tokens.includes(normPart(parts[0]))) return parts[0];
+      const last = parts[parts.length - 1];
+      return tokens.includes(normPart(last)) ? last : '';
+    })();
     const occBase = {
       selector: titleSelector,
       html: '',
-      summary: review
-        ? `Check that the page title, “${titleText}”, says what the page is about.`
-        : 'The page title may not say clearly what the page is about.',
-      hint: review
-        ? "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages."
-        : 'Use a more specific title that identifies the page topic or purpose (for example, include the section name or task).',
+      summary:
+        reasonCode === 'genericTitle'
+          ? `The page title “${shownTitle}” is generic and may not say what the page is about.`
+          : reasonCode === 'veryShortTitle'
+            ? `The page title “${shownTitle}” is very short and may not say what the page is about.`
+            : reasonCode === 'templateLikeTitle' && templateWord
+              ? `The page title “${shownTitle}” pairs a site name with the generic word “${templateWord}”, and may not say what the page is about.`
+              : `Check that the page title, “${shownTitle}”, says what the page is about.`,
+      hint: "Check that the title says what the page is about or what it is for, and sets it apart from the site's other pages.",
       i18n: {
-        summaryKey,
+        summaryKey:
+          reasonCode === 'templateLikeTitle' && !templateWord
+            ? 'pageTitlePatterns_summary_cantTell_review'
+            : summaryKey,
         hintKey: 'pageTitlePatterns_hint_cantTell',
-        params: review ? { titleText } : {}
+        params: {
+          titleText: shownTitle,
+          ...(templateWord ? { word: templateWord } : {})
+        }
       },
       data: {
         details: {

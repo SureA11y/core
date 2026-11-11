@@ -375,3 +375,43 @@ test(`${RULE_ID}: the selector names the title element the finding is about`, ()
     ['a']
   );
 });
+
+test('the generic, very short and templated summaries quote the title, and the generic word', () => {
+  const occOf = (title, lang = 'en') =>
+    getFirstOccurrence(
+      assertRule(
+        runa11yCoreOnHtml(
+          `<!doctype html><html lang="${lang}"><head><title>${title}</title></head><body>Hi</body></html>`,
+          { runOnly: [RULE_ID] }
+        ),
+        RULE_ID,
+        'cantTell'
+      )
+    );
+
+  const generic = occOf('Home');
+  assert.strictEqual(
+    generic.summary,
+    'The page title “Home” is generic and may not say what the page is about.'
+  );
+  assert.deepStrictEqual(generic.i18n.params, { titleText: 'Home' });
+
+  const short = occOf('Ab');
+  assert.strictEqual(
+    short.summary,
+    'The page title “Ab” is very short and may not say what the page is about.'
+  );
+
+  const template = occOf('Acme Shoes | Home');
+  assert.strictEqual(template.data.details.reasonCode, 'templateLikeTitle');
+  assert.strictEqual(
+    template.summary,
+    'The page title “Acme Shoes | Home” pairs a site name with the generic word “Home”, and may not say what the page is about.'
+  );
+  assert.deepStrictEqual(template.i18n.params, { titleText: 'Acme Shoes | Home', word: 'Home' });
+
+  // In the page's language, the word as written.
+  const de = occOf('Startseite - Acme Schuhe', 'de');
+  assert.strictEqual(de.i18n.summaryKey, 'pageTitlePatterns_summary_cantTell_templateLike');
+  assert.strictEqual(de.i18n.params.word, 'Startseite');
+});

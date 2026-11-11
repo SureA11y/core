@@ -293,22 +293,38 @@ function runInPage(ctx) {
     const causes =
       listed.map((c) => (c.hiddenBy ? `${c.element} (${c.hiddenBy})` : c.element)).join(', ') +
       more;
+    // One panel hidden by an ancestor: the message names the ancestor, which
+    // the panel's own markup does not show.
+    const byAncestor =
+      !collapsed && controlledInfo.length === 1 && controlledInfo[0].hiddenByElement
+        ? controlledInfo[0]
+        : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: collapsed
           ? `aria-expanded="false" says the content it controls (${controlled}) is collapsed, but it is shown.`
-          : `aria-expanded="true" says the content it controls is expanded, but it is hidden: ${causes}.`,
+          : byAncestor
+            ? `aria-expanded="true" says the content it controls (${controlled}) is expanded, but its ancestor ${byAncestor.hiddenByElement} hides it with ${byAncestor.hiddenBy}.`
+            : `aria-expanded="true" says the content it controls is expanded, but it is hidden: ${causes}.`,
         hint: collapsed
           ? 'Check whether the content is open; if it is, set aria-expanded="true", or hide the content while collapsed.'
           : 'Check whether the content is open; if it is not, set aria-expanded="false", or show the content while expanded.',
         i18n: {
           summaryKey: collapsed
             ? 'ariaExpandedStateMismatch_summary_cantTell_collapsedShownNamed'
-            : 'ariaExpandedStateMismatch_summary_cantTell_expandedHiddenNamed',
+            : byAncestor
+              ? 'ariaExpandedStateMismatch_summary_cantTell_expandedHiddenByAncestor'
+              : 'ariaExpandedStateMismatch_summary_cantTell_expandedHiddenNamed',
           hintKey: collapsed
             ? 'ariaExpandedStateMismatch_hint_cantTell_collapsedShown'
             : 'ariaExpandedStateMismatch_hint_cantTell_expandedHidden',
-          params: { controlled, causes }
+          params: {
+            controlled,
+            causes,
+            ...(byAncestor
+              ? { ancestor: byAncestor.hiddenByElement, hiddenBy: byAncestor.hiddenBy }
+              : {})
+          }
         },
         ...(lean ? { lean } : {}),
         data: {

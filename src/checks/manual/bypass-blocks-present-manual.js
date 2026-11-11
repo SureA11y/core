@@ -422,6 +422,7 @@ function runInPage(ctx) {
     if (!content) return null;
     let leading = 0;
     let navWithLinks = false;
+    let navBlock = null;
     for (const el of queryAll(FOCUSABLE)) {
       if (!el || !isExposedToAt(el) || !precedes(el, content)) continue;
       const tabindex = dom.getAttribute(el, 'tabindex');
@@ -432,6 +433,7 @@ function runInPage(ctx) {
         for (let cur = el; cur && guard++ < 500; cur = dom.parentElement(cur)) {
           if (blockRoleOf(cur) === 'navigation') {
             navWithLinks = true;
+            navBlock = cur;
             break;
           }
         }
@@ -467,15 +469,25 @@ function runInPage(ctx) {
     // A navigation block with links in front of the page's own text, and
     // nothing to move past it: the block 2.4.1 is about (ACT cf77f2).
     if (navWithLinks && otherSamePageLinks === 0) {
+      // The block, named as in the markup: <nav class="top">.
+      const block =
+        navBlock && typeof helpers.describeElement === 'function'
+          ? helpers.describeElement(navBlock, { role: true })
+          : '';
       return {
         toward: 'fail',
-        why: "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
+        why: block
+          ? `The navigation block ${block} comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.`
+          : "A navigation block with links comes before the page's own content, and no skip link, main landmark, heading or same-page link leads past it.",
         signals,
         caution:
           'Whether the block repeats on other pages cannot be seen from one page, and a dialog built without <dialog> may hide the real page.',
         i18n: {
-          whyKey: 'bypassBlocksPresent_lean_why_navBeforeContent',
-          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent'
+          whyKey: block
+            ? 'bypassBlocksPresent_lean_why_navBeforeContentNamed'
+            : 'bypassBlocksPresent_lean_why_navBeforeContent',
+          cautionKey: 'bypassBlocksPresent_lean_caution_navBeforeContent',
+          ...(block ? { params: { block } } : {})
         }
       };
     }

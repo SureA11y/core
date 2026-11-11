@@ -407,3 +407,18 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-focus-indicator-suppresse
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: says which <style> element the removing rule is in`, () => {
+  const html =
+    '<!doctype html><html><head><style>p { color: red }</style>' +
+    '<style>*:focus { outline: none }</style></head><body><a href="/x" id="a">x</a></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This element takes a tab stop, and "*:focus" in <style> element 2 of the page removes its focus outline with no replacement indicator in any other focus rule matching it.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'cssFocusIndicatorSuppressed_summary_cantTell_inStyle');
+  assert.deepStrictEqual(occ.i18n.params, { selectors: '*:focus', index: 2 });
+  assert.strictEqual(occ.data.details.styleElementIndex, 2);
+});

@@ -115,3 +115,45 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/page-zones-landmark-all-scena
     );
   }
 });
+
+test(`${RULE_ID}: says which id or class names the block as a zone`, () => {
+  const rule = assertRule(
+    run(
+      '<div id="masthead">Logo</div><main>x</main>' +
+        '<div class="top nav"><a href="/a">A</a> <a href="/b">B</a></div>' +
+        '<div class="site-footer">f</div>'
+    ),
+    RULE_ID,
+    'cantTell'
+  );
+  const byCode = (code) => rule.occurrences.find((o) => o.data.details.reasonCode === code);
+
+  const banner = byCode('BANNER_NOT_EXPOSED');
+  assert.strictEqual(
+    banner.summary,
+    'The id "masthead" names this block as the page header, but the page has no banner landmark.'
+  );
+  assert.strictEqual(
+    banner.i18n.summaryKey,
+    'pageZonesLandmark_summary_cantTell_bannerNotExposedById'
+  );
+  assert.deepStrictEqual(banner.i18n.params, { token: 'masthead' });
+  assert.strictEqual(banner.data.details.namedBy, 'id');
+
+  const nav = byCode('NAVIGATION_NOT_EXPOSED');
+  assert.strictEqual(
+    nav.summary,
+    'The class "nav" names this block as a navigation, but it is not a navigation landmark.'
+  );
+  assert.strictEqual(
+    nav.i18n.summaryKey,
+    'pageZonesLandmark_summary_cantTell_navigationNotExposedByClass'
+  );
+
+  const footer = byCode('CONTENTINFO_NOT_EXPOSED');
+  assert.strictEqual(
+    footer.i18n.summaryKey,
+    'pageZonesLandmark_summary_cantTell_contentinfoNotExposedByClass'
+  );
+  assert.strictEqual(footer.data.details.namedByToken, 'site-footer');
+});

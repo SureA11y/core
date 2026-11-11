@@ -128,15 +128,27 @@ function runInPage(ctx) {
 
     if (normalizedAriaChecked === actualState) continue;
 
+    // The two states, as written and as they are.
+    const written = rawAriaChecked.length > 20 ? `${rawAriaChecked.slice(0, 19)}…` : rawAriaChecked;
+    const stateText =
+      actualState === 'mixed'
+        ? 'is indeterminate'
+        : actualState === 'true'
+          ? 'is checked'
+          : 'is not checked';
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This element’s aria-checked value does not match its actual checked/indeterminate state.',
+        summary: `This <input type="${type}"> has aria-checked="${written}", but it ${stateText}.`,
         hint: 'Make aria-checked match the real state, or remove it; a native checkbox or radio button already exposes its state.',
         i18n: {
-          summaryKey: 'ariaCheckedStateMismatch_summary_cantTell',
+          summaryKey:
+            actualState === 'mixed'
+              ? 'ariaCheckedStateMismatch_summary_cantTell_actualMixed'
+              : actualState === 'true'
+                ? 'ariaCheckedStateMismatch_summary_cantTell_actualChecked'
+                : 'ariaCheckedStateMismatch_summary_cantTell_actualUnchecked',
           hintKey: 'ariaCheckedStateMismatch_hint_cantTell',
-          params: { ariaChecked: normalizedAriaChecked, actualState, type }
+          params: { ariaChecked: normalizedAriaChecked, actualState, type, written }
         },
         // Browsers expose a native checkbox's or radio's own state and ignore
         // aria-checked on it (Chromium, checked 2026-10-25), so assistive
