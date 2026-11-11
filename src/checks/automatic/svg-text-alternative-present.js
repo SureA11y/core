@@ -301,16 +301,87 @@ function runInPage(ctx) {
       }
     }
 
+    // The hint names what the author put in place of a name, where the
+    // markup shows it: a missing or empty aria-labelledby target or a blank
+    // aria-label (helpers.nameCause), an alt, a <title> that is not a direct
+    // child (only those are read) or is empty, or <text> drawn in it.
+    const short = (v) => {
+      const t = trim(String(v || '').replace(/\s+/g, ' '));
+      return t.length > 40 ? `${t.slice(0, 39)}…` : t;
+    };
+    const svgCause = (() => {
+      const alt = short(dom.getAttribute(el, 'alt'));
+      if (alt) {
+        return {
+          hint: `Its alt="${alt}" does nothing: an <svg> has no alt attribute. Add a <title> child with that text, or aria-label="${alt}".`,
+          hintKey: 'svg_textAltPresent_hint_fail_alt',
+          params: { alt },
+          detail: { cause: 'altOnSvg', alt }
+        };
+      }
+      for (const t of dom.querySelectorAll(el, 'title')) {
+        const parent = dom.parentElement(t);
+        if (parent === el) continue;
+        const text = short(dom.textContent(t));
+        if (!text) continue;
+        const parentTag = String(dom.tagName(parent) || '').toLowerCase();
+        return {
+          hint: `Its <title> ("${text}") is inside a <${parentTag}>, where it names that element, not the <svg>: only a <title> that is a direct child of the <svg> names it. Move it there.`,
+          hintKey: 'svg_textAltPresent_hint_fail_nestedTitle',
+          params: { text, parentTag },
+          detail: { cause: 'nestedTitle', text, parent: parentTag }
+        };
+      }
+      let emptyTitle = false;
+      for (let c = dom.firstElementChild(el); c; c = dom.nextElementSibling(c)) {
+        if (String(dom.localName(c) || '').toLowerCase() === 'title') emptyTitle = true;
+      }
+      if (emptyTitle) {
+        const desc = short(descText);
+        return desc
+          ? {
+              hint: `Its <title> is empty, and the <desc> ("${desc}") gives a description, not a name. Put the name in the <title>.`,
+              hintKey: 'svg_textAltPresent_hint_fail_emptyTitleDesc',
+              params: { desc },
+              detail: { cause: 'emptyTitle', desc }
+            }
+          : {
+              hint: 'Its <title> is empty, so it gives no name. Put the name in it.',
+              hintKey: 'svg_textAltPresent_hint_fail_emptyTitle',
+              params: {},
+              detail: { cause: 'emptyTitle', desc: null }
+            };
+      }
+      const drawn = short(
+        [...dom.querySelectorAll(el, 'text')].map((t) => dom.textContent(t) || '').join(' ')
+      );
+      if (/[\p{L}\p{N}]/u.test(drawn)) {
+        return {
+          hint: `Its <text> "${drawn}" is drawn on screen, but text inside an <svg> does not name it. Add a <title> or aria-label with that text.`,
+          hintKey: 'svg_textAltPresent_hint_fail_textInside',
+          params: { text: drawn },
+          detail: { cause: 'textInside', text: drawn }
+        };
+      }
+      return null;
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || svgCause;
     const baseOccurrence = {
       summary: 'This <svg> has no text alternative.',
-      hint: 'Add a <title> with text, or name it with aria-label or aria-labelledby. A <desc> alone does not give it a name.',
+      hint: cause
+        ? cause.hint
+        : 'Add a <title> with text, or name it with aria-label or aria-labelledby. A <desc> alone does not give it a name.',
       i18n: {
         summaryKey: 'svg_textAltPresent_summary_fail',
-        hintKey: 'svg_textAltPresent_hint_fail',
-        params: { element: 'svg' }
+        hintKey: cause ? cause.hintKey : 'svg_textAltPresent_hint_fail',
+        params: { element: 'svg', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };
