@@ -1235,6 +1235,8 @@
   "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel は点字用の補足であり、代わりになるものではありません。表示テキスト、aria-label、aria-labelledby などで、要素にアクセシブルな名前も付けてください。",
   "ariaBrailleEquivalent_summary_fail_roleDescription": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription がありません。",
   "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。aria-roledescription も指定してください。",
+  "ariaBrailleEquivalent_summary_cantTell_roleDescriptionBlank": "この要素には aria-brailleroledescription がありますが、点字以外で対応する aria-roledescription が空です。",
+  "ariaBrailleEquivalent_hint_cantTell_roleDescriptionBlank": "aria-brailleroledescription は点字用の補足であり、代わりになるものではありません。ロールの説明を aria-roledescription にも入れてください。",
   "ariaBrailleEquivalent_lean_why_label": "この要素のロールには名前が必要ですが、点字ラベル以外に名前がないため、音声の利用者には名前が伝わりません。",
   "ariaBrailleEquivalent_lean_caution_label": "このロールの名前に関するルールも名前の欠落を報告します。問題は 2 つではなく 1 つです。",
   "ariaBrailleEquivalent_lean_why_roleDescription": "aria-roledescription がない場合、ブラウザーは点字のロール説明を公開しないため、要素は通常のロールのままで、失われるものはありません。",

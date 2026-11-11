@@ -210,8 +210,11 @@ function runInPage(ctx) {
 
     if (brailleRoleDesc) {
       const roleDesc = trim(dom.getAttribute(el, 'aria-roledescription'));
+      // Present but blank, which the reader sees in the markup: said so.
+      const blank = !roleDesc && dom.hasAttribute(el, 'aria-roledescription');
       if (!roleDesc)
         missing.push({
+          blank,
           // Browsers expose aria-brailleroledescription only with an
           // aria-roledescription, so the element keeps its usual role and
           // no user loses anything they had.
@@ -228,9 +231,12 @@ function runInPage(ctx) {
           attr: 'aria-brailleroledescription',
           requires: 'aria-roledescription',
           messageKey: 'roleDescription',
-          summary:
-            'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
-          hint: 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
+          summary: blank
+            ? 'This element has aria-brailleroledescription, but its aria-roledescription, the non-braille equivalent, is empty.'
+            : 'This element has aria-brailleroledescription but not aria-roledescription, its non-braille equivalent.',
+          hint: blank
+            ? 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also put the role description in aria-roledescription.'
+            : 'aria-brailleroledescription is a Braille-specific supplement, not a replacement, so also provide aria-roledescription.'
         });
     }
 
@@ -247,8 +253,12 @@ function runInPage(ctx) {
           summary: m.summary,
           hint: m.hint,
           i18n: {
-            summaryKey: `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
-            hintKey: `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
+            summaryKey: m.blank
+              ? 'ariaBrailleEquivalent_summary_cantTell_roleDescriptionBlank'
+              : `ariaBrailleEquivalent_summary_fail_${m.messageKey}`,
+            hintKey: m.blank
+              ? 'ariaBrailleEquivalent_hint_cantTell_roleDescriptionBlank'
+              : `ariaBrailleEquivalent_hint_fail_${m.messageKey}`,
             params: { element: tag, attr: m.attr }
           },
           uncertainty: {
@@ -262,7 +272,8 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'BRAILLE_ATTR_WITHOUT_EQUIVALENT',
               attr: m.attr,
-              requires: m.requires
+              requires: m.requires,
+              ...(m.blank ? { requiredBlank: true } : {})
             }
           }
         })

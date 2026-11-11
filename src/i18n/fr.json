@@ -1235,6 +1235,8 @@
   "ariaBrailleEquivalent_hint_fail_label": "aria-braillelabel est un complément spécifique au braille, pas un remplacement — donnez aussi un nom accessible à l’élément (par exemple un texte visible, aria-label ou aria-labelledby).",
   "ariaBrailleEquivalent_summary_fail_roleDescription": "Cet élément a aria-brailleroledescription mais pas aria-roledescription, son équivalent non braille.",
   "ariaBrailleEquivalent_hint_fail_roleDescription": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — fournissez aussi aria-roledescription.",
+  "ariaBrailleEquivalent_summary_cantTell_roleDescriptionBlank": "Cet élément a aria-brailleroledescription, mais son aria-roledescription, l’équivalent non braille, est vide.",
+  "ariaBrailleEquivalent_hint_cantTell_roleDescriptionBlank": "aria-brailleroledescription est un complément spécifique au braille, pas un remplacement — mettez aussi la description du rôle dans aria-roledescription.",
   "ariaBrailleEquivalent_lean_why_label": "Le rôle de l’élément exige un nom, et il n’en a aucun en dehors de son libellé braille : les utilisateurs de la synthèse vocale n’obtiennent aucun nom.",
   "ariaBrailleEquivalent_lean_caution_label": "La règle de nommage de ce rôle signale aussi le nom manquant : c’est un seul problème, pas deux.",
   "ariaBrailleEquivalent_lean_why_roleDescription": "Sans aria-roledescription, les navigateurs n’exposent pas la description de rôle braille : l’élément garde son rôle habituel et rien n’est perdu.",
