@@ -151,7 +151,7 @@ test(`${RULE_ID}: an inline <svg><title> is not the page title, so the reason is
     const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
     const occ = getFirstOccurrence(rule);
     assert.strictEqual(occ.data.details.reasonCode, 'missingTitleElement');
-    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_missing');
+    assert.strictEqual(occ.i18n.summaryKey, 'pageTitlePresent_summary_fail_svgOnly');
   }
 });
 
@@ -230,4 +230,32 @@ test(`${RULE_ID}: with no <head>, the finding points at <html>`, () => {
   const occ = getFirstOccurrence(result.checksResults[0]);
   assert.equal(occ.selector, 'html');
   assert.deepEqual([...doc.querySelectorAll(occ.selector)], [doc.documentElement]);
+});
+
+test(`${RULE_ID}: a fail says when the only <title> is an svg's, or a later <title> has the text`, () => {
+  const svgOnly = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head></head><body><svg><title>Logo</title></svg></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  const a = assertRule(svgOnly, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 })
+    .occurrences[0];
+  assert.equal(a.i18n.summaryKey, 'pageTitlePresent_summary_fail_svgOnly');
+  assert.equal(
+    a.summary,
+    'This page has no <title> element of its own: the only <title> ("Logo") is inside an <svg>, where it names the graphic.'
+  );
+  assert.equal(a.data.details.reasonCode, 'missingTitleElement');
+
+  const later = runa11yCoreOnHtml(
+    '<!doctype html><html lang="en"><head><title></title><title>Shop</title></head><body></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  const b = assertRule(later, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 })
+    .occurrences[0];
+  assert.equal(b.i18n.hintKey, 'pageTitlePresent_hint_fail_laterTitle');
+  assert.equal(
+    b.hint,
+    'Browsers use the first <title>, which is empty; the later <title> ("Shop") is ignored. Remove the empty one, or put the title text in it.'
+  );
+  assert.equal(b.data.details.reasonCode, 'emptyTitleText');
 });

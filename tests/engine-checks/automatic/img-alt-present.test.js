@@ -284,3 +284,49 @@ test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#
   });
   assert.ok(hasOccurrenceForId(rule, 'ip'));
 });
+
+test(`${RULE_ID}: a fail says when alt is only white space, or why role="presentation" is ignored`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <img id="i1" src="a.png" alt=" ">
+  <img id="i2" src="a.png" role="presentation" aria-describedby="d"><p id="d">x</p>
+  <img id="i3" src="a.png" role="none" tabindex="0">
+  <img id="i4" src="a.png">
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('i1').i18n.hintKey, 'img_altPresent_hint_fail_blankAlt');
+  assert.equal(
+    occ('i1').hint,
+    'Use alt="" (nothing between the quotes) if the image is decorative, or alt text that says what it shows.'
+  );
+  assert.equal(occ('i2').i18n.hintKey, 'img_altPresent_hint_fail_roleIgnoredGlobal');
+  assert.equal(
+    occ('i2').hint,
+    'It has role="presentation", but browsers ignore that role because the image has aria-describedby, a global ARIA attribute, so it is still an image and needs alt. Remove aria-describedby, or give it alt text.'
+  );
+  assert.equal(occ('i3').i18n.hintKey, 'img_altPresent_hint_fail_roleIgnoredFocus');
+  assert.equal(
+    occ('i3').hint,
+    'It has role="none", but browsers ignore that role because the image can take focus, so it is still an image and needs alt. Remove what makes it focusable (such as tabindex), or give it alt text.'
+  );
+  assert.equal(occ('i4').i18n.hintKey, 'img_altPresent_hint_fail');
+  assert.equal(
+    occ('i4').hint,
+    'Add an alt attribute that says what the image shows, or alt="" if the image is purely decorative.'
+  );
+});
+
+test(`${RULE_ID}: the summary of a white-space alt says it is not alt=""`, () => {
+  const html = '<!doctype html><html lang="en"><body><img src="a.png" alt=" "></body></html>';
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  const o = rule.occurrences[0];
+  assert.equal(o.i18n.summaryKey, 'img_altPresent_summary_fail_blankAlt');
+  assert.equal(
+    o.summary,
+    'This <img> has an alt attribute of only white space, which is not alt="": the image is not treated as decorative, and it has no name.'
+  );
+  assert.equal(o.data.details.reasonCode, 'TEXT_ALTERNATIVE_MISSING');
+});
