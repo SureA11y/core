@@ -443,7 +443,7 @@
   "treeitemNamePresent_hint_fail": "Stellen Sie einen Baumeintrag-Text bereit, der nicht vor assistiven Technologien verborgen ist, oder stellen Sie aria-label oder aria-labelledby bereit.",
   "ariaRoleNamePresent_title": "ARIA-Rollen, die einen zugänglichen Namen erfordern, haben einen",
   "ariaRoleNamePresent_description": "Prüft, ob die ARIA-Rollen, für die WAI-ARIA einen zugänglichen Namen vorschreibt, einen nicht leeren Namen aufweisen.",
-  "ariaRoleNamePresent_summary_fail": "Dieses Element hat keinen zugänglichen Namen.",
+  "ariaRoleNamePresent_summary_cantTell_role": "Dieses Element mit der Rolle {{role}} hat keinen zugänglichen Namen.",
   "ariaRoleNamePresent_hint_fail": "Benennen Sie es mit aria-label oder aria-labelledby. Ein title-Attribut funktioniert auch, aber weniger zuverlässig.",
   "composite_rollup_summary": "Ergebnis der zusammengesetzten Regel: {{reasonCode}} ({{testCount}} Prüfungen)",
   "catalog.rules.wcag_111_non_text_content.title": "Nicht-Text-Inhalt: Textalternativen",

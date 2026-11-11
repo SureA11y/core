@@ -443,7 +443,7 @@
   "treeitemNamePresent_hint_fail": "支援技術から隠されていないツリー項目のテキストを用意するか、aria-label または aria-labelledby を指定してください。",
   "ariaRoleNamePresent_title": "アクセシブルな名前を必要とする ARIA ロールに名前があること",
   "ariaRoleNamePresent_description": "WAI-ARIA がアクセシブルな名前を必須としているロールで、空でない名前が公開されているかを確認します。",
-  "ariaRoleNamePresent_summary_fail": "この要素にはアクセシブルな名前がありません。",
+  "ariaRoleNamePresent_summary_cantTell_role": "このロール {{role}} の要素にはアクセシブルな名前がありません。",
   "ariaRoleNamePresent_hint_fail": "aria-label または aria-labelledby で名前を付けてください。title 属性でも名前は付きますが、確実さに欠けます。",
   "composite_rollup_summary": "複合ルールの結果: {{reasonCode}} ({{testCount}} 件のチェック)",
   "catalog.rules.wcag_111_non_text_content.title": "非テキストコンテンツ: テキストによる代替",

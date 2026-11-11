@@ -443,7 +443,7 @@
   "treeitemNamePresent_hint_fail": "Fournissez un texte d’élément d’arborescence qui n’est pas masqué aux technologies d’assistance, ou fournissez aria-label ou aria-labelledby.",
   "ariaRoleNamePresent_title": "Les rôles ARIA qui exigent un nom accessible en ont un",
   "ariaRoleNamePresent_description": "Vérifie que les rôles ARIA pour lesquels WAI-ARIA exige un nom accessible exposent un nom non vide.",
-  "ariaRoleNamePresent_summary_fail": "Cet élément n’a pas de nom accessible.",
+  "ariaRoleNamePresent_summary_cantTell_role": "Cet élément de rôle {{role}} n’a pas de nom accessible.",
   "ariaRoleNamePresent_hint_fail": "Nommez-le avec aria-label ou aria-labelledby. Un attribut title fonctionne aussi, mais de façon moins fiable.",
   "composite_rollup_summary": "Résultat de la règle composite : {{reasonCode}} ({{testCount}} contrôles)",
   "catalog.rules.wcag_111_non_text_content.title": "Contenu non textuel : équivalents textuels",

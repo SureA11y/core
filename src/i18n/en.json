@@ -443,7 +443,7 @@
   "treeitemNamePresent_hint_fail": "Provide tree item text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.",
   "ariaRoleNamePresent_title": "ARIA roles that require an accessible name have one",
   "ariaRoleNamePresent_description": "Checks that the ARIA roles WAI-ARIA requires an accessible name for expose a non-empty one.",
-  "ariaRoleNamePresent_summary_fail": "This element has no accessible name.",
+  "ariaRoleNamePresent_summary_cantTell_role": "This {{role}} element has no accessible name.",
   "ariaRoleNamePresent_hint_fail": "Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.",
   "composite_rollup_summary": "Composite rule result: {{reasonCode}} ({{testCount}} checks)",
   "catalog.rules.wcag_111_non_text_content.title": "Non-text content: text alternatives",
