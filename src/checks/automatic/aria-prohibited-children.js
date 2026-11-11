@@ -411,6 +411,14 @@ function runInPage(ctx) {
       let hint;
       let summaryKey;
       let hintKey;
+      // A role the child has by its tag (a plain <li> is a listitem) has no
+      // attribute to remove or change: the message names the element, and a
+      // role attribute that names no ARIA role (helpers.roleTypo) is said.
+      const childElement = String(dom.tagName(entry.el) || '').toLowerCase();
+      const implicit =
+        !!entry.role && !entry.native && ariaHelpers.getExplicitRole(entry.el) !== entry.role;
+      const typo =
+        implicit && typeof helpers.roleTypo === 'function' ? helpers.roleTypo(entry.el) : null;
       if (entry.native) {
         summary = `This element is a ${entry.role}, which isn't allowed directly inside a role="${role}" container.`;
         hint = `Move it out of the ${role} container, or use one of the roles the container allows (${allowedRoles.join(', ')}). A focusable element keeps its role even with role="none".`;
@@ -426,6 +434,20 @@ function runInPage(ctx) {
         hint = `Remove ${entry.attr}, give the element role="none" if it isn't meant to be exposed on its own, or move it out of the ${role} container.`;
         summaryKey = 'ariaProhibitedChildren_summary_fail_roleless';
         hintKey = 'ariaProhibitedChildren_hint_fail_roleless';
+      } else if (typo) {
+        summary = `This <${childElement}>’s role "${typo.written}" is not an ARIA role, so it stays a ${entry.role}, which isn't allowed directly inside a role="${role}" container.`;
+        hint = typo.suggestion
+          ? `Did you mean role="${typo.suggestion}"? Otherwise give it one of the roles the container allows (${allowedRoles.join(', ')}), or role="none".`
+          : `Give the <${childElement}> one of the roles the container allows (${allowedRoles.join(', ')}), or role="none" so what it holds belongs to the ${role}.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_typo';
+        hintKey = typo.suggestion
+          ? 'ariaProhibitedChildren_hint_fail_typoNear'
+          : 'ariaProhibitedChildren_hint_fail_implicit';
+      } else if (implicit) {
+        summary = `This <${childElement}> is a ${entry.role} by default, which isn't allowed directly inside a role="${role}" container.`;
+        hint = `Give the <${childElement}> one of the roles the container allows (${allowedRoles.join(', ')}), or role="none" so what it holds belongs to the ${role}.`;
+        summaryKey = 'ariaProhibitedChildren_summary_fail_implicit';
+        hintKey = 'ariaProhibitedChildren_hint_fail_implicit';
       } else {
         summary = `This element has role="${entry.role}", which isn't allowed directly inside a role="${role}" container.`;
         hint = `Remove or change this role so it matches one of the container's allowed owned roles (${allowedRoles.join(', ')}), or move this element outside the ${role} container.`;
@@ -445,7 +467,9 @@ function runInPage(ctx) {
               : {
                   childRole: entry.role,
                   containerRole: role,
-                  allowedRoles: allowedRoles.join(', ')
+                  allowedRoles: allowedRoles.join(', '),
+                  element: childElement,
+                  ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {})
                 }
           },
           data: {
@@ -455,7 +479,9 @@ function runInPage(ctx) {
               attr: entry.attr,
               containerRole: role,
               containerSelector,
-              allowedOwnedRoles: allowedRoles
+              allowedOwnedRoles: allowedRoles,
+              ...(implicit ? { implicitRole: true } : {}),
+              ...(typo ? { roleTypo: typo } : {})
             }
           }
         })

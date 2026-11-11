@@ -318,3 +318,47 @@ test(`${RULE_ID}: elements owned through aria-owns are checked in work linear in
   );
   assertRule(hundred.result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a plain <li> between a menu and its menuitem is named as what breaks the ownership`, () => {
+  const occ = messageOccurrence(
+    '<ul role="menu"><li><a role="menuitem" href="#">m</a></li></ul>',
+    'menuitem'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredParent_summary_fail_blocked');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredParent_hint_fail_blocked');
+  assert.strictEqual(
+    occ.summary,
+    'role="menuitem" must sit directly inside one of these roles: menu, menubar, group. A menu (<ul>) is above it, but the <li> between them is a listitem, so the menu is not its parent.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Give the <li> role="none" so the menuitem belongs to the menu, or move the menuitem directly inside the menu.'
+  );
+});
+
+test(`${RULE_ID}: an ancestor with a misspelled role is named, with the role it likely meant`, () => {
+  const occ = messageOccurrence('<div role="lisbox"><div role="option">b</div></div>', 'option');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredParent_summary_fail_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredParent_hint_fail_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'role="option" must sit inside an element with one of these roles: listbox, group. An ancestor <div> has role "lisbox", which is not an ARIA role, so it has none.'
+  );
+  assert.strictEqual(occ.hint, 'Did you mean role="listbox"? Fix the ancestor’s role.');
+});

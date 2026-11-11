@@ -300,14 +300,47 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Each tab stop as the reader finds it in the markup, with what makes it
+    // focusable (helpers.describeElement): <span tabindex="0"> "3". The
+    // first three, and how many more.
+    const described = tabStops
+      .slice(0, 3)
+      .map((n) => {
+        try {
+          return typeof helpers.describeElement === 'function' ? helpers.describeElement(n) : '';
+        } catch {
+          return '';
+        }
+      })
+      .filter(Boolean);
+    const focusableElements = described.length
+      ? described.join(', ') + (tabStops.length > 3 ? ` (+${tabStops.length - 3})` : '')
+      : dedupedTabStopTags.join(', ');
+    // A role the element has by its tag (a <button>) has no role attribute
+    // to remove: the message names the element, and the hint leaves the
+    // role alone.
+    const element = lower(dom.tagName(el));
+    const explicit = lower(
+      helpers.aria && helpers.aria.getExplicitRole ? helpers.aria.getExplicitRole(el) : ''
+    );
+    const native = explicit !== role;
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${dedupedTabStopTags.join(', ')}).`,
-        hint: 'Move the focusable content out of this element, or remove the role that makes its children presentational; otherwise focus lands on something screen readers announce with no role or name.',
+        summary: native
+          ? `This <${element}> is a ${role}, which makes its children presentational, but it contains content that is still in the tab order: ${focusableElements}.`
+          : `This role="${role}" element makes its children presentational, but it contains content that is still part of sequential focus navigation (${focusableElements}).`,
+        hint: native
+          ? `Move the focusable content out of the <${element}>, or take it out of the tab order; otherwise focus lands on something screen readers announce with no role or name.`
+          : 'Move the focusable content out of this element, or remove the role that makes its children presentational; otherwise focus lands on something screen readers announce with no role or name.',
         i18n: {
-          summaryKey: 'presentationalChildrenFocusableAbsent_summary_fail',
-          hintKey: 'presentationalChildrenFocusableAbsent_hint_fail',
-          params: { role, focusableElements: dedupedTabStopTags.join(', ') }
+          summaryKey: native
+            ? 'presentationalChildrenFocusableAbsent_summary_fail_native'
+            : 'presentationalChildrenFocusableAbsent_summary_fail',
+          hintKey: native
+            ? 'presentationalChildrenFocusableAbsent_hint_fail_native'
+            : 'presentationalChildrenFocusableAbsent_hint_fail',
+          params: { role, element, focusableElements }
         },
         data: {
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -315,7 +348,9 @@ function runInPage(ctx) {
             reasonCode: 'PRESENTATIONAL_CHILDREN_FOCUSABLE_CONTENT',
             role,
             element: lower(dom.tagName(el)),
-            focusableElements: tabStopTags
+            focusableElements: tabStopTags,
+            ...(described.length ? { focusableDescriptions: described } : {}),
+            ...(native ? { implicitRole: true } : {})
           }
         }
       })

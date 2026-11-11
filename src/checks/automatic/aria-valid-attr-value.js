@@ -633,6 +633,87 @@ function runInPage(ctx) {
     return USER_SETTABLE_STATE_ATTRS.has(item.name) && CONTROL_ROLES.has(controlRoleOf(el));
   }
 
+  // What a missing id reference was likely meant to be: the bare id of a
+  // value written with a leading "#" (aria-controls="#menu") whose bare id
+  // an element has, or the id that differs from it only by case or one
+  // character (the near-miss lean's signal).
+  function idRefFix(el, value, lean) {
+    const v = trim(value);
+    if (/^#\S+$/.test(v)) {
+      const bare = v.slice(1);
+      let found = null;
+      try {
+        found = helpers.getElementByIdInTree(el, bare);
+      } catch {}
+      if (found) return { bareId: bare };
+    }
+    const near =
+      lean && lean.signals ? lean.signals.find((x) => x.signal === 'near-miss-id') : null;
+    return near ? { nearId: String(near.value) } : null;
+  }
+
+  // The hint for an invalid value: the values or the kind of value the
+  // attribute takes, by why the value was refused.
+  function valueHint(item, fix) {
+    const attr = item.name;
+    if (item.reason === 'idref-not-found') {
+      if (fix && fix.bareId)
+        return {
+          key: 'ariaValidAttrValue_hint_fail_idrefHash',
+          text: `Remove the "#": an id reference takes the bare id, ${fix.bareId}.`,
+          params: { bareId: fix.bareId }
+        };
+      if (fix && fix.nearId)
+        return {
+          key: 'ariaValidAttrValue_hint_fail_idrefNear',
+          text: `An element with id "${fix.nearId}" exists; did you mean that?`,
+          params: { nearId: fix.nearId }
+        };
+      return {
+        key: 'ariaValidAttrValue_hint_fail_idrefMissing',
+        text: 'Point it at the id of an element on the page, or remove it.',
+        params: {}
+      };
+    }
+    if (item.reason === 'invalid-token') {
+      const tokens = ariaHelpers.getAttrTokens ? ariaHelpers.getAttrTokens(attr) : null;
+      if (tokens && tokens.length) {
+        const list = ariaHelpers.getAttrValueType(attr) === 'token-list';
+        return {
+          key: list
+            ? 'ariaValidAttrValue_hint_fail_tokenList'
+            : 'ariaValidAttrValue_hint_fail_tokens',
+          text: list
+            ? `${attr} takes one or more of these values, separated by spaces: ${tokens.join(', ')}.`
+            : `${attr} takes one of these values: ${tokens.join(', ')}.`,
+          params: { values: tokens.join(', ') }
+        };
+      }
+      return null;
+    }
+    const BY_REASON = {
+      'expected-true-false': ['trueFalse', `${attr} takes "true" or "false".`],
+      'expected-true-false-undefined': [
+        'trueFalseUndefined',
+        `${attr} takes "true", "false" or "undefined".`
+      ],
+      'expected-true-false-mixed': ['trueFalseMixed', `${attr} takes "true", "false" or "mixed".`],
+      'expected-integer': ['integer', `${attr} takes a whole number, such as 2.`],
+      'expected-number':
+        attr === 'aria-valuenow'
+          ? [
+              'numberValuenow',
+              `${attr} takes a number without units or other text, such as 50; put text such as "50%" in aria-valuetext.`
+            ]
+          : ['number', `${attr} takes a number without units or other text, such as 50.`],
+      'expected-single-idref': ['singleIdref', `${attr} takes a single id, with no spaces.`]
+    };
+    const entry = BY_REASON[item.reason];
+    return entry
+      ? { key: 'ariaValidAttrValue_hint_fail_' + entry[0], text: entry[1], params: {} }
+      : null;
+  }
+
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('*') : helpers.queryAll('*');
 
   const failOccurrences = [];
@@ -682,15 +763,26 @@ function runInPage(ctx) {
       // or focus undeterminable (SC 4.1.2); elsewhere it is a WAI-ARIA
       // violation whose WCAG effect a person settles.
       const wcagFail = invalidValueFailsWcag(el, item);
+      // A well-formed id no element has is a missing target, not a value of
+      // the wrong kind: said so, with the id it was likely meant to be.
+      const idMissing = item.reason === 'idref-not-found';
+      const fix = idMissing ? idRefFix(el, item.value, targetAbsentLean(el, item.value)) : null;
+      const vh = valueHint(item, fix);
       (wcagFail ? failOccurrences : cantTellOccurrences).push(
         helpers.reportOccurrence(el, {
-          summary: 'This element has an ARIA attribute with an invalid value.',
-          hint: 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
+          summary: idMissing
+            ? `${item.name} points to id "${item.value}", which no element on the page has.`
+            : 'This element has an ARIA attribute with an invalid value.',
+          hint: vh
+            ? vh.text
+            : 'Use a value of the type this attribute expects, as the WAI-ARIA specification defines it.',
           occurrenceOutcome: wcagFail ? 'fail' : 'cantTell',
           i18n: {
-            summaryKey: 'ariaValidAttrValue_summary_fail',
-            hintKey: 'ariaValidAttrValue_hint_fail',
-            params: { attr: item.name, value: item.value }
+            summaryKey: idMissing
+              ? 'ariaValidAttrValue_summary_fail_idrefMissing'
+              : 'ariaValidAttrValue_summary_fail',
+            hintKey: vh ? vh.key : 'ariaValidAttrValue_hint_fail',
+            params: { attr: item.name, value: item.value, ...(vh ? vh.params : {}) }
           },
           ...(wcagFail
             ? {}
@@ -707,7 +799,8 @@ function runInPage(ctx) {
               reasonCode: 'ARIA_ATTR_VALUE_INVALID',
               attr: item.name,
               value: item.value,
-              valueReason: item.reason
+              valueReason: item.reason,
+              ...(fix || {})
             }
           }
         })
@@ -717,19 +810,31 @@ function runInPage(ctx) {
     for (const item of review || []) {
       const controls = item.name === 'aria-controls';
       const lean = targetAbsentLean(el, item.value);
+      // A leading "#" or a near id, said in the hint (idRefFix).
+      const fix = idRefFix(el, item.value, lean);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           summary:
             'No element with this id exists right now, so the engine cannot tell whether this reference is wrong.',
-          hint: controls
-            ? 'Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.'
-            : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
+          hint:
+            fix && fix.bareId
+              ? `Remove the "#": an id reference takes the bare id, ${fix.bareId}, and an element with that id exists.`
+              : fix && fix.nearId
+                ? `No element has this id, but one has id "${fix.nearId}"; did you mean that? If not, check whether an element with this id is added later.`
+                : controls
+                  ? 'Check that the element it refers to is added when the widget opens; if it never is, fix or remove the reference.'
+                  : 'Check whether an element with this id is added later. If not, correct or remove the reference; until then the element uses its other name or description sources.',
           i18n: {
             summaryKey: 'ariaValidAttrValue_summary_cantTell_idref',
-            hintKey: controls
-              ? 'ariaValidAttrValue_hint_cantTell_idref'
-              : 'ariaValidAttrValue_hint_cantTell_idrefList',
-            params: { attr: item.name, value: item.value }
+            hintKey:
+              fix && fix.bareId
+                ? 'ariaValidAttrValue_hint_cantTell_idrefHash'
+                : fix && fix.nearId
+                  ? 'ariaValidAttrValue_hint_cantTell_idrefNear'
+                  : controls
+                    ? 'ariaValidAttrValue_hint_cantTell_idref'
+                    : 'ariaValidAttrValue_hint_cantTell_idrefList',
+            params: { attr: item.name, value: item.value, ...(fix || {}) }
           },
           uncertainty: {
             code: 'runtime-dependent',
@@ -748,7 +853,8 @@ function runInPage(ctx) {
               reasonCode: 'ARIA_ATTR_VALUE_TARGET_ABSENT',
               attr: item.name,
               value: item.value,
-              valueReason: item.reason
+              valueReason: item.reason,
+              ...(fix || {})
             }
           }
         })

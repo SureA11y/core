@@ -506,6 +506,17 @@ function runInPage(ctx) {
       };
     }
 
+    // A role attribute that names no ARIA role (helpers.roleTypo) is why
+    // the element has none: the reader sees a role in the markup, so the
+    // message says so, and the role it likely misspells.
+    const typo = typeof helpers.roleTypo === 'function' ? helpers.roleTypo(el) : null;
+    const typoParams = typo ? { written: typo.written, suggestion: typo.suggestion } : {};
+    const typoHint =
+      typo && typo.suggestion
+        ? (attr) => `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${attr}.`
+        : null;
+    const typoDetails = typo ? { roleTypo: typo } : {};
+
     for (const attr of present) {
       // A role description has nothing to describe without a role, whatever
       // the element's content: content can stand in for a name, not a role.
@@ -515,12 +526,20 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
-            summary: `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
-            hint: 'Give the element the role the description refines, or remove the attribute.',
+            summary: typo
+              ? `This <${tag}>’s role "${typo.written}" is not an ARIA role, so it has none, and its ${attr} describes nothing and assistive technology ignores it.`
+              : `This <${tag}> has no role, so its ${attr} describes nothing and assistive technology ignores it.`,
+            hint: typoHint
+              ? typoHint(attr)
+              : 'Give the element the role the description refines, or remove the attribute.',
             i18n: {
-              summaryKey: 'ariaProhibitedAttr_summary_fail_roleDescription',
-              hintKey: 'ariaProhibitedAttr_hint_fail_roleDescription',
-              params: { attr, element: tag }
+              summaryKey: typo
+                ? 'ariaProhibitedAttr_summary_fail_roleDescription_typo'
+                : 'ariaProhibitedAttr_summary_fail_roleDescription',
+              hintKey: typoHint
+                ? 'ariaProhibitedAttr_hint_typoNear'
+                : 'ariaProhibitedAttr_hint_fail_roleDescription',
+              params: { attr, element: tag, ...typoParams }
             },
             uncertainty: {
               code: 'spec-only',
@@ -533,7 +552,8 @@ function runInPage(ctx) {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
                 attr,
                 role: null,
-                element: tag
+                element: tag,
+                ...typoDetails
               }
             }
           })
@@ -543,12 +563,20 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
-            summary: `This <${tag}> has no role, so assistive technology may not announce its ${attr}; its own text gives it a name anyway.`,
-            hint: 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
+            summary: typo
+              ? `This <${tag}>’s role "${typo.written}" is not an ARIA role, so it has none, and assistive technology may not announce its ${attr}; its own text gives it a name anyway.`
+              : `This <${tag}> has no role, so assistive technology may not announce its ${attr}; its own text gives it a name anyway.`,
+            hint: typoHint
+              ? typoHint(attr)
+              : 'Verify whether the existing text content already serves as this element’s label; if so the naming attribute is redundant, otherwise give the element a role that supports naming (e.g. role="img").',
             i18n: {
-              summaryKey: 'ariaProhibitedAttr_summary_cantTell_roleless',
-              hintKey: 'ariaProhibitedAttr_hint_cantTell_roleless',
-              params: { attr, element: tag }
+              summaryKey: typo
+                ? 'ariaProhibitedAttr_summary_cantTell_roleless_typo'
+                : 'ariaProhibitedAttr_summary_cantTell_roleless',
+              hintKey: typoHint
+                ? 'ariaProhibitedAttr_hint_typoNear'
+                : 'ariaProhibitedAttr_hint_cantTell_roleless',
+              params: { attr, element: tag, ...typoParams }
             },
             uncertainty: {
               code: 'judgement-required',
@@ -561,7 +589,8 @@ function runInPage(ctx) {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS_NEEDS_REVIEW',
                 attr,
                 role: null,
-                element: tag
+                element: tag,
+                ...typoDetails
               }
             }
           })
@@ -570,19 +599,28 @@ function runInPage(ctx) {
         failOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'fail',
-            summary: `This <${tag}> has no role and no other source of a name, so assistive technology may not announce its ${attr}.`,
-            hint: 'Give it a role that can be named, such as role="img" or role="button", or remove the attribute if it does nothing without one.',
+            summary: typo
+              ? `This <${tag}>’s role "${typo.written}" is not an ARIA role, so it has none, and with no other source of a name, assistive technology may not announce its ${attr}.`
+              : `This <${tag}> has no role and no other source of a name, so assistive technology may not announce its ${attr}.`,
+            hint: typoHint
+              ? typoHint(attr)
+              : 'Give it a role that can be named, such as role="img" or role="button", or remove the attribute if it does nothing without one.',
             i18n: {
-              summaryKey: 'ariaProhibitedAttr_summary_fail_roleless',
-              hintKey: 'ariaProhibitedAttr_hint_fail_roleless',
-              params: { attr, element: tag }
+              summaryKey: typo
+                ? 'ariaProhibitedAttr_summary_fail_roleless_typo'
+                : 'ariaProhibitedAttr_summary_fail_roleless',
+              hintKey: typoHint
+                ? 'ariaProhibitedAttr_hint_typoNear'
+                : 'ariaProhibitedAttr_hint_fail_roleless',
+              params: { attr, element: tag, ...typoParams }
             },
             data: {
               details: {
                 reasonCode: 'ARIA_ATTR_PROHIBITED_ROLELESS',
                 attr,
                 role: null,
-                element: tag
+                element: tag,
+                ...typoDetails
               }
             }
           })

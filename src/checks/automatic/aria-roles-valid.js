@@ -192,44 +192,10 @@ function runInPage(ctx) {
     window: []
   };
 
-  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
-  function editDistance(a, b) {
-    const d = [];
-    for (let i = 0; i <= a.length; i++) {
-      d.push([i]);
-      for (let j = 1; j <= b.length; j++) {
-        if (i === 0) {
-          d[0].push(j);
-          continue;
-        }
-        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
-        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
-        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
-          v = Math.min(v, d[i - 2][j - 2] + 1);
-        d[i].push(v);
-      }
-    }
-    return d[a.length][b.length];
-  }
-
-  // The one concrete role a token is a near misspelling of: one edit away
-  // for a token of up to five letters, two for a longer one, and no other
-  // role as near. Shorter tokens resemble too many words to tell.
+  // The one concrete role a token is a near misspelling of
+  // (helpers.nearestRole), '' when none is.
   function nearestRole(token) {
-    if (token.length < 4 || typeof ariaHelpers.concreteRoles !== 'function') return '';
-    const limit = token.length <= 5 ? 1 : 2;
-    let best = '';
-    let bestDistance = Infinity;
-    let tie = false;
-    for (const r of ariaHelpers.concreteRoles()) {
-      const d = editDistance(token, r);
-      if (d < bestDistance) {
-        best = r;
-        bestDistance = d;
-        tie = false;
-      } else if (d === bestDistance) tie = true;
-    }
-    return bestDistance <= limit && !tie ? best : '';
+    return typeof helpers.nearestRole === 'function' ? helpers.nearestRole(token) : '';
   }
 
   // Which way an unusable role on an element that keeps its native role
@@ -325,17 +291,35 @@ function runInPage(ctx) {
         ? ariaHelpers.getNativeRoleForElement(el) || ''
         : '';
 
+    // The role a misspelled token was likely meant to be, said in the hint.
+    let suggestion = '';
+    if (!isKnown) {
+      for (const t of tokens) {
+        suggestion = nearestRole(t);
+        if (suggestion) break;
+      }
+    }
+    const element = String(dom.tagName(el) || '').toLowerCase();
+
     if (nativeRole) {
       const lean = leanFor(reasonCode, tokens, nativeRole);
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'cantTell',
-          summary: `The role attribute has no usable value, so this element keeps its native role, "${nativeRole}".`,
-          hint: 'Fix or remove the role attribute; until then, assistive technology treats the element by its native role.',
+          summary: !isKnown
+            ? `role="${role}" is not an ARIA role, so this <${element}> keeps its native role, ${nativeRole}.`
+            : `The role attribute has no usable value, so this element keeps its native role, "${nativeRole}".`,
+          hint: suggestion
+            ? `Did you mean role="${suggestion}"? Fix the role, or remove it if the native role, ${nativeRole}, is what you want.`
+            : 'Fix or remove the role attribute; until then, assistive technology treats the element by its native role.',
           i18n: {
-            summaryKey: 'ariaRolesValid_summary_cantTell',
-            hintKey: 'ariaRolesValid_hint_cantTell',
-            params: { role, nativeRole }
+            summaryKey: !isKnown
+              ? 'ariaRolesValid_summary_cantTell_invalid'
+              : 'ariaRolesValid_summary_cantTell',
+            hintKey: suggestion
+              ? 'ariaRolesValid_hint_cantTell_near'
+              : 'ariaRolesValid_hint_cantTell',
+            params: { role, nativeRole, element, ...(suggestion ? { suggestion } : {}) }
           },
           uncertainty: {
             code: 'spec-only',
@@ -344,7 +328,7 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode, role, nativeRole }
+            details: { reasonCode, role, nativeRole, ...(suggestion ? { suggestion } : {}) }
           }
         })
       );
@@ -382,18 +366,24 @@ function runInPage(ctx) {
         summary: !isKnown
           ? 'The role attribute value is not a recognized ARIA role.'
           : 'The role attribute value is an abstract ARIA role, which must not be used directly.',
-        hint: !isKnown
-          ? 'Use a valid ARIA role, or remove the role attribute if none fits.'
-          : 'Replace it with a concrete role that matches what the element is, such as "button" or "region".',
+        hint: suggestion
+          ? `Did you mean role="${suggestion}"? As written, the role is ignored and the element has none.`
+          : !isKnown
+            ? 'Use a valid ARIA role, or remove the role attribute if none fits.'
+            : 'Replace it with a concrete role that matches what the element is, such as "button" or "region".',
         i18n: {
           summaryKey: !isKnown
             ? 'ariaRolesValid_summary_invalid'
             : 'ariaRolesValid_summary_abstract',
-          hintKey: !isKnown ? 'ariaRolesValid_hint_invalid' : 'ariaRolesValid_hint_abstract',
-          params: { role }
+          hintKey: suggestion
+            ? 'ariaRolesValid_hint_invalid_near'
+            : !isKnown
+              ? 'ariaRolesValid_hint_invalid'
+              : 'ariaRolesValid_hint_abstract',
+          params: { role, ...(suggestion ? { suggestion } : {}) }
         },
         data: {
-          details: { reasonCode, role }
+          details: { reasonCode, role, ...(suggestion ? { suggestion } : {}) }
         }
       })
     );

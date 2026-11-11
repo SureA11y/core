@@ -1537,6 +1537,13 @@ function createAriaHelpers(opts, shared) {
     // Every concrete role token: the list the live-region hook keeps a copy
     // of, to resolve a role attribute as getExplicitRole does.
     concreteRoles: () => [...CONCRETE_ROLES],
+    // Every WAI-ARIA attribute name, and the tokens one with an enumerated
+    // value takes (null for any other), for a rule that says what was meant.
+    ariaAttrNames: () => Object.keys(ATTR_VALUE_TYPES),
+    getAttrTokens: (name) => {
+      const set = ATTR_TOKEN_SETS[lower(name)];
+      return set ? [...set] : null;
+    },
     isValidAriaAttrName,
     getAttrValueType,
     validateAttrValue,
@@ -1557,6 +1564,11 @@ function createAriaHelpers(opts, shared) {
     getRequiredOwnedRoles,
     getRequiredContextRoles,
     isRoleAllowedOnElement,
+    // The permitted-roles entry an element falls under (section and
+    // section[named], img and img[alt], ...) and the roles it permits, for
+    // aria-allowed-role to say why a role is not allowed.
+    getElementRoleKey,
+    getAllowedRolesForElement,
     getContainmentRole,
 
     // An element's own native/implicit ARIA-in-HTML role (see

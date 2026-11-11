@@ -2257,6 +2257,116 @@ function createDomHelpers(opts) {
     }
   }
 
+  // Edits (insert, delete, replace, or swap two neighbours) from a to b.
+  function editDistance(a, b) {
+    const d = [];
+    for (let i = 0; i <= a.length; i++) {
+      d.push([i]);
+      for (let j = 1; j <= b.length; j++) {
+        if (i === 0) {
+          d[0].push(j);
+          continue;
+        }
+        const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+        let v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+        if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1])
+          v = Math.min(v, d[i - 2][j - 2] + 1);
+        d[i].push(v);
+      }
+    }
+    return d[a.length][b.length];
+  }
+
+  // The one concrete role a token is a near misspelling of: one edit away
+  // for a token of up to five letters, two for a longer one, and no other
+  // role as near; '' when none is. Shorter tokens resemble too many words
+  // to tell.
+  function nearestRole(token) {
+    const t = lower(token);
+    if (t.length < 4) return '';
+    const limit = t.length <= 5 ? 1 : 2;
+    let best = '';
+    let bestDistance = Infinity;
+    let tie = false;
+    for (const r of aria.concreteRoles()) {
+      const d = editDistance(t, r);
+      if (d < bestDistance) {
+        best = r;
+        bestDistance = d;
+        tie = false;
+      } else if (d === bestDistance) tie = true;
+    }
+    return bestDistance <= limit && !tie ? best : '';
+  }
+
+  // The ARIA attribute an unknown aria-* name is a near misspelling of
+  // (aria-lable, aria-value-now): one edit away after aria- for a name of
+  // up to five letters, two for a longer one; '' when none is that near.
+  function nearestAriaAttr(name) {
+    const n = lower(name);
+    if (n.slice(0, 5) !== 'aria-' || aria.isValidAriaAttrName(n)) return '';
+    const suffix = n.slice(5);
+    let best = '';
+    let bestDistance = Infinity;
+    for (const a of aria.ariaAttrNames()) {
+      const d = editDistance(suffix, a.slice(5));
+      if (d < bestDistance) {
+        best = a;
+        bestDistance = d;
+      }
+    }
+    return bestDistance <= (suffix.length <= 5 ? 1 : 2) ? best : '';
+  }
+
+  // A role attribute that gives an element no role because none of its
+  // tokens is an ARIA role (role="buton", role="menu-item"): the attribute
+  // as written, and the role its first near token misspells ('' when none
+  // is near). null when the element has no role attribute, an empty one,
+  // or one naming a role (an abstract one too, which aria-roles-valid
+  // reports apart). The rules that fall back to the element's native role
+  // say so, as the reader sees a role attribute in the markup.
+  function roleTypo(el) {
+    let raw;
+    try {
+      raw = trim(dom.getAttribute(el, 'role'));
+    } catch {
+      return null;
+    }
+    if (!raw) return null;
+    const tokens = raw.split(/\s+/).map(lower);
+    if (tokens.some((t) => aria.isKnownRole(t))) return null;
+    let suggestion = '';
+    for (const t of tokens) {
+      suggestion = nearestRole(t);
+      if (suggestion) break;
+    }
+    return { written: raw, suggestion };
+  }
+
+  // An element as a reader finds it in the markup, for a message to point
+  // at: its start tag with the attributes that give it a role or focus
+  // (role, tabindex, href, type, contenteditable), then its text or
+  // aria-label, each cut to 40 characters: <span role="button"
+  // tabindex="0"> "Fav".
+  function describeElement(el) {
+    const cut = (v) => (v.length > 40 ? v.slice(0, 39) + '…' : v);
+    let out = '<' + lower(dom.tagName(el) || '');
+    for (const a of ['role', 'tabindex', 'href', 'type', 'contenteditable']) {
+      let v = null;
+      try {
+        v = dom.getAttribute(el, a);
+      } catch {}
+      if (v != null) out += ' ' + a + '="' + cut(String(v)) + '"';
+    }
+    out += '>';
+    let text = '';
+    try {
+      text =
+        trim(dom.textContent(el)).replace(/\s+/g, ' ') || trim(dom.getAttribute(el, 'aria-label'));
+    } catch {}
+    return text ? out + ' "' + cut(text) + '"' : out;
+  }
+
   // What a name rule asks when a custom element may name itself through
   // internals no script can read: the fields of a cantTell occurrence, for
   // helpers.reportOccurrence. kind is 'name', or an attribute for a state.
@@ -9039,6 +9149,10 @@ function createDomHelpers(opts) {
     hiddenNameTextHint,
     nameCause,
     hiddenCause: hiddenBy,
+    nearestRole,
+    nearestAriaAttr,
+    roleTypo,
+    describeElement,
     getTextFromIdRefsIdrefEligible,
 
     // ARIA-only name primitives (new)

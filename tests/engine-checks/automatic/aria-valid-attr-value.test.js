@@ -594,3 +594,69 @@ test(`${RULE_ID}: an invalid state value fails on a control and is asked about e
     assert.strictEqual(occ.uncertainty && occ.uncertainty.code, 'spec-only', body);
   }
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: an aria-activedescendant id no element has names the near id`, () => {
+  const occ = messageOccurrence(
+    '<input role="combobox" aria-expanded="true" aria-controls="lb" aria-activedescendant="opt1"><ul id="lb" role="listbox"><li role="option" id="opt-1">a</li></ul>',
+    'opt1'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttrValue_summary_fail_idrefMissing');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttrValue_hint_fail_idrefNear');
+  assert.strictEqual(
+    occ.summary,
+    'aria-activedescendant points to id "opt1", which no element on the page has.'
+  );
+  assert.strictEqual(occ.hint, 'An element with id "opt-1" exists; did you mean that?');
+});
+
+test(`${RULE_ID}: an aria-controls value with a leading "#" says to drop it`, () => {
+  const occ = messageOccurrence(
+    '<button aria-controls="#menu" aria-expanded="true">m</button><ul id="menu"><li>x</li></ul>',
+    '#menu'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttrValue_summary_cantTell_idref');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttrValue_hint_cantTell_idrefHash');
+  assert.strictEqual(
+    occ.summary,
+    'aria-controls="#menu" points to an id that no element on the page has yet.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Remove the "#": an id reference takes the bare id, menu, and an element with that id exists.'
+  );
+});
+
+test(`${RULE_ID}: a token attribute lists the values it takes`, () => {
+  const occ = messageOccurrence('<div aria-current="active">c</div>', 'aria-current');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttrValue_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttrValue_hint_fail_tokens');
+  assert.strictEqual(occ.summary, 'aria-current="active" is not a valid value for this attribute.');
+  assert.strictEqual(
+    occ.hint,
+    'aria-current takes one of these values: page, step, location, date, time, true, false.'
+  );
+});
+
+test(`${RULE_ID}: an integer attribute says it takes a whole number`, () => {
+  const occ = messageOccurrence('<h2 aria-level="h2">x</h2>', 'aria-level');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaValidAttrValue_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaValidAttrValue_hint_fail_integer');
+  assert.strictEqual(occ.summary, 'aria-level="h2" is not a valid value for this attribute.');
+  assert.strictEqual(occ.hint, 'aria-level takes a whole number, such as 2.');
+});

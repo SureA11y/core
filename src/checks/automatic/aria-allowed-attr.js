@@ -1114,6 +1114,14 @@ function runInPage(ctx) {
 
     if (!disallowed || !disallowed.length) continue;
 
+    // The role is the element's implicit one when it has no role of its
+    // own: the message names the element rather than a role attribute it
+    // doesn't have, and a role attribute that names no ARIA role
+    // (helpers.roleTypo) is said, as the reader sees it in the markup.
+    const element = String(dom.tagName(el) || '').toLowerCase();
+    const implicit = !explicitRole;
+    const typo = implicit && typeof helpers.roleTypo === 'function' ? helpers.roleTypo(el) : null;
+
     for (const name of disallowed) {
       // A property ARIA deprecated (rather than prohibited) on this role is
       // still allowed, surfaced as cantTell for the author to decide, not a
@@ -1124,13 +1132,17 @@ function runInPage(ctx) {
       if (deprecated) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
-            summary: 'This ARIA attribute is deprecated for this element’s role.',
+            summary: implicit
+              ? `${name} is deprecated on this <${element}>, whose implicit role is ${role} (still allowed, but discouraged).`
+              : 'This ARIA attribute is deprecated for this element’s role.',
             hint: 'It is still allowed but discouraged; remove it or use a role that supports it, as a future ARIA version may disallow it.',
             occurrenceOutcome: 'cantTell',
             i18n: {
-              summaryKey: 'ariaAllowedAttr_summary_cantTell',
+              summaryKey: implicit
+                ? 'ariaAllowedAttr_summary_cantTell_implicit'
+                : 'ariaAllowedAttr_summary_cantTell',
               hintKey: 'ariaAllowedAttr_hint_cantTell',
-              params: { attr: name, role }
+              params: { attr: name, role, element }
             },
             uncertainty: {
               code: 'spec-only',
@@ -1147,13 +1159,36 @@ function runInPage(ctx) {
       }
       cantTellOccurrences.push(
         helpers.reportOccurrence(el, {
-          summary: 'This ARIA attribute is not permitted for this element’s role.',
-          hint: 'Remove this attribute, or use a role that supports it.',
+          summary: typo
+            ? `This <${element}>’s role "${typo.written}" is not an ARIA role, so it is read as ${role}, which does not support ${name}.`
+            : implicit
+              ? `${name} is not permitted on this <${element}>, whose implicit role ${role} does not support it.`
+              : 'This ARIA attribute is not permitted for this element’s role.',
+          hint:
+            typo && typo.suggestion
+              ? `Did you mean role="${typo.suggestion}"? Fix the role, or remove ${name}.`
+              : implicit
+                ? `Remove ${name}, or give the element a role that supports it.`
+                : 'Remove this attribute, or use a role that supports it.',
           occurrenceOutcome: 'cantTell',
           i18n: {
-            summaryKey: 'ariaAllowedAttr_summary_fail',
-            hintKey: 'ariaAllowedAttr_hint_fail',
-            params: { attr: name, role }
+            summaryKey: typo
+              ? 'ariaAllowedAttr_summary_fail_typo'
+              : implicit
+                ? 'ariaAllowedAttr_summary_fail_implicit'
+                : 'ariaAllowedAttr_summary_fail',
+            hintKey:
+              typo && typo.suggestion
+                ? 'ariaAllowedAttr_hint_fail_typoNear'
+                : implicit
+                  ? 'ariaAllowedAttr_hint_fail_implicit'
+                  : 'ariaAllowedAttr_hint_fail',
+            params: {
+              attr: name,
+              role,
+              element,
+              ...(typo ? { written: typo.written, suggestion: typo.suggestion } : {})
+            }
           },
           uncertainty: {
             code: 'spec-only',
@@ -1162,7 +1197,13 @@ function runInPage(ctx) {
             evidence: { attribute: name, role, status: 'not-supported-for-role' }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_NOT_ALLOWED', attr: name, role }
+            details: {
+              reasonCode: 'ARIA_ATTR_NOT_ALLOWED',
+              attr: name,
+              role,
+              ...(implicit ? { implicitRole: true } : {}),
+              ...(typo ? { roleTypo: typo } : {})
+            }
           }
         })
       );

@@ -844,12 +844,23 @@ function runInPage(ctx) {
       const hints = getVisibilityHints(el);
       for (const h of hints) entry.hints.add(h);
 
+      // The element as the reader finds it in the markup, for the message
+      // (helpers.describeElement): <a href="/promo"> "Read more".
+      let description;
+      try {
+        description =
+          typeof helpers.describeElement === 'function' ? helpers.describeElement(el) : '';
+      } catch {
+        description = '';
+      }
+
       entry.offenders.push({
         tag: tag || null,
         tabindex: ti == null ? null : String(ti),
         href: href || null,
         type: type || null,
-        visibilityHints: hints
+        visibilityHints: hints,
+        ...(description ? { description, isRoot: el === rootEl } : {})
       });
     }
   }
@@ -930,6 +941,24 @@ function runInPage(ctx) {
         : 'ariaHiddenSelfFocusable'
       : 'ariaHiddenContainsFocusable';
 
+    // The first focusable element inside, named in the summary so the
+    // reader need not search a large hidden section for it.
+    const firstInside = entry.offenders.find((o) => o.description && !o.isRoot);
+    const named = !selfFocusable && !!firstInside;
+    const moreCount = Math.max(0, totalFocusable - 1);
+    let namedSummaryKey = '';
+    let namedSummary = '';
+    if (named) {
+      namedSummaryKey =
+        moreCount > 0
+          ? 'ariaHidden_focus_summary_fail_desc_named'
+          : 'ariaHidden_focus_summary_fail_desc_one';
+      namedSummary =
+        moreCount > 0
+          ? `This aria-hidden <${tagName}> contains ${firstInside.description} and ${moreCount} more focusable element(s): keyboard users can reach them, but screen readers don't announce them.`
+          : `This aria-hidden <${tagName}> contains a focusable element, ${firstInside.description}: keyboard users can reach it, but screen readers don't announce it.`;
+    }
+
     const summaryText = selfFocusable
       ? descendantFocusable > 0
         ? `This aria-hidden <${tagName}> can take keyboard focus and contains ${descendantFocusable} more focusable element(s), none of which screen readers announce.`
@@ -971,10 +1000,10 @@ function runInPage(ctx) {
       occHintKey = 'ariaHidden_focus_hint_cantTell_redirect';
       occReasonCode = 'ariaHiddenFocusable_runtimeRedirect_needsReview';
     } else {
-      occSummary = summaryText;
+      occSummary = named ? namedSummary : summaryText;
       occHint =
         'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.';
-      occSummaryKey = summaryKey;
+      occSummaryKey = named ? namedSummaryKey : summaryKey;
       occHintKey = 'ariaHidden_focus_hint_fail';
       occReasonCode = reasonCode;
     }
@@ -990,6 +1019,7 @@ function runInPage(ctx) {
           element: tagName,
           focusableCount: String(totalFocusable),
           descendantFocusableCount: String(descendantFocusable),
+          ...(named ? { first: firstInside.description, moreCount: String(moreCount) } : {}),
           redirectedToTag:
             runtimeProbe && runtimeProbe.redirectedToTag ? runtimeProbe.redirectedToTag : '',
           redirectedToId:

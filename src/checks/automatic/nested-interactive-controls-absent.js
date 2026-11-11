@@ -404,6 +404,22 @@ function runInPage(ctx) {
     const outerRole = effectiveRole(el);
     const fails = PRESENTATIONAL_CHILDREN_ROLES.has(outerRole);
 
+    // Each nested control as the reader finds it in the markup, with what
+    // makes it focusable (helpers.describeElement): <span role="button"
+    // tabindex="0"> "Fav". The first three, and how many more.
+    const describe = (n) => {
+      try {
+        return typeof helpers.describeElement === 'function' ? helpers.describeElement(n) : '';
+      } catch {
+        return '';
+      }
+    };
+    const described = nested.slice(0, 3).map(describe).filter(Boolean);
+    const nestedList = described.length
+      ? described.join(', ') + (nested.length > 3 ? ` (+${nested.length - 3})` : '')
+      : '';
+    const roleNamed = !!(outerRole && nestedList);
+
     (fails ? failOccurrences : cantTellOccurrences).push(
       helpers.reportOccurrence(el, {
         occurrenceOutcome: fails ? 'fail' : 'cantTell',
@@ -417,18 +433,32 @@ function runInPage(ctx) {
                 evidence: { element: tag, outerRole, nestedElements: nestedTags }
               }
             }),
-        summary: 'This interactive control contains one or more other interactive controls.',
+        summary: !roleNamed
+          ? 'This interactive control contains one or more other interactive controls.'
+          : fails
+            ? `This <${tag}> is a ${outerRole}, whose content is presentational, and it contains ${nestedList}: the nested control loses its role but still takes focus.`
+            : `This <${tag}> (${outerRole}) contains ${nestedList}. Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.`,
         hint: "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another.",
         i18n: {
-          summaryKey: 'nestedInteractiveControlsAbsent_summary_fail',
+          summaryKey: !roleNamed
+            ? 'nestedInteractiveControlsAbsent_summary_fail'
+            : fails
+              ? 'nestedInteractiveControlsAbsent_summary_fail_presentational'
+              : 'nestedInteractiveControlsAbsent_summary_cantTell_nested',
           hintKey: 'nestedInteractiveControlsAbsent_hint_fail',
-          params: { element: tag, nestedElements: dedupedNestedTags.join(', ') }
+          params: {
+            element: tag,
+            nestedElements: dedupedNestedTags.join(', '),
+            ...(roleNamed ? { outerRole, nestedList } : {})
+          }
         },
         data: {
           details: {
             reasonCode: 'NESTED_INTERACTIVE_CONTROL',
             element: tag,
-            nestedElements: nestedTags
+            nestedElements: nestedTags,
+            ...(outerRole ? { outerRole } : {}),
+            ...(described.length ? { nestedDescriptions: described } : {})
           }
         }
       })

@@ -495,3 +495,97 @@ test(`${RULE_ID}: leans pass for role presentation on a focusable element`, () =
 test(`${RULE_ID}: no lean for a role on an element that takes no focus`, () => {
   assert.strictEqual(leanOn('<ul id="a" role="button"><li>One</li></ul>', 'a'), undefined);
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: role="region" on an unnamed <section> says the section has no name`, () => {
+  const occ = messageOccurrence('<section role="region"><p>x</p></section>', 'section');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_sectionUnnamed');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_sectionUnnamed');
+  assert.strictEqual(
+    occ.summary,
+    'This <section> has no accessible name, so it is not a region, and role="region" is not allowed on it.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Name the section with aria-label or aria-labelledby: it is then a region, and the role is not needed. Or remove the role.'
+  );
+});
+
+test(`${RULE_ID}: role="banner" on a nested <header> names what it is nested in`, () => {
+  const occ = messageOccurrence('<article><header role="banner">Site</header></article>', 'header');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_headerNested');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_headerNested');
+  assert.strictEqual(
+    occ.summary,
+    'This <header> is nested in <article>, so it is not the page banner, and role="banner" is not allowed on it.'
+  );
+  assert.strictEqual(occ.hint, 'Remove the role, or move the page header out of that element.');
+});
+
+test(`${RULE_ID}: a role on a <label> tied to a field says the label may take none`, () => {
+  const occ = messageOccurrence('<label for="i" role="button">L</label><input id="i">', 'label');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_labelAssociated');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_labelAssociated');
+  assert.strictEqual(
+    occ.summary,
+    'This <label> is tied to a form field, and a label tied to a field may take no role, so role="button" is not allowed on it.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Remove the role. If the label must act as a control, use a separate element, such as a <button>.'
+  );
+});
+
+test(`${RULE_ID}: a role on an <img> with no alt text says why`, () => {
+  const occ = messageOccurrence('<img src="a.png" role="button" tabindex="0">', 'img');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_imgNoAlt');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_imgNoAlt');
+  assert.strictEqual(
+    occ.summary,
+    'This <img> has no alt text, so it may only take role="none" or role="presentation", and role="button" is not allowed on it.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Give the image alt text that says what it is or does, which allows more roles, or put it inside a native element, such as a <button>.'
+  );
+});
+
+test(`${RULE_ID}: a role on an <a> with href lists the roles it may take`, () => {
+  const occ = messageOccurrence('<a href="/x" role="heading" aria-level="2">H</a>', 'heading');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_linkHref');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_linkHref');
+  assert.strictEqual(
+    occ.summary,
+    'An <a> with href may only take these roles: button, checkbox, menuitem, menuitemcheckbox, menuitemradio, option, radio, switch, tab, treeitem, doc-backlink, doc-biblioref, doc-glossref, doc-noteref. role="heading" is not one of them.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Use one of those roles, or wrap the link in an element that has the role you meant, such as a heading element around it.'
+  );
+});
+
+test(`${RULE_ID}: any other element lists the roles it allows`, () => {
+  const occ = messageOccurrence('<h2 role="button">x</h2>', 'h2');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_allowed');
+  assert.strictEqual(occ.summary, 'role="button" is not permitted on <h2>.');
+  assert.strictEqual(
+    occ.hint,
+    'Use a role this element allows (tab, presentation, none), or use a different element.'
+  );
+});
