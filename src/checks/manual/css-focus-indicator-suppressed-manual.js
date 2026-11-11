@@ -560,7 +560,9 @@ function runInPage(ctx) {
     if (sheetPlaces.has(sheet)) return sheetPlaces.get(sheet);
     let place = null;
     try {
-      const owner = dom.get(sheet, 'ownerNode');
+      // A style sheet is no element a page's markup can shadow, so its
+      // ownerNode is read as dom-helpers reads it.
+      const owner = sheet.ownerNode;
       const tag =
         owner && dom.nodeType(owner) === 1 ? String(dom.localName(owner) || '').toLowerCase() : '';
       if (tag === 'style') {

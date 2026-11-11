@@ -15347,7 +15347,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .filter(Boolean)
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
-        if (described.length) {
+        if (described.length && !skip('describedbyNotName')) {
           const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
@@ -70471,7 +70471,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     // Why it has none, where the page shows a cause the reader would not
     // see from the element alone (helpers.nameCause): the hint says so.
     // Its fallback content counts only without role="img".
-    const cause = helpers.nameCause ? helpers.nameCause(el, { content: !isRoleImg }) : null;
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: !isRoleImg, skip: ['describedbyNotName'] })
+      : null;
     // An aria-describedby that reaches an element is likely meant as the
     // text alternative: it gives a description, never a name.
     let describedBy = '';
@@ -75679,7 +75681,9 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (sheetPlaces.has(sheet)) return sheetPlaces.get(sheet);
     let place = null;
     try {
-      const owner = dom.get(sheet, 'ownerNode');
+      // A style sheet is no element a page's markup can shadow, so its
+      // ownerNode is read as dom-helpers reads it.
+      const owner = sheet.ownerNode;
       const tag =
         owner && dom.nodeType(owner) === 1 ? String(dom.localName(owner) || '').toLowerCase() : '';
       if (tag === 'style') {
@@ -134958,7 +134962,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           .filter(Boolean)
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
-        if (described.length) {
+        if (described.length && !skip('describedbyNotName')) {
           const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,

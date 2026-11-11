@@ -253,7 +253,9 @@ function runInPage(ctx) {
     // Why it has none, where the page shows a cause the reader would not
     // see from the element alone (helpers.nameCause): the hint says so.
     // Its fallback content counts only without role="img".
-    const cause = helpers.nameCause ? helpers.nameCause(el, { content: !isRoleImg }) : null;
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: !isRoleImg, skip: ['describedbyNotName'] })
+      : null;
     // An aria-describedby that reaches an element is likely meant as the
     // text alternative: it gives a description, never a name.
     let describedBy = '';

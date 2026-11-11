@@ -2487,7 +2487,7 @@ function createDomHelpers(opts) {
           .filter(Boolean)
           .map(byId)
           .filter((t) => t && t !== el && HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')));
-        if (described.length) {
+        if (described.length && !skip('describedbyNotName')) {
           const targets = described.map((t) => describeElement(t, { text: true })).join(', ');
           return {
             hint: `Its aria-describedby points to ${targets}, which gives a description, not a name. Point aria-labelledby at it instead, or name it with aria-label.`,
