@@ -119,6 +119,12 @@ test(`${RULE_ID}: a marquee leans pass with a pause control or scrollamount="0",
   );
   assert.equal(control.toward, 'pass');
   assert.equal(control.i18n.whyKey, 'deprecatedElements_lean_why_pauseControl');
+  // The lean quotes the control it found.
+  assert.equal(
+    control.why,
+    'The page has a control named for pausing, stopping or hiding: "Pause".'
+  );
+  assert.deepEqual(control.i18n.params, { pauseControl: 'Pause' });
 
   const still = lean('<marquee scrollamount="0">News</marquee>');
   assert.equal(still.toward, 'pass');

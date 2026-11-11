@@ -1436,6 +1436,16 @@ function runInPage(ctx) {
               ? null
               : fadeNote(el, fgHex);
           if (fade) Object.assign(params, fade.params);
+          // The ancestor that paints the background, where the reader would
+          // not find that color on the element itself.
+          const C2 = helpers.contrast;
+          const backgroundFrom =
+            pseudo || placeholderMode || analysis.colorScheme || analysis.drawnBy
+              ? ''
+              : C2 && typeof C2.describeBackgroundSource === 'function'
+                ? C2.describeBackgroundSource(el, bgHex)
+                : '';
+          if (backgroundFrom) params.backgroundFrom = backgroundFrom;
 
           const details = {
             reasonCode: 'BELOW_THRESHOLD',
@@ -1465,6 +1475,7 @@ function runInPage(ctx) {
               : {}),
             ...(analysis.selectField ? { selectField: analysis.selectField } : {}),
             ...(fade ? { fade: fade.detail } : {}),
+            ...(backgroundFrom ? { backgroundFrom } : {}),
             ...(pseudo ? { generatedBy: pseudo } : {}),
             // On the canvas of a page with two color schemes: the one it
             // fails in, where it passes in the other, and those measured,

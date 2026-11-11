@@ -262,3 +262,34 @@ test(`${RULE_ID}: an <li> a wrapper separates from its <ul> names both`, () => {
   );
   assert.strictEqual(link.data.details.listElement, 'ul');
 });
+
+// Wrappers two or three levels deep: the list is still named, with every
+// wrapper between, from the list down.
+test(`${RULE_ID}: an <li> two or three wrappers below its list names the list and them`, () => {
+  const html = `<!doctype html><html><body>
+    <ul><div class="row"><span><li id="two">a</li></span></div></ul>
+    <ol><div><span><b><li id="three">b</li></b></span></div></ol>
+    <ul><div><span><b><i><li id="four">c</li></i></b></span></div></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const two = byId('two');
+  assert.strictEqual(two.i18n.summaryKey, 'listitemParentValid_summary_fail_wrappedMany');
+  assert.strictEqual(two.i18n.hintKey, 'listitemParentValid_hint_fail_wrappedMany');
+  assert.strictEqual(
+    two.summary,
+    'This <li> is inside a <ul>, but the <div class="row">, <span> between them break the list: a list\'s items must be its children.'
+  );
+  assert.strictEqual(
+    two.hint,
+    'Remove the elements between them, or move them inside the <li>, so the <li> is a child of the <ul>.'
+  );
+  assert.deepStrictEqual(two.data.details.wrappedBy, ['<span>', '<div class="row">']);
+  assert.strictEqual(two.data.details.listElement, 'ul');
+
+  assert.match(byId('three').summary, /inside a <ol>, but the <div>, <span>, <b> between them/);
+  // Four levels down is past the walk: the plain message.
+  assert.strictEqual(byId('four').i18n.summaryKey, 'listitemParentValid_summary_fail');
+});

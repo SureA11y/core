@@ -2716,6 +2716,35 @@ function createContrastHelpers(opts, shared) {
     }
   }
 
+  // The ancestor that paints the background el's text is measured on, as a
+  // message names it (describeElement), where the reader would not find that
+  // color on el: the nearest ancestor with a background, when it is an
+  // opaque color and is the one measured (bgHex). '' where el paints its own background, where the color is
+  // blended from several layers or comes from elsewhere, and where it is the
+  // page's own (<html> or <body>).
+  function describeBackgroundSource(el, bgHex) {
+    try {
+      if (!el || dom.nodeType(el) !== 1 || !bgHex) return '';
+      if (__svgBackdropOf(el) || __fieldText(el)) return '';
+      for (const cur of ancestorsOf(el)) {
+        if (dom.nodeType(cur) !== 1) continue;
+        const cs = __contrastComputedStyle(cur);
+        const bg = parseCssColorToRgba(backgroundColorOf(cs));
+        const paints = (bg && bg.a > 0) || __hasBackgroundImageOrGradientEl(cur, cs);
+        if (!paints) continue;
+        if (cur === el || !bg || bg.a < 1 || __hasBackgroundImageOrGradientEl(cur, cs)) return '';
+        const tag = String(dom.localName(cur) || '').toLowerCase();
+        if (tag === 'html' || tag === 'body') return '';
+        return String(rgbToHex(bg)).toLowerCase() === String(bgHex).toLowerCase()
+          ? describeElement(cur)
+          : '';
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
   // -------- Opacity product memoization --------
 
   const __localOpacityProductCache = new WeakMap();
@@ -8070,6 +8099,7 @@ function createContrastHelpers(opts, shared) {
     computeOpacityProduct,
     describeElement,
     describeFade,
+    describeBackgroundSource,
     computeEffectiveForeground,
     textFillColor,
     computeEffectiveBackground,

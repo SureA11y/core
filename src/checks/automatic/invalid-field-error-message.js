@@ -380,7 +380,10 @@ function runInPage(ctx) {
         summary: hideCause
           ? `This field is marked invalid, but the error message aria-errormessage names${hideCause.messageText ? ` ("${hideCause.messageText}")` : ''} is hidden by ${hideCause.hiddenBy} on ${hideCause.element}${hideCause.onAncestor ? ', which contains it' : ''}.`
           : 'This field is marked invalid, but the error message aria-errormessage names is hidden.',
-        hint: 'Show the error message while the field is invalid.',
+        hint:
+          hideCause && hideCause.onAncestor
+            ? `${hideCause.hiddenBy} on ${hideCause.element} hides the error message along with everything else in it. Show ${hideCause.element} while the field is invalid, or move the message out of it.`
+            : 'Show the error message while the field is invalid.',
         uncertainty: 'judgement-required',
         needed: 'Whether the error is described in text elsewhere, such as the field’s label.',
         lean: {

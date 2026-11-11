@@ -82,6 +82,9 @@
  *     (`regionDistance`): how far the neighbour's region is from the
  *     target's centre, against the circle's 12px radius.
  *   - `conflictWith`: a selector for the neighbour it is too close to.
+ *   - `clippedBy`, `clipProperty`: where the region is smaller than the
+ *     target's box, the ancestor that clips it, as `<div class="toolbar">`,
+ *     and the CSS that does, as `overflow: hidden`.
  *   - The fail hint (`targetSizeMinimum_hint_fail_centerDistance` or
  *     `targetSizeMinimum_hint_fail_regionDistance`, by `decidedBy`) states
  *     the same distance: `i18n.params.distancePx` against
@@ -1768,6 +1771,88 @@ function runInPage(ctx) {
       : `The part of this target a pointer can hit spans ${size.widthPx}×${size.heightPx} CSS px but fits only a ${size.squarePx}×${size.squarePx} square`;
   }
   const keyFor = (it, key) => (it.region.rectangle ? key : `${key}_shape`);
+  // The neighbour a target is too close to, as a reader finds it in the
+  // markup: <a href="/next"> "Next" (helpers.describeMarkup).
+  function neighbourOf(other) {
+    try {
+      return other && typeof helpers.describeMarkup === 'function'
+        ? helpers.describeMarkup(other)
+        : '';
+    } catch {
+      return '';
+    }
+  }
+  // The ancestor whose clip cuts a target's box down to the region
+  // measured, and the CSS that does it, where the region is smaller than
+  // the box: { clippedBy, clipProperty }, or {}. Overflow (and contain:
+  // paint) on the containing-block chain first, then clip-path: inset()
+  // and clip: rect() on its ancestors.
+  function clipParams(it) {
+    try {
+      const r = boxOf(it.el);
+      if (!r) return {};
+      const cutW = it.rect.width < r.width - 0.5;
+      const cutH = it.rect.height < r.height - 0.5;
+      if (!cutW && !cutH) return {};
+      const name = (a) =>
+        typeof helpers.describeElement === 'function' ? helpers.describeElement(a) : '';
+      for (let a = containingBlockOf(it.el), i = 0; a && i < 1000; a = containingBlockOf(a), i++) {
+        const cs = getStyle(a);
+        const oc = overflowClip(a, cs);
+        const ar = oc ? boxOf(a) : null;
+        if (!ar) continue;
+        const cutX =
+          oc.sw < Infinity &&
+          (oc.sw < r.width - 0.5 ||
+            r.left < ar.left - 0.5 ||
+            r.left + r.width > ar.left + ar.width + 0.5);
+        const cutY =
+          oc.sh < Infinity &&
+          (oc.sh < r.height - 0.5 ||
+            r.top < ar.top - 0.5 ||
+            r.top + r.height > ar.top + ar.height + 0.5);
+        if (!(cutX && cutW) && !(cutY && cutH)) continue;
+        const contain = String(cs.contain || '');
+        let property;
+        if (/\b(paint|strict|content)\b/.test(contain)) property = `contain: ${contain}`;
+        else if (cs.overflowX === cs.overflowY) property = `overflow: ${cs.overflowX}`;
+        else
+          property = cutY && cutH ? `overflow-y: ${cs.overflowY}` : `overflow-x: ${cs.overflowX}`;
+        const clippedBy = name(a);
+        return clippedBy ? { clippedBy, clipProperty: property } : {};
+      }
+      for (let a = helpers.composedParent(it.el), i = 0; a && i < 1000; i++) {
+        if (dom.nodeType(a) !== 1) break;
+        const cs = getStyle(a);
+        const c = subtreeClipOf(a, cs);
+        if (
+          c &&
+          (c.l > r.left + 0.5 ||
+            c.t > r.top + 0.5 ||
+            c.r < r.left + r.width - 0.5 ||
+            c.b < r.top + r.height - 0.5)
+        ) {
+          const cp = String(cs.clipPath || 'none').trim();
+          const clippedBy = name(a);
+          return clippedBy
+            ? {
+                clippedBy,
+                clipProperty: cp !== 'none' ? `clip-path: ${cp}` : `clip: ${cs.clip}`
+              }
+            : {};
+        }
+        a = helpers.composedParent(a);
+      }
+      return {};
+    } catch {
+      return {};
+    }
+  }
+  function clipText(c) {
+    return c.clippedBy
+      ? ` Its ancestor ${c.clippedBy} cuts it to that size with ${c.clipProperty}.`
+      : '';
+  }
   // How far the conflict leaves the target from passing the spacing
   // exception, for the hint: the distance measured, the distance the test
   // holds it to, and the gap between them. The distance is rounded as
@@ -1808,7 +1893,12 @@ function runInPage(ctx) {
     // to a neighbour is reported only where it is why the target is asked
     // about (the inline link run below).
     const shown = SPACING_APPLIES ? info : { conflict: false, conflictEl: null };
-    const tooClose = SPACING_APPLIES ? ', and too close to another target' : '';
+    // The neighbour it is too close to, and what clips it, named.
+    const neighbour = neighbourOf(shown.conflictEl);
+    const clip = clipParams(it);
+    const tooClose = SPACING_APPLIES
+      ? `, and too close to another target${neighbour ? ` (${neighbour})` : ''}`
+      : '';
 
     if (info.conflict || !SPACING_APPLIES) {
       if (isPlausiblyEssentialOrEquivalent(it.el)) {
@@ -1818,12 +1908,12 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.`,
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, under ${MIN}×${MIN}${tooClose}, but may be exempt as part of an essential graphic or image-map region.${clipText(clip)}`,
             hint: 'Check whether this size is essential, as it can be for a region of a map or a diagram. If not, make the target larger or give it more space.',
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_plausiblyEssential'),
               hintKey: 'targetSizeMinimum_hint_cantTell_plausiblyEssential',
-              params: size
+              params: { ...size, ...(neighbour ? { neighbour } : {}), ...clip }
             },
             uncertainty: {
               code: 'judgement-required',
@@ -1837,6 +1927,7 @@ function runInPage(ctx) {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-plausibly-essential',
                 conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+                ...clip,
                 ...measurements(it, shown)
               }
             }
@@ -1852,15 +1943,16 @@ function runInPage(ctx) {
       // text around them at all are in no text to be exempt in.
       const around = isLinkLike(it.el) ? textAround(it.el) : null;
       if (around && around.symbols && info.conflictEl && textAround(info.conflictEl) === around) {
+        const linkNeighbour = neighbourOf(info.conflictEl);
         cantTellOccurrences.push(
           helpers.reportOccurrence(it.el, {
             occurrenceOutcome: 'cantTell',
-            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link in the same run of text, where the inline exception may apply.`,
+            summary: `${sized} at a ${size.viewportWidth}px-wide viewport, smaller than ${MIN}×${MIN}, and close to another inline link${linkNeighbour ? ` (${linkNeighbour})` : ''} in the same run of text, where the inline exception may apply.${clipText(clip)}`,
             hint: `Check whether these links sit inside a sentence or paragraph, which is exempt. If not, make the target at least ${MIN}×${MIN} CSS px or give it more space.`,
             i18n: {
               summaryKey: keyFor(it, 'targetSizeMinimum_summary_cantTell_inlineLinkRun'),
               hintKey: 'targetSizeMinimum_hint_cantTell_inlineLinkRun',
-              params: size
+              params: { ...size, ...(linkNeighbour ? { neighbour: linkNeighbour } : {}), ...clip }
             },
             uncertainty: {
               code: 'judgement-required',
@@ -1874,6 +1966,7 @@ function runInPage(ctx) {
                 measured: measuredOf(it),
                 reasonCode: 'undersized-inline-link-run',
                 conflictWith: info.conflictEl ? buildSelector(info.conflictEl) : null,
+                ...clip,
                 ...measurements(it, info)
               }
             }
@@ -1893,7 +1986,7 @@ function runInPage(ctx) {
             SPACING_APPLIES
               ? `${tooClose}: ${spacing.distancePx} px where ${spacing.minDistancePx} px is needed`
               : ''
-          }.`,
+          }.${clipText(clip)}`,
           hint: SPACING_APPLIES
             ? spacingHint(info.decidedBy, spacing)
             : `Make the target at least ${MIN}×${MIN} CSS px.`,
@@ -1902,13 +1995,14 @@ function runInPage(ctx) {
             hintKey: SPACING_APPLIES
               ? `targetSizeMinimum_hint_fail_${info.decidedBy}`
               : 'targetSizeMinimum_hint_fail_size',
-            params: { ...size, ...spacing }
+            params: { ...size, ...spacing, ...(neighbour ? { neighbour } : {}), ...clip }
           },
           data: {
             details: {
               measured: measuredOf(it),
               reasonCode: SPACING_APPLIES ? 'undersized-and-too-close' : 'undersized',
               conflictWith: shown.conflictEl ? buildSelector(shown.conflictEl) : null,
+              ...clip,
               ...measurements(it, shown)
             }
           }
