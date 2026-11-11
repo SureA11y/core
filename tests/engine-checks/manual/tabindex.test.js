@@ -95,3 +95,32 @@ test(`tabindex: respects contextSelector scoping (regression -- used to bypass h
   const result = runa11yCoreOnHtml(html, { runOnly: ['tabindex'], contextSelector: '#target' });
   assertRule(result, 'tabindex', 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: gives the value and the tab stops it jumps ahead of`, () => {
+  const html = `<!doctype html><html><body>
+    <a id="a" href="/a">Home</a> <button id="b" tabindex="3">Buy</button>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This element has tabindex="3", so Tab reaches it before earlier tab stops in the page (1, starting with <a id="a"> "Home").'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'tabindex_summary_cantTell_jumpsAhead');
+  assert.strictEqual(occ.data.details.skippedCount, 1);
+  assert.strictEqual(occ.data.details.firstSkipped, '<a id="a"> "Home"');
+
+  const first = assertRule(
+    runa11yCoreOnHtml(
+      '<!doctype html><html><body><button tabindex="2">One</button><a href="/b">B</a></body></html>',
+      { runOnly: [RULE_ID] }
+    ),
+    RULE_ID,
+    'cantTell'
+  ).occurrences[0];
+  assert.strictEqual(
+    first.summary,
+    'This element has tabindex="2", overriding the natural tab order.'
+  );
+  assert.strictEqual(first.i18n.summaryKey, 'tabindex_summary_cantTell_value');
+});
