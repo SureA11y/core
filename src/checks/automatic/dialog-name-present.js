@@ -174,6 +174,38 @@ function runInPage(ctx) {
     return { ok: false, method: 'none' };
   }
 
+  // The first heading in el with text, not inside a nested dialog:
+  // { tag, text, id }, tag as <h2> or <div role="heading">; null when none.
+  function headingIn(el) {
+    const BOXES = ['dialog', 'alertdialog'];
+    const roleOf = (n) => helpers.aria.getExplicitRole(n) || '';
+    for (const h of dom.querySelectorAll(el, 'h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      const tag = String(dom.tagName(h) || '').toLowerCase();
+      const role = roleOf(h);
+      if (role ? role !== 'heading' : !/^h[1-6]$/.test(tag)) continue;
+      // Leave out a heading of a nested dialog or landmark.
+      let nested = false;
+      for (let n = dom.parentElement(h); n && n !== el; n = dom.parentElement(n)) {
+        const r =
+          roleOf(n) || (String(dom.tagName(n) || '').toLowerCase() === 'dialog' ? 'dialog' : '');
+        if (BOXES.includes(r)) nested = true;
+      }
+      if (nested) continue;
+      const all = String(dom.textContent(h) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(all)) continue;
+      const text = all.length > 40 ? `${all.slice(0, 39)}…` : all;
+      const headingId = (dom.getAttribute(h, 'id') || '').trim();
+      return {
+        tag: /^h[1-6]$/.test(tag) ? `<${tag}>` : `<${tag} role="heading">`,
+        text,
+        id: headingId
+      };
+    }
+    return null;
+  }
+
   // The role the browser uses: the first token of the role attribute that
   // names a concrete ARIA role (in any case), else the element's implicit
   // role (dialog for a native <dialog>; the others are not in scope here).
@@ -218,9 +250,13 @@ function runInPage(ctx) {
 
     // Why it has none, where the page shows a cause the reader would not
     // see from the element alone (helpers.nameCause): the hint says so.
-    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    const cause = helpers.nameCause
+      ? helpers.nameCause(el, { content: false, skip: ['labelledbyHiddenText'] })
+      : null;
     // Without a cause, the hint does not ask for an aria-labelledby the dialog has.
     const labelledby = !!(dom.getAttribute(el, 'aria-labelledby') || '').trim();
+    // A heading in the dialog that is not tied to it: the hint names it.
+    const heading = cause || labelledby ? null : headingIn(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This dialog has no accessible name.',
@@ -228,15 +264,27 @@ function runInPage(ctx) {
           ? cause.hint
           : labelledby
             ? "Its aria-labelledby gives no name. Check that it lists the id of the dialog's heading and that the heading has text screen readers read, or name the dialog with aria-label."
-            : 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
+            : heading && heading.id
+              ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Add aria-labelledby="${heading.id}" to the dialog, so screen readers announce that heading as its name.`
+              : heading
+                ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Give the heading an id and point the dialog's aria-labelledby at it, so screen readers announce that heading as its name.`
+                : 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
         i18n: {
           summaryKey: 'dialogNamePresent_summary_fail',
           hintKey: cause
             ? cause.hintKey
             : labelledby
               ? 'dialogNamePresent_hint_fail_labelledby'
-              : 'dialogNamePresent_hint_fail',
-          params: { role, ...(cause ? cause.params : {}) }
+              : heading && heading.id
+                ? 'dialogNamePresent_hint_heading'
+                : heading
+                  ? 'dialogNamePresent_hint_headingNoId'
+                  : 'dialogNamePresent_hint_fail',
+          params: {
+            role,
+            ...(cause ? cause.params : {}),
+            ...(heading ? { tag: heading.tag, text: heading.text, id: heading.id } : {})
+          }
         },
         uncertainty: {
           code: 'spec-only',
@@ -248,6 +296,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'name_missing',
             ...(cause ? { nameCause: cause.detail } : {}),
+            ...(heading ? { heading: { text: heading.text, id: heading.id || null } } : {}),
             controlType: role,
             methodTried: res.method
           },

@@ -217,3 +217,17 @@ test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a fail says an alt on the <video> does nothing`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><video poster="p.png" src="v.mp4" alt="Intro video"></video></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'videoPoster_textAltPresent_hint_fail_alt');
+  assert.strictEqual(
+    occ.hint,
+    'Its alt="Intro video" does nothing: a <video> has no alt attribute. Use aria-label="Intro video" instead.'
+  );
+});

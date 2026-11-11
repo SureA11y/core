@@ -73,6 +73,40 @@ function runInPage(ctx) {
 
   const occurrences = [];
   let applicableCount = 0;
+  const dom = helpers.dom;
+
+  // The first heading in el with text, not inside a nested landmark or
+  // dialog: { tag, text, id }, tag as <h2> or <div role="heading">; null
+  // when none.
+  function headingIn(el) {
+    const BOXES = ['region', 'form', 'dialog', 'alertdialog'];
+    const roleOf = (n) => helpers.aria.getExplicitRole(n) || '';
+    for (const h of dom.querySelectorAll(el, 'h1, h2, h3, h4, h5, h6, [role~="heading" i]')) {
+      const tag = String(dom.tagName(h) || '').toLowerCase();
+      const role = roleOf(h);
+      if (role ? role !== 'heading' : !/^h[1-6]$/.test(tag)) continue;
+      // Leave out a heading of a nested dialog or landmark.
+      let nested = false;
+      for (let n = dom.parentElement(h); n && n !== el; n = dom.parentElement(n)) {
+        const r =
+          roleOf(n) || (String(dom.tagName(n) || '').toLowerCase() === 'dialog' ? 'dialog' : '');
+        if (BOXES.includes(r)) nested = true;
+      }
+      if (nested) continue;
+      const all = String(dom.textContent(h) || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(all)) continue;
+      const text = all.length > 40 ? `${all.slice(0, 39)}…` : all;
+      const headingId = (dom.getAttribute(h, 'id') || '').trim();
+      return {
+        tag: /^h[1-6]$/.test(tag) ? `<${tag}>` : `<${tag} role="heading">`,
+        text,
+        id: headingId
+      };
+    }
+    return null;
+  }
 
   for (const el of helpers.queryAllSmart('[role]', { internalsRoles: true })) {
     // The role the attribute resolves to: its first known, non-abstract
@@ -95,16 +129,33 @@ function runInPage(ctx) {
     // Why it has none, where the page shows a cause the reader would not
     // see from the element alone (helpers.nameCause): the hint says so.
     const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    // A heading in it that is not tied to it: the hint names it.
+    const heading =
+      cause || (dom.getAttribute(el, 'aria-labelledby') || '').trim() ? null : headingIn(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This element has role="${role}" but no accessible name, so it is not exposed as a landmark.`,
         hint: cause
           ? cause.hint
-          : `Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role="${role}" if it is not meant to be a landmark.`,
+          : heading && heading.id
+            ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Add aria-labelledby="${heading.id}" to it; or remove role="${role}" if it is not meant to be a landmark.`
+            : heading
+              ? `Its heading ${heading.tag} "${heading.text}" is not tied to it. Give the heading an id and point aria-labelledby at it; or remove role="${role}" if it is not meant to be a landmark.`
+              : `Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role="${role}" if it is not meant to be a landmark.`,
         i18n: {
           summaryKey: 'landmarkRoleNamePresent_summary_cantTell',
-          hintKey: cause ? cause.hintKey : 'landmarkRoleNamePresent_hint_cantTell',
-          params: { role, ...(cause ? cause.params : {}) }
+          hintKey: cause
+            ? cause.hintKey
+            : heading && heading.id
+              ? 'landmarkRoleNamePresent_hint_cantTell_heading'
+              : heading
+                ? 'landmarkRoleNamePresent_hint_cantTell_headingNoId'
+                : 'landmarkRoleNamePresent_hint_cantTell',
+          params: {
+            role,
+            ...(cause ? cause.params : {}),
+            ...(heading ? { tag: heading.tag, text: heading.text, id: heading.id } : {})
+          }
         },
         uncertainty: {
           code: 'spec-only',
@@ -121,6 +172,7 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'LANDMARK_ROLE_NAME_MISSING',
             ...(cause ? { nameCause: cause.detail } : {}),
+            ...(heading ? { heading: { text: heading.text, id: heading.id || null } } : {}),
             role
           }
         }

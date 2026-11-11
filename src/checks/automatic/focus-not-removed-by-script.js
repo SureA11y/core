@@ -177,6 +177,28 @@ function runInPage(ctx) {
     return all > own;
   }
 
+  // The element a handler sends focus to, named as <tag id> "text"
+  // (helpers.describeElement), when it reaches it with getElementById('x')
+  // or querySelector('…') on the document and the page has it; '' else.
+  function focusTarget(el, handler) {
+    const m =
+      /getElementById\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*focus\s*\(/.exec(handler) ||
+      /querySelector\(\s*(['"])([^'"]+)\1\s*\)\s*\.\s*focus\s*\(/.exec(handler);
+    if (!m) return '';
+    try {
+      const doc = dom.ownerDocument(el);
+      const t = /^getElementById/.test(m[0])
+        ? dom.getElementById(doc, m[2])
+        : dom.querySelector(doc, m[2]);
+      if (!t || t === el) return '';
+      return typeof helpers.describeElement === 'function'
+        ? helpers.describeElement(t, { text: true })
+        : `<${String(dom.tagName(t) || '').toLowerCase()}>`;
+    } catch {
+      return '';
+    }
+  }
+
   // The handler's top-level statements: split on the semicolons and the
   // closing braces that are outside any bracket or string, so a call in a
   // condition, a callback or a block stays inside its statement.
@@ -458,15 +480,28 @@ function runInPage(ctx) {
         }
       };
     }
+    // Where a handler that moves focus sends it, when it names the element
+    // by id or selector and the page has it.
+    const target = kind === 'moves' ? focusTarget(el, handler) : '';
     occurrences.push(
       helpers.reportOccurrence(el, {
         ...(lean ? { lean } : {}),
         summary: SUMMARIES[kind],
-        hint: 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it: remove the blur() call, or make the element unfocusable if it should not take focus at all.',
+        hint:
+          kind !== 'moves'
+            ? 'Tab to the element and check that focus stays on it. A script must not remove focus from an element that receives it: remove the blur() call, or make the element unfocusable if it should not take focus at all.'
+            : target
+              ? `Tab to the element and check that focus stays on it. Its handler sends focus to ${target}: stop moving focus away as the element receives it, or make the element unfocusable if it should not take focus at all.`
+              : 'Tab to the element and check that focus stays on it. A script must not move focus away from an element as it receives it: stop moving focus in the handler, or make the element unfocusable if it should not take focus at all.',
         i18n: {
           summaryKey: `focusNotRemovedByScript_summary_cantTell_${kind}`,
-          hintKey: 'focusNotRemovedByScript_hint_cantTell',
-          params: { element: tag, handler: shown }
+          hintKey:
+            kind !== 'moves'
+              ? 'focusNotRemovedByScript_hint_cantTell'
+              : target
+                ? 'focusNotRemovedByScript_hint_cantTell_movesTarget'
+                : 'focusNotRemovedByScript_hint_cantTell_moves',
+          params: { element: tag, handler: shown, ...(target ? { target } : {}) }
         },
         uncertainty: {
           code: 'judgement-required',
@@ -476,7 +511,8 @@ function runInPage(ctx) {
           details: {
             reasonCode: CODES[kind],
             handler: shown,
-            tabbable: focus.tabbable
+            tabbable: focus.tabbable,
+            ...(target ? { focusTarget: target } : {})
           }
         }
       })

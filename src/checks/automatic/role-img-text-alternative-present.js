@@ -416,7 +416,9 @@ function runInPage(ctx) {
       return null;
     })();
     const cause =
-      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || roleCause;
+      (helpers.nameCause
+        ? helpers.nameCause(el, { content: false, skip: ['labelledbyHiddenText'] })
+        : null) || roleCause;
     const baseOccurrence = {
       summary: `Missing text alternative on element with role="${matchedRole}".`,
       hint: cause
