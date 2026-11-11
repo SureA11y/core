@@ -291,3 +291,26 @@ test(`${RULE_ID}: role="foo img" fails on fallback content, role="NONE" is decor
   );
   assertRule(none, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: a fail says when the fallback is only an image with alt="", or aria-labelledby points nowhere`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <canvas id="c1"><img src="chart.png" alt=""></canvas>
+  <canvas id="c2" aria-labelledby="cap"></canvas>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('c1').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
+  assert.equal(
+    occ('c1').hint,
+    'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.'
+  );
+  assert.equal(occ('c1').data.details.nameCause.cause, 'imageEmptyAlt');
+  assert.equal(occ('c2').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('c2').hint,
+    'Its aria-labelledby points to "cap", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+});

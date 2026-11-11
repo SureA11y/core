@@ -246,17 +246,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This slider has no accessible name.',
-        hint: 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
+        hint: cause
+          ? cause.hint
+          : 'Provide a label, aria-label, or aria-labelledby so assistive technologies can identify the slider.',
         i18n: {
           summaryKey: 'sliderNamePresent_summary_fail',
-          hintKey: 'sliderNamePresent_hint_fail',
-          params: { kind }
+          hintKey: cause ? cause.hintKey : 'sliderNamePresent_hint_fail',
+          params: { kind, ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: kind, methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: kind,
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

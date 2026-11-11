@@ -204,3 +204,27 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'link'));
 });
+
+test(`${RULE_ID}: a fail says a <label> can't name a custom combobox, or aria-labelledby points nowhere`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label for="cb">City</label>
+  <div id="cb" role="combobox" aria-expanded="false" tabindex="0">Madrid</div>
+  <input id="cb2" role="combobox" aria-expanded="false" aria-labelledby="lbl-x">
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('cb').i18n.hintKey, 'nameCause_hint_labelNotLabelableNoId');
+  assert.equal(
+    occ('cb').hint,
+    'The <label for="cb"> "City" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <div role="combobox">. Give the label an id and point this element\'s aria-labelledby at it.'
+  );
+  assert.equal(occ('cb').data.details.nameCause.cause, 'labelNotLabelable');
+  assert.equal(occ('cb2').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('cb2').hint,
+    'Its aria-labelledby points to "lbl-x", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+});

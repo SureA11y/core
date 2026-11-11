@@ -295,13 +295,18 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     const baseOccurrence = {
       summary: 'This element has no accessible name.',
-      hint: 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
+      hint: cause
+        ? cause.hint
+        : 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'ariaRoleNamePresent_summary_fail',
-        hintKey: 'ariaRoleNamePresent_hint_fail',
-        params: { role }
+        hintKey: cause ? cause.hintKey : 'ariaRoleNamePresent_hint_fail',
+        params: { role, ...(cause ? cause.params : {}) }
       },
       uncertainty: {
         code: 'spec-only',
@@ -314,6 +319,7 @@ function runInPage(ctx) {
         details: {
           reasonCode: 'name_missing',
           role,
+          ...(cause ? { nameCause: cause.detail } : {}),
           nameSourcesChecked: ['aria-label', 'aria-labelledby', 'title']
         }
       }

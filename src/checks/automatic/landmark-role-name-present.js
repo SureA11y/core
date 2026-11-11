@@ -92,14 +92,19 @@ function runInPage(ctx) {
         : null;
     if (internalsName && internalsName.status === 'named') continue;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: `This element has role="${role}" but no accessible name, so it is not exposed as a landmark.`,
-        hint: `Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role="${role}" if it is not meant to be a landmark.`,
+        hint: cause
+          ? cause.hint
+          : `Name it with aria-labelledby pointing at its visible heading, or aria-label; or remove role="${role}" if it is not meant to be a landmark.`,
         i18n: {
           summaryKey: 'landmarkRoleNamePresent_summary_cantTell',
-          hintKey: 'landmarkRoleNamePresent_hint_cantTell',
-          params: { role }
+          hintKey: cause ? cause.hintKey : 'landmarkRoleNamePresent_hint_cantTell',
+          params: { role, ...(cause ? cause.params : {}) }
         },
         uncertainty: {
           code: 'spec-only',
@@ -113,7 +118,11 @@ function runInPage(ctx) {
           i18n: { whyKey: 'landmarkRoleNamePresent_lean_why' }
         },
         data: {
-          details: { reasonCode: 'LANDMARK_ROLE_NAME_MISSING', role }
+          details: {
+            reasonCode: 'LANDMARK_ROLE_NAME_MISSING',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            role
+          }
         }
       })
     );

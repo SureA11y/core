@@ -216,14 +216,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    // Without a cause, the hint does not ask for an aria-labelledby the dialog has.
+    const labelledby = !!(dom.getAttribute(el, 'aria-labelledby') || '').trim();
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This dialog has no accessible name.',
-        hint: 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
+        hint: cause
+          ? cause.hint
+          : labelledby
+            ? "Its aria-labelledby gives no name. Check that it lists the id of the dialog's heading and that the heading has text screen readers read, or name the dialog with aria-label."
+            : 'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.',
         i18n: {
           summaryKey: 'dialogNamePresent_summary_fail',
-          hintKey: 'dialogNamePresent_hint_fail',
-          params: { role }
+          hintKey: cause
+            ? cause.hintKey
+            : labelledby
+              ? 'dialogNamePresent_hint_fail_labelledby'
+              : 'dialogNamePresent_hint_fail',
+          params: { role, ...(cause ? cause.params : {}) }
         },
         uncertainty: {
           code: 'spec-only',
@@ -232,7 +245,12 @@ function runInPage(ctx) {
           evidence: { role, source: 'WAI-ARIA 1.2, dialog role (MUST)' }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: role,
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

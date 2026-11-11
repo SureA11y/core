@@ -257,6 +257,15 @@ function runInPage(ctx) {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
           }
         };
+    // Why it has no name from aria-labelledby or aria-label either, where
+    // the page shows a cause (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    if (cause) {
+      baseOccurrence.hint = cause.hint;
+      baseOccurrence.i18n.hintKey = cause.hintKey;
+      Object.assign(baseOccurrence.i18n.params, cause.params);
+      baseOccurrence.data.details.nameCause = cause.detail;
+    }
 
     if (helpers && typeof helpers.reportOccurrence === 'function') {
       occurrences.push(helpers.reportOccurrence(el, baseOccurrence));

@@ -108,3 +108,20 @@ test(`${RULE_ID}: an upper-case role resolves too: role="REGION" needs a name (#
   );
   assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: the hint says when aria-labelledby points to a missing id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="r1" role="region" aria-labelledby="qq"><p>Text</p></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('r1').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('r1').hint,
+    'Its aria-labelledby points to "qq", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('r1').data.details.nameCause.cause, 'labelledbyMissing');
+});

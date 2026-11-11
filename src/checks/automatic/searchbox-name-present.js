@@ -230,18 +230,24 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a searchbox does not become its name.',
+        hint: cause
+          ? cause.hint
+          : 'Name it with aria-label, aria-labelledby or a title attribute. Text inside a searchbox does not become its name.',
         i18n: {
           summaryKey: 'searchboxNamePresent_summary_fail',
-          hintKey: 'searchboxNamePresent_hint_fail',
-          params: { controlType: 'searchbox' }
+          hintKey: cause ? cause.hintKey : 'searchboxNamePresent_hint_fail',
+          params: { controlType: 'searchbox', ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType: 'searchbox',
             methodTried: res.method
           },
