@@ -65,7 +65,7 @@ test(`${RULE_ID}: ask, leaning fail, when aria-errormessage names a hidden messa
     // What hides it, named in the summary.
     hiddenCause: { hiddenBy: 'hidden', element: '<p id="e">', onAncestor: false }
   });
-  assert.match(rule.occurrences[0].summary, /is hidden by hidden on <p id="e">\.$/);
+  assert.match(rule.occurrences[0].summary, /is hidden by hidden="" on <p id="e">\.$/);
   assert.equal(rule.occurrences[0].uncertainty.code, 'judgement-required');
   // As for an empty message, the error may be told elsewhere; but the one
   // tied to the field can't be seen, so it leans fail.
