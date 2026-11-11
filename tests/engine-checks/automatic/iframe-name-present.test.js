@@ -111,3 +111,21 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/iframe-name-present-all-scena
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: a fail says when aria-labelledby points to a missing id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <h2 id="maphead">Map</h2>
+  <iframe id="f1" src="about:blank" aria-labelledby="map-head"></iframe>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('f1').i18n.hintKey, 'nameCause_hint_labelledbyMissing');
+  assert.equal(
+    occ('f1').hint,
+    'Its aria-labelledby points to "map-head", which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.'
+  );
+  assert.equal(occ('f1').data.details.nameCause.cause, 'labelledbyMissing');
+});

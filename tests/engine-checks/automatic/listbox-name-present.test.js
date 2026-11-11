@@ -191,3 +191,20 @@ test('listbox-name-present: role is a fallback list matched in any case (#91)', 
   assert.ok(hasOccurrenceForId(rule, 'up'));
   assert.ok(!hasOccurrenceForId(rule, 'lk'));
 });
+
+test(`${RULE_ID}: a fail says a <label> around a custom listbox names nothing`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label id="fl">Fruit <div id="lb" role="listbox"><div role="option">Apple</div></div></label>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('lb').i18n.hintKey, 'nameCause_hint_labelNotLabelable');
+  assert.equal(
+    occ('lb').hint,
+    'The <label> "Fruit" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <div role="listbox">. Add aria-labelledby="fl" to this element.'
+  );
+  assert.equal(occ('lb').data.details.nameCause.cause, 'labelNotLabelable');
+});

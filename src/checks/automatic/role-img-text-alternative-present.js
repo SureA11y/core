@@ -359,17 +359,78 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // The hint names the cause the reason code and the markup show: a
+    // missing or empty aria-labelledby target or a blank aria-label
+    // (helpers.nameCause), an aria-labelledby that names nothing, or, with
+    // no naming attribute at all, an alt, text or a named <img> that the
+    // role leaves unread.
+    const elTag = String(dom.tagName(el) || '').toLowerCase();
+    const roleCause = (() => {
+      const role = matchedRole;
+      if (reasonCode === 'nameNotResolved') {
+        return {
+          hint: `Its aria-labelledby="${ariaLabelledby}" gives no name: the elements it points to have no text that screen readers read (text hidden with aria-hidden or display: none does not count). Put readable text in them, or name it with aria-label.`,
+          hintKey: 'roleImg_textAlternativePresent_hint_fail_notResolved',
+          params: { ids: ariaLabelledby },
+          detail: { cause: 'labelledbyNoText' }
+        };
+      }
+      if (reasonCode === 'emptyAriaLabelledby') {
+        return {
+          hint: 'Its aria-labelledby is empty, so it gives no name. Put in it the id of the element whose text names it, or name it with aria-label.',
+          hintKey: 'roleImg_textAlternativePresent_hint_fail_emptyLabelledby',
+          params: {},
+          detail: { cause: 'labelledbyEmptyAttr' }
+        };
+      }
+      if (reasonCode !== 'missingTextAlternative') return null;
+      const alt = trim(dom.getAttribute(el, 'alt'));
+      if (alt) {
+        return {
+          hint: `Its alt="${alt}" does nothing: alt names only an <img> (or an <area> or an <input type="image">), not a <${elTag}>. Use aria-label="${alt}" instead.`,
+          hintKey: 'roleImg_textAlternativePresent_hint_fail_alt',
+          params: { alt, tag: elTag },
+          detail: { cause: 'altOnNonImage', alt }
+        };
+      }
+      const all = trim(String(dom.textContent(el) || '').replace(/\s+/g, ' '));
+      if (/[\p{L}\p{N}]/u.test(all)) {
+        const text = all.length > 40 ? `${all.slice(0, 39)}…` : all;
+        return {
+          hint: `Its text "${text}" does not name it: role="${role}" hides its content from screen readers. Put that text in aria-label.`,
+          hintKey: 'roleImg_textAlternativePresent_hint_fail_textInside',
+          params: { text },
+          detail: { cause: 'textInside', text }
+        };
+      }
+      for (const img of dom.querySelectorAll(el, 'img[alt]')) {
+        const imgAlt = trim(dom.getAttribute(img, 'alt'));
+        if (!imgAlt) continue;
+        return {
+          hint: `The <img alt="${imgAlt}"> inside it does not name it: role="${role}" hides its content from screen readers. Move the alt text to aria-label on this element, or remove the role.`,
+          hintKey: 'roleImg_textAlternativePresent_hint_fail_imgInside',
+          params: { alt: imgAlt },
+          detail: { cause: 'imgInside', alt: imgAlt }
+        };
+      }
+      return null;
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || roleCause;
     const baseOccurrence = {
       summary: `Missing text alternative on element with role="${matchedRole}".`,
-      hint: 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
+      hint: cause
+        ? cause.hint
+        : 'Provide aria-label or aria-labelledby (referencing non-empty text) to give this element a text alternative.',
       i18n: {
         summaryKey: 'roleImg_textAlternativePresent_summary_fail',
-        hintKey: 'roleImg_textAlternativePresent_hint_fail',
-        params: { role: matchedRole }
+        hintKey: cause ? cause.hintKey : 'roleImg_textAlternativePresent_hint_fail',
+        params: { role: matchedRole, ...(cause ? cause.params : {}) }
       },
       data: {
         details: {
           reasonCode,
+          ...(cause ? { nameCause: cause.detail } : {}),
           ariaLabel: ariaLabelRaw === null ? null : ariaLabel,
           ariaLabelledby: ariaLabelledbyRaw === null ? null : ariaLabelledby,
           accessibleNameInfo: nameInfo || null

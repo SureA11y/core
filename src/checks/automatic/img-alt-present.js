@@ -143,6 +143,9 @@ function runInPage(ctx) {
     // Role (presentation/none) exclusion only when NOT focusable.
     // The resolved role: the first token naming a known role, in any case.
     let role;
+    // Why a presentational role is ignored, for the message: 'focus' or
+    // 'global' (a global ARIA attribute).
+    let keptBy = '';
     try {
       role = helpers.aria.getExplicitRole(el);
     } catch {
@@ -160,12 +163,14 @@ function runInPage(ctx) {
       } catch {
         kept = false;
       }
+      if (kept) keptBy = 'focus';
       if (!kept && typeof helpers.isPresentationalRoleIgnored === 'function') {
         try {
           kept = helpers.isPresentationalRoleIgnored(el);
         } catch {
           kept = false;
         }
+        if (kept) keptBy = 'global';
       }
 
       if (!kept) continue;
@@ -224,16 +229,64 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // The message names what the author did: an alt of only white space,
+    // which is not alt="", or a presentational role browsers ignore.
+    const msg = (() => {
+      if (isWhitespaceOnlyAlt) {
+        return {
+          summary:
+            'This <img> has an alt attribute of only white space, which is not alt="": the image is not treated as decorative, and it has no name.',
+          hint: 'Use alt="" (nothing between the quotes) if the image is decorative, or alt text that says what it shows.',
+          summaryKey: 'img_altPresent_summary_fail_blankAlt',
+          hintKey: 'img_altPresent_hint_fail_blankAlt',
+          params: {},
+          detail: { cause: 'blankAlt' }
+        };
+      }
+      if (keptBy === 'focus') {
+        return {
+          summary: 'This <img> has no alt attribute.',
+          hint: `It has role="${role}", but browsers ignore that role because the image can take focus, so it is still an image and needs alt. Remove what makes it focusable (such as tabindex), or give it alt text.`,
+          summaryKey: 'img_altPresent_summary_fail',
+          hintKey: 'img_altPresent_hint_fail_roleIgnoredFocus',
+          params: { role },
+          detail: { cause: 'presentationIgnored', by: 'focus' }
+        };
+      }
+      if (keptBy === 'global') {
+        const names = dom.getAttributeNames(el) || [];
+        const GLOBAL =
+          /^aria-(atomic|braillelabel|brailleroledescription|busy|controls|current|describedby|description|details|dropeffect|flowto|grabbed|keyshortcuts|live|owns|relevant|roledescription)$/;
+        const attr =
+          names.find((n) => GLOBAL.test(n)) ||
+          names.find((n) => /^aria-/.test(n) && n !== 'aria-hidden') ||
+          'aria-*';
+        return {
+          summary: 'This <img> has no alt attribute.',
+          hint: `It has role="${role}", but browsers ignore that role because the image has ${attr}, a global ARIA attribute, so it is still an image and needs alt. Remove ${attr}, or give it alt text.`,
+          summaryKey: 'img_altPresent_summary_fail',
+          hintKey: 'img_altPresent_hint_fail_roleIgnoredGlobal',
+          params: { role, attr },
+          detail: { cause: 'presentationIgnored', by: 'global', attr }
+        };
+      }
+      return null;
+    })();
     const baseOccurrence = {
-      summary: 'This <img> has no alt attribute.',
-      hint: 'Add an alt attribute that says what the image shows, or alt="" if the image is purely decorative.',
+      summary: msg ? msg.summary : 'This <img> has no alt attribute.',
+      hint: msg
+        ? msg.hint
+        : 'Add an alt attribute that says what the image shows, or alt="" if the image is purely decorative.',
       i18n: {
-        summaryKey: 'img_altPresent_summary_fail',
-        hintKey: 'img_altPresent_hint_fail',
-        params: {}
+        summaryKey: msg ? msg.summaryKey : 'img_altPresent_summary_fail',
+        hintKey: msg ? msg.hintKey : 'img_altPresent_hint_fail',
+        params: msg ? msg.params : {}
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(msg ? { altCause: msg.detail } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
       }
     };

@@ -138,3 +138,20 @@ test(`${RULE_ID}: the role attribute is a fallback list read in any case (#91)`,
   assert.ok(hasOccurrenceForId(rule, 'upper'));
   assert.ok(!hasOccurrenceForId(rule, 'link'));
 });
+
+test(`${RULE_ID}: a fail says when aria-label is only white space`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="p1" role="progressbar" aria-valuenow="20" aria-label=" "></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('p1').i18n.hintKey, 'nameCause_hint_ariaLabelBlank');
+  assert.equal(
+    occ('p1').hint,
+    'Its aria-label is only white space, so it gives no name. Put the name in it.'
+  );
+  assert.equal(occ('p1').data.details.nameCause.cause, 'ariaLabelBlank');
+});

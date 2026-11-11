@@ -215,6 +215,75 @@ function runInPage(ctx) {
     return null;
   }
 
+  function cellText(cell) {
+    const all = trim(String(dom.textContent(cell) || '').replace(/\s+/g, ' '));
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  }
+
+  // The message of a cell with no header, when a cell that looks like a
+  // header is not counted as one: the cell itself (self), the first such
+  // cell above it (col) or at the start of its row (row). null otherwise.
+  function headerMessage(self, col, row) {
+    if (self && self.kind === 'role') {
+      const { role, text } = self;
+      return {
+        summary: `This <th> has role="${role}", which makes it an ordinary cell, so it heads nothing and has no header of its own.`,
+        hint: `Remove role="${role}" from the <th> so it heads its column or row (or give it role="columnheader" or role="rowheader").`,
+        summaryKey: 'tdHasHeader_summary_fail_thRole',
+        hintKey: 'tdHasHeader_hint_fail_thRole',
+        params: { role },
+        detail: { cell: 'self', kind: 'role', role, text }
+      };
+    }
+    if (self && self.kind === 'theadTd') {
+      return {
+        summary:
+          "This cell is in the table's <thead> but is a <td>, so it heads nothing, and the cells below it have no column header.",
+        hint: 'Make the cells of the header row <th>.',
+        summaryKey: 'tdHasHeader_summary_fail_theadTd',
+        hintKey: 'tdHasHeader_hint_fail_theadTd',
+        params: {},
+        detail: { cell: 'self', kind: 'theadTd', text: self.text }
+      };
+    }
+    const near = col || row;
+    if (!near) return null;
+    const where = col ? 'col' : 'row';
+    const { text } = near;
+    const detail = { cell: where, ...near };
+    if (near.kind === 'theadTd') {
+      return {
+        summary: `This data cell has no header: the cell above it in the <thead> ("${text}") is a <td>, not a <th>, so it heads nothing.`,
+        hint: 'Make the cells of the header row <th>.',
+        summaryKey: 'tdHasHeader_summary_fail_colTheadTd',
+        hintKey: 'tdHasHeader_hint_fail_theadTd',
+        params: { text },
+        detail
+      };
+    }
+    const place = col ? 'above it' : 'at the start of its row';
+    if (near.kind === 'hidden') {
+      const { hiddenBy } = near;
+      return {
+        summary: `This data cell has no header: the <th> ${place} ("${text}") is hidden from screen readers by ${hiddenBy}, so it heads nothing.`,
+        hint: 'Let screen readers read the header cells, or give this cell a headers attribute that points at a header they read.',
+        summaryKey: `tdHasHeader_summary_fail_${where}Hidden`,
+        hintKey: 'tdHasHeader_hint_fail_hidden',
+        params: { text, hiddenBy },
+        detail
+      };
+    }
+    const { role } = near;
+    return {
+      summary: `This data cell has no header: the <th> ${place} ("${text}") has role="${role}", which makes it an ordinary cell.`,
+      hint: `Remove role="${role}" from the header cells, or give them role="${col ? 'columnheader' : 'rowheader'}".`,
+      summaryKey: `tdHasHeader_summary_fail_${where}Role`,
+      hintKey: `tdHasHeader_hint_fail_${where}Role`,
+      params: { text, role },
+      detail
+    };
+  }
+
   const tables = helpers.queryAllSmart ? helpers.queryAllSmart('table') : helpers.queryAll('table');
 
   const occurrences = [];
@@ -316,11 +385,36 @@ function runInPage(ctx) {
       continue;
     }
 
+    // Why a cell that looks like a header is not counted as one, for the
+    // message: a <th> with another role, a <th> hidden from assistive
+    // technology, or a <td> in the table's <thead>. null for other cells.
+    function notHeader(cell) {
+      const tag = String(dom.tagName(cell) || '').toLowerCase();
+      if (tag === 'th') {
+        if (!isEligible(cell)) {
+          const hid = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(cell) : null;
+          return hid ? { kind: 'hidden', text: cellText(cell), hiddenBy: hid.hiddenBy } : null;
+        }
+        const role = firstRole(cell);
+        return role ? { kind: 'role', text: cellText(cell), role } : null;
+      }
+      const row = dom.parentElement(cell);
+      const section = row ? dom.parentElement(row) : null;
+      if (tag === 'td' && section && String(dom.tagName(section) || '').toLowerCase() === 'thead') {
+        return { kind: 'theadTd', text: cellText(cell) };
+      }
+      return null;
+    }
+
     const colHasHeaderAbove = new Array(maxCols).fill(false);
+    // The first cell above, in each column, that looks like a header but is
+    // not counted as one (notHeader).
+    const colNotHeader = new Array(maxCols).fill(null);
 
     for (let r = 0; r < rowCells.length; r++) {
       const cells = rowCells[r];
       let rowHasHeaderBefore = false;
+      let rowNotHeader = null;
 
       for (let c = 0; c < cells.length; c++) {
         const cell = cells[c];
@@ -331,6 +425,12 @@ function runInPage(ctx) {
           rowHasHeaderBefore = true;
           continue;
         }
+        const why = notHeader(cell);
+        // Read before this cell is recorded, so a cell is not its own header.
+        const colWhy = colNotHeader[c];
+        const rowWhy = rowNotHeader;
+        if (why && !colNotHeader[c]) colNotHeader[c] = why;
+        if (why && why.kind !== 'theadTd' && !rowNotHeader) rowNotHeader = why;
 
         // An aria-hidden data cell isn't exposed to AT either, so it has
         // no need for an accessible header association.
@@ -345,19 +445,28 @@ function runInPage(ctx) {
         if (colHasHeaderAbove[c]) continue;
         if (rowHasHeaderBefore) continue;
 
+        const msg = headerMessage(why, colWhy, rowWhy);
         occurrences.push(
           helpers.reportOccurrence(cell, {
-            summary:
-              'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
-            hint: "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
+            summary: msg
+              ? msg.summary
+              : 'This data cell has no associated header (no headers attribute, no column <th> above it, no row <th> to its left).',
+            hint: msg
+              ? msg.hint
+              : "Add a headers attribute that points at the right <th> ids, or arrange the table so a <th> sits above this cell's column or at the start of its row.",
             occurrenceOutcome: 'fail',
             i18n: {
-              summaryKey: 'tdHasHeader_summary_fail',
-              hintKey: 'tdHasHeader_hint_fail',
-              params: { row: String(r), column: String(c) }
+              summaryKey: msg ? msg.summaryKey : 'tdHasHeader_summary_fail',
+              hintKey: msg ? msg.hintKey : 'tdHasHeader_hint_fail',
+              params: { row: String(r), column: String(c), ...(msg ? msg.params : {}) }
             },
             data: {
-              details: { reasonCode: 'TD_NO_ASSOCIATED_HEADER', row: r, column: c }
+              details: {
+                reasonCode: 'TD_NO_ASSOCIATED_HEADER',
+                row: r,
+                column: c,
+                ...(msg ? { notHeader: msg.detail } : {})
+              }
             }
           })
         );

@@ -2058,11 +2058,14 @@ function createDomHelpers(opts) {
   // Why an element that should have a name has none, where the page shows a
   // cause a reader would not see from the element alone: the hint and its
   // i18n fields for a name rule's fail, with details.nameCause, or null.
-  // Tried in turn: an aria-labelledby whose ids are all missing; a <label>
-  // of the field hidden from assistive technology; a <label for> beside the
-  // field whose id no element has (a typo); then, for an element named from
-  // its content (opts.content), text in it that is hidden, and content that
-  // is only an unnamed image.
+  // Tried in turn: an aria-labelledby whose ids are all missing, or whose
+  // elements all have no text; a <label> on an element it can't label (a
+  // custom widget); for a form field, a <label> hidden from assistive
+  // technology, and a nearby <label> that misses the field (a for typo, a
+  // duplicate id, a for at a non-field, a label around an earlier field, a
+  // label beside it with no for); then, for an element named from its
+  // content (opts.content), text in it that is hidden, and content that is
+  // only images or icons that give no name; last, an aria-label with no text.
   const LEVENSHTEIN_MAX = 2;
   function closeIds(a, b) {
     a = lower(a);
@@ -2143,10 +2146,39 @@ function createDomHelpers(opts) {
           return null;
         }
       };
-      const labelledby = trim(dom.getAttribute(el, 'aria-labelledby') || '');
+      const tagOf = (n) => lower(dom.tagName(n) || '');
+      const attr = (n, name) => trim(dom.getAttribute(n, name) || '');
+      // A label's text, leaving out el's and a field's own text (a widget or
+      // a <select> it wraps), trimmed to 40 characters.
+      const labelText = (l) => {
+        let all = '';
+        const stack = [l];
+        for (let seen = 0; stack.length && seen < 500; seen++) {
+          const n = stack.pop();
+          if (dom.nodeType(n) === 3) all += String(dom.nodeValue(n) || '');
+          if (
+            dom.nodeType(n) !== 1 ||
+            (n !== l && (n === el || /^(select|textarea)$/.test(tagOf(n))))
+          ) {
+            continue;
+          }
+          for (let c = dom.lastChild(n); c; c = dom.previousSibling(c)) stack.push(c);
+        }
+        all = trim(all.replace(/\s+/g, ' '));
+        return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+      };
+      const labelsFor = () => {
+        try {
+          return [...dom.querySelectorAll(root, 'label[for]')];
+        } catch {
+          return doc ? [...dom.querySelectorAll(doc, 'label[for]')] : [];
+        }
+      };
+      const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
         const ids = labelledby.split(/\s+/);
-        if (ids.every((id) => !byId(id))) {
+        const targets = ids.map(byId);
+        if (targets.every((t) => !t)) {
           const list = ids.map((id) => `"${id}"`).join(', ');
           return {
             hint: `Its aria-labelledby points to ${list}, which no element on the page has, so it gives no name. Point it at the id of the element whose text names it, or name it with aria-label.`,
@@ -2155,10 +2187,80 @@ function createDomHelpers(opts) {
             detail: { cause: 'labelledbyMissing', ids }
           };
         }
+        // Every target is there, and none has text or a name of its own.
+        const gives = (t) =>
+          HIDDEN_TEXT_RE.test(String(dom.textContent(t) || '')) ||
+          attr(t, 'aria-label') ||
+          attr(t, 'alt') ||
+          attr(t, 'title') ||
+          attr(t, 'value') ||
+          dom.querySelector(t, 'img, svg, input, select, textarea, [aria-label], [title]');
+        if (targets.every((t) => t && t !== el && !gives(t))) {
+          const list = targets.map((t) => `<${tagOf(t)} id="${attr(t, 'id')}">`).join(', ');
+          return {
+            hint: `Its aria-labelledby points only to elements with no text (${list}), so it gives no name. Put the text in the element it points to, or name it with aria-label.`,
+            hintKey: 'nameCause_hint_labelledbyEmpty',
+            params: { targets: list },
+            detail: { cause: 'labelledbyEmpty', ids }
+          };
+        }
       }
-      const tag = lower(dom.tagName(el) || '');
+      const tag = tagOf(el);
+      const id = attr(el, 'id');
+      // The first form field a <label> with no for would label: its control.
+      const firstField = (l) => {
+        for (const n of dom.querySelectorAll(
+          l,
+          'input, select, textarea, meter, output, progress, button'
+        )) {
+          if (!(tagOf(n) === 'input' && lower(dom.getAttribute(n, 'type')) === 'hidden')) return n;
+        }
+        return null;
+      };
+      if (!LABELABLE.test(tag)) {
+        // A <label> names only a native form field: one pointed at (or
+        // wrapped around) a custom widget names nothing.
+        let label = null;
+        if (id && byId(id) === el) {
+          label = labelsFor().find((l) => dom.getAttribute(l, 'for') === id) || null;
+        }
+        if (!label) {
+          const wrap = dom.closest(el, 'label');
+          if (wrap && !dom.getAttribute(wrap, 'for')) label = wrap;
+        }
+        const text = label ? labelText(label) : '';
+        if (label && HIDDEN_TEXT_RE.test(text)) {
+          const forId = dom.getAttribute(label, 'for');
+          const labelTag = forId ? `<label for="${forId}">` : '<label>';
+          const role = attr(el, 'role').split(/\s+/)[0];
+          const control = role ? `${tag} role="${role}"` : tag;
+          const labelId = attr(label, 'id');
+          const base = `The ${labelTag} "${text}" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <${control}>.`;
+          const detail = { cause: 'labelNotLabelable', text, labelId: labelId || null };
+          return labelId
+            ? {
+                hint: `${base} Add aria-labelledby="${labelId}" to this element.`,
+                hintKey: 'nameCause_hint_labelNotLabelable',
+                params: { labelTag, text, control, labelId },
+                detail
+              }
+            : {
+                hint: `${base} Give the label an id and point this element's aria-labelledby at it.`,
+                hintKey: 'nameCause_hint_labelNotLabelableNoId',
+                params: { labelTag, text, control },
+                detail
+              };
+        }
+      }
       if (LABELABLE.test(tag)) {
-        for (const label of labelsOf(el)) {
+        // The labels that do label el: for reaches it, or it is the first
+        // field of a label it sits in.
+        const labels = labelsOf(el).filter((l) =>
+          dom.getAttribute(l, 'for')
+            ? byId(dom.getAttribute(l, 'for')) === el
+            : firstField(l) === el
+        );
+        for (const label of labels) {
           const text = shortText(label);
           if (!HIDDEN_TEXT_RE.test(text)) continue;
           const hid = hiddenBy(label);
@@ -2171,15 +2273,14 @@ function createDomHelpers(opts) {
             detail: { cause: 'labelHidden', text, hiddenBy: hid.hiddenBy, element: hiddenElement }
           };
         }
-        if (!labelsOf(el).length && doc) {
-          const id = trim(dom.getAttribute(el, 'id') || '');
+        if (!labels.length && doc) {
           // A <label for> that labels nothing, beside the field or with an
           // id one or two letters from the field's.
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          for (const l of dom.querySelectorAll(doc, 'label[for]')) {
-            const forId = trim(dom.getAttribute(l, 'for') || '');
+          for (const l of labelsFor()) {
+            const forId = attr(l, 'for');
             if (!forId || byId(forId)) continue;
             const inParent = parent && dom.parentElement(l) === parent;
             if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
@@ -2199,62 +2300,282 @@ function createDomHelpers(opts) {
                   detail: { cause: 'labelForMissing', for: forId, text, id: null }
                 };
           }
+          // A <label for> with this field's id that reaches an earlier
+          // element with the same id.
+          const first = id ? byId(id) : null;
+          if (first && first !== el) {
+            for (const l of labelsFor()) {
+              if (attr(l, 'for') !== id) continue;
+              const text = shortText(l);
+              if (!HIDDEN_TEXT_RE.test(text)) continue;
+              const firstTag = tagOf(first);
+              return {
+                hint: `The <label for="${id}"> "${text}" reaches the first element with id "${id}", a <${firstTag}>, not this field, which has the same id. Give each element its own id.`,
+                hintKey: 'nameCause_hint_labelForDuplicateId',
+                params: { forId: id, text, firstTag },
+                detail: { cause: 'labelForDuplicateId', for: id, text, first: firstTag }
+              };
+            }
+          }
+          // A <label for> beside the field, or around it, that points at an
+          // element that is not a form field.
+          for (const l of labelsFor()) {
+            const forId = attr(l, 'for');
+            const target = forId ? byId(forId) : null;
+            if (!target || target === el || LABELABLE.test(tagOf(target))) continue;
+            if (!near.has(l) && !dom.contains(target, el)) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            const targetTag = tagOf(target);
+            const detail = { cause: 'labelForNotField', for: forId, text, target: targetTag };
+            return id
+              ? {
+                  hint: `The <label for="${forId}"> "${text}" points at a <${targetTag}>, not at a form field, so it labels nothing. Point for at this field's id, "${id}".`,
+                  hintKey: 'nameCause_hint_labelForNotField',
+                  params: { forId, text, targetTag, id },
+                  detail
+                }
+              : {
+                  hint: `The <label for="${forId}"> "${text}" points at a <${targetTag}>, not at a form field, so it labels nothing. Give this field an id and point for at it.`,
+                  hintKey: 'nameCause_hint_labelForNotFieldNoId',
+                  params: { forId, text, targetTag },
+                  detail
+                };
+          }
+          // A label around the field that names an earlier field in it.
+          const wrap = dom.closest(el, 'label');
+          const wrapFirst = wrap && !dom.getAttribute(wrap, 'for') ? firstField(wrap) : null;
+          if (wrapFirst && wrapFirst !== el) {
+            const text = labelText(wrap);
+            if (HIDDEN_TEXT_RE.test(text)) {
+              const firstTag = tagOf(wrapFirst);
+              return {
+                hint: `It sits inside the <label> "${text}", but a label names only the first field in it, which is another <${firstTag}>. Give this field its own <label> or aria-label.`,
+                hintKey: 'nameCause_hint_labelWrapsOther',
+                params: { text, firstTag },
+                detail: { cause: 'labelWrapsOther', text, first: firstTag }
+              };
+            }
+          }
+          // A <label> beside the field with no for, that wraps no field.
+          for (const l of [dom.previousElementSibling(el), dom.nextElementSibling(el)]) {
+            if (!l || tagOf(l) !== 'label' || dom.hasAttribute(l, 'for') || firstField(l)) continue;
+            const text = shortText(l);
+            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            const base = `The <label> "${text}" beside it is not tied to it: the label has no for attribute and does not wrap the field.`;
+            const detail = { cause: 'labelNotTied', text, id: id || null };
+            return id
+              ? {
+                  hint: `${base} Add for="${id}" to the label, or put the field inside the label.`,
+                  hintKey: 'nameCause_hint_labelNotTied',
+                  params: { text, id },
+                  detail
+                }
+              : {
+                  hint: `${base} Give the field an id and add a for attribute with that id to the label, or put the field inside the label.`,
+                  hintKey: 'nameCause_hint_labelNotTiedNoId',
+                  params: { text },
+                  detail
+                };
+          }
         }
       }
-      if (!o.content) return null;
-      const hidden = hiddenNameText(el);
-      if (hidden) {
-        const h = hiddenNameTextHint(hidden);
-        return { ...h, detail: { cause: 'hiddenText', ...hidden } };
-      }
-      // Content that is only an image with no name: no text of its own.
-      if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
-      const imgs = [...dom.querySelectorAll(el, 'img, svg')];
-      if (imgs.length !== 1) return null;
-      const img = imgs[0];
-      if (hiddenBy(img)) return null;
-      if (lower(dom.tagName(img)) === 'img') {
-        if (
-          trim(dom.getAttribute(img, 'aria-label') || '') ||
-          dom.getAttribute(img, 'aria-labelledby')
-        ) {
-          return null;
-        }
-        const alt = dom.getAttribute(img, 'alt');
-        if (alt === null) {
-          return {
-            hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
-            hintKey: 'nameCause_hint_imageNoAlt',
-            params: {},
-            detail: { cause: 'imageNoAlt' }
-          };
-        }
-        if (!trim(alt)) {
-          return {
-            hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
-            hintKey: 'nameCause_hint_imageEmptyAlt',
-            params: {},
-            detail: { cause: 'imageEmptyAlt' }
-          };
-        }
-        return null;
-      }
-      const svgNamed =
-        trim(dom.getAttribute(img, 'aria-label') || '') ||
-        dom.getAttribute(img, 'aria-labelledby') ||
-        [...dom.querySelectorAll(img, 'title')].some((t) =>
-          HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
-        );
-      if (svgNamed) return null;
-      return {
-        hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
-        hintKey: 'nameCause_hint_svgNoName',
-        params: {},
-        detail: { cause: 'svgNoName' }
+      // An aria-label with no text in it: it is ignored.
+      const blankLabel = () => {
+        const ariaLabel = dom.getAttribute(el, 'aria-label');
+        if (ariaLabel === null || trim(ariaLabel) || labelledby) return null;
+        return ariaLabel
+          ? {
+              hint: 'Its aria-label is only white space, so it gives no name. Put the name in it.',
+              hintKey: 'nameCause_hint_ariaLabelBlank',
+              params: {},
+              detail: { cause: 'ariaLabelBlank' }
+            }
+          : {
+              hint: 'Its aria-label is empty, so it gives no name. Put the name in it.',
+              hintKey: 'nameCause_hint_ariaLabelEmpty',
+              params: {},
+              detail: { cause: 'ariaLabelEmpty' }
+            };
       };
+      if (!o.content) return blankLabel();
+      return contentNameCause(el) || blankLabel();
     } catch {
       return null;
     }
+  }
+  // nameCause for an element named from its content: text in it that is
+  // hidden, or content that is only images or icons that give no name.
+  function contentNameCause(el) {
+    const tagOf = (n) => lower(dom.tagName(n) || '');
+    const hidden = hiddenNameText(el);
+    if (hidden) {
+      const h = hiddenNameTextHint(hidden);
+      return { ...h, detail: { cause: 'hiddenText', ...hidden } };
+    }
+    // Content that is only images or icons with no name: no text of its own.
+    if (HIDDEN_TEXT_RE.test(String(dom.textContent(el) || ''))) return null;
+    const named = (n) =>
+      trim(dom.getAttribute(n, 'aria-label') || '') || dom.getAttribute(n, 'aria-labelledby');
+    // Images and svgs, leaving out an svg inside another.
+    const imgs = [...dom.querySelectorAll(el, 'img, svg')].filter((n) => {
+      const up = dom.parentElement(n);
+      return !(up && dom.closest(up, 'svg') && dom.contains(el, dom.closest(up, 'svg')));
+    });
+    if (imgs.length > 1) {
+      const allEmpty = imgs.every(
+        (n) =>
+          tagOf(n) === 'img' &&
+          !hiddenBy(n) &&
+          !named(n) &&
+          dom.getAttribute(n, 'alt') !== null &&
+          !trim(dom.getAttribute(n, 'alt'))
+      );
+      if (!allEmpty) return null;
+      const count = imgs.length;
+      return {
+        hint: `Its content is ${count} images, all with alt="", so it gives no name. Give one of them alt text that says what it does or where it leads, or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_imagesEmptyAlt',
+        params: { count },
+        detail: { cause: 'imagesEmptyAlt', count }
+      };
+    }
+    if (!imgs.length) {
+      // An empty element with a class, as an icon font or a CSS background
+      // draws: nothing in it gives a name.
+      const icons = [...dom.querySelectorAll(el, 'i, span')].filter(
+        (n) =>
+          trim(dom.getAttribute(n, 'class') || '') &&
+          !dom.querySelector(n, '*') &&
+          !trim(dom.textContent(n) || '')
+      );
+      if (icons.length !== 1 || named(icons[0])) return null;
+      const iconTag = tagOf(icons[0]);
+      const cls = trim(dom.getAttribute(icons[0], 'class')).replace(/\s+/g, ' ');
+      const iconClass = cls.length > 40 ? `${cls.slice(0, 39)}…` : cls;
+      return {
+        hint: `Its only content is an empty <${iconTag} class="${iconClass}">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_iconEmpty',
+        params: { iconTag, iconClass },
+        detail: { cause: 'iconEmpty', element: iconTag, class: cls }
+      };
+    }
+    const img = imgs[0];
+    const imageTag = tagOf(img);
+    const hid = hiddenBy(img);
+    if (hid) {
+      // Hidden by aria-hidden inside el: an icon screen readers skip.
+      if (
+        hid.hiddenBy !== 'aria-hidden="true"' ||
+        hid.element === el ||
+        !dom.contains(el, hid.element)
+      ) {
+        return null;
+      }
+      return {
+        hint: `Its only content is an <${imageTag}> hidden by aria-hidden="true", so screen readers skip it and it gives no name. Add text a screen reader reads (a visually-hidden <span>), or name the element with aria-label.`,
+        hintKey: 'nameCause_hint_iconHidden',
+        params: { imageTag },
+        detail: { cause: 'iconHidden', element: imageTag }
+      };
+    }
+    if (imageTag === 'img') {
+      if (named(img)) return null;
+      const alt = dom.getAttribute(img, 'alt');
+      if (alt === null) {
+        return {
+          hint: 'Its only content is an image with no alt attribute, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hintKey: 'nameCause_hint_imageNoAlt',
+          params: {},
+          detail: { cause: 'imageNoAlt' }
+        };
+      }
+      if (!trim(alt)) {
+        return {
+          hint: 'Its only content is an image with alt="", which marks it as decorative, so it gives no name. Give the image alt text that says what it does or where it leads, or name the element with aria-label.',
+          hintKey: 'nameCause_hint_imageEmptyAlt',
+          params: {},
+          detail: { cause: 'imageEmptyAlt' }
+        };
+      }
+      return null;
+    }
+    const svgNamed =
+      named(img) ||
+      [...dom.querySelectorAll(img, 'title')].some((t) =>
+        HIDDEN_TEXT_RE.test(dom.textContent(t) || '')
+      );
+    if (svgNamed) return null;
+    return {
+      hint: 'Its only content is an <svg> with no name (no <title> or aria-label), so it gives no name. Give the svg a <title> or aria-label that says what it does or where it leads, or name the element with aria-label.',
+      hintKey: 'nameCause_hint_svgNoName',
+      params: {},
+      detail: { cause: 'svgNoName' }
+    };
+  }
+
+  // The language tag an almost-right lang value was meant to be, for a
+  // message: { kind, suggestion }, kind 'underscore' (en_US, a POSIX locale),
+  // 'country' (jp, a country code used as a language code) or 'alpha3' (eng,
+  // the ISO 639-2 code of a language with a two-letter one); null when no
+  // such fix gives a valid tag.
+  const LANG_FROM_COUNTRY = {
+    jp: 'ja',
+    cz: 'cs',
+    dk: 'da',
+    gr: 'el',
+    cn: 'zh',
+    ua: 'uk',
+    kr: 'ko',
+    il: 'he',
+    vn: 'vi'
+  };
+  const LANG_FROM_ALPHA3 = {
+    ara: 'ar',
+    ces: 'cs',
+    chi: 'zh',
+    cze: 'cs',
+    dan: 'da',
+    deu: 'de',
+    dut: 'nl',
+    ell: 'el',
+    eng: 'en',
+    fin: 'fi',
+    fra: 'fr',
+    fre: 'fr',
+    ger: 'de',
+    gre: 'el',
+    heb: 'he',
+    hin: 'hi',
+    ita: 'it',
+    jpn: 'ja',
+    kor: 'ko',
+    nld: 'nl',
+    nor: 'no',
+    pol: 'pl',
+    por: 'pt',
+    rus: 'ru',
+    spa: 'es',
+    swe: 'sv',
+    tur: 'tr',
+    ukr: 'uk',
+    zho: 'zh'
+  };
+  function langTagFix(value) {
+    const raw = trim(value);
+    if (!raw) return null;
+    if (raw.includes('_')) {
+      const fixed = raw.replace(/_/g, '-');
+      return isValidLanguageTag(fixed) ? { kind: 'underscore', suggestion: fixed } : null;
+    }
+    const parts = raw.split('-');
+    const primary = lower(parts[0]);
+    const own = (map) => Object.prototype.hasOwnProperty.call(map, primary);
+    const kind = own(LANG_FROM_COUNTRY) ? 'country' : own(LANG_FROM_ALPHA3) ? 'alpha3' : '';
+    if (!kind) return null;
+    const code = kind === 'country' ? LANG_FROM_COUNTRY[primary] : LANG_FROM_ALPHA3[primary];
+    const suggestion = [code].concat(parts.slice(1)).join('-');
+    return isValidLanguageTag(suggestion) ? { kind, suggestion } : null;
   }
 
   // Edits (insert, delete, replace, or swap two neighbours) from a to b.
@@ -9148,6 +9469,7 @@ function createDomHelpers(opts) {
     hiddenNameText,
     hiddenNameTextHint,
     nameCause,
+    langTagFix,
     hiddenCause: hiddenBy,
     nearestRole,
     nearestAriaAttr,

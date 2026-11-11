@@ -270,16 +270,53 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // The hint names what the author put in place of a name, where the
+    // markup shows it: a missing or empty aria-labelledby target or a blank
+    // aria-label (helpers.nameCause), an alt on the <object>, or fallback
+    // that is only an image's alt, which is not read as its text.
+    const short = (v) => {
+      const t = trim(String(v || '').replace(/\s+/g, ' '));
+      return t.length > 40 ? `${t.slice(0, 39)}…` : t;
+    };
+    const objectCause = (() => {
+      const alt = short(dom.getAttribute(el, 'alt'));
+      if (alt) {
+        return {
+          hint: `Its alt="${alt}" does nothing: an <object> has no alt attribute. Use aria-label="${alt}", or put that text in its fallback content.`,
+          hintKey: 'object_textAltPresent_hint_fail_alt',
+          params: { alt },
+          detail: { cause: 'altOnObject', alt }
+        };
+      }
+      for (const img of dom.querySelectorAll(el, 'img[alt]')) {
+        const imgAlt = short(dom.getAttribute(img, 'alt'));
+        if (!imgAlt) continue;
+        return {
+          hint: `Its fallback is only an <img alt="${imgAlt}">, and an image's alt is not read as the <object>'s text alternative. Give the <object> aria-label="${imgAlt}", or add that text to the fallback as text.`,
+          hintKey: 'object_textAltPresent_hint_fail_imgFallback',
+          params: { alt: imgAlt },
+          detail: { cause: 'imgFallback', alt: imgAlt }
+        };
+      }
+      return null;
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || objectCause;
     const baseOccurrence = {
       summary: 'This <object> has no text alternative.',
-      hint: 'Add fallback content inside the <object> that conveys the same thing, or name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
+      hint: cause
+        ? cause.hint
+        : 'Add fallback content inside the <object> that conveys the same thing, or name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'object_textAltPresent_summary_fail',
-        hintKey: 'object_textAltPresent_hint_fail',
-        params: { element: 'object' }
+        hintKey: cause ? cause.hintKey : 'object_textAltPresent_hint_fail',
+        params: { element: 'object', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         fallback: fb,
         name

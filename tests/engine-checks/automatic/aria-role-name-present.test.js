@@ -640,3 +640,26 @@ test('aria-role-name-present: an unnamed grid after a heading is a spec-only que
   assert.ok(rollup, 'the 4.1.2 name rollup ran');
   assert.notEqual(rollup.outcome, 'fail', 'an unnamed grid alone does not fail SC 4.1.2');
 });
+
+test(`${RULE_ID}: a fail names an aria-labelledby with no text, or a blank aria-label`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="rg1" role="radiogroup" aria-labelledby="e"><span id="e"></span></div>
+  <div id="rg2" role="radiogroup" aria-label=" "></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('rg1').i18n.hintKey, 'nameCause_hint_labelledbyEmpty');
+  assert.equal(
+    occ('rg1').hint,
+    'Its aria-labelledby points only to elements with no text (<span id="e">), so it gives no name. Put the text in the element it points to, or name it with aria-label.'
+  );
+  assert.equal(occ('rg1').data.details.nameCause.cause, 'labelledbyEmpty');
+  assert.equal(occ('rg2').i18n.hintKey, 'nameCause_hint_ariaLabelBlank');
+  assert.equal(
+    occ('rg2').hint,
+    'Its aria-label is only white space, so it gives no name. Put the name in it.'
+  );
+});

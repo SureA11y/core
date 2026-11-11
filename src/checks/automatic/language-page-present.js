@@ -145,15 +145,30 @@ function runInPage(ctx) {
   const lang = (rawLang || '').trim();
 
   if (rawLang === null) {
+    // A language the markup has, but where it does not declare the page's:
+    // xml:lang, which HTML ignores, or lang on <body>.
+    const xmlLang = (dom.getAttribute(html, 'xml:lang') || '').trim();
+    const body = dom.body(document);
+    const bodyLang = body ? (dom.getAttribute(body, 'lang') || '').trim() : '';
+    const hintKey = xmlLang
+      ? 'html_lang_attr_hint_missing_xmlLang'
+      : bodyLang
+        ? 'html_lang_attr_hint_missing_bodyLang'
+        : 'html_lang_attr_hint_missing_absent';
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity,
       occurrences: pushFail(
         'html_lang_attr_missing_absent',
-        'html_lang_attr_hint_missing_absent',
-        {},
-        { reasonCode: 'lang-missing', location: 'html' }
+        hintKey,
+        xmlLang ? { xmlLang } : bodyLang ? { bodyLang } : {},
+        {
+          reasonCode: 'lang-missing',
+          location: 'html',
+          ...(xmlLang ? { xmlLang } : {}),
+          ...(!xmlLang && bodyLang ? { bodyLang } : {})
+        }
       )
     };
   }
@@ -179,15 +194,23 @@ function runInPage(ctx) {
       ? helpers.isValidLanguageTag
       : (v) => /^[a-zA-Z]{2,3}$/.test(String(v || ''));
   if (!isValidTag(lang.split('-')[0])) {
+    // An almost-right value (en_US, jp, eng): the hint gives the tag it was
+    // meant to be (helpers.langTagFix).
+    const fix =
+      helpers && typeof helpers.langTagFix === 'function' ? helpers.langTagFix(lang) : null;
     return {
       ruleId: rule.ruleId,
       outcome: 'fail',
       severity: rule.defaultSeverity,
       occurrences: pushFail(
         'html_lang_attr_invalid',
-        'html_lang_attr_hint_invalid',
-        { lang },
-        { reasonCode: 'lang-invalid-bcp47', lang }
+        fix ? `html_lang_attr_hint_invalid_${fix.kind}` : 'html_lang_attr_hint_invalid',
+        { lang, ...(fix ? { subtag: lang.split('-')[0], suggestion: fix.suggestion } : {}) },
+        {
+          reasonCode: 'lang-invalid-bcp47',
+          lang,
+          ...(fix ? { suggestion: fix.suggestion, fixKind: fix.kind } : {})
+        }
       )
     };
   }

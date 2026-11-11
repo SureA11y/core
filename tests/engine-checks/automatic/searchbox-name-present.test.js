@@ -227,3 +227,21 @@ test('searchbox-name-present: a searchbox named only by aria-placeholder fails, 
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: a fail says a <label for> can't name a custom searchbox`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label for="sb">Search</label>
+  <div id="sb" role="searchbox" contenteditable="true"></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('sb').i18n.hintKey, 'nameCause_hint_labelNotLabelableNoId');
+  assert.equal(
+    occ('sb').hint,
+    'The <label for="sb"> "Search" names nothing here: a <label> only names native form fields (input, select, textarea…), not a <div role="searchbox">. Give the label an id and point this element\'s aria-labelledby at it.'
+  );
+  assert.equal(occ('sb').data.details.nameCause.cause, 'labelNotLabelable');
+});

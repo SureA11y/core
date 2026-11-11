@@ -562,3 +562,58 @@ test(`${RULE_ID}: a fail says when its label is hidden, or a label beside it poi
   assert.equal(noId.i18n.hintKey, 'nameCause_hint_labelForMissingNoId');
   assert.equal(noId.i18n.params.forId, 'phone');
 });
+
+test(`${RULE_ID}: a fail says when a nearby label misses the field, or its aria-label is blank`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div><label>Email</label><input id="sib" type="email"></div>
+  <div><label>Phone <input type="tel" aria-label="Area code"> <input id="second" type="tel"></label></div>
+  <div><label for="wrap">Street</label><div id="wrap"><input id="inwrap"></div></div>
+  <div><label for="dup">City</label><span id="dup"></span><input id="dup"></div>
+  <div><input id="blank" aria-label="  "></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 5,
+    maxOccurrences: 5
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('sib').i18n.hintKey, 'nameCause_hint_labelNotTied');
+  assert.equal(
+    occ('sib').hint,
+    'The <label> "Email" beside it is not tied to it: the label has no for attribute and does not wrap the field. Add for="sib" to the label, or put the field inside the label.'
+  );
+  assert.equal(occ('second').i18n.hintKey, 'nameCause_hint_labelWrapsOther');
+  assert.equal(
+    occ('second').hint,
+    'It sits inside the <label> "Phone", but a label names only the first field in it, which is another <input>. Give this field its own <label> or aria-label.'
+  );
+  assert.equal(occ('inwrap').i18n.hintKey, 'nameCause_hint_labelForNotField');
+  assert.equal(
+    occ('inwrap').hint,
+    'The <label for="wrap"> "Street" points at a <div>, not at a form field, so it labels nothing. Point for at this field\'s id, "inwrap".'
+  );
+  const dup = rule.occurrences.find((o) => o.html.includes('<input id="dup"'));
+  assert.equal(dup.i18n.hintKey, 'nameCause_hint_labelForDuplicateId');
+  assert.equal(
+    dup.hint,
+    'The <label for="dup"> "City" reaches the first element with id "dup", a <span>, not this field, which has the same id. Give each element its own id.'
+  );
+  assert.equal(occ('blank').i18n.hintKey, 'nameCause_hint_ariaLabelBlank');
+  assert.equal(
+    occ('blank').hint,
+    'Its aria-label is only white space, so it gives no name. Put the name in it.'
+  );
+});
+
+test(`${RULE_ID}: a sibling label with no for, and a field with no id`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <label>Email</label><input type="email">
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const o = rule.occurrences[0];
+  assert.equal(o.i18n.hintKey, 'nameCause_hint_labelNotTiedNoId');
+  assert.deepEqual(o.data.details.nameCause, { cause: 'labelNotTied', text: 'Email', id: null });
+  assert.match(o.hint, /^The <label> "Email" beside it is not tied to it/);
+});

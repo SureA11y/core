@@ -253,3 +253,33 @@ test(`${RULE_ID}: an object whose type markup doesn't tell, or names an image, i
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
 });
+
+test(`${RULE_ID}: a fail says when the fallback is only an image's alt, or alt is on the <object>`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <object id="o1" data="chart.svg" type="image/svg+xml"><img src="chart.png" alt="Sales chart"></object>
+  <object id="o2" data="v.mp4" type="video/mp4" alt="Intro video"></object>
+  <object id="o3" data="x.svg" type="image/svg+xml"></object>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('o1').i18n.hintKey, 'object_textAltPresent_hint_fail_imgFallback');
+  assert.equal(
+    occ('o1').hint,
+    'Its fallback is only an <img alt="Sales chart">, and an image\'s alt is not read as the <object>\'s text alternative. Give the <object> aria-label="Sales chart", or add that text to the fallback as text.'
+  );
+  assert.equal(occ('o1').data.details.nameCause.cause, 'imgFallback');
+  assert.equal(occ('o2').i18n.hintKey, 'object_textAltPresent_hint_fail_alt');
+  assert.equal(
+    occ('o2').hint,
+    'Its alt="Intro video" does nothing: an <object> has no alt attribute. Use aria-label="Intro video", or put that text in its fallback content.'
+  );
+  assert.equal(occ('o2').data.details.nameCause.cause, 'altOnObject');
+  assert.equal(occ('o3').i18n.hintKey, 'object_textAltPresent_hint_fail');
+  assert.equal(
+    occ('o3').hint,
+    'Add fallback content inside the <object> that conveys the same thing, or name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.'
+  );
+});

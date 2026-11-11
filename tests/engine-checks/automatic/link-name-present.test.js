@@ -479,3 +479,34 @@ test('link-name-present: a fail whose content text is hidden says what hides it'
   });
   assert.equal(occ.i18n.hintKey, 'nameHiddenText_hint_displayNone');
 });
+
+test('link-name-present: a fail says when the content is only icons, or aria-labelledby points at empty elements', () => {
+  const html = `<!doctype html><html lang="en"><body>
+  <a id="font" href="/t"><i class="fa fa-twitter"></i></a>
+  <a id="hidden" href="/x"><svg aria-hidden="true"><use href="#i"></use></svg></a>
+  <a id="imgs" href="/y"><img src="a.png" alt=""><img src="b.png" alt=""></a>
+  <a id="empty" href="/z" aria-labelledby="zz"><h2 id="zz"></h2></a>
+  <a id="blank" href="/w" aria-label=""></a>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 5,
+    maxOccurrences: 5
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('font').i18n.hintKey, 'nameCause_hint_iconEmpty');
+  assert.equal(
+    occ('font').hint,
+    'Its only content is an empty <i class="fa fa-twitter">, an icon drawn by CSS, which has no text to give a name. Add visually-hidden text, or name the element with aria-label.'
+  );
+  assert.equal(occ('hidden').i18n.hintKey, 'nameCause_hint_iconHidden');
+  assert.match(occ('hidden').hint, /^Its only content is an <svg> hidden by aria-hidden="true"/);
+  assert.equal(occ('imgs').i18n.hintKey, 'nameCause_hint_imagesEmptyAlt');
+  assert.equal(occ('imgs').i18n.params.count, 2);
+  assert.match(occ('imgs').hint, /^Its content is 2 images, all with alt="", so it gives no name/);
+  assert.equal(occ('empty').i18n.hintKey, 'nameCause_hint_labelledbyEmpty');
+  assert.equal(
+    occ('empty').hint,
+    'Its aria-labelledby points only to elements with no text (<h2 id="zz">), so it gives no name. Put the text in the element it points to, or name it with aria-label.'
+  );
+  assert.equal(occ('blank').i18n.hintKey, 'nameCause_hint_ariaLabelEmpty');
+});
