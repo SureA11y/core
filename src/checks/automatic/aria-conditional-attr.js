@@ -16,7 +16,10 @@
  *   other than `"false"` (i.e. `"true"`, `"grammar"`, or `"spelling"`).
  *   An element with `aria-errormessage` but `aria-invalid` absent or
  *   `"false"` silently drops the error message from the accessibility
- *   tree, authors almost always intend it to be exposed.
+ *   tree, authors almost always intend it to be exposed. Any other value
+ *   (aria-invalid="yes") is read as "true", as WAI-ARIA 1.2 requires of a
+ *   value not in its list, so the message is exposed and the element passes;
+ *   the value itself is `aria-valid-attr-value`'s finding.
  *   Reported at CANTTELL rather than FAIL: aria-errormessage is only
  *   exposed once aria-invalid is set, so the reference is currently inert.
  *   Whether that costs the user anything depends on whether the message is
@@ -164,28 +167,26 @@ function runInPage(ctx) {
 
     const invalidValue = trim(dom.getAttribute(el, 'aria-invalid')).toLowerCase();
     if (TRUTHY_INVALID_VALUES.has(invalidValue)) continue;
+    // Any other value but "false" is read as "true" (WAI-ARIA 1.2,
+    // aria-invalid: "Any value not recognized in the list of allowed values
+    // MUST be treated as if the value true had been provided"), so the error
+    // message is exposed. That the value is not one of aria-invalid's tokens
+    // (aria-invalid="yes") is aria-valid-attr-value's finding, not this one's.
+    const absentAttr = dom.getAttribute(el, 'aria-invalid') == null;
+    if (!absentAttr && invalidValue !== '' && invalidValue !== 'false') continue;
 
     const tag = (dom.tagName(el) || '').toLowerCase();
     const lean = leanFor(el, errorMessageRef);
 
-    // Which case it is: no aria-invalid, aria-invalid="false", or a value
-    // that is none of aria-invalid's tokens (aria-invalid="yes"), which
-    // browsers read as "true" though the value is not valid.
+    // Which case it is: no aria-invalid, or aria-invalid="false" (an empty
+    // value counts as false).
     const absent = dom.getAttribute(el, 'aria-invalid') == null;
-    const otherValue = !absent && invalidValue !== '' && invalidValue !== 'false';
-    const variant = absent
-      ? 'missing'
-      : invalidValue === 'false'
-        ? 'false'
-        : otherValue
-          ? 'invalidValue'
-          : '';
+    const variant = absent ? 'missing' : invalidValue === 'false' ? 'false' : '';
     const SUMMARIES = {
       missing:
         'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.',
       false:
-        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.',
-      invalidValue: `This element has aria-errormessage, but its aria-invalid="${invalidValue}" is not a valid value (true, false, grammar or spelling). Browsers read it as "true", but other tools may not, so the error message may not be exposed.`
+        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.'
     };
 
     occurrences.push(
@@ -193,18 +194,12 @@ function runInPage(ctx) {
         summary: variant
           ? SUMMARIES[variant]
           : 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-        hint:
-          variant === 'invalidValue'
-            ? 'Use aria-invalid="true" (or "grammar" or "spelling"), so every tool exposes the error message.'
-            : 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
         i18n: {
           summaryKey: variant
             ? `ariaConditionalAttr_summary_fail_${variant}`
             : 'ariaConditionalAttr_summary_fail',
-          hintKey:
-            variant === 'invalidValue'
-              ? 'ariaConditionalAttr_hint_fail_invalidValue'
-              : 'ariaConditionalAttr_hint_fail',
+          hintKey: 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },
         uncertainty: {

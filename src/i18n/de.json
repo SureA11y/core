@@ -1301,8 +1301,6 @@
   "ariaConditionalAttr_hint_fail": "Setzen Sie aria-invalid auf „true“ (oder „grammar“/„spelling“), wann immer aria-errormessage assistiven Technologien zur Verfügung gestellt werden soll.",
   "ariaConditionalAttr_summary_fail_missing": "Dieses Element hat aria-errormessage, aber kein aria-invalid, sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
   "ariaConditionalAttr_summary_fail_false": "Dieses Element hat aria-errormessage, aber aria-invalid=\"false\", sodass die Fehlermeldung nicht zur Verfügung gestellt wird.",
-  "ariaConditionalAttr_summary_fail_invalidValue": "Dieses Element hat aria-errormessage, aber sein aria-invalid=\"{{ariaInvalid}}\" ist kein gültiger Wert (true, false, grammar oder spelling). Browser lesen ihn als \"true\", andere Werkzeuge aber vielleicht nicht, sodass die Fehlermeldung möglicherweise nicht zur Verfügung gestellt wird.",
-  "ariaConditionalAttr_hint_fail_invalidValue": "Verwenden Sie aria-invalid=\"true\" (oder \"grammar\" oder \"spelling\"), damit jedes Werkzeug die Fehlermeldung zur Verfügung stellt.",
   "ariaConditionalAttr_lean_why_described": "Die Fehlermeldung wird auch von aria-describedby benannt und erreicht assistive Technologien so als Beschreibung des Feldes.",
   "ariaConditionalAttr_lean_why_shown": "Die Fehlermeldung wird mit Text angezeigt, aber aria-invalid ist nicht gesetzt, sodass assistive Technologien sie nicht erhalten.",
   "ariaConditionalAttr_lean_caution_shown": "Der angezeigte Text kann ein ständiger Hinweis statt eines Fehlers sein.",
