@@ -242,3 +242,26 @@ test(`${RULE_ID}: a header with no cell after it leans fail; one over a column o
   );
   assert.ok(named.every((o) => o.lean === undefined));
 });
+
+test(`${RULE_ID}: the hint says when the scope looks away from the cells, or headers attributes leave the header out`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <table><tr><th id="s1" scope="row">Item</th><th id="s2" scope="row">Price</th></tr><tr><td>A</td><td>1</td></tr></table>
+  <table><tr><th id="a">Item</th><th id="b">Price</th></tr><tr><td headers="a">A</td><td headers="a">1</td></tr></table>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('s2').i18n.hintKey, 'tableThHasDataCells_hint_cantTell_scopeRow');
+  assert.equal(
+    occ('s2').hint,
+    'Its scope="row" makes it head the cells to its right, but there are none; the cells are below it. If it heads that column, use scope="col".'
+  );
+  assert.deepEqual(occ('s2').data.details.unassignedCause, { kind: 'scope', scope: 'row' });
+  assert.equal(occ('b').i18n.hintKey, 'tableThHasDataCells_hint_cantTell_headersOmit');
+  assert.equal(
+    occ('b').hint,
+    'The cells it would head list their headers in a headers attribute, which replaces the lookup by position, and none lists this header\'s id, "b". Add "b" to the headers attribute of the cells it heads.'
+  );
+});

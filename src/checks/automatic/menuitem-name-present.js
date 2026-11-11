@@ -258,17 +258,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This menu item has no accessible name.',
-        hint: 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
+        hint: cause
+          ? cause.hint
+          : 'Provide visible text that is not hidden from assistive technologies, or provide aria-label or aria-labelledby.',
         i18n: {
           summaryKey: 'menuitemNamePresent_summary_fail',
-          hintKey: 'menuitemNamePresent_hint_fail',
-          params: { role }
+          hintKey: cause ? cause.hintKey : 'menuitemNamePresent_hint_fail',
+          params: { role, ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: role, methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: role,
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

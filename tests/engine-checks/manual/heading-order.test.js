@@ -241,3 +241,17 @@ test(`${RULE_ID}: a heading with role="none" and nothing to override it is out o
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: names the heading it jumps from`, () => {
+  const html = `<!doctype html><html><body><h1>Shop</h1><h2 id="p">Pricing</h2><p>Long content</p><h4 id="f">FAQ</h4></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This level-4 heading "FAQ" follows the level-2 heading "Pricing", skipping a level.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'headingOrder_summary_cantTell_previous');
+  assert.strictEqual(occ.data.details.previousText, 'Pricing');
+  assert.strictEqual(occ.data.details.previousSelector, '#p');
+  assert.strictEqual(occ.data.details.fromLevel, 2);
+});

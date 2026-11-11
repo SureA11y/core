@@ -255,17 +255,27 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This element has no accessible name.',
-        hint: 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
+        hint: cause
+          ? cause.hint
+          : 'Provide aria-label or aria-labelledby (preferred), or provide visible text that is not hidden from assistive technologies.',
         i18n: {
           summaryKey: 'optionNamePresent_summary_fail',
-          hintKey: 'optionNamePresent_hint_fail',
-          params: { controlType: 'option' }
+          hintKey: cause ? cause.hintKey : 'optionNamePresent_hint_fail',
+          params: { controlType: 'option', ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'name_missing', controlType: 'option', methodTried: res.method },
+          details: {
+            reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            controlType: 'option',
+            methodTried: res.method
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

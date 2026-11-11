@@ -1407,3 +1407,48 @@ test(`${RULE_ID}: notApplicable carries no occurrence, and the pass's occurrence
     }
   }
 });
+
+// A color the CSS gives that is drawn faded: the summary names the CSS color
+// and what fades it, so #adadad doesn't read as a false positive of #333.
+test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the color the CSS gives`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div class="disabled" style="opacity: 0.4"><p id="faded" style="color: #333">Faded text</p></div>
+  <p id="alpha" style="color: rgba(0, 0, 0, 0.35)">Alpha text</p>
+  <div style="opacity: 0.8"><span id="twice" style="opacity: 0.6; color: #555">Faded twice</span></div>
+  <p id="plain" style="color: #999">Plain grey</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 4, maxOccurrences: 4 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const faded = byId('faded');
+  assert.strictEqual(faded.i18n.summaryKey, 'contrastMinimum_fail_belowThreshold');
+  assert.strictEqual(faded.i18n.params.declaredColor, '#333333');
+  assert.strictEqual(faded.i18n.params.fadedBy, '<div class="disabled">');
+  assert.strictEqual(faded.i18n.params.fadedOpacity, '0.4');
+  assert.match(
+    faded.summary,
+    /\(foreground: #adadad,.*\. Its color #333333 is drawn as #adadad because <div class="disabled"> has opacity: 0\.4\.$/
+  );
+  assert.deepStrictEqual(faded.data.details.fade, {
+    declaredColor: '#333333',
+    colorAlpha: 1,
+    fadedBy: [{ element: '<div class="disabled">', opacity: 0.4 }]
+  });
+
+  assert.match(
+    byId('alpha').summary,
+    /Its color rgba\(0, 0, 0, 0\.35\) is semi-transparent, which shows as #a6a6a6 over the background\.$/
+  );
+  assert.match(
+    byId('twice').summary,
+    /Its color #555555 is drawn as #adadad because <span id="twice"> \(0\.6\), <div> \(0\.8\) have opacities that multiply to 0\.48\.$/
+  );
+
+  const plain = byId('plain');
+  assert.strictEqual(plain.i18n.params.declaredColor, undefined);
+  assert.strictEqual(plain.data.details.fade, undefined);
+  assert.doesNotMatch(plain.summary, /Its color/);
+});

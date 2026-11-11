@@ -79,3 +79,22 @@ test(`${RULE_ID}: notApplicable when only one element has an accesskey, since no
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
+
+test(`${RULE_ID}: names the key and the other elements that use it`, () => {
+  const html = `<!doctype html><html><body>
+    <a id="a" href="/a" accesskey="s">Search</a>
+    <main><button id="b" accesskey="S">Save</button></main>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'This element\'s accesskey="s" is also used by <button id="b"> "Save", so the shortcut may reach only one of them.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'accesskeys_summary_cantTell_others');
+  assert.deepStrictEqual(a.data.details.others, ['<button id="b"> "Save"']);
+  assert.strictEqual(a.data.details.reasonCode, 'ACCESSKEY_DUPLICATE');
+  assert.match(byId('b').summary, /accesskey="S" is also used by <a id="a"> "Search"/);
+});

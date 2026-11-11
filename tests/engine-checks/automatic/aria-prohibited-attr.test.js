@@ -358,3 +358,30 @@ test(`${RULE_ID}: a prohibited label is asked about where the element's text nam
   assert.equal(tier('a'), 'cantTell');
   assert.equal(tier('b'), 'fail');
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a misspelled role is named as why the element has none`, () => {
+  const occ = messageOccurrence('<div role="buton" aria-label="Close"></div>', 'buton');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaProhibitedAttr_summary_fail_roleless_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaProhibitedAttr_hint_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'This <div>’s role "buton" is not an ARIA role, so it has none, and with no other source of a name, assistive technology may not announce its aria-label.'
+  );
+  assert.strictEqual(occ.hint, 'Did you mean role="button"? Fix the role, or remove aria-label.');
+});

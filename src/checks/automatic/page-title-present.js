@@ -103,11 +103,24 @@ function runInPage(ctx) {
   // <title> counts: an inline <svg><title> names the graphic, not the page,
   // and document.title ignores it.
   let titleEl = null;
+  // For the message: the first <title> with text inside an <svg>, and the
+  // first HTML <title> with text after the one that counts.
+  const textOf = (t) => {
+    const all = String(dom.textContent(t) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return all.length > 40 ? `${all.slice(0, 39)}…` : all;
+  };
+  let svgTitle = '';
+  let laterTitle = '';
   for (const t of [...dom.getElementsByTagName(document, 'title')]) {
     if (!dom.namespaceURI(t) || dom.namespaceURI(t) === HTML_NS) {
-      titleEl = t;
-      break;
+      if (!titleEl) titleEl = t;
+      else if (!laterTitle) laterTitle = textOf(t);
+    } else if (!svgTitle) {
+      svgTitle = textOf(t);
     }
+    if (titleEl && laterTitle) break;
   }
   const titleText = (dom.get(document, 'title') || '').replace(/\s+/g, ' ').trim();
 
@@ -117,23 +130,36 @@ function runInPage(ctx) {
   if (missingTitleEl || emptyTitle) {
     const reasonCode = missingTitleEl ? 'missingTitleElement' : 'emptyTitleText';
 
+    // A <title> the reader finds in the markup that does not count: one
+    // inside an <svg>, which names the graphic, or a later one, which
+    // browsers ignore.
+    const svgOnly = missingTitleEl && !!svgTitle;
+    const later = emptyTitle && !!laterTitle;
     const occBase = {
       html: '',
-      summary: missingTitleEl
-        ? 'This page has no <title> element.'
-        : "This page's <title> is empty.",
-      hint: 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
+      summary: svgOnly
+        ? `This page has no <title> element of its own: the only <title> ("${svgTitle}") is inside an <svg>, where it names the graphic.`
+        : missingTitleEl
+          ? 'This page has no <title> element.'
+          : "This page's <title> is empty.",
+      hint: later
+        ? `Browsers use the first <title>, which is empty; the later <title> ("${laterTitle}") is ignored. Remove the empty one, or put the title text in it.`
+        : 'Provide a descriptive, non-empty <title> that identifies the page topic or purpose.',
       i18n: {
-        summaryKey: missingTitleEl
-          ? 'pageTitlePresent_summary_fail_missing'
-          : 'pageTitlePresent_summary_fail_empty',
-        hintKey: 'pageTitlePresent_hint_fail',
-        params: {}
+        summaryKey: svgOnly
+          ? 'pageTitlePresent_summary_fail_svgOnly'
+          : missingTitleEl
+            ? 'pageTitlePresent_summary_fail_missing'
+            : 'pageTitlePresent_summary_fail_empty',
+        hintKey: later ? 'pageTitlePresent_hint_fail_laterTitle' : 'pageTitlePresent_hint_fail',
+        params: svgOnly ? { svgTitle } : later ? { laterTitle } : {}
       },
       data: {
         details: {
           reasonCode,
-          titleText
+          titleText,
+          ...(svgOnly ? { svgTitle } : {}),
+          ...(later ? { laterTitle } : {})
         },
         visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
       }

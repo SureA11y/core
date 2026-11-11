@@ -535,7 +535,7 @@ test(`${RULE_ID}: a link in a container positioned off screen or clipped to noth
   assert.deepStrictEqual(hintsFor('clip'), ['containerClipped']);
   assert.match(
     rule.occurrences.find((o) => o.html.includes('id="off"')).summary,
-    /where scrolling can't bring it into view/
+    /its container <div id="menu"> is positioned off screen \(left: -9999px\)/
   );
 });
 
@@ -548,4 +548,34 @@ test(`${RULE_ID}: a container a :focus-within rule brings into view is not asked
     minOccurrences: 0,
     maxOccurrences: 0
   });
+});
+
+test(`${RULE_ID}: names the container that hides the element, and its CSS`, () => {
+  const html = `<!doctype html><html><head><style>
+    .drawer { position: absolute; left: -9999px; }
+    .sr { clip-path: inset(50%); }
+  </style></head><body>
+    <div class="drawer"><ul><li><a id="acct" href="/a">Account</a></li></ul></div>
+    <div id="panel" class="sr"><span><button id="go">Go</button></span></div>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const acct = byId('acct');
+  assert.strictEqual(
+    acct.summary,
+    'This focusable <a> can\'t be seen: its container <div class="drawer"> is positioned off screen (left: -9999px), and nothing brings it into view when the element takes focus.'
+  );
+  assert.strictEqual(acct.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_containerOffscreen');
+  assert.strictEqual(acct.i18n.params.container, '<div class="drawer">');
+  assert.strictEqual(acct.data.details.hiddenByContainer, '<div class="drawer">');
+  assert.strictEqual(acct.data.details.containerCss, 'left: -9999px');
+  assert.strictEqual(acct.data.details.reasonCode, 'cssHiddenTabbable_needsFocusStateVerification');
+
+  const go = byId('go');
+  assert.strictEqual(go.i18n.summaryKey, 'cssHidden_focus_summary_cantTell_containerClipped');
+  assert.match(
+    go.summary,
+    /its container <div id="panel"> is clipped to nothing \(clip-path: inset\(50%\)\)/
+  );
 });

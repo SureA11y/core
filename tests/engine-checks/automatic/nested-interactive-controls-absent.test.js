@@ -285,3 +285,59 @@ test(`${RULE_ID}: fails inside a role with presentational children, and asks abo
   assert.strictEqual(link.outcome, 'cantTell');
   assert.strictEqual(link.occurrences[0].uncertainty.code, 'spec-only');
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a control in a tab is named, with its role and what makes it focusable`, () => {
+  const occ = messageOccurrence(
+    '<div role="tab" tabindex="0">Doc <button>×</button></div>',
+    'role="tab"'
+  );
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'nestedInteractiveControlsAbsent_summary_fail_presentational'
+  );
+  assert.strictEqual(occ.i18n.hintKey, 'nestedInteractiveControlsAbsent_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This <div> is a tab, whose content is presentational, and it contains <button> "×": the nested control loses its role but still takes focus.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another."
+  );
+});
+
+test(`${RULE_ID}: a control in a link names both and keeps the question`, () => {
+  const occ = messageOccurrence(
+    '<a href="/p"><div class="card">x<span role="button" tabindex="0">Fav</span></div></a>',
+    'href="/p"'
+  );
+  assert.strictEqual(
+    occ.i18n.summaryKey,
+    'nestedInteractiveControlsAbsent_summary_cantTell_nested'
+  );
+  assert.strictEqual(occ.i18n.hintKey, 'nestedInteractiveControlsAbsent_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This <a> (link) contains <span role="button" tabindex="0"> "Fav". Both keep their roles, but a control inside another is hard to reach and operate, and its name may be swallowed by the outer one.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    "Move the nested controls out of this element. Screen readers and keyboards often can't reach or operate a control placed inside another."
+  );
+});

@@ -113,3 +113,67 @@ test(`${RULE_ID}: no lean when the error message is hidden`, () => {
     undefined
   );
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: an aria-invalid value outside its tokens is called invalid, not missing`, () => {
+  const occ = messageOccurrence(
+    '<input aria-errormessage="e1" aria-invalid="yes"><span id="e1">Bad</span>',
+    'yes'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_invalidValue');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail_invalidValue');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-errormessage, but its aria-invalid="yes" is not a valid value (true, false, grammar or spelling). Browsers read it as "true", but other tools may not, so the error message may not be exposed.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Use aria-invalid="true" (or "grammar" or "spelling"), so every tool exposes the error message.'
+  );
+});
+
+test(`${RULE_ID}: a missing aria-invalid is called missing`, () => {
+  const occ = messageOccurrence('<input aria-errormessage="e1"><span id="e1">Bad</span>', 'input');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_missing');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.'
+  );
+});
+
+test(`${RULE_ID}: aria-invalid="false" is called false`, () => {
+  const occ = messageOccurrence(
+    '<input aria-errormessage="e1" aria-invalid="false"><span id="e1">Bad</span>',
+    'false'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaConditionalAttr_summary_fail_false');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaConditionalAttr_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.'
+  );
+});

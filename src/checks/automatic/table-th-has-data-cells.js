@@ -212,16 +212,59 @@ function runInPage(ctx) {
     return Number.isFinite(n) ? n : 1;
   }
 
-  function askUnassigned(th, row, column, ragged) {
+  // The hint of an unassigned header, by why (askUnassignedIn): its scope
+  // looks away from the cells there are, or the cells where it looks list
+  // their headers in a headers attribute that leaves it out. null otherwise.
+  function unassignedHint(th, why) {
+    if (!why) return null;
+    if (why.kind === 'scope') {
+      const scopeValue = String(dom.getAttribute(th, 'scope') || '')
+        .trim()
+        .toLowerCase();
+      const scopeAttr =
+        scopeValue === why.scope
+          ? `scope="${why.scope}"`
+          : `role="${why.scope === 'row' ? 'rowheader' : 'columnheader'}"`;
+      return why.scope === 'row'
+        ? {
+            hint: `Its ${scopeAttr} makes it head the cells to its right, but there are none; the cells are below it. If it heads that column, use scope="col".`,
+            hintKey: 'tableThHasDataCells_hint_cantTell_scopeRow',
+            params: { scopeAttr }
+          }
+        : {
+            hint: `Its ${scopeAttr} makes it head the cells below it, but there are none; the cells are to its right. If it heads that row, use scope="row".`,
+            hintKey: 'tableThHasDataCells_hint_cantTell_scopeCol',
+            params: { scopeAttr }
+          };
+    }
+    const base =
+      'The cells it would head list their headers in a headers attribute, which replaces the lookup by position,';
+    return why.id
+      ? {
+          hint: `${base} and none lists this header's id, "${why.id}". Add "${why.id}" to the headers attribute of the cells it heads.`,
+          hintKey: 'tableThHasDataCells_hint_cantTell_headersOmit',
+          params: { id: why.id }
+        }
+      : {
+          hint: `${base} and this header has no id for them to list. Give it an id and add that id to the headers attribute of the cells it heads.`,
+          hintKey: 'tableThHasDataCells_hint_cantTell_headersOmitNoId',
+          params: {}
+        };
+  }
+
+  function askUnassigned(th, row, column, ragged, why) {
+    const cause = unassignedHint(th, why);
     askOccurrences.push(
       helpers.reportOccurrence(th, {
         summary: 'No data cell in this table is assigned to this header cell.',
-        hint: 'Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.',
+        hint: cause
+          ? cause.hint
+          : 'Check whether the table is missing the cells this header describes. Where cells name their headers with a headers attribute, include this header in those it applies to.',
         occurrenceOutcome: 'cantTell',
         i18n: {
           summaryKey: 'tableThHasDataCells_summary_cantTell_unassigned',
-          hintKey: 'tableThHasDataCells_hint_cantTell_unassigned',
-          params: {}
+          hintKey: cause ? cause.hintKey : 'tableThHasDataCells_hint_cantTell_unassigned',
+          params: cause ? cause.params : {}
         },
         uncertainty: {
           code: 'judgement-required',
@@ -249,7 +292,14 @@ function runInPage(ctx) {
               }
             }
           : {}),
-        data: { details: { reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL', row, column } }
+        data: {
+          details: {
+            reasonCode: 'TABLE_TH_NO_ASSIGNED_CELL',
+            row,
+            column,
+            ...(why ? { unassignedCause: why } : {})
+          }
+        }
       })
     );
   }
@@ -325,7 +375,20 @@ function runInPage(ctx) {
               : scope === 'row'
                 ? !inRowAfter.count
                 : !inRowAfter.count && !inColumnBelow.count);
-          askUnassigned(th, r, c, ragged);
+          // Why, where the markup shows it: the scope looks away from the
+          // cells there are, or every cell where it looks lists its headers
+          // in a headers attribute that leaves this one out.
+          let why = null;
+          if (scope === 'row' && inColumnBelow.anyFree) why = { kind: 'scope', scope: 'row' };
+          else if (scope === 'col' && inRowAfter.anyFree) why = { kind: 'scope', scope: 'col' };
+          else if (
+            named.size &&
+            ((scope !== 'col' && inRowAfter.count && !inRowAfter.allHeaders) ||
+              (scope !== 'row' && inColumnBelow.count && !inColumnBelow.allHeaders))
+          ) {
+            why = { kind: 'headersAttr', id: headerId || null };
+          }
+          askUnassigned(th, r, c, ragged, why);
         }
       }
     }

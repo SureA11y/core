@@ -250,18 +250,25 @@ function runInPage(ctx) {
           hintKey: 'canvas_textAltPresent_hint_fail'
         };
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    // Its fallback content counts only without role="img".
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: !isRoleImg }) : null;
     const baseOccurrence = {
       selector: '',
       html: '',
       summary: messages.summary,
-      hint: messages.hint,
+      hint: cause ? cause.hint : messages.hint,
       i18n: {
         summaryKey: messages.summaryKey,
-        hintKey: messages.hintKey,
-        params: { element: 'canvas' }
+        hintKey: cause ? cause.hintKey : messages.hintKey,
+        params: { element: 'canvas', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: isRoleImg ? 'ROLE_IMG_NAME_MISSING' : 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         // Always log eligibility/filter info (engine contract for targetSet=acc checks)
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         // Debuggable, deterministic helper facts (non-verdict)

@@ -245,3 +245,39 @@ test(`${RULE_ID}: governed text is read in the flat tree`, () => {
   assert.strictEqual(outcome('<p></p>', 'secret'), 'notApplicable');
   assert.strictEqual(outcome('<p><slot></slot></p>', 'secret'), 'fail');
 });
+
+test(`${RULE_ID}: the hint gives the tag an almost-right value was meant to be`, () => {
+  const cases = [
+    [
+      'en_US',
+      'validLang_hint_fail_underscore',
+      'Language tags use a hyphen, not an underscore: lang="en-US".'
+    ],
+    [
+      'jp',
+      'validLang_hint_fail_country',
+      '"jp" is a country code, not a language code: for the language, use lang="ja".'
+    ],
+    [
+      'cz-CZ',
+      'validLang_hint_fail_country',
+      '"cz" is a country code, not a language code: for the language, use lang="cs-CZ".'
+    ],
+    [
+      'eng',
+      'validLang_hint_fail_alpha3',
+      '"eng" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: lang="en".'
+    ],
+    ['xyz', 'validLang_hint_fail', 'Use a valid language tag, such as "fr" or "es-MX".']
+  ];
+  for (const [value, key, hint] of cases) {
+    const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><p lang="${value}">Hallo</p></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const o = rule.occurrences[0];
+    assert.equal(o.i18n.hintKey, key, value);
+    assert.equal(o.hint, hint, value);
+  }
+});

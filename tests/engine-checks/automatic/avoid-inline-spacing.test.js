@@ -326,3 +326,45 @@ test(`${RULE_ID}: short text in Chromium leans on the lines it is drawn on`, asy
   assert.strictEqual(longer.data.details.reasonCode, 'INLINE_SPACING_SHORT_TEXT');
   assert.strictEqual(longer.lean, undefined);
 });
+
+// The summary quotes the forced value, the ratio it comes to at the font
+// size, and only the limits it falls short of; an unresolved one is quoted
+// as declared.
+test(`${RULE_ID}: the summary quotes the forced value, its ratio and the limit it misses`, () => {
+  const text = `${LONG} ${LONG} ${LONG} ${LONG}`;
+  const html = `<!doctype html><html><body>
+    <div style="font-size: 16px"><p id="lh" style="line-height: 20px !important">${text}</p></div>
+    <p id="two" style="font-size: 16px; letter-spacing: 1px !important; line-height: 1.2 !important">${text}</p>
+    <p id="var" style="line-height: var(--lh) !important">${text}</p>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const lh = byId('lh');
+  assert.strictEqual(lh.data.details.reasonCode, 'INLINE_SPACING_IMPORTANT');
+  assert.strictEqual(
+    lh.summary,
+    "This element's inline style forces line-height: 20px (1.25) with !important at its 16px font size, below the spacing users must be able to apply (line-height 1.5), so they can't increase it."
+  );
+  assert.strictEqual(
+    lh.hint,
+    'Remove !important from the spacing in the inline style, or set a value that already meets the metric: line-height 1.5.'
+  );
+  assert.deepStrictEqual(lh.data.details.declarations, ['line-height: 20px (1.25)']);
+
+  const two = byId('two');
+  assert.strictEqual(
+    two.i18n.params.declarations,
+    'line-height: 1.2, letter-spacing: 1px (0.06em)'
+  );
+  assert.strictEqual(two.i18n.params.limits, 'line-height 1.5, letter-spacing 0.12em');
+  assert.doesNotMatch(two.summary, /word-spacing/);
+
+  const unresolved = byId('var');
+  assert.strictEqual(unresolved.data.details.reasonCode, 'INLINE_SPACING_NOT_RESOLVABLE');
+  assert.match(
+    unresolved.summary,
+    /^This element's inline style sets line-height: var\(--lh\) with !important/
+  );
+});

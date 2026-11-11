@@ -140,7 +140,14 @@ function runInPage(ctx) {
       }
       const refTag = dom.tagName(ref) ? dom.tagName(ref).toLowerCase() : '';
       if (refTag !== 'th' && refTag !== 'td') {
-        invalid.push({ id: headerId, reason: 'not-a-cell' });
+        // The cell it sits in, when the id is on an element inside a cell.
+        const holder = dom.get(ref, 'closest') ? dom.closest(ref, 'th, td') : null;
+        invalid.push({
+          id: headerId,
+          reason: 'not-a-cell',
+          element: refTag,
+          inCell: holder ? dom.tagName(holder).toLowerCase() : null
+        });
         continue;
       }
       if (table && (!dom.get(ref, 'closest') || dom.closest(ref, 'table') !== table)) {
@@ -154,14 +161,60 @@ function runInPage(ctx) {
 
     const tag = dom.tagName(el).toLowerCase();
 
+    // With one bad id, the hint says what is wrong with it.
+    const one = (() => {
+      if (dedupedInvalidIds.length !== 1) return null;
+      const bad = invalid[0];
+      const badId = bad.id;
+      if (bad.reason === 'missing') {
+        return {
+          hint: `No element has the id "${badId}". Give the header cell this id, or point the headers attribute at the id it has.`,
+          hintKey: 'tableHeadersAttrValid_hint_fail_missing',
+          params: { id: badId }
+        };
+      }
+      if (bad.reason === 'self-reference') {
+        return {
+          hint: `"${badId}" is this cell's own id, and a cell can't be its own header. Point the headers attribute at a header cell's id.`,
+          hintKey: 'tableHeadersAttrValid_hint_fail_self',
+          params: { id: badId }
+        };
+      }
+      if (bad.reason === 'different-table') {
+        return {
+          hint: `"${badId}" is a cell of another <table>, such as the separate header table a fixed-header layout builds, and headers works only within one table. Put the header row in the same table as this cell.`,
+          hintKey: 'tableHeadersAttrValid_hint_fail_differentTable',
+          params: { id: badId }
+        };
+      }
+      const refElement = bad.element;
+      return bad.inCell
+        ? {
+            hint: `"${badId}" is on a <${refElement}> inside a <${bad.inCell}>, not on the cell itself. Move the id to the <${bad.inCell}>.`,
+            hintKey: 'tableHeadersAttrValid_hint_fail_inCell',
+            params: { id: badId, refElement, cell: bad.inCell }
+          }
+        : {
+            hint: `"${badId}" is on a <${refElement}>, not on a table cell. Point the headers attribute at a <th>'s id.`,
+            hintKey: 'tableHeadersAttrValid_hint_fail_notCell',
+            params: { id: badId, refElement }
+          };
+    })();
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This cell’s headers attribute references one or more invalid header cells.',
-        hint: 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
+        hint: one
+          ? one.hint
+          : 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
         i18n: {
           summaryKey: 'tableHeadersAttrValid_summary_fail',
-          hintKey: 'tableHeadersAttrValid_hint_fail',
-          params: { element: tag, invalidIds: dedupedInvalidIds.join(', ') }
+          hintKey: one ? one.hintKey : 'tableHeadersAttrValid_hint_fail',
+          params: {
+            element: tag,
+            invalidIds: dedupedInvalidIds.join(', '),
+            ...(one ? one.params : {})
+          }
         },
         data: {
           details: { reasonCode: 'TABLE_HEADERS_ATTR_INVALID', element: tag, invalid }

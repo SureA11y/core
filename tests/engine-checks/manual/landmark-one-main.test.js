@@ -137,3 +137,30 @@ test(`${RULE_ID} (node runtime): cantTell when the only main is hidden from the 
   const html = `<!doctype html><html><body><main aria-hidden="true">Hidden</main></body></html>`;
   assertNodeRule(html, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
 });
+
+test(`${RULE_ID}: names the hidden <main> and what hides it, rather than "no main landmark"`, () => {
+  const html = `<!doctype html><html><body><div id="app" aria-hidden="true"><main><h1>x</h1></main></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const occ = rule.occurrences[0];
+  assert.strictEqual(
+    occ.summary,
+    'This page\'s main landmark <main> is hidden from screen readers by aria-hidden="true" on its ancestor <div id="app">, so the page has no main landmark they can reach.'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'landmarkOneMain_summary_cantTell_hiddenAncestor');
+  assert.strictEqual(occ.i18n.hintKey, 'landmarkOneMain_hint_cantTell_hidden');
+  assert.strictEqual(occ.lean.i18n.whyKey, 'landmarkOneMain_lean_why_hidden');
+  assert.strictEqual(occ.data.details.reasonCode, 'LANDMARK_MAIN_MISSING');
+  assert.deepStrictEqual(occ.data.details.hiddenMain, {
+    main: '<main>',
+    hiddenBy: 'aria-hidden="true"',
+    hiddenByElement: '<div id="app">'
+  });
+
+  const own = runa11yCoreOnHtml(
+    '<!doctype html><html><body><div role="main" hidden>x</div></body></html>',
+    { runOnly: [RULE_ID] }
+  );
+  const ownOcc = assertRule(own, RULE_ID, 'cantTell').occurrences[0];
+  assert.strictEqual(ownOcc.i18n.summaryKey, 'landmarkOneMain_summary_cantTell_hiddenOwn');
+  assert.strictEqual(ownOcc.i18n.params.main, '<div role="main">');
+});

@@ -309,3 +309,48 @@ test(`${RULE_ID} (node runtime): pass when <html> lang is a valid tag (en, fr-CH
     assert.strictEqual(rule.occurrences.length, 0);
   }
 });
+
+test(`${RULE_ID}: the hint says when the language is in xml:lang or on <body>, or almost right`, () => {
+  const cases = [
+    [
+      '<html xml:lang="en">',
+      '<body>',
+      'html_lang_attr_hint_missing_xmlLang',
+      'It has xml:lang="en", which HTML ignores. Add lang="en" to the <html> element as well.'
+    ],
+    [
+      '<html>',
+      '<body lang="en">',
+      'html_lang_attr_hint_missing_bodyLang',
+      'lang="en" is on <body>, not on <html>, so it does not declare the page\'s language. Move it to the <html> element.'
+    ],
+    [
+      '<html lang="en_US">',
+      '<body>',
+      'html_lang_attr_hint_invalid_underscore',
+      'Language tags use a hyphen, not an underscore: <html lang="en-US">.'
+    ],
+    [
+      '<html lang="jp">',
+      '<body>',
+      'html_lang_attr_hint_invalid_country',
+      '"jp" is a country code, not a language code: for the language, use <html lang="ja">.'
+    ],
+    [
+      '<html lang="ger">',
+      '<body>',
+      'html_lang_attr_hint_invalid_alpha3',
+      '"ger" is a three-letter ISO 639-2 code; a lang attribute uses the two-letter code for that language: <html lang="de">.'
+    ]
+  ];
+  for (const [htmlTag, bodyTag, key, hint] of cases) {
+    const html = `<!doctype html>${htmlTag}<head><title>t</title></head>${bodyTag}<p>Text</p></body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    const o = rule.occurrences[0];
+    assert.equal(o.i18n.hintKey, key, htmlTag);
+    assert.equal(o.hint, hint, htmlTag);
+  }
+});

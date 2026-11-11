@@ -374,7 +374,32 @@ function runInPage(ctx) {
 
     if (!missing.length) continue;
 
+    // Why a required attribute reads as missing, where the reader sees it
+    // on the element: it is there but empty, or it is misspelled
+    // (aria-cheked, aria-value-now; helpers.nearestAriaAttr).
+    function presentAs(attr) {
+      const v = dom.getAttribute(el, attr);
+      if (v != null) return { empty: true };
+      if (typeof helpers.nearestAriaAttr !== 'function') return null;
+      const attrs = dom.attributes(el);
+      for (let i = 0; i < attrs.length; i++) {
+        const name = String(attrs[i].name || '').toLowerCase();
+        if (name.slice(0, 5) !== 'aria-' || ariaHelpers.isValidAriaAttrName(name)) continue;
+        if (helpers.nearestAriaAttr(name) === attr) return { written: name };
+      }
+      return null;
+    }
+
     for (const attr of missing) {
+      const present = presentAs(attr);
+      const empty = !!(present && present.empty);
+      const written = present && present.written ? present.written : '';
+      const presentParams = written ? { written } : {};
+      const presentDetails = empty
+        ? { attrPresent: 'empty' }
+        : written
+          ? { attrPresent: 'misspelled', written }
+          : {};
       const implicit =
         typeof ariaHelpers.getRequiredAttrImplicitValue === 'function'
           ? ariaHelpers.getRequiredAttrImplicitValue(role, attr)
@@ -385,12 +410,24 @@ function runInPage(ctx) {
         cantTellOccurrences.push(
           helpers.reportOccurrence(el, {
             occurrenceOutcome: 'cantTell',
-            summary: `This attribute is required for this element’s role and is missing, but ARIA falls back to "${implicit}".`,
-            hint: 'Set the attribute explicitly if the implicit value is not the state you mean.',
+            summary: empty
+              ? `${attr} is present but empty, so ARIA falls back to "${implicit}" for role="${role}".`
+              : written
+                ? `This element has ${written}, not ${attr}, and the misspelled attribute is ignored, so ARIA falls back to "${implicit}" for role="${role}".`
+                : `${attr} is required for role="${role}" and is missing, but ARIA falls back to "${implicit}".`,
+            hint: written
+              ? `Rename ${written} to ${attr}.`
+              : 'Set the attribute explicitly if the implicit value is not the state you mean.',
             i18n: {
-              summaryKey: 'ariaRequiredAttr_summary_cantTell',
-              hintKey: 'ariaRequiredAttr_hint_cantTell',
-              params: { attr, role, implicit }
+              summaryKey: empty
+                ? 'ariaRequiredAttr_summary_cantTell_empty'
+                : written
+                  ? 'ariaRequiredAttr_summary_cantTell_misspelled'
+                  : 'ariaRequiredAttr_summary_cantTell',
+              hintKey: written
+                ? 'ariaRequiredAttr_hint_misspelled'
+                : 'ariaRequiredAttr_hint_cantTell',
+              params: { attr, role, implicit, ...presentParams }
             },
             uncertainty: {
               code: 'spec-only',
@@ -403,7 +440,8 @@ function runInPage(ctx) {
                 reasonCode: 'ARIA_ATTR_REQUIRED_MISSING_IMPLICIT',
                 attr,
                 role,
-                implicitValue: implicit
+                implicitValue: implicit,
+                ...presentDetails
               }
             }
           })
@@ -414,15 +452,31 @@ function runInPage(ctx) {
       failOccurrences.push(
         helpers.reportOccurrence(el, {
           occurrenceOutcome: 'fail',
-          summary: 'This attribute is required for this element’s role, but is missing.',
-          hint: 'Add this attribute with a valid value for this role.',
+          summary: empty
+            ? `${attr} is present but empty, so role="${role}" is given no value for it.`
+            : written
+              ? `This element has ${written}, not ${attr}; the misspelled attribute is ignored, so role="${role}" is given no value for ${attr}.`
+              : 'This attribute is required for this element’s role, but is missing.',
+          hint: empty
+            ? `Give ${attr} a valid value for role="${role}".`
+            : written
+              ? `Rename ${written} to ${attr}.`
+              : 'Add this attribute with a valid value for this role.',
           i18n: {
-            summaryKey: 'ariaRequiredAttr_summary_fail',
-            hintKey: 'ariaRequiredAttr_hint_fail',
-            params: { attr, role }
+            summaryKey: empty
+              ? 'ariaRequiredAttr_summary_fail_empty'
+              : written
+                ? 'ariaRequiredAttr_summary_fail_misspelled'
+                : 'ariaRequiredAttr_summary_fail',
+            hintKey: empty
+              ? 'ariaRequiredAttr_hint_fail_empty'
+              : written
+                ? 'ariaRequiredAttr_hint_misspelled'
+                : 'ariaRequiredAttr_hint_fail',
+            params: { attr, role, ...presentParams }
           },
           data: {
-            details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role }
+            details: { reasonCode: 'ARIA_ATTR_REQUIRED_MISSING', attr, role, ...presentDetails }
           }
         })
       );

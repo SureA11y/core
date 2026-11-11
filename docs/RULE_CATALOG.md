@@ -236,6 +236,7 @@ Checks that no two elements on the page share the same accesskey attribute value
 
 - `accesskey`: the shared key, in lower case.
 - `duplicateCount`: how many elements on the page share it, this one included.
+- `others`: the other elements with this key, the first three, as the message names them (`<button> "Save"`).
 
 **Reason codes.**
 
@@ -472,6 +473,7 @@ An element counts as hidden when it is out of the accessibility tree: `display: 
 
 - `ariaExpanded`: `true` or `false`, as the attribute says.
 - `controlledCount`: how many elements `aria-controls` names that were compared.
+- `controlled`: each of them, `{ element }` (`#menu`), and for hidden content what hides it, `hiddenBy` (`display: none`, `hidden`, `aria-hidden="true"`...) with `hiddenByElement` when an ancestor carries it.
 
 **Reason codes.**
 
@@ -760,6 +762,10 @@ Checks that elements with role="text" contain no focusable descendant (link, but
 **Applies to.** Elements whose role attribute has the token `text`, matched in any case, before any token naming a WAI-ARIA role, so `role="foo text"` and `role="TEXT"` count while `role="link text"` (a link) does not.
 
 **Expectation.** `role="text"` names no WAI-ARIA role (neither WAI-ARIA 1.2 nor the 1.3 draft defines it; aria-roles-valid reports it), but some assistive technology has read it as asking to treat an element's whole subtree as a single unit of plain text (e.g. text visually split across multiple `<span>`s by styling). That only makes sense when the subtree contains no focusable content: a focusable descendant inside a "this is just text" region is unreachable or confusing for keyboard/AT users.
+
+**What a finding reports.**
+
+- `focusableElement`, `focusableSelector`: the first focusable element inside, as the message names it (`<a> "details"`) and a selector.
 
 **Reason codes.**
 
@@ -1608,6 +1614,7 @@ Flags a visible form-field label that is a placeholder ("Label", "Field"), or th
 **What a finding reports.**
 
 - `label`: the visible label text of the field.
+- `sharedWithFields`: on `DUPLICATE_LABEL_TEXT`, the first three of those other fields, as the message names them (`#last (name="last")`).
 - `sharedWith`: how many other fields have the same label with nothing visible telling them apart, a count. 0 when no other field shares it.
 - `hiddenLabelParts`: how many parts of the field's label are hidden from sight, a count. 0 when the whole label is visible.
 
@@ -1671,6 +1678,7 @@ Prefer an associated &lt;label&gt; or aria-labelledby pointing at visible text.
 - `labelMethod`: where the control's label comes from: `placeholder`, `title`, `aria-label` or `aria-labelledby`.
 - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`, `label_from_aria_label_only` or `label_from_hidden_labelledby`.
 - `sourceText`: the label text, up to 120 characters.
+- `labelledbyTargets` (`label_from_hidden_labelledby`): the elements aria-labelledby points at (`#id`), with `hiddenBy` and, when an ancestor carries it, `hiddenByElement`, for a single target.
 
 **Reason codes.**
 
@@ -1729,6 +1737,7 @@ Checks that heading levels increase by at most one at a time in document order.
 
 - `fromLevel`: the level of the previous exposed heading (3 for an &lt;h3&gt;).
 - `toLevel`: this heading's level, more than one deeper than `fromLevel`.
+- `previousText`, `previousSelector`: the previous exposed heading, its text (shortened) and a selector for it.
 
 **Reason codes.**
 
@@ -1849,6 +1858,7 @@ Flags groups of links that share the same accessible name but resolve to more th
 - `name`: the accessible name the links share, trimmed, with whitespace collapsed and in lower case.
 - `href`: the full URL this link leads to.
 - `distinctDestinationCount`: how many different URLs the links with this name lead to, a count of 2 or more.
+- `otherDestinations`: the other addresses the links with this name lead to, the first ten, as the message shows them (a path on the page's own site).
 - `linkKind`: what this link is made of (`helpers.getLinkKind`): `svg` for an `<a>` in SVG; `image` for an `<area>`, or a link whose content is only images (`<img>`, `<svg>`, `<object>`, `<canvas>`, `role="img"`); `composite` for text and an image; `text` otherwise, a link with no content (named by its attributes) included.
 
 **Reason codes.**
@@ -1972,6 +1982,7 @@ Flags &lt;img&gt;, &lt;canvas&gt; and &lt;svg&gt; elements excluded from the acc
 - `sameImageCount`: how many of this result's findings show the same image, this one included: an &lt;img&gt; with the same current source (`currentSrc`, else `src`), or an inline &lt;svg&gt; with the same root attributes that change its rendering (viewBox, width, height, class, style, fill, stroke, color) and the same markup. 1 for a canvas, an image with no source or markup to compare, or a lazy-loaded &lt;img&gt; whose `data:` placeholder stands in for a `data-src` or `data-srcset`.
 - `sameImageFirst`: true on the first of them in document order, so a reader can review one copy and count the rest.
 - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it): the control then has no name from it, whether or not it decorates, with `controlContent` naming the control's role (`link` or `button`). `EXCLUDED_ELEMENT_REVIEW` otherwise.
+- `excludedBy`: what hides it: `hidden-ancestor` (an ancestor's aria-hidden, with `hiddenBy` and `hiddenByElement`), `hidden` (its own), `role` (role none/presentation), `empty-alt`, `unnamed-svg` or `unnamed-canvas`; `alt` quotes a non-empty alt that is never read.
 
 **Reason codes.**
 
@@ -2015,6 +2026,7 @@ Flags &lt;img&gt; elements with non-empty alt text for human review of appropria
 - `altSignal`: what made the alt text look suspicious, on those findings only: `file-name`, `url`, `symbols`, `placeholder`, `redundant-prefix` or `too-long`. Absent on a finding with ordinary alt text. When several apply, the first in that order is reported.
 - `length`: the alt text's length in characters, on `too-long` only.
 - `limit`: the length above which alt counts as too long (150), on `too-long` only.
+- `nameSource`, `name` (and `labelledbyIds`): when aria-label or aria-labelledby names the image in place of its alt, where the name comes from and what it is; the message then quotes that name.
 - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the only content of a link or button (no text and no other image in it), so its alt is the control's name (H30), with `controlContent` naming the control's role (`link` or `button`); `TEXT_ALTERNATIVE_REVIEW` otherwise.
 
 **Reason codes.**
@@ -2035,6 +2047,10 @@ Flags &lt;input type="image"&gt; elements with empty alt for human review (usual
 **Applies to.** Applies to &lt;input type="image"&gt; elements whose alt attribute is present but empty once trimmed, and which still carry a name from another source: an ARIA name resolving to non-empty text, or a title. Without that other name there is nothing to weigh the empty alt against, and the control is input-image-alt-present's failure instead. The element must be included in the accessibility tree, and role="presentation"/"none" takes it out of scope unless it is focusable, which restores its role.
 
 **Expectation.** Human review is required to confirm that the provided text alternative is accurate and appropriate.
+
+**What a finding reports.**
+
+- `name`, `nameSource`: the name the input takes in place of its alt, and where from (`aria-labelledby`, with `labelledbyIds`, `aria-label`, `internals` or `title`).
 
 **Reason codes.**
 
@@ -2217,6 +2233,10 @@ Checks that the banner landmark (role="banner" or a non-nested &lt;header&gt;) i
 
 **Expectation.** No banner candidate has an ancestor that is itself any landmark region. A banner nested inside another landmark is not a top-level, whole-page banner and confuses landmark-based navigation for assistive technology users.
 
+**What a finding reports.**
+
+- `ancestorRole`, `ancestorElement`: the landmark it is nested in, its role and the element, as the message names it.
+
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
@@ -2234,6 +2254,10 @@ Checks that the complementary landmark (role="complementary" or an &lt;aside&gt;
 **Applies to.** Applies whenever the page contains at least one element carrying the complementary role: explicit role="complementary", or an &lt;aside&gt; that keeps its implicit role. A custom element whose ElementInternals give it a landmark role (this.attachInternals().role), with no role attribute naming another, is a landmark as a native element with that role is.
 
 **Expectation.** No complementary candidate has an ancestor that is itself a landmark region. Complementary content supports the main content of the page and sits beside it; nested inside another landmark it is a section of that landmark instead, which is not what landmark navigation announces.
+
+**What a finding reports.**
+
+- `ancestorRole`, `ancestorElement`: the landmark it is nested in, its role and the element, as the message names it.
 
 **Reason codes.**
 
@@ -2253,6 +2277,10 @@ Checks that the contentinfo landmark (role="contentinfo" or a non-nested &lt;foo
 
 **Expectation.** No contentinfo candidate has an ancestor that is itself any landmark region. A contentinfo nested inside another landmark is not a top-level, whole-page footer region and confuses landmark-based navigation for assistive technology users.
 
+**What a finding reports.**
+
+- `ancestorRole`, `ancestorElement`: the landmark it is nested in, its role and the element, as the message names it.
+
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
@@ -2270,6 +2298,10 @@ Checks that the main landmark (role="main" or &lt;main&gt;) is not nested inside
 **Applies to.** Applies whenever the page contains at least one main landmark (explicit role="main", or an implicit &lt;main&gt; element). A custom element whose ElementInternals give it a landmark role (this.attachInternals().role), with no role attribute naming another, is a landmark as a native element with that role is.
 
 **Expectation.** No main landmark has an ancestor that is itself any landmark region. A main region nested inside another landmark is not a top-level, whole-page main content area and confuses landmark-based navigation for assistive technology users.
+
+**What a finding reports.**
+
+- `ancestorRole`, `ancestorElement`: the landmark it is nested in, its role and the element, as the message names it.
 
 **Reason codes.**
 
@@ -2292,6 +2324,7 @@ Checks that at most one banner landmark (role="banner" or a non-nested &lt;heade
 **What a finding reports.**
 
 - `count`: how many banner landmarks the page exposes to assistive technology, against a limit of 1.
+- `others`: the other landmarks of this role, as the message names them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
 
 **Reason codes.**
 
@@ -2314,6 +2347,7 @@ Checks that at most one contentinfo landmark (role="contentinfo" or a non-nested
 **What a finding reports.**
 
 - `count`: how many contentinfo landmarks the page exposes to assistive technology, against a limit of 1.
+- `others`: the other landmarks of this role, as the message names them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
 
 **Reason codes.**
 
@@ -2336,6 +2370,7 @@ Checks that at most one main landmark (role="main" or &lt;main&gt;) exists on th
 **What a finding reports.**
 
 - `count`: how many main landmarks the page exposes to assistive technology, against a limit of 1.
+- `others`: the other landmarks of this role, as the message names them, with their text (`<div role="banner" class="cookie"> "Cookies"`).
 
 **Reason codes.**
 
@@ -2400,6 +2435,7 @@ Checks that when two or more landmarks share the same role, each has a distinct 
 - `role`: the landmark role the colliding landmarks share, such as `navigation`.
 - `name`: the name they share, in lowercase with spacing collapsed. Empty when they are all unnamed.
 - `groupSize`: how many landmarks of that role share that name.
+- `others`: the other landmarks in the group, as the message names them (`<nav id="pages">`, with their text when they are unnamed).
 
 **Reason codes.**
 
@@ -2415,7 +2451,7 @@ automatic · WCAG 1.4.1 (A) · confidence high · default severity serious
 
 Checks that a link inside a run of text is visually distinguishable from the surrounding text by a non-color cue (underline, font-weight or style, border, background, icon), and asks about links distinguished only by a &gt;=3:1 color difference, which also need a hover and focus cue.
 
-**Applies to.** Applies to links (`<a href>` and elements whose role attribute resolves to link: its first known role token, in any case, is `link`) that draw text (text other than white space in the link's flat tree and, where the page has a layout, a box with some area) and whose immediate parent element also has text with a letter or a digit beside it: a direct-child text node, or text in an inline element on the same line that is not a link, is not drawn invisibly, and is not an item of a flex or grid parent (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item, nor one of a row of links separated by "|" or "·"). A custom element whose ElementInternals give it the link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
+**Applies to.** Applies to links (`<a href>` and elements whose role attribute resolves to link: its first known role token, in any case, is `link`) that draw text (text other than white space in the link's flat tree and, where the page has a layout, a box with some area) and whose immediate parent element also has text with a letter or a digit beside it, on the link's own line (a `<br>`, or a child laid out as a block, starts another): a direct-child text node, or text in an inline element that is not a link, is not drawn invisibly, and is not an item of a flex or grid parent (i.e. the link sits inline within a run of plain text, not as a standalone item, e.g. not the sole content of a &lt;li&gt; nav item, nor one of a row of links separated by "|" or "·"). A custom element whose ElementInternals give it the link role (this.attachInternals().role), with no role attribute naming another, counts as a native element with that role does.
 
 **Expectation.**
 
@@ -2440,7 +2476,7 @@ A link with none of these is distinguished by color alone. When its color contra
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `COLOR_ONLY_DIFFERENTIATION` | fail | A link in a block of text is told apart from the surrounding text by color alone, with less than 3:1 contrast between the two. | WCAG 1.4.1; F73; G183 |
+| `COLOR_ONLY_DIFFERENTIATION` | fail | A link in a block of text is told apart from the surrounding text by color alone, with less than 3:1 contrast between the two. At 1.00:1, drawn in the text's own color, the summary says nothing sets the link apart (`linkInTextBlock_summary_fail_sameColor`). | WCAG 1.4.1; F73; G183 |
 | `LINK_COLOR_CONTRAST_ONLY` | cantTell | A link in a block of text is told apart by color alone at 3:1 or more; whether hover and focus add a non-color cue is for a person to check. It leans pass when the style sheets give it a non-color cue on :hover and on :focus (not where an ancestor's opacity fades it, whose ratio as drawn may be below 3:1), and fail when every sheet could be read and none gives it one on :hover. | WCAG 1.4.1 (not settled); G183 (not settled) |
 | `TEXT_DECORATION_NOT_RESOLVABLE` | cantTell | Whether the link is underlined could not be read, so whether color is its only cue is unknown. | WCAG 1.4.1 (not settled) |
 | `COLOR_NOT_COMPUTABLE` | cantTell | The colors of the link or of the surrounding text could not be worked out. Where the link is not underlined, has no background of its own, and it and the text are drawn in opaque colors, which compare without the background, it is decided from those colors instead (`COLOR_ONLY_DIFFERENTIATION` below 3:1, `LINK_COLOR_CONTRAST_ONLY` at 3:1 or more), unless what can't be worked out is their colors in the color scheme the page is drawn in, as in an emulator such as jsdom (`contrast-computable`'s `COLOR_SCHEME_NOT_RENDERED`). It leans fail when such a link is drawn in the same translucent color as the surrounding text; it leans pass when it has an opaque background of its own unlike the one around it; neither where its colors in the page's color scheme are unknown. | WCAG 1.4.1 (not settled) |
@@ -2608,6 +2644,7 @@ Check whether the page uses the region for status messages, and that it is in th
 - `politeness`: the region's, `polite` or `assertive`.
 - `messageKind`: the kind of message the region declares it carries, from its role and live-region attributes, never from its text: `status` (role status, an &lt;output&gt;, or aria-live="polite" with aria-atomic="true"), `alert` (role alert, or aria-live="assertive"), `log` (role log), `progress` (role progressbar, or a &lt;progress&gt;), or `unknown` (any other live region, such as a plain aria-live="polite"). A role, given or the element's own, wins over aria-live.
 - `hiddenBy`: for `LIVE_REGION_HIDDEN`, `aria-hidden`, `inert`, or `modal` for a region behind an open modal &lt;dialog&gt;. A region behind the dialog is `modal` whatever else hides it (inert or aria-hidden on it or above it, with or without includeHiddenElements): while the dialog is open, it is the cause in effect.
+- `hiddenByElement`: for `aria-hidden` or `inert` on an ancestor, that ancestor (`<div id="app">`).
 - `text`: for the hook's two findings, the text the region was given (up to 300 characters).
 - `removed`: for the hook's two findings, true when the region was no longer on the page when it was scanned; the occurrence is then on the document element, and `region` describes it (`tag`, `role`, `id`).
 
@@ -2656,6 +2693,7 @@ Finds audio and video elements where a transcript or other text alternative is n
 - `evidence.method`: what was found: `none`, `anchor-unverified` (a transcript link to a part of the same page that does not look like a transcript) or `external-link` (a transcript link to another page, which is not followed).
 - `evidence.transcriptLinkHref` (a weak signal): the transcript link's `href`.
 - `evidence.transcriptNodeSelector` (a weak signal): a selector for the transcript link.
+- `evidence.transcriptLinkText`, `evidence.transcriptLinkSelector` (a weak signal): the transcript link's name, shortened, and a selector that finds that link.
 - `evidence.notes`: short English notes on what was found. Empty when nothing was.
 
 **Reason codes.**
@@ -3317,6 +3355,7 @@ Other same-page anchor links are not skip links and are left alone. Where the pa
 - `href`: the link's `href`.
 - `lean` (a finding with a lean): the lean's direction, `fail` or `pass`, the same as the occurrence's `lean.toward`, so a standard's mapping, which reads `data.details`, can route the finding by it. Absent when the finding has no lean.
 - `unusableReasonCode` (a target that is not usable): why it is not: `ACC_TREE_INELIGIBLE` when it is hidden from the accessibility tree, `NO_CLIENT_RECTS` when it is not rendered, `ZERO_AREA_TARGET` when it, or for an empty target the content it marks, has no area or is cut to nothing.
+- `unusableCause` (a target that is not usable, when known): what hides it, `hiddenBy` (`aria-hidden="true"`, `hidden`, `display: none`, `visibility: hidden`, `inert`) with `hiddenByElement` when an ancestor carries it, or `geometry` (`notRendered`, `noSize`).
 - `targetSelector` (a target that is not usable): a selector for the target.
 - `geometryCheckEnabled` (a target that is not usable): whether the target's geometry could be measured, which needs a browser.
 - `viewport.width`, `viewport.height` (a target whose geometry was measured): the viewport the page was laid out in, in CSS pixels. A target hidden at one width can be usable at another.
@@ -3509,6 +3548,7 @@ Checks that tabindex values are 0 or negative, not a positive number.
 **What a finding reports.**
 
 - `value`: the `tabindex` value, a whole number above 0.
+- `skippedCount`, `firstSkipped`: when Tab reaches it before tab stops earlier in the document, how many, and the first, as the message names it (`<a> "Home"`).
 
 **Reason codes.**
 

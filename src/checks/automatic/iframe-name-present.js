@@ -143,17 +143,26 @@ function runInPage(ctx) {
       : null;
     const tag = dom.tagName(el).toLowerCase();
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This frame has no accessible name.',
-        hint: 'Add a title attribute, aria-label or aria-labelledby that says what the frame contains.',
+        hint: cause
+          ? cause.hint
+          : 'Add a title attribute, aria-label or aria-labelledby that says what the frame contains.',
         i18n: {
           summaryKey: 'iframeNamePresent_summary_fail',
-          hintKey: 'iframeNamePresent_hint_fail',
-          params: { element: tag }
+          hintKey: cause ? cause.hintKey : 'iframeNamePresent_hint_fail',
+          params: { element: tag, ...(cause ? cause.params : {}) }
         },
         data: {
-          details: { reasonCode: 'IFRAME_NAME_MISSING', element: tag },
+          details: {
+            reasonCode: 'IFRAME_NAME_MISSING',
+            ...(cause ? { nameCause: cause.detail } : {}),
+            element: tag
+          },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
         }
       })

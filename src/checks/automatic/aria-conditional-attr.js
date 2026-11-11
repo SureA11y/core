@@ -168,14 +168,43 @@ function runInPage(ctx) {
     const tag = (dom.tagName(el) || '').toLowerCase();
     const lean = leanFor(el, errorMessageRef);
 
+    // Which case it is: no aria-invalid, aria-invalid="false", or a value
+    // that is none of aria-invalid's tokens (aria-invalid="yes"), which
+    // browsers read as "true" though the value is not valid.
+    const absent = dom.getAttribute(el, 'aria-invalid') == null;
+    const otherValue = !absent && invalidValue !== '' && invalidValue !== 'false';
+    const variant = absent
+      ? 'missing'
+      : invalidValue === 'false'
+        ? 'false'
+        : otherValue
+          ? 'invalidValue'
+          : '';
+    const SUMMARIES = {
+      missing:
+        'This element has aria-errormessage but no aria-invalid, so the error message is not exposed.',
+      false:
+        'This element has aria-errormessage but aria-invalid="false", so the error message is not exposed.',
+      invalidValue: `This element has aria-errormessage, but its aria-invalid="${invalidValue}" is not a valid value (true, false, grammar or spelling). Browsers read it as "true", but other tools may not, so the error message may not be exposed.`
+    };
+
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
-        hint: 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
+        summary: variant
+          ? SUMMARIES[variant]
+          : 'This element has aria-errormessage but aria-invalid is missing or "false", so the error message is not exposed.',
+        hint:
+          variant === 'invalidValue'
+            ? 'Use aria-invalid="true" (or "grammar" or "spelling"), so every tool exposes the error message.'
+            : 'Set aria-invalid to "true" (or "grammar"/"spelling") whenever aria-errormessage should be exposed to assistive technology.',
         i18n: {
-          summaryKey: 'ariaConditionalAttr_summary_fail',
-          hintKey: 'ariaConditionalAttr_hint_fail',
+          summaryKey: variant
+            ? `ariaConditionalAttr_summary_fail_${variant}`
+            : 'ariaConditionalAttr_summary_fail',
+          hintKey:
+            variant === 'invalidValue'
+              ? 'ariaConditionalAttr_hint_fail_invalidValue'
+              : 'ariaConditionalAttr_hint_fail',
           params: { element: tag, ariaInvalid: invalidValue || '(absent)' }
         },
         uncertainty: {

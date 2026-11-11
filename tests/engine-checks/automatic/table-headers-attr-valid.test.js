@@ -154,3 +154,43 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/table-headers-attr-valid-all-
     assert.ok(!hasOccurrenceForId(rule, id), `Did not expect occurrence for id="${id}"`);
   }
 });
+
+test(`${RULE_ID}: with one bad id, the hint says what is wrong with it`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <table><tr><th><span id="h1">Name</span></th><th>B</th></tr><tr><td id="c1" headers="h1">x</td><td>y</td></tr></table>
+  <table><tr><th id="h2">Name</th></tr></table>
+  <table><tr><th>Name</th></tr><tr><td id="c2" headers="h2">x</td></tr></table>
+  <table><tr><th>Name</th></tr><tr><td id="c3" headers="zz">x</td></tr></table>
+  <table><tr><th>Name</th></tr><tr><td id="c4" headers="c4">x</td></tr></table>
+  <p id="pp">x</p><table><tr><th>Name</th></tr><tr><td id="c5" headers="pp">x</td></tr></table>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 5,
+    maxOccurrences: 5
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('c1').i18n.hintKey, 'tableHeadersAttrValid_hint_fail_inCell');
+  assert.equal(
+    occ('c1').hint,
+    '"h1" is on a <span> inside a <th>, not on the cell itself. Move the id to the <th>.'
+  );
+  assert.deepEqual(occ('c1').data.details.invalid, [
+    { id: 'h1', reason: 'not-a-cell', element: 'span', inCell: 'th' }
+  ]);
+  assert.equal(occ('c2').i18n.hintKey, 'tableHeadersAttrValid_hint_fail_differentTable');
+  assert.equal(
+    occ('c2').hint,
+    '"h2" is a cell of another <table>, such as the separate header table a fixed-header layout builds, and headers works only within one table. Put the header row in the same table as this cell.'
+  );
+  assert.equal(occ('c3').i18n.hintKey, 'tableHeadersAttrValid_hint_fail_missing');
+  assert.equal(
+    occ('c3').hint,
+    'No element has the id "zz". Give the header cell this id, or point the headers attribute at the id it has.'
+  );
+  assert.equal(occ('c4').i18n.hintKey, 'tableHeadersAttrValid_hint_fail_self');
+  assert.equal(occ('c5').i18n.hintKey, 'tableHeadersAttrValid_hint_fail_notCell');
+  assert.equal(
+    occ('c5').hint,
+    '"pp" is on a <p>, not on a table cell. Point the headers attribute at a <th>\'s id.'
+  );
+});

@@ -182,18 +182,101 @@ function runInPage(ctx) {
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
   }
 
+  // An <h1> that is in the markup but does not count, and why: a reader who
+  // finds it in the source otherwise takes the finding for a mistake.
+  // Hidden content included: the hidden <h1> is the one to name.
+  function skippedH1() {
+    let h1s;
+    try {
+      h1s =
+        typeof helpers.queryAllDeep === 'function'
+          ? helpers.queryAllDeep('h1')
+          : dom.querySelectorAll(document, 'h1');
+    } catch {
+      h1s = [];
+    }
+    for (const el of h1s) {
+      if (!el || !dom.tagName(el)) continue;
+      const all = normalizeWs(dom.textContent(el));
+      const text = all.length > 60 ? `${all.slice(0, 59)}…` : all;
+      if (isLevelOneHeading(el)) {
+        const cause = typeof helpers.hiddenCause === 'function' ? helpers.hiddenCause(el) : null;
+        if (!cause) {
+          return {
+            summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden from screen readers.`,
+            summaryKey: 'pageHasHeadingOne_summary_h1Hidden',
+            hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+            params: { text },
+            detail: { cause: 'hidden', text }
+          };
+        }
+        if (cause.element === el) {
+          return {
+            summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden by ${cause.hiddenBy}.`,
+            summaryKey: 'pageHasHeadingOne_summary_h1HiddenOwn',
+            hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+            params: { text, hiddenBy: cause.hiddenBy },
+            detail: { cause: 'hidden', text, hiddenBy: cause.hiddenBy }
+          };
+        }
+        const ancestor = helpers.describeElement(cause.element);
+        return {
+          summary: `This page has no level-one heading that screen readers can reach. Its <h1> "${text}" is hidden: an ancestor ${ancestor} has ${cause.hiddenBy}.`,
+          summaryKey: 'pageHasHeadingOne_summary_h1HiddenAncestor',
+          hintKey: 'pageHasHeadingOne_hint_h1Hidden',
+          params: { text, hiddenBy: cause.hiddenBy, ancestor },
+          detail: { cause: 'hidden', text, hiddenBy: cause.hiddenBy, hiddenByElement: ancestor }
+        };
+      }
+      let role = getExplicitRoleToken(el);
+      if ((role === 'none' || role === 'presentation') && helpers.isPresentationalRoleIgnored(el)) {
+        role = '';
+      }
+      if (role && role !== 'heading') {
+        return {
+          summary: `This page has no level-one heading. Its <h1> "${text}" has role="${role}", so it is not exposed as a heading.`,
+          summaryKey: 'pageHasHeadingOne_summary_h1Role',
+          hintKey: 'pageHasHeadingOne_hint_h1Role',
+          params: { text, role },
+          detail: { cause: 'role', text, role }
+        };
+      }
+      const level = ariaLevelOf(el);
+      if (/^[0-9]+$/.test(level) && parseInt(level, 10) > 1) {
+        return {
+          summary: `This page has no level-one heading. Its <h1> "${text}" is exposed as level ${level} by aria-level="${level}".`,
+          summaryKey: 'pageHasHeadingOne_summary_h1Relevelled',
+          hintKey: 'pageHasHeadingOne_hint_h1Relevelled',
+          params: { text, level },
+          detail: { cause: 'aria-level', text, level: parseInt(level, 10) }
+        };
+      }
+    }
+    return null;
+  }
+  const skipped = skippedH1();
+
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'minor',
     occurrences: [
       helpers.reportOccurrence(body, {
-        summary: 'This page has no level-one heading.',
-        hint: 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
+        summary: skipped ? skipped.summary : 'This page has no level-one heading.',
+        hint: skipped
+          ? {
+              pageHasHeadingOne_hint_h1Hidden:
+                "If this <h1> names the page's main content, let screen readers reach it; otherwise add a level-one heading that does.",
+              pageHasHeadingOne_hint_h1Role:
+                "If this <h1> names the page's main content, remove its role; otherwise add a level-one heading that does.",
+              pageHasHeadingOne_hint_h1Relevelled:
+                "If this <h1> names the page's main content, remove its aria-level; otherwise add a level-one heading that does."
+            }[skipped.hintKey]
+          : 'Add a level-one heading (<h1> or role="heading" aria-level="1") that identifies the page\'s main content.',
         i18n: {
-          summaryKey: 'pageHasHeadingOne_summary_cantTell',
-          hintKey: 'pageHasHeadingOne_hint_cantTell',
-          params: {}
+          summaryKey: skipped ? skipped.summaryKey : 'pageHasHeadingOne_summary_cantTell',
+          hintKey: skipped ? skipped.hintKey : 'pageHasHeadingOne_hint_cantTell',
+          params: skipped ? skipped.params : {}
         },
         lean: {
           toward: 'fail',
@@ -202,7 +285,10 @@ function runInPage(ctx) {
           i18n: { whyKey: 'pageHasHeadingOne_lean_why' }
         },
         data: {
-          details: { reasonCode: 'HEADING_ONE_MISSING' }
+          details: {
+            reasonCode: 'HEADING_ONE_MISSING',
+            ...(skipped ? { skippedH1: skipped.detail } : {})
+          }
         }
       })
     ]

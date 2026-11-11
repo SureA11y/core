@@ -315,17 +315,25 @@ function runInPage(ctx) {
       ariaPlaceholder = String(dom.getAttribute(el, 'aria-placeholder') || '').trim();
     } catch {}
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the field alone (helpers.nameCause): a hidden <label>, or a
+    // <label for> beside it pointing at an id no element has.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
     const baseOccurrence = {
       summary: 'This form field has no label that assistive technology can read.',
-      hint: ariaPlaceholder
-        ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
-        : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
+      hint: cause
+        ? cause.hint
+        : ariaPlaceholder
+          ? 'aria-placeholder names a field in some browsers only. Associate a <label> with it, or name it with aria-label or aria-labelledby.'
+          : 'Associate a <label> with it, or name it with aria-label or aria-labelledby. A placeholder or title does not count as a label.',
       i18n: {
         summaryKey: 'formControl_programmaticLabelPresent_summary_fail',
-        hintKey: ariaPlaceholder
-          ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
-          : 'formControl_programmaticLabelPresent_hint_fail',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        hintKey: cause
+          ? cause.hintKey
+          : ariaPlaceholder
+            ? 'formControl_programmaticLabelPresent_hint_fail_ariaPlaceholder'
+            : 'formControl_programmaticLabelPresent_hint_fail',
+        params: { element: (dom.tagName(el) || '').toLowerCase(), ...(cause ? cause.params : {}) }
       },
       data: {
         visibilityFilter: vf
@@ -335,7 +343,8 @@ function runInPage(ctx) {
           reasonCode: 'missing_programmatic_label',
           labelMethod: 'none',
           labelStrength: 'none',
-          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {})
+          ...(ariaPlaceholder ? { ariaPlaceholder: true } : {}),
+          ...(cause ? { nameCause: cause.detail } : {})
         }
       }
     };

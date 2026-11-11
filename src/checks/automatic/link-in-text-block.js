@@ -14,8 +14,9 @@
  *   text (text other than white space in the link's flat tree and, where the
  *   page has a layout, a box with some area) and whose immediate parent
  *   element also has text with a letter or a digit beside
- *   it: a direct-child text node, or text in an inline element on the same
- *   line that is not a link, is not drawn invisibly, and is not an item of
+ *   it, on the link's own line (a `<br>`, or a child laid out as a block,
+ *   starts another): a direct-child text node, or text in an inline element
+ *   that is not a link, is not drawn invisibly, and is not an item of
  *   a flex or grid parent (i.e. the link sits inline within a run of
  *   plain text, not as a standalone item, e.g. not the sole content of a
  *   <li> nav item, nor one of a row of links separated by "|" or "·").
@@ -77,7 +78,9 @@
  * @reason-codes
  *   - `COLOR_ONLY_DIFFERENTIATION` (fail): a link in a block of text is told
  *     apart from the surrounding text by color alone, with less than 3:1
- *     contrast between the two.
+ *     contrast between the two. At 1.00:1, drawn in the text's own color,
+ *     the summary says nothing sets the link apart
+ *     (`linkInTextBlock_summary_fail_sameColor`).
  *     Basis: WCAG 1.4.1; F73; G183.
  *   - `LINK_COLOR_CONTRAST_ONLY` (cantTell): a link in a block of text is
  *     told apart by color alone at 3:1 or more; whether hover and focus add
@@ -887,30 +890,54 @@ function runInPage(ctx) {
     }
     return null;
   }
-  // The element whose style is the surrounding text's, for the parent: the
-  // parent itself when text sits in it directly, else the inline element
-  // beside the link that holds it, else null (no text around the link).
+  // The element whose style is the surrounding text's, for the link (or the
+  // inline wrapper holding it, `child`) in parent: the parent itself when
+  // text sits in it directly, else the inline element beside the link that
+  // holds it, else null (no text around the link). Only text on the link's
+  // own line counts: a <br>, or a child laid out as a block, starts another
+  // line, so a link alone on its line ("Phone 555 (Fax)<br><a>mail</a>") is
+  // in no block of text, whatever the lines around it hold. The parent's
+  // children are read once, a line at a time, for all its links.
   const surroundingTextElement = new Map();
-  function textElementOf(parent) {
-    if (!parent) return null;
+  const INLINE_LEVEL = /^(inline|contents|none|ruby)|^$/;
+  function breaksLine(n) {
+    if ((dom.tagName(n) || '').toLowerCase() === 'br') return true;
+    const display = String((safeComputedStyle(n) || {}).display || '');
+    return !INLINE_LEVEL.test(display.split(/\s+/)[0]);
+  }
+  function linesOf(parent) {
     if (surroundingTextElement.has(parent)) return surroundingTextElement.get(parent);
-    let found = null;
+    // A flex or grid parent lays its children out as items, not lines of
+    // text: its own text still counts, its elements' does not.
+    const itemized = /flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''));
+    const lineOf = new Map();
+    let line = { text: null, inline: null };
     for (let n = dom.firstChild(parent); n; n = dom.nextSibling(n)) {
-      if (dom.nodeType(n) === 3 && TEXT.test(dom.nodeValue(n) || '')) {
-        found = parent;
-        break;
+      const type = dom.nodeType(n);
+      if (type === 3) {
+        if (!line.text && TEXT.test(dom.nodeValue(n) || '')) line.text = parent;
+        continue;
       }
-    }
-    if (!found && !/flex|grid/.test(String((safeComputedStyle(parent) || {}).display || ''))) {
-      for (let n = dom.firstElementChild(parent); n && !found; n = dom.nextElementSibling(n)) {
-        found = inlineTextElement(n);
+      if (type !== 1) continue;
+      if (!itemized && breaksLine(n)) {
+        // The element is a line of its own, and the text after it another.
+        lineOf.set(n, { text: null, inline: null });
+        line = { text: null, inline: null };
+        continue;
       }
+      lineOf.set(n, line);
+      if (!itemized && !line.inline) line.inline = inlineTextElement(n);
     }
-    surroundingTextElement.set(parent, found);
-    return found;
+    surroundingTextElement.set(parent, lineOf);
+    return lineOf;
+  }
+  function textElementOf(parent, child) {
+    if (!parent || !child) return null;
+    const line = linesOf(parent).get(child);
+    return line ? line.text || line.inline : null;
   }
   function hasSurroundingText(el, parent) {
-    return !!textElementOf(parent);
+    return !!textElementOf(parent, el);
   }
 
   const contrastOpts =
@@ -1844,14 +1871,19 @@ function runInPage(ctx) {
     if (!drawsText(el)) return;
 
     const parent = textParentOf(el);
-    if (!hasSurroundingText(el, parent)) return;
+    // The link, or the inline wrapper holding it, as a child of parent.
+    let lineChild = el;
+    while (lineChild && dom.parentElement(lineChild) !== parent) {
+      lineChild = dom.parentElement(lineChild);
+    }
+    if (!hasSurroundingText(lineChild, parent)) return;
 
     applicableCount += 1;
 
     const linkCs = safeComputedStyle(el);
     // The surrounding text's style: the parent's, or the inline element's
     // beside the link that holds the text.
-    const textEl = textElementOf(parent);
+    const textEl = textElementOf(parent, lineChild);
     const parentCs = safeComputedStyle(textEl);
 
     // Cues that do not depend on `text-decoration` come first, so a link
@@ -2166,26 +2198,36 @@ function runInPage(ctx) {
     if (hasRatio && Number(ratioStr) >= 3) ratioStr = (Math.floor(ratio * 100) / 100).toFixed(2);
     // The ratio is stated with the summary. Under an ancestor's opacity it
     // is the one before the fading, which only brings the colors closer.
-    const summaryKey = !hasRatio
-      ? 'linkInTextBlock_summary_fail'
-      : beforeOpacity
-        ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
-        : 'linkInTextBlock_summary_fail_ratio';
+    // At 1.00:1 the link is drawn in the surrounding text's color: color
+    // sets it apart no more than anything else does, and the summary says
+    // nothing does. The outcome and its reason code are the same (F73).
+    const sameColor = hasRatio && Number(ratioStr) === 1;
+    const summaryKey = sameColor
+      ? 'linkInTextBlock_summary_fail_sameColor'
+      : !hasRatio
+        ? 'linkInTextBlock_summary_fail'
+        : beforeOpacity
+          ? 'linkInTextBlock_summary_fail_ratioBeforeOpacity'
+          : 'linkInTextBlock_summary_fail_ratio';
     const colorOnly =
       'This link in a block of text relies on color alone to be distinguished from the surrounding text';
-    const summary = !hasRatio
-      ? `${colorOnly}.`
-      : beforeOpacity
-        ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
-        : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
+    const summary = sameColor
+      ? 'Nothing sets this link in a block of text apart from the surrounding text: it is drawn in the same color, with no underline or other mark.'
+      : !hasRatio
+        ? `${colorOnly}.`
+        : beforeOpacity
+          ? `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1, and less as drawn, since an ancestor's opacity fades both.`
+          : `${colorOnly}, with a contrast of ${ratioStr}:1 against that text, below 3:1.`;
 
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary,
-        hint: 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
+        hint: sameColor
+          ? 'Add an underline or another visible cue (a font-weight or style difference, a border, an icon), so the link can be told apart from the text around it.'
+          : 'Add an underline or another non-color cue (a font-weight or style difference, a border, an icon). Raising the color contrast with the surrounding text to 3:1 is enough only if hovering and focusing the link also add a non-color cue.',
         i18n: {
           summaryKey,
-          hintKey: 'linkInTextBlock_hint_fail',
+          hintKey: sameColor ? 'linkInTextBlock_hint_fail_sameColor' : 'linkInTextBlock_hint_fail',
           params: { element: tag, ratio: String(ratioStr), threshold: '3' }
         },
         data: {

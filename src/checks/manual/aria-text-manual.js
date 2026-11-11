@@ -20,6 +20,9 @@
  *   subtree contains no focusable content: a focusable descendant inside
  *   a "this is just text" region is unreachable or confusing for
  *   keyboard/AT users.
+ * @reports
+ *   - `focusableElement`, `focusableSelector`: the first focusable element
+ *     inside, as the message names it (`<a> "details"`) and a selector.
  * @reason-codes
  *   - `ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT` (cantTell): an element with
  *     role="text" contains content that can take keyboard focus.
@@ -110,6 +113,8 @@ function runInPage(ctx) {
     }
     if (!focusableDescendant) continue;
 
+    // The focusable element, named with its text, for the message.
+    const focusable = helpers.describeElement(focusableDescendant, { text: true });
     const stableSelector = helpers.buildSelector ? helpers.buildSelector(el) : 'html';
     const html = helpers.getOuterHtmlSnippet
       ? helpers.getOuterHtmlSnippet(el)
@@ -118,12 +123,12 @@ function runInPage(ctx) {
     const baseOccurrence = {
       selector: stableSelector,
       html,
-      summary: 'This role="text" element contains something that can take focus.',
+      summary: `This role="text" element contains a focusable ${focusable}, which role="text" flattens into plain text.`,
       hint: 'Remove role="text", or move the focusable content out of it.',
       i18n: {
-        summaryKey: 'ariaText_summary_cantTell',
+        summaryKey: 'ariaText_summary_cantTell_focusable',
         hintKey: 'ariaText_hint_cantTell',
-        params: {}
+        params: { focusable }
       },
       lean: {
         toward: 'fail',
@@ -132,7 +137,13 @@ function runInPage(ctx) {
         i18n: { whyKey: 'ariaText_lean_why' }
       },
       data: {
-        details: { reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT' }
+        details: {
+          reasonCode: 'ROLE_TEXT_HAS_FOCUSABLE_DESCENDANT',
+          focusableElement: focusable,
+          focusableSelector: helpers.buildSelector
+            ? helpers.buildSelector(focusableDescendant)
+            : null
+        }
       }
     };
 

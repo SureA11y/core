@@ -338,3 +338,58 @@ test(`${RULE_ID}: state_internals leans by what the component's code does`, () =
   assert.strictEqual(lean('b').i18n.whyKey, 'ariaRequiredAttr_lean_why_internalsSet');
   assert.strictEqual(lean('c'), undefined);
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: an empty required attribute is called empty, not missing`, () => {
+  const occ = messageOccurrence(
+    '<div role="checkbox" tabindex="0" aria-checked="">A</div>',
+    'aria-checked'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredAttr_summary_fail_empty');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredAttr_hint_fail_empty');
+  assert.strictEqual(
+    occ.summary,
+    'aria-checked is present but empty, so role="checkbox" is given no value for it.'
+  );
+  assert.strictEqual(occ.hint, 'Give aria-checked a valid value for role="checkbox".');
+});
+
+test(`${RULE_ID}: a misspelled required attribute is named`, () => {
+  const occ = messageOccurrence(
+    '<div role="checkbox" tabindex="0" aria-cheked="true">B</div>',
+    'aria-cheked'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredAttr_summary_fail_misspelled');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredAttr_hint_misspelled');
+  assert.strictEqual(
+    occ.summary,
+    'This element has aria-cheked, not aria-checked; the misspelled attribute is ignored, so role="checkbox" is given no value for aria-checked.'
+  );
+  assert.strictEqual(occ.hint, 'Rename aria-cheked to aria-checked.');
+});
+
+test(`${RULE_ID}: the implicit-value message names the attribute`, () => {
+  const occ = messageOccurrence('<div role="heading">x</div>', 'heading');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaRequiredAttr_summary_cantTell');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaRequiredAttr_hint_cantTell');
+  assert.strictEqual(
+    occ.summary,
+    'aria-level is required for role="heading" and is missing, but ARIA falls back to "2".'
+  );
+  assert.strictEqual(occ.hint, 'Set aria-level explicitly if "2" is not the state you mean.');
+});

@@ -400,7 +400,7 @@ test(`${RULE_ID}: fail when aria-hidden subtree contains focusable descendant (l
   assert.ok(hasOccurrenceForId(rule, 'ah_root2'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Focusable link": keyboard users can reach it, but screen readers don't announce it.`
   );
 });
 
@@ -537,7 +537,7 @@ test(`${RULE_ID}: does NOT exclude opacity:0 focusable candidates (fail when opa
   assert.ok(hasOccurrenceForId(rule, 'ah_root5'));
   assert.strictEqual(
     rule.occurrences[0].summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Invisible but focusable link": keyboard users can reach it, but screen readers don't announce it.`
   );
 });
 
@@ -833,7 +833,7 @@ test(`${RULE_ID}: i18n default is English (title/description/occurrence strings)
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    "This aria-hidden <div> contains 1 focusable element(s): keyboard users can reach them, but screen readers don't announce them."
+    `This aria-hidden <div> contains a focusable element, <a href="#x"> "Link": keyboard users can reach it, but screen readers don't announce it.`
   );
   assert.strictEqual(
     occ.hint,
@@ -862,7 +862,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description/occurrence strings are locali
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'Cet élément <div> avec aria-hidden contient 1 élément(s) focalisable(s) : on les atteint au clavier, mais les lecteurs d’écran ne les annoncent pas.'
+    'Cet élément <div> avec aria-hidden contient un élément focalisable, <a href="#x"> "Link" : on l’atteint au clavier, mais les lecteurs d’écran ne l’annoncent pas.'
   );
   assert.strictEqual(
     occ.hint,
@@ -963,4 +963,37 @@ test('aria-hidden-focus: a page that reacts to focus is reported as it was found
     ]
   );
   assert.strictEqual(doc.activeElement, doc.body);
+});
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: several focusable elements: the summary names one and counts the rest`, () => {
+  const occ = messageOccurrence(
+    '<div aria-hidden="true"><button>b</button><button>c</button></div>',
+    'aria-hidden'
+  );
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaHidden_focus_summary_fail_desc_named');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaHidden_focus_hint_fail');
+  assert.strictEqual(
+    occ.summary,
+    'This aria-hidden <div> contains <button> "b" and 1 more focusable element(s): keyboard users can reach them, but screen readers don\'t announce them.'
+  );
+  assert.strictEqual(
+    occ.hint,
+    'Remove aria-hidden, or take these elements out of the tab order (the inert attribute does this for a whole section), so nothing keyboard users can reach is hidden from screen readers.'
+  );
 });

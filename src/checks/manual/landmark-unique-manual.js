@@ -31,6 +31,8 @@
  *   - `name`: the name they share, in lowercase with spacing collapsed.
  *     Empty when they are all unnamed.
  *   - `groupSize`: how many landmarks of that role share that name.
+ *   - `others`: the other landmarks in the group, as the message names
+ *     them (`<nav id="pages">`, with their text when they are unnamed).
  * @reason-codes
  *   - `LANDMARK_NOT_UNIQUE` (cantTell): two or more landmarks with the same
  *     role share one accessible name, or are all unnamed; a person judges
@@ -153,26 +155,36 @@ function runInPage(ctx) {
     for (const [normalizedName, group] of byName) {
       if (group.length <= 1) continue;
 
-      for (const { el } of group) {
+      for (const { el, name } of group) {
+        // The others in the group, named (with their text when they have no
+        // name), so a reviewer finds them; and this one's name as written.
+        const otherEls = group.filter((o) => o.el !== el).map((o) => o.el);
+        const otherNames = otherEls.map((o) =>
+          helpers.describeElement(o, { role: true, text: !normalizedName })
+        );
+        const others =
+          otherNames.length > 3 ? `${otherNames.slice(0, 3).join(', ')}, …` : otherNames.join(', ');
+        const shownName = name.length > 80 ? `${name.slice(0, 79)}…` : name;
         occurrences.push(
           helpers.reportOccurrence(el, {
             summary: normalizedName
-              ? `This ${role} landmark shares its accessible name with another ${role} landmark.`
-              : `This ${role} landmark has no accessible name, and more than one unnamed ${role} landmark exists on this page.`,
+              ? `This ${role} landmark is named "${shownName}"; other ${role} landmarks with that name: ${others}.`
+              : `This ${role} landmark has no accessible name; other unnamed ${role} landmarks on this page: ${others}.`,
             hint: `Give each ${role} landmark a distinct name via aria-label or aria-labelledby, unless they have the same content and purpose, such as pagination repeated above and below a table, where the ARIA Authoring Practices allow the same name.`,
             i18n: {
               summaryKey: normalizedName
-                ? 'landmarkUnique_summary_cantTell_duplicateName'
-                : 'landmarkUnique_summary_cantTell_bothUnnamed',
+                ? 'landmarkUnique_summary_cantTell_duplicateNameOthers'
+                : 'landmarkUnique_summary_cantTell_unnamedOthers',
               hintKey: 'landmarkUnique_hint_cantTell',
-              params: { role }
+              params: { role, name: shownName, others }
             },
             data: {
               details: {
                 reasonCode: 'LANDMARK_NOT_UNIQUE',
                 role,
                 name: normalizedName,
-                groupSize: group.length
+                groupSize: group.length,
+                others: otherNames
               }
             }
           })

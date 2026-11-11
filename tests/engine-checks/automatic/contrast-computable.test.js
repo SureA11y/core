@@ -844,3 +844,119 @@ test(`${RULE_ID}: each text asked about says its size and weight (typography)`, 
   assert.strictEqual(byId['bold-small'].isBold, true);
   assert.strictEqual(byId['bold-small'].isLargeText, false, '18px bold is below 14pt');
 });
+
+// The summary names what stops the measurement: the element that carries it
+// and its value, rather than the bare reason code.
+test(`${RULE_ID}: an ancestor's opacity is named with the ancestor and its value`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-image: linear-gradient(red, blue);">
+  <div class="card is-disabled" style="opacity: 0.5;">
+    <p id="faded" style="color: rgb(0, 0, 0);">Ancestor opacity text</p>
+  </div>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ANCESTOR_OPACITY');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_ancestorOpacity');
+  assert.strictEqual(occ.i18n.hintKey, 'contrastComputable_hint_cantTell_effect');
+  assert.strictEqual(occ.data.details.blockerElement, '<div class="card is-disabled">');
+  assert.strictEqual(occ.data.details.blockerIsAncestor, true);
+  assert.match(
+    occ.summary,
+    /because its ancestor <div class="card is-disabled"> has opacity: 0\.5, which fades the text/
+  );
+  assert.doesNotMatch(occ.summary, /ANCESTOR_OPACITY/);
+});
+
+test(`${RULE_ID}: the element's own opacity over a background of its own is named`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div style="background-image: linear-gradient(rgb(255, 255, 255), rgb(238, 238, 238));">
+    <p id="badge" style="color: rgb(187, 187, 187); background-color: rgb(255, 255, 255); opacity: 0.6;">Faint badge</p>
+  </div>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.data.details.reasonCode, 'ELEMENT_OPACITY');
+  assert.strictEqual(occ.i18n.summaryKey, 'contrastComputable_cantTell_elementOpacity');
+  assert.match(occ.summary, /this element has opacity: 0\.6 and a background of its own/);
+});
+
+test(`${RULE_ID}: a background image on an ancestor says which ancestor carries it`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div class="hero" style="background-image: url(hero.jpg);">
+    <div><h1 id="title" style="color: rgb(255, 255, 255);">Hero</h1></div>
+  </div>
+  <p id="own" style="color: rgb(0, 0, 0); background-image: url(x.png);">Own image</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const hero = rule.occurrences.find((o) => o.html.includes('id="title"'));
+  assert.strictEqual(hero.i18n.summaryKey, 'contrastComputable_cantTell_bgImage');
+  assert.strictEqual(hero.i18n.params.blockerAncestor, '<div class="hero">');
+  assert.match(
+    hero.summary,
+    /\(background-image=url\("hero\.jpg"\), set on its ancestor <div class="hero">\)\./
+  );
+  const own = rule.occurrences.find((o) => o.html.includes('id="own"'));
+  assert.strictEqual(own.i18n.params.blockerAncestor, '');
+  assert.strictEqual(own.data.details.blockerIsAncestor, false);
+  assert.doesNotMatch(own.summary, /ancestor/);
+});
+
+test(`${RULE_ID}: a background or text color the scan can't read is quoted`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div id="wrap" class="panel"><p id="on-unread">Over an unread background</p></div>
+  <p id="unread-color">Unread color</p>
+</body></html>`;
+  const dom = createDom(html);
+  patchGeometry(dom);
+  patchComputedStyleDefaults(dom);
+  const { window } = dom;
+  const orig = window.getComputedStyle;
+  window.getComputedStyle = function unreadColors(el, pseudo) {
+    const cs = orig.call(window, el, pseudo);
+    const id = el && el.id;
+    return new Proxy(cs, {
+      get(target, prop) {
+        if (!pseudo && id === 'wrap' && prop === 'backgroundColor') return 'nonsense(1)';
+        if (
+          !pseudo &&
+          id === 'unread-color' &&
+          (prop === 'color' || prop === 'webkitTextFillColor')
+        )
+          return 'nonsense(2)';
+        const v = target[prop];
+        return typeof v === 'function' ? v.bind(target) : v;
+      }
+    });
+  };
+  const result = runa11yCoreOnDom(dom, {
+    engineOptions: { rules: [RULE_ID] },
+    entryPointParity: false
+  });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 2, maxOccurrences: 2 });
+  const bg = rule.occurrences.find((o) => o.html.includes('id="on-unread"'));
+  assert.strictEqual(bg.data.details.reasonCode, 'BACKGROUND_UNPARSABLE');
+  assert.strictEqual(bg.i18n.summaryKey, 'contrastComputable_cantTell_backgroundUnparsable');
+  assert.strictEqual(
+    bg.summary,
+    'Contrast is not computable because the background color of its ancestor <div id="wrap"> (nonsense(1)) is a value this scan can\'t read.'
+  );
+  const fg = rule.occurrences.find((o) => o.html.includes('id="unread-color"'));
+  assert.strictEqual(fg.data.details.reasonCode, 'FOREGROUND_UNPARSABLE');
+  assert.strictEqual(fg.i18n.summaryKey, 'contrastComputable_cantTell_foregroundUnparsable');
+  assert.strictEqual(
+    fg.summary,
+    "Contrast is not computable because the text color (nonsense(2)) is a value this scan can't read."
+  );
+});

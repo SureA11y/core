@@ -332,23 +332,29 @@ function runInPage(ctx) {
 
       const tag = (dom.tagName(el) || '').toLowerCase();
 
+      // Why it has none, where the page shows a cause the reader would not
+      // see from the element alone (helpers.nameCause): the hint says so.
+      const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           // Human fallbacks (allowed)
           summary: 'This link has no accessible name.',
-          hint: 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
+          hint: cause
+            ? cause.hint
+            : 'Give the link text, or name it with aria-label, so screen reader users know where it leads.',
 
           // Validator requires these keys to exist in the English dictionary
           i18n: {
             summaryKey: 'linkNamePresent_summary_fail',
-            hintKey: 'linkNamePresent_hint_fail',
-            params: { element: tag }
+            hintKey: cause ? cause.hintKey : 'linkNamePresent_hint_fail',
+            params: { element: tag, ...(cause ? cause.params : {}) }
           },
 
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
+              ...(cause ? { nameCause: cause.detail } : {}),
               metrics: {
                 programmaticNameLength: programmaticName.trim().length,
                 contentNameLength: contentName.trim().length

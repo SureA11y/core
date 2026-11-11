@@ -35,6 +35,9 @@
  *   - `reasonCode`: `label_from_placeholder_primary`, `label_from_title_primary`,
  *     `label_from_aria_label_only` or `label_from_hidden_labelledby`.
  *   - `sourceText`: the label text, up to 120 characters.
+ *   - `labelledbyTargets` (`label_from_hidden_labelledby`): the elements
+ *     aria-labelledby points at (`#id`), with `hiddenBy` and, when an
+ *     ancestor carries it, `hiddenByElement`, for a single target.
  * @reason-codes
  *   - `label_from_aria_label_only` (cantTell): the field's name comes from
  *     aria-label, which is not shown on screen, so whether a visible label
@@ -240,6 +243,53 @@ function runInPage(ctx) {
     return false;
   }
 
+  // The elements aria-labelledby points at, none of them rendered, and what
+  // hides them, for the message: the target, its text, and the CSS or
+  // attribute on it or on the ancestor that carries it.
+  function hiddenLabelledby(el, text) {
+    let refs;
+    try {
+      refs = [...helpers.getRefElements(el, 'aria-labelledby', ctx)];
+    } catch {
+      refs = [];
+    }
+    if (!refs.length) return null;
+    const refName = (r) => {
+      const rid = trim(dom.getAttribute(r, 'id') || '');
+      return rid ? `#${rid}` : helpers.describeElement(r);
+    };
+    const target = refs.map(refName).join(' ');
+    const name = text.length > 80 ? `${text.slice(0, 79)}…` : text;
+    const cause =
+      refs.length === 1 && typeof helpers.hiddenCause === 'function'
+        ? helpers.hiddenCause(refs[0])
+        : null;
+    // aria-hidden leaves the text on screen: it is not what hides it here.
+    if (!cause || cause.hiddenBy === 'aria-hidden="true"') {
+      return {
+        summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, which is not shown on screen.`,
+        summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHidden',
+        params: { name, target },
+        detail: { labelledbyTargets: target }
+      };
+    }
+    if (cause.element === refs[0]) {
+      return {
+        summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, which has ${cause.hiddenBy}, so no label is shown on screen.`,
+        summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHiddenOwn',
+        params: { name, target, hiddenBy: cause.hiddenBy },
+        detail: { labelledbyTargets: target, hiddenBy: cause.hiddenBy }
+      };
+    }
+    const ancestor = helpers.describeElement(cause.element);
+    return {
+      summary: `This form field's name, "${name}", comes from aria-labelledby pointing at ${target}, whose ancestor ${ancestor} has ${cause.hiddenBy}, so no label is shown on screen.`,
+      summaryKey: 'formControl_programmaticLabelQuality_summary_labelledbyHiddenAncestor',
+      params: { name, target, hiddenBy: cause.hiddenBy, ancestor },
+      detail: { labelledbyTargets: target, hiddenBy: cause.hiddenBy, hiddenByElement: ancestor }
+    };
+  }
+
   // Native controls only
   const selector =
     'input:not([type="hidden"]):not([type="submit"]):not([type="reset"]):not([type="button"]):not([type="image"]),select,textarea';
@@ -328,6 +378,15 @@ function runInPage(ctx) {
         summaryKey: 'formControl_programmaticLabelQuality_summary_unseenName',
         hintKey: 'formControl_programmaticLabelQuality_hint_unseenName'
       };
+      if (method === 'aria-labelledby') {
+        const hidden = hiddenLabelledby(el, sourceText);
+        if (hidden) {
+          message.summary = hidden.summary;
+          message.summaryKey = hidden.summaryKey;
+          message.params = hidden.params;
+          message.detail = hidden.detail;
+        }
+      }
     }
 
     const baseOccurrence = {
@@ -336,7 +395,7 @@ function runInPage(ctx) {
       i18n: {
         summaryKey: message.summaryKey,
         hintKey: message.hintKey,
-        params: { element, method }
+        params: { element, method, ...(message.params || {}) }
       },
       data: {
         visibilityFilter: vf || { targetSet: 'acc', accEligible: null, reasons: [] },
@@ -345,7 +404,8 @@ function runInPage(ctx) {
           labelMethod: method,
           labelStrength: isWeakPrimary ? 'weak' : 'medium',
           recommendedMethods: ['label', 'aria-labelledby'],
-          sourceText
+          sourceText,
+          ...(message.detail || {})
         }
       }
     };

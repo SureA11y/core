@@ -400,6 +400,55 @@ function runInPage(ctx) {
 
     if (found) continue;
 
+    // A role for the hint's example, the first required one that is not a
+    // grouping role (option in a listbox, tab in a tablist), and a child
+    // whose role attribute names no ARIA role (helpers.roleTypo), likely
+    // the item meant: said, with the role it misspells.
+    const exampleRole =
+      requiredOwned.find((r) => r !== 'group' && r !== 'rowgroup') || requiredOwned[0];
+    let typo = null;
+    let typoElement = '';
+    if (typeof helpers.roleTypo === 'function') {
+      let withRole = [];
+      try {
+        withRole = dom.querySelectorAll(el, '[role]');
+      } catch {}
+      for (let i = 0; i < withRole.length && i < 200; i++) {
+        const t = helpers.roleTypo(withRole[i]);
+        if (!t) continue;
+        if (
+          !typo ||
+          (t.suggestion && ownedSet.has(t.suggestion) && !ownedSet.has(typo.suggestion))
+        ) {
+          typo = t;
+          typoElement = String(dom.tagName(withRole[i]) || '').toLowerCase();
+        }
+        if (typo.suggestion && ownedSet.has(typo.suggestion)) break;
+      }
+    }
+    const requiredRoles = requiredOwned.join(', ');
+    const typoText = typo
+      ? {
+          summary: `This role="${role}" needs a child with one of these roles: ${requiredRoles}. A child <${typoElement}> has role "${typo.written}", which is not an ARIA role, so it has none.`,
+          hint: typo.suggestion
+            ? `Did you mean role="${typo.suggestion}"? Fix the child’s role.`
+            : `Give each item the role it needs inside the ${role}, such as role="${exampleRole}".`,
+          summaryKey: 'ariaRequiredChildren_summary_fail_typo',
+          hintKey: typo.suggestion
+            ? 'ariaRequiredChildren_hint_fail_typoNear'
+            : 'ariaRequiredChildren_hint_fail_textOnly',
+          params: {
+            role,
+            requiredRoles,
+            exampleRole,
+            element: typoElement,
+            written: typo.written,
+            suggestion: typo.suggestion
+          }
+        }
+      : null;
+    const typoDetails = typo ? { childRoleTypo: { element: typoElement, ...typo } } : {};
+
     // Text the container owns itself, or through generic wrappers (a <span>
     // with no role), is content in place of its required children: a list
     // whose items have no role (ACT bc4a75, Failed Example 1). It fails. An
@@ -408,20 +457,26 @@ function runInPage(ctx) {
     if (ownsBareText(el, 0)) {
       fails.push(
         helpers.reportOccurrence(el, {
-          summary:
-            'This container role holds content, but none of it has a role the container requires.',
-          hint: 'Give each item the role the container needs, such as role="listitem" in a list.',
+          summary: typoText
+            ? typoText.summary
+            : `This role="${role}" holds content, but none of it has one of the roles it requires: ${requiredRoles}.`,
+          hint: typoText
+            ? typoText.hint
+            : `Give each item the role it needs inside the ${role}, such as role="${exampleRole}".`,
           occurrenceOutcome: 'fail',
           i18n: {
-            summaryKey: 'ariaRequiredChildren_summary_fail_textOnly',
-            hintKey: 'ariaRequiredChildren_hint_fail_textOnly',
-            params: { role, requiredRoles: requiredOwned.join(', ') }
+            summaryKey: typoText
+              ? typoText.summaryKey
+              : 'ariaRequiredChildren_summary_fail_textOnly',
+            hintKey: typoText ? typoText.hintKey : 'ariaRequiredChildren_hint_fail_textOnly',
+            params: typoText ? typoText.params : { role, requiredRoles, exampleRole }
           },
           data: {
             details: {
               reasonCode: 'ARIA_REQUIRED_CHILD_TEXT_ONLY',
               role,
-              requiredOwnedRoles: requiredOwned
+              requiredOwnedRoles: requiredOwned,
+              ...typoDetails
             }
           }
         })
@@ -432,12 +487,16 @@ function runInPage(ctx) {
     const lean = leanFor(el);
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: 'This container role has no owned child with a required role.',
-        hint: 'Add a child element with one of these roles, or reference one with aria-owns.',
+        summary: typoText
+          ? typoText.summary
+          : 'This container role has no owned child with a required role.',
+        hint: typoText
+          ? typoText.hint
+          : 'Add a child element with one of these roles, or reference one with aria-owns.',
         i18n: {
-          summaryKey: 'ariaRequiredChildren_summary_fail',
-          hintKey: 'ariaRequiredChildren_hint_fail',
-          params: { role, requiredRoles: requiredOwned.join(', ') }
+          summaryKey: typoText ? typoText.summaryKey : 'ariaRequiredChildren_summary_fail',
+          hintKey: typoText ? typoText.hintKey : 'ariaRequiredChildren_hint_fail',
+          params: typoText ? typoText.params : { role, requiredRoles }
         },
         uncertainty: {
           code: 'spec-only',
@@ -455,7 +514,8 @@ function runInPage(ctx) {
           details: {
             reasonCode: 'ARIA_REQUIRED_CHILD_MISSING',
             role,
-            requiredOwnedRoles: requiredOwned
+            requiredOwnedRoles: requiredOwned,
+            ...typoDetails
           }
         }
       })

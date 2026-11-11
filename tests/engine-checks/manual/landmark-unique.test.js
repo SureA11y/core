@@ -266,3 +266,29 @@ test(`${RULE_ID}: the hint says when a shared name is allowed, since that is why
     }
   }
 });
+
+test(`${RULE_ID}: quotes the shared name and points at the other landmarks`, () => {
+  const html = `<!doctype html><html><body>
+    <nav id="top" aria-label="Main">a</nav>
+    <nav id="foot" aria-labelledby="h"><h2 id="h">main</h2></nav>
+    <aside id="one">One</aside><aside class="ad">Two</aside>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const top = byId('top');
+  assert.strictEqual(
+    top.summary,
+    'This navigation landmark is named "Main"; other navigation landmarks with that name: <nav id="foot">.'
+  );
+  assert.strictEqual(top.i18n.summaryKey, 'landmarkUnique_summary_cantTell_duplicateNameOthers');
+  assert.deepStrictEqual(top.data.details.others, ['<nav id="foot">']);
+  assert.strictEqual(top.data.details.reasonCode, 'LANDMARK_NOT_UNIQUE');
+
+  const one = byId('one');
+  assert.strictEqual(
+    one.summary,
+    'This complementary landmark has no accessible name; other unnamed complementary landmarks on this page: <aside class="ad"> "Two".'
+  );
+  assert.strictEqual(one.i18n.summaryKey, 'landmarkUnique_summary_cantTell_unnamedOthers');
+});

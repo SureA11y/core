@@ -306,3 +306,92 @@ test(`${RULE_ID}: a table with no headers leans fail on data signs, pass on layo
   assert.equal(noHeadersLean(words.repeat(4)), undefined);
   assert.equal(noHeadersLean(layoutRow + numbers), undefined);
 });
+
+test(`${RULE_ID}: a fail names the <th> that is not counted as a header, and why`, () => {
+  const body = '<tr><th>R</th><td>1</td><td>2</td><td>3</td></tr>'.repeat(4);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <tr><th role="presentation">H0</th><th role="presentation">H1</th><th role="presentation">H2</th><th role="presentation">H3</th></tr>
+  ${body}
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  // Only the <th role="presentation"> cells themselves: the row <th>s head the others.
+  for (const o of rule.occurrences) {
+    assert.equal(o.i18n.summaryKey, 'tdHasHeader_summary_fail_thRole');
+    assert.equal(o.i18n.hintKey, 'tdHasHeader_hint_fail_thRole');
+    assert.equal(
+      o.summary,
+      'This <th> has role="presentation", which makes it an ordinary cell, so it heads nothing and has no header of its own.'
+    );
+  }
+});
+
+test(`${RULE_ID}: a fail says the <th> above a cell has a role, or is hidden`, () => {
+  const body = '<tr><td>a</td><td>1</td><td>2</td><td>3</td></tr>'.repeat(4);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <tr><th role="cell">H0</th><th aria-hidden="true">H1</th><th>H2</th><th>H3</th></tr>
+  ${body}
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 9,
+    maxOccurrences: 9
+  });
+  const role = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colRole'
+  );
+  const hidden = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colHidden'
+  );
+  assert.equal(role.length, 4);
+  assert.equal(hidden.length, 4);
+  assert.equal(
+    role[0].summary,
+    'This data cell has no header: the <th> above it ("H0") has role="cell", which makes it an ordinary cell.'
+  );
+  assert.equal(role[0].i18n.hintKey, 'tdHasHeader_hint_fail_colRole');
+  assert.equal(
+    role[0].hint,
+    'Remove role="cell" from the header cells, or give them role="columnheader".'
+  );
+  assert.equal(
+    hidden[0].summary,
+    'This data cell has no header: the <th> above it ("H1") is hidden from screen readers by aria-hidden="true", so it heads nothing.'
+  );
+  assert.equal(hidden[0].i18n.hintKey, 'tdHasHeader_hint_fail_hidden');
+  assert.deepEqual(hidden[0].data.details.notHeader, {
+    cell: 'col',
+    kind: 'hidden',
+    text: 'H1',
+    hiddenBy: 'aria-hidden="true"'
+  });
+  // The <th role="cell"> itself.
+  assert.ok(rule.occurrences.some((o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_thRole'));
+});
+
+test(`${RULE_ID}: a fail says a header row of <td>s in <thead> heads nothing`, () => {
+  const body = '<tr><td>a</td><td>1</td><td>2</td><td>3</td></tr>'.repeat(3);
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><table>
+  <thead><tr><td>H0</td><td>H1</td><td>H2</td><td>H3</td></tr></thead>
+  <tbody><tr><th>R</th><td>1</td><td>2</td><td>3</td></tr>${body}</tbody>
+</table></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail');
+  const head = rule.occurrences.filter(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_theadTd'
+  );
+  assert.equal(head.length, 4);
+  assert.equal(
+    head[0].summary,
+    "This cell is in the table's <thead> but is a <td>, so it heads nothing, and the cells below it have no column header."
+  );
+  assert.equal(head[0].hint, 'Make the cells of the header row <th>.');
+  const below = rule.occurrences.find(
+    (o) => o.i18n.summaryKey === 'tdHasHeader_summary_fail_colTheadTd'
+  );
+  assert.equal(
+    below.summary,
+    'This data cell has no header: the cell above it in the <thead> ("H1") is a <td>, not a <th>, so it heads nothing.'
+  );
+  assert.equal(below.i18n.hintKey, 'tdHasHeader_hint_fail_theadTd');
+});

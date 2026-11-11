@@ -382,19 +382,25 @@ function runInPage(ctx) {
         ? helpers.getEligibilityInfo(el, ctx, { targetSet: 'acc' })
         : null;
 
+      // Why it has none, where the page shows a cause the reader would not
+      // see from the element alone (helpers.nameCause): the hint says so.
+      const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This button has no accessible name.',
-          hint: 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
+          hint: cause
+            ? cause.hint
+            : 'Give the button visible text, or name it with aria-label, so screen reader users know what it does.',
           i18n: {
             summaryKey: 'buttonNamePresent_summary_fail',
-            hintKey: 'buttonNamePresent_hint_fail',
-            params: { element: tag }
+            hintKey: cause ? cause.hintKey : 'buttonNamePresent_hint_fail',
+            params: { element: tag, ...(cause ? cause.params : {}) }
           },
           data: {
             visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
             details: {
               reasonCode: 'name_missing',
+              ...(cause ? { nameCause: cause.detail } : {}),
               metrics: {
                 trustedProgrammaticNameLength: trustedProgrammaticName.length,
                 inputValueNameLength: inputValueName.length,

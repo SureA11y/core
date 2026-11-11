@@ -33,6 +33,8 @@
  *     <h3>).
  *   - `toLevel`: this heading's level, more than one deeper than
  *     `fromLevel`.
+ *   - `previousText`, `previousSelector`: the previous exposed heading,
+ *     its text (shortened) and a selector for it.
  * @reason-codes
  *   - `HEADING_ORDER_SKIPPED_LEVEL` (cantTell): a heading is more than one
  *     level deeper than the previous heading exposed to assistive
@@ -220,19 +222,36 @@ function runInPage(ctx) {
 
   const occurrences = [];
   let previousLevel = headings[0].level;
+  let previousEl = headings[0].el;
+  // A heading's text, shortened, for the message.
+  const shortText = (h) => {
+    const all = String(dom.textContent(h) || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return all.length > 60 ? `${all.slice(0, 59)}…` : all;
+  };
 
   for (let i = 1; i < headings.length; i += 1) {
     const { el, level } = headings[i];
 
     if (level > previousLevel + 1) {
+      // The heading it jumps from, which can be far above it or in another
+      // landmark, named so the reviewer finds it.
+      const text = shortText(el);
+      const previousText = shortText(previousEl);
       occurrences.push(
         helpers.reportOccurrence(el, {
-          summary: `This heading jumps from level ${previousLevel} to level ${level}, skipping a level.`,
+          summary: `This level-${level} heading "${text}" follows the level-${previousLevel} heading "${previousText}", skipping a level.`,
           hint: 'Go down one level at a time, so an <h2> is followed by an <h3> rather than an <h4>, and the outline of the page stays easy to follow.',
           i18n: {
-            summaryKey: 'headingOrder_summary_cantTell',
+            summaryKey: 'headingOrder_summary_cantTell_previous',
             hintKey: 'headingOrder_hint_cantTell',
-            params: { fromLevel: String(previousLevel), toLevel: String(level) }
+            params: {
+              fromLevel: String(previousLevel),
+              toLevel: String(level),
+              text,
+              previousText
+            }
           },
           lean: {
             toward: 'fail',
@@ -244,7 +263,9 @@ function runInPage(ctx) {
             details: {
               reasonCode: 'HEADING_ORDER_SKIPPED_LEVEL',
               fromLevel: previousLevel,
-              toLevel: level
+              toLevel: level,
+              previousText,
+              previousSelector: helpers.buildSelector ? helpers.buildSelector(previousEl) : null
             }
           }
         })
@@ -252,6 +273,7 @@ function runInPage(ctx) {
     }
 
     previousLevel = level;
+    previousEl = el;
   }
 
   if (occurrences.length) {

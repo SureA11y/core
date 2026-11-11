@@ -324,6 +324,78 @@ function runInPage(ctx) {
     return Array.isArray(list) && list.length > 200 ? list.slice(0, 200) : list;
   }
 
+  // The label's words the name does not have, each once, in label order.
+  function missingWordsOf(labelTokens, nameTokens) {
+    const have = new Set(nameTokens);
+    const out = [];
+    for (const w of labelTokens) if (!have.has(w) && out.indexOf(w) === -1) out.push(w);
+    return out;
+  }
+
+  // An element as a message names it: <span class="badge">.
+  function describeEl(node) {
+    const tag = String(dom.localName(node) || dom.tagName(node) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(node, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(node, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+
+  // The element inside the control whose own text shows `word`, where it is
+  // not the control itself; null otherwise.
+  function shownIn(control, word) {
+    const stack = [control];
+    let guard = 0;
+    while (stack.length && guard++ < 2000) {
+      const node = stack.pop();
+      const kids = dom.childNodes(node) || [];
+      for (let i = kids.length - 1; i >= 0; i--) {
+        const k = kids[i];
+        const type = dom.nodeType(k);
+        if (type === 1) stack.push(k);
+        else if (type === 3 && tokenize(dom.textContent(k), false).indexOf(word) !== -1) {
+          const parent = dom.parentElement(k);
+          return parent && parent !== control ? parent : null;
+        }
+      }
+    }
+    return null;
+  }
+
+  // The fail's hint, naming the label's words the name lacks and where the
+  // first is shown, or, none lacking, saying they are not together and in
+  // order.
+  function failHintOf(control, labelInfo, missing, visibleLabel) {
+    if (!missing.length) {
+      const label = clipForSummary(visibleLabel);
+      return {
+        hint: `The accessible name has every word of the visible label, but not together and in that order; people using speech input say them as they see them. Make the name contain "${label}" as one phrase, ideally at its start.`,
+        hintKey: 'labelInName_hint_fail_wordOrder',
+        params: {}
+      };
+    }
+    const shown = missing.slice(0, 5);
+    const missingWords =
+      shown.map((w) => `"${w}"`).join(', ') + (missing.length > 5 ? ', ...' : '');
+    let missingIn = '';
+    try {
+      const holder = labelInfo && labelInfo.source === 'self' ? shownIn(control, missing[0]) : null;
+      if (holder) missingIn = describeEl(holder);
+    } catch {
+      missingIn = '';
+    }
+    return {
+      hint: missingIn
+        ? `The accessible name lacks ${missingWords} from the visible label, shown in ${missingIn} inside the control. Add ${missingWords} to the name, or move that text out of the control, so people using speech input can activate it by saying what they see.`
+        : `The accessible name lacks ${missingWords} from the visible label. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`,
+      hintKey: 'labelInName_hint_fail_missingWords',
+      params: { missingWords, missingIn }
+    };
+  }
+
   function clipForSummary(s) {
     const v = (s == null ? '' : String(s)).replace(/\s+/g, ' ').trim();
     if (v.length <= 80) return v;
@@ -977,6 +1049,13 @@ function runInPage(ctx) {
       uncertainReason === 'POSSIBLE_ICON_FONT_GLYPH' ||
       uncertainReason === 'POSSIBLE_SYMBOLIC_CHARACTER';
 
+    // Which of the label's words the name lacks, and the element inside the
+    // control that shows the first of them (a badge, a counter); none
+    // lacking, the words are all there but not together and in order.
+    const failWords =
+      !contains && !uncertainReason ? missingWordsOf(labelTokens, nameTokens) : null;
+    const failHint = failWords ? failHintOf(el, labelInfo, failWords, visibleLabel) : null;
+
     if (!contains) {
       occurrences.push(
         helpers.reportOccurrence(el, {
@@ -985,7 +1064,9 @@ function runInPage(ctx) {
             ? 'Accessible name may not contain the visible label text.'
             : 'Accessible name does not contain the visible label text.',
           hint: !uncertainReason
-            ? 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
+            ? failHint
+              ? failHint.hint
+              : 'Ensure the accessible name includes the visible text label (e.g., update aria-label/aria-labelledby to include the visible wording).'
             : isSymbolicUncertainty
               ? 'Check by hand: the visible text may render as an icon or symbol rather than literal words, which markup cannot settle.'
               : 'Check by hand: the two differ only by an abbreviation or by hyphenation, which markup cannot settle.',
@@ -996,15 +1077,20 @@ function runInPage(ctx) {
                 ? 'labelInName_summary_cantTell_symbolic'
                 : 'labelInName_summary_cantTell',
             hintKey: !uncertainReason
-              ? 'labelInName_hint_fail'
+              ? failHint
+                ? failHint.hintKey
+                : 'labelInName_hint_fail'
               : isSymbolicUncertainty
                 ? 'labelInName_hint_cantTell_symbolic'
                 : 'labelInName_hint_cantTell',
             params: {
               element: getElementDescriptor(el),
               visibleLabel: clipForSummary(visibleLabel),
+              // The name the label is missing from, said in the summary.
+              accessibleName: clipForSummary(accName),
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none',
+              ...(failHint ? failHint.params : null)
             }
           },
           ...(uncertainReason
@@ -1033,7 +1119,11 @@ function runInPage(ctx) {
                 accessibleName: capWords(nameTokens)
               },
               labelSource: labelInfo && labelInfo.source ? labelInfo.source : 'none',
-              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none'
+              nameMechanism: acc && acc.mechanism ? acc.mechanism : 'none',
+              ...(failWords ? { missingWords: failWords } : null),
+              ...(failHint && failHint.params.missingIn
+                ? { missingWordsShownIn: failHint.params.missingIn }
+                : null)
             }
           }
         })

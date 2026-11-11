@@ -265,18 +265,24 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause): the hint says so.
+    const cause = helpers.nameCause ? helpers.nameCause(el, { content: true }) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This control has no accessible name.',
-        hint: 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
+        hint: cause
+          ? cause.hint
+          : 'Name the control with a <label>, aria-label or aria-labelledby, so screen reader users know what it is for.',
         i18n: {
           summaryKey: 'binaryControlNamePresent_summary_fail',
-          hintKey: 'binaryControlNamePresent_hint_fail',
-          params: { controlType }
+          hintKey: cause ? cause.hintKey : 'binaryControlNamePresent_hint_fail',
+          params: { controlType, ...(cause ? cause.params : {}) }
         },
         data: {
           details: {
             reasonCode: 'name_missing',
+            ...(cause ? { nameCause: cause.detail } : {}),
             controlType,
             methodTried: res.method
           },

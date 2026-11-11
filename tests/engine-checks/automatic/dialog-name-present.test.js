@@ -210,3 +210,32 @@ test(`${RULE_ID}: the role is the first concrete token of a fallback list`, () =
     maxOccurrences: 0
   });
 });
+
+test(`${RULE_ID}: a fail names an empty heading it points to, and does not ask for an aria-labelledby it has`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <div id="d1" role="dialog" aria-labelledby="t1"><h2 id="t1"></h2><p>Body</p></div>
+  <div id="d2" role="dialog" aria-labelledby="t2"><h2 id="t2"><span aria-hidden="true">Hi</span></h2></div>
+  <div id="d3" role="dialog"><p>Body</p></div>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 3,
+    maxOccurrences: 3
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('d1').i18n.hintKey, 'nameCause_hint_labelledbyEmpty');
+  assert.equal(
+    occ('d1').hint,
+    'Its aria-labelledby points only to elements with no text (<h2 id="t1">), so it gives no name. Put the text in the element it points to, or name it with aria-label.'
+  );
+  assert.equal(occ('d1').data.details.nameCause.cause, 'labelledbyEmpty');
+  assert.equal(occ('d2').i18n.hintKey, 'dialogNamePresent_hint_fail_labelledby');
+  assert.equal(
+    occ('d2').hint,
+    "Its aria-labelledby gives no name. Check that it lists the id of the dialog's heading and that the heading has text screen readers read, or name the dialog with aria-label."
+  );
+  assert.equal(occ('d3').i18n.hintKey, 'dialogNamePresent_hint_fail');
+  assert.equal(
+    occ('d3').hint,
+    'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.'
+  );
+});

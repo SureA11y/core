@@ -373,3 +373,32 @@ test(`${RULE_ID}: role presentation is read from a fallback list, in any case (#
   });
   assert.equal(rule.data.details.metrics.applicableCount, 0);
 });
+
+test(`${RULE_ID}: names the hidden aria-labelledby target, its text and what hides it`, () => {
+  const html = `<!doctype html><html><head><style>.sr{display:none}</style></head><body>
+    <span id="l" class="sr">Email address</span><input id="e" aria-labelledby="l">
+    <div class="wrap" hidden><span id="m">Phone</span></div><input id="p" aria-labelledby="m">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const e = byId('e');
+  assert.strictEqual(
+    e.summary,
+    'This form field\'s name, "Email address", comes from aria-labelledby pointing at #l, which has display: none, so no label is shown on screen.'
+  );
+  assert.strictEqual(
+    e.i18n.summaryKey,
+    'formControl_programmaticLabelQuality_summary_labelledbyHiddenOwn'
+  );
+  assert.strictEqual(e.data.details.reasonCode, 'label_from_hidden_labelledby');
+  assert.strictEqual(e.data.details.labelledbyTargets, '#l');
+  assert.strictEqual(e.data.details.hiddenBy, 'display: none');
+
+  const p = byId('p');
+  assert.strictEqual(
+    p.i18n.summaryKey,
+    'formControl_programmaticLabelQuality_summary_labelledbyHiddenAncestor'
+  );
+  assert.match(p.summary, /pointing at #m, whose ancestor <div class="wrap"> has hidden="",/);
+});

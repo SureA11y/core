@@ -293,14 +293,33 @@ function runInPage(ctx) {
 
     for (const name of invalidNames) {
       const lean = leanFor(el, name);
+      // What the author likely meant, said in the hint: the role attribute
+      // for aria-role, else the attribute the name misspells.
+      const roleValue = name === 'aria-role' ? String(dom.getAttribute(el, name) || '').trim() : '';
+      const suggestion =
+        !roleValue && typeof helpers.nearestAriaAttr === 'function'
+          ? helpers.nearestAriaAttr(name)
+          : '';
       occurrences.push(
         helpers.reportOccurrence(el, {
           summary: 'This element has an attribute that is not a recognized ARIA attribute.',
-          hint: 'Fix the attribute name if it is a typo, or remove it.',
+          hint: roleValue
+            ? `ARIA has no aria-role attribute. Use the role attribute instead: role="${roleValue}".`
+            : suggestion
+              ? `Did you mean ${suggestion}? As written, the attribute is ignored.`
+              : 'Fix the attribute name if it is a typo, or remove it.',
           i18n: {
             summaryKey: 'ariaValidAttr_summary_fail',
-            hintKey: 'ariaValidAttr_hint_fail',
-            params: { attr: name }
+            hintKey: roleValue
+              ? 'ariaValidAttr_hint_fail_ariaRole'
+              : suggestion
+                ? 'ariaValidAttr_hint_fail_near'
+                : 'ariaValidAttr_hint_fail',
+            params: {
+              attr: name,
+              ...(roleValue ? { value: roleValue } : {}),
+              ...(suggestion ? { suggestion } : {})
+            }
           },
           uncertainty: {
             code: 'spec-only',
@@ -310,7 +329,11 @@ function runInPage(ctx) {
           },
           ...(lean ? { lean } : {}),
           data: {
-            details: { reasonCode: 'ARIA_ATTR_INVALID', attr: name }
+            details: {
+              reasonCode: 'ARIA_ATTR_INVALID',
+              attr: name,
+              ...(suggestion ? { suggestion } : {})
+            }
           }
         })
       );

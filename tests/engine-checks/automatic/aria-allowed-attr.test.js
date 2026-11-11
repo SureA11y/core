@@ -637,3 +637,41 @@ test(`${RULE_ID}: an unsupported attribute on a native button is a spec-only que
   assert.ok(rollup, 'the 4.1.2 ARIA validity rollup ran');
   assert.notStrictEqual(rollup.outcome, 'fail');
 });
+
+// The message names the cause the rule found: the element and the root
+// cause, in the summary and hint, with their i18n keys.
+function messageOccurrence(html, match) {
+  const result = runa11yCoreOnHtml(
+    `<!doctype html><html lang="en"><head><title>t</title></head><body>${html}</body></html>`,
+    {
+      runOnly: [RULE_ID]
+    }
+  );
+  const rule = result.checksResults.find((r) => r.ruleId === RULE_ID);
+  assert.ok(rule, 'rule ran');
+  const occ = (rule.occurrences || []).find((o) => String(o.html || '').includes(match));
+  assert.ok(occ, `an occurrence for ${match}`);
+  return occ;
+}
+
+test(`${RULE_ID}: a misspelled role is named, with the role it likely meant`, () => {
+  const occ = messageOccurrence('<div role="buton" aria-pressed="true">z</div>', 'buton');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedAttr_summary_fail_typo');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedAttr_hint_fail_typoNear');
+  assert.strictEqual(
+    occ.summary,
+    'This <div>’s role "buton" is not an ARIA role, so it is read as generic, which does not support aria-pressed.'
+  );
+  assert.strictEqual(occ.hint, 'Did you mean role="button"? Fix the role, or remove aria-pressed.');
+});
+
+test(`${RULE_ID}: an implicit role is named as the element’s, not as a role attribute`, () => {
+  const occ = messageOccurrence('<button aria-checked="true">B</button>', 'aria-checked');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedAttr_summary_fail_implicit');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedAttr_hint_fail_implicit');
+  assert.strictEqual(
+    occ.summary,
+    'aria-checked is not permitted on this <button>, whose implicit role button does not support it.'
+  );
+  assert.strictEqual(occ.hint, 'Remove aria-checked, or give the element a role that supports it.');
+});

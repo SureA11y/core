@@ -220,3 +220,18 @@ test(`${RULE_ID}: role="none" with only a deprecated global is presentational, w
     maxOccurrences: 1
   });
 });
+
+test(`${RULE_ID}: a fail says when the heading's text is hidden, or its only content is an image with alt=""`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body>
+  <h2 id="hidden"><span style="display:none">News</span></h2>
+  <h2 id="img"><img src="x.png" alt=""></h2>
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('hidden').i18n.hintKey, 'nameHiddenText_hint_displayNone');
+  assert.equal(occ('hidden').data.details.nameCause.text, 'News');
+  assert.equal(occ('img').i18n.hintKey, 'nameCause_hint_imageEmptyAlt');
+});

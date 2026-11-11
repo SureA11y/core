@@ -756,7 +756,17 @@ function runInPage(ctx) {
   // one walk up the tree per focusable element: whether one is positioned off
   // screen (outOfReach) or clipped to nothing (clipped), the outermost scroll
   // container below <body> (box), and whether one is fixed to the viewport.
-  const NO_CONTAINER = { outOfReach: false, clipped: false, box: null, fixed: false, clips: [] };
+  // outOfReachBy and clippedBy keep the outermost container that does it,
+  // for the message.
+  const NO_CONTAINER = {
+    outOfReach: false,
+    clipped: false,
+    outOfReachBy: null,
+    clippedBy: null,
+    box: null,
+    fixed: false,
+    clips: []
+  };
   const scrolls = (v) => v === 'hidden' || v === 'auto' || v === 'scroll';
   const chainCache = new Map();
   function chainOf(c) {
@@ -785,6 +795,8 @@ function runInPage(ctx) {
       acc = {
         outOfReach: acc.outOfReach || own.includes('outOfReach'),
         clipped: acc.clipped || own.includes('containerClipped'),
+        outOfReachBy: acc.outOfReachBy || (own.includes('outOfReach') ? e : null),
+        clippedBy: acc.clippedBy || (own.includes('containerClipped') ? e : null),
         box: acc.box || (cs && (scrolls(cs.overflowX) || scrolls(cs.overflowY)) ? e : null),
         fixed: acc.fixed || (!!cs && cs.position === 'fixed'),
         clips: clipX || clipY ? acc.clips.concat([{ el: e, x: clipX, y: clipY }]) : acc.clips
@@ -904,7 +916,59 @@ function runInPage(ctx) {
     const hints = [];
     if (outOfReach) hints.push('outOfReach');
     if (chain.clipped || outsideClipBox(el, chain)) hints.push('containerClipped');
-    return { hints, containers: hints.length ? containersOf(el) : [] };
+    return {
+      hints,
+      containers: hints.length ? containersOf(el) : [],
+      cause: containerCause(chain)
+    };
+  }
+
+  // The container that hides the element and the CSS that does it, as a
+  // reader would find it in a stylesheet: { kind, container, css } or null.
+  function containerCause(chain) {
+    const px = (v) => {
+      const m = String(v == null ? '' : v).match(/-?\d+(\.\d+)?/);
+      return m ? Number.parseFloat(m[0]) : null;
+    };
+    if (chain.outOfReachBy) {
+      const cs = getComputedStyleSafe(chain.outOfReachBy) || {};
+      let css = '';
+      for (const [prop, field] of [
+        ['left', 'left'],
+        ['top', 'top'],
+        ['text-indent', 'textIndent']
+      ]) {
+        const n = px(cs[field]);
+        if (n != null && n <= -5000) {
+          css = `${prop}: ${trim(cs[field])}`;
+          break;
+        }
+      }
+      return {
+        kind: 'offscreen',
+        container: helpers.describeElement(chain.outOfReachBy),
+        css
+      };
+    }
+    if (chain.clippedBy) {
+      const cs = getComputedStyleSafe(chain.clippedBy) || {};
+      let css = '';
+      const clipPath = trim(cs.clipPath);
+      const clip = trim(cs.clip);
+      const ov = lower(cs.overflow);
+      if (clipPath && clipPath !== 'none' && clipPath !== 'auto') css = `clip-path: ${clipPath}`;
+      else if (clip && clip !== 'auto') css = `clip: ${clip}`;
+      else if ((ov === 'hidden' || ov === 'clip') && px(cs.width) === 0) {
+        css = `width: 0; overflow: ${ov}`;
+      } else if ((ov === 'hidden' || ov === 'clip') && px(cs.height) === 0) {
+        css = `height: 0; overflow: ${ov}`;
+      } else if (trim(cs.scale) && trim(cs.scale) !== 'none') css = `scale: ${trim(cs.scale)}`;
+      else if (trim(cs.transform) && trim(cs.transform) !== 'none') {
+        css = `transform: ${trim(cs.transform)}`;
+      }
+      return { kind: 'clipped', container: helpers.describeElement(chain.clippedBy), css };
+    }
+    return null;
   }
 
   // A :focus-within rule that reaches a container (`.menu:focus-within`,
@@ -967,6 +1031,7 @@ function runInPage(ctx) {
     if (!isRendered(el)) continue;
 
     let hints = getVisibilityHints(el);
+    let cause = null;
     if (hints.length) {
       // Brought back into view when it takes focus: visible while focused.
       const whenFocused = focusedVisibilityHints(el);
@@ -989,11 +1054,12 @@ function runInPage(ctx) {
       )
         continue;
       hints = byContainer.hints;
+      cause = byContainer.cause;
     }
-    flagged.push({ el, hints });
+    flagged.push({ el, hints, cause });
   }
 
-  for (const { el, hints } of flagged) {
+  for (const { el, hints, cause } of flagged) {
     const tagName = (() => {
       try {
         return lower(dom.tagName(el) || '');
@@ -1017,11 +1083,18 @@ function runInPage(ctx) {
       runtimeProbeCount < maxRuntimeProbeCount ? probeImmediateFocusRedirect(el) : null;
     if (runtimeProbeCount < maxRuntimeProbeCount) runtimeProbeCount += 1;
     const downgradedToRedirectReview = !!(runtimeProbe && runtimeProbe.redirected);
+    // A container the rule found, named with its CSS.
+    const byContainer = !downgradedToRedirectReview && cause && cause.css ? cause : null;
+    const containerSummary = byContainer
+      ? byContainer.kind === 'offscreen'
+        ? `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is positioned off screen (${byContainer.css}), and nothing brings it into view when the element takes focus.`
+        : `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is clipped to nothing (${byContainer.css}), and nothing shows it when the element takes focus.`
+      : null;
 
     const baseOccurrence = {
       summary: downgradedToRedirectReview
         ? `This focusable <${tagName}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.`
-        : `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
+        : containerSummary || `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
       hint: downgradedToRedirectReview
         ? 'Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.'
         : 'Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.',
@@ -1032,7 +1105,11 @@ function runInPage(ctx) {
             params: { element: tagName }
           }
         : {
-            summaryKey: 'cssHidden_focus_summary_cantTell',
+            summaryKey: byContainer
+              ? byContainer.kind === 'offscreen'
+                ? 'cssHidden_focus_summary_cantTell_containerOffscreen'
+                : 'cssHidden_focus_summary_cantTell_containerClipped'
+              : 'cssHidden_focus_summary_cantTell',
             hintKey: 'cssHidden_focus_hint_cantTell',
             // One flag per technique, so each locale words them as sentences
             // instead of showing the internal codes. visibilityHints stays
@@ -1045,7 +1122,8 @@ function runInPage(ctx) {
               clipped: hintsArr.includes('clipped'),
               zeroSizeOverflowHidden: hintsArr.includes('zeroSizeOverflowHidden'),
               outOfReach: hintsArr.includes('outOfReach'),
-              containerClipped: hintsArr.includes('containerClipped')
+              containerClipped: hintsArr.includes('containerClipped'),
+              ...(byContainer ? { container: byContainer.container, css: byContainer.css } : {})
             }
           },
       data: {
@@ -1054,6 +1132,9 @@ function runInPage(ctx) {
             ? 'cssHiddenTabbable_runtimeRedirect_needsReview'
             : 'cssHiddenTabbable_needsFocusStateVerification',
           metrics: { visibilityHints: hintsArr.slice(0) },
+          ...(byContainer
+            ? { hiddenByContainer: byContainer.container, containerCss: byContainer.css }
+            : {}),
           runtimeProbe: runtimeProbe || null
         }
       }

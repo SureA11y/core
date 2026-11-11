@@ -143,12 +143,16 @@ function runInPage(ctx) {
     // Flatten one level of wrapping <div> (common dt/dd grouping pattern).
     const flattened = [];
     let hasText = dlHasText;
+    // <div>s inside a wrapping <div>: one level of wrapper too many.
+    const nestedDivs = new Set();
     for (const child of childElementsOf(el)) {
       if (!child || !dom.tagName(child)) continue;
       if (dom.tagName(child).toLowerCase() === 'div') {
         if (hasDirectText(child)) hasText = true;
         for (const grandchild of childElementsOf(child)) {
-          if (grandchild && dom.tagName(grandchild)) flattened.push(grandchild);
+          if (!grandchild || !dom.tagName(grandchild)) continue;
+          flattened.push(grandchild);
+          if (dom.tagName(grandchild).toLowerCase() === 'div') nestedDivs.add(grandchild);
         }
       } else {
         flattened.push(child);
@@ -157,6 +161,10 @@ function runInPage(ctx) {
 
     let hasDt = false;
     let hasDd = false;
+    let dtCount = 0;
+    let ddCount = 0;
+    let lastDt = null;
+    let invalidNotNested = 0;
     const invalidTags = [];
     // The dt/dd sequence in document order, for the group-order check.
     const sequence = [];
@@ -164,17 +172,26 @@ function runInPage(ctx) {
       const tag = dom.tagName(node).toLowerCase();
       if (tag === 'dt') {
         hasDt = true;
+        dtCount += 1;
+        lastDt = node;
         sequence.push(tag);
         continue;
       }
       if (tag === 'dd') {
         hasDd = true;
+        ddCount += 1;
         sequence.push(tag);
         continue;
       }
-      if (!PASSTHROUGH_TAGS.has(tag)) invalidTags.push(tag);
+      if (!PASSTHROUGH_TAGS.has(tag)) {
+        invalidTags.push(tag);
+        if (!nestedDivs.has(node)) invalidNotNested += 1;
+      }
     }
-    if (hasText) invalidTags.push('#text');
+    if (hasText) {
+      invalidTags.push('#text');
+      invalidNotNested += 1;
+    }
     const dedupedInvalidTags = [...new Set(invalidTags)];
 
     // Groups of one or more dt then one or more dd: the sequence starts
@@ -196,6 +213,49 @@ function runInPage(ctx) {
           ? 'DL_DT_DD_ORDER'
           : null;
     if (!reasonCode) continue;
+
+    // Which form of the finding the summary takes: a <div> nested in the
+    // wrapping <div> and nothing else wrong; which of dt and dd is missing;
+    // which end of the order is wrong.
+    let variant = '';
+    let lastTerm = '';
+    if (reasonCode === 'DL_INVALID_CHILD' && invalidNotNested === 0) variant = 'nestedDiv';
+    else if (reasonCode === 'DL_NO_DT_DD') variant = hasDt ? 'noDd' : 'noDt';
+    else if (reasonCode === 'DL_DT_DD_ORDER') {
+      if (sequence[0] !== 'dt') variant = 'orderStart';
+      else {
+        variant = 'orderEnd';
+        const t = String((lastDt && dom.textContent(lastDt)) || '')
+          .replace(/\s+/g, ' ')
+          .trim();
+        lastTerm = t.length > 40 ? t.slice(0, 39) + '…' : t;
+      }
+    }
+    const VARIANT = {
+      nestedDiv: {
+        summary:
+          'A <div> inside the wrapping <div> holds items of this description list; only one level of <div> may sit between <dl> and its <dt>/<dd>.',
+        hint: 'Remove the inner <div>, so each group is wrapped in at most one <div> directly inside the <dl>.',
+        key: 'invalidChild_nestedDiv',
+        hintSuffix: 'invalidChild_nestedDiv'
+      },
+      noDd: {
+        summary: `This description list has terms (<dt>, ${dtCount}) but no definition (<dd>).`,
+        key: 'noDd'
+      },
+      noDt: {
+        summary: `This description list has definitions (<dd>, ${ddCount}) but no term (<dt>).`,
+        key: 'noDt'
+      },
+      orderStart: {
+        summary: "This description list's first item is a <dd>, with no <dt> term before it.",
+        key: 'order_start'
+      },
+      orderEnd: {
+        summary: `In this description list, the last <dt>${lastTerm ? ` ("${lastTerm}")` : ''} has no <dd> after it.`,
+        key: 'order_end'
+      }
+    }[variant];
 
     const TEXT = {
       DL_INVALID_CHILD: {
@@ -219,8 +279,8 @@ function runInPage(ctx) {
 
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: TEXT.summary,
-        hint: TEXT.hint,
+        summary: VARIANT ? VARIANT.summary : TEXT.summary,
+        hint: VARIANT && VARIANT.hint ? VARIANT.hint : TEXT.hint,
         uncertainty: {
           code: 'spec-only',
           needed:
@@ -228,12 +288,21 @@ function runInPage(ctx) {
           evidence: { reasonCode, invalidChildren: invalidTags }
         },
         i18n: {
-          summaryKey: `definitionListChildrenValid_summary_fail_${TEXT.key}`,
-          hintKey: `definitionListChildrenValid_hint_fail_${TEXT.key}`,
-          params: { invalidChildren: dedupedInvalidTags.join(', ') }
+          summaryKey: `definitionListChildrenValid_summary_fail_${VARIANT ? VARIANT.key : TEXT.key}`,
+          hintKey: `definitionListChildrenValid_hint_fail_${VARIANT && VARIANT.hintSuffix ? VARIANT.hintSuffix : TEXT.key}`,
+          params: {
+            invalidChildren: dedupedInvalidTags.join(', '),
+            dtCount: String(dtCount),
+            ddCount: String(ddCount),
+            lastTerm
+          }
         },
         data: {
-          details: { reasonCode, invalidChildren: invalidTags }
+          details: {
+            reasonCode,
+            invalidChildren: invalidTags,
+            ...(variant ? { finding: variant, dtCount, ddCount } : {})
+          }
         }
       })
     );

@@ -35,6 +35,8 @@
  *   the visible fragment of a label whose descriptive part is hidden.
  * @reports
  *   - `label`: the visible label text of the field.
+ *   - `sharedWithFields`: on `DUPLICATE_LABEL_TEXT`, the first three of
+ *     those other fields, as the message names them (`#last (name="last")`).
  *   - `sharedWith`: how many other fields have the same label with nothing
  *     visible telling them apart, a count. 0 when no other field shares it.
  *   - `hiddenLabelParts`: how many parts of the field's label are hidden
@@ -998,6 +1000,16 @@ function runInPage(ctx) {
   }
 
   const occurrences = [];
+  const fieldNames = new Map();
+  function describeField(f) {
+    if (!fieldNames.has(f)) {
+      const fid = String(dom.getAttribute(f.el, 'id') || '').trim();
+      const fname = String(dom.getAttribute(f.el, 'name') || '').trim();
+      const tagged = fid ? `#${fid}` : helpers.describeElement(f.el);
+      fieldNames.set(f, fname ? `${tagged} (name="${fname}")` : tagged);
+    }
+    return fieldNames.get(f);
+  }
 
   for (const field of fields) {
     const isPlaceholder = inPhraseList(
@@ -1066,9 +1078,21 @@ function runInPage(ctx) {
         })()
       : null;
 
+    // The other fields with this label, the first three, named with their
+    // name attribute: the evidence the reviewer weighs. Each field is
+    // described once, so a page of many alike fields stays linear.
+    const otherFields = [];
+    if (isDuplicate) {
+      for (const f of shared) {
+        if (f === field) continue;
+        if (otherFields.length === 3) break;
+        otherFields.push(describeField(f));
+      }
+    }
+    const others = otherFields.join(', ') + (shared.length - 1 > 3 ? ', …' : '');
     const summaryByReason = {
       PLACEHOLDER_LABEL_TEXT: `This field's visible label ("${field.labelText}") is a placeholder rather than a description of what the field is for.`,
-      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is shared with ${shared.length - 1} other field(s), with no visible heading, legend or row text telling them apart.`,
+      DUPLICATE_LABEL_TEXT: `This field's visible label ("${field.labelText}") is also the label of ${others}, with no visible heading, legend or row text telling them apart.`,
       PARTIALLY_HIDDEN_LABEL: `This field's label is split: "${field.labelText}" is what renders, while ${field.hiddenParts} other part(s) of the label are hidden from sight.`
     };
     const hintByReason = {
@@ -1081,7 +1105,7 @@ function runInPage(ctx) {
     };
     const SUMMARY_KEY_BY_REASON = {
       PLACEHOLDER_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_placeholder',
-      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicate',
+      DUPLICATE_LABEL_TEXT: 'formControlLabelQuality_summary_cantTell_duplicateOthers',
       PARTIALLY_HIDDEN_LABEL: 'formControlLabelQuality_summary_cantTell_partiallyHidden'
     };
     const HINT_KEY_BY_REASON = {
@@ -1100,7 +1124,8 @@ function runInPage(ctx) {
           params: {
             label: field.labelText,
             count: String(shared.length - 1),
-            hiddenCount: String(field.hiddenParts)
+            hiddenCount: String(field.hiddenParts),
+            others
           }
         },
         ...(lean ? { lean } : {}),
@@ -1109,6 +1134,7 @@ function runInPage(ctx) {
             reasonCode,
             label: field.labelText,
             sharedWith: isDuplicate ? shared.length - 1 : 0,
+            ...(isDuplicate ? { sharedWithFields: otherFields } : {}),
             hiddenLabelParts: field.hiddenParts
           },
           visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] }
