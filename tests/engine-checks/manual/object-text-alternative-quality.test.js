@@ -86,7 +86,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <object> transmet ce qu\u2019il int\u00e8gre.'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <object>, \u00ab Image fallback text \u00bb, transmet ce qu\u2019il int\u00e8gre.'
   );
   assert.strictEqual(
     occ.hint,
@@ -198,4 +198,27 @@ test(`${RULE_ID}: leans fail on a file name, a placeholder or a missing-plugin n
   ]) {
     assert.strictEqual(run(obj).lean, undefined, obj);
   }
+});
+
+test(`${RULE_ID}: quotes the text under review, and the ids aria-labelledby takes it from`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="c">Figure 2</p><object id="a" data="a.mp4" type="video/mp4" aria-labelledby="c"></object>
+    <object id="b" data="b.mp4" type="video/mp4">Clip of the launch</object>
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'Check that the text alternative of this <object>, "Figure 2", taken from #c by aria-labelledby, conveys what it embeds.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'object_textAltQuality_summary_cantTell_labelledby');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'Check that the text alternative of this <object>, "Clip of the launch", conveys what it embeds.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'object_textAltQuality_summary_cantTell_name');
 });

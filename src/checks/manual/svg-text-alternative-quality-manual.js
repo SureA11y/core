@@ -354,14 +354,35 @@ function runInPage(ctx) {
     const controlContent = onlyContentOf(el);
     const lean = leanFor(el, ariaLabel || labelledByText || titleText, controlContent);
 
+    // The name under review, quoted: from aria-labelledby or a <title> deep
+    // in the graphic, it is not in the snippet. A <desc> alone gives none.
+    const nameAll = (ariaLabel || labelledByText || titleText).replace(/\s+/g, ' ');
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
+
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <svg> is accurate.',
+      summary: !name
+        ? 'Check that the text alternative of this <svg> is accurate.'
+        : ids
+          ? `Check that the text alternative of this <svg>, "${name}", taken from ${ids} by aria-labelledby, is accurate.`
+          : `Check that the text alternative of this <svg>, "${name}", is accurate.`,
       hint: 'The <title>, <desc> or ARIA name should say what the graphic means or does here.',
       i18n: {
-        summaryKey: 'svg_textAltQuality_summary_cantTell',
+        summaryKey: !name
+          ? 'svg_textAltQuality_summary_cantTell'
+          : ids
+            ? 'svg_textAltQuality_summary_cantTell_labelledby'
+            : 'svg_textAltQuality_summary_cantTell_name',
         hintKey: 'svg_textAltQuality_hint_cantTell',
-        params: { element: 'svg' }
+        params: { element: 'svg', ...(name ? { name } : {}), ...(ids ? { ids } : {}) }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

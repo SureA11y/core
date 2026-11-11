@@ -81,7 +81,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <embed> est exact.'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet <embed>, \u00ab Embedded PDF \u00bb, est exact.'
   );
   assert.strictEqual(
     occ.hint,
@@ -153,4 +153,28 @@ test(`${RULE_ID}: leans fail on a file name or a placeholder name`, () => {
     assert.strictEqual(o.lean.i18n.whyKey, 'embed_textAltQuality_lean_why', attrs);
   }
   assert.strictEqual(run('title="Sales by quarter, 2024"').lean, undefined);
+});
+
+test(`${RULE_ID}: quotes the name under review, and the ids aria-labelledby takes it from`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="c">Figure 2</p><embed id="a" src="a.pdf" aria-labelledby="c">
+    <embed id="b" src="b.pdf" title="Annual report">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'Check that the text alternative of this <embed>, "Figure 2", taken from #c by aria-labelledby, is accurate.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'embed_textAltQuality_summary_cantTell_labelledby');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'Check that the text alternative of this <embed>, "Annual report", is accurate.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'embed_textAltQuality_summary_cantTell_name');
+  assert.strictEqual(b.i18n.params.name, 'Annual report');
 });

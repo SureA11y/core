@@ -171,7 +171,9 @@ test(`${RULE_ID}: each suspicious alt reports its signal and its own message`, (
     assert.ok(o.summary.includes(words), `${id}: ${o.summary}`);
     // A signal changes the message, not the finding's identity.
     assert.strictEqual(o.data.details.reasonCode, 'TEXT_ALTERNATIVE_REVIEW', id);
-    const suffix = o.i18n.summaryKey.replace('textAlternative_summary_cantTell', '');
+    const suffix = o.i18n.summaryKey
+      .replace('textAlternative_summary_cantTell', '')
+      .replace(/Quoted$/, '');
     assert.ok(suffix.length > 0 && suffix !== o.i18n.summaryKey, `${id} uses a signal message`);
     assert.strictEqual(o.i18n.hintKey, 'textAlternative_hint_cantTell' + suffix, id);
     assert.strictEqual(o.i18n.params.element, 'img', id);
@@ -389,4 +391,27 @@ test(`${RULE_ID}: quotes the name that overrides the alt, not the alt nobody hea
   );
   assert.strictEqual(b.i18n.params.ids, '#c');
   assert.strictEqual(b.data.details.name, 'Chart 3');
+});
+
+test(`${RULE_ID}: the lean on an overridden alt quotes the alt it judged`, () => {
+  const html = `<!doctype html><html><body>
+    <img id="a" src="a.png" alt="image" aria-label="Acme company logo">
+    <img id="b" src="b.png" alt="IMG_0001.jpg">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.lean.why,
+    'The alt text "image", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.'
+  );
+  assert.deepStrictEqual(a.lean.i18n.params, { alt: 'image' });
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'The text alternative of this <img>, "IMG_0001.jpg", looks like a file name.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'textAlternative_summary_cantTellFileNameQuoted');
 });

@@ -6555,52 +6555,65 @@ function createDomHelpers(opts) {
   // The message for a getTextAlternativeSignal result, shared by the rules
   // that report one: summary and hint in English, and the i18n keys and
   // params that translate them. `element` is how the summary names the
-  // element: 'img', 'area', 'input type="image"'.
+  // element: 'img', 'area', 'input type="image"'. Each entry: the key
+  // suffix, the summary, the summary quoting the text ('' for none), the
+  // hint.
   const TA_SIGNAL_MESSAGES = {
     'file-name': [
       'FileName',
       'The text alternative of this <{{element}}> looks like a file name.',
+      'The text alternative of this <{{element}}>, "{{text}}", looks like a file name.',
       'A file name tells someone who can’t see the image nothing about it. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the file name is itself what the image shows, such as a screenshot of a file list.'
     ],
     url: [
       'Url',
       'The text alternative of this <{{element}}> is a web address.',
+      'The text alternative of this <{{element}}>, "{{text}}", is a web address.',
       'An address does not say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does. Keep it only if the address is itself what the image shows, such as an image of a printed web address.'
     ],
     placeholder: [
       'Placeholder',
       'The text alternative of this <{{element}}> is a placeholder or a generic word.',
+      'The text alternative of this <{{element}}>, "{{text}}", is a placeholder or a generic word.',
       'Words such as “image”, “logo” or “TBD” don’t say what the image shows or does. Replace it with text that says what the image shows or, on a link or button, where it leads or what it does; an <img> that is only decorative takes alt="" instead. The word is fine only if it is all the image conveys, such as an image of that word.'
     ],
     symbols: [
       'Symbols',
       'The text alternative of this <{{element}}> is made only of symbols.',
+      'The text alternative of this <{{element}}>, "{{text}}", is made only of symbols.',
       'Screen readers read symbols one by one, by their names, or skip them, so “★★★★☆” may be read as five separate stars, or as nothing. Replace them with words that say what they mean, such as “4 out of 5 stars”.'
     ],
     'redundant-prefix': [
       'RedundantPrefix',
       'The text alternative of this <{{element}}> starts by saying it is an image.',
+      'The text alternative of this <{{element}}>, "{{text}}", starts by saying it is an image.',
       'Screen readers already announce an image, so an opening such as “image of” or “photo of” is said twice. Remove it, unless the kind of image matters, such as a photograph shown beside a painting of the same scene.'
     ],
     'too-long': [
       'TooLong',
       'The text alternative of this <{{element}}> is {{length}} characters long.',
+      '',
       'A text alternative is read in one go and can’t be navigated. If the image needs a long description, such as a chart or a diagram, keep the text alternative short and give the details in text on the page or in a linked description. A long one is fine when the image holds that much text itself, such as a short quotation.'
     ]
   };
 
-  function describeTextAlternativeSignal(signal, element) {
+  // With text, the text alternative judged, the summary quotes it, cut to
+  // 80 characters: a name from aria-labelledby is not in the element's
+  // markup. A too-long one is not quoted.
+  function describeTextAlternativeSignal(signal, element, text) {
     const entry = signal && TA_SIGNAL_MESSAGES[signal.altSignal];
     if (!entry) return null;
     const params = { element: String(element || '') };
     if (signal.length) params.length = signal.length;
+    const all = entry[2] && text != null ? trim(String(text)).replace(/\s+/g, ' ') : '';
+    if (all) params.text = all.length > 80 ? `${all.slice(0, 79)}…` : all;
     const fill = (t) =>
       t.replace(/\{\{(\w+)\}\}/g, (m, k) => (params[k] != null ? String(params[k]) : m));
     return {
-      summary: fill(entry[1]),
-      hint: entry[2],
+      summary: fill(all ? entry[2] : entry[1]),
+      hint: entry[3],
       i18n: {
-        summaryKey: 'textAlternative_summary_cantTell' + entry[0],
+        summaryKey: 'textAlternative_summary_cantTell' + entry[0] + (all ? 'Quoted' : ''),
         hintKey: 'textAlternative_hint_cantTell' + entry[0],
         params
       }

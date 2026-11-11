@@ -93,7 +93,7 @@ test(`${RULE_ID}: i18n (fr) rule title/description are localized`, () => {
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet \u00e9l\u00e9ment <input type="image"> (alt) est exact.'
+    'V\u00e9rifiez que l\u2019\u00e9quivalent textuel de cet \u00e9l\u00e9ment <input type="image"> (alt) est exact ; les lecteurs d\u2019\u00e9cran annoncent \u00ab Search \u00bb.'
   );
   assert.strictEqual(
     occ.hint,
@@ -268,4 +268,29 @@ test(`${RULE_ID}: leans fail on a file name, an address or a placeholder only`, 
   for (const attrs of ['alt="Search"', 'alt="→"']) {
     assert.strictEqual(run(attrs).lean, undefined, attrs);
   }
+});
+
+test(`${RULE_ID}: quotes the name screen readers announce, and a suspicious one`, () => {
+  const html = `<!doctype html><html><body>
+    <p id="q">Search</p>
+    <input id="a" type="image" src="s.png" alt="btn.png">
+    <input id="b" type="image" src="s.png" alt="x" aria-labelledby="q">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'The text alternative of this <input type="image">, "btn.png", looks like a file name.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'textAlternative_summary_cantTellFileNameQuoted');
+  assert.strictEqual(a.i18n.params.text, 'btn.png');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'Check that the text alternative of this <input type="image"> (aria-labelledby, alt) is accurate; screen readers announce "Search", taken from #q by aria-labelledby.'
+  );
+  assert.strictEqual(b.i18n.summaryKey, 'inputImage_altQuality_summary_cantTell_labelledby');
 });
