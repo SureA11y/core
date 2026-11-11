@@ -233,4 +233,58 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     );
     assert.equal(onlySmall.margin, undefined);
   });
+
+  // The fail names the ancestor that cuts the target down to the size
+  // measured, and the CSS that does, in both rules.
+  await t.test('a target an ancestor clips names that ancestor and its CSS', async () => {
+    async function occurrences(ruleId, body) {
+      const p = await browser.newPage({ viewport: { width: 390, height: 900 } });
+      try {
+        await p.setContent(
+          `<!doctype html><html lang="en"><head><title>t</title><style>body{margin:0;font:16px sans-serif}</style></head><body>${body}</body></html>`
+        );
+        await addBundle(p);
+        const result = await p.evaluate(
+          ([id]) => window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null),
+          [ruleId]
+        );
+        return result.checksResults.find((c) => c.ruleId === ruleId).occurrences;
+      } finally {
+        await p.close();
+      }
+    }
+    const B = 'width:16px;height:40px;margin:0;padding:0;border:0';
+    const [first] = await occurrences(
+      RULE_ID,
+      `<div class="toolbar" style="height:16px;overflow:hidden"><button style="${B}">A</button><button style="${B}">B</button></div>`
+    );
+    assert.equal(first.data.details.clippedBy, '<div class="toolbar">');
+    assert.equal(first.data.details.clipProperty, 'overflow: hidden');
+    assert.equal(first.i18n.params.neighbour, '<button> "B"');
+    assert.match(
+      first.summary,
+      /^Target is 16×16 CSS px .* too close to another target \(<button> "B"\): 16 px where 24 px is needed\. Its ancestor <div class="toolbar"> cuts it to that size with overflow: hidden\.$/
+    );
+    const [inset] = await occurrences(
+      RULE_ID,
+      `<div class="cp" style="clip-path:inset(0 0 24px 0)"><button style="${B}">A</button><button style="${B}">B</button></div>`
+    );
+    assert.equal(inset.i18n.params.clippedBy, '<div class="cp">');
+    assert.match(inset.i18n.params.clipProperty, /^clip-path: inset\(/);
+    const [enhanced] = await occurrences(
+      'target-size-enhanced',
+      '<div class="toolbar" style="height:20px;overflow:hidden"><button style="width:40px;height:40px;margin:0;padding:0;border:0">T</button></div>'
+    );
+    assert.equal(
+      enhanced.summary,
+      'Target is 40×20 CSS px at a 390px-wide viewport, under 44×44. Its ancestor <div class="toolbar"> cuts it to that size with overflow: hidden.'
+    );
+    // Not clipped: nothing named.
+    const [plain] = await occurrences(
+      RULE_ID,
+      '<button style="width:16px;height:16px;margin:0;padding:0;border:0">A</button><button style="width:16px;height:16px;margin:0;padding:0;border:0">B</button>'
+    );
+    assert.equal(plain.data.details.clippedBy, undefined);
+    assert.doesNotMatch(plain.summary, /cuts it/);
+  });
 });

@@ -381,6 +381,37 @@ function runInPage(ctx) {
   // ::marker generates, and the summary says so.
   // lean: which way the evidence points, for the few blockers where the
   // colors that are known bound the answer (leanFor, below), or null.
+  // A selector that names the element carrying the blocker alone, where
+  // it is the text's element or one of its ancestors: the blocker's own
+  // selector is its tag where it has no id, which names every <div>. The
+  // element is the nearest that matches that selector and is described as
+  // the blocker is (blockerElement). '' where it isn't found.
+  function uniqueBlockerSelector(el, extra) {
+    try {
+      const sel = String(extra.blockerSelector || '');
+      const described = String(extra.blockerElement || '');
+      const C = helpers.contrast;
+      if (!sel || !described || sel.indexOf('::') !== -1) return '';
+      if (!C || typeof C.describeElement !== 'function') return '';
+      if (typeof helpers.buildSelector !== 'function') return '';
+      for (let cur = el, guard = 0; cur && guard < 10000; guard++) {
+        if (
+          dom.nodeType(cur) === 1 &&
+          dom.matches(cur, sel) &&
+          C.describeElement(cur) === described
+        )
+          return helpers.buildSelector(cur) || '';
+        cur =
+          typeof helpers.composedParent === 'function'
+            ? helpers.composedParent(cur)
+            : dom.parentNode(cur);
+      }
+      return '';
+    } catch {
+      return '';
+    }
+  }
+
   function pushCantTellOccurrence(el, reasonCode, extraDetails, lean) {
     try {
       const pseudo =
@@ -470,10 +501,15 @@ function runInPage(ctx) {
       else if (rc === 'SELECT_OPTION_COLOR') hintKind = 'selectOption';
 
       const typography = typographyOf(el, pseudo);
+      const blocker =
+        extraDetails && typeof extraDetails === 'object' && !pseudo
+          ? uniqueBlockerSelector(el, extraDetails)
+          : '';
       const details = Object.assign(
         { reasonCode: rc },
         extraDetails && typeof extraDetails === 'object' ? extraDetails : {},
-        typography ? { typography } : {}
+        typography ? { typography } : {},
+        blocker ? { blockerSelector: blocker } : {}
       );
 
       const occBase = {

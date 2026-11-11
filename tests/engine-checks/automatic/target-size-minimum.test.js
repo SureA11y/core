@@ -594,11 +594,12 @@ test(`${RULE_ID}: a finding says what was measured, against what, and at which v
     viewportWidth: '1000',
     distancePx: '20',
     minDistancePx: '24',
-    shortfallPx: '4'
+    shortfallPx: '4',
+    neighbour: '<button> "B"'
   });
   assert.strictEqual(
     occ.summary,
-    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target: 20 px where 24 px is needed.'
+    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target (<button> "B"): 20 px where 24 px is needed.'
   );
   assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_centerDistance');
   assert.strictEqual(
@@ -628,7 +629,7 @@ test(`${RULE_ID}: a conflict with a neighbour's box reports how far it is from t
   const occ = rule.occurrences[0];
   assert.strictEqual(
     occ.summary,
-    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target: 10 px where 12 px is needed.'
+    'Target is 10×10 CSS px at a 1000px-wide viewport, under 24×24, and too close to another target (<button> "Big"): 10 px where 12 px is needed.'
   );
   assert.strictEqual(occ.i18n.hintKey, 'targetSizeMinimum_hint_fail_regionDistance');
   assert.strictEqual(
@@ -665,7 +666,7 @@ test(`${RULE_ID}: the fail summary and hint are translated with their distances`
   );
   assert.strictEqual(
     rule.occurrences[0].summary,
-    'La cible mesure 10×10 px CSS dans une zone d’affichage de 1000 px de large, moins de 24×24, et est trop proche d’une autre cible : 10 px là où il en faut 12.'
+    'La cible mesure 10×10 px CSS dans une zone d’affichage de 1000 px de large, moins de 24×24, et est trop proche d’une autre cible (<button> "Big") : 10 px là où il en faut 12.'
   );
 });
 
@@ -699,4 +700,21 @@ test(`${RULE_ID}: a control clipped to nothing is not a target, however close (#
   </body></html>`;
   const rule = assertRule(run(visible), RULE_ID, 'fail', { minOccurrences: 1 });
   assert.ok(rule.occurrences.some((o) => /#skip\b/.test(o.selector)));
+});
+
+// The fail names the neighbour it is too close to, as the markup shows it.
+test(`${RULE_ID}: the fail names the neighbour it is too close to`, () => {
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="10,80,10,10">A</button>
+    <button id="b" data-rect="25,80,10,10" aria-label="Next"></button>
+  </body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const a = rule.occurrences.find((o) => /#a\b/.test(o.selector));
+  assert.strictEqual(a.i18n.params.neighbour, '<button> "Next"');
+  assert.match(
+    a.summary,
+    /and too close to another target \(<button> "Next"\): 15 px where 24 px is needed\.$/
+  );
+  const b = rule.occurrences.find((o) => /#b\b/.test(o.selector));
+  assert.strictEqual(b.i18n.params.neighbour, '<button> "A"');
 });

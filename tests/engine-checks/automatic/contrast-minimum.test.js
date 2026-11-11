@@ -1452,3 +1452,31 @@ test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the
   assert.strictEqual(plain.data.details.fade, undefined);
   assert.doesNotMatch(plain.summary, /Its color/);
 });
+
+// A background painted by an ancestor some levels up: the summary names that
+// ancestor, so a reader can find where #777777 comes from. Not where the text
+// paints its own, or where the color is the page's (<body>).
+test(`${RULE_ID}: a background painted by an ancestor names the ancestor`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <section class="band" style="background: #777"><div><div><p id="deep" style="color: #555">Gray text</p></div></div></section>
+  <section style="background: #777"><p id="own" style="color: #555; background: #777">Own background</p></section>
+  <p id="page" style="color: #eee">On the page</p>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 3, maxOccurrences: 3 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const deep = byId('deep');
+  assert.strictEqual(deep.i18n.params.backgroundFrom, '<section class="band">');
+  assert.strictEqual(deep.data.details.backgroundFrom, '<section class="band">');
+  assert.match(
+    deep.summary,
+    /\(normal text\)\. The background #777777 is painted by its ancestor <section class="band">\.$/
+  );
+  for (const id of ['own', 'page']) {
+    assert.strictEqual(byId(id).i18n.params.backgroundFrom, undefined, id);
+    assert.doesNotMatch(byId(id).summary, /painted by/, id);
+  }
+});
