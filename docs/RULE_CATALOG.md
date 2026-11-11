@@ -1256,6 +1256,7 @@ Flags elements in the tab order whose focus outline is removed, by a :focus/:foc
 **What a finding reports.**
 
 - `suppressingSelectors`: the selector of each style sheet rule that removes the element's outline, one item per selector.
+- `styleSheet` or `styleElementIndex`: when those rules are all in one style sheet, its href as written, or the position of its &lt;style&gt; element among the page's, from 1.
 
 **Reason codes.**
 
@@ -3100,6 +3101,7 @@ Asks about blocks that name themselves the page's header, a navigation or its fo
 **What a finding reports.**
 
 - `zone`: banner, navigation, search or contentinfo, the role the zone would have.
+- `namedBy`, `namedByToken`: on a block named as a zone, whether its `id` or its `class` names it, and the token that does.
 
 **Reason codes.**
 
@@ -3682,6 +3684,7 @@ Checks that pointer-operable targets have an effective hit region of at least 24
 - `metrics.centerDistancePx`, `metrics.minDistancePx` (`centerDistance`): the distance from the target's centre to its neighbour's, against the 24px it needs.
 - `metrics.regionDistancePx`, `metrics.minDistancePx` (`regionDistance`): how far the neighbour's region is from the target's centre, against the circle's 12px radius.
 - `conflictWith`: a selector for the neighbour it is too close to.
+- `clippedBy`, `clipProperty`: where the region is smaller than the target's box, the ancestor that clips it, as `<div class="toolbar">`, and the CSS that does, as `overflow: hidden`.
 - The fail hint (`targetSizeMinimum_hint_fail_centerDistance` or `targetSizeMinimum_hint_fail_regionDistance`, by `decidedBy`) states the same distance: `i18n.params.distancePx` against `i18n.params.minDistancePx`, and `i18n.params.shortfallPx`, how much further apart the two need to be, rounded up to a tenth.
 - `measured.width`, `measured.height`, `measured.square`: the region's extent and the largest square, unrounded.
 - `viewport.width`, `viewport.height`: the viewport the page was laid out in, in CSS pixels. A responsive page can size or place a target differently at another width.
@@ -3766,6 +3769,8 @@ Without a layout and with no such rule, the rule is notApplicable, with `data.re
 - `metrics.thresholdPx` (cut-off text): how far it may go before it fails: half an em across, or half the line's height down.
 - `metrics.axis` (cut-off text): `x` when the line went past a side, `y` past the top or bottom.
 - `container.widthPx`, `container.heightPx` (cut-off text): the size of the clipping box with the spacing applied.
+- `edge` (cut-off text): the edge of the box the line went furthest past: `top`, `right`, `bottom` or `left`.
+- `clipCss` (cut-off text, where it can be read): the CSS that cuts it off there, as declarations: what fixes the box's size on that axis (`white-space: nowrap`, `width`, `max-height`...) and its overflow, as `height: 48px; overflow: hidden`. Not for the viewport.
 - `clippedBy` (cut-off text): `content-visibility` when the box clips only for its `content-visibility: auto`, which clips what overflows it, on screen as well as off it, as `contain: paint` does, though its computed `contain` doesn't say so. The finding names it.
 - `viewport.width`, `viewport.height` (cut-off or overlapping text): the viewport the page was laid out in, in CSS pixels. Text that fits at one width can be cut off at another.
 - `other` (overlapping text): the text it comes to overlap.
