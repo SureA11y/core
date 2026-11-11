@@ -1611,12 +1611,12 @@
       "testFile": "tests/engine-checks/automatic/link-in-text-block.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/link-in-text-block-all-scenarios.html",
-      "totalCases": 11,
+      "totalCases": 13,
       "caseCounts": {
         "PASS": 4,
-        "FAIL": 3,
+        "FAIL": 4,
         "CANTTELL": 2,
-        "OTHER": 2
+        "OTHER": 3
       }
     },
     {

@@ -30,6 +30,12 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 
 - **A law is identified, not documented.** `standard.laws` keeps `name`, `jurisdiction` and `sources` (links to the official text); `appliesTo`, `exemptions`, `enforcement` and `since` are removed, and `checkPack` and `checkStandardData` refuse them. Core tests a standard's requirements and names the law a profile is used for; it is no reference for the law itself. `standard.lawTexts` translates a law's name only (`laws.<id>.name`), and `lawOf` gives `{ id, name, jurisdiction, sources, lang }`, without `langs`. To move: drop those four fields and their translations.
 
+### Fixed
+
+- **`link-in-text-block` counts only text on the link's own line.** A link alone on its line, after a `<br>` or a child laid out as a block, is in no block of text, whatever the lines around it hold: an e-mail address under two phone numbers and their labels was failed as a link set apart by color alone.
+
+- **`link-in-text-block` says nothing sets a link apart when it is drawn in the text's own color.** At 1.00:1, with no underline or other mark, the summary no longer says the link relies on color (`linkInTextBlock_summary_fail_sameColor`, `linkInTextBlock_hint_fail_sameColor`). It still fails, with the same reason code.
+
 ## [1.16.1] - 2026-11-08
 
 ### Fixed
