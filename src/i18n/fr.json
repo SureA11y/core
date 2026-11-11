@@ -1343,6 +1343,7 @@
   "cssOrientationLock_summary_fail_unknownSelector": "Une media query \"{{mediaText}}\" fait pivoter un élément sans sélecteur lisible et verrouille la page dans une seule orientation.",
   "cssOrientationLock_hint_fail": "Retirez la transformation rotate() de la media query d’orientation, et laissez la page suivre l’orientation de l’appareil.",
   "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} feuille(s) de style n'ont pas pu être lues ; impossible donc de déterminer si cette page verrouille son orientation.",
+  "cssOrientationLock_summary_cantTell_unreadableSheetsNamed": "{{count}} feuille(s) de style n'ont pas pu être lues ({{urls}}) ; impossible donc de déterminer si cette page verrouille son orientation.",
   "cssOrientationLock_hint_cantTell_unreadableSheets": "Les feuilles de style d’une autre origine ne sont pas lisibles depuis la page. Cherchez dans le CSS tiers une media query d’orientation avec une transformation rotate(), ou relancez l’analyse avec ces feuilles servies depuis la même origine.",
   "cssOrientationLock_summary_cantTell_hidesContent": "Une media query « {{mediaText}} » masque « {{selectorText}} », qui contient le contenu principal de la page ; la page pourrait donc ne pas être utilisable dans cette orientation.",
   "cssOrientationLock_hint_cantTell_hidesContent": "Vérifiez que la page peut être consultée et utilisée en portrait comme en paysage. Si cette media query remplace le contenu par un message demandant de tourner l’appareil, affichez plutôt le contenu, sauf si une orientation est essentielle.",

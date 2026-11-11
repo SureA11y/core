@@ -1343,6 +1343,7 @@
   "cssOrientationLock_summary_fail_unknownSelector": "A \"{{mediaText}}\" media query rotates an element with no readable selector, locking the page to one orientation.",
   "cssOrientationLock_hint_fail": "Remove the rotate() transform from the orientation media query, and let the page follow the device's orientation.",
   "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} stylesheet(s) could not be read, so whether this page locks its orientation could not be determined.",
+  "cssOrientationLock_summary_cantTell_unreadableSheetsNamed": "{{count}} stylesheet(s) could not be read ({{urls}}), so whether this page locks its orientation could not be determined.",
   "cssOrientationLock_hint_cantTell_unreadableSheets": "Stylesheets from another origin can't be read from the page. Check any third-party CSS for an orientation media query with a rotate() transform, or scan again with those stylesheets served from the same origin.",
   "cssOrientationLock_summary_cantTell_hidesContent": "A \"{{mediaText}}\" media query hides \"{{selectorText}}\", which holds the page's main content, so the page may not be usable in that orientation.",
   "cssOrientationLock_hint_cantTell_hidesContent": "Check that the page can be viewed and operated in both portrait and landscape. If this media query replaces the content with a message asking the user to rotate the device, show the content instead, unless one orientation is essential.",

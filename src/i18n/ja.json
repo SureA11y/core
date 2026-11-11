@@ -1343,6 +1343,7 @@
   "cssOrientationLock_summary_fail_unknownSelector": "「{{mediaText}}」のメディアクエリが、セレクターを読み取れない要素を回転させており、ページが 1 つの向きに固定されています。",
   "cssOrientationLock_hint_fail": "向きのメディアクエリから rotate() の変形を削除し、ページが端末の向きに従うようにしてください。",
   "cssOrientationLock_summary_cantTell_unreadableSheets": "{{count}} 個のスタイルシートを読み取れなかったため、このページが表示の向きを固定しているかは判定できませんでした。",
+  "cssOrientationLock_summary_cantTell_unreadableSheetsNamed": "{{count}} 個のスタイルシート ({{urls}}) を読み取れなかったため、このページが表示の向きを固定しているかは判定できませんでした。",
   "cssOrientationLock_hint_cantTell_unreadableSheets": "別オリジンのスタイルシートはページから読み取れません。サードパーティの CSS に rotate() 変形を含む向きのメディアクエリがないか確認するか、それらのスタイルシートを同一オリジンから配信して再スキャンしてください。",
   "cssOrientationLock_summary_cantTell_hidesContent": "「{{mediaText}}」のメディアクエリがページの主要なコンテンツを含む「{{selectorText}}」を非表示にしているため、その向きではページを利用できない可能性があります。",
   "cssOrientationLock_hint_cantTell_hidesContent": "ページが縦向きと横向きのどちらでも表示・操作できるか確認してください。このメディアクエリがコンテンツを端末の回転を求めるメッセージに置き換えている場合は、特定の向きが必須でない限り、代わりにコンテンツを表示してください。",
