@@ -171,3 +171,58 @@ test(`${RULE_ID}: whitespace between groups is not a text child`, () => {
     maxOccurrences: 0
   });
 });
+
+// The summary says what is wrong: a wrapper nested one level too deep,
+// which of <dt> and <dd> is missing, and which end of the order is wrong.
+test(`${RULE_ID}: the summary names the nested wrapper, the missing kind and the end out of order`, () => {
+  const html = `<!doctype html><html><body>
+    <dl id="nested"><div><div><dt>a</dt><dd>b</dd></div></div></dl>
+    <dl id="no-dd"><dt>a</dt><dt>b</dt></dl>
+    <dl id="no-dt"><dd>a</dd></dl>
+    <dl id="start"><dd>a</dd><dt>b</dt><dd>c</dd></dl>
+    <dl id="end"><dt>a</dt><dd>b</dd><dt>Last term</dt></dl>
+    <dl id="span"><div><span>x</span><dt>a</dt><dd>b</dd></div></dl>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 6, maxOccurrences: 6 });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const nested = byId('nested');
+  assert.strictEqual(nested.data.details.reasonCode, 'DL_INVALID_CHILD');
+  assert.strictEqual(
+    nested.i18n.summaryKey,
+    'definitionListChildrenValid_summary_fail_invalidChild_nestedDiv'
+  );
+  assert.match(nested.summary, /^A <div> inside the wrapping <div> holds items/);
+  assert.match(nested.hint, /^Remove the inner <div>/);
+
+  const noDd = byId('no-dd');
+  assert.strictEqual(noDd.data.details.reasonCode, 'DL_NO_DT_DD');
+  assert.strictEqual(
+    noDd.summary,
+    'This description list has terms (<dt>, 2) but no definition (<dd>).'
+  );
+  assert.strictEqual(
+    byId('no-dt').summary,
+    'This description list has definitions (<dd>, 1) but no term (<dt>).'
+  );
+
+  const start = byId('start');
+  assert.strictEqual(start.data.details.reasonCode, 'DL_DT_DD_ORDER');
+  assert.strictEqual(start.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_order_start');
+  assert.strictEqual(
+    start.summary,
+    "This description list's first item is a <dd>, with no <dt> term before it."
+  );
+  const end = byId('end');
+  assert.strictEqual(end.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_order_end');
+  assert.strictEqual(
+    end.summary,
+    'In this description list, the last <dt> ("Last term") has no <dd> after it.'
+  );
+
+  // A bad child that is not a nested <div> keeps the general message.
+  const span = byId('span');
+  assert.strictEqual(span.i18n.summaryKey, 'definitionListChildrenValid_summary_fail_invalidChild');
+  assert.match(span.summary, /dt\/dd group: span\.$/);
+});

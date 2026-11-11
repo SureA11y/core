@@ -135,6 +135,18 @@ function runInPage(ctx) {
 
   const nodes = helpers.queryAllSmart ? helpers.queryAllSmart('li') : helpers.queryAll('li');
 
+  // An element as a message names it: <div class="item-wrap">.
+  function describeEl(n) {
+    const tag = String(dom.localName(n) || dom.tagName(n) || '').toLowerCase();
+    const cut = (v) => (v.length > 60 ? v.slice(0, 57) + '...' : v);
+    const elId = String(dom.getAttribute(n, 'id') || '').trim();
+    if (elId) return `<${tag} id="${cut(elId)}">`;
+    const cls = String(dom.getAttribute(n, 'class') || '')
+      .replace(/\s+/g, ' ')
+      .trim();
+    return cls ? `<${tag} class="${cut(cls)}">` : `<${tag}>`;
+  }
+
   const failOccurrences = [];
   const cantTellOccurrences = [];
   let applicableCount = 0;
@@ -240,18 +252,44 @@ function runInPage(ctx) {
       continue;
     }
 
+    // A <ul>, <ol> or <menu> one level up, a list still: the wrapper
+    // between them (a <div>, an <a> around the item) breaks it, and giving
+    // the wrapper role="list" would nest a second list.
+    const grandparent = flatParent(parent);
+    const grandTag =
+      grandparent && dom.tagName(grandparent) ? dom.tagName(grandparent).toLowerCase() : '';
+    const grandRole = grandparent ? resolvedRole(grandparent) : '';
+    const listElement =
+      (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu') &&
+      (!grandRole || grandRole === 'list')
+        ? grandTag
+        : '';
+    const wrapper = listElement ? describeEl(parent) : '';
+
     bucket.push(
       helpers.reportOccurrence(el, {
         ...extra,
-        summary: 'This list item is not contained by a list container.',
-        hint: 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
+        summary: listElement
+          ? `This <li> is inside a <${listElement}>, but the ${wrapper} between them breaks the list: a list's items must be its children.`
+          : 'This list item is not contained by a list container.',
+        hint: listElement
+          ? `Move the <${parentTag}> inside the <li>, or remove it, so the <li> is a child of the <${listElement}>.`
+          : 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
         i18n: {
-          summaryKey: 'listitemParentValid_summary_fail',
-          hintKey: 'listitemParentValid_hint_fail',
-          params: { parentElement: parentTag }
+          summaryKey: listElement
+            ? 'listitemParentValid_summary_fail_wrapped'
+            : 'listitemParentValid_summary_fail',
+          hintKey: listElement
+            ? 'listitemParentValid_hint_fail_wrapped'
+            : 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag, listElement, wrapper }
         },
         data: {
-          details: { reasonCode: 'LISTITEM_INVALID_PARENT', parentElement: parentTag }
+          details: {
+            reasonCode: 'LISTITEM_INVALID_PARENT',
+            parentElement: parentTag,
+            ...(listElement ? { listElement, wrapper } : {})
+          }
         }
       })
     );

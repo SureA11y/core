@@ -237,3 +237,28 @@ test(`${RULE_ID}: fails where the stray item is drawn as a list item, and asks a
     'cantTell'
   );
 });
+
+// An <li> a wrapper separates from its list: the hint must not suggest
+// role="list" on the wrapper, which would nest a second list.
+test(`${RULE_ID}: an <li> a wrapper separates from its <ul> names both`, () => {
+  const html = `<!doctype html><html><body>
+    <ul><div class="item-wrap"><li id="w">a</li></div></ul>
+    <ul><a href="/x"><li id="l">Home</li></a></ul>
+  </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+  const wrapped = rule.occurrences.find((o) => o.html.includes('id="w"'));
+  assert.strictEqual(wrapped.data.details.reasonCode, 'LISTITEM_INVALID_PARENT');
+  assert.strictEqual(wrapped.i18n.summaryKey, 'listitemParentValid_summary_fail_wrapped');
+  assert.strictEqual(
+    wrapped.summary,
+    'This <li> is inside a <ul>, but the <div class="item-wrap"> between them breaks the list: a list\'s items must be its children.'
+  );
+  assert.doesNotMatch(wrapped.hint, /role="list"/);
+  const link = rule.occurrences.find((o) => o.html.includes('id="l"'));
+  assert.strictEqual(
+    link.hint,
+    'Move the <a> inside the <li>, or remove it, so the <li> is a child of the <ul>.'
+  );
+  assert.strictEqual(link.data.details.listElement, 'ul');
+});
