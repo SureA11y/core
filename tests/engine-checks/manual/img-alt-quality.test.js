@@ -361,3 +361,32 @@ test(`${RULE_ID}: an image that is a link's only content leans fail on a file na
   assert.strictEqual(run('https://example.com/').lean, undefined);
   assert.strictEqual(run('Home').lean, undefined);
 });
+
+test(`${RULE_ID}: quotes the name that overrides the alt, not the alt nobody hears`, () => {
+  const html = `<!doctype html><html><body>
+    <img id="a" src="a.png" alt="image" aria-label="Acme company logo">
+    <p id="c">Chart 3</p><img id="b" src="b.png" alt="x" aria-labelledby="c">
+  </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell');
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const a = byId('a');
+  assert.strictEqual(
+    a.summary,
+    'This image\'s name comes from aria-label ("Acme company logo"), which overrides its alt "image". Check that "Acme company logo" says what the image shows.'
+  );
+  assert.strictEqual(a.i18n.summaryKey, 'img_altQuality_summary_nameFromAriaLabel');
+  assert.strictEqual(a.i18n.hintKey, 'img_altQuality_hint_nameOverridesAlt');
+  assert.strictEqual(a.lean.i18n.whyKey, 'img_altQuality_lean_why_overridden');
+  assert.strictEqual(a.data.details.nameSource, 'aria-label');
+  assert.strictEqual(a.data.details.altSignal, 'placeholder');
+  assert.strictEqual(a.data.details.reasonCode, 'TEXT_ALTERNATIVE_REVIEW');
+
+  const b = byId('b');
+  assert.strictEqual(
+    b.summary,
+    'This image\'s name comes from aria-labelledby ("Chart 3", from #c), which overrides its alt "x". Check that "Chart 3" says what the image shows.'
+  );
+  assert.strictEqual(b.i18n.params.ids, '#c');
+  assert.strictEqual(b.data.details.name, 'Chart 3');
+});

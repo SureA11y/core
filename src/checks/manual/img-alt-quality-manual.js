@@ -34,6 +34,9 @@
  *   - `length`: the alt text's length in characters, on `too-long` only.
  *   - `limit`: the length above which alt counts as too long (150), on
  *     `too-long` only.
+ *   - `nameSource`, `name` (and `labelledbyIds`): when aria-label or
+ *     aria-labelledby names the image in place of its alt, where the name
+ *     comes from and what it is; the message then quotes that name.
  *   - `reasonCode`: `IMAGE_ONLY_CONTROL_CONTENT` when the image is the
  *     only content of a link or button (no text and no other image in it),
  *     so its alt is the control's name (H30), with `controlContent` naming
@@ -334,7 +337,54 @@ function runInPage(ctx) {
     const controlContent = onlyContentOf(el);
     // Alt that looks like something other than a description gets the
     // shared message for its signal; ordinary alt keeps this rule's own.
-    const message = signal ? describeTextAlternativeSignal(signal, 'img') : null;
+    // aria-labelledby or aria-label names the image in place of its alt:
+    // the alt is never read, so the message quotes the name that is.
+    const override = (() => {
+      try {
+        const info =
+          typeof helpers.getAriaNameInfo === 'function' ? helpers.getAriaNameInfo(el, ctx) : null;
+        if (!info || !info.present || !info.value) return null;
+        if (info.mechanism !== 'aria-label' && info.mechanism !== 'aria-labelledby') return null;
+        const all = String(info.value).replace(/\s+/g, ' ').trim();
+        const name = all.length > 80 ? `${all.slice(0, 79)}…` : all;
+        const shownAlt = alt.length > 80 ? `${alt.slice(0, 79)}…` : alt;
+        if (info.mechanism === 'aria-label') {
+          return {
+            summary: `This image's name comes from aria-label ("${name}"), which overrides its alt "${shownAlt}". Check that "${name}" says what the image shows.`,
+            summaryKey: 'img_altQuality_summary_nameFromAriaLabel',
+            params: { name, alt: shownAlt },
+            detail: { nameSource: 'aria-label', name }
+          };
+        }
+        const ids = String(dom.getAttribute(el, 'aria-labelledby') || '')
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((x) => `#${x}`)
+          .join(' ');
+        return {
+          summary: `This image's name comes from aria-labelledby ("${name}", from ${ids}), which overrides its alt "${shownAlt}". Check that "${name}" says what the image shows.`,
+          summaryKey: 'img_altQuality_summary_nameFromAriaLabelledby',
+          params: { name, alt: shownAlt, ids },
+          detail: { nameSource: 'aria-labelledby', name, labelledbyIds: ids }
+        };
+      } catch {
+        return null;
+      }
+    })();
+    const message = override
+      ? {
+          summary: override.summary,
+          hint: 'Screen readers announce this name, not the alt text. The alt still shows when the image does not load, so keep it in step with the name.',
+          i18n: {
+            summaryKey: override.summaryKey,
+            hintKey: 'img_altQuality_hint_nameOverridesAlt',
+            params: { element: 'img', ...override.params }
+          }
+        }
+      : signal
+        ? describeTextAlternativeSignal(signal, 'img')
+        : null;
     // A file name, an address or a generic word is the page's own text, and
     // none of them says what an image shows (F30). On a link or button an
     // address does say where it leads, so it gets no lean there.
@@ -343,18 +393,22 @@ function runInPage(ctx) {
       signal && leanSignals.has(signal.altSignal)
         ? {
             toward: 'fail',
-            why: controlContent
-              ? "The alt text is the control's name, and a file name or a generic word does not say what the control does."
-              : 'A file name, a web address or a generic word does not say what the image shows.',
+            why: override
+              ? 'The alt text is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.'
+              : controlContent
+                ? "The alt text is the control's name, and a file name or a generic word does not say what the control does."
+                : 'A file name, a web address or a generic word does not say what the image shows.',
             signals: [
               { signal: 'alt-signal', value: signal.altSignal },
               ...(controlContent ? [{ signal: 'control-content-only-image', value: true }] : [])
             ],
             caution: 'The word may be all the image shows, such as an image of that word.',
             i18n: {
-              whyKey: controlContent
-                ? 'img_altQuality_lean_why_control'
-                : 'img_altQuality_lean_why',
+              whyKey: override
+                ? 'img_altQuality_lean_why_overridden'
+                : controlContent
+                  ? 'img_altQuality_lean_why_control'
+                  : 'img_altQuality_lean_why',
               cautionKey: 'img_altQuality_lean_caution'
             }
           }
@@ -376,9 +430,12 @@ function runInPage(ctx) {
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: controlContent
-          ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
-          : { ...(signal || {}), reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }
+        details: {
+          ...(controlContent
+            ? { ...(signal || {}), reasonCode: 'IMAGE_ONLY_CONTROL_CONTENT', controlContent }
+            : { ...(signal || {}), reasonCode: 'TEXT_ALTERNATIVE_REVIEW' }),
+          ...(override ? override.detail : {})
+        }
       }
     };
 

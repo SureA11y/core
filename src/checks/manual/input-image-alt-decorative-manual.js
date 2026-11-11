@@ -19,6 +19,10 @@
  *   takes it out of scope unless it is focusable, which restores its role.
  * @expectation
  *   Human review is required to confirm that the provided text alternative is accurate and appropriate.
+ * @reports
+ *   - `name`, `nameSource`: the name the input takes in place of its
+ *     alt, and where from (`aria-labelledby`, with `labelledbyIds`,
+ *     `aria-label`, `internals` or `title`).
  * @reason-codes
  *   - `NAME_FROM_ELSEWHERE_REVIEW` (cantTell): an image button has alt=""
  *     but takes a name from aria-label, aria-labelledby or title, and a
@@ -130,20 +134,33 @@ function runInPage(ctx) {
   // call this rule reviews. alt="" with no other source leaves the control
   // unnamed, which input-image-alt-present fails outright.
   // The name, '' when there is none: the ARIA name wins over title.
+  // The name and where it comes from: { name, source, ids }, source one of
+  // 'aria-labelledby', 'aria-label', 'internals' or 'title'.
   function nameFromOtherSource(el) {
     if (getAriaNameInfo) {
       try {
         const aria = getAriaNameInfo(el, ctx);
-        if (aria && aria.present && String(aria.value || '').trim())
-          return String(aria.value).trim();
+        if (aria && aria.present && String(aria.value || '').trim()) {
+          const source = aria.mechanism || '';
+          const ids =
+            source === 'aria-labelledby'
+              ? String(dom.getAttribute(el, 'aria-labelledby') || '')
+                  .trim()
+                  .split(/\s+/)
+                  .filter(Boolean)
+                  .map((x) => `#${x}`)
+                  .join(' ')
+              : '';
+          return { name: String(aria.value).trim(), source, ids };
+        }
       } catch {
         // fall through to title
       }
     }
     try {
-      return String(dom.getAttribute(el, 'title') || '').trim();
+      return { name: String(dom.getAttribute(el, 'title') || '').trim(), source: 'title', ids: '' };
     } catch {
-      return '';
+      return { name: '', source: '', ids: '' };
     }
   }
 
@@ -188,8 +205,24 @@ function runInPage(ctx) {
     // Rule-specific applicability (only elements that already have a text alternative mechanism)
     if (!(dom.getAttribute(el, 'alt') != null && String(dom.getAttribute(el, 'alt')).trim() === ''))
       continue;
-    const name = nameFromOtherSource(el);
+    const named = nameFromOtherSource(el);
+    const name = named.name;
     if (!name) continue;
+    const shownName = name.length > 80 ? `${name.slice(0, 79)}…` : name;
+    const sourceMessage = {
+      'aria-labelledby': {
+        summary: `This <input type="image"> has alt="" and takes its name, "${shownName}", from aria-labelledby (${named.ids}).`,
+        summaryKey: 'inputImage_altDecorative_summary_fromLabelledby'
+      },
+      'aria-label': {
+        summary: `This <input type="image"> has alt="" and takes its name, "${shownName}", from aria-label.`,
+        summaryKey: 'inputImage_altDecorative_summary_fromAriaLabel'
+      },
+      title: {
+        summary: `This <input type="image"> has alt="" and takes its name, "${shownName}", from its title attribute.`,
+        summaryKey: 'inputImage_altDecorative_summary_fromTitle'
+      }
+    }[named.source];
 
     applicableCount += 1;
 
@@ -216,16 +249,25 @@ function runInPage(ctx) {
 
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'This <input type="image"> has alt="" and takes its name from elsewhere.',
+      summary: sourceMessage
+        ? sourceMessage.summary
+        : 'This <input type="image"> has alt="" and takes its name from elsewhere.',
       hint: "Check that this name says what the button does. A button is never decorative, so if the name doesn't fit, say what it does in alt.",
       i18n: {
-        summaryKey: 'inputImage_altDecorative_summary_cantTell',
+        summaryKey: sourceMessage
+          ? sourceMessage.summaryKey
+          : 'inputImage_altDecorative_summary_cantTell',
         hintKey: 'inputImage_altDecorative_hint_cantTell',
-        params: { element: 'input[type=image]' }
+        params: { element: 'input[type=image]', name: shownName, ids: named.ids }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
-        details: { reasonCode: 'NAME_FROM_ELSEWHERE_REVIEW' }
+        details: {
+          reasonCode: 'NAME_FROM_ELSEWHERE_REVIEW',
+          name,
+          nameSource: named.source,
+          ...(named.ids ? { labelledbyIds: named.ids } : {})
+        }
       }
     };
 
