@@ -765,3 +765,19 @@ test(`${RULE_ID}: text faded by an ancestor's opacity names the ancestor and the
     /Its color #333333 is drawn as #adadad because <div id="card"> has opacity: 0\.4\.$/
   );
 });
+
+test(`${RULE_ID}: a background painted by an ancestor names the ancestor`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <section id="band" style="background: #777"><div><p id="deep" style="color: #222">Gray text</p></div></section>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.params.backgroundFrom, '<section id="band">');
+  assert.match(
+    occ.summary,
+    /The background #777777 is painted by its ancestor <section id="band">\.$/
+  );
+});

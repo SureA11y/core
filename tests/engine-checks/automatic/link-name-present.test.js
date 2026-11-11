@@ -510,3 +510,24 @@ test('link-name-present: a fail says when the content is only icons, or aria-lab
   );
   assert.equal(occ('blank').i18n.hintKey, 'nameCause_hint_ariaLabelEmpty');
 });
+
+test(`${RULE_ID}: a fail names an aria-labelledby whose text is hidden, or that mixes missing ids with empty elements`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><h2 id="zz"><span aria-hidden="true">Shirts</span></h2><a id="hid" href="/x" aria-labelledby="zz"></a><h3 id="e"></h3><a id="mix" href="/y" aria-labelledby="e nope"></a></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('hid').i18n.hintKey, 'nameCause_hint_labelledbyHiddenText');
+  assert.equal(
+    occ('hid').hint,
+    'Its aria-labelledby points to <h2 id="zz">, whose text "Shirts" is in a <span> hidden from screen readers by aria-hidden="true", so it gives no name. Let screen readers read that text, or name it with aria-label.'
+  );
+  assert.equal(occ('hid').data.details.nameCause.cause, 'labelledbyHiddenText');
+  assert.equal(occ('mix').i18n.hintKey, 'nameCause_hint_labelledbyMixed');
+  assert.equal(
+    occ('mix').hint,
+    'Its aria-labelledby gives no name: no element on the page has "nope", and what it does point to (<h3 id="e">) has no text screen readers read. Point it at elements with text, or name it with aria-label.'
+  );
+  assert.deepEqual(occ('mix').data.details.nameCause.missing, ['nope']);
+});

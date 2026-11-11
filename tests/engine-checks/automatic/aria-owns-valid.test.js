@@ -53,8 +53,26 @@ test(`${RULE_ID}: an element with two owners fails once, on the element owned`, 
   assert.deepEqual(rule.occurrences[0].data.details, {
     reasonCode: 'ARIA_OWNS_DUPLICATE',
     ownerCount: 3,
-    ownedId: 'i'
+    ownedId: 'i',
+    owners: ['<div role="list">', '<div role="list">', '<div role="list">']
   });
+});
+
+test(`${RULE_ID}: the summary names the competing owners`, () => {
+  const rule = assertRule(
+    run(
+      '<div id="c1" role="combobox" aria-expanded="true" aria-owns="lb"></div><div id="c2" role="combobox" aria-expanded="true" aria-owns="lb"></div><div id="lb" role="listbox"><div role="option">a</div></div>'
+    ),
+    RULE_ID,
+    'fail',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaOwnsValid_summary_fail_duplicateNamed');
+  assert.strictEqual(
+    occ.summary,
+    'This element is named in the aria-owns of 2 elements (<div role="combobox" id="c1">, <div role="combobox" id="c2">), but it can have only one owner.'
+  );
 });
 
 // The ownership is impossible and ignored, so the document's own structure
@@ -73,6 +91,12 @@ test(`${RULE_ID}: an owner naming itself or an ancestor is asked about, on the o
       ['ARIA_OWNS_ANCESTOR', 'g']
     ]
   );
+  // Its own id is said as its own id, not as an ancestor containing it.
+  assert.deepEqual(
+    rule.occurrences.map((o) => o.i18n.summaryKey),
+    ['ariaOwnsValid_summary_fail_ancestor', 'ariaOwnsValid_summary_cantTell_self']
+  );
+  assert.strictEqual(rule.occurrences[1].summary, 'This element’s aria-owns names its own id, g.');
 });
 
 test(`${RULE_ID}: ids resolve in each owner's own tree`, () => {

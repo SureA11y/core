@@ -960,3 +960,25 @@ test(`${RULE_ID}: a background or text color the scan can't read is quoted`, () 
     "Contrast is not computable because the text color (nonsense(2)) is a value this scan can't read."
   );
 });
+
+// The blocker's own selector is its tag where it has no id, which names
+// every <div>: the details give one that names the ancestor alone.
+test(`${RULE_ID}: an ancestor's blocker gets a selector that names it alone`, () => {
+  const html = `
+<!doctype html>
+<html style="background-color: rgb(255, 255, 255)">
+<body style="background-color: rgb(255, 255, 255)">
+  <div>Before</div>
+  <div class="hero" style="background-image: url('hero.jpg')"><div><h1 style="color: #fff">Welcome</h1></div></div>
+</body></html>`;
+  const rule = assertRule(run(html), RULE_ID, 'cantTell', { minOccurrences: 1, maxOccurrences: 1 });
+  const det = rule.occurrences[0].data.details;
+  assert.strictEqual(det.blockerElement, '<div class="hero">');
+  assert.strictEqual(det.blockerIsAncestor, true);
+  assert.notStrictEqual(det.blockerSelector, 'div');
+  const { window } = require('../../helpers/runa11yCoreOnHtml').createDom(html);
+  const found = window.document.querySelectorAll(det.blockerSelector);
+  assert.strictEqual(found.length, 1, det.blockerSelector);
+  assert.strictEqual(found[0].className, 'hero');
+  assert.match(rule.occurrences[0].summary, /set on its ancestor <div class="hero">/);
+});

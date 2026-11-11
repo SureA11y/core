@@ -593,18 +593,38 @@ function runInPage(ctx) {
       continue;
     }
 
+    // The tabindex as written, and the first element it puts out of reach.
+    const tabindex = String(dom.getAttribute(el, 'tabindex')).trim();
+    const first =
+      typeof helpers.describeElement === 'function'
+        ? helpers.describeElement(candidates[0], { text: true })
+        : '';
+    const more = candidates.length - 1;
     failOccurrences.push(
       helpers.reportOccurrence(el, {
-        summary:
-          'This frame has tabindex="-1" but its content contains focusable elements, which keyboard users cannot reach.',
-        hint: 'Remove focusable content from the frame, or remove tabindex="-1" if the frame is meant to be reachable.',
+        summary: !first
+          ? `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the focusable elements inside it.`
+          : more
+            ? `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the focusable elements inside it: ${first} and ${more} more.`
+            : `This <${tag}> has tabindex="${tabindex}", so keyboard users can't reach the ${first} inside it.`,
+        hint: `Remove focusable content from the frame, or remove tabindex="${tabindex}" if the frame is meant to be reachable.`,
         i18n: {
-          summaryKey: 'iframeFocusableContent_summary_fail',
-          hintKey: 'iframeFocusableContent_hint_fail',
-          params: { element: tag }
+          summaryKey: !first
+            ? 'iframeFocusableContent_summary_fail_value'
+            : more
+              ? 'iframeFocusableContent_summary_fail_namedMore'
+              : 'iframeFocusableContent_summary_fail_named',
+          hintKey: 'iframeFocusableContent_hint_fail_value',
+          params: { element: tag, tabindex, ...(first ? { first, more: String(more) } : {}) }
         },
         data: {
-          details: { reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE', element: tag }
+          details: {
+            reasonCode: 'IFRAME_TABINDEX_NEGATIVE_CONTENT_FOCUSABLE',
+            element: tag,
+            tabindex,
+            focusableCount: candidates.length,
+            ...(first ? { firstFocusable: first } : {})
+          }
         }
       })
     );

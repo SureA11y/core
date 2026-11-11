@@ -383,7 +383,7 @@ function runInPage(ctx) {
           }
         }
       : signal
-        ? describeTextAlternativeSignal(signal, 'img')
+        ? describeTextAlternativeSignal(signal, 'img', alt)
         : null;
     // A file name, an address or a generic word is the page's own text, and
     // none of them says what an image shows (F30). On a link or button an
@@ -394,7 +394,7 @@ function runInPage(ctx) {
         ? {
             toward: 'fail',
             why: override
-              ? 'The alt text is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.'
+              ? `The alt text "${override.params.alt}", not the name, is a file name, a web address or a generic word. aria-label or aria-labelledby names the image instead, but browsers still show the alt when the image does not load.`
               : controlContent
                 ? "The alt text is the control's name, and a file name or a generic word does not say what the control does."
                 : 'A file name, a web address or a generic word does not say what the image shows.',
@@ -409,7 +409,8 @@ function runInPage(ctx) {
                 : controlContent
                   ? 'img_altQuality_lean_why_control'
                   : 'img_altQuality_lean_why',
-              cautionKey: 'img_altQuality_lean_caution'
+              cautionKey: 'img_altQuality_lean_caution',
+              ...(override ? { params: { alt: override.params.alt } } : {})
             }
           }
         : null;

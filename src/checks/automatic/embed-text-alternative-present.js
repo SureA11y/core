@@ -208,16 +208,39 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause), or an alt attribute,
+    // which an <embed> does not have: the hint says so.
+    const embedCause = (() => {
+      const raw = String(dom.getAttribute(el, 'alt') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!raw) return null;
+      const alt = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its alt="${alt}" is not read: an <embed> has no alt attribute. Move the text to aria-label.`,
+        hintKey: 'embed_textAltPresent_hint_fail_alt',
+        params: { alt },
+        detail: { cause: 'altOnEmbed', alt }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || embedCause;
     const baseOccurrence = {
       summary: 'This <embed> has no text alternative.',
-      hint: 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
+      hint: cause
+        ? cause.hint
+        : 'Name it with aria-label or aria-labelledby. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'embed_textAltPresent_summary_fail',
-        hintKey: 'embed_textAltPresent_hint_fail',
-        params: { element: 'embed' }
+        hintKey: cause ? cause.hintKey : 'embed_textAltPresent_hint_fail',
+        params: { element: 'embed', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         name
       }

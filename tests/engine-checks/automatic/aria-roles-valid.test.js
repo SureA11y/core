@@ -367,3 +367,24 @@ test(`${RULE_ID}: a misspelled role on a focusable element says which role it li
     'Did you mean role="button"? As written, the role is ignored and the element has none.'
   );
 });
+
+test(`${RULE_ID}: a word written for a role is answered with the ARIA role for it`, () => {
+  const run = (body) =>
+    runa11yCoreOnHtml(`<!doctype html><html lang="en"><body>${body}</body></html>`, {
+      runOnly: [RULE_ID]
+    });
+  const icon = assertRule(run('<span role="icon">x</span>'), RULE_ID, 'cantTell').occurrences[0];
+  assert.strictEqual(icon.data.details.reasonCode, 'ARIA_ROLE_INVALID');
+  assert.strictEqual(icon.data.details.meant, 'img');
+  assert.strictEqual(icon.i18n.hintKey, 'ariaRolesValid_hint_invalid_meant');
+  assert.strictEqual(
+    icon.hint,
+    'ARIA has no role "icon"; use role="img", the ARIA role for it. As written, the role is ignored and the element has none.'
+  );
+  const nav = assertRule(run('<ul><li role="nav">x</li></ul>'), RULE_ID, 'cantTell').occurrences[0];
+  assert.strictEqual(nav.i18n.hintKey, 'ariaRolesValid_hint_cantTell_meant');
+  assert.strictEqual(nav.i18n.params.meant, 'navigation');
+  // A token that is neither near a role nor a word for one keeps the plain hint.
+  const none = assertRule(run('<span role="zzzz">x</span>'), RULE_ID, 'cantTell').occurrences[0];
+  assert.strictEqual(none.i18n.hintKey, 'ariaRolesValid_hint_invalid');
+});

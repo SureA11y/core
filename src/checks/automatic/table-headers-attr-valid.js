@@ -201,19 +201,37 @@ function runInPage(ctx) {
           };
     })();
 
+    // With several, the hint lists what each id reaches, in markup alone:
+    // "h1" (<th> › <span>), "h2" (—) for an id no element has.
+    const reached = one
+      ? ''
+      : dedupedInvalidIds
+          .map((badId) => {
+            const bad = invalid.find((i) => i.id === badId);
+            let where = '—';
+            if (bad.reason === 'self-reference' || bad.reason === 'different-table') {
+              const ref = helpers.getElementByIdInTree(el, badId);
+              where = `<${String(dom.tagName(ref) || '').toLowerCase()}>`;
+            } else if (bad.reason === 'not-a-cell') {
+              where = bad.inCell ? `<${bad.inCell}> › <${bad.element}>` : `<${bad.element}>`;
+            }
+            return `"${badId}" (${where})`;
+          })
+          .join(', ');
+
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This cell’s headers attribute references one or more invalid header cells.',
         hint: one
           ? one.hint
-          : 'Update the headers attribute so every id refers to a cell (<td> or <th>) within the same table.',
+          : `None of these ids reaches a header cell for it: ${reached}, where — marks an id no element has. Each id must be on another <th> or <td> of this same table: not on an element inside a cell, and not in another table.`,
         i18n: {
           summaryKey: 'tableHeadersAttrValid_summary_fail',
-          hintKey: one ? one.hintKey : 'tableHeadersAttrValid_hint_fail',
+          hintKey: one ? one.hintKey : 'tableHeadersAttrValid_hint_fail_several',
           params: {
             element: tag,
             invalidIds: dedupedInvalidIds.join(', '),
-            ...(one ? one.params : {})
+            ...(one ? one.params : { reached })
           }
         },
         data: {

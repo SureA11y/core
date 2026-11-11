@@ -252,43 +252,61 @@ function runInPage(ctx) {
       continue;
     }
 
-    // A <ul>, <ol> or <menu> one level up, a list still: the wrapper
-    // between them (a <div>, an <a> around the item) breaks it, and giving
-    // the wrapper role="list" would nest a second list.
-    const grandparent = flatParent(parent);
-    const grandTag =
-      grandparent && dom.tagName(grandparent) ? dom.tagName(grandparent).toLowerCase() : '';
-    const grandRole = grandparent ? resolvedRole(grandparent) : '';
-    const listElement =
-      (grandTag === 'ul' || grandTag === 'ol' || grandTag === 'menu') &&
-      (!grandRole || grandRole === 'list')
-        ? grandTag
-        : '';
-    const wrapper = listElement ? describeEl(parent) : '';
+    // A <ul>, <ol> or <menu> one to three levels up, a list still: the
+    // wrappers between them (a <div>, an <a> around the item) break it,
+    // and giving the wrapper role="list" would nest a second list. The
+    // walk stops at another list or list item, which is not a wrapper.
+    let listElement = '';
+    const between = [];
+    for (let cur = parent, i = 0; cur && i < 3; i++) {
+      between.push(describeEl(cur));
+      const up = flatParent(cur);
+      const upTag = up && dom.tagName(up) ? dom.tagName(up).toLowerCase() : '';
+      if (!upTag) break;
+      if (upTag === 'ul' || upTag === 'ol' || upTag === 'menu') {
+        const upRole = resolvedRole(up);
+        if (!upRole || upRole === 'list') listElement = upTag;
+        break;
+      }
+      if (upTag === 'li') break;
+      cur = up;
+    }
+    const wrapper = listElement && between.length === 1 ? between[0] : '';
+    // Named from the list down to the item, as they read in the markup.
+    const wrappers = listElement && between.length > 1 ? between.slice(0).reverse().join(', ') : '';
 
     bucket.push(
       helpers.reportOccurrence(el, {
         ...extra,
-        summary: listElement
-          ? `This <li> is inside a <${listElement}>, but the ${wrapper} between them breaks the list: a list's items must be its children.`
-          : 'This list item is not contained by a list container.',
-        hint: listElement
-          ? `Move the <${parentTag}> inside the <li>, or remove it, so the <li> is a child of the <${listElement}>.`
-          : 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
+        summary: wrappers
+          ? `This <li> is inside a <${listElement}>, but the ${wrappers} between them break the list: a list's items must be its children.`
+          : listElement
+            ? `This <li> is inside a <${listElement}>, but the ${wrapper} between them breaks the list: a list's items must be its children.`
+            : 'This list item is not contained by a list container.',
+        hint: wrappers
+          ? `Remove the elements between them, or move them inside the <li>, so the <li> is a child of the <${listElement}>.`
+          : listElement
+            ? `Move the <${parentTag}> inside the <li>, or remove it, so the <li> is a child of the <${listElement}>.`
+            : 'Place this <li> inside a <ul> or <ol>, or give its parent role="list".',
         i18n: {
-          summaryKey: listElement
-            ? 'listitemParentValid_summary_fail_wrapped'
-            : 'listitemParentValid_summary_fail',
-          hintKey: listElement
-            ? 'listitemParentValid_hint_fail_wrapped'
-            : 'listitemParentValid_hint_fail',
-          params: { parentElement: parentTag, listElement, wrapper }
+          summaryKey: wrappers
+            ? 'listitemParentValid_summary_fail_wrappedMany'
+            : listElement
+              ? 'listitemParentValid_summary_fail_wrapped'
+              : 'listitemParentValid_summary_fail',
+          hintKey: wrappers
+            ? 'listitemParentValid_hint_fail_wrappedMany'
+            : listElement
+              ? 'listitemParentValid_hint_fail_wrapped'
+              : 'listitemParentValid_hint_fail',
+          params: { parentElement: parentTag, listElement, wrapper, wrappers }
         },
         data: {
           details: {
             reasonCode: 'LISTITEM_INVALID_PARENT',
             parentElement: parentTag,
-            ...(listElement ? { listElement, wrapper } : {})
+            ...(wrapper ? { listElement, wrapper } : {}),
+            ...(wrappers ? { listElement, wrappedBy: between.slice(0) } : {})
           }
         }
       })

@@ -755,3 +755,33 @@ test('label-in-name: the fail names the accessible name and the words it lacks',
   );
   assert.match(apart.hint, /contain "Buy now" as one phrase/);
 });
+
+// A visible label from a <label>: the hint names where the missing word is
+// shown without calling it inside the control.
+test('label-in-name: a word a <label> shows and the name lacks is named where it is shown', () => {
+  const html = `
+<!doctype html><html><body>
+  <label for="q">Find <b>items</b></label><input id="q" aria-label="Find">
+  <label for="r">Search orders</label><input id="r" aria-label="Search">
+</body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html), 'label-in-name', 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const byId = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+
+  const inB = byId('q');
+  assert.strictEqual(inB.i18n.params.missingAt, '<b>');
+  assert.strictEqual(inB.i18n.params.missingAtWithin, '<label>');
+  assert.strictEqual(inB.i18n.params.missingIn, '');
+  assert.strictEqual(inB.data.details.missingWordsShownAt, '<b>');
+  assert.strictEqual(
+    inB.hint,
+    'The accessible name lacks "items" from the visible label, shown in <b> in <label>. Add "items" to the name, so people using speech input can activate it by saying what they see.'
+  );
+
+  const inLabel = byId('r');
+  assert.strictEqual(inLabel.i18n.params.missingAt, '<label>');
+  assert.match(inLabel.hint, /lacks "orders" from the visible label, shown in <label>\. Add/);
+  assert.doesNotMatch(inLabel.hint, /inside the control/);
+});

@@ -347,19 +347,32 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const lean = leanFor(
-      el,
-      ariaLabel || labelledByText || fallbackText || title,
-      dom.getAttribute(el, 'data')
-    );
+    const judgedText = ariaLabel || labelledByText || fallbackText || title;
+    const lean = leanFor(el, judgedText, dom.getAttribute(el, 'data'));
+    // The text under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = judgedText.replace(/\s+/g, ' ');
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <object> conveys what it embeds.',
+      summary: ids
+        ? `Check that the text alternative of this <object>, "${name}", taken from ${ids} by aria-labelledby, conveys what it embeds.`
+        : `Check that the text alternative of this <object>, "${name}", conveys what it embeds.`,
       hint: 'The fallback content or ARIA name should give the same information as the embedded content.',
       i18n: {
-        summaryKey: 'object_textAltQuality_summary_cantTell',
+        summaryKey: ids
+          ? 'object_textAltQuality_summary_cantTell_labelledby'
+          : 'object_textAltQuality_summary_cantTell_name',
         hintKey: 'object_textAltQuality_hint_cantTell',
-        params: { element: 'object' }
+        params: { element: 'object', name, ...(ids ? { ids } : {}) }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

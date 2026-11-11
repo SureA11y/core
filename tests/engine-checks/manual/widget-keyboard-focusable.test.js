@@ -215,7 +215,12 @@ test(`${RULE_ID}: leans`, async (t) => {
       'WIDGET_NOT_IN_TAB_ORDER'
     );
     assert.equal(twin.lean.toward, 'pass');
-    assert.equal(twin.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_duplicate');
+    assert.equal(twin.lean.i18n.whyKey, 'widgetKeyboardFocusable_lean_why_duplicateNamed');
+    assert.equal(
+      twin.lean.why,
+      'Another control in the tab order, <button> "Save", has the same role and name, so this one is a duplicate taken out of the tab order.'
+    );
+    assert.deepEqual(twin.lean.i18n.params, { other: '<button> "Save"' });
     assert.equal(
       occOf('<div role="button" tabindex="-1">Save</div>', 'WIDGET_NOT_IN_TAB_ORDER').lean,
       undefined

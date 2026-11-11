@@ -272,16 +272,39 @@ function runInPage(ctx) {
       continue;
     }
 
+    // Why it has none, where the page shows a cause the reader would not
+    // see from the element alone (helpers.nameCause), or an alt attribute,
+    // which a <video> does not have: the hint says so.
+    const videoCause = (() => {
+      const raw = String(dom.getAttribute(el, 'alt') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!raw) return null;
+      const alt = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its alt="${alt}" does nothing: a <video> has no alt attribute. Use aria-label="${alt}" instead.`,
+        hintKey: 'videoPoster_textAltPresent_hint_fail_alt',
+        params: { alt },
+        detail: { cause: 'altOnVideo', alt }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || videoCause;
     const baseOccurrence = {
       summary: 'This <video> poster image has no text alternative.',
-      hint: 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
+      hint: cause
+        ? cause.hint
+        : 'Name the video with aria-label or aria-labelledby, saying what the poster shows. A title attribute also works, but less reliably.',
       i18n: {
         summaryKey: 'videoPoster_textAltPresent_summary_fail',
-        hintKey: 'videoPoster_textAltPresent_hint_fail',
-        params: { element: 'video' }
+        hintKey: cause ? cause.hintKey : 'videoPoster_textAltPresent_hint_fail',
+        params: { element: 'video', ...(cause ? cause.params : {}) }
       },
       data: {
-        details: { reasonCode: 'TEXT_ALTERNATIVE_MISSING' },
+        details: {
+          reasonCode: 'TEXT_ALTERNATIVE_MISSING',
+          ...(cause ? { nameCause: cause.detail } : {})
+        },
         poster,
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },
         nameInfo: nameInfo || null

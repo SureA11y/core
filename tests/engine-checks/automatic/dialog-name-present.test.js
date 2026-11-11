@@ -239,3 +239,23 @@ test(`${RULE_ID}: a fail names an empty heading it points to, and does not ask f
     'Name it with aria-labelledby pointing at its heading, or with aria-label, so screen readers announce what the dialog is about.'
   );
 });
+
+test(`${RULE_ID}: with no aria-labelledby, the hint names the heading inside to point it at`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><div id="d1" role="dialog"><h2 id="t1">Sign in</h2><p>x</p></div><div id="d2" role="alertdialog"><h3>Delete file?</h3></div></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.equal(occ('d1').i18n.hintKey, 'dialogNamePresent_hint_heading');
+  assert.equal(
+    occ('d1').hint,
+    'Its heading <h2> "Sign in" is not tied to it. Add aria-labelledby="t1" to the dialog, so screen readers announce that heading as its name.'
+  );
+  assert.equal(occ('d2').i18n.hintKey, 'dialogNamePresent_hint_headingNoId');
+  assert.equal(
+    occ('d2').hint,
+    `Its heading <h3> "Delete file?" is not tied to it. Give the heading an id and point the dialog's aria-labelledby at it, so screen readers announce that heading as its name.`
+  );
+  assert.deepEqual(occ('d2').data.details.heading, { text: 'Delete file?', id: null });
+});

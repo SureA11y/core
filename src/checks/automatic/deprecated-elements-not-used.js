@@ -152,7 +152,7 @@ function runInPage(ctx) {
     if (pauseControl) {
       return {
         toward: 'pass',
-        why: 'The page has a control named for pausing, stopping or hiding.',
+        why: `The page has a control named for pausing, stopping or hiding: "${pauseControl}".`,
         signals: [
           { signal: 'pause-control', value: pauseControl },
           { signal: 'stop-call', value: stopCall }
@@ -161,7 +161,8 @@ function runInPage(ctx) {
           'Check that the control acts on this marquee and can be reached with the keyboard.',
         i18n: {
           whyKey: 'deprecatedElements_lean_why_pauseControl',
-          cautionKey: 'deprecatedElements_lean_caution_pauseControl'
+          cautionKey: 'deprecatedElements_lean_caution_pauseControl',
+          params: { pauseControl }
         }
       };
     }

@@ -274,12 +274,25 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
     const sourcesText = alt.sources.join(', ');
+    // The name screen readers announce, quoted: from aria-labelledby it is
+    // not in the snippet.
+    const nameAll = alt.name.replace(/\s+/g, ' ');
+    const shownName = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      alt.sources[0] === 'aria-labelledby'
+        ? String(dom.getAttribute(el, 'aria-labelledby') || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
 
     const details = { name: alt.name, sources: alt.sources.slice() };
     if (alt.alt) details.alt = alt.alt;
     const message =
       signal && typeof helpers.describeTextAlternativeSignal === 'function'
-        ? helpers.describeTextAlternativeSignal(signal, 'input type="image"')
+        ? helpers.describeTextAlternativeSignal(signal, 'input type="image"', alt.name)
         : null;
     if (message) Object.assign(details, signal);
     // One code whatever the signal, which changes the message only.
@@ -301,16 +314,25 @@ function runInPage(ctx) {
       ...(lean ? { lean } : {}),
       summary: message
         ? message.summary
-        : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate.`,
+        : ids
+          ? `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate; screen readers announce "${shownName}", taken from ${ids} by aria-labelledby.`
+          : `Check that the text alternative of this <input type="image"> (${sourcesText}) is accurate; screen readers announce "${shownName}".`,
       hint: message
         ? message.hint
         : 'Each text alternative listed should say what the button does, such as “Search” or “Submit order”.',
       i18n: message
         ? message.i18n
         : {
-            summaryKey: 'inputImage_altQuality_summary_cantTell',
+            summaryKey: ids
+              ? 'inputImage_altQuality_summary_cantTell_labelledby'
+              : 'inputImage_altQuality_summary_cantTell_name',
             hintKey: 'inputImage_altQuality_hint_cantTell',
-            params: { element: 'input[type=image]', sources: sourcesText }
+            params: {
+              element: 'input[type=image]',
+              sources: sourcesText,
+              name: shownName,
+              ...(ids ? { ids } : {})
+            }
           },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

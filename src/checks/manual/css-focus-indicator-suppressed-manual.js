@@ -30,6 +30,9 @@
  * @reports
  *   - `suppressingSelectors`: the selector of each style sheet rule that
  *     removes the element's outline, one item per selector.
+ *   - `styleSheet` or `styleElementIndex`: when those rules are all in one
+ *     style sheet, its href as written, or the position of its <style>
+ *     element among the page's, from 1.
  * @reason-codes
  *   - `FOCUS_INDICATOR_SUPPRESSED` (cantTell): a style sheet rule removes the
  *     element's focus outline and no focus rule draws a replacement; whether
@@ -323,7 +326,9 @@ function runInPage(ctx) {
     }
   }
 
-  const suppressors = []; // { selector, base }
+  const suppressors = []; // { selector, base, sheet }
+  // The style sheet being read, for the message to say where a rule is.
+  let currentSheet = null;
   const providers = []; // { base, subject }
   // :focus-within rules that draw something: the compound holding the
   // pseudo, without it. Read only for the lean, never to pass an element.
@@ -432,7 +437,7 @@ function runInPage(ctx) {
       // outline. Other states (:hover, :active) never match the static
       // element, so el.matches() leaves them out below.
       if (suppresses && !hasPseudoElement(part)) {
-        suppressors.push({ selector: trim(part), base: trim(part) });
+        suppressors.push({ selector: trim(part), base: trim(part), sheet: currentSheet });
       }
       return;
     }
@@ -451,7 +456,11 @@ function runInPage(ctx) {
     const focusedBase = stripFocusPseudo(compounds[focusIndex]).replace(/::?[a-z-]+$/i, '') || '*';
 
     if (suppresses && isSubject && !hasPseudoElement(part)) {
-      suppressors.push({ selector: trim(part), base: stripFocusPseudo(part) });
+      suppressors.push({
+        selector: trim(part),
+        base: stripFocusPseudo(part),
+        sheet: currentSheet
+      });
     }
 
     // A replacement is credited to the element that takes focus, wherever
@@ -529,7 +538,9 @@ function runInPage(ctx) {
         continue;
       }
       sheetCount += 1;
+      currentSheet = sheet;
       walkRules(rules, 0, '');
+      currentSheet = null;
     }
   } catch {
     // no-throw: treat as no accessible stylesheets
@@ -537,6 +548,38 @@ function runInPage(ctx) {
 
   if (sheetCount === 0 || !suppressors.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
+  }
+
+  // Where a sheet is, for the message: { href } for a linked or imported
+  // sheet, { index } for the page's nth <style> element, or null. Read once
+  // per sheet.
+  const sheetPlaces = new Map();
+  let styleElements = null;
+  function sheetPlace(sheet) {
+    if (!sheet) return null;
+    if (sheetPlaces.has(sheet)) return sheetPlaces.get(sheet);
+    let place = null;
+    try {
+      // A style sheet is no element a page's markup can shadow, so its
+      // ownerNode is read as dom-helpers reads it.
+      const owner = sheet.ownerNode;
+      const tag =
+        owner && dom.nodeType(owner) === 1 ? String(dom.localName(owner) || '').toLowerCase() : '';
+      if (tag === 'style') {
+        if (!styleElements) styleElements = [...dom.querySelectorAll(document, 'style')];
+        const index = styleElements.indexOf(owner) + 1;
+        if (index > 0) place = { index };
+      } else {
+        const href = trim(
+          (tag === 'link' ? dom.getAttribute(owner, 'href') : '') || dom.get(sheet, 'href') || ''
+        );
+        if (href) place = { href: href.length > 100 ? `${href.slice(0, 99)}…` : href };
+      }
+    } catch {
+      place = null;
+    }
+    sheetPlaces.set(sheet, place);
+    return place;
   }
 
   const getFocusableInfo =
@@ -617,6 +660,9 @@ function runInPage(ctx) {
     if (indicated) continue;
 
     const selectors = [...new Set(suppressing.map((s) => s.selector))];
+    // The one sheet the removing rules are in, when they are all in one.
+    const sheets = [...new Set(suppressing.map((s) => s.sheet))];
+    const place = sheets.length === 1 ? sheetPlace(sheets[0]) : null;
     const eligInfo = helpers.getEligibilityInfo
       ? (() => {
           try {
@@ -662,17 +708,27 @@ function runInPage(ctx) {
               }
             }
           : {}),
-        summary: `This element takes a tab stop, and "${selectors.join(', ')}" removes its focus outline with no replacement indicator in any other focus rule matching it.`,
+        summary: !place
+          ? `This element takes a tab stop, and "${selectors.join(', ')}" removes its focus outline with no replacement indicator in any other focus rule matching it.`
+          : place.href
+            ? `This element takes a tab stop, and "${selectors.join(', ')}" in the style sheet ${place.href} removes its focus outline with no replacement indicator in any other focus rule matching it.`
+            : `This element takes a tab stop, and "${selectors.join(', ')}" in <style> element ${place.index} of the page removes its focus outline with no replacement indicator in any other focus rule matching it.`,
         hint: 'Draw a replacement indicator in the same rule (a visible outline, border, box-shadow, or background change), or drop the outline reset. If the indicator is applied from script instead, confirm it appears for keyboard users.',
         i18n: {
-          summaryKey: 'cssFocusIndicatorSuppressed_summary_cantTell',
+          summaryKey: !place
+            ? 'cssFocusIndicatorSuppressed_summary_cantTell'
+            : place.href
+              ? 'cssFocusIndicatorSuppressed_summary_cantTell_inSheet'
+              : 'cssFocusIndicatorSuppressed_summary_cantTell_inStyle',
           hintKey: 'cssFocusIndicatorSuppressed_hint_cantTell',
-          params: { selectors: selectors.join(', ') }
+          params: { selectors: selectors.join(', '), ...(place || {}) }
         },
         data: {
           details: {
             reasonCode: 'FOCUS_INDICATOR_SUPPRESSED',
-            suppressingSelectors: selectors
+            suppressingSelectors: selectors,
+            ...(place && place.href ? { styleSheet: place.href } : {}),
+            ...(place && place.index ? { styleElementIndex: place.index } : {})
           },
           visibilityFilter: eligInfo || { targetSet: 'dom', accEligible: null, reasons: [] }
         }

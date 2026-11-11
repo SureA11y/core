@@ -220,6 +220,43 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
     }
   });
 
+  await t.test('the fail names the edge the text crosses and the CSS that clips it', async () => {
+    for (const [css, edge, clipCss] of [
+      ['#box{height:20px;overflow:hidden}', 'bottom', 'height: 20px; overflow: hidden'],
+      [
+        '#box{white-space:nowrap;overflow:hidden}',
+        'right',
+        'white-space: nowrap; overflow: hidden'
+      ],
+      [
+        '#box{overflow-x:clip}#run{white-space:nowrap}',
+        'right',
+        'white-space: nowrap; overflow-x: clip'
+      ]
+    ]) {
+      const result = await scan(
+        page(
+          css,
+          `<div class="fit" id="box" data-text="${TEXT}"><span id="run">${TEXT}</span></div>`
+        )
+      );
+      const [occ] = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences;
+      assert.equal(occ.data.details.reasonCode, 'TEXT_CLIPPED', css);
+      assert.equal(occ.data.details.edge, edge, css);
+      assert.equal(occ.data.details.clipCss, clipCss, css);
+      assert.equal(occ.i18n.params.clipCss, clipCss, css);
+      assert.match(
+        occ.summary,
+        new RegExp(`px past its ${edge} edge\\)\\. The CSS that cuts it off: ${clipCss}\\.$`),
+        css
+      );
+      assert.equal(
+        occ.hint,
+        `Let the container grow with its text: change ${clipCss}, or let it scroll.`
+      );
+    }
+  });
+
   await t.test('a clipped line that a repeating animation moves is asked about', async () => {
     // A marquee: the text moves through the clipping box for ever, so one
     // frame can't tell whether any of it is lost. Moving it (transform)
@@ -751,10 +788,16 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
 
     const occ = result.checksResults.find((r) => r.ruleId === RULE_ID).occurrences[0];
     const px = String(Math.round(d.metrics.overflowPx));
-    assert.deepEqual(occ.i18n.params, { text: TEXT, overflowPx: px, viewportWidth: '800' });
+    assert.deepEqual(occ.i18n.params, {
+      text: TEXT,
+      overflowPx: px,
+      viewportWidth: '800',
+      edgeRight: true,
+      clipCss: 'white-space: nowrap; overflow: hidden'
+    });
     assert.match(
       occ.summary,
-      new RegExp(`at a 800px-wide viewport, .* \\(${px}px past its edge\\)`)
+      new RegExp(`at a 800px-wide viewport, .* \\(${px}px past its right edge\\)`)
     );
   });
 

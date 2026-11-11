@@ -380,19 +380,45 @@ function runInPage(ctx) {
     const shown = missing.slice(0, 5);
     const missingWords =
       shown.map((w) => `"${w}"`).join(', ') + (missing.length > 5 ? ', ...' : '');
+    // Where the first missing word is shown: inside the control (missingIn),
+    // or, where the label comes from elsewhere, such as a <label>, in that
+    // element or the one in it that holds the word (missingAt, and the
+    // element it is in, missingAtWithin).
     let missingIn = '';
+    let missingAt = '';
+    let missingAtWithin = '';
     try {
-      const holder = labelInfo && labelInfo.source === 'self' ? shownIn(control, missing[0]) : null;
-      if (holder) missingIn = describeEl(holder);
+      if (labelInfo && labelInfo.source === 'self') {
+        const holder = shownIn(control, missing[0]);
+        if (holder) missingIn = describeEl(holder);
+      } else if (labelInfo && Array.isArray(labelInfo.sourceElements)) {
+        for (const src of labelInfo.sourceElements) {
+          if (!src || src === control || dom.nodeType(src) !== 1) continue;
+          const holder = shownIn(src, missing[0]);
+          if (holder) {
+            missingAt = describeEl(holder);
+            missingAtWithin = describeEl(src);
+            break;
+          }
+          if (tokenize(dom.textContent(src), false).indexOf(missing[0]) !== -1) {
+            missingAt = describeEl(src);
+            break;
+          }
+        }
+      }
     } catch {
       missingIn = '';
+      missingAt = '';
+      missingAtWithin = '';
     }
     return {
       hint: missingIn
         ? `The accessible name lacks ${missingWords} from the visible label, shown in ${missingIn} inside the control. Add ${missingWords} to the name, or move that text out of the control, so people using speech input can activate it by saying what they see.`
-        : `The accessible name lacks ${missingWords} from the visible label. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`,
+        : missingAt
+          ? `The accessible name lacks ${missingWords} from the visible label, shown in ${missingAt}${missingAtWithin ? ` in ${missingAtWithin}` : ''}. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`
+          : `The accessible name lacks ${missingWords} from the visible label. Add ${missingWords} to the name, so people using speech input can activate it by saying what they see.`,
       hintKey: 'labelInName_hint_fail_missingWords',
-      params: { missingWords, missingIn }
+      params: { missingWords, missingIn, missingAt, missingAtWithin }
     };
   }
 
@@ -1123,6 +1149,9 @@ function runInPage(ctx) {
               ...(failWords ? { missingWords: failWords } : null),
               ...(failHint && failHint.params.missingIn
                 ? { missingWordsShownIn: failHint.params.missingIn }
+                : null),
+              ...(failHint && failHint.params.missingAt
+                ? { missingWordsShownAt: failHint.params.missingAt }
                 : null)
             }
           }

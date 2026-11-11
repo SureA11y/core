@@ -145,7 +145,23 @@ function runInPage(ctx) {
 
     // Why it has none, where the page shows a cause the reader would not
     // see from the element alone (helpers.nameCause): the hint says so.
-    const cause = helpers.nameCause ? helpers.nameCause(el, { content: false }) : null;
+    // A name attribute, a target for links and forms, reads like a name
+    // but gives none.
+    const frameCause = (() => {
+      const raw = String(dom.getAttribute(el, 'name') || '')
+        .replace(/\s+/g, ' ')
+        .trim();
+      if (!/[\p{L}\p{N}]/u.test(raw)) return null;
+      const frameName = raw.length > 40 ? `${raw.slice(0, 39)}…` : raw;
+      return {
+        hint: `Its name="${frameName}" is a target for links and forms, not a name screen readers read. Put the text in a title attribute.`,
+        hintKey: 'iframeNamePresent_hint_fail_nameAttr',
+        params: { frameName },
+        detail: { cause: 'nameAttribute', name: frameName }
+      };
+    })();
+    const cause =
+      (helpers.nameCause ? helpers.nameCause(el, { content: false }) : null) || frameCause;
     occurrences.push(
       helpers.reportOccurrence(el, {
         summary: 'This frame has no accessible name.',

@@ -394,6 +394,12 @@ test(`${RULE_ID}: names what hides the message and the id no element has`, () =>
     element: '<div class="errors">',
     onAncestor: true
   });
+  // The wrapper that hides it is named in the hint too.
+  assert.strictEqual(hidden.i18n.hintKey, 'invalidFieldErrorMessage_hint_cantTell_hidden');
+  assert.strictEqual(
+    hidden.hint,
+    'display: none on <div class="errors"> hides the error message along with everything else in it. Show <div class="errors"> while the field is invalid, or move the message out of it.'
+  );
 
   const near = byId('b');
   assert.strictEqual(near.data.details.reasonCode, 'ERROR_MESSAGE_TARGET_MISSING');
@@ -428,5 +434,19 @@ test(`${RULE_ID}: names the aria-hidden ancestor that hides the message`, () => 
   assert.strictEqual(
     occ.summary,
     'This field is marked invalid, but the error message aria-errormessage names ("Too short") is hidden from assistive technology by aria-hidden="true" on <div class="msgs">, which contains it.'
+  );
+});
+
+test(`${RULE_ID}: a message hidden on its own keeps the plain hint`, () => {
+  const rule = assertRule(
+    run(`<input id="e" aria-invalid="true" aria-errormessage="e-err">
+      <span id="e-err" style="display: none">Enter a valid email</span>`),
+    RULE_ID,
+    'cantTell',
+    { minOccurrences: 1, maxOccurrences: 1 }
+  );
+  assert.strictEqual(
+    rule.occurrences[0].hint,
+    'Show the error message while the field is invalid.'
   );
 });

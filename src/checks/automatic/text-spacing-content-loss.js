@@ -92,6 +92,12 @@
  *     past the top or bottom.
  *   - `container.widthPx`, `container.heightPx` (cut-off text): the size of
  *     the clipping box with the spacing applied.
+ *   - `edge` (cut-off text): the edge of the box the line went furthest
+ *     past: `top`, `right`, `bottom` or `left`.
+ *   - `clipCss` (cut-off text, where it can be read): the CSS that cuts it
+ *     off there, as declarations: what fixes the box's size on that axis
+ *     (`white-space: nowrap`, `width`, `max-height`...) and its overflow,
+ *     as `height: 48px; overflow: hidden`. Not for the viewport.
  *   - `clippedBy` (cut-off text): `content-visibility` when the box clips
  *     only for its `content-visibility: auto`, which clips what overflows
  *     it, on screen as well as off it, as `contain: paint` does, though its
@@ -1120,6 +1126,58 @@ function runInPage(ctx) {
       const dx = c.x ? Math.max(0, box.left - line.left, line.right - box.right) : 0;
       return { dx, dy };
     }
+    // The side of box a line goes furthest past on an axis: top, right,
+    // bottom or left.
+    function edgeOf(line, box, axis) {
+      return axis === 'x'
+        ? line.right - box.right >= box.left - line.left
+          ? 'right'
+          : 'left'
+        : line.bottom - box.bottom >= box.top - line.top
+          ? 'bottom'
+          : 'top';
+    }
+    // The CSS that cuts text off on an axis at box c: what fixes the box's
+    // size there (white-space: nowrap or pre, on the text's element or an
+    // element up to c, keeping the text on one line; else the box's
+    // max-width or width, max-height or height), then its overflow, as
+    // declarations: "height: 48px; overflow: hidden". '' where it can't
+    // be read.
+    function clipCssOf(c, textEl, axis) {
+      try {
+        const cs = styleOf(c.el);
+        if (!cs) return '';
+        const parts = [];
+        if (axis === 'x') {
+          let ws = '';
+          for (let cur = textEl, i = 0; cur && i < 100; cur = dom.parentElement(cur), i++) {
+            const st = styleOf(cur);
+            const v = st ? String(st.whiteSpace || st.textWrapMode || '') : '';
+            if (/^(nowrap|pre)$/.test(v) || (st && st.textWrapMode === 'nowrap')) {
+              ws = `white-space: ${v === 'pre' ? 'pre' : 'nowrap'}`;
+              break;
+            }
+            if (cur === c.el) break;
+          }
+          if (ws) parts.push(ws);
+          else if (cs.maxWidth && cs.maxWidth !== 'none') parts.push(`max-width: ${cs.maxWidth}`);
+          else if (cs.width && cs.width !== 'auto') parts.push(`width: ${cs.width}`);
+        } else if (cs.maxHeight && cs.maxHeight !== 'none')
+          parts.push(`max-height: ${cs.maxHeight}`);
+        else if (cs.height && cs.height !== 'auto') parts.push(`height: ${cs.height}`);
+        const ox = String(cs.overflowX || '');
+        const oy = String(cs.overflowY || '');
+        const own = axis === 'x' ? ox : oy;
+        if (own && own !== 'visible')
+          parts.push(ox === oy ? `overflow: ${own}` : `overflow-${axis}: ${own}`);
+        else if (cs.contain && cs.contain !== 'none') parts.push(`contain: ${cs.contain}`);
+        else return '';
+        if (axis === 'x' && cs.textOverflow === 'ellipsis') parts.push('text-overflow: ellipsis');
+        return parts.join('; ');
+      } catch {
+        return '';
+      }
+    }
     function insideBefore(n, c) {
       const b0 = before.boxes.get(keyOf(c));
       const lines = before.lines.get(n) || [];
@@ -1213,12 +1271,14 @@ function runInPage(ctx) {
           const lost = o.dy >= y.thresholdPx || o.dx >= x.thresholdPx;
           const some = o.dy > PARTLY_PX || o.dx > PARTLY_PX;
           if (lost) {
-            worst = { lost, ...(o.dx >= x.thresholdPx ? x : y) };
+            const m = o.dx >= x.thresholdPx ? x : y;
+            worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
             break;
           }
           if (some) {
             const m = o.dx >= o.dy ? x : y;
-            if (!worst || m.overflowPx > worst.overflowPx) worst = { lost, ...m };
+            if (!worst || m.overflowPx > worst.overflowPx)
+              worst = { lost, ...m, edge: edgeOf(l, b1, m.axis) };
           }
         }
         const moved = isMovedForEver(dom.parentElement(n), c.el);
@@ -1239,6 +1299,13 @@ function runInPage(ctx) {
             el: c.el,
             ...(sizing ? { sizing } : {}),
             ...(c.contentVisibility ? { clippedBy: 'content-visibility' } : {}),
+            // The edge the text crosses, and the CSS that keeps the box from
+            // growing past it and clips it there.
+            edge: worst.edge,
+            clipCss:
+              c.viewport || c.contentVisibility
+                ? ''
+                : clipCssOf(c, dom.parentElement(n), worst.axis),
             text: textOf(dom.parentElement(n)),
             metrics: {
               overflowPx: round1(worst.overflowPx),
@@ -1413,11 +1480,23 @@ function runInPage(ctx) {
 
   // ---- Findings ----
 
+  // The edge a finding names, as its params give it (edgeTop and so on),
+  // with a space after it, or ''.
+  function edgeWord(p) {
+    if (p.edgeTop) return 'top ';
+    if (p.edgeRight) return 'right ';
+    if (p.edgeBottom) return 'bottom ';
+    if (p.edgeLeft) return 'left ';
+    return '';
+  }
   const MESSAGES = {
     TEXT_CLIPPED: {
       summary: (p) =>
-        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its edge).`,
-      hint: 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll.',
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, this element cuts off the text "${p.text}" (${p.overflowPx}px past its ${edgeWord(p)}edge).${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
+      hint: (p) =>
+        p.clipCss
+          ? `Let the container grow with its text: change ${p.clipCss}, or let it scroll.`
+          : 'Let the container grow with its text: avoid fixed heights and widths with overflow: hidden on text, or let it scroll.',
       key: 'fail_clipped'
     },
     // TEXT_CLIPPED by a box that clips only for its content-visibility: auto,
@@ -1430,7 +1509,7 @@ function runInPage(ctx) {
     },
     TEXT_CLIPPED_PARTLY: {
       summary: (p) =>
-        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the edge of this element, which hides what goes past it.`,
+        `With the text spacing applied (line height 1.5, paragraph spacing 2 times the font size, letter spacing 0.12 and word spacing 0.16 times the font size) at a ${p.viewportWidth}px-wide viewport, the text "${p.text}" reaches ${p.overflowPx}px past the ${edgeWord(p)}edge of this element, which hides what goes past it.${p.clipCss ? ` The CSS that cuts it off: ${p.clipCss}.` : ''}`,
       hint: 'Check with the text spacing (line-height 1.5, letter-spacing 0.12em, word-spacing 0.16em, 2em after paragraphs) applied that this text can still be read in full.',
       key: 'cantTell_clippedPartly',
       needed: 'Whether the text that reaches past the edge of the element can still be read.'
@@ -1624,7 +1703,7 @@ function runInPage(ctx) {
     const occ = helpers.reportOccurrence(el, {
       ...(lean ? { lean } : {}),
       summary: msg.summary(params),
-      hint: msg.hint,
+      hint: typeof msg.hint === 'function' ? msg.hint(params) : msg.hint,
       i18n: {
         summaryKey: `textSpacingContentLoss_summary_${msg.key}`,
         hintKey: `textSpacingContentLoss_hint_${msg.key}`,
@@ -1657,8 +1736,19 @@ function runInPage(ctx) {
     ['TEXT_CLIPPED_SCRIPT_SIZED', scriptSized, 'runtime-dependent']
   ]) {
     for (const f of list) {
-      const { text, metrics, container, sizing, clippedBy } = f;
-      const params = { text, overflowPx: String(Math.round(metrics.overflowPx)), ...at };
+      const { text, metrics, container, sizing, clippedBy, edge, clipCss } = f;
+      // The edge the text crosses and the CSS that clips it there, said in
+      // the summary of a box that cuts text off (TEXT_CLIPPED,
+      // TEXT_CLIPPED_PARTLY).
+      const named = reasonCode === 'TEXT_CLIPPED' || reasonCode === 'TEXT_CLIPPED_PARTLY';
+      const edgeKey = named && edge ? `edge${edge[0].toUpperCase()}${edge.slice(1)}` : '';
+      const params = {
+        text,
+        overflowPx: String(Math.round(metrics.overflowPx)),
+        ...at,
+        ...(edgeKey ? { [edgeKey]: true } : {}),
+        ...(named && clipCss && !clippedBy ? { clipCss } : {})
+      };
       const lean =
         reasonCode === 'VIEWPORT_SCROLL_LOCKED'
           ? scrollLockedLean()
@@ -1679,7 +1769,9 @@ function runInPage(ctx) {
           container,
           viewport,
           ...(sizedBy ? { sizedBy } : {}),
-          ...(clippedBy ? { clippedBy } : {})
+          ...(clippedBy ? { clippedBy } : {}),
+          ...(edge ? { edge } : {}),
+          ...(clipCss ? { clipCss } : {})
         },
         uncertaintyCode,
         lean,

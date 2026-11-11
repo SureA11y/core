@@ -193,7 +193,8 @@ function runInPage(ctx) {
       try {
         const aria = helpers.getAriaNameInfo(el, ctx);
         const v = aria && aria.present ? String(aria.value || '').trim() : '';
-        if (v) return { text: v, fallback: false };
+        if (v)
+          return { text: v, fallback: false, labelledby: aria.mechanism === 'aria-labelledby' };
       } catch {
         // use the helper's value
       }
@@ -201,12 +202,12 @@ function runInPage(ctx) {
     if (!textAltInfo || textAltInfo.value === 'fallback-content') return null;
     return {
       text: String(textAltInfo.value || '').trim(),
-      fallback: textAltInfo.mechanism === 'canvas-fallback'
+      fallback: textAltInfo.mechanism === 'canvas-fallback',
+      labelledby: textAltInfo.mechanism === 'aria-labelledby'
     };
   }
 
-  function leanFor(el, textAltInfo) {
-    const judged = textToJudge(el, textAltInfo);
+  function leanFor(el, judged) {
     if (!judged || !judged.text) return null;
     if (judged.fallback && isUnsupportedBrowserNote(judged.text)) {
       return {
@@ -275,15 +276,41 @@ function runInPage(ctx) {
 
     const eligInfo = getEligibilityInfo ? getEligibilityInfo(el, ctx, { targetSet: 'acc' }) : null;
 
-    const lean = leanFor(el, textAltInfo);
+    const judged = textToJudge(el, textAltInfo);
+    const lean = leanFor(el, judged);
+    // The text under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = judged && judged.text ? judged.text.replace(/\s+/g, ' ') : '';
+    const name = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      name && judged.labelledby
+        ? String(dom.getAttribute(el, 'aria-labelledby') || '')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <canvas> conveys what it shows.',
+      summary: !name
+        ? 'Check that the text alternative of this <canvas> conveys what it shows.'
+        : ids
+          ? `Check that the text alternative of this <canvas>, "${name}", taken from ${ids} by aria-labelledby, conveys what it shows.`
+          : `Check that the text alternative of this <canvas>, "${name}", conveys what it shows.`,
       hint: 'The fallback text or accessible name should give the same information, or do the same job, as what is drawn.',
       i18n: {
-        summaryKey: 'canvas_textAltQuality_summary_cantTell',
+        summaryKey: !name
+          ? 'canvas_textAltQuality_summary_cantTell'
+          : ids
+            ? 'canvas_textAltQuality_summary_cantTell_labelledby'
+            : 'canvas_textAltQuality_summary_cantTell_name',
         hintKey: 'canvas_textAltQuality_hint_cantTell',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        params: {
+          element: (dom.tagName(el) || '').toLowerCase(),
+          ...(name ? { name } : {}),
+          ...(ids ? { ids } : {})
+        }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

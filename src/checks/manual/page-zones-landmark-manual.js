@@ -25,6 +25,8 @@
  * @reports
  *   - `zone`: banner, navigation, search or contentinfo, the role the zone
  *     would have.
+ *   - `namedBy`, `namedByToken`: on a block named as a zone, whether its
+ *     `id` or its `class` names it, and the token that does.
  * @reason-codes
  *   - `BANNER_NOT_EXPOSED` (cantTell): the page exposes no banner, and a
  *     block named as its header is not a <header> and has no role="banner".
@@ -180,6 +182,16 @@ function runInPage(ctx) {
     }
     return '';
   }
+  // The id or class token that names el as the zone, as written, for the
+  // message: { by: 'id' | 'class', token }, or null.
+  function namedBy(el, zone) {
+    for (const by of ['id', 'class']) {
+      for (const t of norm(dom.getAttribute(el, by)).split(' ')) {
+        if (t && NAMES[zone].includes(t.toLowerCase())) return { by, token: t };
+      }
+    }
+    return null;
+  }
 
   const isSearchField = (input) => {
     const type = norm(dom.getAttribute(input, 'type')).toLowerCase();
@@ -209,6 +221,24 @@ function runInPage(ctx) {
     return false;
   }
 
+  // A block named by its id or class says which, quoting the token.
+  const NAMED_MESSAGES = {
+    BANNER_NOT_EXPOSED: {
+      id: 'The id "{{token}}" names this block as the page header, but the page has no banner landmark.',
+      class:
+        'The class "{{token}}" names this block as the page header, but the page has no banner landmark.'
+    },
+    NAVIGATION_NOT_EXPOSED: {
+      id: 'The id "{{token}}" names this block as a navigation, but it is not a navigation landmark.',
+      class:
+        'The class "{{token}}" names this block as a navigation, but it is not a navigation landmark.'
+    },
+    CONTENTINFO_NOT_EXPOSED: {
+      id: 'The id "{{token}}" names this block as the page footer, but the page has no contentinfo landmark.',
+      class:
+        'The class "{{token}}" names this block as the page footer, but the page has no contentinfo landmark.'
+    }
+  };
   const MESSAGES = {
     BANNER_NOT_EXPOSED: [
       'This block is named as the page header, but the page has no banner landmark.',
@@ -251,20 +281,30 @@ function runInPage(ctx) {
     if (reported.has(el)) return;
     reported.add(el);
     const key = code.toLowerCase().replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    const named = NAMED_MESSAGES[code] ? namedBy(el, ZONE_OF[code]) : null;
     occurrences.push(
       helpers.reportOccurrence(el, {
-        summary: MESSAGES[code][0],
+        summary: named
+          ? NAMED_MESSAGES[code][named.by].replace('{{token}}', () => named.token)
+          : MESSAGES[code][0],
         hint: MESSAGES[code][1],
         i18n: {
-          summaryKey: `pageZonesLandmark_summary_cantTell_${key}`,
-          hintKey: `pageZonesLandmark_hint_cantTell_${key}`
+          summaryKey: named
+            ? `pageZonesLandmark_summary_cantTell_${key}${named.by === 'id' ? 'ById' : 'ByClass'}`
+            : `pageZonesLandmark_summary_cantTell_${key}`,
+          hintKey: `pageZonesLandmark_hint_cantTell_${key}`,
+          ...(named ? { params: { token: named.token } } : {})
         },
         uncertainty: {
           code: 'judgement-required',
           needed: 'Whether the block is that zone of the page.'
         },
         data: {
-          details: { reasonCode: code, zone: ZONE_OF[code] },
+          details: {
+            reasonCode: code,
+            zone: ZONE_OF[code],
+            ...(named ? { namedBy: named.by, namedByToken: named.token } : {})
+          },
           visibilityFilter: { targetSet: 'dom', accEligible: null, reasons: [] }
         }
       })

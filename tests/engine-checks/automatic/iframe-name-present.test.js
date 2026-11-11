@@ -129,3 +129,18 @@ test(`${RULE_ID}: a fail says when aria-labelledby points to a missing id`, () =
   );
   assert.equal(occ('f1').data.details.nameCause.cause, 'labelledbyMissing');
 });
+
+test(`${RULE_ID}: a fail says a name attribute is a target, not a name`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><iframe src="https://maps.example/x" name="Map of our office"></iframe></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.strictEqual(occ.i18n.hintKey, 'iframeNamePresent_hint_fail_nameAttr');
+  assert.strictEqual(
+    occ.hint,
+    'Its name="Map of our office" is a target for links and forms, not a name screen readers read. Put the text in a title attribute.'
+  );
+  assert.strictEqual(occ.i18n.params.frameName, 'Map of our office');
+});

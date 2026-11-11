@@ -319,3 +319,21 @@ test(`${RULE_ID}: alt="" fails as an empty name, not as a default name`, () => {
   const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
   assert.strictEqual(rule.occurrences[0].data.details.reasonCode, 'empty_alt');
 });
+
+test(`${RULE_ID}: a fail says a value is not an image button's name`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><input id="a" type="image" src="go.png" value="Search"><input id="b" type="image" src="go.png" alt="" value="Go"></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 2,
+    maxOccurrences: 2
+  });
+  const occ = (id) => rule.occurrences.find((o) => o.html.includes(`id="${id}"`));
+  assert.strictEqual(occ('a').i18n.summaryKey, 'inputImage_altPresent_summary_fail');
+  assert.strictEqual(occ('a').i18n.hintKey, 'inputImage_altPresent_hint_fail_value');
+  assert.strictEqual(
+    occ('a').hint,
+    `Its value="Search" is not used as an image button's name. Put the text in alt: alt="Search".`
+  );
+  assert.strictEqual(occ('b').i18n.summaryKey, 'inputImage_altPresent_summary_emptyAlt');
+  assert.strictEqual(occ('b').i18n.hintKey, 'inputImage_altPresent_hint_fail_value');
+  assert.strictEqual(occ('b').data.details.reasonCode, 'empty_alt');
+});

@@ -114,13 +114,24 @@ function runInPage(ctx) {
         // The ownership is impossible, so the markup's own structure still
         // stands: a WAI-ARIA violation whose WCAG effect depends on whether
         // the page shows the relationship the author tried to state.
+        // An element naming its own id is said so, rather than as an
+        // ancestor that contains it.
+        const self = ref === owner;
         questions.push(
           helpers.reportOccurrence(owner, {
-            summary: `This element’s aria-owns names ${ownedId}, which contains the element itself.`,
-            hint: 'Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.',
+            summary: self
+              ? `This element’s aria-owns names its own id, ${ownedId}.`
+              : `This element’s aria-owns names ${ownedId}, which contains the element itself.`,
+            hint: self
+              ? 'Remove its own id from aria-owns: an element cannot own itself, and the browser ignores it.'
+              : 'Remove that id from aria-owns: an element cannot own one of its ancestors, and the browser ignores it.',
             i18n: {
-              summaryKey: 'ariaOwnsValid_summary_fail_ancestor',
-              hintKey: 'ariaOwnsValid_hint_fail_ancestor',
+              summaryKey: self
+                ? 'ariaOwnsValid_summary_cantTell_self'
+                : 'ariaOwnsValid_summary_fail_ancestor',
+              hintKey: self
+                ? 'ariaOwnsValid_hint_cantTell_self'
+                : 'ariaOwnsValid_hint_fail_ancestor',
               params: { id: ownedId }
             },
             uncertainty: {
@@ -150,17 +161,36 @@ function runInPage(ctx) {
   for (const [owned, owners] of ownersOf) {
     if (owners.length < 2) continue;
     const ownedId = trim(dom.get(owned, 'id'));
+    // The competing owners, as the reader finds them in the markup: the
+    // first three, in document order.
+    const ownerNames = owners
+      .slice(0, 3)
+      .map((o) => helpers.describeElement(o, { role: true }))
+      .filter(Boolean);
+    const ownersText =
+      ownerNames.length === Math.min(owners.length, 3)
+        ? ownerNames.join(', ') + (owners.length > 3 ? ', …' : '')
+        : '';
     fails.push(
       helpers.reportOccurrence(owned, {
-        summary: `This element is named in the aria-owns of ${owners.length} elements, but it can have only one owner.`,
+        summary: ownersText
+          ? `This element is named in the aria-owns of ${owners.length} elements (${ownersText}), but it can have only one owner.`
+          : `This element is named in the aria-owns of ${owners.length} elements, but it can have only one owner.`,
         hint: 'Keep its id in one aria-owns; the browser gives it to only one of them.',
         i18n: {
-          summaryKey: 'ariaOwnsValid_summary_fail_duplicate',
+          summaryKey: ownersText
+            ? 'ariaOwnsValid_summary_fail_duplicateNamed'
+            : 'ariaOwnsValid_summary_fail_duplicate',
           hintKey: 'ariaOwnsValid_hint_fail_duplicate',
-          params: { count: String(owners.length), id: ownedId }
+          params: { count: String(owners.length), id: ownedId, owners: ownersText }
         },
         data: {
-          details: { reasonCode: 'ARIA_OWNS_DUPLICATE', ownerCount: owners.length, ownedId },
+          details: {
+            reasonCode: 'ARIA_OWNS_DUPLICATE',
+            ownerCount: owners.length,
+            ownedId,
+            owners: ownerNames
+          },
           visibilityFilter: visibility(owned) || {
             targetSet: 'acc',
             accEligible: null,

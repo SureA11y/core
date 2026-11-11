@@ -241,14 +241,35 @@ function runInPage(ctx) {
           }
         : null;
 
+    // The name under review, quoted: from aria-labelledby it is not in the
+    // snippet.
+    const nameAll = name.replace(/\s+/g, ' ');
+    const shownName = nameAll.length > 80 ? `${nameAll.slice(0, 79)}…` : nameAll;
+    const ids =
+      !ariaLabel && labelledByText
+        ? ariaLabelledBy
+            .split(/\s+/)
+            .filter(Boolean)
+            .map((x) => `#${x}`)
+            .join(' ')
+        : '';
+
     const baseOccurrence = {
       ...(lean ? { lean } : {}),
-      summary: 'Check that the text alternative of this <embed> is accurate.',
+      summary: ids
+        ? `Check that the text alternative of this <embed>, "${shownName}", taken from ${ids} by aria-labelledby, is accurate.`
+        : `Check that the text alternative of this <embed>, "${shownName}", is accurate.`,
       hint: 'The ARIA name or title should say what is embedded.',
       i18n: {
-        summaryKey: 'embed_textAltQuality_summary_cantTell',
+        summaryKey: ids
+          ? 'embed_textAltQuality_summary_cantTell_labelledby'
+          : 'embed_textAltQuality_summary_cantTell_name',
         hintKey: 'embed_textAltQuality_hint_cantTell',
-        params: { element: (dom.tagName(el) || '').toLowerCase() }
+        params: {
+          element: (dom.tagName(el) || '').toLowerCase(),
+          name: shownName,
+          ...(ids ? { ids } : {})
+        }
       },
       data: {
         visibilityFilter: eligInfo || { targetSet: 'acc', accEligible: null, reasons: [] },

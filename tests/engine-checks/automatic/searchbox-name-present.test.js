@@ -245,3 +245,18 @@ test(`${RULE_ID}: a fail says a <label for> can't name a custom searchbox`, () =
   );
   assert.equal(occ('sb').data.details.nameCause.cause, 'labelNotLabelable');
 });
+
+test(`${RULE_ID}: a fail says an aria-placeholder is a hint, not a name`, () => {
+  const html = `<!doctype html><html lang="en"><head><title>t</title></head><body><input role="searchbox" aria-placeholder="Search"></body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const occ = rule.occurrences[0];
+  assert.equal(occ.i18n.hintKey, 'nameCause_hint_ariaPlaceholder');
+  assert.equal(
+    occ.hint,
+    'Its aria-placeholder "Search" is a hint shown while it is empty, not a name. Name it with aria-label or aria-labelledby.'
+  );
+  assert.equal(occ.i18n.params.text, 'Search');
+});
