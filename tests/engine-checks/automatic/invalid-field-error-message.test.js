@@ -63,7 +63,7 @@ test(`${RULE_ID}: ask, leaning fail, when aria-errormessage names a hidden messa
     ariaInvalid: 'true',
     errorMessageIds: ['e'],
     // What hides it, named in the summary.
-    hiddenCause: { hiddenBy: 'hidden', element: '<p id="e">', onAncestor: false }
+    hiddenCause: { hiddenBy: 'hidden=""', element: '<p id="e">', onAncestor: false }
   });
   assert.match(rule.occurrences[0].summary, /is hidden by hidden="" on <p id="e">\.$/);
   assert.equal(rule.occurrences[0].uncertainty.code, 'judgement-required');

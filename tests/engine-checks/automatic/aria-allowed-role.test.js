@@ -514,8 +514,8 @@ function messageOccurrence(html, match) {
 
 test(`${RULE_ID}: role="region" on an unnamed <section> says the section has no name`, () => {
   const occ = messageOccurrence('<section role="region"><p>x</p></section>', 'section');
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_sectionUnnamed');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_sectionUnnamed');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_cantTell_sectionUnnamed');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_sectionUnnamed');
   assert.strictEqual(
     occ.summary,
     'This <section> has no accessible name, so it is not a region, and role="region" is not allowed on it.'
@@ -528,8 +528,8 @@ test(`${RULE_ID}: role="region" on an unnamed <section> says the section has no 
 
 test(`${RULE_ID}: role="banner" on a nested <header> names what it is nested in`, () => {
   const occ = messageOccurrence('<article><header role="banner">Site</header></article>', 'header');
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_headerNested');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_headerNested');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_cantTell_headerNested');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_headerNested');
   assert.strictEqual(
     occ.summary,
     'This <header> is nested in <article>, so it is not the page banner, and role="banner" is not allowed on it.'
@@ -539,8 +539,8 @@ test(`${RULE_ID}: role="banner" on a nested <header> names what it is nested in`
 
 test(`${RULE_ID}: a role on a <label> tied to a field says the label may take none`, () => {
   const occ = messageOccurrence('<label for="i" role="button">L</label><input id="i">', 'label');
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_labelAssociated');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_labelAssociated');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_cantTell_labelAssociated');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_labelAssociated');
   assert.strictEqual(
     occ.summary,
     'This <label> is tied to a form field, and a label tied to a field may take no role, so role="button" is not allowed on it.'
@@ -553,8 +553,8 @@ test(`${RULE_ID}: a role on a <label> tied to a field says the label may take no
 
 test(`${RULE_ID}: a role on an <img> with no alt text says why`, () => {
   const occ = messageOccurrence('<img src="a.png" role="button" tabindex="0">', 'img');
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_imgNoAlt');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_imgNoAlt');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_cantTell_imgNoAlt');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_imgNoAlt');
   assert.strictEqual(
     occ.summary,
     'This <img> has no alt text, so it may only take role="none" or role="presentation", and role="button" is not allowed on it.'
@@ -567,8 +567,8 @@ test(`${RULE_ID}: a role on an <img> with no alt text says why`, () => {
 
 test(`${RULE_ID}: a role on an <a> with href lists the roles it may take`, () => {
   const occ = messageOccurrence('<a href="/x" role="heading" aria-level="2">H</a>', 'heading');
-  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail_linkHref');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_linkHref');
+  assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_cantTell_linkHref');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_linkHref');
   assert.strictEqual(
     occ.summary,
     'An <a> with href may only take these roles: button, checkbox, menuitem, menuitemcheckbox, menuitemradio, option, radio, switch, tab, treeitem, doc-backlink, doc-biblioref, doc-glossref, doc-noteref. role="heading" is not one of them.'
@@ -582,7 +582,7 @@ test(`${RULE_ID}: a role on an <a> with href lists the roles it may take`, () =>
 test(`${RULE_ID}: any other element lists the roles it allows`, () => {
   const occ = messageOccurrence('<h2 role="button">x</h2>', 'h2');
   assert.strictEqual(occ.i18n.summaryKey, 'ariaAllowedRole_summary_fail');
-  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_fail_allowed');
+  assert.strictEqual(occ.i18n.hintKey, 'ariaAllowedRole_hint_cantTell_allowed');
   assert.strictEqual(occ.summary, 'role="button" is not permitted on <h2>.');
   assert.strictEqual(
     occ.hint,

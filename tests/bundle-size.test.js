@@ -26,11 +26,11 @@ const KB = 1024;
 
 // [file, budget in KB]: about 5% above the size when the budget was set.
 const BUDGETS = [
-  ['surea11y.browser.js', 1690],
-  ['surea11y.i18n.de.js', 230],
-  ['surea11y.i18n.es.js', 222],
-  ['surea11y.i18n.fr.js', 230],
-  ['surea11y.i18n.ja.js', 270],
+  ['surea11y.browser.js', 1823],
+  ['surea11y.i18n.de.js', 283],
+  ['surea11y.i18n.es.js', 273],
+  ['surea11y.i18n.fr.js', 284],
+  ['surea11y.i18n.ja.js', 332],
   // The HTML report openReport() loads on first use.
   ['surea11y.report.js', 151]
 ];

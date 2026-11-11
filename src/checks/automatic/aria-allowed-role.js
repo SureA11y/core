@@ -250,11 +250,6 @@ function runInPage(ctx) {
       : allowedList && allowedList.length
         ? `Use a role this element allows (${allowedRoles}), or use a different element.`
         : 'Use a role this element allows, or use a different element.';
-    const hintKey = why
-      ? `ariaAllowedRole_hint_fail_${why.reason}`
-      : allowedList && allowedList.length
-        ? 'ariaAllowedRole_hint_fail_allowed'
-        : 'ariaAllowedRole_hint_fail';
 
     occurrences.push(
       helpers.reportOccurrence(el, {
@@ -262,9 +257,13 @@ function runInPage(ctx) {
         hint: hintText,
         i18n: {
           summaryKey: why
-            ? `ariaAllowedRole_summary_fail_${why.reason}`
+            ? `ariaAllowedRole_summary_cantTell_${why.reason}`
             : 'ariaAllowedRole_summary_fail',
-          hintKey,
+          hintKey: why
+            ? `ariaAllowedRole_hint_cantTell_${why.reason}`
+            : allowedList && allowedList.length
+              ? 'ariaAllowedRole_hint_cantTell_allowed'
+              : 'ariaAllowedRole_hint_fail',
           params: {
             role,
             element: tag,
