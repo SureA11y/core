@@ -23,7 +23,9 @@
     "cypress",
     "webdriverio",
     "jest",
-    "vitest"
+    "vitest",
+    "server-side-rendering",
+    "static-html"
   ],
   "main": "src/index.js",
   "types": "src/index.d.ts",
