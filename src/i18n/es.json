@@ -401,7 +401,7 @@
   "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
   "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
   "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
-  "cssHidden_focus_lean_why_container": "Un contenedor mantiene el elemento fuera de la vista, y ningún estilo de foco hace visible ese contenedor cuando el elemento recibe el foco.",
+  "cssHidden_focus_lean_why_container": "Cuando el elemento recibe el foco sigue fuera de la vista: está donde el desplazamiento no llega, o en un contenedor recortado a nada, y ningún estilo de foco lo hace visible.",
   "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
   "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
   "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",

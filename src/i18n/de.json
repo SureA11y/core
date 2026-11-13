@@ -401,7 +401,7 @@
   "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
   "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
   "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
-  "cssHidden_focus_lean_why_container": "Ein Container hält das Element außer Sicht, und kein Fokusstil bringt diesen Container in Sicht, wenn das Element den Fokus erhält.",
+  "cssHidden_focus_lean_why_container": "Erhält das Element den Fokus, bleibt es außer Sicht: Es liegt, wo kein Scrollen hinreicht, oder in einem auf nichts zugeschnittenen Container, und kein Fokusstil bringt es in Sicht.",
   "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
   "linkNamePresent_title": "Links haben einen zugänglichen Namen",
   "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",

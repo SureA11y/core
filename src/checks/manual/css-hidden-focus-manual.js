@@ -43,14 +43,18 @@
  *   - `cssHiddenTabbable_needsFocusStateVerification` (cantTell): an element
  *     in the tab order is hidden by CSS and no focus rule brings it into
  *     view, so a keyboard user may not see where focus is.
- *     It leans fail when the element's own styles show it but a container
- *     puts it out of reach or clips it to nothing (`outOfReach`,
- *     `containerClipped`), no focus rule brings that container into view,
+ *     It leans fail when the element is out of view where it lies:
+ *     `outOfReach` (a container is positioned off screen, or, in a browser,
+ *     the element's box lies where no scrolling reaches, whether its own
+ *     position or a container's puts it there) or `containerClipped` (a
+ *     container clips it to nothing); no focus rule brings it into view;
  *     and no script is known to react to its focus (no `onfocus` or
  *     `onfocusin` attribute on it or a container, and no focus listener the
  *     listener hook saw). Without the hook, the lean says a script may
- *     still show it. An element hidden by its own styles gets no lean: a
- *     custom checkbox hides its input and draws focus on the box beside it.
+ *     still show it. A hint read from the element's own styles
+ *     (`opacityZero`, `clipped`, `zeroSizeOverflowHidden`, `offscreen`)
+ *     gets no lean: a custom checkbox hides its input that way and draws
+ *     focus on the box beside it.
  *     Basis: WCAG 2.4.7 (not settled).
  *   - `cssHiddenTabbable_runtimeRedirect_needsReview` (cantTell): an element
  *     in the tab order is hidden by CSS, but focusing it moved focus
@@ -1156,11 +1160,12 @@ function runInPage(ctx) {
     return known ? false : null;
   }
 
-  // Which way a finding hidden by a container leans: fail, the container
-  // keeping it out of view whatever takes focus, unless a script may react
-  // to the focus. Only a container's hiding leans: the element's own hiding
-  // is how a custom checkbox or radio hides its input while a sibling shows
-  // the focus.
+  // Which way a finding out of view where it lies leans: fail, out of
+  // reach (a container off screen, or a box the browser measured where no
+  // scrolling reaches) or in a container clipped to nothing, unless a
+  // script may react to the focus. A hint read from the element's own
+  // styles doesn't lean: that is how a custom checkbox or radio hides its
+  // input while a sibling shows the focus.
   function containerLean(el, hintsArr) {
     const by = hintsArr.includes('outOfReach')
       ? 'outOfReach'
@@ -1172,7 +1177,7 @@ function runInPage(ctx) {
     if (scripted === true) return null;
     return {
       toward: 'fail',
-      why: 'A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.',
+      why: "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       signals: [
         { signal: 'hidden-by-container', value: by },
         { signal: 'focus-style-reveals', value: false },
