@@ -62,11 +62,10 @@ for (const ruleId of ['form-control-programmatic-label-present', 'button-name-pr
       large.labelQueries <= small.labelQueries + 2,
       `${small.labelQueries} then ${large.labelQueries}`
     );
-    // Four times the fields, about four times the for reads: linear, not quadratic.
-    assert.ok(
-      large.forReads <= small.forReads * 4 + 50,
-      `${small.forReads} then ${large.forReads}`
-    );
+    // Four times the fields, about four times the for reads: linear, not
+    // quadratic (16 times). A little over four, as ids with more digits have
+    // a few more neighbours one edit away (field-123 and field-12x).
+    assert.ok(large.forReads <= small.forReads * 4.5, `${small.forReads} then ${large.forReads}`);
   });
 }
 
@@ -76,4 +75,57 @@ test('form-control-programmatic-label-present still names a far label whose for 
   assert.ok(occ, 'field-0 fails');
   assert.equal(occ.data.details.nameCause.cause, 'labelForMissing');
   assert.equal(occ.data.details.nameCause.for, 'field-0x');
+});
+
+test('form-control-programmatic-label-present names the label whose for is closest to the id', () => {
+  // field-0x is two edits from field-1, field-1x one: the closer one is named.
+  const { rule } = count(3, 'form-control-programmatic-label-present');
+  const occ = rule.occurrences.find((o) => o.html.includes('id="field-1"'));
+  assert.equal(occ.data.details.nameCause.for, 'field-1x');
+});
+
+test('form-control-programmatic-label-present names a label beside the field before a closer one far off', () => {
+  const dom = new JSDOM(
+    '<!doctype html><html lang="en"><head><title>t</title></head><body><main>' +
+      '<section><label for="emai">Far</label></section>' +
+      '<p><label for="contact">Beside</label><input id="email" type="text"></p>' +
+      '</main></body></html>'
+  );
+  const rule = runa11yCoreOnDom(dom, {
+    runOnly: ['form-control-programmatic-label-present'],
+    entryPointParity: false
+  }).checksResults[0];
+  assert.equal(rule.occurrences[0].data.details.nameCause.for, 'contact');
+});
+
+test('in a flat form, each field is told about the label next to it, at a cost in proportion to the form', () => {
+  // Every label and field a child of one <form>, each label's for missing
+  // its field: the label just before a field is the one named, not the
+  // form's first, and a form four times as long reads four times as much.
+  const form = (n) => {
+    const dom = new JSDOM(
+      '<!doctype html><html lang="en"><head><title>t</title></head><body><main><form>' +
+        Array.from(
+          { length: n },
+          (_, i) => `<label for="q${i}-answer">Question ${i}</label><input id="q${i}-text">`
+        ).join('') +
+        '</form></main></body></html>'
+    );
+    const getAttribute = dom.window.Element.prototype.getAttribute;
+    let forReads = 0;
+    dom.window.Element.prototype.getAttribute = function (name) {
+      if (name === 'for') forReads++;
+      return getAttribute.apply(this, arguments);
+    };
+    const rule = runa11yCoreOnDom(dom, {
+      runOnly: ['form-control-programmatic-label-present'],
+      entryPointParity: false
+    }).checksResults[0];
+    return { rule, forReads };
+  };
+  const small = form(50);
+  const large = form(200);
+  const occ = small.rule.occurrences.find((o) => o.html.includes('id="q7-text"'));
+  assert.equal(occ.data.details.nameCause.for, 'q7-answer');
+  assert.ok(large.forReads <= small.forReads * 4.5, `${small.forReads} then ${large.forReads}`);
 });

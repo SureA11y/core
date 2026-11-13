@@ -15,9 +15,12 @@
  *   Without a layout (jsdom), notApplicable.
  * @expectation
  *   No element in the tab order can take focus with any part of it hidden
- *   behind such a box: where a box covers part of the window the page's
- *   `scroll-padding` doesn't take out, an element that reaches under it and
- *   can be scrolled there takes focus partly hidden. One finding per box,
+ *   behind such a box, even one it shows through (a semi-transparent or
+ *   dimming box obscures it, as WCAG's Understanding 2.4.12 says, where
+ *   focus-not-obscured-minimum lets it pass): where a box covers part of
+ *   the window the page's `scroll-padding` doesn't take out, an element that
+ *   reaches under it and can be scrolled there takes focus partly hidden.
+ *   One finding per box,
  *   naming how many elements it can hide entirely and how many in part. A
  *   `scroll-padding` on the page at least as large as the box (C43) clears
  *   it. Content the user opened and can close without moving focus is
