@@ -30,7 +30,7 @@ Total rules: **147**. With fixture: **143**. Without fixture: **4**.
 | aria-deprecated-role | automatic | `tests/fixtures/aria-deprecated-role-all-scenarios.html` | 4 | 1 | 0 | 2 | 1 |
 | aria-expanded-state-mismatch | manual | `tests/fixtures/aria-expanded-state-mismatch-all-scenarios.html` | 11 | 4 | 0 | 3 | 4 |
 | aria-hidden-body | automatic | `tests/fixtures/aria-hidden-body-all-scenarios.html` | 1 | 0 | 1 | 0 | 0 |
-| aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 36 | 15 | 21 | 0 | 0 |
+| aria-hidden-focus | automatic | `tests/fixtures/aria-hidden-focus-all-scenarios.html` | 38 | 16 | 22 | 0 | 0 |
 | aria-owns-valid | automatic | `tests/fixtures/aria-owns-valid-all-scenarios.html` | 7 | 2 | 1 | 2 | 2 |
 | aria-prohibited-attr | automatic | `tests/fixtures/aria-prohibited-attr-all-scenarios.html` | 16 | 2 | 9 | 1 | 4 |
 | aria-prohibited-children | automatic | `tests/fixtures/aria-prohibited-children-all-scenarios.html` | 20 | 10 | 8 | 0 | 2 |

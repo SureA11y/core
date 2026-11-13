@@ -222,10 +222,10 @@
       "testFile": "tests/engine-checks/automatic/aria-hidden-focus.test.js",
       "hasFixture": true,
       "fixtureFile": "tests/fixtures/aria-hidden-focus-all-scenarios.html",
-      "totalCases": 36,
+      "totalCases": 38,
       "caseCounts": {
-        "PASS": 15,
-        "FAIL": 21,
+        "PASS": 16,
+        "FAIL": 22,
         "CANTTELL": 0,
         "OTHER": 0
       }

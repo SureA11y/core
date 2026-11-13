@@ -801,7 +801,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 21, maxOccurrences: 21 });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 22, maxOccurrences: 22 });
 
   const expectedFailIds = [
     'case_link_href',
@@ -824,7 +824,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_clip_rect',
     'case_clip_path_inset',
     'case_zero_size_overflow_hidden',
-    'case_offscreen_text_indent'
+    'case_offscreen_text_indent',
+    'case_visibility_overridden'
   ];
 
   const expectedNoOccIds = [
@@ -842,7 +843,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/aria-hidden-focus-all-scenari
     'case_opacity_and_visibility_hidden',
     'case_opacity_close_display_none_far',
     'case_tabindex_negative_descendant',
-    'case_tabindex_negative_self'
+    'case_tabindex_negative_self',
+    'case_visibility_hidden_root'
   ];
 
   for (const id of expectedFailIds) {

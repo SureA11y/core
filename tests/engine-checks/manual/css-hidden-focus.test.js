@@ -290,7 +290,7 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
   const html = fs.readFileSync(fixturePath, 'utf8');
 
   const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
-  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 10, maxOccurrences: 10 });
+  const rule = assertRule(result, RULE_ID, 'cantTell', { minOccurrences: 11, maxOccurrences: 11 });
 
   const expectedHintsById = {
     case_opacity_zero: ['opacityZero'],
@@ -302,7 +302,8 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     case_input_offscreen: ['offscreen'],
     case_select_opacity_zero: ['opacityZero'],
     case_textarea_clipped: ['clipped'],
-    case_focus_half_restored: ['offscreen']
+    case_focus_half_restored: ['offscreen'],
+    case_fixed_bar_above_viewport: ['outOfReach']
   };
 
   for (const [id, hints] of Object.entries(expectedHintsById)) {
@@ -325,8 +326,14 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     'case_hidden_attr',
     'case_tabindex_neg1',
     'case_skip_link_focus_restored',
-    'case_not_focus_clip'
+    'case_not_focus_clip',
+    'case_fixed_bar_revealed'
   ];
+
+  // Only the button its container keeps out of view leans fail.
+  const leaning = rule.occurrences.filter((o) => o.lean).map((o) => o.lean.toward + ':' + o.html);
+  assert.strictEqual(leaning.length, 1);
+  assert.ok(leaning[0].startsWith('fail:') && leaning[0].includes('case_fixed_bar_above_viewport'));
 
   for (const id of expectedNoOccIds) {
     assert.ok(

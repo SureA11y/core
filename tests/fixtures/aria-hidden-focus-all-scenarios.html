@@ -312,5 +312,20 @@
 </div>
 </div>
 
+<div class="case" id="case_37">
+  <div class="case-title">37 — FAIL: a visibility:hidden root holds a button set back to visibility:visible, which is drawn and focusable</div>
+<div id="case_visibility_overridden" aria-hidden="true" style="visibility:hidden">
+  <button>Still hidden</button>
+  <span style="visibility:visible"><button>Shown again</button></span>
+</div>
+</div>
+
+<div class="case" id="case_38">
+  <div class="case-title">38 — PASS: a visibility:hidden root whose content stays hidden</div>
+<div id="case_visibility_hidden_root" aria-hidden="true" style="visibility:hidden">
+  <button>Hidden with its root</button>
+</div>
+</div>
+
 </body>
 </html>

@@ -9,6 +9,8 @@
     .vh-focusable:not(:focus):not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); }
     .half-restored { position: absolute; left: -9999px; top: -9999px; }
     .half-restored:focus { left: 0; }
+    .fixed-bar-revealed { overflow-y: hidden; position: fixed; height: 1px; top: -1px; left: 0; }
+    .fixed-bar-revealed:focus-within { top: 0; height: auto; }
   </style>
 </head>
 <body>
@@ -93,6 +95,20 @@
 <!-- 15) cantTell: the :focus rule restores left but top stays off-screen -->
 <!-- ========================================================= -->
 <a id="case_focus_half_restored" class="half-restored" href="#main">Skip to content</a>
+
+<!-- ========================================================= -->
+<!-- 16) cantTell, leans fail: a fixed 1px bar above the viewport, hidden with visibility, whose content is set back to visible -->
+<!-- ========================================================= -->
+<div style="overflow-y:hidden; position:fixed; height:1px; top:-1px; left:0; visibility:hidden">
+  <div style="visibility:visible"><button id="case_fixed_bar_above_viewport">In the bar</button></div>
+</div>
+
+<!-- ========================================================= -->
+<!-- 17) NOT FLAGGED: the same bar, brought into view by a :focus-within rule -->
+<!-- ========================================================= -->
+<div class="fixed-bar-revealed">
+  <button id="case_fixed_bar_revealed">In the bar</button>
+</div>
 
 </body>
 </html>
