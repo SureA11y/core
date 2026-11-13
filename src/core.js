@@ -14966,11 +14966,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (aria-placeholder, aria-describedby, an aria-label on the generic
   // parent). opts.skip lists causes a rule words itself.
   const LEVENSHTEIN_MAX = 2;
-  function closeIds(a, b) {
+  // How many edits apart two ids are, ignoring case, or Infinity past
+  // LEVENSHTEIN_MAX.
+  function idDistance(a, b) {
     a = lower(a);
     b = lower(b);
-    if (a === b) return true;
-    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return false;
+    if (a === b) return 0;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return Infinity;
     let prev = [];
     for (let j = 0; j <= b.length; j++) prev.push(j);
     for (let i = 1; i <= a.length; i++) {
@@ -14984,7 +14986,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       prev = cur;
     }
-    return prev[b.length] <= LEVENSHTEIN_MAX;
+    return prev[b.length] <= LEVENSHTEIN_MAX ? prev[b.length] : Infinity;
   }
   function shortText(n) {
     const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
@@ -15055,15 +15057,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return index;
   }
   // The id-dependent part of a labelForIndex: `orphans`, the labels whose
-  // trimmed for names no element, with a deletion index over their lower
-  // cased for values (closeTo), and `byTarget`, the labels whose for
-  // reaches an element, by that element.
+  // trimmed for names no element, also by parent element (`orphansByParent`),
+  // with deletion indexes over their lower cased for values (closeTo), and
+  // `byTarget`, the labels whose for reaches an element, by that element.
   const CLOSE_IDS_INDEX_MAX = 48;
-  function deletionsWithin2(s) {
+  // How many labels in a field's parent nameCause compares with its id one
+  // by one before it looks them up in the deletion index instead.
+  const BESIDE_DIRECT_MAX = 32;
+  // A string and what it gives with up to max (1 or 2) characters deleted.
+  function deletionsWithin(s, max) {
     const out = new Set([s]);
     for (let i = 0; i < s.length; i++) {
       const d1 = s.slice(0, i) + s.slice(i + 1);
       out.add(d1);
+      if (max < 2) continue;
       for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
     }
     return out;
@@ -15071,27 +15078,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function labelForIds(index, byId) {
     if (index.ids) return index.ids;
     const orphans = [];
+    const orphansByParent = new Map();
     const byTarget = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
     for (const l of index.all) {
       const forId = trim(dom.getAttribute(l, 'for') || '');
       if (!forId) continue;
       const target = byId(forId);
-      if (!target) orphans.push(l);
-      else {
-        const list = byTarget.get(target);
-        if (list) list.push(l);
-        else byTarget.set(target, [l]);
-      }
+      if (!target) {
+        orphans.push(l);
+        const up = dom.parentElement(l);
+        if (up) push(orphansByParent, up, l);
+      } else push(byTarget, target, l);
     }
-    // Two strings at most LEVENSHTEIN_MAX (2) edits apart share a string
-    // each gives by deleting at most two of its characters, so looking up
-    // an id's deletions finds every for value closeIds can accept. A long
-    // value (rare) is kept apart and compared directly.
-    let deletionIndex = null;
+    // Two strings at most max edits apart (1 or 2) share a string each gives
+    // by deleting at most max of its characters, so looking up an id's
+    // deletions finds every for value within max edits of it (and some a
+    // little further, which idDistance then measures). A long value (rare)
+    // is kept apart and compared directly.
+    const indexes = {};
     let long = null;
-    const closeTo = (id) => {
+    const closeTo = (id, max) => {
+      let deletionIndex = indexes[max];
       if (!deletionIndex) {
-        deletionIndex = new Map();
+        deletionIndex = indexes[max] = new Map();
         long = [];
         for (const l of orphans) {
           const f = lower(trim(dom.getAttribute(l, 'for') || ''));
@@ -15099,26 +15113,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
             long.push(l);
             continue;
           }
-          for (const d of deletionsWithin2(f)) {
-            const list = deletionIndex.get(d);
-            if (list) list.push(l);
-            else deletionIndex.set(d, [l]);
-          }
+          for (const d of deletionsWithin(f, max)) push(deletionIndex, d, l);
         }
       }
       const found = new Set(long);
       const key = lower(id);
       if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
-        for (const d of deletionsWithin2(key)) {
-          const list = deletionIndex.get(d);
-          if (list) for (const l of list) found.add(l);
+        for (const d of deletionsWithin(key, max)) {
+          for (const l of deletionIndex.get(d) || []) found.add(l);
         }
       } else {
         for (const l of orphans) found.add(l);
       }
       return found;
     };
-    index.ids = { orphans, byTarget, closeTo };
+    index.ids = { orphans, orphansByParent, byTarget, closeTo };
     return index.ids;
   }
   function labelsOf(el) {
@@ -15326,20 +15335,92 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          // Only these can pass the test below: a label beside the field,
-          // one in its parent, and one whose for is close to its id.
+          // The label most likely meant for the field, in this order: one
+          // next to it, which a reader takes for its label; another in its
+          // parent whose for is close to its id, then any other there; then
+          // one elsewhere whose for is close to its id. Among several, the
+          // fewest edits from its id, then the first in the page. Each tier
+          // is looked up rather than every label tried, so a form of many
+          // fields costs in proportion to its size.
           const ids = labelForIds(labelIndex(), byId);
-          const maybe = new Set();
-          for (const n of near) if (n) maybe.add(n);
-          if (parent) for (const l of labelIndex().byParent.get(parent) || []) maybe.add(l);
-          if (id) for (const l of ids.closeTo(id)) maybe.add(l);
-          for (const l of inOrder(maybe)) {
+          const pos = labelIndex().pos;
+          const usable = (l) => {
             const forId = attr(l, 'for');
-            if (!forId || byId(forId)) continue;
-            const inParent = parent && dom.parentElement(l) === parent;
-            if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
+            if (!forId || byId(forId)) return null;
             const text = shortText(l);
-            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            return HIDDEN_TEXT_RE.test(text) ? { forId, text } : null;
+          };
+          // The usable label of a set fewest edits from the id, the first in
+          // the page on a tie, or null.
+          const closest = (set, keep) => {
+            let best = null;
+            for (const l of set) {
+              if (!pos.has(l) || !keep(l)) continue;
+              const distance = idDistance(attr(l, 'for'), id);
+              if (distance > LEVENSHTEIN_MAX) continue;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Every label one edit from the id shares a key of the one-edit
+          // index with it, so a find there at one edit or less is the
+          // closest; past that, the two-edit index has the rest.
+          const closestOf = (keep) => {
+            if (!id) return null;
+            const one = closest(ids.closeTo(id, 1), keep);
+            if (one && one.distance <= 1) return one;
+            return closest(ids.closeTo(id, 2), keep) || one;
+          };
+          // A label next to the field (a sibling, or just before its
+          // parent), the reader's first guess at its label: the usable one
+          // fewest edits from its id, any distance, then the first.
+          const nextTo = () => {
+            let best = null;
+            for (const l of near) {
+              if (!l || !pos.has(l)) continue;
+              const distance = id ? idDistance(attr(l, 'for'), id) : Infinity;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Another in its parent: the closest to its id. The labels of a
+          // parent are compared one by one, but for a large flat form, where
+          // they are looked up in the index instead.
+          const inParent = (parent && ids.orphansByParent.get(parent)) || [];
+          const parentClose = () => {
+            if (!id) return null;
+            if (inParent.length > BESIDE_DIRECT_MAX) {
+              return closestOf((l) => dom.parentElement(l) === parent);
+            }
+            return closest(inParent, () => true);
+          };
+          // Else the first usable in its parent.
+          const parentFirst = () => {
+            for (const l of inParent) {
+              const found = usable(l);
+              if (found) return { l, ...found };
+            }
+            return null;
+          };
+          const best = nextTo() || parentClose() || parentFirst() || closestOf(() => true);
+          if (best) {
+            const { forId, text } = best;
             return id
               ? {
                   hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
@@ -136815,11 +136896,13 @@ const createDomHelpers = (function createDomHelpers(opts) {
   // (aria-placeholder, aria-describedby, an aria-label on the generic
   // parent). opts.skip lists causes a rule words itself.
   const LEVENSHTEIN_MAX = 2;
-  function closeIds(a, b) {
+  // How many edits apart two ids are, ignoring case, or Infinity past
+  // LEVENSHTEIN_MAX.
+  function idDistance(a, b) {
     a = lower(a);
     b = lower(b);
-    if (a === b) return true;
-    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return false;
+    if (a === b) return 0;
+    if (Math.abs(a.length - b.length) > LEVENSHTEIN_MAX) return Infinity;
     let prev = [];
     for (let j = 0; j <= b.length; j++) prev.push(j);
     for (let i = 1; i <= a.length; i++) {
@@ -136833,7 +136916,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
       }
       prev = cur;
     }
-    return prev[b.length] <= LEVENSHTEIN_MAX;
+    return prev[b.length] <= LEVENSHTEIN_MAX ? prev[b.length] : Infinity;
   }
   function shortText(n) {
     const all = trim(String(dom.textContent(n) || '').replace(/\s+/g, ' '));
@@ -136904,15 +136987,20 @@ const createDomHelpers = (function createDomHelpers(opts) {
     return index;
   }
   // The id-dependent part of a labelForIndex: `orphans`, the labels whose
-  // trimmed for names no element, with a deletion index over their lower
-  // cased for values (closeTo), and `byTarget`, the labels whose for
-  // reaches an element, by that element.
+  // trimmed for names no element, also by parent element (`orphansByParent`),
+  // with deletion indexes over their lower cased for values (closeTo), and
+  // `byTarget`, the labels whose for reaches an element, by that element.
   const CLOSE_IDS_INDEX_MAX = 48;
-  function deletionsWithin2(s) {
+  // How many labels in a field's parent nameCause compares with its id one
+  // by one before it looks them up in the deletion index instead.
+  const BESIDE_DIRECT_MAX = 32;
+  // A string and what it gives with up to max (1 or 2) characters deleted.
+  function deletionsWithin(s, max) {
     const out = new Set([s]);
     for (let i = 0; i < s.length; i++) {
       const d1 = s.slice(0, i) + s.slice(i + 1);
       out.add(d1);
+      if (max < 2) continue;
       for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
     }
     return out;
@@ -136920,27 +137008,34 @@ const createDomHelpers = (function createDomHelpers(opts) {
   function labelForIds(index, byId) {
     if (index.ids) return index.ids;
     const orphans = [];
+    const orphansByParent = new Map();
     const byTarget = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
     for (const l of index.all) {
       const forId = trim(dom.getAttribute(l, 'for') || '');
       if (!forId) continue;
       const target = byId(forId);
-      if (!target) orphans.push(l);
-      else {
-        const list = byTarget.get(target);
-        if (list) list.push(l);
-        else byTarget.set(target, [l]);
-      }
+      if (!target) {
+        orphans.push(l);
+        const up = dom.parentElement(l);
+        if (up) push(orphansByParent, up, l);
+      } else push(byTarget, target, l);
     }
-    // Two strings at most LEVENSHTEIN_MAX (2) edits apart share a string
-    // each gives by deleting at most two of its characters, so looking up
-    // an id's deletions finds every for value closeIds can accept. A long
-    // value (rare) is kept apart and compared directly.
-    let deletionIndex = null;
+    // Two strings at most max edits apart (1 or 2) share a string each gives
+    // by deleting at most max of its characters, so looking up an id's
+    // deletions finds every for value within max edits of it (and some a
+    // little further, which idDistance then measures). A long value (rare)
+    // is kept apart and compared directly.
+    const indexes = {};
     let long = null;
-    const closeTo = (id) => {
+    const closeTo = (id, max) => {
+      let deletionIndex = indexes[max];
       if (!deletionIndex) {
-        deletionIndex = new Map();
+        deletionIndex = indexes[max] = new Map();
         long = [];
         for (const l of orphans) {
           const f = lower(trim(dom.getAttribute(l, 'for') || ''));
@@ -136948,26 +137043,21 @@ const createDomHelpers = (function createDomHelpers(opts) {
             long.push(l);
             continue;
           }
-          for (const d of deletionsWithin2(f)) {
-            const list = deletionIndex.get(d);
-            if (list) list.push(l);
-            else deletionIndex.set(d, [l]);
-          }
+          for (const d of deletionsWithin(f, max)) push(deletionIndex, d, l);
         }
       }
       const found = new Set(long);
       const key = lower(id);
       if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
-        for (const d of deletionsWithin2(key)) {
-          const list = deletionIndex.get(d);
-          if (list) for (const l of list) found.add(l);
+        for (const d of deletionsWithin(key, max)) {
+          for (const l of deletionIndex.get(d) || []) found.add(l);
         }
       } else {
         for (const l of orphans) found.add(l);
       }
       return found;
     };
-    index.ids = { orphans, byTarget, closeTo };
+    index.ids = { orphans, orphansByParent, byTarget, closeTo };
     return index.ids;
   }
   function labelsOf(el) {
@@ -137175,20 +137265,92 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          // Only these can pass the test below: a label beside the field,
-          // one in its parent, and one whose for is close to its id.
+          // The label most likely meant for the field, in this order: one
+          // next to it, which a reader takes for its label; another in its
+          // parent whose for is close to its id, then any other there; then
+          // one elsewhere whose for is close to its id. Among several, the
+          // fewest edits from its id, then the first in the page. Each tier
+          // is looked up rather than every label tried, so a form of many
+          // fields costs in proportion to its size.
           const ids = labelForIds(labelIndex(), byId);
-          const maybe = new Set();
-          for (const n of near) if (n) maybe.add(n);
-          if (parent) for (const l of labelIndex().byParent.get(parent) || []) maybe.add(l);
-          if (id) for (const l of ids.closeTo(id)) maybe.add(l);
-          for (const l of inOrder(maybe)) {
+          const pos = labelIndex().pos;
+          const usable = (l) => {
             const forId = attr(l, 'for');
-            if (!forId || byId(forId)) continue;
-            const inParent = parent && dom.parentElement(l) === parent;
-            if (!(id && closeIds(forId, id)) && !near.has(l) && !inParent) continue;
+            if (!forId || byId(forId)) return null;
             const text = shortText(l);
-            if (!HIDDEN_TEXT_RE.test(text)) continue;
+            return HIDDEN_TEXT_RE.test(text) ? { forId, text } : null;
+          };
+          // The usable label of a set fewest edits from the id, the first in
+          // the page on a tie, or null.
+          const closest = (set, keep) => {
+            let best = null;
+            for (const l of set) {
+              if (!pos.has(l) || !keep(l)) continue;
+              const distance = idDistance(attr(l, 'for'), id);
+              if (distance > LEVENSHTEIN_MAX) continue;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Every label one edit from the id shares a key of the one-edit
+          // index with it, so a find there at one edit or less is the
+          // closest; past that, the two-edit index has the rest.
+          const closestOf = (keep) => {
+            if (!id) return null;
+            const one = closest(ids.closeTo(id, 1), keep);
+            if (one && one.distance <= 1) return one;
+            return closest(ids.closeTo(id, 2), keep) || one;
+          };
+          // A label next to the field (a sibling, or just before its
+          // parent), the reader's first guess at its label: the usable one
+          // fewest edits from its id, any distance, then the first.
+          const nextTo = () => {
+            let best = null;
+            for (const l of near) {
+              if (!l || !pos.has(l)) continue;
+              const distance = id ? idDistance(attr(l, 'for'), id) : Infinity;
+              if (
+                best &&
+                (best.distance < distance ||
+                  (best.distance === distance && pos.get(best.l) < pos.get(l)))
+              ) {
+                continue;
+              }
+              const found = usable(l);
+              if (found) best = { l, distance, ...found };
+            }
+            return best;
+          };
+          // Another in its parent: the closest to its id. The labels of a
+          // parent are compared one by one, but for a large flat form, where
+          // they are looked up in the index instead.
+          const inParent = (parent && ids.orphansByParent.get(parent)) || [];
+          const parentClose = () => {
+            if (!id) return null;
+            if (inParent.length > BESIDE_DIRECT_MAX) {
+              return closestOf((l) => dom.parentElement(l) === parent);
+            }
+            return closest(inParent, () => true);
+          };
+          // Else the first usable in its parent.
+          const parentFirst = () => {
+            for (const l of inParent) {
+              const found = usable(l);
+              if (found) return { l, ...found };
+            }
+            return null;
+          };
+          const best = nextTo() || parentClose() || parentFirst() || closestOf(() => true);
+          if (best) {
+            const { forId, text } = best;
             return id
               ? {
                   hint: `The <label for="${forId}"> "${text}" points to an id no element has, so it labels nothing; this field's id is "${id}". Make the two match.`,
