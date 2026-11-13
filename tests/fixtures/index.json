@@ -938,7 +938,7 @@
         "2.4.12"
       ],
       "ruleFile": "src/checks/manual/focus-not-obscured-enhanced-manual.js",
-      "testFile": null,
+      "testFile": "tests/engine-checks/manual/focus-not-obscured-enhanced.test.js",
       "hasFixture": false,
       "fixtureFile": null,
       "totalCases": 0,

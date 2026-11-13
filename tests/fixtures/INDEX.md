@@ -10,7 +10,7 @@ Total rules: **149**. With fixture: **144**. Without fixture: **5**.
 
 | Rule ID | Type | Title | Rule file | Test file |
 |---|---|---|---|---|
-| focus-not-obscured-enhanced | manual | No part of a focused element should be hidden | src/checks/manual/focus-not-obscured-enhanced-manual.js | — |
+| focus-not-obscured-enhanced | manual | No part of a focused element should be hidden | src/checks/manual/focus-not-obscured-enhanced-manual.js | tests/engine-checks/manual/focus-not-obscured-enhanced.test.js |
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
