@@ -171,7 +171,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`video-caption`](#video-caption) | Prerecorded video should provide complete captions | 1.2.2 | A | low | moderate |
 | [`widget-keyboard-focusable`](#widget-keyboard-focusable) | Widgets should be reachable with the keyboard | 2.1.1, 2.1.3 | A, AAA | medium | serious |
 
-## Composite (WCAG-SC rollup) rules (40)
+## Composite (WCAG-SC rollup) rules (42)
 
 Composite rules aren't individually authored. They're generated rollups over the atomic rules above, one per WCAG Success Criterion with automatable coverage. See [`WCAG_CONFORMANCE.md`](./WCAG_CONFORMANCE.md) for rollup semantics.
 
@@ -197,6 +197,8 @@ Composite rules aren't individually authored. They're generated rollups over the
 | `wcag-2.2.2-pause-stop-hide` | Pause, Stop, Hide | Rollup of checks ensuring moving, blinking, or auto-scrolling content can be paused, stopped, or hidden. | 2.2.2 | A | 2 |
 | `wcag-2.2.4-interruptions` | Interruptions | Rollup of checks ensuring automatic context changes only happen at the user's request (AAA). | 2.2.4 | AAA | 2 |
 | `wcag-2.4.1-bypass-blocks` | Bypass Blocks | Rollup of checks ensuring the page provides a way to bypass repeated blocks of content. | 2.4.1 | A | 1 |
+| `wcag-2.4.11-focus-not-obscured-minimum` | Focus Not Obscured (Minimum) | Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it. | 2.4.11 | AA | 1 |
+| `wcag-2.4.12-focus-not-obscured-enhanced` | Focus Not Obscured (Enhanced) | Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA). | 2.4.12 | AAA | 1 |
 | `wcag-2.4.13-focus-appearance` | Focus Appearance | Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA). | 2.4.13 | AAA | 2 |
 | `wcag-2.4.2-page-titled` | Page titled | Rollup of checks ensuring documents have a meaningful page title. | 2.4.2 | A | 2 |
 | `wcag-2.4.3-focus-order` | Focus order | Rollup of checks ensuring focus moves through content in a meaningful order. | 2.4.3 | A | 1 |

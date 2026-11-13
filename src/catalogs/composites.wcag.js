@@ -305,6 +305,34 @@ module.exports = [
   },
 
   {
+    id: 'wcag-2.4.11-focus-not-obscured-minimum',
+    checksIds: ['focus-not-obscured-minimum'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2411_focus_not_obscured_minimum.title',
+      descriptionKey: 'catalog.rules.wcag_2411_focus_not_obscured_minimum.description',
+      title: 'Focus Not Obscured (Minimum)',
+      description:
+        'Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.',
+      wcagSc: ['2.4.11'],
+      level: 'AA'
+    }
+  },
+
+  {
+    id: 'wcag-2.4.12-focus-not-obscured-enhanced',
+    checksIds: ['focus-not-obscured-enhanced'],
+    meta: {
+      titleKey: 'catalog.rules.wcag_2412_focus_not_obscured_enhanced.title',
+      descriptionKey: 'catalog.rules.wcag_2412_focus_not_obscured_enhanced.description',
+      title: 'Focus Not Obscured (Enhanced)',
+      description:
+        'Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).',
+      wcagSc: ['2.4.12'],
+      level: 'AAA'
+    }
+  },
+
+  {
     id: 'wcag-2.4.13-focus-appearance',
     checksIds: ['css-focus-indicator-suppressed', 'focus-not-removed-by-script'],
     meta: {

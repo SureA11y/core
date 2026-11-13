@@ -2220,7 +2220,11 @@ const SAFE_DOM_OTHER_NAMES = [
   "origin",
   "pathname",
   "scrollHeight",
+  "scrollTo",
   "scrollWidth",
+  "scrollX",
+  "scrollY",
+  "scrollingElement",
   "selected",
   "selectedIndex",
   "self",
@@ -38898,6 +38902,50 @@ const RUNTIME_CATALOG = {
     }
   },
   {
+    "id": "wcag-2.4.11-focus-not-obscured-minimum",
+    "checksIds": [
+      "focus-not-obscured-minimum"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2411_focus_not_obscured_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_2411_focus_not_obscured_minimum.description",
+      "title": "Focus Not Obscured (Minimum)",
+      "description": "Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.",
+      "wcagSc": [
+        "2.4.11"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.11",
+          "title": "Focus not obscured (minimum)",
+          "wcagSc": [
+            "2.4.11"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-2.4.12-focus-not-obscured-enhanced",
+    "checksIds": [
+      "focus-not-obscured-enhanced"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description",
+      "title": "Focus Not Obscured (Enhanced)",
+      "description": "Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).",
+      "wcagSc": [
+        "2.4.12"
+      ],
+      "level": "AAA",
+      "standardMappings": []
+    }
+  },
+  {
     "id": "wcag-2.4.13-focus-appearance",
     "checksIds": [
       "css-focus-indicator-suppressed",
@@ -40337,6 +40385,10 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Fokus nicht verdeckt (Minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Zusammenfassung der Prüfungen, dass ein Element, das den Tastaturfokus erhält, nicht ganz von Inhalt verdeckt ist, den die Seite darüberlegt.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Fokus nicht verdeckt (erweitert)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Zusammenfassung der Prüfungen, dass kein Teil eines Elements, das den Tastaturfokus erhält, von Inhalt verdeckt ist, den die Seite darüberlegt (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Fokus-Darstellung",
       "catalog.rules.wcag_2413_focus_appearance.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokusindikator groß genug ist und sich ausreichend vom nicht fokussierten Zustand abhebt (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
@@ -42066,6 +42118,10 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Focus Not Obscured (Minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Focus Not Obscured (Enhanced)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Focus Appearance",
       "catalog.rules.wcag_2413_focus_appearance.description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
@@ -43795,6 +43851,10 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un texto provisional en lugar de una descripción del contenido que sigue.",
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Foco no oculto (mínimo)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Resumen de las comprobaciones de que un elemento que recibe el foco del teclado no queda totalmente oculto por contenido que la página pone encima.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Foco no oculto (mejorado)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Resumen de las comprobaciones de que ninguna parte de un elemento que recibe el foco del teclado queda oculta por contenido que la página pone encima (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Apariencia del foco",
       "catalog.rules.wcag_2413_focus_appearance.description": "Agrupación de comprobaciones que garantizan que el indicador de foco del teclado sea lo bastante grande y contraste lo suficiente con el estado sin foco (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
@@ -45524,6 +45584,10 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Focus non masqué (minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Synthèse des vérifications qu’un élément qui reçoit le focus clavier n’est pas entièrement caché par un contenu que la page place par-dessus.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Focus non masqué (amélioré)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Synthèse des vérifications qu’aucune partie d’un élément qui reçoit le focus clavier n’est cachée par un contenu que la page place par-dessus (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Apparence du focus",
       "catalog.rules.wcag_2413_focus_appearance.description": "Regroupe les contrôles garantissant que l’indicateur de focus clavier est assez grand et contraste assez avec l’état sans focus (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
@@ -47253,6 +47317,10 @@ const RUNTIME_CATALOG = {
       "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "フォーカスが隠されない (最低限)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "キーボードフォーカスを受ける要素が、ページが上に重ねたコンテンツで完全に隠れないことを確認するチェックのまとめ。",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "フォーカスが隠されない (高度)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "キーボードフォーカスを受ける要素のどの部分も、ページが上に重ねたコンテンツで隠れないことを確認するチェックのまとめ (AAA)。",
       "catalog.rules.wcag_2413_focus_appearance.title": "フォーカスの外観",
       "catalog.rules.wcag_2413_focus_appearance.description": "キーボードフォーカスインジケータが十分な大きさで、フォーカスがない状態と十分なコントラストがあるかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
@@ -60346,6 +60414,50 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           ]
         }
       ]
+    }
+  },
+  {
+    "id": "wcag-2.4.11-focus-not-obscured-minimum",
+    "checksIds": [
+      "focus-not-obscured-minimum"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2411_focus_not_obscured_minimum.title",
+      "descriptionKey": "catalog.rules.wcag_2411_focus_not_obscured_minimum.description",
+      "title": "Focus Not Obscured (Minimum)",
+      "description": "Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.",
+      "wcagSc": [
+        "2.4.11"
+      ],
+      "level": "AA",
+      "standardMappings": [
+        {
+          "standard": "EN 301 549",
+          "version": "V4.1.1",
+          "requirement": "9.2.4.11",
+          "title": "Focus not obscured (minimum)",
+          "wcagSc": [
+            "2.4.11"
+          ]
+        }
+      ]
+    }
+  },
+  {
+    "id": "wcag-2.4.12-focus-not-obscured-enhanced",
+    "checksIds": [
+      "focus-not-obscured-enhanced"
+    ],
+    "meta": {
+      "titleKey": "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title",
+      "descriptionKey": "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description",
+      "title": "Focus Not Obscured (Enhanced)",
+      "description": "Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).",
+      "wcagSc": [
+        "2.4.12"
+      ],
+      "level": "AAA",
+      "standardMappings": []
     }
   },
   {
@@ -112990,6 +113102,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Zusammenfassung von Prüfungen, die Überschriften markieren, deren Text ein Platzhalter statt einer Beschreibung des folgenden Inhalts ist.",
       "catalog.rules.wcag_247_focus_visible.title": "Fokus sichtbar",
       "catalog.rules.wcag_247_focus_visible.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokus nicht verborgen ist und wahrnehmbar bleibt.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Fokus nicht verdeckt (Minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Zusammenfassung der Prüfungen, dass ein Element, das den Tastaturfokus erhält, nicht ganz von Inhalt verdeckt ist, den die Seite darüberlegt.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Fokus nicht verdeckt (erweitert)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Zusammenfassung der Prüfungen, dass kein Teil eines Elements, das den Tastaturfokus erhält, von Inhalt verdeckt ist, den die Seite darüberlegt (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Fokus-Darstellung",
       "catalog.rules.wcag_2413_focus_appearance.description": "Zusammenfassung von Prüfungen, die sicherstellen, dass der Tastaturfokusindikator groß genug ist und sich ausreichend vom nicht fokussierten Zustand abhebt (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Linkzweck (reiner Link)",
@@ -114719,6 +114835,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Rollup of checks flagging headings whose text is a placeholder rather than a description of the content that follows.",
       "catalog.rules.wcag_247_focus_visible.title": "Focus visible",
       "catalog.rules.wcag_247_focus_visible.description": "Rollup of checks ensuring keyboard focus is not hidden and remains perceivable.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Focus Not Obscured (Minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Rollup of checks ensuring an element that takes keyboard focus is not entirely hidden by content the page puts over it.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Focus Not Obscured (Enhanced)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Rollup of checks ensuring no part of an element that takes keyboard focus is hidden by content the page puts over it (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Focus Appearance",
       "catalog.rules.wcag_2413_focus_appearance.description": "Rollup of checks ensuring the keyboard focus indicator is large enough and contrasts enough with its unfocused state (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Link Purpose (Link Only)",
@@ -116448,6 +116568,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Agrupación de comprobaciones que señalan encabezados cuyo texto es un texto provisional en lugar de una descripción del contenido que sigue.",
       "catalog.rules.wcag_247_focus_visible.title": "Foco visible",
       "catalog.rules.wcag_247_focus_visible.description": "Agrupación de comprobaciones que garantizan que el foco de teclado no esté oculto y siga siendo perceptible.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Foco no oculto (mínimo)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Resumen de las comprobaciones de que un elemento que recibe el foco del teclado no queda totalmente oculto por contenido que la página pone encima.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Foco no oculto (mejorado)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Resumen de las comprobaciones de que ninguna parte de un elemento que recibe el foco del teclado queda oculta por contenido que la página pone encima (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Apariencia del foco",
       "catalog.rules.wcag_2413_focus_appearance.description": "Agrupación de comprobaciones que garantizan que el indicador de foco del teclado sea lo bastante grande y contraste lo suficiente con el estado sin foco (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Propósito de los enlaces (solo enlaces)",
@@ -118177,6 +118301,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "Regroupe les contrôles signalant les titres dont le texte est un texte provisoire plutôt qu’une description du contenu qui suit.",
       "catalog.rules.wcag_247_focus_visible.title": "Visibilité du focus",
       "catalog.rules.wcag_247_focus_visible.description": "Regroupe les contrôles garantissant que le focus clavier n’est pas masqué et reste perceptible.",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "Focus non masqué (minimum)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "Synthèse des vérifications qu’un élément qui reçoit le focus clavier n’est pas entièrement caché par un contenu que la page place par-dessus.",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "Focus non masqué (amélioré)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "Synthèse des vérifications qu’aucune partie d’un élément qui reçoit le focus clavier n’est cachée par un contenu que la page place par-dessus (AAA).",
       "catalog.rules.wcag_2413_focus_appearance.title": "Apparence du focus",
       "catalog.rules.wcag_2413_focus_appearance.description": "Regroupe les contrôles garantissant que l’indicateur de focus clavier est assez grand et contraste assez avec l’état sans focus (AAA).",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "Fonction du lien (lien uniquement)",
@@ -119906,6 +120034,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "catalog.rules.wcag_246_headings_and_labels.description": "テキストが後続のコンテンツの説明ではなく仮の文字列になっている見出しを検出するチェックの集約です。",
       "catalog.rules.wcag_247_focus_visible.title": "フォーカスの可視化",
       "catalog.rules.wcag_247_focus_visible.description": "キーボードフォーカスが隠れず、知覚可能であり続けるかを確認するチェックの集約です。",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.title": "フォーカスが隠されない (最低限)",
+      "catalog.rules.wcag_2411_focus_not_obscured_minimum.description": "キーボードフォーカスを受ける要素が、ページが上に重ねたコンテンツで完全に隠れないことを確認するチェックのまとめ。",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.title": "フォーカスが隠されない (高度)",
+      "catalog.rules.wcag_2412_focus_not_obscured_enhanced.description": "キーボードフォーカスを受ける要素のどの部分も、ページが上に重ねたコンテンツで隠れないことを確認するチェックのまとめ (AAA)。",
       "catalog.rules.wcag_2413_focus_appearance.title": "フォーカスの外観",
       "catalog.rules.wcag_2413_focus_appearance.description": "キーボードフォーカスインジケータが十分な大きさで、フォーカスがない状態と十分なコントラストがあるかを確認するチェックの集約です (AAA)。",
       "catalog.rules.wcag_249_link_purpose_link_only.title": "リンクの目的 (リンクだけ)",
@@ -123536,7 +123668,11 @@ const SAFE_DOM_OTHER_NAMES = [
   "origin",
   "pathname",
   "scrollHeight",
+  "scrollTo",
   "scrollWidth",
+  "scrollX",
+  "scrollY",
+  "scrollingElement",
   "selected",
   "selectedIndex",
   "self",
@@ -148645,7 +148781,11 @@ const SAFE_DOM_OTHER_NAMES = [
   "origin",
   "pathname",
   "scrollHeight",
+  "scrollTo",
   "scrollWidth",
+  "scrollX",
+  "scrollY",
+  "scrollingElement",
   "selected",
   "selectedIndex",
   "self",
