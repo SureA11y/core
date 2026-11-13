@@ -67,7 +67,8 @@ const HOOK_REASON_CODES = Object.freeze({
     entry('widget-keyboard-focusable', 'WIDGET_NOT_IN_TAB_ORDER', 'leans'),
     entry('css-focus-indicator-suppressed', 'FOCUS_INDICATOR_SUPPRESSED', 'leans'),
     entry('focus-order-semantics', 'TABBABLE_WITH_NON_INTERACTIVE_ROLE', 'leans'),
-    entry('skip-link', 'SKIP_LINK_TARGET_MISSING', 'leans')
+    entry('skip-link', 'SKIP_LINK_TARGET_MISSING', 'leans'),
+    entry('css-hidden-focus', 'cssHiddenTabbable_needsFocusStateVerification', 'leans')
   ]),
   // liveRegionHookScript(): what the page's live regions were given.
   liveRegion: Object.freeze([
