@@ -40045,6 +40045,8 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
+      "cssHidden_focus_lean_why_container": "Ein Container hält das Element außer Sicht, und kein Fokusstil bringt diesen Container in Sicht, wenn das Element den Fokus erhält.",
+      "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
@@ -41752,6 +41754,8 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
+      "cssHidden_focus_lean_why_container": "A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.",
+      "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
@@ -43459,6 +43463,8 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
+      "cssHidden_focus_lean_why_container": "Un contenedor mantiene el elemento fuera de la vista, y ningún estilo de foco hace visible ese contenedor cuando el elemento recibe el foco.",
+      "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
@@ -45166,6 +45172,8 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
+      "cssHidden_focus_lean_why_container": "Un conteneur garde l’élément hors de vue, et aucun style de focus ne rend ce conteneur visible quand l’élément reçoit le focus.",
+      "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
@@ -46873,6 +46881,8 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
+      "cssHidden_focus_lean_why_container": "コンテナーが要素を見えない位置に置いたままで、要素がフォーカスを受けてもそのコンテナーを表示するフォーカススタイルがありません。",
+      "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",
@@ -64330,10 +64340,22 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // 1) Find aria-hidden="true" roots, read as the ancestor walk below reads
   // them (any case, trimmed): browsers hide aria-hidden="TRUE" too, and a
   // page whose only roots were written that way was notApplicable.
-  const ariaHiddenRoots = qAll('[aria-hidden]').filter(
-    (el) => dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true'
-  );
-  if (!ariaHiddenRoots.length) {
+  const isAriaHiddenTrue = (el) =>
+    dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true';
+  const ariaHiddenRoots = qAll('[aria-hidden]').filter(isAriaHiddenTrue);
+  // The query above leaves out hidden elements, a root with
+  // visibility:hidden among them. But visibility is inherited, not
+  // absolute: a descendant set to visibility:visible is drawn and takes
+  // focus again, still inside the aria-hidden subtree. So when no rendered
+  // root is found, roots hidden that way are looked for too; whether
+  // anything under them can take focus is decided per element below.
+  // Without a rendered root the rule stays notApplicable unless one of
+  // them holds such an element.
+  const sourceRoots =
+    !ariaHiddenRoots.length && helpers && typeof helpers.queryAllSource === 'function'
+      ? helpers.queryAllSource('[aria-hidden]').filter(isAriaHiddenTrue)
+      : [];
+  if (!ariaHiddenRoots.length && !sourceRoots.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -64434,7 +64456,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
 
   if (!bucket.size) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: ariaHiddenRoots.length ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   // Ensure deterministic root focusability computation (done once per failing root).
@@ -75963,6 +75990,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
       }
       if (ind != null && ind <= -5000) out.push('offscreen');
+      if (pos === 'fixed' && fixedBoxOutsideViewport(cs)) out.push('offscreen');
     } catch {}
 
     // Dedup
@@ -75976,6 +76004,70 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       }
     }
     return uniq;
+  }
+
+  // A length in px as computed style gives it ('12px', '0'), or null for
+  // anything that needs layout to resolve (auto, %, em in jsdom).
+  function pxOf(v) {
+    const s = trim(v).toLowerCase();
+    if (s === '0') return 0;
+    const m = /^(-?\d*\.?\d+)px$/.exec(s);
+    return m ? Number.parseFloat(m[1]) : null;
+  }
+  const BORDER_KEYWORDS = { thin: 1, medium: 3, thick: 5 };
+  function borderOf(cs, side) {
+    const style = trim(cs['border' + side + 'Style']).toLowerCase();
+    if (!style || style === 'none' || style === 'hidden') return 0;
+    const w = trim(cs['border' + side + 'Width']).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(BORDER_KEYWORDS, w) ? BORDER_KEYWORDS[w] : pxOf(w);
+  }
+  // Whether the box clips what overflows it on one axis. jsdom leaves
+  // overflow-x/-y at visible when only the shorthand is set, so the
+  // shorthand ('hidden', or 'visible hidden' for x then y) is read too.
+  function clipsAxis(cs, axis) {
+    const own = trim(axis === 'x' ? cs.overflowX : cs.overflowY).toLowerCase();
+    if (own === 'hidden' || own === 'clip') return true;
+    const parts = trim(cs.overflow).toLowerCase().split(/\s+/).filter(Boolean);
+    const v = axis === 'x' ? parts[0] : parts[1] || parts[0];
+    return v === 'hidden' || v === 'clip';
+  }
+  // A position:fixed box that clips its content and lies wholly outside the
+  // viewport on one side, from its computed lengths alone: `top: -1px;
+  // height: 1px; overflow-y: hidden` ends where the viewport starts. A fixed
+  // box doesn't scroll, so focus can't bring it, or anything in it, into
+  // view. Only lengths in px are read, so nothing that needs layout to
+  // resolve is guessed; the browser measures those itself (outOfReach).
+  // Returns the declarations that place it there, for the message, or ''.
+  function fixedBoxOutsideViewport(cs) {
+    const borderBox = trim(cs.boxSizing).toLowerCase() === 'border-box';
+    const axes = [
+      { axis: 'y', size: 'height', start: ['Top', 'top'], end: ['Bottom', 'bottom'] },
+      { axis: 'x', size: 'width', start: ['Left', 'left'], end: ['Right', 'right'] }
+    ];
+    for (const a of axes) {
+      if (!clipsAxis(cs, a.axis)) continue;
+      const size = pxOf(cs[a.size]);
+      if (size == null) continue;
+      let extent = size;
+      if (!borderBox) {
+        const box = [
+          pxOf(cs['padding' + a.start[0]]),
+          pxOf(cs['padding' + a.end[0]]),
+          borderOf(cs, a.start[0]),
+          borderOf(cs, a.end[0])
+        ];
+        if (box.some((n) => n == null)) continue;
+        extent += box.reduce((s, n) => s + n, 0);
+      }
+      // The start offset wins when both are set, as it does in a
+      // left-to-right, top-to-bottom page.
+      const [side, prop] = trim(cs[a.start[1]]).toLowerCase() !== 'auto' ? a.start : a.end;
+      const offset = pxOf(cs[prop]);
+      const margin = pxOf(cs['margin' + side]);
+      if (offset != null && margin != null && offset + margin + extent <= 0)
+        return `position: fixed; ${prop}: ${trim(cs[prop])}; ${a.size}: ${trim(cs[a.size])}`;
+    }
+    return '';
   }
 
   // ---- Focused state, worked out from the stylesheets ----
@@ -75997,7 +76089,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     top: 'top',
     'text-indent': 'textIndent',
     transform: 'transform',
-    translate: 'translate'
+    translate: 'translate',
+    // What says whether a fixed box lies outside the viewport.
+    bottom: 'bottom',
+    right: 'right',
+    'overflow-x': 'overflowX',
+    'overflow-y': 'overflowY',
+    'box-sizing': 'boxSizing',
+    'margin-top': 'marginTop',
+    'margin-right': 'marginRight',
+    'margin-bottom': 'marginBottom',
+    'margin-left': 'marginLeft',
+    'padding-top': 'paddingTop',
+    'padding-right': 'paddingRight',
+    'padding-bottom': 'paddingBottom',
+    'padding-left': 'paddingLeft',
+    'border-top-width': 'borderTopWidth',
+    'border-right-width': 'borderRightWidth',
+    'border-bottom-width': 'borderBottomWidth',
+    'border-left-width': 'borderLeftWidth',
+    'border-top-style': 'borderTopStyle',
+    'border-right-style': 'borderRightStyle',
+    'border-bottom-style': 'borderBottomStyle',
+    'border-left-style': 'borderLeftStyle'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -76011,7 +76125,28 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     top: 'auto',
     'text-indent': '0px',
     transform: 'none',
-    translate: 'none'
+    translate: 'none',
+    bottom: 'auto',
+    right: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'box-sizing': 'content-box',
+    'margin-top': '0px',
+    'margin-right': '0px',
+    'margin-bottom': '0px',
+    'margin-left': '0px',
+    'padding-top': '0px',
+    'padding-right': '0px',
+    'padding-bottom': '0px',
+    'padding-left': '0px',
+    'border-top-width': 'medium',
+    'border-right-width': 'medium',
+    'border-bottom-width': 'medium',
+    'border-left-width': 'medium',
+    'border-top-style': 'none',
+    'border-right-style': 'none',
+    'border-bottom-style': 'none',
+    'border-left-style': 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -76690,6 +76825,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
           break;
         }
       }
+      if (!css && lower(cs.position) === 'fixed') css = fixedBoxOutsideViewport(cs);
       return {
         kind: 'offscreen',
         container: helpers.describeElement(chain.outOfReachBy),
@@ -76752,6 +76888,65 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     }
     return true;
   }
+  // Whether a script reacts to the element taking focus: true when an
+  // onfocus/onfocusin attribute or a listener the hook saw says so, false
+  // when an early listener hook saw none, null when that can't be known.
+  const FOCUS_EVENTS = ['focus', 'focusin'];
+  function focusScripted(el) {
+    const chain = [el, ...containersOf(el)];
+    for (const a of chain) {
+      try {
+        if (dom.getAttribute(a, 'onfocus') != null || dom.getAttribute(a, 'onfocusin') != null)
+          return true;
+      } catch {}
+    }
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const view = dom.defaultView(document);
+    let known = true;
+    for (const t of [...chain, htmlEl, document, view]) {
+      if (!t) continue;
+      const info = helpers.getEventListenerInfo(t, FOCUS_EVENTS);
+      if (info && info.listens) return true;
+      if (!info || info.hook !== 'early') known = false;
+    }
+    return known ? false : null;
+  }
+
+  // Which way a finding hidden by a container leans: fail, the container
+  // keeping it out of view whatever takes focus, unless a script may react
+  // to the focus. Only a container's hiding leans: the element's own hiding
+  // is how a custom checkbox or radio hides its input while a sibling shows
+  // the focus.
+  function containerLean(el, hintsArr) {
+    const by = hintsArr.includes('outOfReach')
+      ? 'outOfReach'
+      : hintsArr.includes('containerClipped')
+        ? 'containerClipped'
+        : null;
+    if (!by) return null;
+    const scripted = focusScripted(el);
+    if (scripted === true) return null;
+    return {
+      toward: 'fail',
+      why: 'A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.',
+      signals: [
+        { signal: 'hidden-by-container', value: by },
+        { signal: 'focus-style-reveals', value: false },
+        { signal: 'focus-script', value: scripted }
+      ],
+      ...(scripted === null
+        ? {
+            caution:
+              'A script may still show it when it takes focus; whether one listens could not be checked.'
+          }
+        : {}),
+      i18n: {
+        whyKey: 'cssHidden_focus_lean_why_container',
+        ...(scripted === null ? { cautionKey: 'cssHidden_focus_lean_caution_script' } : {})
+      }
+    };
+  }
+
   const candidates = qAll(
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]'
   );
@@ -76837,7 +77032,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         : `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is clipped to nothing (${byContainer.css}), and nothing shows it when the element takes focus.`
       : null;
 
+    const lean = downgradedToRedirectReview ? null : containerLean(el, hintsArr);
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: downgradedToRedirectReview
         ? `This focusable <${tagName}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.`
         : containerSummary || `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,
@@ -111239,6 +111437,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
+      "cssHidden_focus_lean_why_container": "Ein Container hält das Element außer Sicht, und kein Fokusstil bringt diesen Container in Sicht, wenn das Element den Fokus erhält.",
+      "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
@@ -112946,6 +113146,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
+      "cssHidden_focus_lean_why_container": "A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.",
+      "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
@@ -114653,6 +114855,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
+      "cssHidden_focus_lean_why_container": "Un contenedor mantiene el elemento fuera de la vista, y ningún estilo de foco hace visible ese contenedor cuando el elemento recibe el foco.",
+      "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
@@ -116360,6 +116564,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
+      "cssHidden_focus_lean_why_container": "Un conteneur garde l’élément hors de vue, et aucun style de focus ne rend ce conteneur visible quand l’élément reçoit le focus.",
+      "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
@@ -118067,6 +118273,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
+      "cssHidden_focus_lean_why_container": "コンテナーが要素を見えない位置に置いたままで、要素がフォーカスを受けてもそのコンテナーを表示するフォーカススタイルがありません。",
+      "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",

@@ -27,7 +27,8 @@
  *     take focus: `opacityZero`, `offscreen`, `clipped` or
  *     `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own
  *     styles; when they show it, `outOfReach` (a container is positioned
- *     off screen, or, in a browser, the box focus would show lies where no
+ *     off screen, or is fixed and clips its content where its px lengths
+ *     put it wholly outside the viewport, or, in a browser, the box focus would show lies where no
  *     scrolling reaches) or `containerClipped` (a container is clipped to
  *     nothing, has no size with overflow hidden, or is scaled to nothing,
  *     or, in a browser, the element lies wholly outside a container with
@@ -42,6 +43,14 @@
  *   - `cssHiddenTabbable_needsFocusStateVerification` (cantTell): an element
  *     in the tab order is hidden by CSS and no focus rule brings it into
  *     view, so a keyboard user may not see where focus is.
+ *     It leans fail when the element's own styles show it but a container
+ *     puts it out of reach or clips it to nothing (`outOfReach`,
+ *     `containerClipped`), no focus rule brings that container into view,
+ *     and no script is known to react to its focus (no `onfocus` or
+ *     `onfocusin` attribute on it or a container, and no focus listener the
+ *     listener hook saw). Without the hook, the lean says a script may
+ *     still show it. An element hidden by its own styles gets no lean: a
+ *     custom checkbox hides its input and draws focus on the box beside it.
  *     Basis: WCAG 2.4.7 (not settled).
  *   - `cssHiddenTabbable_runtimeRedirect_needsReview` (cantTell): an element
  *     in the tab order is hidden by CSS, but focusing it moved focus
@@ -51,6 +60,14 @@
  * @implementation-notes
  * - This rule intentionally targets CSS techniques that *can* keep an element focusable.
  * - Elements removed from rendering (display:none, visibility:hidden, [hidden]) are excluded.
+ *   visibility:hidden is inherited, so an element set back to
+ *   visibility:visible inside such a container is drawn and is in scope.
+ * - A position:fixed box that clips its content (overflow hidden or clip
+ *   on that axis) and whose px lengths end at or beyond a viewport edge
+ *   (`top: -1px; height: 1px`, with its padding, border and margin) is off
+ *   screen for good: a fixed box doesn't scroll. This is read without
+ *   layout, so jsdom reports it too; a length that needs layout (%, em in
+ *   jsdom) is left to the browser's measurement.
  * - The element's own styles and its containers' are read from computed
  *   style, which jsdom has too. Only in a browser is the rendered box also
  *   measured, to find a container slid out of view by a transform: focus
@@ -217,6 +234,7 @@ function runInPage(ctx) {
         if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
       }
       if (ind != null && ind <= -5000) out.push('offscreen');
+      if (pos === 'fixed' && fixedBoxOutsideViewport(cs)) out.push('offscreen');
     } catch {}
 
     // Dedup
@@ -230,6 +248,70 @@ function runInPage(ctx) {
       }
     }
     return uniq;
+  }
+
+  // A length in px as computed style gives it ('12px', '0'), or null for
+  // anything that needs layout to resolve (auto, %, em in jsdom).
+  function pxOf(v) {
+    const s = trim(v).toLowerCase();
+    if (s === '0') return 0;
+    const m = /^(-?\d*\.?\d+)px$/.exec(s);
+    return m ? Number.parseFloat(m[1]) : null;
+  }
+  const BORDER_KEYWORDS = { thin: 1, medium: 3, thick: 5 };
+  function borderOf(cs, side) {
+    const style = trim(cs['border' + side + 'Style']).toLowerCase();
+    if (!style || style === 'none' || style === 'hidden') return 0;
+    const w = trim(cs['border' + side + 'Width']).toLowerCase();
+    return Object.prototype.hasOwnProperty.call(BORDER_KEYWORDS, w) ? BORDER_KEYWORDS[w] : pxOf(w);
+  }
+  // Whether the box clips what overflows it on one axis. jsdom leaves
+  // overflow-x/-y at visible when only the shorthand is set, so the
+  // shorthand ('hidden', or 'visible hidden' for x then y) is read too.
+  function clipsAxis(cs, axis) {
+    const own = trim(axis === 'x' ? cs.overflowX : cs.overflowY).toLowerCase();
+    if (own === 'hidden' || own === 'clip') return true;
+    const parts = trim(cs.overflow).toLowerCase().split(/\s+/).filter(Boolean);
+    const v = axis === 'x' ? parts[0] : parts[1] || parts[0];
+    return v === 'hidden' || v === 'clip';
+  }
+  // A position:fixed box that clips its content and lies wholly outside the
+  // viewport on one side, from its computed lengths alone: `top: -1px;
+  // height: 1px; overflow-y: hidden` ends where the viewport starts. A fixed
+  // box doesn't scroll, so focus can't bring it, or anything in it, into
+  // view. Only lengths in px are read, so nothing that needs layout to
+  // resolve is guessed; the browser measures those itself (outOfReach).
+  // Returns the declarations that place it there, for the message, or ''.
+  function fixedBoxOutsideViewport(cs) {
+    const borderBox = trim(cs.boxSizing).toLowerCase() === 'border-box';
+    const axes = [
+      { axis: 'y', size: 'height', start: ['Top', 'top'], end: ['Bottom', 'bottom'] },
+      { axis: 'x', size: 'width', start: ['Left', 'left'], end: ['Right', 'right'] }
+    ];
+    for (const a of axes) {
+      if (!clipsAxis(cs, a.axis)) continue;
+      const size = pxOf(cs[a.size]);
+      if (size == null) continue;
+      let extent = size;
+      if (!borderBox) {
+        const box = [
+          pxOf(cs['padding' + a.start[0]]),
+          pxOf(cs['padding' + a.end[0]]),
+          borderOf(cs, a.start[0]),
+          borderOf(cs, a.end[0])
+        ];
+        if (box.some((n) => n == null)) continue;
+        extent += box.reduce((s, n) => s + n, 0);
+      }
+      // The start offset wins when both are set, as it does in a
+      // left-to-right, top-to-bottom page.
+      const [side, prop] = trim(cs[a.start[1]]).toLowerCase() !== 'auto' ? a.start : a.end;
+      const offset = pxOf(cs[prop]);
+      const margin = pxOf(cs['margin' + side]);
+      if (offset != null && margin != null && offset + margin + extent <= 0)
+        return `position: fixed; ${prop}: ${trim(cs[prop])}; ${a.size}: ${trim(cs[a.size])}`;
+    }
+    return '';
   }
 
   // ---- Focused state, worked out from the stylesheets ----
@@ -251,7 +333,29 @@ function runInPage(ctx) {
     top: 'top',
     'text-indent': 'textIndent',
     transform: 'transform',
-    translate: 'translate'
+    translate: 'translate',
+    // What says whether a fixed box lies outside the viewport.
+    bottom: 'bottom',
+    right: 'right',
+    'overflow-x': 'overflowX',
+    'overflow-y': 'overflowY',
+    'box-sizing': 'boxSizing',
+    'margin-top': 'marginTop',
+    'margin-right': 'marginRight',
+    'margin-bottom': 'marginBottom',
+    'margin-left': 'marginLeft',
+    'padding-top': 'paddingTop',
+    'padding-right': 'paddingRight',
+    'padding-bottom': 'paddingBottom',
+    'padding-left': 'paddingLeft',
+    'border-top-width': 'borderTopWidth',
+    'border-right-width': 'borderRightWidth',
+    'border-bottom-width': 'borderBottomWidth',
+    'border-left-width': 'borderLeftWidth',
+    'border-top-style': 'borderTopStyle',
+    'border-right-style': 'borderRightStyle',
+    'border-bottom-style': 'borderBottomStyle',
+    'border-left-style': 'borderLeftStyle'
   };
   const INITIAL_VALUES = {
     opacity: '1',
@@ -265,7 +369,28 @@ function runInPage(ctx) {
     top: 'auto',
     'text-indent': '0px',
     transform: 'none',
-    translate: 'none'
+    translate: 'none',
+    bottom: 'auto',
+    right: 'auto',
+    'overflow-x': 'visible',
+    'overflow-y': 'visible',
+    'box-sizing': 'content-box',
+    'margin-top': '0px',
+    'margin-right': '0px',
+    'margin-bottom': '0px',
+    'margin-left': '0px',
+    'padding-top': '0px',
+    'padding-right': '0px',
+    'padding-bottom': '0px',
+    'padding-left': '0px',
+    'border-top-width': 'medium',
+    'border-right-width': 'medium',
+    'border-bottom-width': 'medium',
+    'border-left-width': 'medium',
+    'border-top-style': 'none',
+    'border-right-style': 'none',
+    'border-bottom-style': 'none',
+    'border-left-style': 'none'
   };
 
   function splitTopLevel(text, separators) {
@@ -944,6 +1069,7 @@ function runInPage(ctx) {
           break;
         }
       }
+      if (!css && lower(cs.position) === 'fixed') css = fixedBoxOutsideViewport(cs);
       return {
         kind: 'offscreen',
         container: helpers.describeElement(chain.outOfReachBy),
@@ -1006,6 +1132,65 @@ function runInPage(ctx) {
     }
     return true;
   }
+  // Whether a script reacts to the element taking focus: true when an
+  // onfocus/onfocusin attribute or a listener the hook saw says so, false
+  // when an early listener hook saw none, null when that can't be known.
+  const FOCUS_EVENTS = ['focus', 'focusin'];
+  function focusScripted(el) {
+    const chain = [el, ...containersOf(el)];
+    for (const a of chain) {
+      try {
+        if (dom.getAttribute(a, 'onfocus') != null || dom.getAttribute(a, 'onfocusin') != null)
+          return true;
+      } catch {}
+    }
+    if (typeof helpers.getEventListenerInfo !== 'function') return null;
+    const view = dom.defaultView(document);
+    let known = true;
+    for (const t of [...chain, htmlEl, document, view]) {
+      if (!t) continue;
+      const info = helpers.getEventListenerInfo(t, FOCUS_EVENTS);
+      if (info && info.listens) return true;
+      if (!info || info.hook !== 'early') known = false;
+    }
+    return known ? false : null;
+  }
+
+  // Which way a finding hidden by a container leans: fail, the container
+  // keeping it out of view whatever takes focus, unless a script may react
+  // to the focus. Only a container's hiding leans: the element's own hiding
+  // is how a custom checkbox or radio hides its input while a sibling shows
+  // the focus.
+  function containerLean(el, hintsArr) {
+    const by = hintsArr.includes('outOfReach')
+      ? 'outOfReach'
+      : hintsArr.includes('containerClipped')
+        ? 'containerClipped'
+        : null;
+    if (!by) return null;
+    const scripted = focusScripted(el);
+    if (scripted === true) return null;
+    return {
+      toward: 'fail',
+      why: 'A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.',
+      signals: [
+        { signal: 'hidden-by-container', value: by },
+        { signal: 'focus-style-reveals', value: false },
+        { signal: 'focus-script', value: scripted }
+      ],
+      ...(scripted === null
+        ? {
+            caution:
+              'A script may still show it when it takes focus; whether one listens could not be checked.'
+          }
+        : {}),
+      i18n: {
+        whyKey: 'cssHidden_focus_lean_why_container',
+        ...(scripted === null ? { cautionKey: 'cssHidden_focus_lean_caution_script' } : {})
+      }
+    };
+  }
+
   const candidates = qAll(
     'a[href],area[href],button,input,select,textarea,summary,[tabindex],[contenteditable]'
   );
@@ -1091,7 +1276,10 @@ function runInPage(ctx) {
         : `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is clipped to nothing (${byContainer.css}), and nothing shows it when the element takes focus.`
       : null;
 
+    const lean = downgradedToRedirectReview ? null : containerLean(el, hintsArr);
+
     const baseOccurrence = {
+      ...(lean ? { lean } : {}),
       summary: downgradedToRedirectReview
         ? `This focusable <${tagName}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.`
         : containerSummary || `Focusable ${tagName} is visually hidden (${hintsArr.join(',')}).`,

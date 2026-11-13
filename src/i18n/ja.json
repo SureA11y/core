@@ -401,6 +401,8 @@
   "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
   "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
   "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
+  "cssHidden_focus_lean_why_container": "コンテナーが要素を見えない位置に置いたままで、要素がフォーカスを受けてもそのコンテナーを表示するフォーカススタイルがありません。",
+  "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
   "linkNamePresent_title": "リンクにアクセシブルな名前があること",
   "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
   "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",

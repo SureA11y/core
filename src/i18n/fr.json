@@ -401,6 +401,8 @@
   "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
   "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
   "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
+  "cssHidden_focus_lean_why_container": "Un conteneur garde l’élément hors de vue, et aucun style de focus ne rend ce conteneur visible quand l’élément reçoit le focus.",
+  "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
   "linkNamePresent_title": "Les liens ont un nom accessible",
   "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
   "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",

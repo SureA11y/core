@@ -60,6 +60,10 @@
  * @implementation-notes
  * - Focusability is computed via ctx.helpers.getFocusableInfo (native + tabindex + contenteditable).
  * - Elements that are not rendered (e.g., display:none, visibility:hidden, [hidden]) are excluded.
+ * - visibility:hidden is inherited, not absolute: an element set to
+ *   visibility:visible inside a visibility:hidden aria-hidden root is drawn
+ *   and takes focus, so it is reported. An aria-hidden root hidden that way
+ *   alone makes the rule applicable only when it holds such an element.
  * - Disabled controls are not focusable, including those disabled by an ancestor
  *   <fieldset disabled> (matched with :disabled).
  * - <area href> has no box of its own, so it is judged by the <img usemap> that uses its
@@ -762,10 +766,22 @@ function runInPage(ctx) {
   // 1) Find aria-hidden="true" roots, read as the ancestor walk below reads
   // them (any case, trimmed): browsers hide aria-hidden="TRUE" too, and a
   // page whose only roots were written that way was notApplicable.
-  const ariaHiddenRoots = qAll('[aria-hidden]').filter(
-    (el) => dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true'
-  );
-  if (!ariaHiddenRoots.length) {
+  const isAriaHiddenTrue = (el) =>
+    dom.get(el, 'getAttribute') && lower(dom.getAttribute(el, 'aria-hidden')) === 'true';
+  const ariaHiddenRoots = qAll('[aria-hidden]').filter(isAriaHiddenTrue);
+  // The query above leaves out hidden elements, a root with
+  // visibility:hidden among them. But visibility is inherited, not
+  // absolute: a descendant set to visibility:visible is drawn and takes
+  // focus again, still inside the aria-hidden subtree. So when no rendered
+  // root is found, roots hidden that way are looked for too; whether
+  // anything under them can take focus is decided per element below.
+  // Without a rendered root the rule stays notApplicable unless one of
+  // them holds such an element.
+  const sourceRoots =
+    !ariaHiddenRoots.length && helpers && typeof helpers.queryAllSource === 'function'
+      ? helpers.queryAllSource('[aria-hidden]').filter(isAriaHiddenTrue)
+      : [];
+  if (!ariaHiddenRoots.length && !sourceRoots.length) {
     return { ruleId: rule.ruleId, outcome: 'notApplicable', severity: 'minor', occurrences: [] };
   }
 
@@ -866,7 +882,12 @@ function runInPage(ctx) {
   }
 
   if (!bucket.size) {
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return {
+      ruleId: rule.ruleId,
+      outcome: ariaHiddenRoots.length ? 'pass' : 'notApplicable',
+      severity: 'minor',
+      occurrences: []
+    };
   }
 
   // Ensure deterministic root focusability computation (done once per failing root).
