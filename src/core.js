@@ -40045,7 +40045,7 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
-      "cssHidden_focus_lean_why_container": "Ein Container hält das Element außer Sicht, und kein Fokusstil bringt diesen Container in Sicht, wenn das Element den Fokus erhält.",
+      "cssHidden_focus_lean_why_container": "Erhält das Element den Fokus, bleibt es außer Sicht: Es liegt, wo kein Scrollen hinreicht, oder in einem auf nichts zugeschnittenen Container, und kein Fokusstil bringt es in Sicht.",
       "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
@@ -41754,7 +41754,7 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
-      "cssHidden_focus_lean_why_container": "A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.",
+      "cssHidden_focus_lean_why_container": "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
@@ -43463,7 +43463,7 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
-      "cssHidden_focus_lean_why_container": "Un contenedor mantiene el elemento fuera de la vista, y ningún estilo de foco hace visible ese contenedor cuando el elemento recibe el foco.",
+      "cssHidden_focus_lean_why_container": "Cuando el elemento recibe el foco sigue fuera de la vista: está donde el desplazamiento no llega, o en un contenedor recortado a nada, y ningún estilo de foco lo hace visible.",
       "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
@@ -45172,7 +45172,7 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
-      "cssHidden_focus_lean_why_container": "Un conteneur garde l’élément hors de vue, et aucun style de focus ne rend ce conteneur visible quand l’élément reçoit le focus.",
+      "cssHidden_focus_lean_why_container": "Quand l’élément reçoit le focus, il reste hors de vue : il se trouve là où le défilement ne peut pas aller, ou dans un conteneur rogné à rien, et aucun style de focus ne le rend visible.",
       "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
@@ -46881,7 +46881,7 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
-      "cssHidden_focus_lean_why_container": "コンテナーが要素を見えない位置に置いたままで、要素がフォーカスを受けてもそのコンテナーを表示するフォーカススタイルがありません。",
+      "cssHidden_focus_lean_why_container": "要素がフォーカスを受けても見えないままです。スクロールで届かない位置にあるか、何も表示されないように切り抜かれたコンテナーの中にあり、表示するフォーカススタイルもありません。",
       "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
@@ -76912,11 +76912,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return known ? false : null;
   }
 
-  // Which way a finding hidden by a container leans: fail, the container
-  // keeping it out of view whatever takes focus, unless a script may react
-  // to the focus. Only a container's hiding leans: the element's own hiding
-  // is how a custom checkbox or radio hides its input while a sibling shows
-  // the focus.
+  // Which way a finding out of view where it lies leans: fail, out of
+  // reach (a container off screen, or a box the browser measured where no
+  // scrolling reaches) or in a container clipped to nothing, unless a
+  // script may react to the focus. A hint read from the element's own
+  // styles doesn't lean: that is how a custom checkbox or radio hides its
+  // input while a sibling shows the focus.
   function containerLean(el, hintsArr) {
     const by = hintsArr.includes('outOfReach')
       ? 'outOfReach'
@@ -76928,7 +76929,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     if (scripted === true) return null;
     return {
       toward: 'fail',
-      why: 'A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.',
+      why: "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       signals: [
         { signal: 'hidden-by-container', value: by },
         { signal: 'focus-style-reveals', value: false },
@@ -111437,7 +111438,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Machen Sie das Element sichtbar, wenn es den Tastaturfokus erhalten kann, oder entfernen Sie es aus der Tab-Reihenfolge, solange es nicht sichtbar ist.",
       "cssHidden_focus_summary_cantTell_redirect": "Dieses fokussierbare <{{element}}> ist nicht zu sehen, aber der Fokus ist sofort zu einem anderen Element weitergesprungen, wie bei einem Wächterelement einer Fokusfalle.",
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
-      "cssHidden_focus_lean_why_container": "Ein Container hält das Element außer Sicht, und kein Fokusstil bringt diesen Container in Sicht, wenn das Element den Fokus erhält.",
+      "cssHidden_focus_lean_why_container": "Erhält das Element den Fokus, bleibt es außer Sicht: Es liegt, wo kein Scrollen hinreicht, oder in einem auf nichts zugeschnittenen Container, und kein Fokusstil bringt es in Sicht.",
       "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
@@ -113146,7 +113147,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
       "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
-      "cssHidden_focus_lean_why_container": "A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.",
+      "cssHidden_focus_lean_why_container": "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
@@ -114855,7 +114856,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Hacer visible el elemento cuando pueda recibir foco de teclado, o eliminarlo del orden de tabulación hasta que sea visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Este <{{element}}> enfocable no se ve, pero el foco pasó de inmediato a otro elemento, como hace el centinela de una trampa de foco.",
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
-      "cssHidden_focus_lean_why_container": "Un contenedor mantiene el elemento fuera de la vista, y ningún estilo de foco hace visible ese contenedor cuando el elemento recibe el foco.",
+      "cssHidden_focus_lean_why_container": "Cuando el elemento recibe el foco sigue fuera de la vista: está donde el desplazamiento no llega, o en un contenedor recortado a nada, y ningún estilo de foco lo hace visible.",
       "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
@@ -116564,7 +116565,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "Rendez l’élément visible lorsqu’il peut recevoir le focus clavier, ou retirez-le de l’ordre de tabulation tant qu’il n’est pas visible.",
       "cssHidden_focus_summary_cantTell_redirect": "Cet élément <{{element}}> focalisable n’est pas visible, mais le focus est passé aussitôt à un autre élément, comme le fait la sentinelle d’un piège à focus.",
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
-      "cssHidden_focus_lean_why_container": "Un conteneur garde l’élément hors de vue, et aucun style de focus ne rend ce conteneur visible quand l’élément reçoit le focus.",
+      "cssHidden_focus_lean_why_container": "Quand l’élément reçoit le focus, il reste hors de vue : il se trouve là où le défilement ne peut pas aller, ou dans un conteneur rogné à rien, et aucun style de focus ne le rend visible.",
       "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
@@ -118273,7 +118274,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell": "キーボードフォーカスを受け取れるときは要素を表示するか、表示されるまでタブ順序から外してください。",
       "cssHidden_focus_summary_cantTell_redirect": "フォーカス可能なこの <{{element}}> は目に見えませんが、フォーカストラップの番兵要素のように、フォーカスはすぐに別の要素へ移りました。",
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
-      "cssHidden_focus_lean_why_container": "コンテナーが要素を見えない位置に置いたままで、要素がフォーカスを受けてもそのコンテナーを表示するフォーカススタイルがありません。",
+      "cssHidden_focus_lean_why_container": "要素がフォーカスを受けても見えないままです。スクロールで届かない位置にあるか、何も表示されないように切り抜かれたコンテナーの中にあり、表示するフォーカススタイルもありません。",
       "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
