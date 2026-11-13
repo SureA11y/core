@@ -1753,6 +1753,12 @@ function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -9839,6 +9845,7 @@ function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 

@@ -124,3 +124,22 @@ test(`${RULE_ID}: its messages are translated`, () => {
   });
   assert.strictEqual(rule.occurrences[0].hint, 'Donnez à la cible au moins 44×44 px CSS.');
 });
+
+test(`${RULE_ID}: run with target-size-minimum, which reads the same regions, each judges at its own size`, () => {
+  // A 30 by 30 button fits 2.5.8's 24, so the small one 20px from its
+  // centre is no conflict for it there (only the small one fails), while
+  // neither fits 2.5.5's 44. The two rules share their measurements in one
+  // scan (helpers.runMemo); whether a region fits is kept by size, so the
+  // 44 test doesn't answer the 24 one.
+  const html = `<!doctype html><html><body>
+    <button id="a" data-rect="100,100,30,30">A</button>
+    <button id="b" data-rect="130,110,10,10">B</button>
+  </body></html>`;
+  const result = run(html, {}, [RULE_ID, 'target-size-minimum']);
+  const minimum = assertRule(result, 'target-size-minimum', 'fail', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  assert.match(minimum.occurrences[0].html, /id="b"/);
+  assertRule(result, RULE_ID, 'fail', { minOccurrences: 2, maxOccurrences: 2 });
+});

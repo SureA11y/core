@@ -241,23 +241,39 @@ function runInPage(ctx) {
   const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
   const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
 
-  const candidates = [];
-  for (const el of all) {
+  // What an element is, as a candidate or a box, doesn't depend on the
+  // settings: it is kept for the scan, keyed by element, so the variant run
+  // in the same scan (focus-not-obscured-enhanced) reads it instead of
+  // working it out again. The page is scrolled back after each rule, so
+  // both read it at the same scroll.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' &&
+      helpers.runMemo('focus-not-obscured-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+
+  // An element in the tab order, drawn and scrolling with the page, or null.
+  const candidateOf = memoized(memoOf('candidate'), (el) => {
     let info;
     try {
       info = helpers.getFocusableInfo(el, ctx);
     } catch {
       info = null;
     }
-    if (!info || !info.tabbable) continue;
-    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    if (!info || !info.tabbable) return null;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) return null;
     const cs = styleOf(el);
-    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (pinnedAncestor(el)) continue;
-    if (inOwnScroller(el)) continue;
-    candidates.push({
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (pinnedAncestor(el)) return null;
+    if (inOwnScroller(el)) return null;
+    return {
       el,
       left: r.left,
       right: r.right,
@@ -265,7 +281,12 @@ function runInPage(ctx) {
       docTop: r.top + scrollY,
       marginTop: px(cs.scrollMarginTop),
       marginBottom: px(cs.scrollMarginBottom)
-    });
+    };
+  });
+  const candidates = [];
+  for (const el of all) {
+    const c = candidateOf(el);
+    if (c) candidates.push(c);
   }
   if (!candidates.length) return notApplicable();
 
@@ -351,16 +372,15 @@ function runInPage(ctx) {
   // its containing block (block) and the edge of the window it sticks to
   // with its root's extent there (stuck), as it sits there only while the
   // block reaches past it.
-  const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  const coverOf = memoized(memoOf('cover'), (el) => {
     const cs = styleOf(el);
-    if (!cs || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
-    if (!root) continue;
-    if (!paints(el, cs)) continue;
+    if (!root) return null;
+    if (!paints(el, cs)) return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (!shown(el)) continue;
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
@@ -378,10 +398,10 @@ function runInPage(ctx) {
       } else if (b !== 'auto' && b) {
         top = vh - px(b) - rootRect.height + offset;
         stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
-      } else continue;
+      } else return null;
       block = stickyBlock(root);
     }
-    covers.push({
+    return {
       el,
       root,
       position,
@@ -391,7 +411,12 @@ function runInPage(ctx) {
       right: r.right,
       block,
       stuck
-    });
+    };
+  });
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cover = coverOf(el);
+    if (cover) covers.push(cover);
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };

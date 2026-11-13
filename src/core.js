@@ -14617,6 +14617,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -22703,6 +22709,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 
@@ -80701,23 +80708,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
   const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
 
-  const candidates = [];
-  for (const el of all) {
+  // What an element is, as a candidate or a box, doesn't depend on the
+  // settings: it is kept for the scan, keyed by element, so the variant run
+  // in the same scan (focus-not-obscured-enhanced) reads it instead of
+  // working it out again. The page is scrolled back after each rule, so
+  // both read it at the same scroll.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' &&
+      helpers.runMemo('focus-not-obscured-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+
+  // An element in the tab order, drawn and scrolling with the page, or null.
+  const candidateOf = memoized(memoOf('candidate'), (el) => {
     let info;
     try {
       info = helpers.getFocusableInfo(el, ctx);
     } catch {
       info = null;
     }
-    if (!info || !info.tabbable) continue;
-    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    if (!info || !info.tabbable) return null;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) return null;
     const cs = styleOf(el);
-    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (pinnedAncestor(el)) continue;
-    if (inOwnScroller(el)) continue;
-    candidates.push({
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (pinnedAncestor(el)) return null;
+    if (inOwnScroller(el)) return null;
+    return {
       el,
       left: r.left,
       right: r.right,
@@ -80725,7 +80748,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       docTop: r.top + scrollY,
       marginTop: px(cs.scrollMarginTop),
       marginBottom: px(cs.scrollMarginBottom)
-    });
+    };
+  });
+  const candidates = [];
+  for (const el of all) {
+    const c = candidateOf(el);
+    if (c) candidates.push(c);
   }
   if (!candidates.length) return notApplicable();
 
@@ -80811,16 +80839,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // its containing block (block) and the edge of the window it sticks to
   // with its root's extent there (stuck), as it sits there only while the
   // block reaches past it.
-  const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  const coverOf = memoized(memoOf('cover'), (el) => {
     const cs = styleOf(el);
-    if (!cs || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
-    if (!root) continue;
-    if (!paints(el, cs)) continue;
+    if (!root) return null;
+    if (!paints(el, cs)) return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (!shown(el)) continue;
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
@@ -80838,10 +80865,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else if (b !== 'auto' && b) {
         top = vh - px(b) - rootRect.height + offset;
         stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
-      } else continue;
+      } else return null;
       block = stickyBlock(root);
     }
-    covers.push({
+    return {
       el,
       root,
       position,
@@ -80851,7 +80878,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       right: r.right,
       block,
       stuck
-    });
+    };
+  });
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cover = coverOf(el);
+    if (cover) covers.push(cover);
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -81275,23 +81307,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
   const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
 
-  const candidates = [];
-  for (const el of all) {
+  // What an element is, as a candidate or a box, doesn't depend on the
+  // settings: it is kept for the scan, keyed by element, so the variant run
+  // in the same scan (focus-not-obscured-enhanced) reads it instead of
+  // working it out again. The page is scrolled back after each rule, so
+  // both read it at the same scroll.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' &&
+      helpers.runMemo('focus-not-obscured-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+
+  // An element in the tab order, drawn and scrolling with the page, or null.
+  const candidateOf = memoized(memoOf('candidate'), (el) => {
     let info;
     try {
       info = helpers.getFocusableInfo(el, ctx);
     } catch {
       info = null;
     }
-    if (!info || !info.tabbable) continue;
-    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    if (!info || !info.tabbable) return null;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) return null;
     const cs = styleOf(el);
-    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (pinnedAncestor(el)) continue;
-    if (inOwnScroller(el)) continue;
-    candidates.push({
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (pinnedAncestor(el)) return null;
+    if (inOwnScroller(el)) return null;
+    return {
       el,
       left: r.left,
       right: r.right,
@@ -81299,7 +81347,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       docTop: r.top + scrollY,
       marginTop: px(cs.scrollMarginTop),
       marginBottom: px(cs.scrollMarginBottom)
-    });
+    };
+  });
+  const candidates = [];
+  for (const el of all) {
+    const c = candidateOf(el);
+    if (c) candidates.push(c);
   }
   if (!candidates.length) return notApplicable();
 
@@ -81385,16 +81438,15 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // its containing block (block) and the edge of the window it sticks to
   // with its root's extent there (stuck), as it sits there only while the
   // block reaches past it.
-  const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  const coverOf = memoized(memoOf('cover'), (el) => {
     const cs = styleOf(el);
-    if (!cs || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
-    if (!root) continue;
-    if (!paints(el, cs)) continue;
+    if (!root) return null;
+    if (!paints(el, cs)) return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (!shown(el)) continue;
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
@@ -81412,10 +81464,10 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       } else if (b !== 'auto' && b) {
         top = vh - px(b) - rootRect.height + offset;
         stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
-      } else continue;
+      } else return null;
       block = stickyBlock(root);
     }
-    covers.push({
+    return {
       el,
       root,
       position,
@@ -81425,7 +81477,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       right: r.right,
       block,
       stuck
-    });
+    };
+  });
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cover = coverOf(el);
+    if (cover) covers.push(cover);
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -105504,6 +105561,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SPACING = 24;
   const RADIUS = SPACING / 2;
 
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
+
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
@@ -105649,7 +105723,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -106495,15 +106569,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -106511,7 +106588,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -106648,7 +106725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -106676,7 +106753,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
@@ -107316,6 +107393,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SPACING = 24;
   const RADIUS = SPACING / 2;
 
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
+
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
@@ -107461,7 +107555,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -108307,15 +108401,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -108323,7 +108420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -108460,7 +108557,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -108488,7 +108585,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
@@ -136369,6 +136466,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -144455,6 +144558,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 

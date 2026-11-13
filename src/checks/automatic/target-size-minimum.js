@@ -264,6 +264,23 @@ function runInPage(ctx) {
   const SPACING = 24;
   const RADIUS = SPACING / 2;
 
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
+
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
@@ -409,7 +426,7 @@ function runInPage(ctx) {
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -1255,15 +1272,18 @@ function runInPage(ctx) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -1271,7 +1291,7 @@ function runInPage(ctx) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -1408,7 +1428,7 @@ function runInPage(ctx) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -1436,7 +1456,7 @@ function runInPage(ctx) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
