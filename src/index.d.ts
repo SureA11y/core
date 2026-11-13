@@ -378,6 +378,7 @@ export interface RuleHelpers {
   getEligibilityInfo: RuleHelper;
   getVisibilityHintsInfo: RuleHelper;
   isClipHidden: RuleHelper;
+  isElementClipHidden: RuleHelper;
   containingBlockOf: RuleHelper;
   isVisuallyHidden: RuleHelper;
   readViewportContent: RuleHelper;
