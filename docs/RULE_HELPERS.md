@@ -978,6 +978,15 @@ Reach for this instead of the naive `if (fails.length) return fail(fails); else 
 (cantTells.length) return cantTell(cantTells);`, which silently drops every cantTell
 finding whenever at least one fail finding also exists on the page.
 
+### `runMemo(name)` → `WeakMap | null`
+
+A `WeakMap` for this scan only, the same for every rule that asks for `name`, and a new
+one in the next scan: for work a rule and its variants would each do again on the same
+element, such as `target-size-minimum` and `target-size-enhanced` measuring a target's
+region. Key it by element and store only what doesn't depend on the rule's settings, scope
+or excludes, since every rule of the scan reads it; prefix the name with the rule's id.
+`null` if it can't be made: then compute as before.
+
 ### `getPerfStats()` / `resetPerfStats()`
 
 Only populated when the engine is run with `perfStats: true`. Not for rule logic —

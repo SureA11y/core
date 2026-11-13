@@ -1753,6 +1753,12 @@ function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -2143,15 +2149,121 @@ function createDomHelpers(opts) {
     }
     return null;
   }
+  // The <label for> elements of a root (a document or shadow root), read
+  // once per run: nameCause asks for them for every element a name rule
+  // fails, and reading the whole tree each time made a page with many
+  // unnamed fields cost the square of their number. `all` is in tree order,
+  // `pos` gives each label's place in it, `byFor` and `byForTrim` list them
+  // by their for attribute as written and trimmed, and `byParent` by their
+  // parent element. What depends on ids (labels whose for reaches nothing,
+  // or reaches an element that isn't a form field) is filled in on first
+  // use, with the caller's id lookup, which is the same for every element
+  // of the root.
+  function labelForIndex(r) {
+    const cache = __sharedWeakMap('labelForIndexByRoot');
+    const cached = cache && cache.get(r);
+    if (cached) return cached;
+    let all;
+    try {
+      all = [...dom.querySelectorAll(r, 'label[for]')];
+    } catch {
+      all = [];
+    }
+    const pos = new Map();
+    const byFor = new Map();
+    const byForTrim = new Map();
+    const byParent = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
+    all.forEach((l, i) => {
+      pos.set(l, i);
+      const f = dom.getAttribute(l, 'for') || '';
+      push(byFor, f, l);
+      push(byForTrim, trim(f), l);
+      const up = dom.parentElement(l);
+      if (up) push(byParent, up, l);
+    });
+    const index = { all, pos, byFor, byForTrim, byParent, ids: null };
+    if (cache) cache.set(r, index);
+    return index;
+  }
+  // The id-dependent part of a labelForIndex: `orphans`, the labels whose
+  // trimmed for names no element, with a deletion index over their lower
+  // cased for values (closeTo), and `byTarget`, the labels whose for
+  // reaches an element, by that element.
+  const CLOSE_IDS_INDEX_MAX = 48;
+  function deletionsWithin2(s) {
+    const out = new Set([s]);
+    for (let i = 0; i < s.length; i++) {
+      const d1 = s.slice(0, i) + s.slice(i + 1);
+      out.add(d1);
+      for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
+    }
+    return out;
+  }
+  function labelForIds(index, byId) {
+    if (index.ids) return index.ids;
+    const orphans = [];
+    const byTarget = new Map();
+    for (const l of index.all) {
+      const forId = trim(dom.getAttribute(l, 'for') || '');
+      if (!forId) continue;
+      const target = byId(forId);
+      if (!target) orphans.push(l);
+      else {
+        const list = byTarget.get(target);
+        if (list) list.push(l);
+        else byTarget.set(target, [l]);
+      }
+    }
+    // Two strings at most LEVENSHTEIN_MAX (2) edits apart share a string
+    // each gives by deleting at most two of its characters, so looking up
+    // an id's deletions finds every for value closeIds can accept. A long
+    // value (rare) is kept apart and compared directly.
+    let deletionIndex = null;
+    let long = null;
+    const closeTo = (id) => {
+      if (!deletionIndex) {
+        deletionIndex = new Map();
+        long = [];
+        for (const l of orphans) {
+          const f = lower(trim(dom.getAttribute(l, 'for') || ''));
+          if (f.length > CLOSE_IDS_INDEX_MAX) {
+            long.push(l);
+            continue;
+          }
+          for (const d of deletionsWithin2(f)) {
+            const list = deletionIndex.get(d);
+            if (list) list.push(l);
+            else deletionIndex.set(d, [l]);
+          }
+        }
+      }
+      const found = new Set(long);
+      const key = lower(id);
+      if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
+        for (const d of deletionsWithin2(key)) {
+          const list = deletionIndex.get(d);
+          if (list) for (const l of list) found.add(l);
+        }
+      } else {
+        for (const l of orphans) found.add(l);
+      }
+      return found;
+    };
+    index.ids = { orphans, byTarget, closeTo };
+    return index.ids;
+  }
   function labelsOf(el) {
     const out = [];
     try {
       const doc = dom.ownerDocument(el);
       const id = dom.getAttribute(el, 'id');
       if (id && doc) {
-        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
-          if (dom.getAttribute(l, 'for') === id) out.push(l);
-        }
+        for (const l of labelForIndex(doc).byFor.get(id) || []) out.push(l);
       }
       const wrap = dom.closest(el, 'label');
       if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
@@ -2201,12 +2313,12 @@ function createDomHelpers(opts) {
         all = trim(all.replace(/\s+/g, ' '));
         return all.length > 40 ? `${all.slice(0, 39)}…` : all;
       };
-      const labelsFor = () => {
-        try {
-          return [...dom.querySelectorAll(root, 'label[for]')];
-        } catch {
-          return doc ? [...dom.querySelectorAll(doc, 'label[for]')] : [];
-        }
+      // The root's <label for> elements, read once per run (labelForIndex).
+      const labelIndex = () => labelForIndex(root || doc);
+      // Labels in tree order, from a set of them.
+      const inOrder = (set) => {
+        const pos = labelIndex().pos;
+        return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
@@ -2293,7 +2405,7 @@ function createDomHelpers(opts) {
         // wrapped around) a custom widget names nothing.
         let label = null;
         if (id && byId(id) === el) {
-          label = labelsFor().find((l) => dom.getAttribute(l, 'for') === id) || null;
+          label = (labelIndex().byFor.get(id) || [])[0] || null;
         }
         if (!label) {
           const wrap = dom.closest(el, 'label');
@@ -2350,7 +2462,14 @@ function createDomHelpers(opts) {
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // one in its parent, and one whose for is close to its id.
+          const ids = labelForIds(labelIndex(), byId);
+          const maybe = new Set();
+          for (const n of near) if (n) maybe.add(n);
+          if (parent) for (const l of labelIndex().byParent.get(parent) || []) maybe.add(l);
+          if (id) for (const l of ids.closeTo(id)) maybe.add(l);
+          for (const l of inOrder(maybe)) {
             const forId = attr(l, 'for');
             if (!forId || byId(forId)) continue;
             const inParent = parent && dom.parentElement(l) === parent;
@@ -2375,7 +2494,7 @@ function createDomHelpers(opts) {
           // element with the same id.
           const first = id ? byId(id) : null;
           if (first && first !== el) {
-            for (const l of labelsFor()) {
+            for (const l of labelIndex().byForTrim.get(id) || []) {
               if (attr(l, 'for') !== id) continue;
               const text = shortText(l);
               if (!HIDDEN_TEXT_RE.test(text)) continue;
@@ -2390,7 +2509,18 @@ function createDomHelpers(opts) {
           }
           // A <label for> beside the field, or around it, that points at an
           // element that is not a form field.
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // and one whose for reaches the field's ancestor.
+          const aimed = new Set();
+          for (const n of near) if (n) aimed.add(n);
+          for (
+            let n = dom.parentElement(el), i = 0;
+            n && i < 10000;
+            n = dom.parentElement(n), i++
+          ) {
+            for (const l of ids.byTarget.get(n) || []) aimed.add(l);
+          }
+          for (const l of inOrder(aimed)) {
             const forId = attr(l, 'for');
             const target = forId ? byId(forId) : null;
             if (!target || target === el || LABELABLE.test(tagOf(target))) continue;
@@ -9715,6 +9845,7 @@ function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 

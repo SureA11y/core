@@ -380,6 +380,7 @@ export interface RuleHelpers {
   isClipHidden: RuleHelper;
   isElementClipHidden: RuleHelper;
   containingBlockOf: RuleHelper;
+  runMemo: RuleHelper;
   isVisuallyHidden: RuleHelper;
   readViewportContent: RuleHelper;
   getTextBoundaryKind: RuleHelper;

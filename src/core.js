@@ -14617,6 +14617,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -15007,15 +15013,121 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
     return null;
   }
+  // The <label for> elements of a root (a document or shadow root), read
+  // once per run: nameCause asks for them for every element a name rule
+  // fails, and reading the whole tree each time made a page with many
+  // unnamed fields cost the square of their number. `all` is in tree order,
+  // `pos` gives each label's place in it, `byFor` and `byForTrim` list them
+  // by their for attribute as written and trimmed, and `byParent` by their
+  // parent element. What depends on ids (labels whose for reaches nothing,
+  // or reaches an element that isn't a form field) is filled in on first
+  // use, with the caller's id lookup, which is the same for every element
+  // of the root.
+  function labelForIndex(r) {
+    const cache = __sharedWeakMap('labelForIndexByRoot');
+    const cached = cache && cache.get(r);
+    if (cached) return cached;
+    let all;
+    try {
+      all = [...dom.querySelectorAll(r, 'label[for]')];
+    } catch {
+      all = [];
+    }
+    const pos = new Map();
+    const byFor = new Map();
+    const byForTrim = new Map();
+    const byParent = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
+    all.forEach((l, i) => {
+      pos.set(l, i);
+      const f = dom.getAttribute(l, 'for') || '';
+      push(byFor, f, l);
+      push(byForTrim, trim(f), l);
+      const up = dom.parentElement(l);
+      if (up) push(byParent, up, l);
+    });
+    const index = { all, pos, byFor, byForTrim, byParent, ids: null };
+    if (cache) cache.set(r, index);
+    return index;
+  }
+  // The id-dependent part of a labelForIndex: `orphans`, the labels whose
+  // trimmed for names no element, with a deletion index over their lower
+  // cased for values (closeTo), and `byTarget`, the labels whose for
+  // reaches an element, by that element.
+  const CLOSE_IDS_INDEX_MAX = 48;
+  function deletionsWithin2(s) {
+    const out = new Set([s]);
+    for (let i = 0; i < s.length; i++) {
+      const d1 = s.slice(0, i) + s.slice(i + 1);
+      out.add(d1);
+      for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
+    }
+    return out;
+  }
+  function labelForIds(index, byId) {
+    if (index.ids) return index.ids;
+    const orphans = [];
+    const byTarget = new Map();
+    for (const l of index.all) {
+      const forId = trim(dom.getAttribute(l, 'for') || '');
+      if (!forId) continue;
+      const target = byId(forId);
+      if (!target) orphans.push(l);
+      else {
+        const list = byTarget.get(target);
+        if (list) list.push(l);
+        else byTarget.set(target, [l]);
+      }
+    }
+    // Two strings at most LEVENSHTEIN_MAX (2) edits apart share a string
+    // each gives by deleting at most two of its characters, so looking up
+    // an id's deletions finds every for value closeIds can accept. A long
+    // value (rare) is kept apart and compared directly.
+    let deletionIndex = null;
+    let long = null;
+    const closeTo = (id) => {
+      if (!deletionIndex) {
+        deletionIndex = new Map();
+        long = [];
+        for (const l of orphans) {
+          const f = lower(trim(dom.getAttribute(l, 'for') || ''));
+          if (f.length > CLOSE_IDS_INDEX_MAX) {
+            long.push(l);
+            continue;
+          }
+          for (const d of deletionsWithin2(f)) {
+            const list = deletionIndex.get(d);
+            if (list) list.push(l);
+            else deletionIndex.set(d, [l]);
+          }
+        }
+      }
+      const found = new Set(long);
+      const key = lower(id);
+      if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
+        for (const d of deletionsWithin2(key)) {
+          const list = deletionIndex.get(d);
+          if (list) for (const l of list) found.add(l);
+        }
+      } else {
+        for (const l of orphans) found.add(l);
+      }
+      return found;
+    };
+    index.ids = { orphans, byTarget, closeTo };
+    return index.ids;
+  }
   function labelsOf(el) {
     const out = [];
     try {
       const doc = dom.ownerDocument(el);
       const id = dom.getAttribute(el, 'id');
       if (id && doc) {
-        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
-          if (dom.getAttribute(l, 'for') === id) out.push(l);
-        }
+        for (const l of labelForIndex(doc).byFor.get(id) || []) out.push(l);
       }
       const wrap = dom.closest(el, 'label');
       if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
@@ -15065,12 +15177,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         all = trim(all.replace(/\s+/g, ' '));
         return all.length > 40 ? `${all.slice(0, 39)}…` : all;
       };
-      const labelsFor = () => {
-        try {
-          return [...dom.querySelectorAll(root, 'label[for]')];
-        } catch {
-          return doc ? [...dom.querySelectorAll(doc, 'label[for]')] : [];
-        }
+      // The root's <label for> elements, read once per run (labelForIndex).
+      const labelIndex = () => labelForIndex(root || doc);
+      // Labels in tree order, from a set of them.
+      const inOrder = (set) => {
+        const pos = labelIndex().pos;
+        return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
@@ -15157,7 +15269,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // wrapped around) a custom widget names nothing.
         let label = null;
         if (id && byId(id) === el) {
-          label = labelsFor().find((l) => dom.getAttribute(l, 'for') === id) || null;
+          label = (labelIndex().byFor.get(id) || [])[0] || null;
         }
         if (!label) {
           const wrap = dom.closest(el, 'label');
@@ -15214,7 +15326,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // one in its parent, and one whose for is close to its id.
+          const ids = labelForIds(labelIndex(), byId);
+          const maybe = new Set();
+          for (const n of near) if (n) maybe.add(n);
+          if (parent) for (const l of labelIndex().byParent.get(parent) || []) maybe.add(l);
+          if (id) for (const l of ids.closeTo(id)) maybe.add(l);
+          for (const l of inOrder(maybe)) {
             const forId = attr(l, 'for');
             if (!forId || byId(forId)) continue;
             const inParent = parent && dom.parentElement(l) === parent;
@@ -15239,7 +15358,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           // element with the same id.
           const first = id ? byId(id) : null;
           if (first && first !== el) {
-            for (const l of labelsFor()) {
+            for (const l of labelIndex().byForTrim.get(id) || []) {
               if (attr(l, 'for') !== id) continue;
               const text = shortText(l);
               if (!HIDDEN_TEXT_RE.test(text)) continue;
@@ -15254,7 +15373,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
           }
           // A <label for> beside the field, or around it, that points at an
           // element that is not a form field.
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // and one whose for reaches the field's ancestor.
+          const aimed = new Set();
+          for (const n of near) if (n) aimed.add(n);
+          for (
+            let n = dom.parentElement(el), i = 0;
+            n && i < 10000;
+            n = dom.parentElement(n), i++
+          ) {
+            for (const l of ids.byTarget.get(n) || []) aimed.add(l);
+          }
+          for (const l of inOrder(aimed)) {
             const forId = attr(l, 'for');
             const target = forId ? byId(forId) : null;
             if (!target || target === el || LABELABLE.test(tagOf(target))) continue;
@@ -22579,6 +22709,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 
@@ -80577,23 +80708,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
   const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
 
-  const candidates = [];
-  for (const el of all) {
+  // What an element is, as a candidate or a box, doesn't depend on the
+  // settings: it is kept for the scan, keyed by element, so the variant run
+  // in the same scan (focus-not-obscured-enhanced) reads it instead of
+  // working it out again. The page is scrolled back after each rule, so
+  // both read it at the same scroll.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' &&
+      helpers.runMemo('focus-not-obscured-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+
+  // An element in the tab order, drawn and scrolling with the page, or null.
+  const candidateOf = memoized(memoOf('candidate'), (el) => {
     let info;
     try {
       info = helpers.getFocusableInfo(el, ctx);
     } catch {
       info = null;
     }
-    if (!info || !info.tabbable) continue;
-    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    if (!info || !info.tabbable) return null;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) return null;
     const cs = styleOf(el);
-    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (pinnedAncestor(el)) continue;
-    if (inOwnScroller(el)) continue;
-    candidates.push({
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (pinnedAncestor(el)) return null;
+    if (inOwnScroller(el)) return null;
+    return {
       el,
       left: r.left,
       right: r.right,
@@ -80601,7 +80748,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       docTop: r.top + scrollY,
       marginTop: px(cs.scrollMarginTop),
       marginBottom: px(cs.scrollMarginBottom)
-    });
+    };
+  });
+  const candidates = [];
+  for (const el of all) {
+    const c = candidateOf(el);
+    if (c) candidates.push(c);
   }
   if (!candidates.length) return notApplicable();
 
@@ -80653,32 +80805,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
 
+  // A sticky box stays inside its containing block, the nearest ancestor
+  // that is no inline box, no display: contents and no table row, row group
+  // or column (a table cell's is the table): the block's extent on the
+  // page, from the document's top, memoized per root. Not
+  // helpers.containingBlockOf, which answers what can clip an element: for a
+  // sticky <th> it gives the row, but the table holds the cell.
+  const TABLE_PARTS = new Set([
+    'table-row',
+    'table-row-group',
+    'table-header-group',
+    'table-footer-group',
+    'table-column',
+    'table-column-group'
+  ]);
+  const stickyBlocks = new Map();
+  function stickyBlock(root) {
+    if (stickyBlocks.has(root)) return stickyBlocks.get(root);
+    let found = null;
+    for (let n = dom.parentElement(root), i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const d = lower((styleOf(n) || {}).display);
+      if (d === 'inline' || d === 'contents' || TABLE_PARTS.has(d)) continue;
+      const r = dom.getBoundingClientRect(n);
+      if (r) found = { top: r.top + scrollY, bottom: r.bottom + scrollY };
+      break;
+    }
+    stickyBlocks.set(root, found);
+    return found;
+  }
+
   // Each box: its root (the fixed or sticky element), the strip of the
-  // window it covers, and its horizontal extent.
-  const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // window it covers, and its horizontal extent. A sticky one also carries
+  // its containing block (block) and the edge of the window it sticks to
+  // with its root's extent there (stuck), as it sits there only while the
+  // block reaches past it.
+  const coverOf = memoized(memoOf('cover'), (el) => {
     const cs = styleOf(el);
-    if (!cs || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
-    if (!root) continue;
-    if (!paints(el, cs)) continue;
+    if (!root) return null;
+    if (!paints(el, cs)) return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (!shown(el)) continue;
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
+    let block = null;
+    let stuck = null;
     if (position === 'sticky') {
       // Taken at the offset it sticks at, from the top or the bottom.
       const t = lower(rootCs.top);
       const b = lower(rootCs.bottom);
       const rootRect = dom.getBoundingClientRect(root);
       const offset = r.top - rootRect.top;
-      if (t !== 'auto' && t) top = px(t) + offset;
-      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
-      else continue;
+      if (t !== 'auto' && t) {
+        top = px(t) + offset;
+        stuck = { edge: 'top', top: px(t), bottom: px(t) + rootRect.height };
+      } else if (b !== 'auto' && b) {
+        top = vh - px(b) - rootRect.height + offset;
+        stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
+      } else return null;
+      block = stickyBlock(root);
     }
-    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+    return {
+      el,
+      root,
+      position,
+      top,
+      bottom: top + r.height,
+      left: r.left,
+      right: r.right,
+      block,
+      stuck
+    };
+  });
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cover = coverOf(el);
+    if (cover) covers.push(cover);
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -80696,8 +80901,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inViewHi = zoneBottom - c.marginBottom - c.height;
     const reachLo = c.docTop - maxScroll;
     const reachHi = c.docTop;
-    const lo = entirely ? cover.top : cover.top - c.height + 1;
-    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    let lo = entirely ? cover.top : cover.top - c.height + 1;
+    let hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    if (cover.block) {
+      // A sticky box covers only what lies in its containing block, and
+      // sits at its offset only while the block reaches past it: with the
+      // element's top at y in the window, the block's top is at
+      // block.top - docTop + y.
+      const { block, stuck } = cover;
+      if (c.docTop + c.height <= block.top || c.docTop >= block.bottom) return null;
+      if (stuck.edge === 'top') lo = Math.max(lo, stuck.bottom - block.bottom + c.docTop);
+      else hi = Math.min(hi, stuck.top - block.top + c.docTop);
+    }
     const a = Math.max(inViewLo, reachLo, lo);
     const b = Math.min(inViewHi, reachHi, hi);
     return a <= b ? (a + b) / 2 : null;
@@ -80804,16 +81019,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return total ? covered / total : 0;
   }
 
+  // Each check scrolls the page and hit-tests it, which costs more the
+  // larger the page: a page with hundreds of sticky boxes made the rule cost
+  // their number times the page's size. So a page lists at most
+  // MAX_OCCURRENCES boxes, in document order, and checks at most
+  // MAX_CHECKS elements; the boxes left unchecked are counted in the
+  // result's data.details (uncheckedCount, truncated).
   const SAMPLES = 3;
+  const MAX_OCCURRENCES = 50;
+  const MAX_CHECKS = MAX_OCCURRENCES * SAMPLES;
+  let checks = 0;
+  let uncheckedCount = 0;
   const occurrences = [];
   try {
     for (const entry of byRoot.values()) {
+      if (occurrences.length >= MAX_OCCURRENCES || checks >= MAX_CHECKS) {
+        uncheckedCount += 1;
+        continue;
+      }
       const hits = [...entry.hits.values()];
       const entirely = hits.filter((h) => h.kind === 'entirely');
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
       for (const h of ordered.slice(0, SAMPLES)) {
+        checks += 1;
         const share = hiddenShare(h);
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
@@ -80953,13 +81183,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     scrollTo(scrollY);
   }
 
+  // Only where boxes were left unchecked: how many boxes could hide an
+  // element, how many are listed, and how many weren't checked.
+  const listing = uncheckedCount
+    ? {
+        data: {
+          details: {
+            boxCount: byRoot.size,
+            reportedCount: occurrences.length,
+            uncheckedCount,
+            maxOccurrences: MAX_OCCURRENCES,
+            truncated: true
+          }
+        }
+      }
+    : {};
   if (!occurrences.length)
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...listing };
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
-    occurrences
+    occurrences,
+    ...listing
   };
 }), applicability: null },
     "focus-not-obscured-minimum": { run: (function runInPage(ctx) {
@@ -81061,23 +81307,39 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
   const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
 
-  const candidates = [];
-  for (const el of all) {
+  // What an element is, as a candidate or a box, doesn't depend on the
+  // settings: it is kept for the scan, keyed by element, so the variant run
+  // in the same scan (focus-not-obscured-enhanced) reads it instead of
+  // working it out again. The page is scrolled back after each rule, so
+  // both read it at the same scroll.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' &&
+      helpers.runMemo('focus-not-obscured-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+
+  // An element in the tab order, drawn and scrolling with the page, or null.
+  const candidateOf = memoized(memoOf('candidate'), (el) => {
     let info;
     try {
       info = helpers.getFocusableInfo(el, ctx);
     } catch {
       info = null;
     }
-    if (!info || !info.tabbable) continue;
-    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    if (!info || !info.tabbable) return null;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) return null;
     const cs = styleOf(el);
-    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (pinnedAncestor(el)) continue;
-    if (inOwnScroller(el)) continue;
-    candidates.push({
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (pinnedAncestor(el)) return null;
+    if (inOwnScroller(el)) return null;
+    return {
       el,
       left: r.left,
       right: r.right,
@@ -81085,7 +81347,12 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       docTop: r.top + scrollY,
       marginTop: px(cs.scrollMarginTop),
       marginBottom: px(cs.scrollMarginBottom)
-    });
+    };
+  });
+  const candidates = [];
+  for (const el of all) {
+    const c = candidateOf(el);
+    if (c) candidates.push(c);
   }
   if (!candidates.length) return notApplicable();
 
@@ -81137,32 +81404,85 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
 
+  // A sticky box stays inside its containing block, the nearest ancestor
+  // that is no inline box, no display: contents and no table row, row group
+  // or column (a table cell's is the table): the block's extent on the
+  // page, from the document's top, memoized per root. Not
+  // helpers.containingBlockOf, which answers what can clip an element: for a
+  // sticky <th> it gives the row, but the table holds the cell.
+  const TABLE_PARTS = new Set([
+    'table-row',
+    'table-row-group',
+    'table-header-group',
+    'table-footer-group',
+    'table-column',
+    'table-column-group'
+  ]);
+  const stickyBlocks = new Map();
+  function stickyBlock(root) {
+    if (stickyBlocks.has(root)) return stickyBlocks.get(root);
+    let found = null;
+    for (let n = dom.parentElement(root), i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const d = lower((styleOf(n) || {}).display);
+      if (d === 'inline' || d === 'contents' || TABLE_PARTS.has(d)) continue;
+      const r = dom.getBoundingClientRect(n);
+      if (r) found = { top: r.top + scrollY, bottom: r.bottom + scrollY };
+      break;
+    }
+    stickyBlocks.set(root, found);
+    return found;
+  }
+
   // Each box: its root (the fixed or sticky element), the strip of the
-  // window it covers, and its horizontal extent.
-  const covers = [];
-  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+  // window it covers, and its horizontal extent. A sticky one also carries
+  // its containing block (block) and the edge of the window it sticks to
+  // with its root's extent there (stuck), as it sits there only while the
+  // block reaches past it.
+  const coverOf = memoized(memoOf('cover'), (el) => {
     const cs = styleOf(el);
-    if (!cs || lower(cs.display) === 'none') continue;
+    if (!cs || lower(cs.display) === 'none') return null;
     const root = pinnedAncestor(el);
-    if (!root) continue;
-    if (!paints(el, cs)) continue;
+    if (!root) return null;
+    if (!paints(el, cs)) return null;
     const r = dom.getBoundingClientRect(el);
-    if (!r || r.width <= 0 || r.height <= 0) continue;
-    if (!shown(el)) continue;
+    if (!r || r.width <= 0 || r.height <= 0) return null;
+    if (!shown(el)) return null;
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
+    let block = null;
+    let stuck = null;
     if (position === 'sticky') {
       // Taken at the offset it sticks at, from the top or the bottom.
       const t = lower(rootCs.top);
       const b = lower(rootCs.bottom);
       const rootRect = dom.getBoundingClientRect(root);
       const offset = r.top - rootRect.top;
-      if (t !== 'auto' && t) top = px(t) + offset;
-      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
-      else continue;
+      if (t !== 'auto' && t) {
+        top = px(t) + offset;
+        stuck = { edge: 'top', top: px(t), bottom: px(t) + rootRect.height };
+      } else if (b !== 'auto' && b) {
+        top = vh - px(b) - rootRect.height + offset;
+        stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
+      } else return null;
+      block = stickyBlock(root);
     }
-    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+    return {
+      el,
+      root,
+      position,
+      top,
+      bottom: top + r.height,
+      left: r.left,
+      right: r.right,
+      block,
+      stuck
+    };
+  });
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cover = coverOf(el);
+    if (cover) covers.push(cover);
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -81180,8 +81500,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inViewHi = zoneBottom - c.marginBottom - c.height;
     const reachLo = c.docTop - maxScroll;
     const reachHi = c.docTop;
-    const lo = entirely ? cover.top : cover.top - c.height + 1;
-    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    let lo = entirely ? cover.top : cover.top - c.height + 1;
+    let hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    if (cover.block) {
+      // A sticky box covers only what lies in its containing block, and
+      // sits at its offset only while the block reaches past it: with the
+      // element's top at y in the window, the block's top is at
+      // block.top - docTop + y.
+      const { block, stuck } = cover;
+      if (c.docTop + c.height <= block.top || c.docTop >= block.bottom) return null;
+      if (stuck.edge === 'top') lo = Math.max(lo, stuck.bottom - block.bottom + c.docTop);
+      else hi = Math.min(hi, stuck.top - block.top + c.docTop);
+    }
     const a = Math.max(inViewLo, reachLo, lo);
     const b = Math.min(inViewHi, reachHi, hi);
     return a <= b ? (a + b) / 2 : null;
@@ -81288,16 +81618,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return total ? covered / total : 0;
   }
 
+  // Each check scrolls the page and hit-tests it, which costs more the
+  // larger the page: a page with hundreds of sticky boxes made the rule cost
+  // their number times the page's size. So a page lists at most
+  // MAX_OCCURRENCES boxes, in document order, and checks at most
+  // MAX_CHECKS elements; the boxes left unchecked are counted in the
+  // result's data.details (uncheckedCount, truncated).
   const SAMPLES = 3;
+  const MAX_OCCURRENCES = 50;
+  const MAX_CHECKS = MAX_OCCURRENCES * SAMPLES;
+  let checks = 0;
+  let uncheckedCount = 0;
   const occurrences = [];
   try {
     for (const entry of byRoot.values()) {
+      if (occurrences.length >= MAX_OCCURRENCES || checks >= MAX_CHECKS) {
+        uncheckedCount += 1;
+        continue;
+      }
       const hits = [...entry.hits.values()];
       const entirely = hits.filter((h) => h.kind === 'entirely');
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
       for (const h of ordered.slice(0, SAMPLES)) {
+        checks += 1;
         const share = hiddenShare(h);
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
@@ -81437,13 +81782,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     scrollTo(scrollY);
   }
 
+  // Only where boxes were left unchecked: how many boxes could hide an
+  // element, how many are listed, and how many weren't checked.
+  const listing = uncheckedCount
+    ? {
+        data: {
+          details: {
+            boxCount: byRoot.size,
+            reportedCount: occurrences.length,
+            uncheckedCount,
+            maxOccurrences: MAX_OCCURRENCES,
+            truncated: true
+          }
+        }
+      }
+    : {};
   if (!occurrences.length)
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...listing };
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
-    occurrences
+    occurrences,
+    ...listing
   };
 }), applicability: null },
     "focus-not-removed-by-script": { run: (function runInPage(ctx) {
@@ -105200,6 +105561,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SPACING = 24;
   const RADIUS = SPACING / 2;
 
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
+
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
@@ -105345,7 +105723,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -106191,15 +106569,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -106207,7 +106588,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -106344,7 +106725,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -106372,7 +106753,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
@@ -107012,6 +107393,23 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   const SPACING = 24;
   const RADIUS = SPACING / 2;
 
+  // What doesn't depend on the settings (whether a target can be hit, where
+  // it can be hit at most, its region, the text around it) is kept for the
+  // scan, keyed by element, so a variant run in the same scan
+  // (target-size-enhanced) reads it instead of measuring again.
+  const memoOf = (name) =>
+    (typeof helpers.runMemo === 'function' && helpers.runMemo('target-size-minimum:' + name)) ||
+    new WeakMap();
+  const memoized = (map, fn) => (el) => {
+    if (map.has(el)) return map.get(el);
+    const value = fn(el);
+    map.set(el, value);
+    return value;
+  };
+  const isPointerReachable = memoized(memoOf('reachable'), pointerReachable);
+  const measure = memoized(memoOf('measure'), measureTarget);
+  const extentOf = memoized(memoOf('extent'), extentOfTarget);
+
   // --- tiny safe helpers (never throw) ---
   // Goes through helpers.queryAllSmart/queryAll (multi-root and shadow-DOM
   // aware, cached) rather than a raw root/safeRoot DOM query -- ctx.root is
@@ -107157,7 +107555,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   // Walks a block container once and settles, for every inline target in it,
   // the text of its stretch.
-  const __textAround = new WeakMap();
+  const __textAround = memoOf('textAround');
   const HAS_WORD = /[\p{L}\p{N}]/u;
   function stretchesOf(container) {
     if (!container) return;
@@ -108003,15 +108401,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // Whether a 24 by 24 square fits in some piece: exactly in a rectangle,
   // and within a thousandth of a pixel where the region is worked out by
   // search rather than read off a box.
+  // Kept on the region by size, as a variant in the same scan reads the
+  // same region (memoOf) with a size of its own.
   function fitsMin(region) {
-    if (region.fits === undefined) {
-      region.fits = region.pieces.some((piece) => {
+    const fits = region.fits || (region.fits = Object.create(null));
+    if (fits[MIN] === undefined) {
+      fits[MIN] = region.pieces.some((piece) => {
         const plain = plainSquare(piece);
         if (plain !== null) return plain >= (piece.rect ? MIN : MIN - 1e-3);
         return squareFits(piece, MIN - 1e-3);
       });
     }
-    return region.fits;
+    return fits[MIN];
   }
   function regionDistance(region, c) {
     let best = Infinity;
@@ -108019,7 +108420,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return best;
   }
 
-  function isPointerReachable(el) {
+  function pointerReachable(el) {
     // Match test expectations:
     // - exclude display:none
     // - exclude [hidden]
@@ -108156,7 +108557,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // A target's region, its bounding box (`rect`), on whose centre the
   // spacing circle sits, and the largest square that fits in it (`square`),
   // or null for a target with nothing left to hit, clipped away.
-  function measure(el) {
+  function measureTarget(el) {
     let region;
     try {
       region = regionOf(el);
@@ -108184,7 +108585,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // contents, its content's) and those of the content inside it. Its region
   // lies within, since clips and the boxes over it only take away. Cheap
   // next to the region, it tells which targets need one.
-  function extentOf(el) {
+  function extentOfTarget(el) {
     const cs = getStyle(el);
     const rects =
       cs && cs.display === 'contents'
@@ -136065,6 +136466,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
       return null;
     }
   }
+  // A WeakMap of the rules' own, by name, shared by every rule of this run
+  // and made again for the next: for work a rule and its variants would
+  // each repeat on the same element. Named apart from the helpers' caches.
+  function runMemo(name) {
+    return __sharedWeakMap('rules:' + String(name));
+  }
 
   // The internals hook's registry in a window, read and checked once per run.
   function __internalsHookOf(win) {
@@ -136455,15 +136862,121 @@ const createDomHelpers = (function createDomHelpers(opts) {
     }
     return null;
   }
+  // The <label for> elements of a root (a document or shadow root), read
+  // once per run: nameCause asks for them for every element a name rule
+  // fails, and reading the whole tree each time made a page with many
+  // unnamed fields cost the square of their number. `all` is in tree order,
+  // `pos` gives each label's place in it, `byFor` and `byForTrim` list them
+  // by their for attribute as written and trimmed, and `byParent` by their
+  // parent element. What depends on ids (labels whose for reaches nothing,
+  // or reaches an element that isn't a form field) is filled in on first
+  // use, with the caller's id lookup, which is the same for every element
+  // of the root.
+  function labelForIndex(r) {
+    const cache = __sharedWeakMap('labelForIndexByRoot');
+    const cached = cache && cache.get(r);
+    if (cached) return cached;
+    let all;
+    try {
+      all = [...dom.querySelectorAll(r, 'label[for]')];
+    } catch {
+      all = [];
+    }
+    const pos = new Map();
+    const byFor = new Map();
+    const byForTrim = new Map();
+    const byParent = new Map();
+    const push = (map, key, l) => {
+      const list = map.get(key);
+      if (list) list.push(l);
+      else map.set(key, [l]);
+    };
+    all.forEach((l, i) => {
+      pos.set(l, i);
+      const f = dom.getAttribute(l, 'for') || '';
+      push(byFor, f, l);
+      push(byForTrim, trim(f), l);
+      const up = dom.parentElement(l);
+      if (up) push(byParent, up, l);
+    });
+    const index = { all, pos, byFor, byForTrim, byParent, ids: null };
+    if (cache) cache.set(r, index);
+    return index;
+  }
+  // The id-dependent part of a labelForIndex: `orphans`, the labels whose
+  // trimmed for names no element, with a deletion index over their lower
+  // cased for values (closeTo), and `byTarget`, the labels whose for
+  // reaches an element, by that element.
+  const CLOSE_IDS_INDEX_MAX = 48;
+  function deletionsWithin2(s) {
+    const out = new Set([s]);
+    for (let i = 0; i < s.length; i++) {
+      const d1 = s.slice(0, i) + s.slice(i + 1);
+      out.add(d1);
+      for (let j = i; j < d1.length; j++) out.add(d1.slice(0, j) + d1.slice(j + 1));
+    }
+    return out;
+  }
+  function labelForIds(index, byId) {
+    if (index.ids) return index.ids;
+    const orphans = [];
+    const byTarget = new Map();
+    for (const l of index.all) {
+      const forId = trim(dom.getAttribute(l, 'for') || '');
+      if (!forId) continue;
+      const target = byId(forId);
+      if (!target) orphans.push(l);
+      else {
+        const list = byTarget.get(target);
+        if (list) list.push(l);
+        else byTarget.set(target, [l]);
+      }
+    }
+    // Two strings at most LEVENSHTEIN_MAX (2) edits apart share a string
+    // each gives by deleting at most two of its characters, so looking up
+    // an id's deletions finds every for value closeIds can accept. A long
+    // value (rare) is kept apart and compared directly.
+    let deletionIndex = null;
+    let long = null;
+    const closeTo = (id) => {
+      if (!deletionIndex) {
+        deletionIndex = new Map();
+        long = [];
+        for (const l of orphans) {
+          const f = lower(trim(dom.getAttribute(l, 'for') || ''));
+          if (f.length > CLOSE_IDS_INDEX_MAX) {
+            long.push(l);
+            continue;
+          }
+          for (const d of deletionsWithin2(f)) {
+            const list = deletionIndex.get(d);
+            if (list) list.push(l);
+            else deletionIndex.set(d, [l]);
+          }
+        }
+      }
+      const found = new Set(long);
+      const key = lower(id);
+      if (key.length <= CLOSE_IDS_INDEX_MAX + LEVENSHTEIN_MAX) {
+        for (const d of deletionsWithin2(key)) {
+          const list = deletionIndex.get(d);
+          if (list) for (const l of list) found.add(l);
+        }
+      } else {
+        for (const l of orphans) found.add(l);
+      }
+      return found;
+    };
+    index.ids = { orphans, byTarget, closeTo };
+    return index.ids;
+  }
   function labelsOf(el) {
     const out = [];
     try {
       const doc = dom.ownerDocument(el);
       const id = dom.getAttribute(el, 'id');
       if (id && doc) {
-        for (const l of dom.querySelectorAll(doc, 'label[for]')) {
-          if (dom.getAttribute(l, 'for') === id) out.push(l);
-        }
+        for (const l of labelForIndex(doc).byFor.get(id) || []) out.push(l);
       }
       const wrap = dom.closest(el, 'label');
       if (wrap && !dom.getAttribute(wrap, 'for') && !out.includes(wrap)) out.push(wrap);
@@ -136513,12 +137026,12 @@ const createDomHelpers = (function createDomHelpers(opts) {
         all = trim(all.replace(/\s+/g, ' '));
         return all.length > 40 ? `${all.slice(0, 39)}…` : all;
       };
-      const labelsFor = () => {
-        try {
-          return [...dom.querySelectorAll(root, 'label[for]')];
-        } catch {
-          return doc ? [...dom.querySelectorAll(doc, 'label[for]')] : [];
-        }
+      // The root's <label for> elements, read once per run (labelForIndex).
+      const labelIndex = () => labelForIndex(root || doc);
+      // Labels in tree order, from a set of them.
+      const inOrder = (set) => {
+        const pos = labelIndex().pos;
+        return [...set].filter((l) => pos.has(l)).sort((a, b) => pos.get(a) - pos.get(b));
       };
       const labelledby = attr(el, 'aria-labelledby');
       if (labelledby) {
@@ -136605,7 +137118,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
         // wrapped around) a custom widget names nothing.
         let label = null;
         if (id && byId(id) === el) {
-          label = labelsFor().find((l) => dom.getAttribute(l, 'for') === id) || null;
+          label = (labelIndex().byFor.get(id) || [])[0] || null;
         }
         if (!label) {
           const wrap = dom.closest(el, 'label');
@@ -136662,7 +137175,14 @@ const createDomHelpers = (function createDomHelpers(opts) {
           const near = new Set([dom.previousElementSibling(el), dom.nextElementSibling(el)]);
           const parent = dom.parentElement(el);
           if (parent) near.add(dom.previousElementSibling(parent));
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // one in its parent, and one whose for is close to its id.
+          const ids = labelForIds(labelIndex(), byId);
+          const maybe = new Set();
+          for (const n of near) if (n) maybe.add(n);
+          if (parent) for (const l of labelIndex().byParent.get(parent) || []) maybe.add(l);
+          if (id) for (const l of ids.closeTo(id)) maybe.add(l);
+          for (const l of inOrder(maybe)) {
             const forId = attr(l, 'for');
             if (!forId || byId(forId)) continue;
             const inParent = parent && dom.parentElement(l) === parent;
@@ -136687,7 +137207,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
           // element with the same id.
           const first = id ? byId(id) : null;
           if (first && first !== el) {
-            for (const l of labelsFor()) {
+            for (const l of labelIndex().byForTrim.get(id) || []) {
               if (attr(l, 'for') !== id) continue;
               const text = shortText(l);
               if (!HIDDEN_TEXT_RE.test(text)) continue;
@@ -136702,7 +137222,18 @@ const createDomHelpers = (function createDomHelpers(opts) {
           }
           // A <label for> beside the field, or around it, that points at an
           // element that is not a form field.
-          for (const l of labelsFor()) {
+          // Only these can pass the test below: a label beside the field,
+          // and one whose for reaches the field's ancestor.
+          const aimed = new Set();
+          for (const n of near) if (n) aimed.add(n);
+          for (
+            let n = dom.parentElement(el), i = 0;
+            n && i < 10000;
+            n = dom.parentElement(n), i++
+          ) {
+            for (const l of ids.byTarget.get(n) || []) aimed.add(l);
+          }
+          for (const l of inOrder(aimed)) {
             const forId = attr(l, 'for');
             const target = forId ? byId(forId) : null;
             if (!target || target === el || LABELABLE.test(tagOf(target))) continue;
@@ -144027,6 +144558,7 @@ const createDomHelpers = (function createDomHelpers(opts) {
     isClipHidden,
     isElementClipHidden,
     containingBlockOf,
+    runMemo,
 
     getAttributeInfo,
 
