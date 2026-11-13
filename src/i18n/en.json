@@ -401,6 +401,8 @@
   "cssHidden_focus_hint_cantTell": "Make the element visible when it can receive keyboard focus, or remove it from the tab order until it is visible.",
   "cssHidden_focus_summary_cantTell_redirect": "This focusable <{{element}}> can't be seen, but focus moved straight on to another element, as a focus trap's sentinel does.",
   "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
+  "cssHidden_focus_lean_why_container": "A container keeps the element out of view, and no focus style brings that container into view when the element takes focus.",
+  "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
   "linkNamePresent_title": "Links have an accessible name",
   "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
   "linkNamePresent_summary_fail": "This link has no accessible name.",

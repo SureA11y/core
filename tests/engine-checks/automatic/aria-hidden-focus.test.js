@@ -485,6 +485,43 @@ test(`${RULE_ID}: excludes visibility:hidden focusable candidates (pass when onl
   assertRule(result, RULE_ID, 'pass', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// visibility is inherited, so a descendant set back to visibility:visible is
+// drawn and takes focus inside a visibility:hidden aria-hidden root.
+test(`${RULE_ID}: fail when a visibility:hidden aria-hidden root holds a focusable element set back to visibility:visible`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_vh_root" aria-hidden="true" style="visibility:hidden">
+        <button id="vh_still_hidden">One</button>
+        <span style="visibility:visible"><button id="vh_shown">Two</button></span>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_vh_root'));
+  const offenders = rule.occurrences[0].data.details.offenders;
+  assert.strictEqual(offenders.length, 1, 'only the button set back to visible is focusable');
+  assert.strictEqual(rule.occurrences[0].data.details.metrics.focusableTotal, 1);
+});
+
+test(`${RULE_ID}: fail for the off-screen pattern, a fixed 1px visibility:hidden root with a visible container of buttons`, () => {
+  const html = `<!doctype html><html><body>
+      <div id="ah_vh_fixed" aria-hidden="true" style="overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden">
+        <div style="visibility:visible"><button>One</button><button>Two</button></div>
+      </div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  const rule = assertRule(result, RULE_ID, 'fail', { minOccurrences: 1, maxOccurrences: 1 });
+  assert.ok(hasOccurrenceForId(rule, 'ah_vh_fixed'));
+  assert.strictEqual(rule.occurrences[0].data.details.metrics.focusableTotal, 2);
+});
+
+test(`${RULE_ID}: notApplicable when the only aria-hidden root is visibility:hidden and nothing under it is set back to visible`, () => {
+  const html = `<!doctype html><html><body>
+      <div aria-hidden="true" style="visibility:hidden"><button>One</button></div>
+    </body></html>`;
+  const result = runa11yCoreOnHtml(html, { runOnly: [RULE_ID] });
+  assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
+});
+
 test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass, visibility:hidden wins)`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_root_op_vh" aria-hidden="true">

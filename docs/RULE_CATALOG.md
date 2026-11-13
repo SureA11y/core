@@ -1278,14 +1278,14 @@ Checks that keyboard-focusable elements are not visually hidden by CSS technique
 
 **What a finding reports.**
 
-- `metrics.visibilityHints`: how the element is hidden while it can take focus: `opacityZero`, `offscreen`, `clipped` or `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own styles; when they show it, `outOfReach` (a container is positioned off screen, or, in a browser, the box focus would show lies where no scrolling reaches) or `containerClipped` (a container is clipped to nothing, has no size with overflow hidden, or is scaled to nothing, or, in a browser, the element lies wholly outside a container with `overflow: clip`, which focus doesn't scroll).
+- `metrics.visibilityHints`: how the element is hidden while it can take focus: `opacityZero`, `offscreen`, `clipped` or `zeroSizeOverflowHidden` (no size, with overflow hidden) by its own styles; when they show it, `outOfReach` (a container is positioned off screen, or is fixed and clips its content where its px lengths put it wholly outside the viewport, or, in a browser, the box focus would show lies where no scrolling reaches) or `containerClipped` (a container is clipped to nothing, has no size with overflow hidden, or is scaled to nothing, or, in a browser, the element lies wholly outside a container with `overflow: clip`, which focus doesn't scroll).
 - `runtimeProbe`: `null` unless focusing the element moved focus straight to another element (`cssHiddenTabbable_runtimeRedirect_needsReview`). Then it holds `redirected: true` and the tag and id of the element focus moved to (`redirectedToTag`, `redirectedToId`). Only the first three hidden elements are tried this way.
 
 **Reason codes.**
 
 | Code | Outcome | Meaning | Basis |
 |---|---|---|---|
-| `cssHiddenTabbable_needsFocusStateVerification` | cantTell | An element in the tab order is hidden by CSS and no focus rule brings it into view, so a keyboard user may not see where focus is. | WCAG 2.4.7 (not settled) |
+| `cssHiddenTabbable_needsFocusStateVerification` | cantTell | An element in the tab order is hidden by CSS and no focus rule brings it into view, so a keyboard user may not see where focus is. It leans fail when the element's own styles show it but a container puts it out of reach or clips it to nothing (`outOfReach`, `containerClipped`), no focus rule brings that container into view, and no script is known to react to its focus (no `onfocus` or `onfocusin` attribute on it or a container, and no focus listener the listener hook saw). Without the hook, the lean says a script may still show it. An element hidden by its own styles gets no lean: a custom checkbox hides its input and draws focus on the box beside it. | WCAG 2.4.7 (not settled) |
 | `cssHiddenTabbable_runtimeRedirect_needsReview` | cantTell | An element in the tab order is hidden by CSS, but focusing it moved focus straight to another element, as a focus trap's sentinel does; whether focus can stay on it is for a person to check. | WCAG 2.4.7 (not settled) |
 
 ### `css-orientation-lock`

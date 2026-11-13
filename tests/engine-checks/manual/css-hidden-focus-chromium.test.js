@@ -141,6 +141,11 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       'a closed menu hidden with visibility',
       '#nav{position:fixed;left:0;width:300px;transform:translateX(-100%);visibility:hidden}',
       {}
+    ],
+    [
+      'a fixed 1px bar above the viewport, hidden with visibility its links set back to visible',
+      '#nav{overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden}#nav a{visibility:visible}',
+      { '#in-menu': 'outOfReach' }
     ]
   ]) {
     await t.test(`${name}: ${JSON.stringify(expected)}`, async () => {
