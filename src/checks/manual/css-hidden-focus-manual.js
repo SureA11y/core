@@ -187,12 +187,14 @@ function runInPage(ctx) {
   // Returns deterministic "visually hidden but can remain focusable" hints.
   function getVisibilityHints(el) {
     if (!el) return [];
-    return hintsFromStyle(getComputedStyleSafe(el));
+    return hintsFromStyle(getComputedStyleSafe(el), el);
   }
 
   // The same hints, read off any object carrying the computed-style fields
-  // used below (a CSSStyleDeclaration, or the focused-state overlay).
-  function hintsFromStyle(cs) {
+  // used below (a CSSStyleDeclaration, or the focused-state overlay). With
+  // `el`, a clip jsdom's parser dropped (rect(0 0 0 0) reads as auto) is
+  // read as declared (helpers.isElementClipHidden).
+  function hintsFromStyle(cs, el) {
     const out = [];
 
     // opacity:0
@@ -204,7 +206,11 @@ function runInPage(ctx) {
 
     // clip / clip-path
     try {
-      if (helpers.isClipHidden(cs)) out.push('clipped');
+      const clipHidden =
+        el && typeof helpers.isElementClipHidden === 'function'
+          ? helpers.isElementClipHidden(el, cs)
+          : helpers.isClipHidden(cs);
+      if (clipHidden) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip
@@ -649,7 +655,12 @@ function runInPage(ctx) {
           ? cs[field]
           : '';
     }
-    return hintsFromStyle(focused);
+    // A focus rule that sets clip decides it; otherwise the clip as declared
+    // stands, which jsdom may have dropped from the computed style.
+    return hintsFromStyle(
+      focused,
+      Object.prototype.hasOwnProperty.call(overlay, 'clip') ? null : el
+    );
   }
 
   function getFocusableInfoSafe(el) {
@@ -856,7 +867,7 @@ function runInPage(ctx) {
   }
   function containerStyleHints(c) {
     if (!containerStyleCache.has(c)) {
-      const hs = hintsFromStyle(getComputedStyleSafe(c));
+      const hs = hintsFromStyle(getComputedStyleSafe(c), c);
       const out = [];
       // A container at opacity 0 is left out: content faded in on scroll
       // is seen by the time a reader gets to it.

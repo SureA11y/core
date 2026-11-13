@@ -824,3 +824,50 @@ test(`${RULE_ID}: with an early listener hook, the lean drops its caution, and a
     assert.strictEqual(scan(script), undefined, script);
   }
 });
+
+// jsdom's CSS parser drops a space-separated rect() (rect(0 0 0 0) computes
+// as auto), the form most visually hidden classes are written in, so the
+// clip is read as declared.
+test(`${RULE_ID}: clip: rect(0 0 0 0) with spaces is clipped, inline or in a style sheet, on the element or a container`, () => {
+  const C = 'position:absolute;clip:rect(0 0 0 0)';
+  for (const [head, body, hint] of [
+    ['', `<button id="t" style="${C}">B</button>`, 'clipped'],
+    [`<style>.h{${C}}</style>`, '<button id="t" class="h">B</button>', 'clipped'],
+    ['', `<div style="${C}"><button id="t">B</button></div>`, 'containerClipped'],
+    [
+      `<style>.h{${C}}</style>`,
+      '<div class="h"><button id="t">B</button></div>',
+      'containerClipped'
+    ]
+  ]) {
+    const html = `<!doctype html><html><head>${head}</head><body>${body}</body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, [hint], body);
+  }
+});
+
+test(`${RULE_ID}: a rect(0 0 0 0) clip with spaces is judged in the focused state as written`, () => {
+  const C = 'position:absolute;clip:rect(0 0 0 0)';
+  const scan = (css) =>
+    runa11yCoreOnHtml(
+      `<!doctype html><html><head><style>${css}</style></head><body><a class="vh" href="#m">Skip</a><main id="m"></main></body></html>`,
+      { runOnly: [RULE_ID] }
+    );
+  // A focus rule that unclips it, or a clip only while unfocused: not asked about.
+  assertRule(scan(`.vh{${C}}.vh:focus{clip:auto;position:static}`), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  assertRule(scan(`.vh:not(:focus){${C}}`), RULE_ID, 'notApplicable', {
+    minOccurrences: 0,
+    maxOccurrences: 0
+  });
+  // A focus rule that sets something else leaves the clip in place.
+  assertRule(scan(`.vh{${C}}.vh:focus{padding:2px}`), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+});

@@ -522,6 +522,24 @@ test(`${RULE_ID}: notApplicable when the only aria-hidden root is visibility:hid
   assertRule(result, RULE_ID, 'notApplicable', { minOccurrences: 0, maxOccurrences: 0 });
 });
 
+// jsdom's CSS parser drops a space-separated rect(), so the clip is read as
+// declared: the offender is still described as clipped.
+test(`${RULE_ID}: a focusable element clipped with rect(0 0 0 0), spaces and all, is hinted clipped`, () => {
+  for (const [head, attr] of [
+    ['', 'style="position:absolute;clip:rect(0 0 0 0)"'],
+    ['<style>.h{position:absolute;clip:rect(0 0 0 0)}</style>', 'class="h"']
+  ]) {
+    const html = `<!doctype html><html><head>${head}</head><body>
+        <div id="ah_clip_spaces" aria-hidden="true"><button ${attr}>B</button></div>
+      </body></html>`;
+    const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'fail', {
+      minOccurrences: 1,
+      maxOccurrences: 1
+    });
+    assert.deepStrictEqual(rule.occurrences[0].data.details.metrics.visibilityHints, ['clipped']);
+  }
+});
+
 test(`${RULE_ID}: excludes candidates that are opacity:0 AND visibility:hidden together (pass, visibility:hidden wins)`, () => {
   const html = `<!doctype html><html><body>
       <div id="ah_root_op_vh" aria-hidden="true">

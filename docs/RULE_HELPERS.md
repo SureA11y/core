@@ -292,6 +292,17 @@ of the box, such as `rect(0, 100px, 50px, 0)` or `inset(0 50% 0 0)`, or that can
 decided without the box's size, such as `inset(10px)`, is not hidden. Use it rather than
 matching the values yourself, so every rule agrees on what visually hidden means.
 
+### `isElementClipHidden(el, style)` → `boolean`
+
+`isClipHidden` for an element, given its computed style: where that style reads no hiding
+clip, the `clip` as declared is tried too. jsdom's CSS parser drops a space-separated
+`rect()` (`rect(0 0 0 0)` computes as `auto`), the form most visually hidden classes are
+written in, so a rule that reads only the computed style misses them without a browser. The
+declared value is read from the style attribute and the style sheets core can read, by the
+cascade, as `getVisibilityHintsInfo` and `isVisuallyHidden` read it. A browser computes the
+clip, so there it decides as `isClipHidden` does. Use it whenever an element is at hand;
+keep `isClipHidden` for a style with no element behind it, such as a focused-state overlay.
+
 ### `containingBlockOf(el)` → `Element | null`
 
 The box an element's position is resolved against, and whose overflow can clip it: CSS

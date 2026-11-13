@@ -519,7 +519,11 @@ function runInPage(ctx) {
 
     // clip / clip-path (still focusable)
     try {
-      if (helpers.isClipHidden(cs)) out.push('clipped');
+      const clipHidden =
+        typeof helpers.isElementClipHidden === 'function'
+          ? helpers.isElementClipHidden(el, cs)
+          : helpers.isClipHidden(cs);
+      if (clipHidden) out.push('clipped');
     } catch {}
 
     // zero-size + overflow hidden/clip (still focusable)

@@ -9713,6 +9713,7 @@ function createDomHelpers(opts) {
     getLiveRegionRecord,
     getVisibilityHintsInfo,
     isClipHidden,
+    isElementClipHidden,
     containingBlockOf,
 
     getAttributeInfo,

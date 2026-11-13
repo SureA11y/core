@@ -178,7 +178,13 @@ function runInPage(ctx) {
           n = dom.parentElement(n), i++
         ) {
           const cs = view && view.getComputedStyle ? view.getComputedStyle(n) : null;
-          if (cs && helpers.isClipHidden(cs)) return false;
+          if (
+            cs &&
+            (typeof helpers.isElementClipHidden === 'function'
+              ? helpers.isElementClipHidden(n, cs)
+              : helpers.isClipHidden(cs))
+          )
+            return false;
           // jsdom neither computes clip nor keeps its value intact
           // (rect(0 0 0 0) reads back as rect(0px)), so read the declaration
           // as written in the style attribute too.
