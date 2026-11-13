@@ -14,7 +14,7 @@ such as a menu scrolled so a button shows 16px at its edge (#181). See
 | `menu-scroll-hidden.html` | The same menu with `overflow: hidden`, as a custom scrollbar has it | the same |
 | `carousel.html` | Slides on a track in a box hiding its overflow | first slide; second slide; half way between |
 | `accordion.html` | Panels collapsed by `height: 0` and by `hidden` | one panel open |
-| `sticky-header.html` | A sticky header and toolbar over scrolled content | top; scrolled 400px; scrolled to the end |
+| `sticky-header.html` | A sticky header and toolbar over scrolled content, with a `scroll-padding-top` that keeps a focused element clear of them | top; scrolled 400px; scrolled to the end |
 | `virtual-list.html` | Rows positioned by transforms in a box hiding its overflow | top; rows cut at both edges |
 | `off-canvas.html` | A navigation drawer moved off screen and hidden | closed; open |
 | `table-sticky-head.html` | A table with a sticky header in a scrolling region | top; scrolled 100px |

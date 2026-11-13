@@ -700,6 +700,30 @@ const PROCEDURES = {
         tools: ['keyboard']
       }
     },
+    '2.4.11': {
+      'focus-not-obscured': {
+        tools: ['keyboard', 'zoom'],
+        variants: {
+          'focus-not-obscured-minimum': [
+            'FOCUS_OBSCURED_ENTIRELY',
+            'FOCUS_OBSCURED_PARTLY',
+            'FOCUS_OBSCURED_BEHIND_MODAL'
+          ]
+        }
+      }
+    },
+    '2.4.12': {
+      'focus-fully-visible': {
+        tools: ['keyboard', 'zoom'],
+        variants: {
+          'focus-not-obscured-enhanced': [
+            'FOCUS_OBSCURED_ENTIRELY',
+            'FOCUS_OBSCURED_PARTLY',
+            'FOCUS_OBSCURED_BEHIND_MODAL'
+          ]
+        }
+      }
+    },
     '2.4.13': {
       'focus-indicator-not-suppressed': {
         coveredBy: 'focus-appearance'

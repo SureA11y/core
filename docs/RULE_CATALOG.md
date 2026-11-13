@@ -2,7 +2,7 @@
 
 Generated from the compiled engine's own catalog (`getChecksCatalog()`/`getRulesCatalog()`) and each rule's source header. Run `node scripts/generate-rule-catalog.js` after `npm run build` to regenerate this file whenever rules change. Do not hand-edit.
 
-**147 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 60 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 117 carry at least one formal WCAG Success Criterion mapping.**
+**149 rules total: 87 automatic (decide deterministically; can return `fail` when they check a WCAG requirement, or a best practice whose failure is itself a barrier), 62 manual (a person judges what they find; never `fail`, and `pass` only when nothing needs judging). 119 carry at least one formal WCAG Success Criterion mapping.**
 
 The tables below are an index; [rule reference](#rule-reference) carries each rule's description, what it applies to and what it expects.
 
@@ -104,7 +104,7 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`valid-lang`](#valid-lang) | Element lang attribute must be syntactically valid | 3.1.2 | AA | high | moderate |
 | [`video-poster-text-alternative-present`](#video-poster-text-alternative-present) | &lt;video&gt; poster must have a text alternative | 1.1.1 | A | medium | serious |
 
-## Manual rules (60), never `fail`
+## Manual rules (62), never `fail`
 
 | Rule ID | Title | WCAG SC | Level | Confidence | Default severity |
 |---|---|---|---|---|---|
@@ -120,6 +120,8 @@ See [`OUTPUT_SCHEMA.md`](./OUTPUT_SCHEMA.md) for what `type`/`confidence`/`sever
 | [`css-hidden-focus`](#css-hidden-focus) | Focusable elements must not be visually hidden | 2.4.7 | AA | low | serious |
 | [`embed-text-alternative-quality`](#embed-text-alternative-quality) | &lt;embed&gt; text alternative must be appropriate (manual review) | 1.1.1 | A | medium | minor |
 | [`empty-table-header`](#empty-table-header) | Table header cells must not be empty | — | — | medium | minor |
+| [`focus-not-obscured-enhanced`](#focus-not-obscured-enhanced) | No part of a focused element should be hidden | 2.4.12 | AAA | low | moderate |
+| [`focus-not-obscured-minimum`](#focus-not-obscured-minimum) | A focused element must not be entirely hidden | 2.4.11 | AA | low | serious |
 | [`focus-order-semantics`](#focus-order-semantics) | Elements added to the tab order should have interactive semantics | — | — | medium | minor |
 | [`form-control-label-quality`](#form-control-label-quality) | Form field labels should be descriptive and distinguishable | 2.4.6 | AA | medium | minor |
 | [`form-control-programmatic-label-quality`](#form-control-programmatic-label-quality) | Form controls should have a label shown on screen | 3.3.2 | A | medium | moderate |
@@ -1539,6 +1541,69 @@ Checks that table header cells (&lt;th&gt;, or any element with role="columnhead
 |---|---|---|---|
 | `TABLE_HEADER_EMPTY` | cantTell | A header cell has no visible text and no name from aria-label or aria-labelledby. It leans fail when the cell is a &lt;th&gt; holding nothing that could name it (an svg, an element with an ARIA name or title, a control), is not the top-left corner above a column of row headers, and has a data cell with text below it or after it in a table with no spans; otherwise no lean. | HTML table model th element (best practice); WAI-ARIA 1.2 columnheader role (best practice) |
 | `TABLE_HEADER_NAME_NOT_VISIBLE_TEXT` | cantTell | A header cell has no visible text and is named only by aria-label or aria-labelledby, which some screen readers do not read on header cells. It leans fail: the page states it. | accname 1.2 (best practice) |
+
+### `focus-not-obscured-enhanced`
+
+**No part of a focused element should be hidden**
+
+manual · WCAG 2.4.12 (AAA) · confidence low · default severity moderate
+
+Checks that no element in the tab order can take focus with any part of it hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.
+
+**Applies to.** What focus-not-obscured-minimum applies to: in a browser, the elements in the tab order that are drawn and scroll with the page, and the `position: fixed` or `sticky` boxes that draw something over it. Without a layout (jsdom), notApplicable.
+
+**Expectation.** No element in the tab order can take focus with any part of it hidden behind such a box: where a box covers part of the window the page's `scroll-padding` doesn't take out, an element that reaches under it and can be scrolled there takes focus partly hidden. One finding per box, naming how many elements it can hide entirely and how many in part. A `scroll-padding` on the page at least as large as the box (C43) clears it. Content the user opened and can close without moving focus is allowed, and a script-made modal dialog that leaves the page able to take focus is reported apart, as in focus-not-obscured-minimum. It is focus-not-obscured-minimum run with `obscured: 'partly'` (a variant: docs/RULE_AUTHORING.md, "Rule variants"), so a fix to that rule's measuring reaches this one.
+
+**What a finding reports.**
+
+- As focus-not-obscured-minimum's, with `metrics.partlyCount`: how many elements can take focus partly hidden, and not entirely.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `FOCUS_OBSCURED_ENTIRELY` | cantTell | Elements in the tab order can take focus entirely hidden behind a box the page keeps in place over part of the window it counts as in view. It leans fail: the box covers them whatever the user does, unless the user opened it and can close it without moving focus. A box a control marks as opened (`openedByUser`) gets no lean. | WCAG 2.4.12; F110; C43 |
+| `FOCUS_OBSCURED_PARTLY` | cantTell | Elements in the tab order can take focus partly hidden behind such a box, none entirely. It leans fail, with the same caution, but for a box a control marks as opened. | WCAG 2.4.12; C43 |
+| `FOCUS_OBSCURED_BEHIND_MODAL` | cantTell | A script-made modal dialog is open, but elements outside it still take focus, hidden behind the dialog or its backdrop. It leans fail. | WCAG 2.4.12; WAI-ARIA 1.2 aria-modal (not settled); ARIA APG Dialog (Modal) Pattern (best practice) |
+
+### `focus-not-obscured-minimum`
+
+**A focused element must not be entirely hidden**
+
+manual · WCAG 2.4.11 (AA) · confidence low · default severity serious
+
+Checks that no element in the tab order can take focus entirely hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.
+
+**Applies to.** Applies, in a browser, to the elements in the tab order that are drawn and scroll with the page, and to the boxes the page keeps in place over it: `position: fixed` or `sticky` boxes that draw something (a background, an image or a picture), such as a sticky header or footer, a cookie banner or a chat widget. Without a layout (jsdom) nothing can be measured, and the rule is notApplicable.
+
+**Expectation.** No element in the tab order can take focus entirely hidden behind such a box. A browser scrolls a focused element into view only when it is not already in view, and counts as in view the whole window less the page's `scroll-padding`. So where a fixed or sticky box covers part of the window that `scroll-padding` doesn't take out, an element that fits under it and can be scrolled there takes focus there and stays hidden: as the user tabs down a page, the next link is often already in the strip a footer covers. The rule works out, for each box, which elements can end up entirely under it, then scrolls a few of them there and checks that the box is what the browser draws on top of them, and puts the page back where it was. One finding per box, naming how many elements it can hide and one of them. A `scroll-padding` on the page at least as large as the box (technique C43) clears it. Content the user opened and can close without moving focus, such as a chat panel closed with Escape, is allowed to cover the focused element (the criterion's second note); the rule can't tell who opened a box, so it asks. A script-made modal dialog (`aria-modal="true"`) that leaves the page behind it able to take focus is reported apart: focus can then reach elements its backdrop covers. A `<dialog>` opened with `showModal()` makes the page inert, so nothing behind it takes focus. It is the base of focus-not-obscured-enhanced (2.4.12), which asks about an element any part of which can be hidden (`obscured: 'partly'`).
+
+**What a finding reports.**
+
+- `metrics.entirelyCount`: how many elements in the tab order can take focus entirely hidden behind the box.
+- `metrics.partlyCount`: with `obscured: 'partly'`, how many can take focus partly hidden, and not entirely.
+- `metrics.position`: `fixed` or `sticky`, the box's own or that of the box it is drawn in.
+- `metrics.side`: where the box sits, `top`, `bottom` or `middle`, for the `scroll-padding` that would clear it.
+- `metrics.coverPx`: the height of the window the box covers that the page still counts as in view, in CSS pixels.
+- `metrics.scrollPaddingPx`: the page's `scroll-padding` on that side.
+- `metrics.paddingNeededPx`: the `scroll-padding` on that side that would clear the box, from that edge of the window to the box's far side (a box stacked under another counts both).
+- `openedByUser`: whether a control marked expanded (`aria-expanded="true"`) names the box, or something in or around it, with `aria-controls`: content the user opened, which may cover the focused element if it closes without moving focus.
+- `examples`: up to 5 of the elements it can hide, each `{ tag, text }`.
+- `confirmedBy`: the element the rule scrolled under the box to check that the box is drawn on top of it, as `{ tag, text }`.
+
+**Reason codes.**
+
+| Code | Outcome | Meaning | Basis |
+|---|---|---|---|
+| `FOCUS_OBSCURED_ENTIRELY` | cantTell | A box the page keeps in place covers part of the window the page still counts as in view, so elements in the tab order that fit under it can take focus entirely hidden behind it. It leans fail: the box covers them whatever the user does, unless the user opened it and can close it without moving focus. A box a control marks as opened (`openedByUser`) gets no lean: whether it closes without moving focus is for a person to try. | WCAG 2.4.11; F110; C43 |
+| `FOCUS_OBSCURED_PARTLY` | cantTell | With `obscured: 'partly'` (focus-not-obscured-enhanced), elements in the tab order can take focus partly hidden behind such a box. It leans fail, with the same caution, but for a box a control marks as opened. | WCAG 2.4.12; C43 |
+| `FOCUS_OBSCURED_BEHIND_MODAL` | cantTell | A script-made modal dialog is open, but elements outside it still take focus, hidden behind the dialog or its backdrop. It leans fail: focus leaves the dialog for content no one can see. | WCAG 2.4.11; WAI-ARIA 1.2 aria-modal (not settled); ARIA APG Dialog (Modal) Pattern (best practice) |
+
+**Settings a variant can change.** See [`RULE_SETTINGS.md`](./RULE_SETTINGS.md).
+
+| Setting | Default | Takes | What it changes | Basis |
+|---|---|---|---|---|
+| `obscured` | `"entirely"` | `"entirely"`, `"partly"` | Which focused elements are asked about: those that can be hidden entirely ('entirely'), or also those that can be hidden in part ('partly'). | WCAG 2.4.11: not entirely hidden (2.4.12: no part hidden) |
 
 ### `focus-not-removed-by-script`
 

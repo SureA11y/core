@@ -4,18 +4,19 @@ Every implemented rule should have a `tests/fixtures/<slug>-all-scenarios.html` 
 
 ## Summary
 
-Total rules: **147**. With fixture: **143**. Without fixture: **4**.
+Total rules: **149**. With fixture: **144**. Without fixture: **5**.
 
-## Rules WITHOUT a fixture (4)
+## Rules WITHOUT a fixture (5)
 
 | Rule ID | Type | Title | Rule file | Test file |
 |---|---|---|---|---|
+| focus-not-obscured-enhanced | manual | No part of a focused element should be hidden | src/checks/manual/focus-not-obscured-enhanced-manual.js | — |
 | iframe-title-unique | automatic | Frame title uniqueness (deprecated) | src/checks/automatic/iframe-title-unique.js | tests/engine-checks/automatic/iframe-title-unique.test.js |
 | label-title-only | manual | Title-only form labels (deprecated) | src/checks/manual/label-title-only-manual.js | tests/engine-checks/manual/label-title-only.test.js |
 | moving-content-pausable | manual | Content that moves by itself should be possible to pause, stop or hide | src/checks/manual/moving-content-pausable-manual.js | tests/engine-checks/manual/moving-content-pausable-chromium.test.js |
 | target-size-enhanced | automatic | Pointer targets must be at least 44x44px large | src/checks/automatic/target-size-enhanced.js | tests/engine-checks/automatic/target-size-enhanced.test.js |
 
-## Rules WITH a fixture (143)
+## Rules WITH a fixture (144)
 
 | Rule ID | Type | Fixture | Cases | PASS | FAIL | CANTTELL | OTHER |
 |---|---|---|---:|---:|---:|---:|---:|
@@ -68,6 +69,7 @@ Total rules: **147**. With fixture: **143**. Without fixture: **4**.
 | embed-text-alternative-quality | manual | `tests/fixtures/embed-text-alternative-quality-manual-all-scenarios.html` | 0 | 0 | 0 | 0 | 0 |
 | empty-heading | automatic | `tests/fixtures/empty-heading-all-scenarios.html` | 11 | 5 | 1 | 3 | 2 |
 | empty-table-header | manual | `tests/fixtures/empty-table-header-all-scenarios.html` | 6 | 1 | 0 | 4 | 1 |
+| focus-not-obscured-minimum | manual | `tests/fixtures/focus-not-obscured-all-scenarios.html` | 5 | 2 | 0 | 3 | 0 |
 | focus-not-removed-by-script | automatic | `tests/fixtures/focus-not-removed-by-script-all-scenarios.html` | 7 | 0 | 2 | 2 | 3 |
 | focus-order-semantics | manual | `tests/fixtures/focus-order-semantics-all-scenarios.html` | 6 | 0 | 0 | 2 | 4 |
 | form-control-label-quality | manual | `tests/fixtures/form-control-label-quality-all-scenarios.html` | 14 | 7 | 0 | 6 | 1 |

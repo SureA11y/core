@@ -31099,6 +31099,163 @@ const RUNTIME_CATALOG = {
     "margin": null
   },
   {
+    "ruleId": "focus-not-obscured-enhanced",
+    "title": "No part of a focused element should be hidden",
+    "description": "Checks that no element in the tab order can take focus with any part of it hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+    "i18n": {
+      "titleKey": "focusNotObscuredEnhanced_title",
+      "descriptionKey": "focusNotObscuredEnhanced_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aaa",
+      "wcag2412",
+      "navigation",
+      "focus",
+      "css",
+      "layout",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.12",
+        "title": "Focus Not Obscured (Enhanced)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-not-obscured-enhanced",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced.html"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.12": [
+          "focus-fully-visible"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "variant": {
+      "of": "focus-not-obscured-minimum",
+      "config": {
+        "obscured": "partly"
+      },
+      "messages": {
+        "from": "focusNotObscuredMinimum",
+        "to": "focusNotObscuredEnhanced"
+      }
+    },
+    "settings": [
+      "obscured"
+    ]
+  },
+  {
+    "ruleId": "focus-not-obscured-minimum",
+    "title": "A focused element must not be entirely hidden",
+    "description": "Checks that no element in the tab order can take focus entirely hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+    "i18n": {
+      "titleKey": "focusNotObscuredMinimum_title",
+      "descriptionKey": "focusNotObscuredMinimum_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aa",
+      "wcag2411",
+      "navigation",
+      "focus",
+      "css",
+      "layout",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.11"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.11",
+        "title": "Focus Not Obscured (Minimum)",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-not-obscured-minimum",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.11",
+        "title": "Focus not obscured (minimum)",
+        "wcagSc": [
+          "2.4.11"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.11": [
+          "focus-not-obscured"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "settings": [
+      "obscured"
+    ],
+    "variantSettings": [
+      {
+        "name": "obscured",
+        "default": "entirely",
+        "values": [
+          "entirely",
+          "partly"
+        ],
+        "description": "Which focused elements are asked about: those that can be hidden entirely ('entirely'), or also those that can be hidden in part ('partly').",
+        "basis": "WCAG 2.4.11: not entirely hidden (2.4.12: no part hidden)"
+      }
+    ]
+  },
+  {
     "ruleId": "focus-not-removed-by-script",
     "title": "A script must not remove focus from an element as it receives it",
     "description": "Fails elements in the tab order whose inline onfocus handler only calls blur() on them, and asks about other handlers that call blur(), or focus() on another element, which can remove focus as soon as the element receives it.",
@@ -39542,6 +39699,8 @@ const RUNTIME_CATALOG = {
   "embed-text-alternative-quality": { run: require("./checks/manual/embed-text-alternative-quality-manual.js").runInPage, applicability: require("./checks/manual/embed-text-alternative-quality-manual.js").applicability || null },
   "empty-heading": { run: require("./checks/automatic/empty-heading.js").runInPage, applicability: require("./checks/automatic/empty-heading.js").applicability || null },
   "empty-table-header": { run: require("./checks/manual/empty-table-header-manual.js").runInPage, applicability: require("./checks/manual/empty-table-header-manual.js").applicability || null },
+  "focus-not-obscured-enhanced": { run: require("./checks/manual/focus-not-obscured-minimum-manual.js").runInPage, applicability: require("./checks/manual/focus-not-obscured-minimum-manual.js").applicability || null },
+  "focus-not-obscured-minimum": { run: require("./checks/manual/focus-not-obscured-minimum-manual.js").runInPage, applicability: require("./checks/manual/focus-not-obscured-minimum-manual.js").applicability || null },
   "focus-not-removed-by-script": { run: require("./checks/automatic/focus-not-removed-by-script.js").runInPage, applicability: require("./checks/automatic/focus-not-removed-by-script.js").applicability || null },
   "focus-order-semantics": { run: require("./checks/manual/focus-order-semantics-manual.js").runInPage, applicability: require("./checks/manual/focus-order-semantics-manual.js").applicability || null },
   "form-control-label-quality": { run: require("./checks/manual/form-control-label-quality-manual.js").runInPage, applicability: require("./checks/manual/form-control-label-quality-manual.js").applicability || null },
@@ -40048,6 +40207,26 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
       "cssHidden_focus_lean_why_container": "Erhält das Element den Fokus, bleibt es außer Sicht: Es liegt, wo kein Scrollen hinreicht, oder in einem auf nichts zugeschnittenen Container, und kein Fokusstil bringt es in Sicht.",
       "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
+      "focusNotObscuredMinimum_title": "Ein fokussiertes Element darf nicht ganz verdeckt sein",
+      "focusNotObscuredMinimum_description": "Prüft, dass kein Element in der Tab-Reihenfolge den Fokus ganz verdeckt hinter Inhalt erhalten kann, den die Seite an Ort und Stelle hält, etwa einer fixierten Kopf- oder Fußzeile oder einem Cookie-Banner.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
+      "focusNotObscuredEnhanced_title": "Kein Teil eines fokussierten Elements sollte verdeckt sein",
+      "focusNotObscuredEnhanced_description": "Prüft, dass kein Element in der Tab-Reihenfolge den Fokus mit einem verdeckten Teil hinter Inhalt erhalten kann, den die Seite an Ort und Stelle hält, etwa einer fixierten Kopf- oder Fußzeile oder einem Cookie-Banner.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "Das Element bleibt über einem Teil des Fensters, den die Seite als sichtbar zählt, und der Browser zeichnet es über ein dort platziertes Element, das so den Fokus außer Sicht erhält.",
+      "focusNotObscuredMinimum_lean_why_partly": "Das Element bleibt über einem Teil des Fensters, den die Seite als sichtbar zählt, und der Browser zeichnet es über einen Teil eines dort platzierten Elements.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Ein modaler Dialog ist geöffnet, doch der Fokus erreicht weiter Elemente dahinter, die sein Dialog oder Hintergrund verdeckt.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Hat der Benutzer diesen Inhalt geöffnet und kann ihn schließen, ohne den Fokus zu bewegen, etwa mit Escape, ist es erfüllt.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
@@ -41757,6 +41936,26 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
       "cssHidden_focus_lean_why_container": "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
+      "focusNotObscuredMinimum_title": "A focused element must not be entirely hidden",
+      "focusNotObscuredMinimum_description": "Checks that no element in the tab order can take focus entirely hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
+      "focusNotObscuredEnhanced_title": "No part of a focused element should be hidden",
+      "focusNotObscuredEnhanced_description": "Checks that no element in the tab order can take focus with any part of it hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "The box stays over part of the window the page counts as in view, and the browser draws it on top of an element placed there, so that element takes focus out of sight.",
+      "focusNotObscuredMinimum_lean_why_partly": "The box stays over part of the window the page counts as in view, and the browser draws it on top of part of an element placed there.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "A modal dialog is open, yet focus can still reach elements behind it that its dialog or backdrop covers.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "If the user opened this content and can close it without moving focus, such as with Escape, it passes.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
@@ -43466,6 +43665,26 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
       "cssHidden_focus_lean_why_container": "Cuando el elemento recibe el foco sigue fuera de la vista: está donde el desplazamiento no llega, o en un contenedor recortado a nada, y ningún estilo de foco lo hace visible.",
       "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
+      "focusNotObscuredMinimum_title": "Un elemento con el foco no debe quedar totalmente oculto",
+      "focusNotObscuredMinimum_description": "Comprueba que ningún elemento del orden de tabulación pueda recibir el foco totalmente oculto tras contenido que la página mantiene fijo, como una cabecera o un pie fijos o un aviso de cookies.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
+      "focusNotObscuredEnhanced_title": "Ninguna parte de un elemento con el foco debería quedar oculta",
+      "focusNotObscuredEnhanced_description": "Comprueba que ningún elemento del orden de tabulación pueda recibir el foco con alguna parte oculta tras contenido que la página mantiene fijo, como una cabecera o un pie fijos o un aviso de cookies.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "La caja sigue sobre una parte de la ventana que la página cuenta como visible, y el navegador la dibuja encima de un elemento colocado allí, que recibe así el foco fuera de la vista.",
+      "focusNotObscuredMinimum_lean_why_partly": "La caja sigue sobre una parte de la ventana que la página cuenta como visible, y el navegador la dibuja encima de parte de un elemento colocado allí.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Hay un diálogo modal abierto, pero el foco aún llega a elementos tras él que su diálogo o su fondo cubren.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Si el usuario abrió este contenido y puede cerrarlo sin mover el foco, por ejemplo con Escape, se cumple.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
@@ -45175,6 +45394,26 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
       "cssHidden_focus_lean_why_container": "Quand l’élément reçoit le focus, il reste hors de vue : il se trouve là où le défilement ne peut pas aller, ou dans un conteneur rogné à rien, et aucun style de focus ne le rend visible.",
       "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
+      "focusNotObscuredMinimum_title": "Un élément qui a le focus ne doit pas être entièrement caché",
+      "focusNotObscuredMinimum_description": "Vérifie qu’aucun élément de l’ordre de tabulation ne peut recevoir le focus entièrement caché derrière un contenu que la page garde en place, comme un en-tête ou un pied de page fixe, ou un bandeau de cookies.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
+      "focusNotObscuredEnhanced_title": "Aucune partie d’un élément qui a le focus ne devrait être cachée",
+      "focusNotObscuredEnhanced_description": "Vérifie qu’aucun élément de l’ordre de tabulation ne peut recevoir le focus avec une partie cachée derrière un contenu que la page garde en place, comme un en-tête ou un pied de page fixe, ou un bandeau de cookies.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "La boîte reste sur une partie de la fenêtre que la page compte comme visible, et le navigateur la dessine par-dessus un élément placé là, qui reçoit donc le focus hors de vue.",
+      "focusNotObscuredMinimum_lean_why_partly": "La boîte reste sur une partie de la fenêtre que la page compte comme visible, et le navigateur la dessine par-dessus une partie d’un élément placé là.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Une boîte de dialogue modale est ouverte, mais le focus atteint encore des éléments derrière elle que sa boîte ou son arrière-plan couvre.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Si l’utilisateur a ouvert ce contenu et peut le fermer sans déplacer le focus, par exemple avec Échap, c’est conforme.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
@@ -46884,6 +47123,26 @@ const RUNTIME_CATALOG = {
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
       "cssHidden_focus_lean_why_container": "要素がフォーカスを受けても見えないままです。スクロールで届かない位置にあるか、何も表示されないように切り抜かれたコンテナーの中にあり、表示するフォーカススタイルもありません。",
       "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
+      "focusNotObscuredMinimum_title": "フォーカスされた要素が完全に隠れてはいけません",
+      "focusNotObscuredMinimum_description": "タブ順序のどの要素も、固定ヘッダーやフッター、Cookie バナーなど、ページが定位置に保つコンテンツの後ろに完全に隠れたままフォーカスを受けないことを確認します。",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
+      "focusNotObscuredEnhanced_title": "フォーカスされた要素のどの部分も隠れるべきではありません",
+      "focusNotObscuredEnhanced_description": "タブ順序のどの要素も、固定ヘッダーやフッター、Cookie バナーなど、ページが定位置に保つコンテンツの後ろに一部でも隠れたままフォーカスを受けないことを確認します。",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
+      "focusNotObscuredMinimum_lean_why_entirely": "ボックスはページが表示中とみなすウィンドウの一部に重なったままで、ブラウザーはそこに置かれた要素の上にボックスを描画するため、その要素は見えないままフォーカスを受けます。",
+      "focusNotObscuredMinimum_lean_why_partly": "ボックスはページが表示中とみなすウィンドウの一部に重なったままで、ブラウザーはそこに置かれた要素の一部の上にボックスを描画します。",
+      "focusNotObscuredMinimum_lean_why_behindModal": "モーダルダイアログが開いていますが、フォーカスはそのダイアログや背景が覆う後ろの要素にまだ到達できます。",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "ユーザーがこのコンテンツを開き、Escape キーなどでフォーカスを移動せずに閉じられる場合は適合です。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",
@@ -48372,6 +48631,8 @@ const RULE_MODULES = [
   "./checks/manual/embed-text-alternative-quality-manual.js",
   "./checks/automatic/empty-heading.js",
   "./checks/manual/empty-table-header-manual.js",
+  "./checks/manual/focus-not-obscured-enhanced-manual.js",
+  "./checks/manual/focus-not-obscured-minimum-manual.js",
   "./checks/automatic/focus-not-removed-by-script.js",
   "./checks/manual/focus-order-semantics-manual.js",
   "./checks/manual/form-control-label-quality-manual.js",
@@ -52287,6 +52548,163 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     "requirements": null,
     "mappings": null,
     "margin": null
+  },
+  {
+    "ruleId": "focus-not-obscured-enhanced",
+    "title": "No part of a focused element should be hidden",
+    "description": "Checks that no element in the tab order can take focus with any part of it hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+    "i18n": {
+      "titleKey": "focusNotObscuredEnhanced_title",
+      "descriptionKey": "focusNotObscuredEnhanced_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aaa",
+      "wcag2412",
+      "navigation",
+      "focus",
+      "css",
+      "layout",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.12"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.12",
+        "title": "Focus Not Obscured (Enhanced)",
+        "conformanceLevel": "AAA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-not-obscured-enhanced",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-enhanced.html"
+      }
+    ],
+    "defaultSeverity": "moderate",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.12": [
+          "focus-fully-visible"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "variant": {
+      "of": "focus-not-obscured-minimum",
+      "config": {
+        "obscured": "partly"
+      },
+      "messages": {
+        "from": "focusNotObscuredMinimum",
+        "to": "focusNotObscuredEnhanced"
+      }
+    },
+    "settings": [
+      "obscured"
+    ]
+  },
+  {
+    "ruleId": "focus-not-obscured-minimum",
+    "title": "A focused element must not be entirely hidden",
+    "description": "Checks that no element in the tab order can take focus entirely hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+    "i18n": {
+      "titleKey": "focusNotObscuredMinimum_title",
+      "descriptionKey": "focusNotObscuredMinimum_description"
+    },
+    "helpUrl": "",
+    "tags": [
+      "wcag22aa",
+      "wcag2411",
+      "navigation",
+      "focus",
+      "css",
+      "layout",
+      "atomic",
+      "manual",
+      "a11ycore"
+    ],
+    "wcagSc": [
+      "2.4.11"
+    ],
+    "normativeMappings": [
+      {
+        "standard": "WCAG",
+        "version": "2.2",
+        "requirement": "2.4.11",
+        "title": "Focus Not Obscured (Minimum)",
+        "conformanceLevel": "AA",
+        "url": "https://www.w3.org/TR/WCAG22/#focus-not-obscured-minimum",
+        "understandingUrl": "https://www.w3.org/WAI/WCAG22/Understanding/focus-not-obscured-minimum.html"
+      },
+      {
+        "standard": "EN 301 549",
+        "version": "V4.1.1",
+        "requirement": "9.2.4.11",
+        "title": "Focus not obscured (minimum)",
+        "wcagSc": [
+          "2.4.11"
+        ]
+      }
+    ],
+    "defaultSeverity": "serious",
+    "defaultConfidence": "low",
+    "type": "manual",
+    "coverage": {
+      "facetsBySc": {
+        "2.4.11": [
+          "focus-not-obscured"
+        ]
+      }
+    },
+    "data": null,
+    "ruleInterfaceVersion": "1.0.0",
+    "ruleVersion": "0.0.0",
+    "normative": true,
+    "atomic": true,
+    "deprecated": false,
+    "deprecation": null,
+    "category": "operable",
+    "standard": null,
+    "applicability": "",
+    "expectation": "",
+    "references": [],
+    "requirements": null,
+    "mappings": null,
+    "margin": null,
+    "settings": [
+      "obscured"
+    ],
+    "variantSettings": [
+      {
+        "name": "obscured",
+        "default": "entirely",
+        "values": [
+          "entirely",
+          "partly"
+        ],
+        "description": "Which focused elements are asked about: those that can be hidden entirely ('entirely'), or also those that can be hidden in part ('partly').",
+        "basis": "WCAG 2.4.11: not entirely hidden (2.4.12: no part hidden)"
+      }
+    ]
   },
   {
     "ruleId": "focus-not-removed-by-script",
@@ -79947,6 +80365,974 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     };
   }
   return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+}), applicability: null },
+    "focus-not-obscured-enhanced": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { document, helpers, rule } = ctx;
+  const config = ctx.config || {};
+  const partlyToo = config.obscured === 'partly';
+  const view = document ? dom.defaultView(document) : null;
+  const notApplicable = (data) => ({
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(data ? { data } : {})
+  });
+
+  const trim = (v) => (v == null ? '' : String(v)).trim();
+  const lower = (v) => trim(v).toLowerCase();
+  const px = (v) => {
+    const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
+    return m ? Number.parseFloat(m[1]) : 0;
+  };
+  const styleOf = (el) => {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  };
+  const describe = (el, opts) =>
+    typeof helpers.describeElement === 'function' ? helpers.describeElement(el, opts) : '';
+  const example = (el) => {
+    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ').slice(0, 40);
+    return { tag: lower(dom.tagName(el)), text };
+  };
+
+  // ---- A layout to measure ----
+  const html = document ? dom.documentElement(document) : null;
+  const body = document ? dom.body(document) : null;
+  if (!view || !html || !body) return notApplicable({ reason: 'noLayout' });
+  let htmlRect;
+  try {
+    htmlRect = dom.getBoundingClientRect(html);
+  } catch {
+    htmlRect = null;
+  }
+  if (!htmlRect || (htmlRect.width <= 0 && htmlRect.height <= 0))
+    return notApplicable({ reason: 'noLayout' });
+
+  // ---- The elements in the tab order that scroll with the page ----
+  const positionOf = (cs) => lower(cs && cs.position);
+  // The nearest fixed or sticky box an element is in (itself included).
+  const pinnedCache = new Map();
+  function pinnedAncestor(el) {
+    const chain = [];
+    let found = null;
+    for (let n = el, i = 0; n && n !== html && i < 10000; n = dom.parentElement(n), i++) {
+      if (pinnedCache.has(n)) {
+        found = pinnedCache.get(n);
+        break;
+      }
+      chain.push(n);
+      const pos = positionOf(styleOf(n));
+      if (pos === 'fixed' || pos === 'sticky') {
+        found = n;
+        break;
+      }
+    }
+    for (const n of chain) pinnedCache.set(n, found);
+    return found;
+  }
+  // Whether an ancestor below <body> scrolls on its own.
+  function inOwnScroller(el) {
+    for (
+      let n = dom.parentElement(el), i = 0;
+      n && n !== body && n !== html && i < 10000;
+      n = dom.parentElement(n), i++
+    ) {
+      const cs = styleOf(n);
+      const oy = lower(cs && cs.overflowY);
+      if (
+        (oy === 'auto' || oy === 'scroll') &&
+        dom.get(n, 'scrollHeight') > dom.get(n, 'clientHeight') + 1
+      )
+        return true;
+    }
+    return false;
+  }
+
+  const SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,iframe,[tabindex],[contenteditable]';
+  const all = typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart(SELECTOR) : [];
+  const scrollY = Number(dom.get(view, 'scrollY')) || 0;
+  const scrollX = Number(dom.get(view, 'scrollX')) || 0;
+  const scroller = dom.get(document, 'scrollingElement') || html;
+  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
+  const htmlCs = styleOf(html);
+  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
+  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+
+  const candidates = [];
+  for (const el of all) {
+    let info;
+    try {
+      info = helpers.getFocusableInfo(el, ctx);
+    } catch {
+      info = null;
+    }
+    if (!info || !info.tabbable) continue;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    const cs = styleOf(el);
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    const r = dom.getBoundingClientRect(el);
+    if (!r || r.width <= 0 || r.height <= 0) continue;
+    if (pinnedAncestor(el)) continue;
+    if (inOwnScroller(el)) continue;
+    candidates.push({
+      el,
+      left: r.left,
+      right: r.right,
+      height: r.height,
+      docTop: r.top + scrollY,
+      marginTop: px(cs.scrollMarginTop),
+      marginBottom: px(cs.scrollMarginBottom)
+    });
+  }
+  if (!candidates.length) return notApplicable();
+
+  // ---- The boxes the page keeps in place, and what of them is drawn ----
+  const REPLACED = new Set([
+    'img',
+    'picture',
+    'svg',
+    'video',
+    'canvas',
+    'iframe',
+    'object',
+    'embed'
+  ]);
+  function paints(el, cs) {
+    if (REPLACED.has(lower(dom.tagName(el)))) return true;
+    if (!cs) return false;
+    if (trim(cs.backgroundImage) && lower(cs.backgroundImage) !== 'none') return true;
+    const m = /rgba?\(([^)]*)\)/.exec(lower(cs.backgroundColor));
+    if (!m) return false;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(alpha) && alpha > 0.05;
+  }
+  // Whether an element, and everything up to the page, is drawn at all.
+  function shown(el) {
+    for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const cs = styleOf(n);
+      if (!cs) return false;
+      const op = Number.parseFloat(cs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) return false;
+      if (n === el && lower(cs.visibility) === 'hidden') return false;
+    }
+    return true;
+  }
+
+  // The script-made modal dialogs open on the page: they leave it able to
+  // take focus. A <dialog> opened with showModal() makes it inert instead.
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
+  const modals = [];
+  for (const m of typeof helpers.queryAllSmart === 'function'
+    ? helpers.queryAllSmart('[aria-modal="true" i]')
+    : []) {
+    const role = helpers.aria.getExplicitRole(m);
+    const isDialog = lower(dom.tagName(m)) === 'dialog';
+    if (!isDialog && !MODAL_ROLES.has(role)) continue;
+    const r = dom.getBoundingClientRect(m);
+    if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
+  }
+  const inModal = (el) => modals.some((m) => dom.contains(m, el));
+
+  // Each box: its root (the fixed or sticky element), the strip of the
+  // window it covers, and its horizontal extent.
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cs = styleOf(el);
+    if (!cs || lower(cs.display) === 'none') continue;
+    const root = pinnedAncestor(el);
+    if (!root) continue;
+    if (!paints(el, cs)) continue;
+    const r = dom.getBoundingClientRect(el);
+    if (!r || r.width <= 0 || r.height <= 0) continue;
+    if (!shown(el)) continue;
+    const rootCs = el === root ? cs : styleOf(root);
+    const position = positionOf(rootCs);
+    let top = r.top;
+    if (position === 'sticky') {
+      // Taken at the offset it sticks at, from the top or the bottom.
+      const t = lower(rootCs.top);
+      const b = lower(rootCs.bottom);
+      const rootRect = dom.getBoundingClientRect(root);
+      const offset = r.top - rootRect.top;
+      if (t !== 'auto' && t) top = px(t) + offset;
+      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
+      else continue;
+    }
+    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+  }
+  if (!covers.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // ---- Which elements can take focus under each box ----
+  // In view: the window less the page's scroll-padding. A browser leaves a
+  // focused element where it is when it is in view, and the element can be
+  // placed anywhere its scroll range allows.
+  const zoneTop = padTop;
+  const zoneBottom = vh - padBottom;
+  // The element's top in the window, as an interval, where it is in view
+  // and under the box's strip [lo, hi] (entirely: all of it; partly: some).
+  function placement(c, cover, entirely) {
+    const inViewLo = zoneTop + c.marginTop;
+    const inViewHi = zoneBottom - c.marginBottom - c.height;
+    const reachLo = c.docTop - maxScroll;
+    const reachHi = c.docTop;
+    const lo = entirely ? cover.top : cover.top - c.height + 1;
+    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    const a = Math.max(inViewLo, reachLo, lo);
+    const b = Math.min(inViewHi, reachHi, hi);
+    return a <= b ? (a + b) / 2 : null;
+  }
+
+  // Covers sharing a root are one box to the reader: the first that hides
+  // an element is the one reported for it.
+  const byRoot = new Map();
+  for (const cover of covers) {
+    for (const c of candidates) {
+      const behindModal = modals.length > 0 && !inModal(c.el);
+      const horizontallyAll = cover.left <= c.left + 0.5 && cover.right >= c.right - 0.5;
+      const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
+      let kind = null;
+      let at = null;
+      if (horizontallyAll) {
+        at = placement(c, cover, true);
+        if (at != null) kind = 'entirely';
+      }
+      if (!kind && partlyToo && horizontallySome) {
+        at = placement(c, cover, false);
+        if (at != null) kind = 'partly';
+      }
+      if (!kind) continue;
+      let entry = byRoot.get(cover.root);
+      if (!entry) {
+        entry = { root: cover.root, cover, hits: new Map(), behindModal: false };
+        byRoot.set(cover.root, entry);
+      }
+      const prev = entry.hits.get(c.el);
+      if (prev && prev.kind === 'entirely') continue;
+      entry.hits.set(c.el, { c, kind, at, cover });
+      if (behindModal) entry.behindModal = true;
+    }
+  }
+  if (!byRoot.size)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // Content the user opened: a control the page marks expanded
+  // (aria-expanded="true") names the box, or something in or around it, with
+  // aria-controls, as a menu button does its drawer. The criterion allows
+  // such content to cover the focused element when the user can close it
+  // without moving focus, which only a person can try.
+  const opened = [];
+  for (const ctl of typeof helpers.queryAllSmart === 'function'
+    ? helpers.queryAllSmart('[aria-expanded="true" i][aria-controls]')
+    : []) {
+    for (const idref of trim(dom.getAttribute(ctl, 'aria-controls')).split(/\s+/)) {
+      if (!idref) continue;
+      let target;
+      try {
+        target = helpers.getElementByIdInTree(ctl, idref);
+      } catch {
+        target = null;
+      }
+      if (target) opened.push(target);
+    }
+  }
+  const userOpened = (root) =>
+    opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
+
+  // ---- Confirm with the browser: scroll a few there and hit-test ----
+  const scrollTo = (y) => {
+    try {
+      dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
+    } catch {
+      try {
+        dom.call(view, 'scrollTo', scrollX, y);
+      } catch {}
+    }
+  };
+  const FRACTIONS = [0.15, 0.5, 0.85];
+  function hiddenShare(hit) {
+    const { c, at, cover } = hit;
+    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    const r = dom.getBoundingClientRect(c.el);
+    let covered = 0;
+    let total = 0;
+    for (const fx of FRACTIONS) {
+      for (const fy of FRACTIONS) {
+        const x = r.left + r.width * fx;
+        const y = r.top + r.height * fy;
+        total += 1;
+        let top;
+        try {
+          top = dom.call(document, 'elementFromPoint', x, y);
+        } catch {
+          top = null;
+        }
+        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
+        if (!dom.contains(cover.root, top)) continue;
+        // Drawn there: the part hit, or a box around it within the root.
+        let drawn = false;
+        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+          if (paints(n, styleOf(n))) {
+            drawn = true;
+            break;
+          }
+          if (n === cover.root) break;
+        }
+        if (drawn) covered += 1;
+      }
+    }
+    return total ? covered / total : 0;
+  }
+
+  const SAMPLES = 3;
+  const occurrences = [];
+  try {
+    for (const entry of byRoot.values()) {
+      const hits = [...entry.hits.values()];
+      const entirely = hits.filter((h) => h.kind === 'entirely');
+      const partly = hits.filter((h) => h.kind === 'partly');
+      const ordered = [...entirely, ...partly];
+      let confirmed = null;
+      for (const h of ordered.slice(0, SAMPLES)) {
+        const share = hiddenShare(h);
+        if (h.kind === 'entirely' ? share >= 1 : share > 0) {
+          confirmed = h;
+          break;
+        }
+      }
+      if (!confirmed) continue;
+
+      const rootCs = styleOf(entry.root);
+      const position = positionOf(rootCs);
+      const cover = entry.cover;
+      const mid = (cover.top + cover.bottom) / 2;
+      const side = mid < vh / 3 ? 'top' : mid > (vh * 2) / 3 ? 'bottom' : 'middle';
+      const coverPx = Math.max(
+        0,
+        Math.min(cover.bottom, zoneBottom) - Math.max(cover.top, zoneTop)
+      );
+      const first = (entirely[0] || partly[0]).c.el;
+      const firstTag = describe(first, { text: true }) || `<${lower(dom.tagName(first))}>`;
+      const container = describe(entry.root) || `<${lower(dom.tagName(entry.root))}>`;
+      const count = entirely.length || partly.length;
+      const code = entry.behindModal
+        ? 'FOCUS_OBSCURED_BEHIND_MODAL'
+        : entirely.length
+          ? 'FOCUS_OBSCURED_ENTIRELY'
+          : 'FOCUS_OBSCURED_PARTLY';
+      const scrollPaddingPx = side === 'bottom' ? padBottom : side === 'top' ? padTop : 0;
+      // The scroll-padding that clears the box: from its edge of the window
+      // to its far side, a box stacked under another included.
+      const paddingPx = Math.ceil(side === 'bottom' ? vh - cover.top : cover.bottom);
+      const openedByUser = userOpened(entry.root);
+
+      let summary;
+      let hint;
+      let keys;
+      let lean;
+      const userOpenedCaution =
+        'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
+      if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
+        summary = `A modal dialog is open, but ${count} focusable elements outside it, such as ${firstTag}, still take focus while ${container} covers them.`;
+        hint =
+          'While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().';
+        keys = 'behindModal';
+        lean = {
+          toward: 'fail',
+          why: 'A modal dialog is open, yet focus can still reach elements behind it that its dialog or backdrop covers.',
+          signals: [
+            { signal: 'modal-open', value: true },
+            { signal: 'elements-covered', value: count },
+            { signal: 'hit-test-confirmed', value: true }
+          ],
+          i18n: { whyKey: 'focusNotObscuredMinimum_lean_why_behindModal' }
+        };
+      } else {
+        const how = code === 'FOCUS_OBSCURED_ENTIRELY' ? 'entirely' : 'partly';
+        summary = `${count} focusable elements, such as ${firstTag}, can take focus ${how} hidden behind this ${position} ${container}: it covers ${Math.round(coverPx)}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.`;
+        hint =
+          side === 'middle'
+            ? 'Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.'
+            : `Give the page a scroll-padding-${side} of at least ${paddingPx}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not ${position}.`;
+        keys = code === 'FOCUS_OBSCURED_ENTIRELY' ? 'entirely' : 'partly';
+        // A box a control marks as opened by the user gets no lean: whether
+        // it closes without moving focus is for a person to try.
+        lean = openedByUser
+          ? null
+          : {
+              toward: 'fail',
+              why:
+                code === 'FOCUS_OBSCURED_ENTIRELY'
+                  ? 'The box stays over part of the window the page counts as in view, and the browser draws it on top of an element placed there, so that element takes focus out of sight.'
+                  : 'The box stays over part of the window the page counts as in view, and the browser draws it on top of part of an element placed there.',
+              signals: [
+                { signal: 'position', value: position },
+                { signal: 'cover-px', value: Math.round(coverPx) },
+                { signal: 'scroll-padding-px', value: scrollPaddingPx },
+                { signal: 'hit-test-confirmed', value: true }
+              ],
+              caution: userOpenedCaution,
+              i18n: {
+                whyKey:
+                  code === 'FOCUS_OBSCURED_ENTIRELY'
+                    ? 'focusNotObscuredMinimum_lean_why_entirely'
+                    : 'focusNotObscuredMinimum_lean_why_partly',
+                cautionKey: 'focusNotObscuredMinimum_lean_caution_userOpened'
+              }
+            };
+      }
+
+      const baseOccurrence = {
+        ...(lean ? { lean } : {}),
+        summary,
+        hint,
+        i18n: {
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          hintKey:
+            keys === 'behindModal'
+              ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
+              : side === 'middle'
+                ? 'focusNotObscuredMinimum_hint_cantTell_middle'
+                : 'focusNotObscuredMinimum_hint_cantTell_edge',
+          params: {
+            count,
+            example: firstTag,
+            container,
+            position,
+            side,
+            coverPx: Math.round(coverPx),
+            paddingPx
+          }
+        },
+        data: {
+          details: {
+            reasonCode: code,
+            metrics: {
+              entirelyCount: entirely.length,
+              ...(partlyToo ? { partlyCount: partly.length } : {}),
+              position,
+              side,
+              coverPx: Math.round(coverPx),
+              scrollPaddingPx,
+              paddingNeededPx: paddingPx
+            },
+            openedByUser,
+            examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
+            confirmedBy: example(confirmed.c.el)
+          },
+          visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      };
+      occurrences.push(
+        typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(entry.root, baseOccurrence)
+          : { __node: entry.root, selector: '', html: '', ...baseOccurrence }
+      );
+    }
+  } finally {
+    scrollTo(scrollY);
+  }
+
+  if (!occurrences.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
+}), applicability: null },
+    "focus-not-obscured-minimum": { run: (function runInPage(ctx) {
+  const dom = ctx.helpers.dom;
+  const { document, helpers, rule } = ctx;
+  const config = ctx.config || {};
+  const partlyToo = config.obscured === 'partly';
+  const view = document ? dom.defaultView(document) : null;
+  const notApplicable = (data) => ({
+    ruleId: rule.ruleId,
+    outcome: 'notApplicable',
+    severity: 'minor',
+    occurrences: [],
+    ...(data ? { data } : {})
+  });
+
+  const trim = (v) => (v == null ? '' : String(v)).trim();
+  const lower = (v) => trim(v).toLowerCase();
+  const px = (v) => {
+    const m = /^(-?\d*\.?\d+)px$/.exec(lower(v));
+    return m ? Number.parseFloat(m[1]) : 0;
+  };
+  const styleOf = (el) => {
+    try {
+      return view.getComputedStyle(el);
+    } catch {
+      return null;
+    }
+  };
+  const describe = (el, opts) =>
+    typeof helpers.describeElement === 'function' ? helpers.describeElement(el, opts) : '';
+  const example = (el) => {
+    const text = trim(dom.textContent(el)).replace(/\s+/g, ' ').slice(0, 40);
+    return { tag: lower(dom.tagName(el)), text };
+  };
+
+  // ---- A layout to measure ----
+  const html = document ? dom.documentElement(document) : null;
+  const body = document ? dom.body(document) : null;
+  if (!view || !html || !body) return notApplicable({ reason: 'noLayout' });
+  let htmlRect;
+  try {
+    htmlRect = dom.getBoundingClientRect(html);
+  } catch {
+    htmlRect = null;
+  }
+  if (!htmlRect || (htmlRect.width <= 0 && htmlRect.height <= 0))
+    return notApplicable({ reason: 'noLayout' });
+
+  // ---- The elements in the tab order that scroll with the page ----
+  const positionOf = (cs) => lower(cs && cs.position);
+  // The nearest fixed or sticky box an element is in (itself included).
+  const pinnedCache = new Map();
+  function pinnedAncestor(el) {
+    const chain = [];
+    let found = null;
+    for (let n = el, i = 0; n && n !== html && i < 10000; n = dom.parentElement(n), i++) {
+      if (pinnedCache.has(n)) {
+        found = pinnedCache.get(n);
+        break;
+      }
+      chain.push(n);
+      const pos = positionOf(styleOf(n));
+      if (pos === 'fixed' || pos === 'sticky') {
+        found = n;
+        break;
+      }
+    }
+    for (const n of chain) pinnedCache.set(n, found);
+    return found;
+  }
+  // Whether an ancestor below <body> scrolls on its own.
+  function inOwnScroller(el) {
+    for (
+      let n = dom.parentElement(el), i = 0;
+      n && n !== body && n !== html && i < 10000;
+      n = dom.parentElement(n), i++
+    ) {
+      const cs = styleOf(n);
+      const oy = lower(cs && cs.overflowY);
+      if (
+        (oy === 'auto' || oy === 'scroll') &&
+        dom.get(n, 'scrollHeight') > dom.get(n, 'clientHeight') + 1
+      )
+        return true;
+    }
+    return false;
+  }
+
+  const SELECTOR =
+    'a[href],area[href],button,input,select,textarea,summary,iframe,[tabindex],[contenteditable]';
+  const all = typeof helpers.queryAllSmart === 'function' ? helpers.queryAllSmart(SELECTOR) : [];
+  const scrollY = Number(dom.get(view, 'scrollY')) || 0;
+  const scrollX = Number(dom.get(view, 'scrollX')) || 0;
+  const scroller = dom.get(document, 'scrollingElement') || html;
+  const vh = Number(dom.get(html, 'clientHeight')) || 0;
+  const maxScroll = Math.max(0, (Number(dom.get(scroller, 'scrollHeight')) || 0) - vh);
+  const htmlCs = styleOf(html);
+  const padTop = px(htmlCs && htmlCs.scrollPaddingTop);
+  const padBottom = px(htmlCs && htmlCs.scrollPaddingBottom);
+
+  const candidates = [];
+  for (const el of all) {
+    let info;
+    try {
+      info = helpers.getFocusableInfo(el, ctx);
+    } catch {
+      info = null;
+    }
+    if (!info || !info.tabbable) continue;
+    if (typeof helpers.isVisuallyHidden === 'function' && helpers.isVisuallyHidden(el)) continue;
+    const cs = styleOf(el);
+    if (!cs || lower(cs.visibility) === 'hidden' || lower(cs.display) === 'none') continue;
+    const r = dom.getBoundingClientRect(el);
+    if (!r || r.width <= 0 || r.height <= 0) continue;
+    if (pinnedAncestor(el)) continue;
+    if (inOwnScroller(el)) continue;
+    candidates.push({
+      el,
+      left: r.left,
+      right: r.right,
+      height: r.height,
+      docTop: r.top + scrollY,
+      marginTop: px(cs.scrollMarginTop),
+      marginBottom: px(cs.scrollMarginBottom)
+    });
+  }
+  if (!candidates.length) return notApplicable();
+
+  // ---- The boxes the page keeps in place, and what of them is drawn ----
+  const REPLACED = new Set([
+    'img',
+    'picture',
+    'svg',
+    'video',
+    'canvas',
+    'iframe',
+    'object',
+    'embed'
+  ]);
+  function paints(el, cs) {
+    if (REPLACED.has(lower(dom.tagName(el)))) return true;
+    if (!cs) return false;
+    if (trim(cs.backgroundImage) && lower(cs.backgroundImage) !== 'none') return true;
+    const m = /rgba?\(([^)]*)\)/.exec(lower(cs.backgroundColor));
+    if (!m) return false;
+    const parts = m[1].split(/[\s,/]+/).filter(Boolean);
+    const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(alpha) && alpha > 0.05;
+  }
+  // Whether an element, and everything up to the page, is drawn at all.
+  function shown(el) {
+    for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const cs = styleOf(n);
+      if (!cs) return false;
+      const op = Number.parseFloat(cs.opacity);
+      if (Number.isFinite(op) && op <= 0.01) return false;
+      if (n === el && lower(cs.visibility) === 'hidden') return false;
+    }
+    return true;
+  }
+
+  // The script-made modal dialogs open on the page: they leave it able to
+  // take focus. A <dialog> opened with showModal() makes it inert instead.
+  const MODAL_ROLES = new Set(['dialog', 'alertdialog']);
+  const modals = [];
+  for (const m of typeof helpers.queryAllSmart === 'function'
+    ? helpers.queryAllSmart('[aria-modal="true" i]')
+    : []) {
+    const role = helpers.aria.getExplicitRole(m);
+    const isDialog = lower(dom.tagName(m)) === 'dialog';
+    if (!isDialog && !MODAL_ROLES.has(role)) continue;
+    const r = dom.getBoundingClientRect(m);
+    if (r && r.width > 0 && r.height > 0 && shown(m)) modals.push(m);
+  }
+  const inModal = (el) => modals.some((m) => dom.contains(m, el));
+
+  // Each box: its root (the fixed or sticky element), the strip of the
+  // window it covers, and its horizontal extent.
+  const covers = [];
+  for (const el of [...dom.querySelectorAll(document, 'body *')]) {
+    const cs = styleOf(el);
+    if (!cs || lower(cs.display) === 'none') continue;
+    const root = pinnedAncestor(el);
+    if (!root) continue;
+    if (!paints(el, cs)) continue;
+    const r = dom.getBoundingClientRect(el);
+    if (!r || r.width <= 0 || r.height <= 0) continue;
+    if (!shown(el)) continue;
+    const rootCs = el === root ? cs : styleOf(root);
+    const position = positionOf(rootCs);
+    let top = r.top;
+    if (position === 'sticky') {
+      // Taken at the offset it sticks at, from the top or the bottom.
+      const t = lower(rootCs.top);
+      const b = lower(rootCs.bottom);
+      const rootRect = dom.getBoundingClientRect(root);
+      const offset = r.top - rootRect.top;
+      if (t !== 'auto' && t) top = px(t) + offset;
+      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
+      else continue;
+    }
+    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+  }
+  if (!covers.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // ---- Which elements can take focus under each box ----
+  // In view: the window less the page's scroll-padding. A browser leaves a
+  // focused element where it is when it is in view, and the element can be
+  // placed anywhere its scroll range allows.
+  const zoneTop = padTop;
+  const zoneBottom = vh - padBottom;
+  // The element's top in the window, as an interval, where it is in view
+  // and under the box's strip [lo, hi] (entirely: all of it; partly: some).
+  function placement(c, cover, entirely) {
+    const inViewLo = zoneTop + c.marginTop;
+    const inViewHi = zoneBottom - c.marginBottom - c.height;
+    const reachLo = c.docTop - maxScroll;
+    const reachHi = c.docTop;
+    const lo = entirely ? cover.top : cover.top - c.height + 1;
+    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    const a = Math.max(inViewLo, reachLo, lo);
+    const b = Math.min(inViewHi, reachHi, hi);
+    return a <= b ? (a + b) / 2 : null;
+  }
+
+  // Covers sharing a root are one box to the reader: the first that hides
+  // an element is the one reported for it.
+  const byRoot = new Map();
+  for (const cover of covers) {
+    for (const c of candidates) {
+      const behindModal = modals.length > 0 && !inModal(c.el);
+      const horizontallyAll = cover.left <= c.left + 0.5 && cover.right >= c.right - 0.5;
+      const horizontallySome = cover.left < c.right - 0.5 && cover.right > c.left + 0.5;
+      let kind = null;
+      let at = null;
+      if (horizontallyAll) {
+        at = placement(c, cover, true);
+        if (at != null) kind = 'entirely';
+      }
+      if (!kind && partlyToo && horizontallySome) {
+        at = placement(c, cover, false);
+        if (at != null) kind = 'partly';
+      }
+      if (!kind) continue;
+      let entry = byRoot.get(cover.root);
+      if (!entry) {
+        entry = { root: cover.root, cover, hits: new Map(), behindModal: false };
+        byRoot.set(cover.root, entry);
+      }
+      const prev = entry.hits.get(c.el);
+      if (prev && prev.kind === 'entirely') continue;
+      entry.hits.set(c.el, { c, kind, at, cover });
+      if (behindModal) entry.behindModal = true;
+    }
+  }
+  if (!byRoot.size)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+
+  // Content the user opened: a control the page marks expanded
+  // (aria-expanded="true") names the box, or something in or around it, with
+  // aria-controls, as a menu button does its drawer. The criterion allows
+  // such content to cover the focused element when the user can close it
+  // without moving focus, which only a person can try.
+  const opened = [];
+  for (const ctl of typeof helpers.queryAllSmart === 'function'
+    ? helpers.queryAllSmart('[aria-expanded="true" i][aria-controls]')
+    : []) {
+    for (const idref of trim(dom.getAttribute(ctl, 'aria-controls')).split(/\s+/)) {
+      if (!idref) continue;
+      let target;
+      try {
+        target = helpers.getElementByIdInTree(ctl, idref);
+      } catch {
+        target = null;
+      }
+      if (target) opened.push(target);
+    }
+  }
+  const userOpened = (root) =>
+    opened.some((t) => t === root || dom.contains(root, t) || dom.contains(t, root));
+
+  // ---- Confirm with the browser: scroll a few there and hit-test ----
+  const scrollTo = (y) => {
+    try {
+      dom.call(view, 'scrollTo', { left: scrollX, top: y, behavior: 'instant' });
+    } catch {
+      try {
+        dom.call(view, 'scrollTo', scrollX, y);
+      } catch {}
+    }
+  };
+  const FRACTIONS = [0.15, 0.5, 0.85];
+  function hiddenShare(hit) {
+    const { c, at, cover } = hit;
+    scrollTo(Math.max(0, Math.min(maxScroll, c.docTop - at)));
+    const r = dom.getBoundingClientRect(c.el);
+    let covered = 0;
+    let total = 0;
+    for (const fx of FRACTIONS) {
+      for (const fy of FRACTIONS) {
+        const x = r.left + r.width * fx;
+        const y = r.top + r.height * fy;
+        total += 1;
+        let top;
+        try {
+          top = dom.call(document, 'elementFromPoint', x, y);
+        } catch {
+          top = null;
+        }
+        if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
+        if (!dom.contains(cover.root, top)) continue;
+        // Drawn there: the part hit, or a box around it within the root.
+        let drawn = false;
+        for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+          if (paints(n, styleOf(n))) {
+            drawn = true;
+            break;
+          }
+          if (n === cover.root) break;
+        }
+        if (drawn) covered += 1;
+      }
+    }
+    return total ? covered / total : 0;
+  }
+
+  const SAMPLES = 3;
+  const occurrences = [];
+  try {
+    for (const entry of byRoot.values()) {
+      const hits = [...entry.hits.values()];
+      const entirely = hits.filter((h) => h.kind === 'entirely');
+      const partly = hits.filter((h) => h.kind === 'partly');
+      const ordered = [...entirely, ...partly];
+      let confirmed = null;
+      for (const h of ordered.slice(0, SAMPLES)) {
+        const share = hiddenShare(h);
+        if (h.kind === 'entirely' ? share >= 1 : share > 0) {
+          confirmed = h;
+          break;
+        }
+      }
+      if (!confirmed) continue;
+
+      const rootCs = styleOf(entry.root);
+      const position = positionOf(rootCs);
+      const cover = entry.cover;
+      const mid = (cover.top + cover.bottom) / 2;
+      const side = mid < vh / 3 ? 'top' : mid > (vh * 2) / 3 ? 'bottom' : 'middle';
+      const coverPx = Math.max(
+        0,
+        Math.min(cover.bottom, zoneBottom) - Math.max(cover.top, zoneTop)
+      );
+      const first = (entirely[0] || partly[0]).c.el;
+      const firstTag = describe(first, { text: true }) || `<${lower(dom.tagName(first))}>`;
+      const container = describe(entry.root) || `<${lower(dom.tagName(entry.root))}>`;
+      const count = entirely.length || partly.length;
+      const code = entry.behindModal
+        ? 'FOCUS_OBSCURED_BEHIND_MODAL'
+        : entirely.length
+          ? 'FOCUS_OBSCURED_ENTIRELY'
+          : 'FOCUS_OBSCURED_PARTLY';
+      const scrollPaddingPx = side === 'bottom' ? padBottom : side === 'top' ? padTop : 0;
+      // The scroll-padding that clears the box: from its edge of the window
+      // to its far side, a box stacked under another included.
+      const paddingPx = Math.ceil(side === 'bottom' ? vh - cover.top : cover.bottom);
+      const openedByUser = userOpened(entry.root);
+
+      let summary;
+      let hint;
+      let keys;
+      let lean;
+      const userOpenedCaution =
+        'If the user opened this content and can close it without moving focus, such as with Escape, it passes.';
+      if (code === 'FOCUS_OBSCURED_BEHIND_MODAL') {
+        summary = `A modal dialog is open, but ${count} focusable elements outside it, such as ${firstTag}, still take focus while ${container} covers them.`;
+        hint =
+          'While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().';
+        keys = 'behindModal';
+        lean = {
+          toward: 'fail',
+          why: 'A modal dialog is open, yet focus can still reach elements behind it that its dialog or backdrop covers.',
+          signals: [
+            { signal: 'modal-open', value: true },
+            { signal: 'elements-covered', value: count },
+            { signal: 'hit-test-confirmed', value: true }
+          ],
+          i18n: { whyKey: 'focusNotObscuredMinimum_lean_why_behindModal' }
+        };
+      } else {
+        const how = code === 'FOCUS_OBSCURED_ENTIRELY' ? 'entirely' : 'partly';
+        summary = `${count} focusable elements, such as ${firstTag}, can take focus ${how} hidden behind this ${position} ${container}: it covers ${Math.round(coverPx)}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.`;
+        hint =
+          side === 'middle'
+            ? 'Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.'
+            : `Give the page a scroll-padding-${side} of at least ${paddingPx}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not ${position}.`;
+        keys = code === 'FOCUS_OBSCURED_ENTIRELY' ? 'entirely' : 'partly';
+        // A box a control marks as opened by the user gets no lean: whether
+        // it closes without moving focus is for a person to try.
+        lean = openedByUser
+          ? null
+          : {
+              toward: 'fail',
+              why:
+                code === 'FOCUS_OBSCURED_ENTIRELY'
+                  ? 'The box stays over part of the window the page counts as in view, and the browser draws it on top of an element placed there, so that element takes focus out of sight.'
+                  : 'The box stays over part of the window the page counts as in view, and the browser draws it on top of part of an element placed there.',
+              signals: [
+                { signal: 'position', value: position },
+                { signal: 'cover-px', value: Math.round(coverPx) },
+                { signal: 'scroll-padding-px', value: scrollPaddingPx },
+                { signal: 'hit-test-confirmed', value: true }
+              ],
+              caution: userOpenedCaution,
+              i18n: {
+                whyKey:
+                  code === 'FOCUS_OBSCURED_ENTIRELY'
+                    ? 'focusNotObscuredMinimum_lean_why_entirely'
+                    : 'focusNotObscuredMinimum_lean_why_partly',
+                cautionKey: 'focusNotObscuredMinimum_lean_caution_userOpened'
+              }
+            };
+      }
+
+      const baseOccurrence = {
+        ...(lean ? { lean } : {}),
+        summary,
+        hint,
+        i18n: {
+          summaryKey: `focusNotObscuredMinimum_summary_cantTell_${keys}`,
+          hintKey:
+            keys === 'behindModal'
+              ? 'focusNotObscuredMinimum_hint_cantTell_behindModal'
+              : side === 'middle'
+                ? 'focusNotObscuredMinimum_hint_cantTell_middle'
+                : 'focusNotObscuredMinimum_hint_cantTell_edge',
+          params: {
+            count,
+            example: firstTag,
+            container,
+            position,
+            side,
+            coverPx: Math.round(coverPx),
+            paddingPx
+          }
+        },
+        data: {
+          details: {
+            reasonCode: code,
+            metrics: {
+              entirelyCount: entirely.length,
+              ...(partlyToo ? { partlyCount: partly.length } : {}),
+              position,
+              side,
+              coverPx: Math.round(coverPx),
+              scrollPaddingPx,
+              paddingNeededPx: paddingPx
+            },
+            openedByUser,
+            examples: ordered.slice(0, 5).map((h) => example(h.c.el)),
+            confirmedBy: example(confirmed.c.el)
+          },
+          visibilityFilter: { targetSet: 'acc', accEligible: null, reasons: [] }
+        }
+      };
+      occurrences.push(
+        typeof helpers.reportOccurrence === 'function'
+          ? helpers.reportOccurrence(entry.root, baseOccurrence)
+          : { __node: entry.root, selector: '', html: '', ...baseOccurrence }
+      );
+    }
+  } finally {
+    scrollTo(scrollY);
+  }
+
+  if (!occurrences.length)
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+  return {
+    ruleId: rule.ruleId,
+    outcome: 'cantTell',
+    severity: rule.defaultSeverity || 'serious',
+    occurrences
+  };
 }), applicability: null },
     "focus-not-removed-by-script": { run: (function runInPage(ctx) {
   const dom = ctx.helpers.dom;
@@ -111474,6 +112860,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell_redirect": "Prüfen Sie, ob dies eine beabsichtigte Fokusübergabe ist und der Tastaturfokus nie auf dem verborgenen Element bleibt.",
       "cssHidden_focus_lean_why_container": "Erhält das Element den Fokus, bleibt es außer Sicht: Es liegt, wo kein Scrollen hinreicht, oder in einem auf nichts zugeschnittenen Container, und kein Fokusstil bringt es in Sicht.",
       "cssHidden_focus_lean_caution_script": "Ein Skript kann es noch zeigen, wenn es den Fokus erhält; ob eines darauf reagiert, ließ sich nicht prüfen.",
+      "focusNotObscuredMinimum_title": "Ein fokussiertes Element darf nicht ganz verdeckt sein",
+      "focusNotObscuredMinimum_description": "Prüft, dass kein Element in der Tab-Reihenfolge den Fokus ganz verdeckt hinter Inhalt erhalten kann, den die Seite an Ort und Stelle hält, etwa einer fixierten Kopf- oder Fußzeile oder einem Cookie-Banner.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
+      "focusNotObscuredEnhanced_title": "Kein Teil eines fokussierten Elements sollte verdeckt sein",
+      "focusNotObscuredEnhanced_description": "Prüft, dass kein Element in der Tab-Reihenfolge den Fokus mit einem verdeckten Teil hinter Inhalt erhalten kann, den die Seite an Ort und Stelle hält, etwa einer fixierten Kopf- oder Fußzeile oder einem Cookie-Banner.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus ganz verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} fokussierbare Elemente, etwa {{example}}, können den Fokus teilweise verdeckt hinter diesem {{position}} {{container}} erhalten: Es deckt {{coverPx}}px des Fensters ab, die die Seite noch als sichtbar zählt, daher scrollt der Fokus sie nicht darunter hervor.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Ein modaler Dialog ist geöffnet, doch {{count}} fokussierbare Elemente außerhalb davon, etwa {{example}}, erhalten weiter den Fokus, während {{container}} sie verdeckt.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Geben Sie der Seite ein scroll-padding-{{side}} von mindestens {{paddingPx}}px (am html-Element), damit der Fokus Elemente unter dem Element hervorscrollt; oder machen Sie das Element kleiner oder nicht {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Lassen Sie das Element die Seite nicht verdecken, solange es nicht gebraucht wird, oder setzen Sie es an den oberen oder unteren Rand und geben Sie der Seite auf dieser Seite ein scroll-padding mindestens so groß wie das Element, damit der Fokus Elemente darunter hervorscrollt.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Halten Sie den Fokus im Dialog, solange er geöffnet ist: Machen Sie den Rest der Seite inert, oder öffnen Sie einen <dialog> mit showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "Das Element bleibt über einem Teil des Fensters, den die Seite als sichtbar zählt, und der Browser zeichnet es über ein dort platziertes Element, das so den Fokus außer Sicht erhält.",
+      "focusNotObscuredMinimum_lean_why_partly": "Das Element bleibt über einem Teil des Fensters, den die Seite als sichtbar zählt, und der Browser zeichnet es über einen Teil eines dort platzierten Elements.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Ein modaler Dialog ist geöffnet, doch der Fokus erreicht weiter Elemente dahinter, die sein Dialog oder Hintergrund verdeckt.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Hat der Benutzer diesen Inhalt geöffnet und kann ihn schließen, ohne den Fokus zu bewegen, etwa mit Escape, ist es erfüllt.",
       "linkNamePresent_title": "Links haben einen zugänglichen Namen",
       "linkNamePresent_description": "Prüft, ob Links einen nicht leeren zugänglichen Namen aufweisen.",
       "linkNamePresent_summary_fail": "Dieser Link hat keinen zugänglichen Namen.",
@@ -113183,6 +114589,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell_redirect": "Check that this is a deliberate focus handoff, and that keyboard focus never stays on the hidden element.",
       "cssHidden_focus_lean_why_container": "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       "cssHidden_focus_lean_caution_script": "A script may still show it when it takes focus; whether one listens could not be checked.",
+      "focusNotObscuredMinimum_title": "A focused element must not be entirely hidden",
+      "focusNotObscuredMinimum_description": "Checks that no element in the tab order can take focus entirely hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
+      "focusNotObscuredEnhanced_title": "No part of a focused element should be hidden",
+      "focusNotObscuredEnhanced_description": "Checks that no element in the tab order can take focus with any part of it hidden behind content the page keeps in place, such as a sticky header or footer or a cookie banner.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} focusable elements, such as {{example}}, can take focus entirely hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} focusable elements, such as {{example}}, can take focus partly hidden behind this {{position}} {{container}}: it covers {{coverPx}}px of the window that the page still counts as in view, so focus doesn't scroll them out from under it.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "A modal dialog is open, but {{count}} focusable elements outside it, such as {{example}}, still take focus while {{container}} covers them.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Give the page a scroll-padding-{{side}} of at least {{paddingPx}}px (on the html element), so focus scrolls elements clear of the box; or make the box smaller, or not {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Keep the box from covering the page while it is not in use, or move it to the top or bottom edge and give the page a scroll-padding on that side at least as large as the box, so focus scrolls elements clear of it.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "While the dialog is open, keep focus inside it: make the rest of the page inert, or open a <dialog> with showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "The box stays over part of the window the page counts as in view, and the browser draws it on top of an element placed there, so that element takes focus out of sight.",
+      "focusNotObscuredMinimum_lean_why_partly": "The box stays over part of the window the page counts as in view, and the browser draws it on top of part of an element placed there.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "A modal dialog is open, yet focus can still reach elements behind it that its dialog or backdrop covers.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "If the user opened this content and can close it without moving focus, such as with Escape, it passes.",
       "linkNamePresent_title": "Links have an accessible name",
       "linkNamePresent_description": "Checks that links expose a non-empty accessible name.",
       "linkNamePresent_summary_fail": "This link has no accessible name.",
@@ -114892,6 +116318,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell_redirect": "Comprobar que se trata de un traspaso de foco intencionado y que el foco del teclado nunca se queda en el elemento oculto.",
       "cssHidden_focus_lean_why_container": "Cuando el elemento recibe el foco sigue fuera de la vista: está donde el desplazamiento no llega, o en un contenedor recortado a nada, y ningún estilo de foco lo hace visible.",
       "cssHidden_focus_lean_caution_script": "Un script aún puede mostrarlo cuando recibe el foco; no se pudo comprobar si alguno lo escucha.",
+      "focusNotObscuredMinimum_title": "Un elemento con el foco no debe quedar totalmente oculto",
+      "focusNotObscuredMinimum_description": "Comprueba que ningún elemento del orden de tabulación pueda recibir el foco totalmente oculto tras contenido que la página mantiene fijo, como una cabecera o un pie fijos o un aviso de cookies.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
+      "focusNotObscuredEnhanced_title": "Ninguna parte de un elemento con el foco debería quedar oculta",
+      "focusNotObscuredEnhanced_description": "Comprueba que ningún elemento del orden de tabulación pueda recibir el foco con alguna parte oculta tras contenido que la página mantiene fijo, como una cabecera o un pie fijos o un aviso de cookies.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco totalmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} elementos enfocables, como {{example}}, pueden recibir el foco parcialmente ocultos tras este {{position}} {{container}}: cubre {{coverPx}}px de la ventana que la página aún cuenta como visibles, así que el foco no los desplaza fuera de debajo.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Hay un diálogo modal abierto, pero {{count}} elementos enfocables fuera de él, como {{example}}, siguen recibiendo el foco mientras {{container}} los cubre.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Dé a la página un scroll-padding-{{side}} de al menos {{paddingPx}}px (en el elemento html), para que el foco desplace los elementos fuera de debajo de la caja; o haga la caja más pequeña, o que no sea {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Evite que la caja cubra la página mientras no se usa, o llévela al borde superior o inferior y dé a la página un scroll-padding en ese lado al menos tan grande como la caja, para que el foco desplace los elementos fuera de debajo.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Mientras el diálogo esté abierto, mantenga el foco dentro de él: haga inerte el resto de la página, o abra un <dialog> con showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "La caja sigue sobre una parte de la ventana que la página cuenta como visible, y el navegador la dibuja encima de un elemento colocado allí, que recibe así el foco fuera de la vista.",
+      "focusNotObscuredMinimum_lean_why_partly": "La caja sigue sobre una parte de la ventana que la página cuenta como visible, y el navegador la dibuja encima de parte de un elemento colocado allí.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Hay un diálogo modal abierto, pero el foco aún llega a elementos tras él que su diálogo o su fondo cubren.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Si el usuario abrió este contenido y puede cerrarlo sin mover el foco, por ejemplo con Escape, se cumple.",
       "linkNamePresent_title": "Los enlaces tienen un nombre accesible",
       "linkNamePresent_description": "Comprueba que los enlaces expongan un nombre accesible no vacío.",
       "linkNamePresent_summary_fail": "Este enlace no tiene nombre accesible.",
@@ -116601,6 +118047,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell_redirect": "Vérifiez qu’il s’agit d’un transfert de focus voulu, et que le focus clavier ne reste jamais sur l’élément caché.",
       "cssHidden_focus_lean_why_container": "Quand l’élément reçoit le focus, il reste hors de vue : il se trouve là où le défilement ne peut pas aller, ou dans un conteneur rogné à rien, et aucun style de focus ne le rend visible.",
       "cssHidden_focus_lean_caution_script": "Un script peut encore l’afficher quand il reçoit le focus ; il n’a pas été possible de vérifier si un script l’écoute.",
+      "focusNotObscuredMinimum_title": "Un élément qui a le focus ne doit pas être entièrement caché",
+      "focusNotObscuredMinimum_description": "Vérifie qu’aucun élément de l’ordre de tabulation ne peut recevoir le focus entièrement caché derrière un contenu que la page garde en place, comme un en-tête ou un pied de page fixe, ou un bandeau de cookies.",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
+      "focusNotObscuredEnhanced_title": "Aucune partie d’un élément qui a le focus ne devrait être cachée",
+      "focusNotObscuredEnhanced_description": "Vérifie qu’aucun élément de l’ordre de tabulation ne peut recevoir le focus avec une partie cachée derrière un contenu que la page garde en place, comme un en-tête ou un pied de page fixe, ou un bandeau de cookies.",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus entièrement cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{count}} éléments focalisables, comme {{example}}, peuvent recevoir le focus en partie cachés derrière ce {{position}} {{container}} : il couvre {{coverPx}}px de la fenêtre que la page compte encore comme visibles, donc le focus ne les fait pas défiler hors de dessous.",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "Une boîte de dialogue modale est ouverte, mais {{count}} éléments focalisables en dehors, comme {{example}}, reçoivent encore le focus pendant que {{container}} les couvre.",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "Donnez à la page un scroll-padding-{{side}} d’au moins {{paddingPx}}px (sur l’élément html), pour que le focus fasse défiler les éléments hors de dessous la boîte ; ou rendez la boîte plus petite, ou non {{position}}.",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "Évitez que la boîte couvre la page quand elle ne sert pas, ou placez-la au bord haut ou bas et donnez à la page un scroll-padding de ce côté au moins aussi grand que la boîte, pour que le focus fasse défiler les éléments hors de dessous.",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "Tant que la boîte de dialogue est ouverte, gardez le focus à l’intérieur : rendez le reste de la page inerte, ou ouvrez un <dialog> avec showModal().",
+      "focusNotObscuredMinimum_lean_why_entirely": "La boîte reste sur une partie de la fenêtre que la page compte comme visible, et le navigateur la dessine par-dessus un élément placé là, qui reçoit donc le focus hors de vue.",
+      "focusNotObscuredMinimum_lean_why_partly": "La boîte reste sur une partie de la fenêtre que la page compte comme visible, et le navigateur la dessine par-dessus une partie d’un élément placé là.",
+      "focusNotObscuredMinimum_lean_why_behindModal": "Une boîte de dialogue modale est ouverte, mais le focus atteint encore des éléments derrière elle que sa boîte ou son arrière-plan couvre.",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "Si l’utilisateur a ouvert ce contenu et peut le fermer sans déplacer le focus, par exemple avec Échap, c’est conforme.",
       "linkNamePresent_title": "Les liens ont un nom accessible",
       "linkNamePresent_description": "Vérifie que les liens exposent un nom accessible non vide.",
       "linkNamePresent_summary_fail": "Ce lien n’a pas de nom accessible.",
@@ -118310,6 +119776,26 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       "cssHidden_focus_hint_cantTell_redirect": "意図したフォーカスの受け渡しであり、キーボードフォーカスが隠れた要素に留まることがないか確認してください。",
       "cssHidden_focus_lean_why_container": "要素がフォーカスを受けても見えないままです。スクロールで届かない位置にあるか、何も表示されないように切り抜かれたコンテナーの中にあり、表示するフォーカススタイルもありません。",
       "cssHidden_focus_lean_caution_script": "フォーカスを受けたときにスクリプトが表示する可能性はあります。それを監視するスクリプトがあるかは確認できませんでした。",
+      "focusNotObscuredMinimum_title": "フォーカスされた要素が完全に隠れてはいけません",
+      "focusNotObscuredMinimum_description": "タブ順序のどの要素も、固定ヘッダーやフッター、Cookie バナーなど、ページが定位置に保つコンテンツの後ろに完全に隠れたままフォーカスを受けないことを確認します。",
+      "focusNotObscuredMinimum_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredMinimum_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredMinimum_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredMinimum_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
+      "focusNotObscuredMinimum_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
+      "focusNotObscuredMinimum_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
+      "focusNotObscuredEnhanced_title": "フォーカスされた要素のどの部分も隠れるべきではありません",
+      "focusNotObscuredEnhanced_description": "タブ順序のどの要素も、固定ヘッダーやフッター、Cookie バナーなど、ページが定位置に保つコンテンツの後ろに一部でも隠れたままフォーカスを受けないことを確認します。",
+      "focusNotObscuredEnhanced_summary_cantTell_entirely": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに完全に隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredEnhanced_summary_cantTell_partly": "{{example}} など {{count}} 個のフォーカス可能な要素が、この {{position}} の {{container}} の後ろに一部隠れたままフォーカスを受ける可能性があります。この要素はページがまだ表示中とみなすウィンドウの {{coverPx}}px を覆っているため、フォーカスしてもその下からスクロールされません。",
+      "focusNotObscuredEnhanced_summary_cantTell_behindModal": "モーダルダイアログが開いていますが、その外にある {{example}} など {{count}} 個のフォーカス可能な要素が、{{container}} に覆われたままフォーカスを受けます。",
+      "focusNotObscuredEnhanced_hint_cantTell_edge": "ページ（html 要素）に {{paddingPx}}px 以上の scroll-padding-{{side}} を指定して、フォーカス時に要素がボックスの下から出るようにスクロールさせてください。またはボックスを小さくするか、{{position}} にしないでください。",
+      "focusNotObscuredEnhanced_hint_cantTell_middle": "使っていない間はボックスがページを覆わないようにするか、上端または下端に移し、その側にボックス以上の大きさの scroll-padding をページに指定して、フォーカス時に要素がその下から出るようにスクロールさせてください。",
+      "focusNotObscuredEnhanced_hint_cantTell_behindModal": "ダイアログが開いている間はフォーカスをその中に留めてください。ページの残りを inert にするか、showModal() で <dialog> を開いてください。",
+      "focusNotObscuredMinimum_lean_why_entirely": "ボックスはページが表示中とみなすウィンドウの一部に重なったままで、ブラウザーはそこに置かれた要素の上にボックスを描画するため、その要素は見えないままフォーカスを受けます。",
+      "focusNotObscuredMinimum_lean_why_partly": "ボックスはページが表示中とみなすウィンドウの一部に重なったままで、ブラウザーはそこに置かれた要素の一部の上にボックスを描画します。",
+      "focusNotObscuredMinimum_lean_why_behindModal": "モーダルダイアログが開いていますが、フォーカスはそのダイアログや背景が覆う後ろの要素にまだ到達できます。",
+      "focusNotObscuredMinimum_lean_caution_userOpened": "ユーザーがこのコンテンツを開き、Escape キーなどでフォーカスを移動せずに閉じられる場合は適合です。",
       "linkNamePresent_title": "リンクにアクセシブルな名前があること",
       "linkNamePresent_description": "リンクが空でないアクセシブルな名前を公開しているかを確認します。",
       "linkNamePresent_summary_fail": "このリンクにはアクセシブルな名前がありません。",
