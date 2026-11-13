@@ -4,7 +4,7 @@
   ],
   "facetsFile": "src/coverage/wcag-facets.js",
   "summary": {
-    "totalRules": 147,
+    "totalRules": 149,
     "wcagTagCoverage": {
       "byVersion": {
         "2.0": {
@@ -18,25 +18,25 @@
           "AAA": 1
         },
         "2.2": {
-          "A": 4,
-          "AA": 4,
-          "AAA": 2
+          "A": 6,
+          "AA": 6,
+          "AAA": 3
         }
       },
       "anyVersion": {
-        "A": 117,
-        "AA": 31,
-        "AAA": 16
+        "A": 119,
+        "AA": 33,
+        "AAA": 17
       },
       "rawTagCounts": {
         "wcag2a": 96,
         "wcag21aa": 6,
         "wcag2aaa": 14,
         "wcag2aa": 11,
-        "wcag22aaa": 2,
+        "wcag22aaa": 3,
         "wcag21a": 1,
         "wcag21aaa": 1,
-        "wcag22aa": 2
+        "wcag22aa": 3
       }
     }
   },
@@ -5109,6 +5109,116 @@
       "deprecated": false
     },
     {
+      "file": "src/checks/manual/focus-not-obscured-enhanced-manual.js",
+      "ruleId": "focus-not-obscured-enhanced",
+      "wcagScNormative": [
+        "2.4.12"
+      ],
+      "wcagScAll": [
+        "2.4.12"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "No part of a focused element should be hidden",
+      "tags": [
+        "wcag22aaa",
+        "wcag2412",
+        "navigation",
+        "focus",
+        "css",
+        "layout",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag22aaa",
+            "version": "2.2",
+            "level": "AAA"
+          }
+        ],
+        "versions": [
+          "2.2"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.2": [
+            "A",
+            "AA",
+            "AAA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA",
+          "AAA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.12": [
+            "focus-fully-visible"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
+      "file": "src/checks/manual/focus-not-obscured-minimum-manual.js",
+      "ruleId": "focus-not-obscured-minimum",
+      "wcagScNormative": [
+        "2.4.11"
+      ],
+      "wcagScAll": [
+        "2.4.11"
+      ],
+      "wcagScInformative": [],
+      "type": "manual",
+      "title": "A focused element must not be entirely hidden",
+      "tags": [
+        "wcag22aa",
+        "wcag2411",
+        "navigation",
+        "focus",
+        "css",
+        "layout",
+        "atomic",
+        "manual"
+      ],
+      "wcagTagSignals": {
+        "parsed": [
+          {
+            "tag": "wcag22aa",
+            "version": "2.2",
+            "level": "AA"
+          }
+        ],
+        "versions": [
+          "2.2"
+        ],
+        "cumulativeLevelsByVersion": {
+          "2.2": [
+            "A",
+            "AA"
+          ]
+        },
+        "cumulativeLevelsAny": [
+          "A",
+          "AA"
+        ]
+      },
+      "error": null,
+      "coverage": {
+        "facetsBySc": {
+          "2.4.11": [
+            "focus-not-obscured"
+          ]
+        }
+      },
+      "deprecated": false
+    },
+    {
       "file": "src/checks/manual/focus-order-semantics-manual.js",
       "ruleId": "focus-order-semantics",
       "wcagScNormative": [],
@@ -8293,6 +8403,50 @@
         ]
       },
       {
+        "sc": "2.4.11",
+        "title": "Focus Not Obscured (Minimum)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-not-obscured",
+            "label": "An element that receives focus is not entirely hidden by content the page puts over it",
+            "automation": "partial",
+            "coveredBy": [
+              "focus-not-obscured-minimum"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "2.4.12",
+        "title": "Focus Not Obscured (Enhanced)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-fully-visible",
+            "label": "No part of an element that receives focus is hidden by content the page puts over it",
+            "automation": "partial",
+            "coveredBy": [
+              "focus-not-obscured-enhanced"
+            ]
+          }
+        ]
+      },
+      {
         "sc": "2.4.13",
         "title": "Focus Appearance",
         "totalFacets": 3,
@@ -10303,6 +10457,50 @@
             "label": "Each link's purpose can be told from its text alone",
             "automation": "partial",
             "coveredBy": []
+          }
+        ]
+      },
+      {
+        "sc": "2.4.11",
+        "title": "Focus Not Obscured (Minimum)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-not-obscured",
+            "label": "An element that receives focus is not entirely hidden by content the page puts over it",
+            "automation": "partial",
+            "coveredBy": [
+              "focus-not-obscured-minimum"
+            ]
+          }
+        ]
+      },
+      {
+        "sc": "2.4.12",
+        "title": "Focus Not Obscured (Enhanced)",
+        "totalFacets": 1,
+        "coveredFacets": 1,
+        "uncoveredFacets": [],
+        "automationCounts": {
+          "partial": 1
+        },
+        "missingFacetRules": [],
+        "unknownFacetIds": [],
+        "facets": [
+          {
+            "id": "focus-fully-visible",
+            "label": "No part of an element that receives focus is hidden by content the page puts over it",
+            "automation": "partial",
+            "coveredBy": [
+              "focus-not-obscured-enhanced"
+            ]
           }
         ]
       },

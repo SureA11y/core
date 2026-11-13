@@ -848,6 +848,50 @@ The header cell has visible text content.
 ```
 The header cell has no text content and no accessible name.
 
+## focus-not-obscured-enhanced
+
+**Passed** (in a browser)
+```html
+<style>html { scroll-padding-bottom: 60px; } footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The page's `scroll-padding-bottom` is as tall as the fixed footer, so focus scrolls the link clear of it before it can be hidden, even in part.
+
+**Flagged (cantTell)** (in a browser)
+```html
+<style>.chat { position: fixed; bottom: 0; left: 0; width: 40px; height: 60px; background: #036; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next" style="display: inline-block; width: 200px">Next article</a></p>
+<p style="height: 1000px"></p>
+<div class="chat">Chat</div>
+```
+The chat button stays in place over the bottom of the window, which the page still counts as in view, so the link can take focus with part of it hidden behind the button.
+
+## focus-not-obscured-minimum
+
+**Passed** (in a browser)
+```html
+<style>html { scroll-padding-bottom: 60px; } footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The page's `scroll-padding-bottom` is as tall as the fixed footer, so focus scrolls the link clear of it.
+
+**Flagged (cantTell)** (in a browser)
+```html
+<style>footer { position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: #fff; }</style>
+<p style="height: 1000px">Article</p>
+<p><a href="/next">Next article</a></p>
+<p style="height: 1000px"></p>
+<footer>Site footer</footer>
+```
+The fixed footer covers the bottom 60px of the window, which the page still counts as in view, so the link can take focus there entirely hidden behind it, as the next link often does while tabbing down a page.
+
 ## focus-order-semantics
 
 **Flagged (cantTell)**

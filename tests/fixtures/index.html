@@ -27,7 +27,7 @@
 </head>
 <body>
   <h1>surea11y Fixture Index</h1>
-  <p class="meta">143/147 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
+  <p class="meta">144/149 rules have a fixture &middot; regenerate with <code>node scripts/generate-fixture-index.js</code></p>
 
   <div class="toolbar">
     <input type="search" id="filter" placeholder="Filter by rule id or title…" autocomplete="off">
@@ -537,6 +537,16 @@
       <td class="num fail"></td>
       <td class="num canttell">4</td>
       <td class="num">1</td>
+    </tr>
+<tr data-search="focus-not-obscured-minimum a focused element must not be entirely hidden">
+      <td><a href="focus-not-obscured-all-scenarios.html" target="_blank" rel="noopener">focus-not-obscured-minimum</a></td>
+      <td class="muted">manual</td>
+      <td>A focused element must not be entirely hidden</td>
+      <td class="num">5</td>
+      <td class="num pass">2</td>
+      <td class="num fail"></td>
+      <td class="num canttell">3</td>
+      <td class="num"></td>
     </tr>
 <tr data-search="focus-not-removed-by-script a script must not remove focus from an element as it receives it">
       <td><a href="focus-not-removed-by-script-all-scenarios.html" target="_blank" rel="noopener">focus-not-removed-by-script</a></td>
@@ -1481,8 +1491,9 @@
     </tbody>
   </table>
 
-  <h2>Rules without a fixture (4)</h2>
+  <h2>Rules without a fixture (5)</h2>
   <ul>
+    <li>focus-not-obscured-enhanced — <code>src/checks/manual/focus-not-obscured-enhanced-manual.js</code></li>
     <li>iframe-title-unique — <code>src/checks/automatic/iframe-title-unique.js</code></li>
     <li>label-title-only — <code>src/checks/manual/label-title-only-manual.js</code></li>
     <li>moving-content-pausable — <code>src/checks/manual/moving-content-pausable-manual.js</code></li>

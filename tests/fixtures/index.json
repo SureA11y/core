@@ -1,8 +1,8 @@
 {
   "summary": {
-    "total": 147,
-    "withFixture": 143,
-    "withoutFixture": 4
+    "total": 149,
+    "withFixture": 144,
+    "withoutFixture": 5
   },
   "rows": [
     {
@@ -928,6 +928,39 @@
         "FAIL": 0,
         "CANTTELL": 4,
         "OTHER": 1
+      }
+    },
+    {
+      "ruleId": "focus-not-obscured-enhanced",
+      "title": "No part of a focused element should be hidden",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.12"
+      ],
+      "ruleFile": "src/checks/manual/focus-not-obscured-enhanced-manual.js",
+      "testFile": "tests/engine-checks/manual/focus-not-obscured-enhanced.test.js",
+      "hasFixture": false,
+      "fixtureFile": null,
+      "totalCases": 0,
+      "caseCounts": null
+    },
+    {
+      "ruleId": "focus-not-obscured-minimum",
+      "title": "A focused element must not be entirely hidden",
+      "type": "manual",
+      "wcagSc": [
+        "2.4.11"
+      ],
+      "ruleFile": "src/checks/manual/focus-not-obscured-minimum-manual.js",
+      "testFile": "tests/engine-checks/manual/focus-not-obscured-chromium.test.js",
+      "hasFixture": true,
+      "fixtureFile": "tests/fixtures/focus-not-obscured-all-scenarios.html",
+      "totalCases": 5,
+      "caseCounts": {
+        "PASS": 2,
+        "FAIL": 0,
+        "CANTTELL": 3,
+        "OTHER": 0
       }
     },
     {

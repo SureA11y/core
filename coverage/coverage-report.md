@@ -5,13 +5,13 @@ Facets: `src/coverage/wcag-facets.js`
 
 ## Summary
 
-Total rules (loaded without error): **147**
+Total rules (loaded without error): **149**
 
 ### Coverage by WCAG Level (Version-agnostic, cumulative)
 
 | Scope | A | AA | AAA |
 |---|---:|---:|---:|
-| Any WCAG version | 117 | 31 | 16 |
+| Any WCAG version | 119 | 33 | 17 |
 
 ### Coverage by WCAG Level (Per version, cumulative)
 
@@ -19,7 +19,7 @@ Total rules (loaded without error): **147**
 |---|---:|---:|---:|
 | WCAG 2.0 | 108 | 23 | 14 |
 | WCAG 2.1 | 8 | 7 | 1 |
-| WCAG 2.2 | 4 | 4 | 2 |
+| WCAG 2.2 | 6 | 6 | 3 |
 
 ### Raw WCAG tag counts (non-cumulative)
 
@@ -28,8 +28,8 @@ Total rules (loaded without error): **147**
 | wcag21a | 1 |
 | wcag21aa | 6 |
 | wcag21aaa | 1 |
-| wcag22aa | 2 |
-| wcag22aaa | 2 |
+| wcag22aa | 3 |
+| wcag22aaa | 3 |
 | wcag2a | 96 |
 | wcag2aa | 11 |
 | wcag2aaa | 14 |
@@ -563,6 +563,32 @@ Uncovered facets: link-text-alone-clear
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.11
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-not-obscured | partial | focus-not-obscured-minimum |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-obscured-minimum | manual | A focused element must not be entirely hidden | src/checks/manual/focus-not-obscured-minimum-manual.js | focus-not-obscured |  |
+
+### 2.4.12
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-fully-visible | partial | focus-not-obscured-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-obscured-enhanced | manual | No part of a focused element should be hidden | src/checks/manual/focus-not-obscured-enhanced-manual.js | focus-fully-visible |  |
 
 ### 2.4.13
 
@@ -1413,6 +1439,32 @@ Uncovered facets: link-text-alone-clear
 | link-name-present | automatic | Links have an accessible name | src/checks/automatic/link-name-present.js | link-name-present |  |
 | identical-links-same-purpose | manual | Links with the same accessible name should lead to the same destination | src/checks/manual/identical-links-same-purpose-manual.js | identical-links-same-purpose-evidence |  |
 | link-name-quality | manual | Link text should be descriptive, not generic | src/checks/manual/link-name-quality-manual.js | link-text-descriptive-evidence |  |
+
+### 2.4.11
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-not-obscured | partial | focus-not-obscured-minimum |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-obscured-minimum | manual | A focused element must not be entirely hidden | src/checks/manual/focus-not-obscured-minimum-manual.js | focus-not-obscured |  |
+
+### 2.4.12
+
+Facet coverage: **1/1** facets covered.
+Automation mix: **full 0, partial 1, manual 0**.
+
+| Facet | Automation | Covered by |
+|---|---|---|
+| focus-fully-visible | partial | focus-not-obscured-enhanced |
+
+| Rule ID | Type | Title | File | Facet | Notes |
+|---|---|---|---|---|---|
+| focus-not-obscured-enhanced | manual | No part of a focused element should be hidden | src/checks/manual/focus-not-obscured-enhanced-manual.js | focus-fully-visible |  |
 
 ### 2.4.13
 

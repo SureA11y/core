@@ -1103,7 +1103,7 @@ const FACETS = {
             {
                 "id": "focus-not-obscured",
                 "label": "An element that receives focus is not entirely hidden by content the page puts over it",
-                "automation": "manual"
+                "automation": "partial"
             }
         ]
     },
@@ -1114,7 +1114,7 @@ const FACETS = {
             {
                 "id": "focus-fully-visible",
                 "label": "No part of an element that receives focus is hidden by content the page puts over it",
-                "automation": "manual"
+                "automation": "partial"
             }
         ]
     },

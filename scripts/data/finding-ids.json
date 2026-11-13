@@ -50,6 +50,8 @@
     "embed-text-alternative-quality",
     "empty-heading",
     "empty-table-header",
+    "focus-not-obscured-enhanced",
+    "focus-not-obscured-minimum",
     "focus-not-removed-by-script",
     "focus-order-semantics",
     "form-control-label-quality",
@@ -383,6 +385,16 @@
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
       "TABLE_HEADER_NAME_NOT_VISIBLE_TEXT"
+    ],
+    "focus-not-obscured-enhanced": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
+    ],
+    "focus-not-obscured-minimum": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
     ],
     "focus-not-removed-by-script": [
       "FOCUS_HANDLER_BLURS_SELF",

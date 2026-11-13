@@ -2528,6 +2528,60 @@
       "ja": "0614e136a1f514b8",
       "fr-CA": "1629d899f856d5e2",
       "pt": "cf32a30476c85b38"
+    },
+    "focus-not-obscured-enhanced FOCUS_OBSCURED_BEHIND_MODAL": {
+      "en": "58822101075b3dc4",
+      "de": "fbcfe302f013cbf4",
+      "es": "e8ea1f5c45ef173b",
+      "fr": "c9b8cc95fa32af53",
+      "ja": "4a3d38d403e28f74",
+      "fr-CA": "c9b8cc95fa32af53",
+      "pt": "58822101075b3dc4"
+    },
+    "focus-not-obscured-enhanced FOCUS_OBSCURED_ENTIRELY": {
+      "en": "d38825037bdb5150",
+      "de": "4b537a5c39141dfe",
+      "es": "e3ee87cd2908e5d3",
+      "fr": "a3e75fe837e02598",
+      "ja": "d3c576a7fba2a953",
+      "fr-CA": "a3e75fe837e02598",
+      "pt": "d38825037bdb5150"
+    },
+    "focus-not-obscured-enhanced FOCUS_OBSCURED_PARTLY": {
+      "en": "948fdd62ef12f112",
+      "de": "f704386161bad410",
+      "es": "0b1b506c584fb0a7",
+      "fr": "8aed2dbd80e09403",
+      "ja": "0d0f6277b101d532",
+      "fr-CA": "8aed2dbd80e09403",
+      "pt": "948fdd62ef12f112"
+    },
+    "focus-not-obscured-minimum FOCUS_OBSCURED_BEHIND_MODAL": {
+      "en": "09e96543e49c1125",
+      "de": "b526d68ebbe9abcb",
+      "es": "c1a3008ef6f43f37",
+      "fr": "5ff609ca59459cf0",
+      "ja": "dd33d1ad826ce826",
+      "fr-CA": "5ff609ca59459cf0",
+      "pt": "09e96543e49c1125"
+    },
+    "focus-not-obscured-minimum FOCUS_OBSCURED_ENTIRELY": {
+      "en": "44c7d4ec3ef203c5",
+      "de": "dbdfc0a084c95e87",
+      "es": "53892effb930a951",
+      "fr": "8836f8c4ecf7631e",
+      "ja": "f0d7799200bb650f",
+      "fr-CA": "8836f8c4ecf7631e",
+      "pt": "44c7d4ec3ef203c5"
+    },
+    "focus-not-obscured-minimum FOCUS_OBSCURED_PARTLY": {
+      "en": "798925fedd34b7b7",
+      "de": "048b5f627e7c22ac",
+      "es": "f188b381746c171a",
+      "fr": "c7e712b778891a6b",
+      "ja": "2645a67c9ca181c9",
+      "fr-CA": "c7e712b778891a6b",
+      "pt": "798925fedd34b7b7"
     }
   },
   "reviews": {
@@ -2677,13 +2731,15 @@
     "table-duplicate-name": "ea445b7eb857a12e",
     "table-fake-caption": "5023f49818f67ed2",
     "video-caption": "61b92a403c21d4a5",
-    "widget-keyboard-focusable": "c8cefbbd4fadee80"
+    "widget-keyboard-focusable": "c8cefbbd4fadee80",
+    "focus-not-obscured-enhanced": "fe683fbed61fbb8f",
+    "focus-not-obscured-minimum": "6d92f3ab7c9aefea"
   },
   "dictionaries": {
-    "de": "7f7c54a2b842f3887a197cb7db904fe48e9698167cd03772a4143ae36b51127b",
-    "en": "fffbb09bfdf79ed76ecd283f2eda2cb8ac4042f0b5854e1044604b72a4b10c09",
-    "es": "c6f9e5951dce310ccb4944646bb1520d9bb2c04d3cd55f6244509a7fc62cf663",
-    "fr": "a659a321b6a642dbb96efb47a1a338917481fa039efc8e30acbd59f60c3a2b5d",
-    "ja": "6b88cb0d66a590ff8dbab5dcdc1652b3ea7612a738e6b90860e6abca810d2a7f"
+    "de": "8613facefe590153ec3bea39d6149cd328e1925c20114121ad99fdcf03d86d4a",
+    "en": "614284f828abe469e40b33d626959c839eda0cab63925da226973666b48e5b44",
+    "es": "794930f9bb99c89f6ff23db1026057a3d194bc60bfb9511e12609db55d58f470",
+    "fr": "11deee670647eaac45ff06ae732814205bf24ccabe8d2cf32d9a1d15395cacad",
+    "ja": "233101c4a369fcfced39c092a444827ea25537afae48863dbf47107fd0684cef"
   }
 }

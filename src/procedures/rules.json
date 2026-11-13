@@ -528,6 +528,28 @@
     "criteria": [],
     "facets": {}
   },
+  "focus-not-obscured-enhanced": {
+    "prefix": "focusNotObscuredEnhanced",
+    "criteria": [
+      "2.4.12"
+    ],
+    "facets": {
+      "2.4.12": [
+        "focus-fully-visible"
+      ]
+    }
+  },
+  "focus-not-obscured-minimum": {
+    "prefix": "focusNotObscuredMinimum",
+    "criteria": [
+      "2.4.11"
+    ],
+    "facets": {
+      "2.4.11": [
+        "focus-not-obscured"
+      ]
+    }
+  },
   "focus-not-removed-by-script": {
     "prefix": "focusNotRemovedByScript",
     "criteria": [
