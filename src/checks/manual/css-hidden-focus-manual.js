@@ -46,15 +46,18 @@
  *     It leans fail when the element is out of view where it lies:
  *     `outOfReach` (a container is positioned off screen, or, in a browser,
  *     the element's box lies where no scrolling reaches, whether its own
- *     position or a container's puts it there) or `containerClipped` (a
- *     container clips it to nothing); no focus rule brings it into view;
- *     and no script is known to react to its focus (no `onfocus` or
- *     `onfocusin` attribute on it or a container, and no focus listener the
- *     listener hook saw). Without the hook, the lean says a script may
- *     still show it. A hint read from the element's own styles
- *     (`opacityZero`, `clipped`, `zeroSizeOverflowHidden`, `offscreen`)
- *     gets no lean: a custom checkbox hides its input that way and draws
- *     focus on the box beside it.
+ *     position or a container's puts it there), `offscreen` (its own styles
+ *     position it off screen; a text-indent that moves only its text leaves
+ *     its box and focus ring in view, and doesn't lean) or `containerClipped` (a container clips it to
+ *     nothing); no focus rule brings it into view; and no script is known
+ *     to react to its focus (no `onfocus` or `onfocusin` attribute on it or
+ *     a container, and no focus listener the listener hook saw). Without
+ *     the hook, the lean says a script may still show it. Hidden by its own
+ *     opacity, clip or lack of size alone (`opacityZero`, `clipped`,
+ *     `zeroSizeOverflowHidden`), it gets no lean: a custom checkbox hides
+ *     its input that way and draws focus on the box beside it. A checkbox
+ *     or radio input gets none either way, as such a control may also move
+ *     its input off screen and show focus on its label.
  *     Basis: WCAG 2.4.7 (not settled).
  *   - `cssHiddenTabbable_runtimeRedirect_needsReview` (cantTell): an element
  *     in the tab order is hidden by CSS, but focusing it moved focus
@@ -217,28 +220,9 @@ function runInPage(ctx) {
 
     // off-screen heuristic (absolute/fixed + left/top <= -5000 OR text-indent <= -5000)
     try {
-      const pos = cs && cs.position != null ? String(cs.position).trim().toLowerCase() : '';
-      const left = cs && cs.left != null ? String(cs.left).trim().toLowerCase() : '';
-      const top = cs && cs.top != null ? String(cs.top).trim().toLowerCase() : '';
-      const ti = cs && cs.textIndent != null ? String(cs.textIndent).trim().toLowerCase() : '';
-
-      const parsePx = (s) => {
-        if (!s || s === 'auto') return null;
-        const m = String(s).match(/-?\d+(\.\d+)?/);
-        if (!m) return null;
-        const n = Number.parseFloat(m[0]);
-        return Number.isFinite(n) ? n : null;
-      };
-
-      const l = parsePx(left);
-      const t = parsePx(top);
-      const ind = parsePx(ti);
-
-      if (pos === 'absolute' || pos === 'fixed') {
-        if ((l != null && l <= -5000) || (t != null && t <= -5000)) out.push('offscreen');
-      }
+      if (positionedOffscreen(cs)) out.push('offscreen');
+      const ind = pxLoose(cs && cs.textIndent);
       if (ind != null && ind <= -5000) out.push('offscreen');
-      if (pos === 'fixed' && fixedBoxOutsideViewport(cs)) out.push('offscreen');
     } catch {}
 
     // Dedup
@@ -252,6 +236,29 @@ function runInPage(ctx) {
       }
     }
     return uniq;
+  }
+
+  // The first number in a computed length, or null for none or auto.
+  function pxLoose(v) {
+    const s = trim(v).toLowerCase();
+    if (!s || s === 'auto') return null;
+    const m = s.match(/-?\d+(\.\d+)?/);
+    if (!m) return null;
+    const n = Number.parseFloat(m[0]);
+    return Number.isFinite(n) ? n : null;
+  }
+  // Whether the box itself is positioned off screen: absolute or fixed at
+  // left/top <= -5000px, or a fixed box wholly outside the viewport. A
+  // text-indent moves only the text: the box, and a focus ring on it, stay
+  // in view (a logo link replaced by its background image).
+  function positionedOffscreen(cs) {
+    if (!cs) return false;
+    const pos = lower(cs.position);
+    if (pos !== 'absolute' && pos !== 'fixed') return false;
+    const l = pxLoose(cs.left);
+    const t = pxLoose(cs.top);
+    if ((l != null && l <= -5000) || (t != null && t <= -5000)) return true;
+    return pos === 'fixed' && !!fixedBoxOutsideViewport(cs);
   }
 
   // A length in px as computed style gives it ('12px', '0'), or null for
@@ -1162,24 +1169,32 @@ function runInPage(ctx) {
 
   // Which way a finding out of view where it lies leans: fail, out of
   // reach (a container off screen, or a box the browser measured where no
-  // scrolling reaches) or in a container clipped to nothing, unless a
-  // script may react to the focus. A hint read from the element's own
-  // styles doesn't lean: that is how a custom checkbox or radio hides its
-  // input while a sibling shows the focus.
-  function containerLean(el, hintsArr) {
-    const by = hintsArr.includes('outOfReach')
-      ? 'outOfReach'
-      : hintsArr.includes('containerClipped')
-        ? 'containerClipped'
-        : null;
+  // scrolling reaches), positioned off screen by its own styles, or in a
+  // container clipped to nothing, unless a script may react to the focus.
+  // Hidden by opacity, a clip or no size doesn't lean: that is how a custom
+  // checkbox or radio hides its input while a sibling shows the focus. A
+  // checkbox or radio input never leans, as such a control may also move
+  // its input off screen (left: -9999px) and show focus on its label.
+  const LEAN_HINTS = ['outOfReach', 'containerClipped', 'offscreen'];
+  function outOfViewLean(el, hintsArr) {
+    const by =
+      LEAN_HINTS.find(
+        (h) =>
+          hintsArr.includes(h) &&
+          (h !== 'offscreen' || positionedOffscreen(getComputedStyleSafe(el)))
+      ) || null;
     if (!by) return null;
+    if (lower(dom.tagName(el)) === 'input') {
+      const type = lower(dom.getAttribute(el, 'type'));
+      if (type === 'checkbox' || type === 'radio') return null;
+    }
     const scripted = focusScripted(el);
     if (scripted === true) return null;
     return {
       toward: 'fail',
       why: "When the element takes focus it stays out of view: it lies where scrolling can't reach, or in a container clipped to nothing, and no focus style brings it into view.",
       signals: [
-        { signal: 'hidden-by-container', value: by },
+        { signal: 'hidden-by', value: by },
         { signal: 'focus-style-reveals', value: false },
         { signal: 'focus-script', value: scripted }
       ],
@@ -1281,7 +1296,7 @@ function runInPage(ctx) {
         : `This focusable <${tagName}> can't be seen: its container ${byContainer.container} is clipped to nothing (${byContainer.css}), and nothing shows it when the element takes focus.`
       : null;
 
-    const lean = downgradedToRedirectReview ? null : containerLean(el, hintsArr);
+    const lean = downgradedToRedirectReview ? null : outOfViewLean(el, hintsArr);
 
     const baseOccurrence = {
       ...(lean ? { lean } : {}),

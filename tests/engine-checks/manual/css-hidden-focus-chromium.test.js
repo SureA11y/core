@@ -311,4 +311,30 @@ test(`${RULE_ID} in Chromium`, { skip }, async (t) => {
       await p.close();
     }
   });
+
+  await t.test(
+    'a link off screen leans fail whether the browser measures it or its CSS says so',
+    async () => {
+      const p = await open(
+        doc(
+          '',
+          '<a id="near" href="/a" style="position:absolute;left:-500px">Near</a>' +
+            '<a id="far" href="/b" style="position:absolute;left:-9999px">Far</a>' +
+            '<input id="cb" type="checkbox" style="position:absolute;left:-500px">'
+        )
+      );
+      try {
+        const leans = await p.evaluate((id) => {
+          const r = window.a11ycore.runa11yCoreInPage(null, null, { rules: { include: id } }, null);
+          const own = r.checksResults.find((c) => c.ruleId === id);
+          return Object.fromEntries(
+            own.occurrences.map((o) => [o.selector, o.lean ? o.lean.signals[0].value : null])
+          );
+        }, RULE_ID);
+        assert.deepEqual(leans, { '#near': 'outOfReach', '#far': 'offscreen', '#cb': null });
+      } finally {
+        await p.close();
+      }
+    }
+  );
 });
