@@ -78,6 +78,7 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
             out[c.ruleId] = {
               outcome: c.outcome,
               error: c.error || null,
+              details: (c.data && c.data.details) || null,
               findings: c.occurrences.map((o) => ({
                 selector: o.selector,
                 code: o.data.details.reasonCode,
@@ -242,6 +243,58 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
       );
     }
   );
+
+  // Sections with a sticky heading each, and room below to scroll the last.
+  const SECTIONS = (n, links = 4) =>
+    Array.from(
+      { length: n },
+      (_, i) =>
+        `<section id="s${i}"><h2 id="h${i}" style="position:sticky;top:0;height:40px;margin:0;background:#fff">Part ${i}</h2>` +
+        Array.from(
+          { length: links },
+          (_, j) => `<p style="margin:0 0 200px"><a href="#">Link ${i}.${j}</a></p>`
+        ).join('') +
+        '</section>'
+    ).join('') + '<p style="height:900px;margin:0"></p>';
+
+  await t.test('a sticky heading hides only what is in its section', async () => {
+    const res = await scan(doc(SECTIONS(3)));
+    assert.deepEqual(brief(res, RULE_ID), [
+      '#h0 FOCUS_OBSCURED_ENTIRELY lean fail',
+      '#h1 FOCUS_OBSCURED_ENTIRELY lean fail',
+      '#h2 FOCUS_OBSCURED_ENTIRELY lean fail'
+    ]);
+    // Its section's four links, not the twelve on the page.
+    for (const f of res[RULE_ID].findings) assert.equal(f.metrics.entirelyCount, 4, f.selector);
+    assert.equal(res[RULE_ID].details, null, 'nothing left unchecked');
+  });
+
+  await t.test('a sticky table header cell sticks over the whole table, not its row', async () => {
+    const rows = Array.from(
+      { length: 60 },
+      (_, i) => `<tr><td><a href="#">Row ${i}</a></td></tr>`
+    ).join('');
+    const res = await scan(
+      doc(
+        `<table><thead><tr><th id="th" style="position:sticky;top:0;background:#fff">Name</th></tr></thead><tbody>${rows}</tbody></table>` +
+          '<p style="height:900px;margin:0"></p>'
+      )
+    );
+    assert.deepEqual(brief(res, RULE_ID), ['#th FOCUS_OBSCURED_ENTIRELY lean fail']);
+  });
+
+  await t.test('a page lists at most 50 boxes, and says how many it left unchecked', async () => {
+    const res = await scan(doc(SECTIONS(60, 1)));
+    assert.equal(res[RULE_ID].findings.length, 50);
+    assert.equal(res[RULE_ID].findings[0].selector, '#h0');
+    assert.deepEqual(res[RULE_ID].details, {
+      boxCount: 60,
+      reportedCount: 50,
+      uncheckedCount: 10,
+      maxOccurrences: 50,
+      truncated: true
+    });
+  });
 
   await t.test('the page is scrolled back where it was', async () => {
     const res = await scan(doc(LINKS(30) + FOOTER()), { scrollY: 450 });

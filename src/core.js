@@ -80777,8 +80777,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
 
+  // A sticky box stays inside its containing block, the nearest ancestor
+  // that is no inline box, no display: contents and no table row, row group
+  // or column (a table cell's is the table): the block's extent on the
+  // page, from the document's top, memoized per root. Not
+  // helpers.containingBlockOf, which answers what can clip an element: for a
+  // sticky <th> it gives the row, but the table holds the cell.
+  const TABLE_PARTS = new Set([
+    'table-row',
+    'table-row-group',
+    'table-header-group',
+    'table-footer-group',
+    'table-column',
+    'table-column-group'
+  ]);
+  const stickyBlocks = new Map();
+  function stickyBlock(root) {
+    if (stickyBlocks.has(root)) return stickyBlocks.get(root);
+    let found = null;
+    for (let n = dom.parentElement(root), i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const d = lower((styleOf(n) || {}).display);
+      if (d === 'inline' || d === 'contents' || TABLE_PARTS.has(d)) continue;
+      const r = dom.getBoundingClientRect(n);
+      if (r) found = { top: r.top + scrollY, bottom: r.bottom + scrollY };
+      break;
+    }
+    stickyBlocks.set(root, found);
+    return found;
+  }
+
   // Each box: its root (the fixed or sticky element), the strip of the
-  // window it covers, and its horizontal extent.
+  // window it covers, and its horizontal extent. A sticky one also carries
+  // its containing block (block) and the edge of the window it sticks to
+  // with its root's extent there (stuck), as it sits there only while the
+  // block reaches past it.
   const covers = [];
   for (const el of [...dom.querySelectorAll(document, 'body *')]) {
     const cs = styleOf(el);
@@ -80792,17 +80824,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
+    let block = null;
+    let stuck = null;
     if (position === 'sticky') {
       // Taken at the offset it sticks at, from the top or the bottom.
       const t = lower(rootCs.top);
       const b = lower(rootCs.bottom);
       const rootRect = dom.getBoundingClientRect(root);
       const offset = r.top - rootRect.top;
-      if (t !== 'auto' && t) top = px(t) + offset;
-      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
-      else continue;
+      if (t !== 'auto' && t) {
+        top = px(t) + offset;
+        stuck = { edge: 'top', top: px(t), bottom: px(t) + rootRect.height };
+      } else if (b !== 'auto' && b) {
+        top = vh - px(b) - rootRect.height + offset;
+        stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
+      } else continue;
+      block = stickyBlock(root);
     }
-    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+    covers.push({
+      el,
+      root,
+      position,
+      top,
+      bottom: top + r.height,
+      left: r.left,
+      right: r.right,
+      block,
+      stuck
+    });
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -80820,8 +80869,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inViewHi = zoneBottom - c.marginBottom - c.height;
     const reachLo = c.docTop - maxScroll;
     const reachHi = c.docTop;
-    const lo = entirely ? cover.top : cover.top - c.height + 1;
-    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    let lo = entirely ? cover.top : cover.top - c.height + 1;
+    let hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    if (cover.block) {
+      // A sticky box covers only what lies in its containing block, and
+      // sits at its offset only while the block reaches past it: with the
+      // element's top at y in the window, the block's top is at
+      // block.top - docTop + y.
+      const { block, stuck } = cover;
+      if (c.docTop + c.height <= block.top || c.docTop >= block.bottom) return null;
+      if (stuck.edge === 'top') lo = Math.max(lo, stuck.bottom - block.bottom + c.docTop);
+      else hi = Math.min(hi, stuck.top - block.top + c.docTop);
+    }
     const a = Math.max(inViewLo, reachLo, lo);
     const b = Math.min(inViewHi, reachHi, hi);
     return a <= b ? (a + b) / 2 : null;
@@ -80928,16 +80987,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return total ? covered / total : 0;
   }
 
+  // Each check scrolls the page and hit-tests it, which costs more the
+  // larger the page: a page with hundreds of sticky boxes made the rule cost
+  // their number times the page's size. So a page lists at most
+  // MAX_OCCURRENCES boxes, in document order, and checks at most
+  // MAX_CHECKS elements; the boxes left unchecked are counted in the
+  // result's data.details (uncheckedCount, truncated).
   const SAMPLES = 3;
+  const MAX_OCCURRENCES = 50;
+  const MAX_CHECKS = MAX_OCCURRENCES * SAMPLES;
+  let checks = 0;
+  let uncheckedCount = 0;
   const occurrences = [];
   try {
     for (const entry of byRoot.values()) {
+      if (occurrences.length >= MAX_OCCURRENCES || checks >= MAX_CHECKS) {
+        uncheckedCount += 1;
+        continue;
+      }
       const hits = [...entry.hits.values()];
       const entirely = hits.filter((h) => h.kind === 'entirely');
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
       for (const h of ordered.slice(0, SAMPLES)) {
+        checks += 1;
         const share = hiddenShare(h);
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
@@ -81077,13 +81151,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     scrollTo(scrollY);
   }
 
+  // Only where boxes were left unchecked: how many boxes could hide an
+  // element, how many are listed, and how many weren't checked.
+  const listing = uncheckedCount
+    ? {
+        data: {
+          details: {
+            boxCount: byRoot.size,
+            reportedCount: occurrences.length,
+            uncheckedCount,
+            maxOccurrences: MAX_OCCURRENCES,
+            truncated: true
+          }
+        }
+      }
+    : {};
   if (!occurrences.length)
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...listing };
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
-    occurrences
+    occurrences,
+    ...listing
   };
 }), applicability: null },
     "focus-not-obscured-minimum": { run: (function runInPage(ctx) {
@@ -81261,8 +81351,40 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   }
   const inModal = (el) => modals.some((m) => dom.contains(m, el));
 
+  // A sticky box stays inside its containing block, the nearest ancestor
+  // that is no inline box, no display: contents and no table row, row group
+  // or column (a table cell's is the table): the block's extent on the
+  // page, from the document's top, memoized per root. Not
+  // helpers.containingBlockOf, which answers what can clip an element: for a
+  // sticky <th> it gives the row, but the table holds the cell.
+  const TABLE_PARTS = new Set([
+    'table-row',
+    'table-row-group',
+    'table-header-group',
+    'table-footer-group',
+    'table-column',
+    'table-column-group'
+  ]);
+  const stickyBlocks = new Map();
+  function stickyBlock(root) {
+    if (stickyBlocks.has(root)) return stickyBlocks.get(root);
+    let found = null;
+    for (let n = dom.parentElement(root), i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
+      const d = lower((styleOf(n) || {}).display);
+      if (d === 'inline' || d === 'contents' || TABLE_PARTS.has(d)) continue;
+      const r = dom.getBoundingClientRect(n);
+      if (r) found = { top: r.top + scrollY, bottom: r.bottom + scrollY };
+      break;
+    }
+    stickyBlocks.set(root, found);
+    return found;
+  }
+
   // Each box: its root (the fixed or sticky element), the strip of the
-  // window it covers, and its horizontal extent.
+  // window it covers, and its horizontal extent. A sticky one also carries
+  // its containing block (block) and the edge of the window it sticks to
+  // with its root's extent there (stuck), as it sits there only while the
+  // block reaches past it.
   const covers = [];
   for (const el of [...dom.querySelectorAll(document, 'body *')]) {
     const cs = styleOf(el);
@@ -81276,17 +81398,34 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const rootCs = el === root ? cs : styleOf(root);
     const position = positionOf(rootCs);
     let top = r.top;
+    let block = null;
+    let stuck = null;
     if (position === 'sticky') {
       // Taken at the offset it sticks at, from the top or the bottom.
       const t = lower(rootCs.top);
       const b = lower(rootCs.bottom);
       const rootRect = dom.getBoundingClientRect(root);
       const offset = r.top - rootRect.top;
-      if (t !== 'auto' && t) top = px(t) + offset;
-      else if (b !== 'auto' && b) top = vh - px(b) - rootRect.height + offset;
-      else continue;
+      if (t !== 'auto' && t) {
+        top = px(t) + offset;
+        stuck = { edge: 'top', top: px(t), bottom: px(t) + rootRect.height };
+      } else if (b !== 'auto' && b) {
+        top = vh - px(b) - rootRect.height + offset;
+        stuck = { edge: 'bottom', top: vh - px(b) - rootRect.height, bottom: vh - px(b) };
+      } else continue;
+      block = stickyBlock(root);
     }
-    covers.push({ el, root, position, top, bottom: top + r.height, left: r.left, right: r.right });
+    covers.push({
+      el,
+      root,
+      position,
+      top,
+      bottom: top + r.height,
+      left: r.left,
+      right: r.right,
+      block,
+      stuck
+    });
   }
   if (!covers.length)
     return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
@@ -81304,8 +81443,18 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const inViewHi = zoneBottom - c.marginBottom - c.height;
     const reachLo = c.docTop - maxScroll;
     const reachHi = c.docTop;
-    const lo = entirely ? cover.top : cover.top - c.height + 1;
-    const hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    let lo = entirely ? cover.top : cover.top - c.height + 1;
+    let hi = entirely ? cover.bottom - c.height : cover.bottom - 1;
+    if (cover.block) {
+      // A sticky box covers only what lies in its containing block, and
+      // sits at its offset only while the block reaches past it: with the
+      // element's top at y in the window, the block's top is at
+      // block.top - docTop + y.
+      const { block, stuck } = cover;
+      if (c.docTop + c.height <= block.top || c.docTop >= block.bottom) return null;
+      if (stuck.edge === 'top') lo = Math.max(lo, stuck.bottom - block.bottom + c.docTop);
+      else hi = Math.min(hi, stuck.top - block.top + c.docTop);
+    }
     const a = Math.max(inViewLo, reachLo, lo);
     const b = Math.min(inViewHi, reachHi, hi);
     return a <= b ? (a + b) / 2 : null;
@@ -81412,16 +81561,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     return total ? covered / total : 0;
   }
 
+  // Each check scrolls the page and hit-tests it, which costs more the
+  // larger the page: a page with hundreds of sticky boxes made the rule cost
+  // their number times the page's size. So a page lists at most
+  // MAX_OCCURRENCES boxes, in document order, and checks at most
+  // MAX_CHECKS elements; the boxes left unchecked are counted in the
+  // result's data.details (uncheckedCount, truncated).
   const SAMPLES = 3;
+  const MAX_OCCURRENCES = 50;
+  const MAX_CHECKS = MAX_OCCURRENCES * SAMPLES;
+  let checks = 0;
+  let uncheckedCount = 0;
   const occurrences = [];
   try {
     for (const entry of byRoot.values()) {
+      if (occurrences.length >= MAX_OCCURRENCES || checks >= MAX_CHECKS) {
+        uncheckedCount += 1;
+        continue;
+      }
       const hits = [...entry.hits.values()];
       const entirely = hits.filter((h) => h.kind === 'entirely');
       const partly = hits.filter((h) => h.kind === 'partly');
       const ordered = [...entirely, ...partly];
       let confirmed = null;
       for (const h of ordered.slice(0, SAMPLES)) {
+        checks += 1;
         const share = hiddenShare(h);
         if (h.kind === 'entirely' ? share >= 1 : share > 0) {
           confirmed = h;
@@ -81561,13 +81725,29 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     scrollTo(scrollY);
   }
 
+  // Only where boxes were left unchecked: how many boxes could hide an
+  // element, how many are listed, and how many weren't checked.
+  const listing = uncheckedCount
+    ? {
+        data: {
+          details: {
+            boxCount: byRoot.size,
+            reportedCount: occurrences.length,
+            uncheckedCount,
+            maxOccurrences: MAX_OCCURRENCES,
+            truncated: true
+          }
+        }
+      }
+    : {};
   if (!occurrences.length)
-    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [] };
+    return { ruleId: rule.ruleId, outcome: 'pass', severity: 'minor', occurrences: [], ...listing };
   return {
     ruleId: rule.ruleId,
     outcome: 'cantTell',
     severity: rule.defaultSeverity || 'serious',
-    occurrences
+    occurrences,
+    ...listing
   };
 }), applicability: null },
     "focus-not-removed-by-script": { run: (function runInPage(ctx) {
