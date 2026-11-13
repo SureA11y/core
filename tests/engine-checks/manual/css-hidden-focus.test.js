@@ -330,10 +330,26 @@ test(`${RULE_ID}: fixture coverage (tests/fixtures/css-hidden-focus-all-scenario
     'case_fixed_bar_revealed'
   ];
 
-  // Only the button its container keeps out of view leans fail.
-  const leaning = rule.occurrences.filter((o) => o.lean).map((o) => o.lean.toward + ':' + o.html);
-  assert.strictEqual(leaning.length, 1);
-  assert.ok(leaning[0].startsWith('fail:') && leaning[0].includes('case_fixed_bar_above_viewport'));
+  // What is positioned out of view leans fail; what opacity, a clip, no
+  // size or a text-indent hides doesn't.
+  const leaning = {};
+  for (const o of rule.occurrences) {
+    const id = (/id="([^"]+)"/.exec(o.html) || [])[1];
+    leaning[id] = o.lean ? o.lean.toward + ':' + o.lean.signals[0].value : null;
+  }
+  assert.deepStrictEqual(leaning, {
+    case_opacity_zero: null,
+    case_offscreen: 'fail:offscreen',
+    case_text_indent_offscreen: null,
+    case_clipped: null,
+    case_zero_size_overflow_hidden: null,
+    case_multi_hint: 'fail:offscreen',
+    case_input_offscreen: 'fail:offscreen',
+    case_select_opacity_zero: null,
+    case_textarea_clipped: null,
+    case_focus_half_restored: 'fail:offscreen',
+    case_fixed_bar_above_viewport: 'fail:outOfReach'
+  });
 
   for (const id of expectedNoOccIds) {
     assert.ok(
@@ -680,8 +696,10 @@ test(`${RULE_ID}: a fixed skip link above the viewport is offscreen, and not onc
 });
 
 // ===== lean =====
-// A finding hidden by a container leans fail; one hidden by its own styles
-// (a custom checkbox's input) gets no lean, nor does one a script may show.
+// A finding positioned out of view, or in a container clipped to nothing,
+// leans fail; one hidden by its own opacity, clip or lack of size (a custom
+// checkbox's input) gets no lean, nor does a checkbox or radio input, nor
+// one a script may show.
 test(`${RULE_ID}: a button kept out of view by its container leans fail`, () => {
   const html = fixedBarCase(
     'overflow-y:hidden;position:fixed;height:1px;top:-1px;left:0;visibility:hidden'
@@ -695,7 +713,7 @@ test(`${RULE_ID}: a button kept out of view by its container leans fail`, () => 
   assert.strictEqual(lean.i18n.whyKey, 'cssHidden_focus_lean_why_container');
   assert.strictEqual(lean.i18n.cautionKey, 'cssHidden_focus_lean_caution_script');
   assert.deepStrictEqual(lean.signals, [
-    { signal: 'hidden-by-container', value: 'outOfReach' },
+    { signal: 'hidden-by', value: 'outOfReach' },
     { signal: 'focus-style-reveals', value: false },
     { signal: 'focus-script', value: null }
   ]);
@@ -711,21 +729,49 @@ test(`${RULE_ID}: a link in a container clipped to nothing leans fail`, () => {
   });
   assert.strictEqual(rule.occurrences[0].lean.toward, 'fail');
   assert.deepStrictEqual(rule.occurrences[0].lean.signals[0], {
-    signal: 'hidden-by-container',
+    signal: 'hidden-by',
     value: 'containerClipped'
   });
 });
 
-test(`${RULE_ID}: an element hidden by its own styles gets no lean`, () => {
+test(`${RULE_ID}: an element hidden by its own opacity, clip, lack of size or text-indent gets no lean`, () => {
   const html = `<!doctype html><html><body>
-      <label><input id="own_op" type="checkbox" style="opacity:0"><span>Accept</span></label>
+      <label><input type="checkbox" style="opacity:0"><span>Accept</span></label>
+      <button style="position:absolute;clip:rect(0,0,0,0)">Clipped</button>
+      <button style="width:0;height:0;overflow:hidden">No size</button>
+      <a href="/" style="display:block;overflow:hidden;text-indent:-9999px">Logo</a>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 4,
+    maxOccurrences: 4
+  });
+  for (const occ of rule.occurrences) assert.strictEqual(occ.lean, undefined, occ.html);
+});
+
+test(`${RULE_ID}: an element positioned off screen by its own styles leans fail`, () => {
+  const html = `<!doctype html><html><body>
       <a id="own_off" href="#x" style="position:absolute;left:-9999px">Hidden link</a>
+    </body></html>`;
+  const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
+    minOccurrences: 1,
+    maxOccurrences: 1
+  });
+  const { lean } = rule.occurrences[0];
+  assert.strictEqual(lean.toward, 'fail');
+  assert.strictEqual(lean.i18n.whyKey, 'cssHidden_focus_lean_why_container');
+  assert.deepStrictEqual(lean.signals[0], { signal: 'hidden-by', value: 'offscreen' });
+});
+
+test(`${RULE_ID}: a checkbox or radio input off screen gets no lean, as its label may show the focus`, () => {
+  const html = `<!doctype html><html><body>
+      <input id="off_cb" type="checkbox" style="position:absolute;left:-9999px"><label for="off_cb">Accept</label>
+      <div style="position:absolute;left:-9999px"><input id="off_radio" type="RADIO" name="r"></div><label for="off_radio">Yes</label>
     </body></html>`;
   const rule = assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'cantTell', {
     minOccurrences: 2,
     maxOccurrences: 2
   });
-  for (const occ of rule.occurrences) assert.strictEqual(occ.lean, undefined);
+  for (const occ of rule.occurrences) assert.strictEqual(occ.lean, undefined, occ.html);
 });
 
 test(`${RULE_ID}: no lean when an onfocus or onfocusin attribute may show the element`, () => {

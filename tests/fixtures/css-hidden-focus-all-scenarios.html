@@ -26,12 +26,12 @@
 <button id="case_opacity_zero" style="opacity:0">Hidden</button>
 
 <!-- ========================================================= -->
-<!-- 3) cantTell: off-screen (absolute + left:-9999px) -->
+<!-- 3) cantTell, leans fail: off-screen (absolute + left:-9999px) -->
 <!-- ========================================================= -->
 <a id="case_offscreen" href="#x" style="position:absolute; left:-9999px; top:0">Off</a>
 
 <!-- ========================================================= -->
-<!-- 4) cantTell: off-screen via text-indent technique -->
+<!-- 4) cantTell, no lean: off-screen via text-indent technique (only the text moves; the box and its focus ring stay in view) -->
 <!-- ========================================================= -->
 <a id="case_text_indent_offscreen" href="#x" style="text-indent:-9999px; display:block; overflow:hidden;">Off via text-indent</a>
 
@@ -46,7 +46,7 @@
 <button id="case_zero_size_overflow_hidden" style="width:0; height:0; overflow:hidden;">ZeroSize</button>
 
 <!-- ========================================================= -->
-<!-- 7) cantTell: multiple hints on one element (opacity:0 + offscreen) -->
+<!-- 7) cantTell, leans fail: multiple hints on one element (opacity:0 + offscreen) -->
 <!-- ========================================================= -->
 <a id="case_multi_hint" href="#x" style="opacity:0; position:absolute; left:-9999px; top:0;">Multi</a>
 
@@ -75,7 +75,7 @@
 <div id="case_tabindex_neg1" tabindex="-1" style="opacity:0">Programmatic focus only</div>
 
 <!-- ========================================================= -->
-<!-- 12) cantTell: hidden select/textarea/input also covered by the same candidate selector -->
+<!-- 12) cantTell: hidden select/textarea/input also covered by the same candidate selector (the off-screen text input leans fail) -->
 <!-- ========================================================= -->
 <input id="case_input_offscreen" type="text" style="position:absolute; left:-9999px; top:0;">
 <select id="case_select_opacity_zero" style="opacity:0"><option>One</option></select>
@@ -92,7 +92,7 @@
 <a id="case_not_focus_clip" class="vh-focusable" href="#main">Skip to content</a>
 
 <!-- ========================================================= -->
-<!-- 15) cantTell: the :focus rule restores left but top stays off-screen -->
+<!-- 15) cantTell, leans fail: the :focus rule restores left but top stays off-screen -->
 <!-- ========================================================= -->
 <a id="case_focus_half_restored" class="half-restored" href="#main">Skip to content</a>
 
