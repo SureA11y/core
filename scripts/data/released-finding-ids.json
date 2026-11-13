@@ -1,6 +1,6 @@
 {
   "$comment": "Written by scripts/freeze-finding-ids.js at each release: the rule ids and reason codes that version shipped. tests/released-finding-ids.test.js fails when one is missing and not listed under retired with its reason. See docs/API_STABILITY.md, \"Finding identity\".",
-  "version": "1.16.1",
+  "version": "1.17.0",
   "ruleIds": [
     "accesskeys",
     "area-alt-present",
@@ -51,6 +51,8 @@
     "embed-text-alternative-quality",
     "empty-heading",
     "empty-table-header",
+    "focus-not-obscured-enhanced",
+    "focus-not-obscured-minimum",
     "focus-not-removed-by-script",
     "focus-order-semantics",
     "form-control-label-quality",
@@ -114,6 +116,7 @@
     "page-has-heading-one",
     "page-title-patterns",
     "page-title-present",
+    "page-zones-landmark",
     "password-paste-enabled",
     "presentation-role-conflict",
     "presentational-children-focusable-absent",
@@ -137,6 +140,7 @@
     "table-fake-caption",
     "table-headers-attr-valid",
     "table-th-has-data-cells",
+    "target-size-enhanced",
     "target-size-minimum",
     "td-has-header",
     "text-spacing-content-loss",
@@ -382,6 +386,16 @@
     "empty-table-header": [
       "TABLE_HEADER_EMPTY",
       "TABLE_HEADER_NAME_NOT_VISIBLE_TEXT"
+    ],
+    "focus-not-obscured-enhanced": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
+    ],
+    "focus-not-obscured-minimum": [
+      "FOCUS_OBSCURED_BEHIND_MODAL",
+      "FOCUS_OBSCURED_ENTIRELY",
+      "FOCUS_OBSCURED_PARTLY"
     ],
     "focus-not-removed-by-script": [
       "FOCUS_HANDLER_BLURS_SELF",
@@ -643,6 +657,14 @@
       "emptyTitleText",
       "missingTitleElement"
     ],
+    "page-zones-landmark": [
+      "BANNER_NOT_EXPOSED",
+      "CONTENTINFO_NOT_EXPOSED",
+      "FOOTER_NESTED",
+      "HEADER_NESTED",
+      "NAVIGATION_NOT_EXPOSED",
+      "SEARCH_NOT_EXPOSED"
+    ],
     "password-paste-enabled": [
       "PASTE_CANCELLED",
       "PASTE_HANDLER_OPAQUE"
@@ -729,7 +751,13 @@
       "TABLE_TH_NO_ASSIGNED_CELL",
       "TABLE_TH_NO_DATA_CELLS"
     ],
+    "target-size-enhanced": [
+      "undersized",
+      "undersized-inline-link-run",
+      "undersized-plausibly-essential"
+    ],
     "target-size-minimum": [
+      "undersized",
       "undersized-and-too-close",
       "undersized-inline-link-run",
       "undersized-plausibly-essential"
