@@ -402,3 +402,22 @@ test(`${RULE_ID}: names the hidden aria-labelledby target, its text and what hid
   );
   assert.match(p.summary, /pointing at #m, whose ancestor <div class="wrap"> has hidden="",/);
 });
+
+// jsdom's CSS parser drops a space-separated rect() (rect(0 0 0 0) computes
+// as auto), so a control a style sheet clips that way was judged as if on
+// screen. The clip is read as declared, as a browser computes it.
+test(`${RULE_ID}: a control a style sheet clips with rect(0 0 0 0), spaces and all, is not judged`, () => {
+  for (const clip of ['rect(0 0 0 0)', 'rect(0, 0, 0, 0)']) {
+    const css = `<style>.sr{position:absolute;width:20px;height:20px;clip:${clip}}</style>`;
+    for (const body of [
+      '<input class="sr" type="checkbox" aria-label="Menu">',
+      '<span class="sr"><input type="checkbox" aria-label="Menu"></span>'
+    ]) {
+      const html = `<!doctype html><html><head>${css}</head><body>${body}</body></html>`;
+      assertRule(runa11yCoreOnHtml(html, { runOnly: [RULE_ID] }), RULE_ID, 'notApplicable', {
+        minOccurrences: 0,
+        maxOccurrences: 0
+      });
+    }
+  }
+});
