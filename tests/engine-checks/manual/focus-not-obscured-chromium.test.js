@@ -172,13 +172,14 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
   await t.test(
     'a script-made modal leaves the page focusable behind it; showModal() does not',
     async () => {
-      const scripted = await scan(
+      const modal = (backdrop) =>
         doc(
           LINKS(5) +
-            '<div id="backdrop" style="position:fixed;inset:0;background:rgba(0,0,0,.5)">' +
+            `<div id="backdrop" style="position:fixed;inset:0;background:${backdrop}">` +
             '<div role="dialog" aria-modal="true" aria-label="Offer" style="background:#fff;margin:60px;padding:20px">Offer <button>Close</button></div></div>'
-        )
-      );
+        );
+      // An opaque backdrop hides the page behind it entirely: 2.4.11 and 2.4.12.
+      const scripted = await scan(modal('#333'));
       assert.deepEqual(brief(scripted, RULE_ID), [
         '#backdrop FOCUS_OBSCURED_BEHIND_MODAL lean fail'
       ]);
@@ -187,6 +188,13 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
         'focusNotObscuredMinimum_lean_why_behindModal'
       );
       assert.deepEqual(brief(scripted, ENHANCED), [
+        '#backdrop FOCUS_OBSCURED_BEHIND_MODAL lean fail'
+      ]);
+      // A dimming one leaves it seen through: not entirely hidden (2.4.11
+      // passes), but obscured (2.4.12).
+      const dimmed = await scan(modal('rgba(0,0,0,.5)'));
+      assert.equal(dimmed[RULE_ID].outcome, 'pass');
+      assert.deepEqual(brief(dimmed, ENHANCED), [
         '#backdrop FOCUS_OBSCURED_BEHIND_MODAL lean fail'
       ]);
       const native = await scan(
@@ -295,6 +303,25 @@ test(`${RULE_ID} and ${ENHANCED} in Chromium`, { skip }, async (t) => {
       truncated: true
     });
   });
+
+  await t.test(
+    'what shows through a box is not entirely hidden (2.4.11), but obscured (2.4.12)',
+    async () => {
+      for (const [name, css] of [
+        ['a footer at opacity 0.5', 'opacity:.5'],
+        ['a footer with a translucent background', 'background:rgba(255,255,255,.6)'],
+        ['a footer in a faded container', 'background:#fff']
+      ]) {
+        const footer =
+          name === 'a footer in a faded container'
+            ? `<div style="opacity:.6">${FOOTER(css)}</div>`
+            : FOOTER(css);
+        const res = await scan(doc(LINKS(20) + footer));
+        assert.equal(res[RULE_ID].outcome, 'pass', name);
+        assert.deepEqual(brief(res, ENHANCED), ['#footer FOCUS_OBSCURED_ENTIRELY lean fail'], name);
+      }
+    }
+  );
 
   await t.test('the page is scrolled back where it was', async () => {
     const res = await scan(doc(LINKS(30) + FOOTER()), { scrollY: 450 });

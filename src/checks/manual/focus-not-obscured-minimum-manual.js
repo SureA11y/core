@@ -27,7 +27,11 @@
  *   up entirely under it, then scrolls a few of them there and checks that
  *   the box is what the browser draws on top of them, and puts the page back
  *   where it was. A sticky box counts only for the elements in its
- *   containing block, where it can be. One finding per box, naming how many
+ *   containing block, where it can be. A box hides an element entirely only
+ *   where it is drawn opaque: under a semi-transparent or dimming box (an
+ *   `opacity` under 1 on it or a container, or a background color that
+ *   isn't opaque) the element shows through, so it is not entirely hidden,
+ *   as WCAG's Understanding 2.4.11 says; 2.4.12 counts it as obscured. One finding per box, naming how many
  *   elements it can hide and one of them. A page lists at most 50 boxes, in
  *   document order, and checks at most 150 elements; when boxes are left
  *   unchecked, the result's own `data.details` says how many boxes could
@@ -311,6 +315,31 @@ function runInPage(ctx) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha > 0.05;
   }
+  // Whether an element is drawn opaque, so nothing under it shows through:
+  // a replaced element or a background image (taken as opaque), or a
+  // background color at full alpha, with no opacity under 1 on it or on
+  // anything up to the page. WCAG's Understanding 2.4.11 counts an element
+  // under a semi-transparent or dimming overlay as not entirely hidden
+  // (it passes); 2.4.12 counts it as obscured.
+  const fadedMemo = new Map();
+  function faded(el) {
+    if (fadedMemo.has(el)) return fadedMemo.get(el);
+    const cs = styleOf(el);
+    const op = Number.parseFloat(cs && cs.opacity);
+    const up = dom.parentElement(el);
+    const value = (Number.isFinite(op) && op < 0.99) || (!!up && faded(up));
+    fadedMemo.set(el, value);
+    return value;
+  }
+  function opaque(el, cs) {
+    if (!paints(el, cs) || faded(el)) return false;
+    if (REPLACED.has(lower(dom.tagName(el)))) return true;
+    if (trim(cs.backgroundImage) && lower(cs.backgroundImage) !== 'none') return true;
+    const m = /rgba?\(([^)]*)\)/.exec(lower(cs.backgroundColor));
+    const parts = m ? m[1].split(/[\s,/]+/).filter(Boolean) : [];
+    const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(alpha) && alpha >= 0.99;
+  }
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -405,6 +434,7 @@ function runInPage(ctx) {
       el,
       root,
       position,
+      opaque: opaque(el, cs),
       top,
       bottom: top + r.height,
       left: r.left,
@@ -455,6 +485,8 @@ function runInPage(ctx) {
   // an element is the one reported for it.
   const byRoot = new Map();
   for (const cover of covers) {
+    // What shows through a box doesn't hide entirely (2.4.11), only in part.
+    if (!partlyToo && !cover.opaque) continue;
     for (const c of candidates) {
       const behindModal = modals.length > 0 && !inModal(c.el);
       const horizontallyAll = cover.left <= c.left + 0.5 && cover.right >= c.right - 0.5;
@@ -537,10 +569,13 @@ function runInPage(ctx) {
         }
         if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
         if (!dom.contains(cover.root, top)) continue;
-        // Drawn there: the part hit, or a box around it within the root.
+        // Drawn there: the part hit, or a box around it within the root,
+        // and for 2.4.11 drawn opaque, as what shows through hides nothing
+        // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
-          if (paints(n, styleOf(n))) {
+          const ncs = styleOf(n);
+          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
             break;
           }

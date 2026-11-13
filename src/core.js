@@ -80859,6 +80859,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha > 0.05;
   }
+  // Whether an element is drawn opaque, so nothing under it shows through:
+  // a replaced element or a background image (taken as opaque), or a
+  // background color at full alpha, with no opacity under 1 on it or on
+  // anything up to the page. WCAG's Understanding 2.4.11 counts an element
+  // under a semi-transparent or dimming overlay as not entirely hidden
+  // (it passes); 2.4.12 counts it as obscured.
+  const fadedMemo = new Map();
+  function faded(el) {
+    if (fadedMemo.has(el)) return fadedMemo.get(el);
+    const cs = styleOf(el);
+    const op = Number.parseFloat(cs && cs.opacity);
+    const up = dom.parentElement(el);
+    const value = (Number.isFinite(op) && op < 0.99) || (!!up && faded(up));
+    fadedMemo.set(el, value);
+    return value;
+  }
+  function opaque(el, cs) {
+    if (!paints(el, cs) || faded(el)) return false;
+    if (REPLACED.has(lower(dom.tagName(el)))) return true;
+    if (trim(cs.backgroundImage) && lower(cs.backgroundImage) !== 'none') return true;
+    const m = /rgba?\(([^)]*)\)/.exec(lower(cs.backgroundColor));
+    const parts = m ? m[1].split(/[\s,/]+/).filter(Boolean) : [];
+    const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(alpha) && alpha >= 0.99;
+  }
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -80953,6 +80978,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el,
       root,
       position,
+      opaque: opaque(el, cs),
       top,
       bottom: top + r.height,
       left: r.left,
@@ -81003,6 +81029,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // an element is the one reported for it.
   const byRoot = new Map();
   for (const cover of covers) {
+    // What shows through a box doesn't hide entirely (2.4.11), only in part.
+    if (!partlyToo && !cover.opaque) continue;
     for (const c of candidates) {
       const behindModal = modals.length > 0 && !inModal(c.el);
       const horizontallyAll = cover.left <= c.left + 0.5 && cover.right >= c.right - 0.5;
@@ -81085,10 +81113,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
         if (!dom.contains(cover.root, top)) continue;
-        // Drawn there: the part hit, or a box around it within the root.
+        // Drawn there: the part hit, or a box around it within the root,
+        // and for 2.4.11 drawn opaque, as what shows through hides nothing
+        // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
-          if (paints(n, styleOf(n))) {
+          const ncs = styleOf(n);
+          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
             break;
           }
@@ -81458,6 +81489,31 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
     const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
     return Number.isFinite(alpha) && alpha > 0.05;
   }
+  // Whether an element is drawn opaque, so nothing under it shows through:
+  // a replaced element or a background image (taken as opaque), or a
+  // background color at full alpha, with no opacity under 1 on it or on
+  // anything up to the page. WCAG's Understanding 2.4.11 counts an element
+  // under a semi-transparent or dimming overlay as not entirely hidden
+  // (it passes); 2.4.12 counts it as obscured.
+  const fadedMemo = new Map();
+  function faded(el) {
+    if (fadedMemo.has(el)) return fadedMemo.get(el);
+    const cs = styleOf(el);
+    const op = Number.parseFloat(cs && cs.opacity);
+    const up = dom.parentElement(el);
+    const value = (Number.isFinite(op) && op < 0.99) || (!!up && faded(up));
+    fadedMemo.set(el, value);
+    return value;
+  }
+  function opaque(el, cs) {
+    if (!paints(el, cs) || faded(el)) return false;
+    if (REPLACED.has(lower(dom.tagName(el)))) return true;
+    if (trim(cs.backgroundImage) && lower(cs.backgroundImage) !== 'none') return true;
+    const m = /rgba?\(([^)]*)\)/.exec(lower(cs.backgroundColor));
+    const parts = m ? m[1].split(/[\s,/]+/).filter(Boolean) : [];
+    const alpha = parts.length >= 4 ? Number.parseFloat(parts[3]) : 1;
+    return Number.isFinite(alpha) && alpha >= 0.99;
+  }
   // Whether an element, and everything up to the page, is drawn at all.
   function shown(el) {
     for (let n = el, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
@@ -81552,6 +81608,7 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
       el,
       root,
       position,
+      opaque: opaque(el, cs),
       top,
       bottom: top + r.height,
       left: r.left,
@@ -81602,6 +81659,8 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
   // an element is the one reported for it.
   const byRoot = new Map();
   for (const cover of covers) {
+    // What shows through a box doesn't hide entirely (2.4.11), only in part.
+    if (!partlyToo && !cover.opaque) continue;
     for (const c of candidates) {
       const behindModal = modals.length > 0 && !inModal(c.el);
       const horizontallyAll = cover.left <= c.left + 0.5 && cover.right >= c.right - 0.5;
@@ -81684,10 +81743,13 @@ function runa11yCoreInPage(pageUrl, contextSelector, engineOptions, runOnly) {
         }
         if (!top || top === c.el || dom.contains(c.el, top) || dom.contains(top, c.el)) continue;
         if (!dom.contains(cover.root, top)) continue;
-        // Drawn there: the part hit, or a box around it within the root.
+        // Drawn there: the part hit, or a box around it within the root,
+        // and for 2.4.11 drawn opaque, as what shows through hides nothing
+        // entirely.
         let drawn = false;
         for (let n = top, i = 0; n && i < 10000; n = dom.parentElement(n), i++) {
-          if (paints(n, styleOf(n))) {
+          const ncs = styleOf(n);
+          if (partlyToo ? paints(n, ncs) : opaque(n, ncs)) {
             drawn = true;
             break;
           }
