@@ -29,7 +29,7 @@ results are auditable rather than reassuring.
 
 *Sure* means certainty about what is known, and honesty about what isn't.
 
-146 accessibility rules · 60 W3C ACT rules compared against W3C's test
+149 accessibility rules · 60 W3C ACT rules compared against W3C's test
 corpus (957 reference cases) · zero runtime dependencies
 
 Unlike browser extensions or cloud-based services, the engine is a library.
