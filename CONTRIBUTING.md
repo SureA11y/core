@@ -151,7 +151,7 @@ Prefer finding the root cause over a narrow patch — this codebase's own conven
 
 ## Contributing a translation
 
-No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<locale>.json` (and `npm run i18n:new -- <locale> --profile <key>` for a profile's messages, if you translate those too), fill in the strings, and check progress with `npm run i18n:report`. If you add or rename a key in `en.json`, run `npm run i18n:sync` so every other locale picks it up. Full workflow and terminology guidance in [`docs/I18N.md`](./docs/I18N.md#adding-your-language).
+No code changes needed. Run `npm run i18n:new <locale>` to scaffold `src/i18n/<locale>.json` (and `npm run i18n:new -- <locale> --profile <key>` for a profile's messages, if you translate those too), fill in the strings, and check progress with `npm run i18n:report`. If you add or rename a key in `en.json`, run `npm run i18n:sync` so every other locale picks it up. A new language is merged once someone who speaks it natively and works in accessibility has reviewed it ([`docs/I18N.md`](./docs/I18N.md#review-by-a-native-speaker)). Full workflow and terminology guidance in [`docs/I18N.md`](./docs/I18N.md#adding-your-language). To report a wrong message or offer to review a language, open a translation issue.
 
 ## Commit and PR conventions
 

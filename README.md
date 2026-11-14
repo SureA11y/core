@@ -48,6 +48,7 @@ that can be consumed by people, scripts or reporting tools.
 - [Quick Start](#quick-start)
 - [Understanding the Results](#understanding-the-results)
 - [Documentation](#documentation)
+- [Languages](#languages)
 - [Contributing](#contributing)
 - [Security](#security)
 - [Versioning & stability](#versioning--stability)
@@ -585,6 +586,25 @@ contributing to it, is listed by what you want to do in
 - [`docs/OUTPUT_SCHEMA.md`](./docs/OUTPUT_SCHEMA.md): every field of a result.
 - [`docs/LIMITATIONS.md`](./docs/LIMITATIONS.md): what a scan can't establish.
 - [`docs/TROUBLESHOOTING.md`](./docs/TROUBLESHOOTING.md): common questions and errors.
+
+---
+
+## Languages
+
+Messages come in English, French, German, Spanish and Japanese, and every
+other language is welcome. A translation is a data file of strings, with no
+code to write: `npm run i18n:new <locale>` creates it, seeded with the
+English, and whatever you leave untranslated shows in English until someone
+translates it. Before a new language is merged, someone who speaks it
+natively and works in accessibility reviews it.
+[`docs/I18N.md`](./docs/I18N.md#adding-your-language) has the steps.
+
+You can help without translating everything: report a wrong or unclear
+message with a
+[translation issue](https://github.com/SureA11y/core/issues/new?template=translation.md),
+or, if you work in accessibility, join the
+[translation reviewers](./docs/I18N.md#translation-reviewers) for your
+language.
 
 ---
 
