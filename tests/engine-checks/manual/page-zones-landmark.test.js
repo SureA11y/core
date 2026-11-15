@@ -157,3 +157,27 @@ test(`${RULE_ID}: says which id or class names the block as a zone`, () => {
   );
   assert.strictEqual(footer.data.details.namedByToken, 'site-footer');
 });
+
+test(`${RULE_ID}: nothing in an excluded block is asked about`, () => {
+  // A site's admin toolbar, say: its search form and menu are left out.
+  const body =
+    '<div id="toolbar"><div class="menu"><a href="/a">A</a><a href="/b">B</a></div><form><input type="search" name="s"></form></div>' +
+    '<main><p>x</p><form><input type="search" name="q"></form></main>';
+  const all = run(body).checksResults.find((c) => c.ruleId === RULE_ID);
+  assert.deepStrictEqual(codes(all).sort(), [
+    'NAVIGATION_NOT_EXPOSED',
+    'SEARCH_NOT_EXPOSED',
+    'SEARCH_NOT_EXPOSED'
+  ]);
+  for (const engineOptions of [
+    { excludeSelectors: ['#toolbar'] },
+    { rules: { [RULE_ID]: { excludeSelectors: ['#toolbar'] } } }
+  ]) {
+    const rule = run(body, { engineOptions }).checksResults.find((c) => c.ruleId === RULE_ID);
+    assert.deepStrictEqual(codes(rule), ['SEARCH_NOT_EXPOSED'], JSON.stringify(engineOptions));
+    assert.ok(
+      !rule.occurrences.some((o) => /toolbar/.test(o.selector)),
+      'no occurrence in the excluded block'
+    );
+  }
+});

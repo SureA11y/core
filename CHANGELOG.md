@@ -17,6 +17,7 @@ All notable changes to this project are documented here, in [Keep a Changelog](h
 ### Fixed
 
 - Under jsdom, `p-as-heading` reads a font size written as a keyword (`large`) or a `calc()` as a browser does, where it read it as no size.
+- **`page-zones-landmark` honours `excludeSelectors`**: it walks the whole document itself and asked about blocks, search forms, headers and footers inside an excluded area, such as a site's admin toolbar. Elements left out, globally or for this rule, are no longer looked at. It was the only rule that reported inside an excluded area, checked by running every rule on a page whose problems all sat in one.
 
 ## [1.17.0] - 2026-11-13
 
